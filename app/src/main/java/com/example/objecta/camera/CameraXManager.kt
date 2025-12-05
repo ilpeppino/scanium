@@ -121,7 +121,8 @@ class CameraXManager(
 
     /**
      * Starts continuous scanning mode.
-     * Captures frames periodically (every ~600ms) and runs detection.
+     * Captures frames periodically (every ~1000ms) and runs detection.
+     * Uses SINGLE_IMAGE_MODE for better accuracy.
      */
     fun startScanning(onResult: (List<ScannedItem>) -> Unit) {
         if (isScanning) {
@@ -129,11 +130,12 @@ class CameraXManager(
             return
         }
 
-        Log.d(TAG, "startScanning: Starting continuous scanning mode")
+        Log.d(TAG, "startScanning: Starting continuous scanning mode with SINGLE_IMAGE_MODE")
         isScanning = true
 
         var lastAnalysisTime = 0L
-        val analysisIntervalMs = 600L // Analyze every 600ms
+        val analysisIntervalMs = 1000L // Analyze every 1 second (slower but more accurate)
+        var isProcessing = false // Prevent overlapping processing
 
         // Clear any previous analyzer to avoid stale callbacks
         imageAnalysis?.clearAnalyzer()
@@ -147,17 +149,24 @@ class CameraXManager(
 
             val currentTime = System.currentTimeMillis()
 
-            if (currentTime - lastAnalysisTime >= analysisIntervalMs) {
+            // Only process if enough time has passed AND we're not already processing
+            if (currentTime - lastAnalysisTime >= analysisIntervalMs && !isProcessing) {
                 lastAnalysisTime = currentTime
+                isProcessing = true
                 Log.d(TAG, "startScanning: Processing frame ${imageProxy.width}x${imageProxy.height}")
 
                 detectionScope.launch {
-                    val items = processImageProxy(imageProxy, useStreamMode = true)  // Use STREAM_MODE
-                    Log.d(TAG, "startScanning: Got ${items.size} items")
-                    if (items.isNotEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            onResult(items)
+                    try {
+                        // Use SINGLE_IMAGE_MODE for better detection (same as tap capture)
+                        val items = processImageProxy(imageProxy, useStreamMode = false)
+                        Log.d(TAG, "startScanning: Got ${items.size} items")
+                        if (items.isNotEmpty()) {
+                            withContext(Dispatchers.Main) {
+                                onResult(items)
+                            }
                         }
+                    } finally {
+                        isProcessing = false
                     }
                 }
             } else {

@@ -157,12 +157,26 @@ Or use Android Studio's Run button.
 
 ***REMOVED******REMOVED*** Summary
 
-The main issue was likely a combination of:
+The main issues were:
 1. **Missing ML Kit model metadata** → Model wasn't auto-downloading
 2. **Wrong detector mode** → STREAM_MODE less accurate than SINGLE_IMAGE_MODE
 3. **Low image resolution** → Not enough detail for detection
 4. **ML Kit inherent limitations** → Only detects prominent objects in 5 categories
 
-These changes should significantly improve detection rates, especially for tap-to-capture. However, if you're testing with items outside ML Kit's supported categories, detection may still be limited.
+***REMOVED******REMOVED*** Latest Update: Fixed Scanning Mode
+
+**Issue**: Tap-to-capture worked, but long-press scanning didn't detect objects.
+
+**Root Cause**: Scanning was using STREAM_MODE (optimized for speed) while tap used SINGLE_IMAGE_MODE (optimized for accuracy). STREAM_MODE is less accurate and was missing objects.
+
+**Fix**: Changed scanning to use SINGLE_IMAGE_MODE as well (CameraXManager.kt:122-177)
+- Both tap and scan now use the same accurate detector
+- Increased scan interval from 600ms to 1000ms (1 second between detections)
+- Added `isProcessing` flag to prevent overlapping processing
+- Same detection quality as tap, just continuous
+
+**Trade-off**: Scanning is now slightly slower (1 detection per second instead of ~1.6), but it actually detects objects now.
+
+These changes should significantly improve detection rates for both tap and scan. However, if you're testing with items outside ML Kit's supported categories, detection may still be limited.
 
 **Test with**: shoes, shirts, bottles, cups, fruits, potted plants for best results.
