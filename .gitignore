@@ -1,0 +1,18 @@
+# Gradle
+.gradle/
+build/
+app/build/
+
+# IDE & tooling
+.idea/
+*.iml
+.DS_Store
+
+# Android/NDK intermediates
+.cxx/
+local.properties
+captures/
+
+# Signing / keys (none should be committed)
+*.keystore
+*.jks
