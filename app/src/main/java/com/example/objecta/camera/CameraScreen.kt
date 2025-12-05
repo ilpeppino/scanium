@@ -1,6 +1,7 @@
 package com.example.objecta.camera
 
 import android.Manifest
+import android.widget.Toast
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -83,7 +84,9 @@ fun CameraScreen(
                         isScanning = scanning
                         if (scanning) {
                             cameraManager.startScanning { items ->
-                                itemsViewModel.addItems(items)
+                                if (items.isNotEmpty()) {
+                                    itemsViewModel.addItems(items)
+                                }
                             }
                         } else {
                             cameraManager.stopScanning()
@@ -91,7 +94,20 @@ fun CameraScreen(
                     },
                     onCapture = {
                         cameraManager.captureSingleFrame { items ->
-                            itemsViewModel.addItems(items)
+                            if (items.isEmpty()) {
+                                Toast.makeText(
+                                    context,
+                                    "No objects detected. Try pointing at prominent items.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                itemsViewModel.addItems(items)
+                                Toast.makeText(
+                                    context,
+                                    "Detected ${items.size} object(s)",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }
                     }
                 )
@@ -127,6 +143,7 @@ private fun CameraPreviewWithGestures(
 ) {
     val scope = rememberCoroutineScope()
     var isCameraStarted by remember { mutableStateOf(false) }
+    val scanningState by rememberUpdatedState(isScanning)
 
     AndroidView(
         factory = { context ->
@@ -136,25 +153,23 @@ private fun CameraPreviewWithGestures(
         },
         modifier = Modifier
             .fillMaxSize()
-            .pointerInput(Unit) {
+            .pointerInput(scanningState) {
                 detectTapGestures(
                     onTap = {
                         // Single tap: capture one frame
-                        if (!isScanning) {
+                        if (!scanningState) {
                             onCapture()
                         }
                     },
                     onLongPress = {
                         // Long press: start scanning
-                        if (!isScanning) {
+                        if (!scanningState) {
                             onScanningChanged(true)
                         }
                     },
-                    onPress = {
-                        // Wait for release
-                        tryAwaitRelease()
-                        // On release: stop scanning if active
-                        if (isScanning) {
+                    onDoubleTap = {
+                        // Double tap: stop scanning if active
+                        if (scanningState) {
                             onScanningChanged(false)
                         }
                     }
@@ -228,7 +243,7 @@ private fun BoxScope.CameraOverlay(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Tap to capture • Long-press to scan environment",
+            text = if (isScanning) "Double-tap to stop scanning" else "Tap to capture • Long-press to scan",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White,
             modifier = Modifier

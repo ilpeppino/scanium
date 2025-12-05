@@ -2,7 +2,10 @@ package com.example.objecta.camera
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.ImageFormat
 import android.graphics.Matrix
+import android.graphics.YuvImage
+import android.util.Log
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -12,6 +15,7 @@ import com.example.objecta.items.ScannedItem
 import com.example.objecta.ml.ObjectDetectorClient
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -27,6 +31,10 @@ class CameraXManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner
 ) {
+    companion object {
+        private const val TAG = "CameraXManager"
+    }
+
     private var cameraProvider: ProcessCameraProvider? = null
     private var camera: Camera? = null
     private var preview: Preview? = null
@@ -63,8 +71,13 @@ class CameraXManager(
 
         // Setup image analysis for object detection
         imageAnalysis = ImageAnalysis.Builder()
+            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setTargetRotation(previewView.display.rotation)
+            .setTargetResolution(android.util.Size(1280, 720)) // Higher resolution for better detection
             .build()
+
+        Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
 
         // Select back camera
         val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -90,9 +103,14 @@ class CameraXManager(
      * Captures a single frame and runs object detection.
      */
     fun captureSingleFrame(onResult: (List<ScannedItem>) -> Unit) {
+        Log.d(TAG, "captureSingleFrame: Starting single frame capture")
+        // Clear any previous analyzer to avoid mixing modes
+        imageAnalysis?.clearAnalyzer()
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
+            Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
             detectionScope.launch {
-                val items = processImageProxy(imageProxy)
+                val items = processImageProxy(imageProxy, useStreamMode = false)  // Use SINGLE_IMAGE_MODE
+                Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                 withContext(Dispatchers.Main) {
                     onResult(items)
                 }
@@ -106,22 +124,40 @@ class CameraXManager(
      * Captures frames periodically (every ~600ms) and runs detection.
      */
     fun startScanning(onResult: (List<ScannedItem>) -> Unit) {
-        if (isScanning) return
+        if (isScanning) {
+            Log.d(TAG, "startScanning: Already scanning, ignoring")
+            return
+        }
+
+        Log.d(TAG, "startScanning: Starting continuous scanning mode")
         isScanning = true
 
         var lastAnalysisTime = 0L
         val analysisIntervalMs = 600L // Analyze every 600ms
 
+        // Clear any previous analyzer to avoid stale callbacks
+        imageAnalysis?.clearAnalyzer()
+
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
+            if (!isScanning) {
+                Log.d(TAG, "startScanning: Not scanning anymore, closing proxy")
+                imageProxy.close()
+                return@setAnalyzer
+            }
+
             val currentTime = System.currentTimeMillis()
 
             if (currentTime - lastAnalysisTime >= analysisIntervalMs) {
                 lastAnalysisTime = currentTime
+                Log.d(TAG, "startScanning: Processing frame ${imageProxy.width}x${imageProxy.height}")
 
                 detectionScope.launch {
-                    val items = processImageProxy(imageProxy)
-                    withContext(Dispatchers.Main) {
-                        onResult(items)
+                    val items = processImageProxy(imageProxy, useStreamMode = true)  // Use STREAM_MODE
+                    Log.d(TAG, "startScanning: Got ${items.size} items")
+                    if (items.isNotEmpty()) {
+                        withContext(Dispatchers.Main) {
+                            onResult(items)
+                        }
                     }
                 }
             } else {
@@ -135,6 +171,7 @@ class CameraXManager(
      * Stops continuous scanning mode.
      */
     fun stopScanning() {
+        Log.d(TAG, "stopScanning: Stopping continuous scanning mode")
         isScanning = false
         imageAnalysis?.clearAnalyzer()
         scanJob?.cancel()
@@ -144,23 +181,37 @@ class CameraXManager(
     /**
      * Processes an ImageProxy: converts to Bitmap and runs ML Kit detection.
      */
-    private suspend fun processImageProxy(imageProxy: ImageProxy): List<ScannedItem> {
+    private suspend fun processImageProxy(imageProxy: ImageProxy, useStreamMode: Boolean = false): List<ScannedItem> {
         return try {
             // Convert ImageProxy to Bitmap
-            val bitmap = imageProxy.toBitmap()
+            val mediaImage = imageProxy.image ?: run {
+                Log.e(TAG, "processImageProxy: mediaImage is null")
+                return emptyList()
+            }
+            val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            // Rotate bitmap if needed based on image rotation
-            val rotatedBitmap = rotateBitmap(bitmap, imageProxy.imageInfo.rotationDegrees)
+            Log.d(TAG, "processImageProxy: Processing ${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees")
 
-            // Create InputImage for ML Kit
-            val inputImage = InputImage.fromBitmap(rotatedBitmap, 0)
+            // Build ML Kit image directly from camera buffer (avoids brittle YUV->Bitmap issues)
+            val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
-            // Run detection
-            val items = objectDetector.detectObjects(inputImage, rotatedBitmap)
+            // Optional bitmap for thumbnails; if conversion fails, we still return detections
+            val bitmapForThumb = runCatching {
+                val bitmap = imageProxy.toBitmap()
+                Log.d(TAG, "processImageProxy: Created bitmap ${bitmap.width}x${bitmap.height}")
+                rotateBitmap(bitmap, rotationDegrees)
+            }.getOrElse { e ->
+                Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
+                null
+            }
 
-            items
+            objectDetector.detectObjects(
+                image = inputImage,
+                sourceBitmap = bitmapForThumb,
+                useStreamMode = useStreamMode
+            )
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "processImageProxy: Error processing image", e)
             emptyList()
         } finally {
             imageProxy.close()
@@ -172,13 +223,26 @@ class CameraXManager(
      */
     @androidx.annotation.OptIn(ExperimentalGetImage::class)
     private fun ImageProxy.toBitmap(): Bitmap {
-        val buffer = planes[0].buffer
-        val bytes = ByteArray(buffer.remaining())
-        buffer.get(bytes)
+        val yBuffer = planes[0].buffer
+        val uBuffer = planes[1].buffer
+        val vBuffer = planes[2].buffer
 
-        // For YUV format, we need to convert. For simplicity in PoC, we'll use a basic approach.
-        // In production, use a proper YUV to RGB converter.
-        return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        val ySize = yBuffer.remaining()
+        val uSize = uBuffer.remaining()
+        val vSize = vBuffer.remaining()
+
+        // NV21 format: Y + VU
+        val nv21 = ByteArray(ySize + uSize + vSize)
+        yBuffer.get(nv21, 0, ySize)
+        vBuffer.get(nv21, ySize, vSize)
+        uBuffer.get(nv21, ySize + vSize, uSize)
+
+        val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
+        val out = ByteArrayOutputStream()
+        yuvImage.compressToJpeg(android.graphics.Rect(0, 0, width, height), 90, out)
+        val jpegBytes = out.toByteArray()
+
+        return android.graphics.BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
             ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     }
 
