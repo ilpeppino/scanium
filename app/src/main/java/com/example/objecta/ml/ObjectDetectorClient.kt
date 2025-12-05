@@ -2,6 +2,7 @@ package com.example.objecta.ml
 
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.util.Log
 import com.example.objecta.items.ScannedItem
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.DetectedObject
@@ -17,14 +18,32 @@ import kotlinx.coroutines.tasks.await
  */
 class ObjectDetectorClient {
 
-    // ML Kit object detector configured for multiple objects and classification
-    private val objectDetector by lazy {
+    companion object {
+        private const val TAG = "ObjectDetectorClient"
+        private const val CONFIDENCE_THRESHOLD = 0.3f // Lowered from 0.5 for better detection
+    }
+
+    // ML Kit object detector configured for single image mode (more accurate)
+    private val singleImageDetector by lazy {
+        val options = ObjectDetectorOptions.Builder()
+            .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE) // Better for tap capture
+            .enableMultipleObjects() // Detect multiple objects per frame
+            .enableClassification() // Enable coarse classification
+            .build()
+
+        Log.d(TAG, "Creating SINGLE_IMAGE_MODE detector")
+        ObjectDetection.getClient(options)
+    }
+
+    // ML Kit object detector for streaming (scanning mode)
+    private val streamDetector by lazy {
         val options = ObjectDetectorOptions.Builder()
             .setDetectorMode(ObjectDetectorOptions.STREAM_MODE) // Optimized for video frames
             .enableMultipleObjects() // Detect multiple objects per frame
             .enableClassification() // Enable coarse classification
             .build()
 
+        Log.d(TAG, "Creating STREAM_MODE detector")
         ObjectDetection.getClient(options)
     }
 
@@ -33,19 +52,44 @@ class ObjectDetectorClient {
      *
      * @param image InputImage to process (from CameraX)
      * @param sourceBitmap Original bitmap for cropping thumbnails
+     * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
      * @return List of ScannedItems with detected objects
      */
-    suspend fun detectObjects(image: InputImage, sourceBitmap: Bitmap): List<ScannedItem> {
+    suspend fun detectObjects(
+        image: InputImage,
+        sourceBitmap: Bitmap?,
+        useStreamMode: Boolean = false
+    ): List<ScannedItem> {
         return try {
+            val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
+            Log.d(TAG, "Starting object detection ($mode) on image ${image.width}x${image.height}, rotation=${image.rotationDegrees}")
+
+            // Choose the appropriate detector
+            val detector = if (useStreamMode) streamDetector else singleImageDetector
+
             // Run detection
-            val detectedObjects = objectDetector.process(image).await()
+            val detectedObjects = detector.process(image).await()
+
+            Log.d(TAG, "Detected ${detectedObjects.size} objects")
+            detectedObjects.forEachIndexed { index, obj ->
+                val labels = obj.labels.joinToString { "${it.text}:${it.confidence}" }
+                Log.d(TAG, "Object $index: labels=[$labels], box=${obj.boundingBox}")
+            }
 
             // Convert each detected object to ScannedItem
-            detectedObjects.mapNotNull { obj ->
-                convertToScannedItem(obj, sourceBitmap)
+            val items = detectedObjects.mapNotNull { obj ->
+                convertToScannedItem(
+                    detectedObject = obj,
+                    sourceBitmap = sourceBitmap,
+                    fallbackWidth = image.width,
+                    fallbackHeight = image.height
+                )
             }
+
+            Log.d(TAG, "Converted to ${items.size} scanned items")
+            items
         } catch (e: Exception) {
-            // Log error in production; for PoC, return empty list
+            Log.e(TAG, "Error detecting objects", e)
             emptyList()
         }
     }
@@ -55,7 +99,9 @@ class ObjectDetectorClient {
      */
     private fun convertToScannedItem(
         detectedObject: DetectedObject,
-        sourceBitmap: Bitmap
+        sourceBitmap: Bitmap?,
+        fallbackWidth: Int,
+        fallbackHeight: Int
     ): ScannedItem? {
         return try {
             // Extract tracking ID (null if not available)
@@ -66,13 +112,17 @@ class ObjectDetectorClient {
             val boundingBox = detectedObject.boundingBox
 
             // Crop thumbnail from source bitmap
-            val thumbnail = cropThumbnail(sourceBitmap, boundingBox)
+            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
 
             // Determine category from labels
             val category = extractCategory(detectedObject)
 
             // Calculate normalized bounding box area for pricing
-            val boxArea = calculateNormalizedArea(boundingBox, sourceBitmap.width, sourceBitmap.height)
+            val boxArea = calculateNormalizedArea(
+                box = boundingBox,
+                imageWidth = sourceBitmap?.width ?: fallbackWidth,
+                imageHeight = sourceBitmap?.height ?: fallbackHeight
+            )
 
             // Generate price range
             val priceRange = PricingEngine.generatePriceRange(category, boxArea)
@@ -97,9 +147,11 @@ class ObjectDetectorClient {
         // Get the label with highest confidence
         val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
 
-        return if (bestLabel != null && bestLabel.confidence > 0.5f) {
+        return if (bestLabel != null && bestLabel.confidence > CONFIDENCE_THRESHOLD) {
+            Log.d(TAG, "Using label: ${bestLabel.text} (confidence: ${bestLabel.confidence})")
             ItemCategory.fromMlKitLabel(bestLabel.text)
         } else {
+            Log.d(TAG, "No confident label found (best: ${bestLabel?.text}:${bestLabel?.confidence})")
             ItemCategory.UNKNOWN
         }
     }
@@ -138,6 +190,11 @@ class ObjectDetectorClient {
      * Cleanup resources when done.
      */
     fun close() {
-        objectDetector.close()
+        try {
+            singleImageDetector.close()
+            streamDetector.close()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error closing detectors", e)
+        }
     }
 }
