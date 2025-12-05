@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="ic_launcher_background">***REMOVED***FFFFFF</color>
-    <string name="app_name">Objecta</string>
-    <style name="Theme.Objecta" parent="android:Theme.Material.Light.NoActionBar"/>
-</resources>
