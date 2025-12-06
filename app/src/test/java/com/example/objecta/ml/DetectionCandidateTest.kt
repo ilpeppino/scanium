@@ -3,6 +3,8 @@ package com.example.objecta.ml
 import android.graphics.Rect
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for DetectionCandidate promotion logic and state management.
@@ -14,6 +16,7 @@ import org.junit.Test
  * - Category selection based on highest confidence
  * - Bounding box area filtering
  */
+@RunWith(RobolectricTestRunner::class)
 class DetectionCandidateTest {
 
     @Test

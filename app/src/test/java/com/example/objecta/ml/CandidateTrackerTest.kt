@@ -330,15 +330,19 @@ class CandidateTrackerTest {
 
     @Test
     fun whenMultipleFramesWithFluctuatingConfidence_thenUsesMaxConfidence() {
-        // Arrange
-        tracker.processDetection("item-1", 0.5f, ItemCategory.FASHION, "Fashion", null, null)
-        tracker.processDetection("item-1", 0.8f, ItemCategory.FASHION, "Fashion", null, null) // Peak
-        tracker.processDetection("item-1", 0.6f, ItemCategory.FASHION, "Fashion", null, null) // Drops
+        // Arrange - Use tracker requiring 3 frames so we can test confidence fluctuation
+        val strictTracker = CandidateTracker(
+            minSeenCount = 3,
+            minConfidence = 0.4f,
+            enableDebugLogging = false
+        )
 
-        // Act
-        val result = tracker.processDetection("item-1", 0.55f, ItemCategory.FASHION, "Fashion", null, null)
+        // Act - Process multiple frames with fluctuating confidence
+        strictTracker.processDetection("item-1", 0.5f, ItemCategory.FASHION, "Fashion", null, null)
+        strictTracker.processDetection("item-1", 0.8f, ItemCategory.FASHION, "Fashion", null, null) // Peak
+        val result = strictTracker.processDetection("item-1", 0.6f, ItemCategory.FASHION, "Fashion", null, null) // Promoted on 3rd frame
 
-        // Assert - Should use peak confidence
+        // Assert - Should use peak confidence (0.8f) from across all frames
         assertThat(result).isNotNull()
         assertThat(result?.confidence).isEqualTo(0.8f)
     }

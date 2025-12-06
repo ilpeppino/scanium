@@ -97,6 +97,7 @@ dependencies {
     testImplementation("io.mockk:mockk:1.13.8")
     testImplementation("com.google.truth:truth:1.1.5")
     testImplementation("androidx.arch.core:core-testing:2.2.0") // For LiveData/Flow testing
+    testImplementation("org.robolectric:robolectric:4.11.1") // For Android framework classes in unit tests
 
     // Testing - Instrumented Tests
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
