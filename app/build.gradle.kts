@@ -82,6 +82,9 @@ dependencies {
     // ML Kit Object Detection
     implementation("com.google.mlkit:object-detection:17.0.1")
 
+    // ML Kit Barcode Scanning
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+
     // Coroutines for Play Services (needed for ML Kit await)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 

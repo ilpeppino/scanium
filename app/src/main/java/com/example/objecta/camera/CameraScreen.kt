@@ -3,6 +3,7 @@ package com.example.objecta.camera
 import android.Manifest
 import android.widget.Toast
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +25,7 @@ import com.example.objecta.items.ItemsViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -56,6 +59,12 @@ fun CameraScreen(
     // Scanning state
     var isScanning by remember { mutableStateOf(false) }
 
+    // Current scan mode
+    var currentScanMode by remember { mutableStateOf(ScanMode.OBJECT_DETECTION) }
+
+    // Flash animation state for mode transitions
+    var showFlash by remember { mutableStateOf(false) }
+
     // Items count from ViewModel
     val itemsCount by itemsViewModel.items.collectAsState()
 
@@ -79,11 +88,12 @@ fun CameraScreen(
                 // Camera preview with gesture detection
                 CameraPreviewWithGestures(
                     cameraManager = cameraManager,
+                    scanMode = currentScanMode,
                     isScanning = isScanning,
                     onScanningChanged = { scanning ->
                         isScanning = scanning
                         if (scanning) {
-                            cameraManager.startScanning { items ->
+                            cameraManager.startScanning(currentScanMode) { items ->
                                 if (items.isNotEmpty()) {
                                     itemsViewModel.addItems(items)
                                 }
@@ -93,18 +103,18 @@ fun CameraScreen(
                         }
                     },
                     onCapture = {
-                        cameraManager.captureSingleFrame { items ->
+                        cameraManager.captureSingleFrame(currentScanMode) { items ->
                             if (items.isEmpty()) {
-                                Toast.makeText(
-                                    context,
-                                    "No objects detected. Try pointing at prominent items.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                val message = when (currentScanMode) {
+                                    ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
+                                    ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
+                                }
+                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             } else {
                                 itemsViewModel.addItems(items)
                                 Toast.makeText(
                                     context,
-                                    "Detected ${items.size} object(s)",
+                                    "Detected ${items.size} item(s)",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -112,11 +122,39 @@ fun CameraScreen(
                     }
                 )
 
+                // Flash animation overlay for mode transitions
+                if (showFlash) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.White.copy(alpha = 0.6f))
+                    )
+                }
+
                 // Overlay UI
                 CameraOverlay(
                     itemsCount = itemsCount.size,
                     isScanning = isScanning,
-                    onNavigateToItems = onNavigateToItems
+                    scanMode = currentScanMode,
+                    onNavigateToItems = onNavigateToItems,
+                    onModeChanged = { newMode ->
+                        if (newMode != currentScanMode) {
+                            // Stop scanning if active
+                            if (isScanning) {
+                                isScanning = false
+                                cameraManager.stopScanning()
+                            }
+
+                            // Trigger flash animation
+                            scope.launch {
+                                showFlash = true
+                                delay(150)
+                                currentScanMode = newMode
+                                delay(100)
+                                showFlash = false
+                            }
+                        }
+                    }
                 )
             }
             else -> {
@@ -137,6 +175,7 @@ fun CameraScreen(
 @Composable
 private fun CameraPreviewWithGestures(
     cameraManager: CameraXManager,
+    scanMode: ScanMode,
     isScanning: Boolean,
     onScanningChanged: (Boolean) -> Unit,
     onCapture: () -> Unit
@@ -194,7 +233,9 @@ private fun CameraPreviewWithGestures(
 private fun BoxScope.CameraOverlay(
     itemsCount: Int,
     isScanning: Boolean,
-    onNavigateToItems: () -> Unit
+    scanMode: ScanMode,
+    onNavigateToItems: () -> Unit,
+    onModeChanged: (ScanMode) -> Unit
 ) {
     // Top bar
     Row(
@@ -235,15 +276,24 @@ private fun BoxScope.CameraOverlay(
         }
     }
 
-    // Bottom hint text
+    // Bottom UI: Mode switcher and hint text
     Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
-            .padding(bottom = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Hint text
         Text(
-            text = if (isScanning) "Double-tap to stop scanning" else "Tap to capture • Long-press to scan",
+            text = if (isScanning) {
+                "Double-tap to stop scanning"
+            } else {
+                when (scanMode) {
+                    ScanMode.OBJECT_DETECTION -> "Tap to capture • Long-press to scan"
+                    ScanMode.BARCODE -> "Tap to scan barcode • Long-press for continuous scan"
+                }
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White,
             modifier = Modifier
@@ -252,6 +302,13 @@ private fun BoxScope.CameraOverlay(
                     shape = MaterialTheme.shapes.small
                 )
                 .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
+        // Mode switcher
+        ModeSwitcher(
+            currentMode = scanMode,
+            onModeChanged = onModeChanged,
+            modifier = Modifier
         )
     }
 
