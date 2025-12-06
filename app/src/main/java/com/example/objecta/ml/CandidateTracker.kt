@@ -90,6 +90,9 @@ class CandidateTracker(
                 )
             }
 
+            // Remove from candidates map after promotion to avoid re-promoting
+            candidates.remove(trackingId)
+
             // Convert to ScannedItem with pricing
             val priceRange = PricingEngine.generatePriceRange(
                 category = updatedCandidate.category,
