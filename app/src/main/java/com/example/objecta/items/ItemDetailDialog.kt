@@ -82,6 +82,39 @@ fun ItemDetailDialog(
                 )
                 DetailRow(label = "Item ID", value = item.id.take(8))
 
+                // Show recognized text for documents
+                item.recognizedText?.let { text ->
+                    Divider()
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "Recognized Text:",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Text(
+                                text = text,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Show barcode value for barcodes
+                item.barcodeValue?.let { barcode ->
+                    Divider()
+                    DetailRow(label = "Barcode Value", value = barcode)
+                }
+
                 Divider()
 
                 // Close button

@@ -109,7 +109,8 @@ class BarcodeScannerClient {
                 id = id,
                 thumbnail = thumbnail,
                 category = category,
-                priceRange = priceRange
+                priceRange = priceRange,
+                barcodeValue = barcodeValue
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error converting barcode to item", e)
