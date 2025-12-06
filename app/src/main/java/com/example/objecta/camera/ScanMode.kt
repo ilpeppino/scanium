@@ -14,5 +14,11 @@ enum class ScanMode(val displayName: String) {
      * Barcode Scanning mode using ML Kit Barcode Scanning.
      * Scans barcodes and QR codes.
      */
-    BARCODE("Barcode")
+    BARCODE("Barcode"),
+
+    /**
+     * Document/Text Scanning mode using ML Kit Text Recognition.
+     * Detects and extracts text from documents and images.
+     */
+    DOCUMENT_TEXT("Document")
 }
