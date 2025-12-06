@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.example.objecta.items.ScannedItem
 import com.example.objecta.ml.BarcodeScannerClient
+import com.example.objecta.ml.DocumentTextRecognitionClient
 import com.example.objecta.ml.ObjectDetectorClient
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
@@ -43,6 +44,7 @@ class CameraXManager(
 
     private val objectDetector = ObjectDetectorClient()
     private val barcodeScanner = BarcodeScannerClient()
+    private val textRecognizer = DocumentTextRecognitionClient()
 
     // Executor for camera operations
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -233,6 +235,12 @@ class CameraXManager(
                         sourceBitmap = bitmapForThumb
                     )
                 }
+                ScanMode.DOCUMENT_TEXT -> {
+                    textRecognizer.recognizeText(
+                        image = inputImage,
+                        sourceBitmap = bitmapForThumb
+                    )
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "processImageProxy: Error processing image", e)
@@ -293,6 +301,7 @@ class CameraXManager(
         stopScanning()
         objectDetector.close()
         barcodeScanner.close()
+        textRecognizer.close()
         cameraExecutor.shutdown()
         detectionScope.cancel()
     }
