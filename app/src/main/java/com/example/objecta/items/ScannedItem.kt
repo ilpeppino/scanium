@@ -12,13 +12,17 @@ import java.util.UUID
  * @param category Classified category
  * @param priceRange Price range in EUR (low to high)
  * @param timestamp When the item was detected
+ * @param recognizedText Text extracted from document (for DOCUMENT items)
+ * @param barcodeValue Barcode value (for BARCODE items)
  */
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
     val thumbnail: Bitmap? = null,
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val recognizedText: String? = null,
+    val barcodeValue: String? = null
 ) {
     /**
      * Formatted price range string for display.
