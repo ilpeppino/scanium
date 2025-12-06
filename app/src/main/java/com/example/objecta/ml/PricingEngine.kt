@@ -20,6 +20,7 @@ object PricingEngine {
         ItemCategory.PLACE to (0.0 to 0.0), // Places don't have prices
         ItemCategory.PLANT to (3.0 to 15.0),
         ItemCategory.ELECTRONICS to (20.0 to 300.0),
+        ItemCategory.DOCUMENT to (0.0 to 0.0), // Documents are informational, not physical goods
         ItemCategory.UNKNOWN to (5.0 to 20.0)
     )
 
@@ -37,8 +38,8 @@ object PricingEngine {
     ): Pair<Double, Double> {
         val baseRange = categoryPriceRanges[category] ?: (5.0 to 20.0)
 
-        // If the category is PLACE, return zero price
-        if (category == ItemCategory.PLACE) {
+        // If the category is PLACE or DOCUMENT, return zero price
+        if (category == ItemCategory.PLACE || category == ItemCategory.DOCUMENT) {
             return 0.0 to 0.0
         }
 
@@ -65,7 +66,7 @@ object PricingEngine {
      */
     fun generateFormattedPrice(category: ItemCategory, boundingBoxArea: Float? = null): String {
         val (low, high) = generatePriceRange(category, boundingBoxArea)
-        return if (category == ItemCategory.PLACE) {
+        return if (category == ItemCategory.PLACE || category == ItemCategory.DOCUMENT) {
             "N/A"
         } else {
             "€%.0f - €%.0f".format(low, high)
