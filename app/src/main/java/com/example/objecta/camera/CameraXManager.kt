@@ -12,6 +12,7 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.example.objecta.items.ScannedItem
+import com.example.objecta.ml.BarcodeScannerClient
 import com.example.objecta.ml.ObjectDetectorClient
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
@@ -41,6 +42,7 @@ class CameraXManager(
     private var imageAnalysis: ImageAnalysis? = null
 
     private val objectDetector = ObjectDetectorClient()
+    private val barcodeScanner = BarcodeScannerClient()
 
     // Executor for camera operations
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -100,16 +102,16 @@ class CameraXManager(
     }
 
     /**
-     * Captures a single frame and runs object detection.
+     * Captures a single frame and runs detection based on the current scan mode.
      */
-    fun captureSingleFrame(onResult: (List<ScannedItem>) -> Unit) {
-        Log.d(TAG, "captureSingleFrame: Starting single frame capture")
+    fun captureSingleFrame(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
+        Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
         // Clear any previous analyzer to avoid mixing modes
         imageAnalysis?.clearAnalyzer()
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
             Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
             detectionScope.launch {
-                val items = processImageProxy(imageProxy, useStreamMode = false)  // Use SINGLE_IMAGE_MODE
+                val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                 Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                 withContext(Dispatchers.Main) {
                     onResult(items)
@@ -121,20 +123,19 @@ class CameraXManager(
 
     /**
      * Starts continuous scanning mode.
-     * Captures frames periodically (every ~1000ms) and runs detection.
-     * Uses SINGLE_IMAGE_MODE for better accuracy.
+     * Captures frames periodically (every ~1000ms) and runs detection based on the current scan mode.
      */
-    fun startScanning(onResult: (List<ScannedItem>) -> Unit) {
+    fun startScanning(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
         if (isScanning) {
             Log.d(TAG, "startScanning: Already scanning, ignoring")
             return
         }
 
-        Log.d(TAG, "startScanning: Starting continuous scanning mode with SINGLE_IMAGE_MODE")
+        Log.d(TAG, "startScanning: Starting continuous scanning mode with $scanMode")
         isScanning = true
 
         var lastAnalysisTime = 0L
-        val analysisIntervalMs = 1000L // Analyze every 1 second (slower but more accurate)
+        val analysisIntervalMs = 1000L // Analyze every 1 second
         var isProcessing = false // Prevent overlapping processing
 
         // Clear any previous analyzer to avoid stale callbacks
@@ -157,8 +158,7 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
-                        // Use SINGLE_IMAGE_MODE for better detection (same as tap capture)
-                        val items = processImageProxy(imageProxy, useStreamMode = false)
+                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                         Log.d(TAG, "startScanning: Got ${items.size} items")
                         if (items.isNotEmpty()) {
                             withContext(Dispatchers.Main) {
@@ -188,9 +188,13 @@ class CameraXManager(
     }
 
     /**
-     * Processes an ImageProxy: converts to Bitmap and runs ML Kit detection.
+     * Processes an ImageProxy: converts to Bitmap and runs ML Kit detection based on scan mode.
      */
-    private suspend fun processImageProxy(imageProxy: ImageProxy, useStreamMode: Boolean = false): List<ScannedItem> {
+    private suspend fun processImageProxy(
+        imageProxy: ImageProxy,
+        scanMode: ScanMode,
+        useStreamMode: Boolean = false
+    ): List<ScannedItem> {
         return try {
             // Convert ImageProxy to Bitmap
             val mediaImage = imageProxy.image ?: run {
@@ -199,12 +203,12 @@ class CameraXManager(
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            Log.d(TAG, "processImageProxy: Processing ${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees")
+            Log.d(TAG, "processImageProxy: Processing ${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, mode=$scanMode")
 
-            // Build ML Kit image directly from camera buffer (avoids brittle YUV->Bitmap issues)
+            // Build ML Kit image directly from camera buffer
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
-            // Optional bitmap for thumbnails; if conversion fails, we still return detections
+            // Optional bitmap for thumbnails
             val bitmapForThumb = runCatching {
                 val bitmap = imageProxy.toBitmap()
                 Log.d(TAG, "processImageProxy: Created bitmap ${bitmap.width}x${bitmap.height}")
@@ -214,11 +218,22 @@ class CameraXManager(
                 null
             }
 
-            objectDetector.detectObjects(
-                image = inputImage,
-                sourceBitmap = bitmapForThumb,
-                useStreamMode = useStreamMode
-            )
+            // Route to the appropriate scanner based on mode
+            when (scanMode) {
+                ScanMode.OBJECT_DETECTION -> {
+                    objectDetector.detectObjects(
+                        image = inputImage,
+                        sourceBitmap = bitmapForThumb,
+                        useStreamMode = useStreamMode
+                    )
+                }
+                ScanMode.BARCODE -> {
+                    barcodeScanner.scanBarcodes(
+                        image = inputImage,
+                        sourceBitmap = bitmapForThumb
+                    )
+                }
+            }
         } catch (e: Exception) {
             Log.e(TAG, "processImageProxy: Error processing image", e)
             emptyList()
@@ -277,6 +292,7 @@ class CameraXManager(
     fun shutdown() {
         stopScanning()
         objectDetector.close()
+        barcodeScanner.close()
         cameraExecutor.shutdown()
         detectionScope.cancel()
     }
