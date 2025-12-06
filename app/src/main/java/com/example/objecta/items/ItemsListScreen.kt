@@ -158,11 +158,33 @@ private fun ItemRow(
                     text = item.category.displayName,
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(
-                    text = item.formattedPriceRange,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
+
+                // Show text preview for documents or barcode value for barcodes
+                when {
+                    item.recognizedText != null -> {
+                        Text(
+                            text = item.recognizedText.take(50) + if (item.recognizedText.length > 50) "..." else "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2
+                        )
+                    }
+                    item.barcodeValue != null -> {
+                        Text(
+                            text = "Barcode: ${item.barcodeValue}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    else -> {
+                        Text(
+                            text = item.formattedPriceRange,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
                 Text(
                     text = formatTimestamp(item.timestamp),
                     style = MaterialTheme.typography.bodySmall,
