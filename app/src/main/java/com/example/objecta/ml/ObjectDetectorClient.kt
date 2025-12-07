@@ -221,8 +221,20 @@ class ObjectDetectorClient {
             // Crop thumbnail from source bitmap
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
 
-            // Determine category from labels
+            // Determine category from labels and get confidence
+            val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
             val category = extractCategory(detectedObject)
+
+            // Use effective confidence (fallback for objects without classification)
+            val confidence = bestLabel?.confidence ?: run {
+                // Objects detected without classification get a higher confidence
+                // ML Kit's object detection is reliable even without classification
+                if (detectedObject.trackingId != null) {
+                    0.6f // Good confidence for tracked but unlabeled objects
+                } else {
+                    0.4f // Moderate confidence for objects without tracking
+                }
+            }
 
             // Calculate normalized bounding box area for pricing
             val boxArea = calculateNormalizedArea(
@@ -238,7 +250,8 @@ class ObjectDetectorClient {
                 id = trackingId,
                 thumbnail = thumbnail,
                 category = category,
-                priceRange = priceRange
+                priceRange = priceRange,
+                confidence = confidence
             )
         } catch (e: Exception) {
             // If cropping or processing fails, skip this object

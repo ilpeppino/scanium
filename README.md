@@ -23,6 +23,7 @@ Objecta is a camera-first Android app that demonstrates object detection and pri
 - **Price Estimation**: Category-based price ranges for detected objects
 - **Items Management**: View and manage all detected items with their estimated prices
 - **Privacy-First**: All processing happens on-device with no cloud calls
+- **Debug Logging**: Comprehensive detection statistics and threshold tuning in debug builds
 
 ## Tech Stack
 
@@ -33,8 +34,10 @@ Objecta is a camera-first Android app that demonstrates object detection and pri
 
 ### Camera & ML
 - **CameraX** - Camera API for preview and image capture
-- **ML Kit Object Detection** - On-device object detection and classification
-- **Image Analysis** - Real-time video stream processing
+- **ML Kit Object Detection** - On-device object detection and classification with tracking
+- **ML Kit Barcode Scanning** - On-device barcode and QR code scanning
+- **Image Analysis** - Real-time video stream processing with multi-frame candidate tracking
+- **Sound Effects** - Camera shutter sound feedback
 
 ### Architecture & State
 - **MVVM Pattern** - ViewModel-based architecture
@@ -49,7 +52,7 @@ The project follows a **Simplified MVVM architecture** with feature-based packag
 
 ```
 app/src/main/java/com/example/objecta/
-├── camera/          # Camera functionality and CameraX integration
+├── camera/          # Camera functionality, CameraX, mode switching
 ├── items/           # Detected items management and display
 ├── ml/              # Object detection and pricing logic
 ├── tracking/        # Object tracking and de-duplication system
@@ -99,6 +102,12 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./TRACKING
 ### Release Build
 ```bash
 ./gradlew assembleRelease
+```
+
+### Testing
+```bash
+./gradlew test                    # Run 110 unit tests
+./gradlew connectedAndroidTest    # Run instrumented tests (requires device)
 ```
 
 ## Project Structure
@@ -156,9 +165,24 @@ The app requires the following permission:
 ## Current Limitations
 
 - **Mocked pricing data** - Prices are generated locally based on category
-- **No persistence** - Items are stored in memory only
-- **Single-module** - Not optimized for large-scale development
+- **No persistence** - Items are stored in memory only (cleared on app close)
+- **ML Kit categories** - Object detection limited to 5 coarse categories (Fashion, Food, Home goods, Places, Plants)
 - **No backend** - All processing is local
+
+## Test Coverage
+
+The project includes comprehensive test coverage:
+- **110 total tests** (all passing ✅)
+- **Unit tests** (7 test files):
+  - CandidateTracker (multi-frame detection logic)
+  - DetectionCandidate (promotion criteria)
+  - ItemsViewModel (state management)
+  - PricingEngine, ScannedItem, ItemCategory
+  - FakeObjectDetector (test fixtures)
+- **Instrumented tests** (2 test files):
+  - ModeSwitcher UI tests
+  - ItemsViewModel integration tests
+- **Test framework**: JUnit 4, Robolectric, Truth assertions, Mockk, Coroutines Test
 
 ## Future Enhancements
 
