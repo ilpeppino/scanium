@@ -129,7 +129,8 @@ class CameraXManager(
     fun captureSingleFrame(
         scanMode: ScanMode,
         onResult: (List<ScannedItem>) -> Unit,
-        onDetectionResult: (List<DetectionResult>) -> Unit = {}
+        onDetectionResult: (List<DetectionResult>) -> Unit = {},
+        onFrameSize: (Size) -> Unit = {}
     ) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
         // Clear any previous analyzer to avoid mixing modes
@@ -137,6 +138,12 @@ class CameraXManager(
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
             Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
             detectionScope.launch {
+                // Report actual frame dimensions
+                val frameSize = Size(imageProxy.width, imageProxy.height)
+                withContext(Dispatchers.Main) {
+                    onFrameSize(frameSize)
+                }
+
                 // Single-frame capture uses direct detection (no candidate tracking)
                 val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                 Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
@@ -156,7 +163,8 @@ class CameraXManager(
     fun startScanning(
         scanMode: ScanMode,
         onResult: (List<ScannedItem>) -> Unit,
-        onDetectionResult: (List<DetectionResult>) -> Unit = {}
+        onDetectionResult: (List<DetectionResult>) -> Unit = {},
+        onFrameSize: (Size) -> Unit = {}
     ) {
         if (isScanning) {
             Log.d(TAG, "startScanning: Already scanning, ignoring")
@@ -208,6 +216,12 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
+                        // Report actual frame dimensions
+                        val frameSize = Size(imageProxy.width, imageProxy.height)
+                        withContext(Dispatchers.Main) {
+                            onFrameSize(frameSize)
+                        }
+
                         // Use SINGLE_IMAGE_MODE for all modes (more accurate than STREAM_MODE)
                         val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                         Log.d(TAG, "startScanning: Got ${items.size} items")
