@@ -78,7 +78,7 @@ fun CameraScreen(
 
     // Detection overlay state
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
-    var imageSize by remember { mutableStateOf(Size(1280, 720)) } // Default from CameraX config
+    var imageSize by remember { mutableStateOf(Size(1280, 720)) } // Updated from actual ImageProxy dimensions
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
 
     // Request permission on first launch
@@ -119,6 +119,9 @@ fun CameraScreen(
                                 },
                                 onDetectionResult = { detections ->
                                     currentDetections = detections
+                                },
+                                onFrameSize = { size ->
+                                    imageSize = size
                                 }
                             )
                         } else {
@@ -152,6 +155,9 @@ fun CameraScreen(
                             },
                             onDetectionResult = { detections ->
                                 currentDetections = detections
+                            },
+                            onFrameSize = { size ->
+                                imageSize = size
                             }
                         )
                     },
