@@ -51,8 +51,8 @@ class CameraXManager(
     // Object tracker for de-duplication
     private val objectTracker = ObjectTracker(
         config = TrackerConfig(
-            minFramesToConfirm = 3,      // Require 3 frames to confirm
-            minConfidence = 0.4f,         // Minimum confidence 0.4
+            minFramesToConfirm = 1,      // Require 1 frame to confirm (instant detection)
+            minConfidence = 0.3f,         // Minimum confidence 0.3
             minBoxArea = 0.001f,          // Minimum 0.1% of frame
             maxFrameGap = 5,              // Allow 5 frames gap for matching
             minMatchScore = 0.3f,         // Minimum 0.3 match score for spatial matching
@@ -165,9 +165,6 @@ class CameraXManager(
         isScanning = true
         frameCounter = 0
 
-        // Clear candidate tracker when starting new scan
-        candidateTracker.clear()
-
         var lastAnalysisTime = 0L
         val analysisIntervalMs = 800L // Analyze every 800ms for better tracking
         var isProcessing = false // Prevent overlapping processing
@@ -201,9 +198,8 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
-                        // Use STREAM_MODE for better tracking when scanning objects
-                        val useStreamMode = (scanMode == ScanMode.OBJECT_DETECTION)
-                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = useStreamMode)
+                        // Use SINGLE_IMAGE_MODE for all modes (more accurate than STREAM_MODE)
+                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                         Log.d(TAG, "startScanning: Got ${items.size} items")
                         if (items.isNotEmpty()) {
                             withContext(Dispatchers.Main) {
@@ -211,11 +207,10 @@ class CameraXManager(
                             }
                         }
 
-                        // Periodic cleanup and stats logging (every 10 frames)
+                        // Periodic stats logging (every 10 frames)
                         if (frameCounter % 10 == 0) {
-                            candidateTracker.cleanupExpiredCandidates()
-                            val stats = candidateTracker.getStats()
-                            com.example.objecta.ml.DetectionLogger.logTrackerStats(stats)
+                            val stats = objectTracker.getStats()
+                            Log.d(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
                         }
                     } finally {
                         isProcessing = false
