@@ -13,6 +13,8 @@ import java.util.UUID
  * @param priceRange Price range in EUR (low to high)
  * @param confidence Detection confidence score (0.0 to 1.0)
  * @param timestamp When the item was detected
+ * @param recognizedText Text extracted from document (for DOCUMENT items)
+ * @param barcodeValue Barcode value (for BARCODE items)
  */
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
