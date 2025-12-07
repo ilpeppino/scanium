@@ -9,6 +9,10 @@ Objecta is a camera-first Android app that demonstrates object detection and pri
 ## Features
 
 - **Real-Time Object Detection**: Uses Google ML Kit for on-device object detection and classification
+- **Visual Detection Overlay**: Real-time bounding boxes and labels displayed on detected objects
+  - Live visualization of ML Kit detections with category labels
+  - Confidence scores shown on each detection
+  - Automatic overlay updates during continuous scanning
 - **Intelligent Object Tracking**: Multi-frame tracking system that eliminates duplicate detections of the same object
   - ML Kit trackingId-based matching with spatial fallback
   - Confirmation thresholds ensure stable, confident detections
@@ -120,7 +124,9 @@ objecta/
 │   │   │   ├── java/com/example/objecta/
 │   │   │   │   ├── camera/
 │   │   │   │   │   ├── CameraScreen.kt
-│   │   │   │   │   └── CameraXManager.kt
+│   │   │   │   │   ├── CameraXManager.kt
+│   │   │   │   │   ├── DetectionOverlay.kt
+│   │   │   │   │   └── ModeSwitcher.kt
 │   │   │   │   ├── items/
 │   │   │   │   │   ├── ItemsScreen.kt
 │   │   │   │   │   └── ItemsViewModel.kt
@@ -151,9 +157,11 @@ objecta/
    - **Tap** the camera button to capture a single photo
    - **Long-press** to start continuous scanning
    - **Double-tap** to stop scanning
-5. **View results** - Detected objects appear with estimated prices
+5. **View results** - Detected objects appear in two ways:
+   - **Visual Overlay**: Real-time bounding boxes and labels shown on camera preview
+   - **Items List**: Tap "View Items" to see all detected objects with details
    - In continuous scanning mode, each physical object appears only once (de-duplicated)
-   - The tracker confirms objects over 3+ frames for stability
+   - The tracker confirms objects instantly for responsive detection
 6. **Manage items** - Tap "View Items" to see all detected objects
 7. **Delete items** - Swipe left on items in the list to remove them
 
@@ -172,17 +180,19 @@ The app requires the following permission:
 ## Test Coverage
 
 The project includes comprehensive test coverage:
-- **110 total tests** (all passing ✅)
-- **Unit tests** (7 test files):
-  - CandidateTracker (multi-frame detection logic)
-  - DetectionCandidate (promotion criteria)
+- **185 total tests** (148 passing ✅)
+- **Unit tests** (8 test files):
+  - DetectionResult (overlay data model validation)
+  - ObjectTracker (tracking and de-duplication logic)
+  - ObjectCandidate (spatial matching algorithms)
+  - TrackingPipelineIntegration (end-to-end scenarios)
   - ItemsViewModel (state management)
   - PricingEngine, ScannedItem, ItemCategory
-  - FakeObjectDetector (test fixtures)
-- **Instrumented tests** (2 test files):
+- **Instrumented tests** (3 test files):
+  - DetectionOverlay UI tests (bounding box rendering)
   - ModeSwitcher UI tests
   - ItemsViewModel integration tests
-- **Test framework**: JUnit 4, Robolectric, Truth assertions, Mockk, Coroutines Test
+- **Test framework**: JUnit 4, Robolectric, Truth assertions, Mockk, Coroutines Test, Compose Testing
 
 ## Future Enhancements
 
@@ -205,10 +215,12 @@ The project includes comprehensive test coverage:
 - Adaptive tracking thresholds based on scene complexity
 
 ### Recently Implemented ✅
+- ✅ **Visual Detection Overlay**: Real-time bounding boxes and labels on camera preview
 - ✅ **Object Tracking & De-duplication**: Multi-frame tracking with ML Kit integration
 - ✅ **Barcode/QR Code Scanning**: Real-time barcode detection
 - ✅ **Document Text Recognition**: OCR for document scanning
 - ✅ **Comprehensive Test Suite**: Unit and integration tests for tracking system
+- ✅ **SINGLE_IMAGE_MODE Detection**: More accurate object detection for both tap and long-press
 
 ## License
 
