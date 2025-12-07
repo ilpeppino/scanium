@@ -59,6 +59,11 @@ fun CameraScreen(
         CameraXManager(context, lifecycleOwner)
     }
 
+    // Sound manager for camera feedback
+    val soundManager = remember {
+        CameraSoundManager()
+    }
+
     // Scanning state
     var isScanning by remember { mutableStateOf(false) }
 
@@ -87,6 +92,7 @@ fun CameraScreen(
     DisposableEffect(Unit) {
         onDispose {
             cameraManager.shutdown()
+            soundManager.release()
         }
     }
 
@@ -96,54 +102,35 @@ fun CameraScreen(
                 // Camera preview with gesture detection
                 CameraPreviewWithGestures(
                     cameraManager = cameraManager,
+                    soundManager = soundManager,
                     scanMode = currentScanMode,
                     isScanning = isScanning,
                     onScanningChanged = { scanning ->
                         isScanning = scanning
                         if (scanning) {
-                            cameraManager.startScanning(
-                                scanMode = currentScanMode,
-                                onResult = { items ->
-                                    if (items.isNotEmpty()) {
-                                        itemsViewModel.addItems(items)
-                                    }
-                                },
-                                onDetectionResult = { detections ->
-                                    currentDetections = detections
+                            // Play scan start melody
+                            soundManager.playScanStartMelody()
+                            cameraManager.startScanning(currentScanMode) { items ->
+                                if (items.isNotEmpty()) {
+                                    itemsViewModel.addItems(items)
                                 }
                             )
                         } else {
+                            // Play scan stop melody
+                            soundManager.playScanStopMelody()
                             cameraManager.stopScanning()
                             currentDetections = emptyList() // Clear overlay when stopped
                         }
                     },
                     onCapture = {
-                        cameraManager.captureSingleFrame(
-                            scanMode = currentScanMode,
-                            onResult = { items ->
-                                if (items.isEmpty()) {
-                                    val message = when (currentScanMode) {
-                                        ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
-                                        ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
-                                        ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
-                                    }
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                    currentDetections = emptyList()
-                                } else {
-                                    itemsViewModel.addItems(items)
-                                    Toast.makeText(
-                                        context,
-                                        "Detected ${items.size} item(s)",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            },
-                            onDetectionResult = { detections ->
-                                currentDetections = detections
-                                // Keep detections visible for a few seconds after single capture
-                                scope.launch {
-                                    delay(3000)
-                                    currentDetections = emptyList()
+                        // Play shutter click
+                        soundManager.playShutterClick()
+                        cameraManager.captureSingleFrame(currentScanMode) { items ->
+                            if (items.isEmpty()) {
+                                val message = when (currentScanMode) {
+                                    ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
+                                    ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
+                                    ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
                                 }
                             }
                         )
@@ -215,6 +202,7 @@ fun CameraScreen(
 @Composable
 private fun CameraPreviewWithGestures(
     cameraManager: CameraXManager,
+    soundManager: CameraSoundManager,
     scanMode: ScanMode,
     isScanning: Boolean,
     onScanningChanged: (Boolean) -> Unit,

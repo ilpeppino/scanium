@@ -39,9 +39,15 @@ class ItemsViewModel : ViewModel() {
     /**
      * Adds multiple detected items at once.
      * Used when processing a frame that detects multiple objects.
+     * Deduplicates both against existing items and within the new batch.
      */
     fun addItems(newItems: List<ScannedItem>) {
-        val uniqueItems = newItems.filter { !seenIds.contains(it.id) }
+        // Deduplicate within the new batch by taking the first occurrence of each ID
+        val deduplicatedNewItems = newItems.distinctBy { it.id }
+
+        // Filter out items already seen
+        val uniqueItems = deduplicatedNewItems.filter { !seenIds.contains(it.id) }
+
         if (uniqueItems.isNotEmpty()) {
             _items.update { currentItems ->
                 currentItems + uniqueItems
