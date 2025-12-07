@@ -5,6 +5,7 @@ import android.util.Size
 import android.widget.Toast
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -78,7 +79,7 @@ fun CameraScreen(
 
     // Detection overlay state
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
-    var imageSize by remember { mutableStateOf(Size(1280, 720)) } // Default from CameraX config
+    var imageSize by remember { mutableStateOf(Size(1280, 720)) } // Updated from actual ImageProxy dimensions
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
 
     // Request permission on first launch
@@ -119,6 +120,9 @@ fun CameraScreen(
                                 },
                                 onDetectionResult = { detections ->
                                     currentDetections = detections
+                                },
+                                onFrameSize = { size ->
+                                    imageSize = size
                                 }
                             )
                         } else {
@@ -152,6 +156,9 @@ fun CameraScreen(
                             },
                             onDetectionResult = { detections ->
                                 currentDetections = detections
+                            },
+                            onFrameSize = { size ->
+                                imageSize = size
                             }
                         )
                     },
@@ -365,31 +372,58 @@ private fun BoxScope.CameraOverlay(
         )
     }
 
-    // Scanning indicator
+    // Scanning indicator - animated recording icon
     if (isScanning) {
-        Surface(
+        RecordingIndicator(
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(16.dp),
-            color = MaterialTheme.colorScheme.primary,
-            shape = MaterialTheme.shapes.medium
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        )
+    }
+}
+
+/**
+ * Animated recording indicator with pulsing red dot.
+ */
+@Composable
+private fun RecordingIndicator(modifier: Modifier = Modifier) {
+    // Pulsing animation for the recording dot
+    val infiniteTransition = rememberInfiniteTransition(label = "recording")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scale"
+    )
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    Box(
+        modifier = modifier
+            .background(
+                Color.Black.copy(alpha = 0.6f),
+                shape = MaterialTheme.shapes.medium
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Canvas(
+            modifier = Modifier.size(16.dp)
         ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = Color.White,
-                    strokeWidth = 3.dp
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "SCANNING...",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
-                )
-            }
+            drawCircle(
+                color = Color.Red,
+                radius = size.minDimension / 2 * scale,
+                alpha = alpha
+            )
         }
     }
 }
