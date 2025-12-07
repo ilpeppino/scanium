@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.example.objecta.items.ScannedItem
 import com.example.objecta.ml.BarcodeScannerClient
+import com.example.objecta.ml.DetectionResult
 import com.example.objecta.ml.DocumentTextRecognitionClient
 import com.example.objecta.ml.ObjectDetectorClient
 import com.google.mlkit.vision.common.InputImage
@@ -106,17 +107,22 @@ class CameraXManager(
     /**
      * Captures a single frame and runs detection based on the current scan mode.
      */
-    fun captureSingleFrame(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
+    fun captureSingleFrame(
+        scanMode: ScanMode,
+        onResult: (List<ScannedItem>) -> Unit,
+        onDetectionResult: (List<DetectionResult>) -> Unit = {}
+    ) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
         // Clear any previous analyzer to avoid mixing modes
         imageAnalysis?.clearAnalyzer()
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
             Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
             detectionScope.launch {
-                val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
+                val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                Log.d(TAG, "captureSingleFrame: Got ${items.size} items and ${detections.size} detections")
                 withContext(Dispatchers.Main) {
                     onResult(items)
+                    onDetectionResult(detections)
                 }
                 imageAnalysis?.clearAnalyzer()
             }
@@ -127,7 +133,11 @@ class CameraXManager(
      * Starts continuous scanning mode.
      * Captures frames periodically (every ~1000ms) and runs detection based on the current scan mode.
      */
-    fun startScanning(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
+    fun startScanning(
+        scanMode: ScanMode,
+        onResult: (List<ScannedItem>) -> Unit,
+        onDetectionResult: (List<DetectionResult>) -> Unit = {}
+    ) {
         if (isScanning) {
             Log.d(TAG, "startScanning: Already scanning, ignoring")
             return
@@ -160,12 +170,14 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
-                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                        Log.d(TAG, "startScanning: Got ${items.size} items")
-                        if (items.isNotEmpty()) {
-                            withContext(Dispatchers.Main) {
+                        val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                        Log.d(TAG, "startScanning: Got ${items.size} items and ${detections.size} detections")
+                        withContext(Dispatchers.Main) {
+                            if (items.isNotEmpty()) {
                                 onResult(items)
                             }
+                            // Always send detection results for overlay (even if empty to clear old detections)
+                            onDetectionResult(detections)
                         }
                     } finally {
                         isProcessing = false
@@ -191,17 +203,18 @@ class CameraXManager(
 
     /**
      * Processes an ImageProxy: converts to Bitmap and runs ML Kit detection based on scan mode.
+     * Returns a Pair of (ScannedItems, DetectionResults).
      */
     private suspend fun processImageProxy(
         imageProxy: ImageProxy,
         scanMode: ScanMode,
         useStreamMode: Boolean = false
-    ): List<ScannedItem> {
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
         return try {
             // Convert ImageProxy to Bitmap
             val mediaImage = imageProxy.image ?: run {
                 Log.e(TAG, "processImageProxy: mediaImage is null")
-                return emptyList()
+                return Pair(emptyList(), emptyList())
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
@@ -223,28 +236,32 @@ class CameraXManager(
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
-                    objectDetector.detectObjects(
+                    val response = objectDetector.detectObjects(
                         image = inputImage,
                         sourceBitmap = bitmapForThumb,
                         useStreamMode = useStreamMode
                     )
+                    Pair(response.scannedItems, response.detectionResults)
                 }
                 ScanMode.BARCODE -> {
-                    barcodeScanner.scanBarcodes(
+                    // Barcode and text scanners don't return DetectionResults yet
+                    val items = barcodeScanner.scanBarcodes(
                         image = inputImage,
                         sourceBitmap = bitmapForThumb
                     )
+                    Pair(items, emptyList())
                 }
                 ScanMode.DOCUMENT_TEXT -> {
-                    textRecognizer.recognizeText(
+                    val items = textRecognizer.recognizeText(
                         image = inputImage,
                         sourceBitmap = bitmapForThumb
                     )
+                    Pair(items, emptyList())
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "processImageProxy: Error processing image", e)
-            emptyList()
+            Pair(emptyList(), emptyList())
         } finally {
             imageProxy.close()
         }
