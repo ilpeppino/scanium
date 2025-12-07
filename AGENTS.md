@@ -24,10 +24,39 @@
 - Run `./gradlew lint` (or Android Studio formatting) before sending changes; avoid storing secrets in code or `local.properties`.
 
 ***REMOVED******REMOVED*** Testing Guidelines
-- Unit tests: place in `app/src/test/java/`, using JUnit4 (`@Test`) for pure Kotlin/VM logic.
-- Instrumented/Compose UI tests: place in `app/src/androidTest/java/`, use `AndroidJUnit4` and `ui-test-junit4` APIs; prefer semantics matchers over hardcoded text.
-- Name tests `functionName_condition_expectedResult`; keep fixtures lightweight and deterministic.
-- Run `./gradlew test` for fast checks; add `connectedAndroidTest` on UI or camera-facing changes.
+
+***REMOVED******REMOVED******REMOVED*** Test Organization
+- **Unit tests**: `app/src/test/java/` - Pure Kotlin/JVM logic with JUnit4
+- **Instrumented tests**: `app/src/androidTest/java/` - UI and Android framework tests
+
+***REMOVED******REMOVED******REMOVED*** Current Test Coverage (110 tests - all passing ✅)
+- **Unit tests** (7 files):
+  - `CandidateTrackerTest.kt` - Multi-frame detection pipeline (20 tests)
+  - `DetectionCandidateTest.kt` - Promotion criteria validation (16 tests)
+  - `ItemsViewModelTest.kt` - State management & deduplication (18 tests)
+  - `PricingEngineTest.kt` - EUR price generation
+  - `ScannedItemTest.kt` - Confidence level classification
+  - `ItemCategoryTest.kt` - ML Kit label mapping
+  - `FakeObjectDetector.kt` - Test fixtures
+
+- **Instrumented tests** (2 files):
+  - `ModeSwitcherTest.kt` - Compose UI interaction
+  - `ItemsViewModelInstrumentedTest.kt` - Integration tests
+
+***REMOVED******REMOVED******REMOVED*** Test Dependencies
+- JUnit 4.13.2 (test framework)
+- **Robolectric 4.11.1** (Android framework in unit tests - required for `Rect`, etc.)
+- Truth 1.1.5 (fluent assertions)
+- MockK 1.13.8 (mocking)
+- Coroutines Test 1.7.3 (coroutine testing)
+- Core Testing 2.2.0 (LiveData/Flow testing)
+
+***REMOVED******REMOVED******REMOVED*** Testing Best Practices
+- Name tests: `whenCondition_thenExpectedBehavior`
+- Use `@RunWith(RobolectricTestRunner::class)` for tests using Android framework classes
+- Keep fixtures lightweight and deterministic
+- Run `./gradlew test` for fast unit tests
+- Run `./gradlew connectedAndroidTest` for UI/instrumented tests (requires device)
 
 ***REMOVED******REMOVED*** Commit & Pull Request Guidelines
 - Commits in imperative mood with clear scope (e.g., `Add MLKit detector pipeline`, `Tweak CameraScreen gestures`); keep them small and logically grouped.

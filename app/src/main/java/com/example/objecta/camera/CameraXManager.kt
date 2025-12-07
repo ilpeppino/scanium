@@ -71,6 +71,9 @@ class CameraXManager(
     private var scanJob: Job? = null
     private var currentScanMode: ScanMode? = null
 
+    // Frame counter for periodic cleanup and stats logging
+    private var frameCounter = 0
+
     /**
      * Initializes and binds camera to the PreviewView.
      */
@@ -120,6 +123,7 @@ class CameraXManager(
 
     /**
      * Captures a single frame and runs detection based on the current scan mode.
+     * Single-frame captures bypass the candidate tracker for immediate results.
      */
     fun captureSingleFrame(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
@@ -128,6 +132,7 @@ class CameraXManager(
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
             Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
             detectionScope.launch {
+                // Single-frame capture uses direct detection (no candidate tracking)
                 val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                 Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                 withContext(Dispatchers.Main) {
@@ -139,8 +144,8 @@ class CameraXManager(
     }
 
     /**
-     * Starts continuous scanning mode.
-     * Captures frames periodically (every ~1000ms) and runs detection based on the current scan mode.
+     * Starts continuous scanning mode with multi-frame candidate tracking.
+     * Captures frames periodically and uses CandidateTracker to promote only stable detections.
      */
     fun startScanning(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
         if (isScanning) {
@@ -158,10 +163,22 @@ class CameraXManager(
         }
 
         isScanning = true
+        frameCounter = 0
+
+        // Clear candidate tracker when starting new scan
+        candidateTracker.clear()
 
         var lastAnalysisTime = 0L
-        val analysisIntervalMs = 1000L // Analyze every 1 second
+        val analysisIntervalMs = 800L // Analyze every 800ms for better tracking
         var isProcessing = false // Prevent overlapping processing
+
+        // Log detection configuration (debug builds only)
+        com.example.objecta.ml.DetectionLogger.logConfiguration(
+            minSeenCount = 1,
+            minConfidence = 0.0f,
+            candidateTimeoutMs = 3000L,
+            analysisIntervalMs = analysisIntervalMs
+        )
 
         // Clear any previous analyzer to avoid stale callbacks
         imageAnalysis?.clearAnalyzer()
@@ -179,7 +196,8 @@ class CameraXManager(
             if (currentTime - lastAnalysisTime >= analysisIntervalMs && !isProcessing) {
                 lastAnalysisTime = currentTime
                 isProcessing = true
-                Log.d(TAG, "startScanning: Processing frame ${imageProxy.width}x${imageProxy.height}")
+                frameCounter++
+                Log.d(TAG, "startScanning: Processing frame ***REMOVED***$frameCounter ${imageProxy.width}x${imageProxy.height}")
 
                 detectionScope.launch {
                     try {
@@ -191,6 +209,13 @@ class CameraXManager(
                             withContext(Dispatchers.Main) {
                                 onResult(items)
                             }
+                        }
+
+                        // Periodic cleanup and stats logging (every 10 frames)
+                        if (frameCounter % 10 == 0) {
+                            candidateTracker.cleanupExpiredCandidates()
+                            val stats = candidateTracker.getStats()
+                            com.example.objecta.ml.DetectionLogger.logTrackerStats(stats)
                         }
                     } finally {
                         isProcessing = false
@@ -219,6 +244,7 @@ class CameraXManager(
 
     /**
      * Processes an ImageProxy: converts to Bitmap and runs ML Kit detection based on scan mode.
+     * Used for single-frame captures (bypasses candidate tracking).
      */
     private suspend fun processImageProxy(
         imageProxy: ImageProxy,
