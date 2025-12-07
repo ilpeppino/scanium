@@ -2,8 +2,10 @@ package com.example.objecta.ml
 
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.graphics.RectF
 import android.util.Log
 import com.example.objecta.items.ScannedItem
+import com.example.objecta.tracking.DetectionInfo
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.DetectedObject
 import com.google.mlkit.vision.objects.ObjectDetection
@@ -91,6 +93,111 @@ class ObjectDetectorClient {
         } catch (e: Exception) {
             Log.e(TAG, "Error detecting objects", e)
             emptyList()
+        }
+    }
+
+    /**
+     * Processes an image and extracts raw detection information for tracking.
+     *
+     * This method returns DetectionInfo objects that can be fed into ObjectTracker
+     * for de-duplication and confirmation logic.
+     *
+     * @param image InputImage to process (from CameraX)
+     * @param sourceBitmap Original bitmap for cropping thumbnails
+     * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
+     * @return List of DetectionInfo with tracking metadata
+     */
+    suspend fun detectObjectsWithTracking(
+        image: InputImage,
+        sourceBitmap: Bitmap?,
+        useStreamMode: Boolean = true // Default to STREAM_MODE for tracking
+    ): List<DetectionInfo> {
+        return try {
+            val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
+            Log.d(TAG, "Starting object detection with tracking ($mode) on image ${image.width}x${image.height}")
+
+            // Choose the appropriate detector
+            val detector = if (useStreamMode) streamDetector else singleImageDetector
+
+            // Run detection
+            val detectedObjects = detector.process(image).await()
+
+            Log.d(TAG, "Detected ${detectedObjects.size} objects for tracking")
+
+            // Convert each detected object to DetectionInfo
+            val detectionInfos = detectedObjects.mapNotNull { obj ->
+                extractDetectionInfo(
+                    detectedObject = obj,
+                    sourceBitmap = sourceBitmap,
+                    fallbackWidth = image.width,
+                    fallbackHeight = image.height
+                )
+            }
+
+            Log.d(TAG, "Extracted ${detectionInfos.size} detection infos")
+            detectionInfos
+        } catch (e: Exception) {
+            Log.e(TAG, "Error detecting objects with tracking", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Extracts DetectionInfo from a DetectedObject for tracking purposes.
+     */
+    private fun extractDetectionInfo(
+        detectedObject: DetectedObject,
+        sourceBitmap: Bitmap?,
+        fallbackWidth: Int,
+        fallbackHeight: Int
+    ): DetectionInfo? {
+        return try {
+            // Extract tracking ID (may be null)
+            val trackingId = detectedObject.trackingId?.toString()
+
+            // Get bounding box and convert to RectF
+            val boundingBox = detectedObject.boundingBox
+            val boundingBoxF = RectF(
+                boundingBox.left.toFloat(),
+                boundingBox.top.toFloat(),
+                boundingBox.right.toFloat(),
+                boundingBox.bottom.toFloat()
+            )
+
+            // Get best label and confidence
+            val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
+            val confidence = bestLabel?.confidence ?: 0f
+            val labelText = bestLabel?.text ?: "Unknown"
+
+            // Determine category
+            val category = if (bestLabel != null && bestLabel.confidence > CONFIDENCE_THRESHOLD) {
+                ItemCategory.fromMlKitLabel(bestLabel.text)
+            } else {
+                ItemCategory.UNKNOWN
+            }
+
+            // Crop thumbnail
+            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
+
+            // Calculate normalized area
+            val normalizedBoxArea = calculateNormalizedArea(
+                box = boundingBox,
+                imageWidth = sourceBitmap?.width ?: fallbackWidth,
+                imageHeight = sourceBitmap?.height ?: fallbackHeight
+            )
+
+            DetectionInfo(
+                trackingId = trackingId,
+                boundingBox = boundingBoxF,
+                confidence = confidence,
+                category = category,
+                labelText = labelText,
+                thumbnail = thumbnail,
+                normalizedBoxArea = normalizedBoxArea
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error extracting detection info", e)
+            null
         }
     }
 
@@ -184,6 +291,32 @@ class ObjectDetectorClient {
         } else {
             0f
         }
+    }
+
+    /**
+     * Converts a confirmed ObjectCandidate to a ScannedItem.
+     *
+     * This is used by the tracking pipeline to create final items from
+     * candidates that have met the confirmation threshold.
+     */
+    fun candidateToScannedItem(
+        candidate: com.example.objecta.tracking.ObjectCandidate
+    ): ScannedItem {
+        // Calculate normalized area from average box area
+        val boxArea = candidate.averageBoxArea
+
+        // Generate price range based on category and size
+        val priceRange = PricingEngine.generatePriceRange(candidate.category, boxArea)
+
+        return ScannedItem(
+            id = candidate.internalId,
+            thumbnail = candidate.thumbnail,
+            category = candidate.category,
+            priceRange = priceRange,
+            timestamp = System.currentTimeMillis(),
+            recognizedText = null,
+            barcodeValue = null
+        )
     }
 
     /**
