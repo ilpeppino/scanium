@@ -15,6 +15,8 @@ import com.example.objecta.items.ScannedItem
 import com.example.objecta.ml.BarcodeScannerClient
 import com.example.objecta.ml.DocumentTextRecognitionClient
 import com.example.objecta.ml.ObjectDetectorClient
+import com.example.objecta.tracking.ObjectTracker
+import com.example.objecta.tracking.TrackerConfig
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
@@ -46,6 +48,18 @@ class CameraXManager(
     private val barcodeScanner = BarcodeScannerClient()
     private val textRecognizer = DocumentTextRecognitionClient()
 
+    // Object tracker for de-duplication
+    private val objectTracker = ObjectTracker(
+        config = TrackerConfig(
+            minFramesToConfirm = 3,      // Require 3 frames to confirm
+            minConfidence = 0.4f,         // Minimum confidence 0.4
+            minBoxArea = 0.001f,          // Minimum 0.1% of frame
+            maxFrameGap = 5,              // Allow 5 frames gap for matching
+            minMatchScore = 0.3f,         // Minimum 0.3 match score for spatial matching
+            expiryFrames = 10             // Expire after 10 frames without detection
+        )
+    )
+
     // Executor for camera operations
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
@@ -55,6 +69,7 @@ class CameraXManager(
     // State for scanning mode
     private var isScanning = false
     private var scanJob: Job? = null
+    private var currentScanMode: ScanMode? = null
 
     /**
      * Initializes and binds camera to the PreviewView.
@@ -134,6 +149,14 @@ class CameraXManager(
         }
 
         Log.d(TAG, "startScanning: Starting continuous scanning mode with $scanMode")
+
+        // Reset tracker when starting a new scan session or switching modes
+        if (currentScanMode != scanMode || currentScanMode == null) {
+            Log.i(TAG, "startScanning: Resetting tracker (mode change: $currentScanMode -> $scanMode)")
+            objectTracker.reset()
+            currentScanMode = scanMode
+        }
+
         isScanning = true
 
         var lastAnalysisTime = 0L
@@ -160,7 +183,9 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
-                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                        // Use STREAM_MODE for better tracking when scanning objects
+                        val useStreamMode = (scanMode == ScanMode.OBJECT_DETECTION)
+                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = useStreamMode)
                         Log.d(TAG, "startScanning: Got ${items.size} items")
                         if (items.isNotEmpty()) {
                             withContext(Dispatchers.Main) {
@@ -187,6 +212,9 @@ class CameraXManager(
         imageAnalysis?.clearAnalyzer()
         scanJob?.cancel()
         scanJob = null
+        // Reset tracker when stopping scan
+        objectTracker.reset()
+        currentScanMode = null
     }
 
     /**
@@ -223,11 +251,17 @@ class CameraXManager(
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
-                    objectDetector.detectObjects(
-                        image = inputImage,
-                        sourceBitmap = bitmapForThumb,
-                        useStreamMode = useStreamMode
-                    )
+                    // Use tracking pipeline for object detection in scanning mode
+                    if (useStreamMode && isScanning) {
+                        processObjectDetectionWithTracking(inputImage, bitmapForThumb)
+                    } else {
+                        // Single-shot detection without tracking
+                        objectDetector.detectObjects(
+                            image = inputImage,
+                            sourceBitmap = bitmapForThumb,
+                            useStreamMode = useStreamMode
+                        )
+                    }
                 }
                 ScanMode.BARCODE -> {
                     barcodeScanner.scanBarcodes(
@@ -248,6 +282,40 @@ class CameraXManager(
         } finally {
             imageProxy.close()
         }
+    }
+
+    /**
+     * Process object detection with tracking to reduce duplicates.
+     */
+    private suspend fun processObjectDetectionWithTracking(
+        inputImage: InputImage,
+        sourceBitmap: Bitmap?
+    ): List<ScannedItem> {
+        // Get raw detections with tracking metadata
+        val detections = objectDetector.detectObjectsWithTracking(
+            image = inputImage,
+            sourceBitmap = sourceBitmap,
+            useStreamMode = true
+        )
+
+        Log.d(TAG, "processObjectDetectionWithTracking: Got ${detections.size} raw detections")
+
+        // Process through tracker
+        val confirmedCandidates = objectTracker.processFrame(detections)
+
+        Log.d(TAG, "processObjectDetectionWithTracking: ${confirmedCandidates.size} newly confirmed candidates")
+
+        // Log tracker stats
+        val stats = objectTracker.getStats()
+        Log.d(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
+
+        // Convert confirmed candidates to ScannedItems
+        val items = confirmedCandidates.map { candidate ->
+            objectDetector.candidateToScannedItem(candidate)
+        }
+
+        Log.d(TAG, "processObjectDetectionWithTracking: Returning ${items.size} scanned items")
+        return items
     }
 
     /**
@@ -299,11 +367,21 @@ class CameraXManager(
      */
     fun shutdown() {
         stopScanning()
+        objectTracker.reset() // Ensure tracker is cleaned up
         objectDetector.close()
         barcodeScanner.close()
         textRecognizer.close()
         cameraExecutor.shutdown()
         detectionScope.cancel()
+    }
+
+    /**
+     * Resets the object tracker.
+     * Useful when the user wants to start a fresh scan session.
+     */
+    fun resetTracker() {
+        Log.i(TAG, "resetTracker: Manually resetting object tracker")
+        objectTracker.reset()
     }
 }
 
