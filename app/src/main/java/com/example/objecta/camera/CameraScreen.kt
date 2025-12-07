@@ -110,9 +110,15 @@ fun CameraScreen(
                         if (scanning) {
                             // Play scan start melody
                             soundManager.playScanStartMelody()
-                            cameraManager.startScanning(currentScanMode) { items ->
-                                if (items.isNotEmpty()) {
-                                    itemsViewModel.addItems(items)
+                            cameraManager.startScanning(
+                                scanMode = currentScanMode,
+                                onResult = { items ->
+                                    if (items.isNotEmpty()) {
+                                        itemsViewModel.addItems(items)
+                                    }
+                                },
+                                onDetectionResult = { detections ->
+                                    currentDetections = detections
                                 }
                             )
                         } else {
@@ -125,13 +131,27 @@ fun CameraScreen(
                     onCapture = {
                         // Play shutter click
                         soundManager.playShutterClick()
-                        cameraManager.captureSingleFrame(currentScanMode) { items ->
-                            if (items.isEmpty()) {
-                                val message = when (currentScanMode) {
-                                    ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
-                                    ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
-                                    ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
+                        cameraManager.captureSingleFrame(
+                            scanMode = currentScanMode,
+                            onResult = { items ->
+                                if (items.isEmpty()) {
+                                    val message = when (currentScanMode) {
+                                        ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
+                                        ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
+                                        ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
+                                    }
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                } else {
+                                    itemsViewModel.addItems(items)
+                                    Toast.makeText(
+                                        context,
+                                        "Detected ${items.size} item(s)",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
+                            },
+                            onDetectionResult = { detections ->
+                                currentDetections = detections
                             }
                         )
                     },
