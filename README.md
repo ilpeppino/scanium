@@ -9,6 +9,14 @@ Objecta is a camera-first Android app that demonstrates object detection and pri
 ## Features
 
 - **Real-Time Object Detection**: Uses Google ML Kit for on-device object detection and classification
+- **Intelligent Object Tracking**: Multi-frame tracking system that eliminates duplicate detections of the same object
+  - ML Kit trackingId-based matching with spatial fallback
+  - Confirmation thresholds ensure stable, confident detections
+  - Automatic expiry of objects that leave the frame
+- **Multiple Scan Modes**:
+  - **Object Detection**: Point at objects and scan continuously with de-duplication
+  - **Barcode Scanning**: Scan QR codes and barcodes with instant recognition
+  - **Document Text**: Extract text from documents and images using OCR
 - **Dual Capture Modes**:
   - Tap to capture: Take a photo and detect objects in the image
   - Long-press to scan: Continuous detection while holding the button
@@ -44,10 +52,12 @@ app/src/main/java/com/example/objecta/
 ├── camera/          # Camera functionality and CameraX integration
 ├── items/           # Detected items management and display
 ├── ml/              # Object detection and pricing logic
+├── tracking/        # Object tracking and de-duplication system
 └── navigation/      # Navigation graph setup
 ```
 
 For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md).
 
 ### Key Architectural Decisions
 
@@ -123,13 +133,20 @@ objecta/
 ## Usage
 
 1. **Launch the app** - Camera screen opens automatically
-2. **Point at objects** - Aim your camera at items you want to identify
-3. **Capture**:
+2. **Select scan mode** - Swipe to switch between:
+   - **Object Detection**: Detect and price everyday objects
+   - **Barcode**: Scan QR codes and barcodes
+   - **Document**: Extract text from documents
+3. **Point at objects** - Aim your camera at items you want to identify
+4. **Capture**:
    - **Tap** the camera button to capture a single photo
-   - **Long-press** the camera button to scan continuously
-4. **View results** - Detected objects appear with estimated prices
-5. **Manage items** - Tap "View Items" to see all detected objects
-6. **Delete items** - Swipe left on items in the list to remove them
+   - **Long-press** to start continuous scanning
+   - **Double-tap** to stop scanning
+5. **View results** - Detected objects appear with estimated prices
+   - In continuous scanning mode, each physical object appears only once (de-duplicated)
+   - The tracker confirms objects over 3+ frames for stability
+6. **Manage items** - Tap "View Items" to see all detected objects
+7. **Delete items** - Swipe left on items in the list to remove them
 
 ## Permissions
 
@@ -149,18 +166,25 @@ The app requires the following permission:
 - Real pricing API integration
 - Local database persistence (Room)
 - Historical price tracking and analytics
-- Barcode/QR code scanning
 - Multi-currency support
 - Share detected items
 - Compare prices across retailers
+- Color-based object matching for improved tracking
 
 ### Technical Improvements
 - Multi-module architecture
 - Dependency injection (Hilt)
-- Comprehensive test coverage
+- Enhanced test coverage (currently has unit & integration tests)
 - CI/CD pipeline
 - Backend service integration
 - Cloud-based ML models
+- Adaptive tracking thresholds based on scene complexity
+
+### Recently Implemented ✅
+- ✅ **Object Tracking & De-duplication**: Multi-frame tracking with ML Kit integration
+- ✅ **Barcode/QR Code Scanning**: Real-time barcode detection
+- ✅ **Document Text Recognition**: OCR for document scanning
+- ✅ **Comprehensive Test Suite**: Unit and integration tests for tracking system
 
 ## License
 
