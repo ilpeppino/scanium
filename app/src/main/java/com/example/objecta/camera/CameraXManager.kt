@@ -15,6 +15,8 @@ import com.example.objecta.items.ScannedItem
 import com.example.objecta.ml.BarcodeScannerClient
 import com.example.objecta.ml.DocumentTextRecognitionClient
 import com.example.objecta.ml.ObjectDetectorClient
+import com.example.objecta.tracking.ObjectTracker
+import com.example.objecta.tracking.TrackerConfig
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
@@ -46,12 +48,16 @@ class CameraXManager(
     private val barcodeScanner = BarcodeScannerClient()
     private val textRecognizer = DocumentTextRecognitionClient()
 
-    // Candidate tracker for multi-frame detection pipeline
-    // Using minimal thresholds to trust ML Kit's detection capability
-    private val candidateTracker = com.example.objecta.ml.CandidateTracker(
-        minSeenCount = 1,           // Require 1 frame minimum
-        minConfidence = 0.0f,        // Trust ML Kit - if it detected something, accept it
-        candidateTimeoutMs = 3000L   // Expire candidates after 3 seconds
+    // Object tracker for de-duplication
+    private val objectTracker = ObjectTracker(
+        config = TrackerConfig(
+            minFramesToConfirm = 3,      // Require 3 frames to confirm
+            minConfidence = 0.4f,         // Minimum confidence 0.4
+            minBoxArea = 0.001f,          // Minimum 0.1% of frame
+            maxFrameGap = 5,              // Allow 5 frames gap for matching
+            minMatchScore = 0.3f,         // Minimum 0.3 match score for spatial matching
+            expiryFrames = 10             // Expire after 10 frames without detection
+        )
     )
 
     // Executor for camera operations
@@ -63,6 +69,7 @@ class CameraXManager(
     // State for scanning mode
     private var isScanning = false
     private var scanJob: Job? = null
+    private var currentScanMode: ScanMode? = null
 
     // Frame counter for periodic cleanup and stats logging
     private var frameCounter = 0
@@ -147,6 +154,14 @@ class CameraXManager(
         }
 
         Log.d(TAG, "startScanning: Starting continuous scanning mode with $scanMode")
+
+        // Reset tracker when starting a new scan session or switching modes
+        if (currentScanMode != scanMode || currentScanMode == null) {
+            Log.i(TAG, "startScanning: Resetting tracker (mode change: $currentScanMode -> $scanMode)")
+            objectTracker.reset()
+            currentScanMode = scanMode
+        }
+
         isScanning = true
         frameCounter = 0
 
@@ -186,18 +201,10 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
-                        // Use multi-frame pipeline for scanning mode
-                        val items = when (scanMode) {
-                            ScanMode.OBJECT_DETECTION -> {
-                                processImageProxyWithCandidateTracking(imageProxy, useStreamMode = false)
-                            }
-                            ScanMode.BARCODE -> {
-                                // Barcodes use direct detection (no candidate tracking)
-                                processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                            }
-                        }
-
-                        Log.d(TAG, "startScanning: Got ${items.size} promoted items")
+                        // Use STREAM_MODE for better tracking when scanning objects
+                        val useStreamMode = (scanMode == ScanMode.OBJECT_DETECTION)
+                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = useStreamMode)
+                        Log.d(TAG, "startScanning: Got ${items.size} items")
                         if (items.isNotEmpty()) {
                             withContext(Dispatchers.Main) {
                                 onResult(items)
@@ -230,115 +237,9 @@ class CameraXManager(
         imageAnalysis?.clearAnalyzer()
         scanJob?.cancel()
         scanJob = null
-
-        // Log final stats and clear candidates
-        val stats = candidateTracker.getStats()
-        com.example.objecta.ml.DetectionLogger.logTrackerStats(stats)
-        candidateTracker.clear()
-    }
-
-    /**
-     * Processes an ImageProxy with candidate tracking for multi-frame stability.
-     * Returns only newly promoted items (not all detections).
-     */
-    private suspend fun processImageProxyWithCandidateTracking(
-        imageProxy: ImageProxy,
-        useStreamMode: Boolean = false
-    ): List<ScannedItem> {
-        val startTime = System.currentTimeMillis()
-
-        return try {
-            val mediaImage = imageProxy.image ?: run {
-                Log.e(TAG, "processImageProxyWithCandidateTracking: mediaImage is null")
-                return emptyList()
-            }
-            val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-
-            // Build ML Kit image
-            val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
-
-            // Create bitmap for thumbnails
-            val bitmapForThumb = runCatching {
-                val bitmap = imageProxy.toBitmap()
-                rotateBitmap(bitmap, rotationDegrees)
-            }.getOrElse { e ->
-                Log.w(TAG, "processImageProxyWithCandidateTracking: Failed to create bitmap", e)
-                null
-            }
-
-            // Get raw detections from ML Kit
-            val rawDetections = objectDetector.detectObjectsRaw(
-                image = inputImage,
-                sourceBitmap = bitmapForThumb,
-                useStreamMode = useStreamMode
-            )
-
-            Log.d(TAG, "processImageProxyWithCandidateTracking: Got ${rawDetections.size} raw detections")
-
-            // Process each detection through candidate tracker
-            val promotedItems = mutableListOf<ScannedItem>()
-            var validDetections = 0
-
-            rawDetections.forEach { detection ->
-                // Log raw detection (debug builds only)
-                com.example.objecta.ml.DetectionLogger.logRawDetection(
-                    frameNumber = frameCounter,
-                    detection = detection,
-                    imageWidth = bitmapForThumb?.width ?: imageProxy.width,
-                    imageHeight = bitmapForThumb?.height ?: imageProxy.height
-                )
-
-                // Use effective confidence (handles objects without classification labels)
-                val effectiveConfidence = detection.getEffectiveConfidence()
-                val bestLabel = detection.bestLabel
-
-                // Log tracking ID info for debugging
-                Log.d(TAG, "Detection: id=${detection.trackingId.take(8)}, conf=$effectiveConfidence, label=${bestLabel?.text ?: "none"}")
-
-                // Trust ML Kit - if it detected something, process it
-                // The ML model's confidence score will be preserved as-is
-                validDetections++
-
-                val normalizedArea = detection.getNormalizedArea(
-                    imageWidth = bitmapForThumb?.width ?: imageProxy.width,
-                    imageHeight = bitmapForThumb?.height ?: imageProxy.height
-                )
-
-                // Process through candidate tracker
-                val promotedItem = candidateTracker.processDetection(
-                    trackingId = detection.trackingId,
-                    confidence = effectiveConfidence,
-                    category = detection.category,
-                    categoryLabel = bestLabel?.text ?: "Unknown",
-                    boundingBox = detection.boundingBox,
-                    thumbnail = detection.thumbnail,
-                    boundingBoxArea = normalizedArea
-                )
-
-                if (promotedItem != null) {
-                    promotedItems.add(promotedItem)
-                }
-            }
-
-            // Log frame summary (debug builds only)
-            val processingTime = System.currentTimeMillis() - startTime
-            val stats = candidateTracker.getStats()
-            com.example.objecta.ml.DetectionLogger.logFrameSummary(
-                frameNumber = frameCounter,
-                rawDetections = rawDetections.size,
-                validDetections = validDetections,
-                promotedItems = promotedItems.size,
-                activeCandidates = stats.activeCandidates,
-                processingTimeMs = processingTime
-            )
-
-            promotedItems
-        } catch (e: Exception) {
-            Log.e(TAG, "processImageProxyWithCandidateTracking: Error processing image", e)
-            emptyList()
-        } finally {
-            imageProxy.close()
-        }
+        // Reset tracker when stopping scan
+        objectTracker.reset()
+        currentScanMode = null
     }
 
     /**
@@ -376,11 +277,17 @@ class CameraXManager(
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
-                    objectDetector.detectObjects(
-                        image = inputImage,
-                        sourceBitmap = bitmapForThumb,
-                        useStreamMode = useStreamMode
-                    )
+                    // Use tracking pipeline for object detection in scanning mode
+                    if (useStreamMode && isScanning) {
+                        processObjectDetectionWithTracking(inputImage, bitmapForThumb)
+                    } else {
+                        // Single-shot detection without tracking
+                        objectDetector.detectObjects(
+                            image = inputImage,
+                            sourceBitmap = bitmapForThumb,
+                            useStreamMode = useStreamMode
+                        )
+                    }
                 }
                 ScanMode.BARCODE -> {
                     barcodeScanner.scanBarcodes(
@@ -401,6 +308,40 @@ class CameraXManager(
         } finally {
             imageProxy.close()
         }
+    }
+
+    /**
+     * Process object detection with tracking to reduce duplicates.
+     */
+    private suspend fun processObjectDetectionWithTracking(
+        inputImage: InputImage,
+        sourceBitmap: Bitmap?
+    ): List<ScannedItem> {
+        // Get raw detections with tracking metadata
+        val detections = objectDetector.detectObjectsWithTracking(
+            image = inputImage,
+            sourceBitmap = sourceBitmap,
+            useStreamMode = true
+        )
+
+        Log.d(TAG, "processObjectDetectionWithTracking: Got ${detections.size} raw detections")
+
+        // Process through tracker
+        val confirmedCandidates = objectTracker.processFrame(detections)
+
+        Log.d(TAG, "processObjectDetectionWithTracking: ${confirmedCandidates.size} newly confirmed candidates")
+
+        // Log tracker stats
+        val stats = objectTracker.getStats()
+        Log.d(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
+
+        // Convert confirmed candidates to ScannedItems
+        val items = confirmedCandidates.map { candidate ->
+            objectDetector.candidateToScannedItem(candidate)
+        }
+
+        Log.d(TAG, "processObjectDetectionWithTracking: Returning ${items.size} scanned items")
+        return items
     }
 
     /**
@@ -452,12 +393,21 @@ class CameraXManager(
      */
     fun shutdown() {
         stopScanning()
-        candidateTracker.clear()
+        objectTracker.reset() // Ensure tracker is cleaned up
         objectDetector.close()
         barcodeScanner.close()
         textRecognizer.close()
         cameraExecutor.shutdown()
         detectionScope.cancel()
+    }
+
+    /**
+     * Resets the object tracker.
+     * Useful when the user wants to start a fresh scan session.
+     */
+    fun resetTracker() {
+        Log.i(TAG, "resetTracker: Manually resetting object tracker")
+        objectTracker.reset()
     }
 }
 
