@@ -138,7 +138,7 @@ class CameraXManager(
             Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
             detectionScope.launch {
                 // Single-frame capture uses direct detection (no candidate tracking)
-                val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                 Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                 withContext(Dispatchers.Main) {
                     onResult(items)
@@ -209,10 +209,10 @@ class CameraXManager(
                 detectionScope.launch {
                     try {
                         // Use SINGLE_IMAGE_MODE for all modes (more accurate than STREAM_MODE)
-                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                        val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                         Log.d(TAG, "startScanning: Got ${items.size} items")
-                        if (items.isNotEmpty()) {
-                            withContext(Dispatchers.Main) {
+                        withContext(Dispatchers.Main) {
+                            if (items.isNotEmpty()) {
                                 onResult(items)
                             }
                             // Always send detection results for overlay (even if empty to clear old detections)
@@ -284,17 +284,13 @@ class CameraXManager(
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
-                    // Use tracking pipeline for object detection in scanning mode
-                    if (useStreamMode && isScanning) {
-                        processObjectDetectionWithTracking(inputImage, bitmapForThumb)
-                    } else {
-                        // Single-shot detection without tracking
-                        objectDetector.detectObjects(
-                            image = inputImage,
-                            sourceBitmap = bitmapForThumb,
-                            useStreamMode = useStreamMode
-                        )
-                    }
+                    // Single-shot detection without tracking (always use SINGLE_IMAGE_MODE)
+                    val response = objectDetector.detectObjects(
+                        image = inputImage,
+                        sourceBitmap = bitmapForThumb,
+                        useStreamMode = useStreamMode
+                    )
+                    Pair(response.scannedItems, response.detectionResults)
                 }
                 ScanMode.BARCODE -> {
                     // Barcode and text scanners don't return DetectionResults yet
