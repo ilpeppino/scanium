@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.example.objecta.items.ScannedItem
 import com.example.objecta.ml.BarcodeScannerClient
+import com.example.objecta.ml.DetectionResult
 import com.example.objecta.ml.DocumentTextRecognitionClient
 import com.example.objecta.ml.ObjectDetectorClient
 import com.example.objecta.tracking.ObjectTracker
@@ -125,7 +126,11 @@ class CameraXManager(
      * Captures a single frame and runs detection based on the current scan mode.
      * Single-frame captures bypass the candidate tracker for immediate results.
      */
-    fun captureSingleFrame(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
+    fun captureSingleFrame(
+        scanMode: ScanMode,
+        onResult: (List<ScannedItem>) -> Unit,
+        onDetectionResult: (List<DetectionResult>) -> Unit = {}
+    ) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
         // Clear any previous analyzer to avoid mixing modes
         imageAnalysis?.clearAnalyzer()
@@ -137,6 +142,7 @@ class CameraXManager(
                 Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                 withContext(Dispatchers.Main) {
                     onResult(items)
+                    onDetectionResult(detections)
                 }
                 imageAnalysis?.clearAnalyzer()
             }
@@ -147,7 +153,11 @@ class CameraXManager(
      * Starts continuous scanning mode with multi-frame candidate tracking.
      * Captures frames periodically and uses CandidateTracker to promote only stable detections.
      */
-    fun startScanning(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
+    fun startScanning(
+        scanMode: ScanMode,
+        onResult: (List<ScannedItem>) -> Unit,
+        onDetectionResult: (List<DetectionResult>) -> Unit = {}
+    ) {
         if (isScanning) {
             Log.d(TAG, "startScanning: Already scanning, ignoring")
             return
@@ -205,6 +215,8 @@ class CameraXManager(
                             withContext(Dispatchers.Main) {
                                 onResult(items)
                             }
+                            // Always send detection results for overlay (even if empty to clear old detections)
+                            onDetectionResult(detections)
                         }
 
                         // Periodic stats logging (every 10 frames)
@@ -245,12 +257,12 @@ class CameraXManager(
         imageProxy: ImageProxy,
         scanMode: ScanMode,
         useStreamMode: Boolean = false
-    ): List<ScannedItem> {
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
         return try {
             // Convert ImageProxy to Bitmap
             val mediaImage = imageProxy.image ?: run {
                 Log.e(TAG, "processImageProxy: mediaImage is null")
-                return emptyList()
+                return Pair(emptyList(), emptyList())
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
@@ -285,21 +297,24 @@ class CameraXManager(
                     }
                 }
                 ScanMode.BARCODE -> {
-                    barcodeScanner.scanBarcodes(
+                    // Barcode and text scanners don't return DetectionResults yet
+                    val items = barcodeScanner.scanBarcodes(
                         image = inputImage,
                         sourceBitmap = bitmapForThumb
                     )
+                    Pair(items, emptyList())
                 }
                 ScanMode.DOCUMENT_TEXT -> {
-                    textRecognizer.recognizeText(
+                    val items = textRecognizer.recognizeText(
                         image = inputImage,
                         sourceBitmap = bitmapForThumb
                     )
+                    Pair(items, emptyList())
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "processImageProxy: Error processing image", e)
-            emptyList()
+            Pair(emptyList(), emptyList())
         } finally {
             imageProxy.close()
         }
