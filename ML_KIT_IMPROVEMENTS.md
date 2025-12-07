@@ -180,3 +180,178 @@ The main issues were:
 These changes should significantly improve detection rates for both tap and scan. However, if you're testing with items outside ML Kit's supported categories, detection may still be limited.
 
 **Test with**: shoes, shirts, bottles, cups, fruits, potted plants for best results.
+
+***REMOVED******REMOVED*** Latest Update: Object Tracking and De-Duplication System
+
+**Issue**: In continuous scanning mode, the same physical object was being detected multiple times, creating duplicate entries in the items list.
+
+**Root Cause**: Each frame's detections were immediately converted to ScannedItems without tracking whether they represented objects already seen. ML Kit's `trackingId` was being used for item IDs, but:
+- `trackingId` is often null in SINGLE_IMAGE_MODE
+- No multi-frame confirmation logic existed
+- No spatial matching for detections without trackingId
+- Same object at slightly different positions created new items
+
+**Solution**: Implemented a comprehensive tracking and de-duplication system (see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md) for details).
+
+***REMOVED******REMOVED******REMOVED*** New Components Added
+
+1. **ObjectCandidate** (`tracking/ObjectCandidate.kt`)
+   - Intermediate representation for objects being tracked across frames
+   - Stores: stable ID, bounding box, frame counts, confidence, category, thumbnail
+   - Implements spatial matching helpers: IoU calculation, center distance
+
+2. **ObjectTracker** (`tracking/ObjectTracker.kt`)
+   - Core tracking engine with configurable thresholds
+   - Maintains in-memory collection of candidates
+   - Implements dual matching strategy:
+     - Primary: ML Kit trackingId matching
+     - Fallback: Spatial matching using IoU + center distance
+   - Automatic expiry of stale candidates
+
+3. **DetectionInfo** (data class in ObjectTracker.kt)
+   - Raw detection metadata from ML Kit
+   - Bridges ML Kit DetectedObject and ObjectTracker
+
+***REMOVED******REMOVED******REMOVED*** How It Works
+
+**Data Flow:**
+```
+ImageProxy → ML Kit (STREAM_MODE) → DetectionInfo[]
+  ↓
+ObjectTracker.processFrame()
+  ├─ Match to existing candidates (trackingId or spatial)
+  ├─ Update or create candidates
+  ├─ Track frame counts, confidence, stability
+  └─ Return newly confirmed candidates
+  ↓
+Convert confirmed candidates to ScannedItems
+  ↓
+ItemsViewModel (ID-based de-duplication)
+```
+
+**Confirmation Logic:**
+Objects must meet ALL criteria before being added to the items list:
+- Seen in ≥3 frames (`minFramesToConfirm`)
+- Confidence ≥0.4 (`minConfidence`)
+- Bounding box ≥0.1% of frame (`minBoxArea`)
+
+**Matching Strategy:**
+1. **TrackingId Match**: If ML Kit provides trackingId (in STREAM_MODE), use it directly
+2. **Spatial Match**: If no trackingId, match using:
+   - Intersection over Union (IoU) - 70% weight
+   - Center distance - 30% weight
+   - Combined score must be ≥0.3
+
+***REMOVED******REMOVED******REMOVED*** Configuration
+
+Tracking behavior is controlled by `TrackerConfig`:
+```kotlin
+TrackerConfig(
+    minFramesToConfirm = 3,      // Require 3 frames to confirm
+    minConfidence = 0.4f,         // Minimum 0.4 confidence
+    minBoxArea = 0.001f,          // Minimum 0.1% of frame
+    maxFrameGap = 5,              // Allow 5 frames gap for matching
+    minMatchScore = 0.3f,         // Spatial matching threshold
+    expiryFrames = 10             // Expire after 10 frames without detection
+)
+```
+
+***REMOVED******REMOVED******REMOVED*** Integration Points
+
+**CameraXManager Changes:**
+- Added `ObjectTracker` instance with configured thresholds
+- Routes OBJECT_DETECTION in STREAM mode through tracking pipeline
+- Resets tracker on mode changes and scan session boundaries
+- Single-shot tap captures bypass tracking (backward compatible)
+
+**ObjectDetectorClient Changes:**
+- New `detectObjectsWithTracking()` method extracts DetectionInfo
+- New `extractDetectionInfo()` converts DetectedObject to tracking metadata
+- New `candidateToScannedItem()` converts confirmed candidates to items
+- Uses STREAM_MODE for better trackingId availability
+
+**ItemsViewModel:**
+- No changes required! Existing ID-based de-duplication works seamlessly with stable tracking IDs
+
+***REMOVED******REMOVED******REMOVED*** Testing
+
+Created comprehensive test suite:
+- **ObjectCandidateTest**: 13 unit tests for candidate data class and spatial helpers
+- **ObjectTrackerTest**: 22 unit tests covering:
+  - Candidate creation and matching
+  - Confirmation thresholds
+  - Expiry logic
+  - Spatial matching fallback
+  - Multi-frame tracking
+- **TrackingPipelineIntegrationTest**: 9 integration tests for realistic scenarios:
+  - Single object confirmed after movement
+  - Multiple objects confirmed independently
+  - Object lost and found
+  - Object exits and expires
+  - Spatial matching without trackingId
+  - Category refinement over time
+  - Noise filtering
+  - Reset between scan sessions
+
+***REMOVED******REMOVED******REMOVED*** Benefits
+
+✅ **Eliminates Duplicates**: Each physical object appears only once per scan session
+✅ **Stable Detection**: Multi-frame confirmation filters out noise and false detections
+✅ **Robust Matching**: Works with or without ML Kit trackingId
+✅ **Memory Efficient**: Automatic expiry prevents unbounded growth
+✅ **Tunable**: All thresholds configurable for different use cases
+✅ **Well-Tested**: 44 tests covering unit and integration scenarios
+✅ **Backward Compatible**: Single-shot and other modes unchanged
+
+***REMOVED******REMOVED******REMOVED*** Monitoring
+
+**Logs to Watch:**
+```bash
+adb logcat | grep -E "ObjectTracker|CameraXManager.*tracking"
+```
+
+**Example Output:**
+```
+ObjectTracker: Created new candidate gen_abc123: FASHION (Shirt)
+ObjectTracker: Updated candidate gen_abc123: seenCount=2, maxConfidence=0.7
+ObjectTracker: ✓ CONFIRMED candidate gen_abc123: FASHION (Shirt) after 3 frames
+ObjectTracker: Tracker stats: active=1, confirmed=1, frame=3
+```
+
+***REMOVED******REMOVED******REMOVED*** Trade-offs
+
+**Pros:**
+- Dramatically reduced duplicates
+- Improved user experience
+- Better detection quality (multi-frame confirmation)
+
+**Cons:**
+- 3-frame delay before objects appear (~3 seconds at 1 detection/sec)
+- Slight processing overhead (IoU calculations)
+- Memory usage for tracking state (mitigated by expiry)
+
+***REMOVED******REMOVED******REMOVED*** Future Enhancements
+
+- **Color Matching**: Extract dominant color for improved spatial matching
+- **Adaptive Thresholds**: Adjust based on scene complexity and frame rate
+- **Persistence**: Save tracker state across app restarts
+- **Performance Metrics**: Track and log frame processing times
+
+***REMOVED******REMOVED******REMOVED*** Debugging Tips
+
+**If same object still appears multiple times:**
+1. Check logs for "Created new candidate" - should see updates, not new candidates
+2. Verify ML Kit is providing trackingId in STREAM_MODE
+3. If trackingId is null, check spatial matching scores
+4. Consider tightening `minMatchScore` threshold
+
+**If objects take too long to appear:**
+1. Reduce `minFramesToConfirm` (default 3)
+2. Lower `minConfidence` (default 0.4)
+3. Reduce `minBoxArea` (default 0.001)
+
+**If objects disappear and reappear:**
+1. Increase `maxFrameGap` (default 5 frames)
+2. Increase `expiryFrames` (default 10 frames)
+
+For detailed implementation documentation, see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md).
