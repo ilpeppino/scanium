@@ -56,6 +56,11 @@ fun CameraScreen(
         CameraXManager(context, lifecycleOwner)
     }
 
+    // Sound manager for camera feedback
+    val soundManager = remember {
+        CameraSoundManager()
+    }
+
     // Scanning state
     var isScanning by remember { mutableStateOf(false) }
 
@@ -79,6 +84,7 @@ fun CameraScreen(
     DisposableEffect(Unit) {
         onDispose {
             cameraManager.shutdown()
+            soundManager.release()
         }
     }
 
@@ -88,21 +94,28 @@ fun CameraScreen(
                 // Camera preview with gesture detection
                 CameraPreviewWithGestures(
                     cameraManager = cameraManager,
+                    soundManager = soundManager,
                     scanMode = currentScanMode,
                     isScanning = isScanning,
                     onScanningChanged = { scanning ->
                         isScanning = scanning
                         if (scanning) {
+                            // Play scan start melody
+                            soundManager.playScanStartMelody()
                             cameraManager.startScanning(currentScanMode) { items ->
                                 if (items.isNotEmpty()) {
                                     itemsViewModel.addItems(items)
                                 }
                             }
                         } else {
+                            // Play scan stop melody
+                            soundManager.playScanStopMelody()
                             cameraManager.stopScanning()
                         }
                     },
                     onCapture = {
+                        // Play shutter click
+                        soundManager.playShutterClick()
                         cameraManager.captureSingleFrame(currentScanMode) { items ->
                             if (items.isEmpty()) {
                                 val message = when (currentScanMode) {
@@ -176,6 +189,7 @@ fun CameraScreen(
 @Composable
 private fun CameraPreviewWithGestures(
     cameraManager: CameraXManager,
+    soundManager: CameraSoundManager,
     scanMode: ScanMode,
     isScanning: Boolean,
     onScanningChanged: (Boolean) -> Unit,

@@ -95,6 +95,75 @@ class ObjectDetectorClient {
     }
 
     /**
+     * Processes an image and returns raw detection data (for multi-frame pipeline).
+     *
+     * @param image InputImage to process (from CameraX)
+     * @param sourceBitmap Original bitmap for cropping thumbnails
+     * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
+     * @return List of RawDetection objects with all detection metadata
+     */
+    suspend fun detectObjectsRaw(
+        image: InputImage,
+        sourceBitmap: Bitmap?,
+        useStreamMode: Boolean = false
+    ): List<RawDetection> {
+        return try {
+            val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
+            Log.d(TAG, "Starting raw object detection ($mode) on image ${image.width}x${image.height}")
+
+            // Choose the appropriate detector
+            val detector = if (useStreamMode) streamDetector else singleImageDetector
+
+            // Run detection
+            val detectedObjects = detector.process(image).await()
+
+            Log.d(TAG, "Detected ${detectedObjects.size} raw objects")
+
+            // Convert each detected object to RawDetection
+            detectedObjects.map { obj ->
+                convertToRawDetection(obj, sourceBitmap)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error detecting raw objects", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * Converts a DetectedObject from ML Kit to RawDetection.
+     */
+    private fun convertToRawDetection(
+        detectedObject: DetectedObject,
+        sourceBitmap: Bitmap?
+    ): RawDetection {
+        // Extract tracking ID (generate UUID if not available)
+        val trackingId = detectedObject.trackingId?.toString()
+            ?: java.util.UUID.randomUUID().toString()
+
+        // Get bounding box
+        val boundingBox = detectedObject.boundingBox
+
+        // Crop thumbnail from source bitmap
+        val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
+
+        // Extract all labels with confidences
+        val labels = detectedObject.labels.map { label ->
+            LabelWithConfidence(
+                text = label.text,
+                confidence = label.confidence,
+                index = label.index
+            )
+        }
+
+        return RawDetection(
+            trackingId = trackingId,
+            boundingBox = boundingBox,
+            labels = labels,
+            thumbnail = thumbnail
+        )
+    }
+
+    /**
      * Converts a DetectedObject from ML Kit to a ScannedItem.
      */
     private fun convertToScannedItem(
@@ -114,8 +183,20 @@ class ObjectDetectorClient {
             // Crop thumbnail from source bitmap
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
 
-            // Determine category from labels
+            // Determine category from labels and get confidence
+            val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
             val category = extractCategory(detectedObject)
+
+            // Use effective confidence (fallback for objects without classification)
+            val confidence = bestLabel?.confidence ?: run {
+                // Objects detected without classification get a higher confidence
+                // ML Kit's object detection is reliable even without classification
+                if (detectedObject.trackingId != null) {
+                    0.6f // Good confidence for tracked but unlabeled objects
+                } else {
+                    0.4f // Moderate confidence for objects without tracking
+                }
+            }
 
             // Calculate normalized bounding box area for pricing
             val boxArea = calculateNormalizedArea(
@@ -131,7 +212,8 @@ class ObjectDetectorClient {
                 id = trackingId,
                 thumbnail = thumbnail,
                 category = category,
-                priceRange = priceRange
+                priceRange = priceRange,
+                confidence = confidence
             )
         } catch (e: Exception) {
             // If cropping or processing fails, skip this object

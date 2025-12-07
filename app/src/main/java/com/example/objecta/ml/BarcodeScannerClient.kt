@@ -95,6 +95,10 @@ class BarcodeScannerClient {
             // Determine category from barcode format
             val category = determineCategoryFromBarcode(barcode)
 
+            // Barcode scanning has very high confidence (typically 1.0 for successful scans)
+            // Use a high confidence value for barcodes since they're binary (detected or not)
+            val confidence = 0.95f
+
             // Calculate normalized bounding box area for pricing
             val boxArea = calculateNormalizedArea(
                 box = boundingBox,
@@ -110,7 +114,7 @@ class BarcodeScannerClient {
                 thumbnail = thumbnail,
                 category = category,
                 priceRange = priceRange,
-                barcodeValue = barcodeValue
+                confidence = confidence
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error converting barcode to item", e)
