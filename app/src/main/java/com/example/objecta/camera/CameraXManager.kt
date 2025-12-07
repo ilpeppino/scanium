@@ -45,10 +45,10 @@ class CameraXManager(
     private val barcodeScanner = BarcodeScannerClient()
 
     // Candidate tracker for multi-frame detection pipeline
-    // Using lower thresholds for better responsiveness with unlabeled objects
+    // Using minimal thresholds to trust ML Kit's detection capability
     private val candidateTracker = com.example.objecta.ml.CandidateTracker(
-        minSeenCount = 1,           // Require 1 frame minimum (relaxed from 2)
-        minConfidence = 0.25f,       // Require 25% confidence (relaxed from 40%)
+        minSeenCount = 1,           // Require 1 frame minimum
+        minConfidence = 0.0f,        // Trust ML Kit - if it detected something, accept it
         candidateTimeoutMs = 3000L   // Expire candidates after 3 seconds
     )
 
@@ -158,7 +158,7 @@ class CameraXManager(
         // Log detection configuration (debug builds only)
         com.example.objecta.ml.DetectionLogger.logConfiguration(
             minSeenCount = 1,
-            minConfidence = 0.25f,
+            minConfidence = 0.0f,
             candidateTimeoutMs = 3000L,
             analysisIntervalMs = analysisIntervalMs
         )
@@ -187,7 +187,7 @@ class CameraXManager(
                         // Use multi-frame pipeline for scanning mode
                         val items = when (scanMode) {
                             ScanMode.OBJECT_DETECTION -> {
-                                processImageProxyWithCandidateTracking(imageProxy, useStreamMode = true)
+                                processImageProxyWithCandidateTracking(imageProxy, useStreamMode = false)
                             }
                             ScanMode.BARCODE -> {
                                 // Barcodes use direct detection (no candidate tracking)
@@ -241,7 +241,7 @@ class CameraXManager(
      */
     private suspend fun processImageProxyWithCandidateTracking(
         imageProxy: ImageProxy,
-        useStreamMode: Boolean = true
+        useStreamMode: Boolean = false
     ): List<ScannedItem> {
         val startTime = System.currentTimeMillis()
 
@@ -293,35 +293,28 @@ class CameraXManager(
                 // Log tracking ID info for debugging
                 Log.d(TAG, "Detection: id=${detection.trackingId.take(8)}, conf=$effectiveConfidence, label=${bestLabel?.text ?: "none"}")
 
-                if (effectiveConfidence > 0.2f) { // Basic threshold
-                    validDetections++
+                // Trust ML Kit - if it detected something, process it
+                // The ML model's confidence score will be preserved as-is
+                validDetections++
 
-                    val normalizedArea = detection.getNormalizedArea(
-                        imageWidth = bitmapForThumb?.width ?: imageProxy.width,
-                        imageHeight = bitmapForThumb?.height ?: imageProxy.height
-                    )
+                val normalizedArea = detection.getNormalizedArea(
+                    imageWidth = bitmapForThumb?.width ?: imageProxy.width,
+                    imageHeight = bitmapForThumb?.height ?: imageProxy.height
+                )
 
-                    // Process through candidate tracker
-                    val promotedItem = candidateTracker.processDetection(
-                        trackingId = detection.trackingId,
-                        confidence = effectiveConfidence,
-                        category = detection.category,
-                        categoryLabel = bestLabel?.text ?: "Unknown",
-                        boundingBox = detection.boundingBox,
-                        thumbnail = detection.thumbnail,
-                        boundingBoxArea = normalizedArea
-                    )
+                // Process through candidate tracker
+                val promotedItem = candidateTracker.processDetection(
+                    trackingId = detection.trackingId,
+                    confidence = effectiveConfidence,
+                    category = detection.category,
+                    categoryLabel = bestLabel?.text ?: "Unknown",
+                    boundingBox = detection.boundingBox,
+                    thumbnail = detection.thumbnail,
+                    boundingBoxArea = normalizedArea
+                )
 
-                    if (promotedItem != null) {
-                        promotedItems.add(promotedItem)
-                    }
-                } else {
-                    // Log rejection
-                    com.example.objecta.ml.DetectionLogger.logRejection(
-                        trackingId = detection.trackingId,
-                        reason = "Low confidence",
-                        confidence = effectiveConfidence
-                    )
+                if (promotedItem != null) {
+                    promotedItems.add(promotedItem)
                 }
             }
 
