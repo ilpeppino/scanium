@@ -13,6 +13,14 @@ import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import kotlinx.coroutines.tasks.await
 
 /**
+ * Wrapper class containing both ScannedItems (for list) and DetectionResults (for overlay).
+ */
+data class DetectionResponse(
+    val scannedItems: List<ScannedItem>,
+    val detectionResults: List<DetectionResult>
+)
+
+/**
  * Client for ML Kit Object Detection and Tracking.
  *
  * Configures ML Kit to detect multiple objects with classification enabled.
@@ -55,13 +63,13 @@ class ObjectDetectorClient {
      * @param image InputImage to process (from CameraX)
      * @param sourceBitmap Original bitmap for cropping thumbnails
      * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
-     * @return List of ScannedItems with detected objects
+     * @return DetectionResponse containing both ScannedItems and DetectionResults
      */
     suspend fun detectObjects(
         image: InputImage,
         sourceBitmap: Bitmap?,
         useStreamMode: Boolean = false
-    ): List<ScannedItem> {
+    ): DetectionResponse {
         return try {
             val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
             Log.d(TAG, "Starting object detection ($mode) on image ${image.width}x${image.height}, rotation=${image.rotationDegrees}")
@@ -78,21 +86,32 @@ class ObjectDetectorClient {
                 Log.d(TAG, "Object $index: labels=[$labels], box=${obj.boundingBox}")
             }
 
-            // Convert each detected object to ScannedItem
-            val items = detectedObjects.mapNotNull { obj ->
-                convertToScannedItem(
+            // Convert to both ScannedItems and DetectionResults
+            val scannedItems = mutableListOf<ScannedItem>()
+            val detectionResults = mutableListOf<DetectionResult>()
+
+            detectedObjects.forEach { obj ->
+                val scannedItem = convertToScannedItem(
                     detectedObject = obj,
                     sourceBitmap = sourceBitmap,
                     fallbackWidth = image.width,
                     fallbackHeight = image.height
                 )
+                val detectionResult = convertToDetectionResult(
+                    detectedObject = obj,
+                    imageWidth = sourceBitmap?.width ?: image.width,
+                    imageHeight = sourceBitmap?.height ?: image.height
+                )
+
+                if (scannedItem != null) scannedItems.add(scannedItem)
+                if (detectionResult != null) detectionResults.add(detectionResult)
             }
 
-            Log.d(TAG, "Converted to ${items.size} scanned items")
-            items
+            Log.d(TAG, "Converted to ${scannedItems.size} scanned items and ${detectionResults.size} detection results")
+            DetectionResponse(scannedItems, detectionResults)
         } catch (e: Exception) {
             Log.e(TAG, "Error detecting objects", e)
-            emptyList()
+            DetectionResponse(emptyList(), emptyList())
         }
     }
 
@@ -255,6 +274,40 @@ class ObjectDetectorClient {
             )
         } catch (e: Exception) {
             // If cropping or processing fails, skip this object
+            null
+        }
+    }
+
+    /**
+     * Converts a DetectedObject from ML Kit to a DetectionResult for overlay rendering.
+     */
+    private fun convertToDetectionResult(
+        detectedObject: DetectedObject,
+        imageWidth: Int,
+        imageHeight: Int
+    ): DetectionResult? {
+        return try {
+            val boundingBox = detectedObject.boundingBox
+            val category = extractCategory(detectedObject)
+
+            // Calculate normalized bounding box area for pricing
+            val boxArea = calculateNormalizedArea(boundingBox, imageWidth, imageHeight)
+
+            // Generate price range
+            val priceRange = PricingEngine.generatePriceRange(category, boxArea)
+
+            // Get best confidence score
+            val confidence = detectedObject.labels.maxByOrNull { it.confidence }?.confidence ?: 0f
+
+            DetectionResult(
+                boundingBox = boundingBox,
+                category = category,
+                priceRange = priceRange,
+                confidence = confidence,
+                trackingId = detectedObject.trackingId
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error converting to DetectionResult", e)
             null
         }
     }

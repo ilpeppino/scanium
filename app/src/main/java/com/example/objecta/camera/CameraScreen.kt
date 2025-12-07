@@ -1,6 +1,7 @@
 package com.example.objecta.camera
 
 import android.Manifest
+import android.util.Size
 import android.widget.Toast
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.*
@@ -16,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.objecta.items.ItemsViewModel
+import com.example.objecta.ml.DetectionResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
@@ -73,6 +76,11 @@ fun CameraScreen(
     // Items count from ViewModel
     val itemsCount by itemsViewModel.items.collectAsState()
 
+    // Detection overlay state
+    var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
+    var imageSize by remember { mutableStateOf(Size(1280, 720)) } // Default from CameraX config
+    var previewSize by remember { mutableStateOf(Size(0, 0)) }
+
     // Request permission on first launch
     LaunchedEffect(Unit) {
         if (!cameraPermissionState.status.isGranted) {
@@ -106,11 +114,12 @@ fun CameraScreen(
                                 if (items.isNotEmpty()) {
                                     itemsViewModel.addItems(items)
                                 }
-                            }
+                            )
                         } else {
                             // Play scan stop melody
                             soundManager.playScanStopMelody()
                             cameraManager.stopScanning()
+                            currentDetections = emptyList() // Clear overlay when stopped
                         }
                     },
                     onCapture = {
@@ -123,16 +132,11 @@ fun CameraScreen(
                                     ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
                                     ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
                                 }
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                            } else {
-                                itemsViewModel.addItems(items)
-                                Toast.makeText(
-                                    context,
-                                    "Detected ${items.size} item(s)",
-                                    Toast.LENGTH_SHORT
-                                ).show()
                             }
-                        }
+                        )
+                    },
+                    onPreviewSizeChanged = { size ->
+                        previewSize = Size(size.width, size.height)
                     }
                 )
 
@@ -142,6 +146,15 @@ fun CameraScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(Color.White.copy(alpha = 0.6f))
+                    )
+                }
+
+                // Detection overlay - bounding boxes and labels
+                if (currentDetections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
+                    DetectionOverlay(
+                        detections = currentDetections,
+                        imageSize = imageSize,
+                        previewSize = previewSize
                     )
                 }
 
@@ -193,7 +206,8 @@ private fun CameraPreviewWithGestures(
     scanMode: ScanMode,
     isScanning: Boolean,
     onScanningChanged: (Boolean) -> Unit,
-    onCapture: () -> Unit
+    onCapture: () -> Unit,
+    onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var isCameraStarted by remember { mutableStateOf(false) }
@@ -207,6 +221,9 @@ private fun CameraPreviewWithGestures(
         },
         modifier = Modifier
             .fillMaxSize()
+            .onSizeChanged { intSize ->
+                onPreviewSizeChanged(intSize)
+            }
             .pointerInput(scanningState) {
                 detectTapGestures(
                     onTap = {
