@@ -76,6 +76,7 @@ fun ItemDetailDialog(
                 // Details
                 DetailRow(label = "Category", value = item.category.displayName)
                 DetailRow(label = "Price Range", value = item.formattedPriceRange)
+                DetailRow(label = "Confidence", value = item.formattedConfidence)
                 DetailRow(
                     label = "Detected At",
                     value = formatDetailTimestamp(item.timestamp)
