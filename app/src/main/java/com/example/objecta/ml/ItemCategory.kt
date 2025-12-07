@@ -11,6 +11,7 @@ enum class ItemCategory(val displayName: String) {
     PLACE("Place"),
     PLANT("Plant"),
     ELECTRONICS("Electronics"),
+    DOCUMENT("Document"),
     UNKNOWN("Unknown");
 
     companion object {

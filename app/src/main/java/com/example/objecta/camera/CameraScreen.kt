@@ -121,6 +121,7 @@ fun CameraScreen(
                                 val message = when (currentScanMode) {
                                     ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
                                     ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
+                                    ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
                                 }
                                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             } else {
@@ -306,6 +307,7 @@ private fun BoxScope.CameraOverlay(
                 when (scanMode) {
                     ScanMode.OBJECT_DETECTION -> "Tap to capture • Long-press to scan"
                     ScanMode.BARCODE -> "Tap to scan barcode • Long-press for continuous scan"
+                    ScanMode.DOCUMENT_TEXT -> "Tap to scan document • Long-press for continuous scan"
                 }
             },
             style = MaterialTheme.typography.bodyMedium,
