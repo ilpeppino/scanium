@@ -1,120 +1,165 @@
 package com.example.objecta.ml
 
-import org.junit.Assert.*
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
- * Unit tests for ItemCategory enum.
+ * Unit tests for ItemCategory ML Kit label mapping.
  *
- * Tests that all categories including the new DOCUMENT category are properly defined
- * and that ML Kit label mapping works correctly.
+ * Tests verify:
+ * - Correct mapping from ML Kit labels to ItemCategory
+ * - Case-insensitive matching
+ * - Unknown/default category handling
+ * - All category display names are set
  */
 class ItemCategoryTest {
 
     @Test
-    fun `verify all categories exist`() {
-        val categories = ItemCategory.values()
-        assertEquals("Should have exactly 8 categories", 8, categories.size)
+    fun whenFashionGoodLabel_thenMapsToFashionCategory() {
+        // Act & Assert
+        assertThat(ItemCategory.fromMlKitLabel("Fashion good")).isEqualTo(ItemCategory.FASHION)
+        assertThat(ItemCategory.fromMlKitLabel("Fashion")).isEqualTo(ItemCategory.FASHION)
+        assertThat(ItemCategory.fromMlKitLabel("Clothing")).isEqualTo(ItemCategory.FASHION)
     }
 
     @Test
-    fun `verify DOCUMENT category exists and has correct display name`() {
-        val category = ItemCategory.DOCUMENT
-        assertEquals("Document", category.displayName)
+    fun whenHomeGoodLabel_thenMapsToHomeGoodCategory() {
+        // Act & Assert
+        assertThat(ItemCategory.fromMlKitLabel("Home good")).isEqualTo(ItemCategory.HOME_GOOD)
+        assertThat(ItemCategory.fromMlKitLabel("Home")).isEqualTo(ItemCategory.HOME_GOOD)
+        assertThat(ItemCategory.fromMlKitLabel("Furniture")).isEqualTo(ItemCategory.HOME_GOOD)
     }
 
     @Test
-    fun `verify all category display names`() {
-        assertEquals("Fashion", ItemCategory.FASHION.displayName)
-        assertEquals("Home Good", ItemCategory.HOME_GOOD.displayName)
-        assertEquals("Food Product", ItemCategory.FOOD.displayName)
-        assertEquals("Place", ItemCategory.PLACE.displayName)
-        assertEquals("Plant", ItemCategory.PLANT.displayName)
-        assertEquals("Electronics", ItemCategory.ELECTRONICS.displayName)
-        assertEquals("Document", ItemCategory.DOCUMENT.displayName)
-        assertEquals("Unknown", ItemCategory.UNKNOWN.displayName)
+    fun whenFoodLabel_thenMapsToFoodCategory() {
+        // Act & Assert
+        assertThat(ItemCategory.fromMlKitLabel("Food")).isEqualTo(ItemCategory.FOOD)
+        assertThat(ItemCategory.fromMlKitLabel("Food product")).isEqualTo(ItemCategory.FOOD)
     }
 
     @Test
-    fun `verify fromMlKitLabel maps fashion correctly`() {
-        assertEquals(ItemCategory.FASHION, ItemCategory.fromMlKitLabel("Fashion"))
-        assertEquals(ItemCategory.FASHION, ItemCategory.fromMlKitLabel("fashion"))
-        assertEquals(ItemCategory.FASHION, ItemCategory.fromMlKitLabel("Fashion good"))
-        assertEquals(ItemCategory.FASHION, ItemCategory.fromMlKitLabel("clothing"))
+    fun whenPlaceLabel_thenMapsToPlaceCategory() {
+        // Act & Assert
+        assertThat(ItemCategory.fromMlKitLabel("Place")).isEqualTo(ItemCategory.PLACE)
     }
 
     @Test
-    fun `verify fromMlKitLabel maps home good correctly`() {
-        assertEquals(ItemCategory.HOME_GOOD, ItemCategory.fromMlKitLabel("Home good"))
-        assertEquals(ItemCategory.HOME_GOOD, ItemCategory.fromMlKitLabel("home"))
-        assertEquals(ItemCategory.HOME_GOOD, ItemCategory.fromMlKitLabel("furniture"))
+    fun whenPlantLabel_thenMapsToPlantCategory() {
+        // Act & Assert
+        assertThat(ItemCategory.fromMlKitLabel("Plant")).isEqualTo(ItemCategory.PLANT)
     }
 
     @Test
-    fun `verify fromMlKitLabel maps food correctly`() {
-        assertEquals(ItemCategory.FOOD, ItemCategory.fromMlKitLabel("Food"))
-        assertEquals(ItemCategory.FOOD, ItemCategory.fromMlKitLabel("food"))
-        assertEquals(ItemCategory.FOOD, ItemCategory.fromMlKitLabel("Food product"))
+    fun whenElectronicsLabel_thenMapsToElectronicsCategory() {
+        // Act & Assert
+        assertThat(ItemCategory.fromMlKitLabel("Electronics")).isEqualTo(ItemCategory.ELECTRONICS)
+        assertThat(ItemCategory.fromMlKitLabel("Electronic")).isEqualTo(ItemCategory.ELECTRONICS)
     }
 
     @Test
-    fun `verify fromMlKitLabel maps electronics correctly`() {
-        assertEquals(ItemCategory.ELECTRONICS, ItemCategory.fromMlKitLabel("Electronics"))
-        assertEquals(ItemCategory.ELECTRONICS, ItemCategory.fromMlKitLabel("electronics"))
-        assertEquals(ItemCategory.ELECTRONICS, ItemCategory.fromMlKitLabel("electronic"))
+    fun whenUnknownLabel_thenMapsToUnknownCategory() {
+        // Act & Assert
+        assertThat(ItemCategory.fromMlKitLabel("Random Label")).isEqualTo(ItemCategory.UNKNOWN)
+        assertThat(ItemCategory.fromMlKitLabel("SomeOtherCategory")).isEqualTo(ItemCategory.UNKNOWN)
     }
 
     @Test
-    fun `verify fromMlKitLabel maps place correctly`() {
-        assertEquals(ItemCategory.PLACE, ItemCategory.fromMlKitLabel("Place"))
-        assertEquals(ItemCategory.PLACE, ItemCategory.fromMlKitLabel("place"))
+    fun whenNullLabel_thenMapsToUnknownCategory() {
+        // Act
+        val result = ItemCategory.fromMlKitLabel(null)
+
+        // Assert
+        assertThat(result).isEqualTo(ItemCategory.UNKNOWN)
     }
 
     @Test
-    fun `verify fromMlKitLabel maps plant correctly`() {
-        assertEquals(ItemCategory.PLANT, ItemCategory.fromMlKitLabel("Plant"))
-        assertEquals(ItemCategory.PLANT, ItemCategory.fromMlKitLabel("plant"))
+    fun whenEmptyLabel_thenMapsToUnknownCategory() {
+        // Act
+        val result = ItemCategory.fromMlKitLabel("")
+
+        // Assert
+        assertThat(result).isEqualTo(ItemCategory.UNKNOWN)
     }
 
     @Test
-    fun `verify fromMlKitLabel returns UNKNOWN for null`() {
-        assertEquals(ItemCategory.UNKNOWN, ItemCategory.fromMlKitLabel(null))
+    fun whenCaseMixedLabel_thenMapsCorrectly() {
+        // Act & Assert - Case insensitive
+        assertThat(ItemCategory.fromMlKitLabel("FASHION GOOD")).isEqualTo(ItemCategory.FASHION)
+        assertThat(ItemCategory.fromMlKitLabel("fashion good")).isEqualTo(ItemCategory.FASHION)
+        assertThat(ItemCategory.fromMlKitLabel("FaShIoN gOoD")).isEqualTo(ItemCategory.FASHION)
     }
 
     @Test
-    fun `verify fromMlKitLabel returns UNKNOWN for unrecognized labels`() {
-        assertEquals(ItemCategory.UNKNOWN, ItemCategory.fromMlKitLabel("random"))
-        assertEquals(ItemCategory.UNKNOWN, ItemCategory.fromMlKitLabel("unknown"))
-        assertEquals(ItemCategory.UNKNOWN, ItemCategory.fromMlKitLabel(""))
+    fun whenLabelWithWhitespace_thenMapsCorrectly() {
+        // Act & Assert - Labels with spaces
+        assertThat(ItemCategory.fromMlKitLabel("Fashion good")).isEqualTo(ItemCategory.FASHION)
+        assertThat(ItemCategory.fromMlKitLabel("Home good")).isEqualTo(ItemCategory.HOME_GOOD)
+        assertThat(ItemCategory.fromMlKitLabel("Food product")).isEqualTo(ItemCategory.FOOD)
     }
 
     @Test
-    fun `verify fromMlKitLabel is case insensitive`() {
-        assertEquals(ItemCategory.FASHION, ItemCategory.fromMlKitLabel("FASHION"))
-        assertEquals(ItemCategory.FASHION, ItemCategory.fromMlKitLabel("FaShIoN"))
-        assertEquals(ItemCategory.ELECTRONICS, ItemCategory.fromMlKitLabel("ELECTRONICS"))
+    fun whenAllCategories_thenHaveDisplayNames() {
+        // Act & Assert - All categories should have non-empty display names
+        ItemCategory.values().forEach { category ->
+            assertThat(category.displayName).isNotEmpty()
+        }
     }
 
     @Test
-    fun `verify category valueOf works for all categories`() {
-        assertEquals(ItemCategory.FASHION, ItemCategory.valueOf("FASHION"))
-        assertEquals(ItemCategory.HOME_GOOD, ItemCategory.valueOf("HOME_GOOD"))
-        assertEquals(ItemCategory.FOOD, ItemCategory.valueOf("FOOD"))
-        assertEquals(ItemCategory.PLACE, ItemCategory.valueOf("PLACE"))
-        assertEquals(ItemCategory.PLANT, ItemCategory.valueOf("PLANT"))
-        assertEquals(ItemCategory.ELECTRONICS, ItemCategory.valueOf("ELECTRONICS"))
-        assertEquals(ItemCategory.DOCUMENT, ItemCategory.valueOf("DOCUMENT"))
-        assertEquals(ItemCategory.UNKNOWN, ItemCategory.valueOf("UNKNOWN"))
+    fun whenAllCategories_thenHaveUniqueDisplayNames() {
+        // Act
+        val displayNames = ItemCategory.values().map { it.displayName }
+
+        // Assert - No duplicates
+        assertThat(displayNames).containsNoDuplicates()
     }
 
     @Test
-    fun `verify all categories have unique display names`() {
-        val categories = ItemCategory.values()
-        val displayNames = categories.map { it.displayName }.toSet()
-        assertEquals(
-            "All categories should have unique display names",
-            categories.size,
-            displayNames.size
-        )
+    fun whenCategoriesEnumerated_thenContainsExpectedCategories() {
+        // Act
+        val categories = ItemCategory.values().toList()
+
+        // Assert - Verify all expected categories exist
+        assertThat(categories).contains(ItemCategory.FASHION)
+        assertThat(categories).contains(ItemCategory.HOME_GOOD)
+        assertThat(categories).contains(ItemCategory.FOOD)
+        assertThat(categories).contains(ItemCategory.PLACE)
+        assertThat(categories).contains(ItemCategory.PLANT)
+        assertThat(categories).contains(ItemCategory.ELECTRONICS)
+        assertThat(categories).contains(ItemCategory.UNKNOWN)
+    }
+
+    @Test
+    fun whenDisplayNamesChecked_thenMatchExpectedValues() {
+        // Assert - Verify display names match expected values
+        assertThat(ItemCategory.FASHION.displayName).isEqualTo("Fashion")
+        assertThat(ItemCategory.HOME_GOOD.displayName).isEqualTo("Home Good")
+        assertThat(ItemCategory.FOOD.displayName).isEqualTo("Food Product")
+        assertThat(ItemCategory.PLACE.displayName).isEqualTo("Place")
+        assertThat(ItemCategory.PLANT.displayName).isEqualTo("Plant")
+        assertThat(ItemCategory.ELECTRONICS.displayName).isEqualTo("Electronics")
+        assertThat(ItemCategory.UNKNOWN.displayName).isEqualTo("Unknown")
+    }
+
+    @Test
+    fun whenMappingVariations_thenAllMapCorrectly() {
+        // Test various label variations that should map to the same category
+        val fashionVariations = listOf("Fashion good", "Fashion", "Clothing", "FASHION", "fashion")
+        fashionVariations.forEach { label ->
+            assertThat(ItemCategory.fromMlKitLabel(label))
+                .isEqualTo(ItemCategory.FASHION)
+        }
+
+        val homeGoodVariations = listOf("Home good", "Home", "Furniture", "HOME", "home good")
+        homeGoodVariations.forEach { label ->
+            assertThat(ItemCategory.fromMlKitLabel(label))
+                .isEqualTo(ItemCategory.HOME_GOOD)
+        }
+
+        val electronicsVariations = listOf("Electronics", "Electronic", "ELECTRONICS", "electronics")
+        electronicsVariations.forEach { label ->
+            assertThat(ItemCategory.fromMlKitLabel(label))
+                .isEqualTo(ItemCategory.ELECTRONICS)
+        }
     }
 }

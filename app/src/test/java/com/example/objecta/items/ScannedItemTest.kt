@@ -1,293 +1,292 @@
 package com.example.objecta.items
 
 import com.example.objecta.ml.ItemCategory
-import org.junit.Assert.*
+import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 /**
- * Unit tests for ScannedItem data class.
+ * Unit tests for ScannedItem confidence classification and formatting.
  *
- * Tests the extended model with recognizedText and barcodeValue fields.
+ * Tests verify:
+ * - Confidence level classification (LOW/MEDIUM/HIGH)
+ * - Price range formatting
+ * - Confidence percentage formatting
+ * - Threshold boundary conditions
  */
 class ScannedItemTest {
 
     @Test
-    fun `create basic scanned item without optional fields`() {
-        val item = ScannedItem(
-            id = "test-id",
-            thumbnail = null,
+    fun whenConfidenceBelow50Percent_thenLowConfidence() {
+        // Arrange
+        val item = createTestItem(confidence = 0.3f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.LOW)
+        assertThat(item.confidenceLevel.displayName).isEqualTo("Low")
+    }
+
+    @Test
+    fun whenConfidenceBetween50And75Percent_thenMediumConfidence() {
+        // Arrange
+        val item = createTestItem(confidence = 0.6f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.MEDIUM)
+        assertThat(item.confidenceLevel.displayName).isEqualTo("Medium")
+    }
+
+    @Test
+    fun whenConfidence75PercentOrAbove_thenHighConfidence() {
+        // Arrange
+        val item = createTestItem(confidence = 0.85f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.HIGH)
+        assertThat(item.confidenceLevel.displayName).isEqualTo("High")
+    }
+
+    @Test
+    fun whenConfidenceExactly50Percent_thenMediumConfidence() {
+        // Arrange - Exactly at MEDIUM threshold
+        val item = createTestItem(confidence = 0.5f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.MEDIUM)
+    }
+
+    @Test
+    fun whenConfidenceExactly75Percent_thenHighConfidence() {
+        // Arrange - Exactly at HIGH threshold
+        val item = createTestItem(confidence = 0.75f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.HIGH)
+    }
+
+    @Test
+    fun whenConfidenceZero_thenLowConfidence() {
+        // Arrange - Edge case: 0% confidence
+        val item = createTestItem(confidence = 0.0f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.LOW)
+    }
+
+    @Test
+    fun whenConfidence100Percent_thenHighConfidence() {
+        // Arrange - Edge case: 100% confidence
+        val item = createTestItem(confidence = 1.0f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.HIGH)
+    }
+
+    @Test
+    fun whenConfidenceJustBelow50Percent_thenLowConfidence() {
+        // Arrange - Just below MEDIUM threshold
+        val item = createTestItem(confidence = 0.49f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.LOW)
+    }
+
+    @Test
+    fun whenConfidenceJustBelow75Percent_thenMediumConfidence() {
+        // Arrange - Just below HIGH threshold
+        val item = createTestItem(confidence = 0.74f)
+
+        // Assert
+        assertThat(item.confidenceLevel).isEqualTo(ConfidenceLevel.MEDIUM)
+    }
+
+    @Test
+    fun whenFormattingConfidence_thenReturnsPercentage() {
+        // Arrange
+        val item = createTestItem(confidence = 0.85f)
+
+        // Assert
+        assertThat(item.formattedConfidence).isEqualTo("85%")
+    }
+
+    @Test
+    fun whenFormattingLowConfidence_thenRoundsDown() {
+        // Arrange
+        val item = createTestItem(confidence = 0.456f) // 45.6%
+
+        // Assert
+        assertThat(item.formattedConfidence).isEqualTo("45%")
+    }
+
+    @Test
+    fun whenFormattingHighConfidence_thenRoundsDown() {
+        // Arrange
+        val item = createTestItem(confidence = 0.999f) // 99.9%
+
+        // Assert
+        assertThat(item.formattedConfidence).isEqualTo("99%")
+    }
+
+    @Test
+    fun whenFormattingZeroConfidence_thenReturnsZeroPercent() {
+        // Arrange
+        val item = createTestItem(confidence = 0.0f)
+
+        // Assert
+        assertThat(item.formattedConfidence).isEqualTo("0%")
+    }
+
+    @Test
+    fun whenFormattingPriceRange_thenReturnsEuroFormat() {
+        // Arrange
+        val item = createTestItem(priceRange = 20.0 to 50.0)
+
+        // Assert
+        assertThat(item.formattedPriceRange).isEqualTo("€20 - €50")
+    }
+
+    @Test
+    fun whenFormattingPriceWithDecimals_thenRoundsToWholeNumber() {
+        // Arrange
+        val item = createTestItem(priceRange = 19.99 to 49.99)
+
+        // Assert
+        assertThat(item.formattedPriceRange).isEqualTo("€20 - €50")
+    }
+
+    @Test
+    fun whenFormattingLargePriceRange_thenFormatsCorrectly() {
+        // Arrange
+        val item = createTestItem(priceRange = 100.0 to 500.0)
+
+        // Assert
+        assertThat(item.formattedPriceRange).isEqualTo("€100 - €500")
+    }
+
+    @Test
+    fun whenFormattingSmallPriceRange_thenFormatsCorrectly() {
+        // Arrange
+        val item = createTestItem(priceRange = 1.0 to 5.0)
+
+        // Assert
+        assertThat(item.formattedPriceRange).isEqualTo("€1 - €5")
+    }
+
+    @Test
+    fun whenFormattingZeroPrice_thenFormatsCorrectly() {
+        // Arrange - For PLACE category
+        val item = createTestItem(priceRange = 0.0 to 0.0)
+
+        // Assert
+        assertThat(item.formattedPriceRange).isEqualTo("€0 - €0")
+    }
+
+    @Test
+    fun whenItemHasCategory_thenCategoryStored() {
+        // Arrange
+        val item = createTestItem(category = ItemCategory.ELECTRONICS)
+
+        // Assert
+        assertThat(item.category).isEqualTo(ItemCategory.ELECTRONICS)
+        assertThat(item.category.displayName).isEqualTo("Electronics")
+    }
+
+    @Test
+    fun whenItemHasId_thenIdStored() {
+        // Arrange
+        val item = createTestItem(id = "test-tracking-id-123")
+
+        // Assert
+        assertThat(item.id).isEqualTo("test-tracking-id-123")
+    }
+
+    @Test
+    fun whenItemHasTimestamp_thenTimestampStored() {
+        // Arrange
+        val now = System.currentTimeMillis()
+        val item = createTestItem(timestamp = now)
+
+        // Assert
+        assertThat(item.timestamp).isEqualTo(now)
+    }
+
+    @Test
+    fun whenDefaultItemCreated_thenHasUniqueId() {
+        // Act - Create two items without specifying ID
+        val item1 = ScannedItem(
             category = ItemCategory.FASHION,
-            priceRange = Pair(10.0, 50.0)
+            priceRange = 10.0 to 20.0
         )
-
-        assertEquals("test-id", item.id)
-        assertNull(item.thumbnail)
-        assertEquals(ItemCategory.FASHION, item.category)
-        assertEquals(Pair(10.0, 50.0), item.priceRange)
-        assertNull(item.recognizedText)
-        assertNull(item.barcodeValue)
-    }
-
-    @Test
-    fun `create document scanned item with recognized text`() {
-        val recognizedText = "This is a test document with some text."
-        val item = ScannedItem(
-            id = "doc-id",
-            thumbnail = null,
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = recognizedText
-        )
-
-        assertEquals("doc-id", item.id)
-        assertEquals(ItemCategory.DOCUMENT, item.category)
-        assertEquals(recognizedText, item.recognizedText)
-        assertNull(item.barcodeValue)
-    }
-
-    @Test
-    fun `create barcode scanned item with barcode value`() {
-        val barcodeValue = "123456789012"
-        val item = ScannedItem(
-            id = "barcode-id",
-            thumbnail = null,
-            category = ItemCategory.UNKNOWN,
-            priceRange = Pair(5.0, 25.0),
-            barcodeValue = barcodeValue
-        )
-
-        assertEquals("barcode-id", item.id)
-        assertEquals(barcodeValue, item.barcodeValue)
-        assertNull(item.recognizedText)
-    }
-
-    @Test
-    fun `verify formatted price range with whole numbers`() {
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.ELECTRONICS,
-            priceRange = Pair(100.0, 500.0)
-        )
-
-        assertEquals("€100 - €500", item.formattedPriceRange)
-    }
-
-    @Test
-    fun `verify formatted price range with decimals rounds correctly`() {
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.FOOD,
-            priceRange = Pair(2.99, 15.49)
-        )
-
-        assertEquals("€3 - €15", item.formattedPriceRange)
-    }
-
-    @Test
-    fun `verify formatted price range with zero`() {
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0)
-        )
-
-        assertEquals("€0 - €0", item.formattedPriceRange)
-    }
-
-    @Test
-    fun `verify timestamp defaults to current time`() {
-        val beforeTime = System.currentTimeMillis()
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.HOME_GOOD,
-            priceRange = Pair(20.0, 80.0)
-        )
-        val afterTime = System.currentTimeMillis()
-
-        assertTrue(item.timestamp >= beforeTime)
-        assertTrue(item.timestamp <= afterTime)
-    }
-
-    @Test
-    fun `verify custom timestamp is preserved`() {
-        val customTimestamp = 1609459200000L // 2021-01-01 00:00:00 UTC
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.PLANT,
-            priceRange = Pair(5.0, 15.0),
-            timestamp = customTimestamp
-        )
-
-        assertEquals(customTimestamp, item.timestamp)
-    }
-
-    @Test
-    fun `verify item with both recognizedText and barcodeValue`() {
-        // While unusual, the model should support both fields
-        val item = ScannedItem(
-            id = "hybrid-id",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = "Some text",
-            barcodeValue = "12345"
-        )
-
-        assertEquals("Some text", item.recognizedText)
-        assertEquals("12345", item.barcodeValue)
-    }
-
-    @Test
-    fun `verify empty string recognized text is preserved`() {
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = ""
-        )
-
-        assertEquals("", item.recognizedText)
-    }
-
-    @Test
-    fun `verify long recognized text is preserved`() {
-        val longText = "A".repeat(1000)
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = longText
-        )
-
-        assertEquals(longText, item.recognizedText)
-        assertEquals(1000, item.recognizedText?.length)
-    }
-
-    @Test
-    fun `verify data class copy works with new fields`() {
-        val original = ScannedItem(
-            id = "original-id",
+        val item2 = ScannedItem(
             category = ItemCategory.FASHION,
-            priceRange = Pair(10.0, 50.0),
-            recognizedText = "Original text"
+            priceRange = 10.0 to 20.0
         )
 
-        val copy = original.copy(
-            recognizedText = "Updated text",
-            barcodeValue = "NEW123"
-        )
-
-        assertEquals("original-id", copy.id)
-        assertEquals(ItemCategory.FASHION, copy.category)
-        assertEquals("Updated text", copy.recognizedText)
-        assertEquals("NEW123", copy.barcodeValue)
+        // Assert - IDs should be different (UUIDs)
+        assertThat(item1.id).isNotEqualTo(item2.id)
     }
 
     @Test
-    fun `verify data class equals works with new fields`() {
-        val item1 = ScannedItem(
-            id = "id1",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            timestamp = 1000L,
-            recognizedText = "Text"
-        )
-
-        val item2 = ScannedItem(
-            id = "id1",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            timestamp = 1000L,
-            recognizedText = "Text"
-        )
-
-        assertEquals(item1, item2)
+    fun whenConfidenceLevelThresholdsChecked_thenMatchExpectedValues() {
+        // Assert - Verify threshold constants
+        assertThat(ConfidenceLevel.LOW.threshold).isEqualTo(0.0f)
+        assertThat(ConfidenceLevel.MEDIUM.threshold).isEqualTo(0.5f)
+        assertThat(ConfidenceLevel.HIGH.threshold).isEqualTo(0.75f)
     }
 
     @Test
-    fun `verify data class hashCode works with new fields`() {
-        val item1 = ScannedItem(
-            id = "id1",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            timestamp = 1000L,
-            recognizedText = "Text"
-        )
-
-        val item2 = ScannedItem(
-            id = "id1",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            timestamp = 1000L,
-            recognizedText = "Text"
-        )
-
-        assertEquals(item1.hashCode(), item2.hashCode())
+    fun whenConfidenceLevelDescriptionsChecked_thenHaveAppropriateText() {
+        // Assert - Verify descriptions exist and are non-empty
+        assertThat(ConfidenceLevel.LOW.description).isNotEmpty()
+        assertThat(ConfidenceLevel.MEDIUM.description).isNotEmpty()
+        assertThat(ConfidenceLevel.HIGH.description).isNotEmpty()
     }
 
     @Test
-    fun `verify items with different recognizedText are not equal`() {
-        val item1 = ScannedItem(
-            id = "id1",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = "Text A"
-        )
+    fun whenMultipleConfidenceLevels_thenAllHaveUniqueDisplayNames() {
+        // Act
+        val displayNames = ConfidenceLevel.values().map { it.displayName }
 
-        val item2 = ScannedItem(
-            id = "id1",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = "Text B"
-        )
-
-        assertNotEquals(item1, item2)
+        // Assert
+        assertThat(displayNames).containsNoDuplicates()
     }
 
     @Test
-    fun `verify multiline recognized text is preserved`() {
-        val multilineText = "Line 1\nLine 2\nLine 3"
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = multilineText
+    fun whenBoundaryTestingAllThresholds_thenCorrectClassification() {
+        // Test values just above and below each threshold
+        val testCases = mapOf(
+            0.0f to ConfidenceLevel.LOW,
+            0.49f to ConfidenceLevel.LOW,
+            0.5f to ConfidenceLevel.MEDIUM,
+            0.51f to ConfidenceLevel.MEDIUM,
+            0.74f to ConfidenceLevel.MEDIUM,
+            0.75f to ConfidenceLevel.HIGH,
+            0.76f to ConfidenceLevel.HIGH,
+            1.0f to ConfidenceLevel.HIGH
         )
 
-        assertEquals(multilineText, item.recognizedText)
-        assertTrue(item.recognizedText?.contains("\n") == true)
-    }
-
-    @Test
-    fun `verify special characters in recognized text are preserved`() {
-        val specialText = "Price: €50.00\nDate: 2024-01-15\nItems: #12345"
-        val item = ScannedItem(
-            id = "test-id",
-            category = ItemCategory.DOCUMENT,
-            priceRange = Pair(0.0, 0.0),
-            recognizedText = specialText
-        )
-
-        assertEquals(specialText, item.recognizedText)
-    }
-
-    @Test
-    fun `verify barcode value with various formats`() {
-        val barcodeFormats = listOf(
-            "123456789012", // EAN-13
-            "12345678", // EAN-8
-            "https://example.com", // QR code URL
-            "VCARD:John Doe" // QR code vCard
-        )
-
-        barcodeFormats.forEach { barcodeValue ->
-            val item = ScannedItem(
-                id = "test-id",
-                category = ItemCategory.UNKNOWN,
-                priceRange = Pair(0.0, 0.0),
-                barcodeValue = barcodeValue
-            )
-
-            assertEquals(barcodeValue, item.barcodeValue)
+        // Assert all test cases
+        testCases.forEach { (confidence, expectedLevel) ->
+            val item = createTestItem(confidence = confidence)
+            assertThat(item.confidenceLevel)
+                .isEqualTo(expectedLevel)
         }
+    }
+
+    // Helper function to create test items
+    private fun createTestItem(
+        id: String = "test-id",
+        category: ItemCategory = ItemCategory.FASHION,
+        priceRange: Pair<Double, Double> = 10.0 to 20.0,
+        confidence: Float = 0.5f,
+        timestamp: Long = System.currentTimeMillis()
+    ): ScannedItem {
+        return ScannedItem(
+            id = id,
+            thumbnail = null,
+            category = category,
+            priceRange = priceRange,
+            confidence = confidence,
+            timestamp = timestamp
+        )
     }
 }
