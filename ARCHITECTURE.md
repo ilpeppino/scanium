@@ -121,7 +121,12 @@ app/
 │   │   ├── ml/                             # Machine learning
 │   │   │   ├── ObjectDetectorClient.kt    # ML Kit wrapper
 │   │   │   ├── ItemCategory.kt            # Category enum
-│   │   │   └── PricingEngine.kt           # Price logic
+│   │   │   ├── PricingEngine.kt           # Price logic
+│   │   │   ├── BarcodeScannerClient.kt    # Barcode scanning
+│   │   │   └── DocumentTextRecognitionClient.kt  # OCR
+│   │   ├── tracking/                       # Object tracking & de-duplication
+│   │   │   ├── ObjectCandidate.kt         # Candidate data class
+│   │   │   └── ObjectTracker.kt           # Tracking engine
 │   │   ├── navigation/                     # Navigation
 │   │   │   └── NavGraph.kt                # Navigation setup
 │   │   └── ui/theme/                       # Material 3 theme
@@ -140,10 +145,11 @@ app/
 - **Reduced Complexity:** No module dependency management
 
 **Package Organization Rationale:**
-- **Feature-based packages** (`camera/`, `items/`, `ml/`) for logical grouping
+- **Feature-based packages** (`camera/`, `items/`, `ml/`, `tracking/`) for logical grouping
 - **Shared infrastructure** (`navigation/`, `ui/theme/`) in dedicated packages
 - Each package contains related UI, logic, and models together
 - Clear ownership boundaries between features
+- Tracking package provides reusable de-duplication logic across scan modes
 
 ---
 
@@ -459,6 +465,99 @@ ObjectDetectorOptions.Builder()
 - Device-dependent performance
 
 **Future Path:** Could add custom TensorFlow Lite model for specific product categories
+
+### 4.1 Object Tracking and De-Duplication System
+
+**Decision:** Multi-frame tracking pipeline with ML Kit integration
+
+**Rationale:**
+- **Eliminates Duplicates:** Same physical object detected multiple times in continuous scanning no longer creates duplicate items
+- **Stable Detection:** Multi-frame confirmation ensures only stable, confident objects are added
+- **Robust Matching:** Dual strategy using ML Kit trackingId + spatial matching (IoU + distance)
+- **Memory Efficient:** Automatic expiry of stale candidates prevents unbounded growth
+
+**Architecture:**
+```
+ImageProxy → ML Kit (STREAM_MODE) → DetectionInfo[]
+  ↓
+ObjectTracker (processFrame)
+  ├─ Match to existing candidates (trackingId or spatial)
+  ├─ Update or create candidates
+  ├─ Track frame counts, confidence, stability
+  └─ Return newly confirmed candidates
+  ↓
+Convert to ScannedItems
+  ↓
+ItemsViewModel (ID-based de-duplication)
+```
+
+**Key Components:**
+
+1. **ObjectCandidate** (`tracking/ObjectCandidate.kt`)
+   - Tracks object across frames with metadata
+   - Stores: internalId, boundingBox, seenCount, maxConfidence, category, thumbnail
+   - Methods: update(), getCenterPoint(), distanceTo(), calculateIoU()
+
+2. **ObjectTracker** (`tracking/ObjectTracker.kt`)
+   - Maintains in-memory collection of candidates
+   - Implements confirmation logic with configurable thresholds
+   - Tracks frame-based temporal information
+   - Handles candidate expiry
+
+3. **DetectionInfo** (`tracking/ObjectTracker.kt`)
+   - Raw detection metadata from ML Kit
+   - Bridges ML Kit DetectedObject and ObjectTracker
+
+**Configuration (TrackerConfig):**
+```kotlin
+TrackerConfig(
+    minFramesToConfirm = 3,      // Require 3 frames to confirm
+    minConfidence = 0.4f,         // Minimum confidence threshold
+    minBoxArea = 0.001f,          // Minimum 0.1% of frame area
+    maxFrameGap = 5,              // Allow 5 frames gap for matching
+    minMatchScore = 0.3f,         // Spatial matching threshold
+    expiryFrames = 10             // Expire after 10 frames without detection
+)
+```
+
+**Matching Strategy:**
+- **Primary:** Direct ML Kit trackingId matching (when available in STREAM_MODE)
+- **Fallback:** Spatial matching using IoU (0.7 weight) + center distance (0.3 weight)
+
+**Confirmation Criteria:**
+```kotlin
+seenCount >= minFramesToConfirm &&
+maxConfidence >= minConfidence &&
+averageBoxArea >= minBoxArea
+```
+
+**Integration Points:**
+- **CameraXManager:** Routes OBJECT_DETECTION + STREAM mode through tracking pipeline
+- **ObjectDetectorClient:** Provides `detectObjectsWithTracking()` and `candidateToScannedItem()`
+- **ItemsViewModel:** Existing ID-based de-duplication works seamlessly with stable tracking IDs
+
+**Trade-offs:**
+- Slight processing overhead (IoU calculations, spatial matching)
+- 3-frame delay before objects appear (ensures stability)
+- Memory usage for tracking state (mitigated by expiry)
+
+**Benefits:**
+- Dramatically reduced duplicates in continuous scanning
+- Improved user experience with cleaner item lists
+- Tunable thresholds for different use cases
+- Comprehensive logging for debugging
+
+**Testing:**
+- Unit tests: ObjectCandidateTest (13 tests), ObjectTrackerTest (22 tests)
+- Integration tests: TrackingPipelineIntegrationTest (9 scenarios)
+- Test coverage: Candidate lifecycle, confirmation logic, spatial matching, expiry
+
+**Future Enhancements:**
+- Color-based matching for improved spatial association
+- Adaptive thresholds based on scene complexity
+- Persistence of tracking state across app restarts
+
+For detailed implementation documentation, see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md).
 
 ### 5. Gesture-Based Interaction
 
