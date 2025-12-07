@@ -22,7 +22,9 @@ data class ScannedItem(
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
     val confidence: Float = 0.0f,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val recognizedText: String? = null,
+    val barcodeValue: String? = null
 ) {
     /**
      * Formatted price range string for display.
