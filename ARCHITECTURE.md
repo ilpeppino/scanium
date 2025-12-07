@@ -35,7 +35,7 @@ Objecta follows a **simplified MVVM (Model-View-ViewModel)** architecture with c
 ┌─────────────────────────────────────────────────────────────┐
 │                         UI Layer                            │
 │  (Jetpack Compose Screens + Navigation)                     │
-│  - CameraScreen                                             │
+│  - CameraScreen (with DetectionOverlay for visual feedback) │
 │  - ItemsListScreen                                          │
 │  - ItemDetailDialog                                         │
 └─────────────────┬───────────────────────────────────────────┘
@@ -62,11 +62,13 @@ Objecta follows a **simplified MVVM (Model-View-ViewModel)** architecture with c
 ┌─────────────────────────────────────────────────────────────┐
 │                     Data Layer                              │
 │  - ScannedItem (promoted detection data model)             │
+│  - DetectionResult (overlay visualization data)            │
+│  - DetectionResponse (wrapper for items + results)         │
 │  - DetectionCandidate (multi-frame tracking data)          │
 │  - RawDetection (ML Kit raw output)                        │
 │  - ItemCategory (enum with ML Kit mapping)                 │
 │  - ConfidenceLevel (LOW/MEDIUM/HIGH classification)        │
-│  - ScanMode (OBJECT_DETECTION/BARCODE)                     │
+│  - ScanMode (OBJECT_DETECTION/BARCODE/DOCUMENT_TEXT)       │
 │  - In-memory state (StateFlow)                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -112,7 +114,10 @@ app/
 │   │   ├── ObjectaApp.kt                   # Root composable
 │   │   ├── camera/                         # Camera-related code
 │   │   │   ├── CameraScreen.kt            # Camera UI
-│   │   │   └── CameraXManager.kt          # Camera logic
+│   │   │   ├── CameraXManager.kt          # Camera logic
+│   │   │   ├── DetectionOverlay.kt        # Visual detection overlay
+│   │   │   ├── ModeSwitcher.kt            # Scan mode selector
+│   │   │   └── ScanMode.kt                # Scan mode enum
 │   │   ├── items/                          # Items/detection results
 │   │   │   ├── ScannedItem.kt             # Data model
 │   │   │   ├── ItemsViewModel.kt          # State management
@@ -120,6 +125,8 @@ app/
 │   │   │   └── ItemDetailDialog.kt        # Detail dialog
 │   │   ├── ml/                             # Machine learning
 │   │   │   ├── ObjectDetectorClient.kt    # ML Kit wrapper
+│   │   │   ├── DetectionResult.kt         # Overlay data model
+│   │   │   ├── DetectionResponse.kt       # Response wrapper
 │   │   │   ├── ItemCategory.kt            # Category enum
 │   │   │   ├── PricingEngine.kt           # Price logic
 │   │   │   ├── BarcodeScannerClient.kt    # Barcode scanning
