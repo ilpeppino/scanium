@@ -16,6 +16,8 @@ import com.example.objecta.ml.BarcodeScannerClient
 import com.example.objecta.ml.DetectionResult
 import com.example.objecta.ml.DocumentTextRecognitionClient
 import com.example.objecta.ml.ObjectDetectorClient
+import com.example.objecta.tracking.ObjectTracker
+import com.example.objecta.tracking.TrackerConfig
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
@@ -47,6 +49,18 @@ class CameraXManager(
     private val barcodeScanner = BarcodeScannerClient()
     private val textRecognizer = DocumentTextRecognitionClient()
 
+    // Object tracker for de-duplication
+    private val objectTracker = ObjectTracker(
+        config = TrackerConfig(
+            minFramesToConfirm = 3,      // Require 3 frames to confirm
+            minConfidence = 0.4f,         // Minimum confidence 0.4
+            minBoxArea = 0.001f,          // Minimum 0.1% of frame
+            maxFrameGap = 5,              // Allow 5 frames gap for matching
+            minMatchScore = 0.3f,         // Minimum 0.3 match score for spatial matching
+            expiryFrames = 10             // Expire after 10 frames without detection
+        )
+    )
+
     // Executor for camera operations
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
@@ -56,6 +70,10 @@ class CameraXManager(
     // State for scanning mode
     private var isScanning = false
     private var scanJob: Job? = null
+    private var currentScanMode: ScanMode? = null
+
+    // Frame counter for periodic cleanup and stats logging
+    private var frameCounter = 0
 
     /**
      * Initializes and binds camera to the PreviewView.
@@ -106,6 +124,7 @@ class CameraXManager(
 
     /**
      * Captures a single frame and runs detection based on the current scan mode.
+     * Single-frame captures bypass the candidate tracker for immediate results.
      */
     fun captureSingleFrame(
         scanMode: ScanMode,
@@ -118,8 +137,9 @@ class CameraXManager(
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
             Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
             detectionScope.launch {
-                val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                Log.d(TAG, "captureSingleFrame: Got ${items.size} items and ${detections.size} detections")
+                // Single-frame capture uses direct detection (no candidate tracking)
+                val items = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                 withContext(Dispatchers.Main) {
                     onResult(items)
                     onDetectionResult(detections)
@@ -130,8 +150,8 @@ class CameraXManager(
     }
 
     /**
-     * Starts continuous scanning mode.
-     * Captures frames periodically (every ~1000ms) and runs detection based on the current scan mode.
+     * Starts continuous scanning mode with multi-frame candidate tracking.
+     * Captures frames periodically and uses CandidateTracker to promote only stable detections.
      */
     fun startScanning(
         scanMode: ScanMode,
@@ -144,11 +164,31 @@ class CameraXManager(
         }
 
         Log.d(TAG, "startScanning: Starting continuous scanning mode with $scanMode")
+
+        // Reset tracker when starting a new scan session or switching modes
+        if (currentScanMode != scanMode || currentScanMode == null) {
+            Log.i(TAG, "startScanning: Resetting tracker (mode change: $currentScanMode -> $scanMode)")
+            objectTracker.reset()
+            currentScanMode = scanMode
+        }
+
         isScanning = true
+        frameCounter = 0
+
+        // Clear candidate tracker when starting new scan
+        candidateTracker.clear()
 
         var lastAnalysisTime = 0L
-        val analysisIntervalMs = 1000L // Analyze every 1 second
+        val analysisIntervalMs = 800L // Analyze every 800ms for better tracking
         var isProcessing = false // Prevent overlapping processing
+
+        // Log detection configuration (debug builds only)
+        com.example.objecta.ml.DetectionLogger.logConfiguration(
+            minSeenCount = 1,
+            minConfidence = 0.0f,
+            candidateTimeoutMs = 3000L,
+            analysisIntervalMs = analysisIntervalMs
+        )
 
         // Clear any previous analyzer to avoid stale callbacks
         imageAnalysis?.clearAnalyzer()
@@ -166,18 +206,28 @@ class CameraXManager(
             if (currentTime - lastAnalysisTime >= analysisIntervalMs && !isProcessing) {
                 lastAnalysisTime = currentTime
                 isProcessing = true
-                Log.d(TAG, "startScanning: Processing frame ${imageProxy.width}x${imageProxy.height}")
+                frameCounter++
+                Log.d(TAG, "startScanning: Processing frame #$frameCounter ${imageProxy.width}x${imageProxy.height}")
 
                 detectionScope.launch {
                     try {
-                        val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                        Log.d(TAG, "startScanning: Got ${items.size} items and ${detections.size} detections")
-                        withContext(Dispatchers.Main) {
-                            if (items.isNotEmpty()) {
+                        // Use STREAM_MODE for better tracking when scanning objects
+                        val useStreamMode = (scanMode == ScanMode.OBJECT_DETECTION)
+                        val items = processImageProxy(imageProxy, scanMode, useStreamMode = useStreamMode)
+                        Log.d(TAG, "startScanning: Got ${items.size} items")
+                        if (items.isNotEmpty()) {
+                            withContext(Dispatchers.Main) {
                                 onResult(items)
                             }
                             // Always send detection results for overlay (even if empty to clear old detections)
                             onDetectionResult(detections)
+                        }
+
+                        // Periodic cleanup and stats logging (every 10 frames)
+                        if (frameCounter % 10 == 0) {
+                            candidateTracker.cleanupExpiredCandidates()
+                            val stats = candidateTracker.getStats()
+                            com.example.objecta.ml.DetectionLogger.logTrackerStats(stats)
                         }
                     } finally {
                         isProcessing = false
@@ -199,11 +249,14 @@ class CameraXManager(
         imageAnalysis?.clearAnalyzer()
         scanJob?.cancel()
         scanJob = null
+        // Reset tracker when stopping scan
+        objectTracker.reset()
+        currentScanMode = null
     }
 
     /**
      * Processes an ImageProxy: converts to Bitmap and runs ML Kit detection based on scan mode.
-     * Returns a Pair of (ScannedItems, DetectionResults).
+     * Used for single-frame captures (bypasses candidate tracking).
      */
     private suspend fun processImageProxy(
         imageProxy: ImageProxy,
@@ -236,12 +289,17 @@ class CameraXManager(
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
-                    val response = objectDetector.detectObjects(
-                        image = inputImage,
-                        sourceBitmap = bitmapForThumb,
-                        useStreamMode = useStreamMode
-                    )
-                    Pair(response.scannedItems, response.detectionResults)
+                    // Use tracking pipeline for object detection in scanning mode
+                    if (useStreamMode && isScanning) {
+                        processObjectDetectionWithTracking(inputImage, bitmapForThumb)
+                    } else {
+                        // Single-shot detection without tracking
+                        objectDetector.detectObjects(
+                            image = inputImage,
+                            sourceBitmap = bitmapForThumb,
+                            useStreamMode = useStreamMode
+                        )
+                    }
                 }
                 ScanMode.BARCODE -> {
                     // Barcode and text scanners don't return DetectionResults yet
@@ -265,6 +323,40 @@ class CameraXManager(
         } finally {
             imageProxy.close()
         }
+    }
+
+    /**
+     * Process object detection with tracking to reduce duplicates.
+     */
+    private suspend fun processObjectDetectionWithTracking(
+        inputImage: InputImage,
+        sourceBitmap: Bitmap?
+    ): List<ScannedItem> {
+        // Get raw detections with tracking metadata
+        val detections = objectDetector.detectObjectsWithTracking(
+            image = inputImage,
+            sourceBitmap = sourceBitmap,
+            useStreamMode = true
+        )
+
+        Log.d(TAG, "processObjectDetectionWithTracking: Got ${detections.size} raw detections")
+
+        // Process through tracker
+        val confirmedCandidates = objectTracker.processFrame(detections)
+
+        Log.d(TAG, "processObjectDetectionWithTracking: ${confirmedCandidates.size} newly confirmed candidates")
+
+        // Log tracker stats
+        val stats = objectTracker.getStats()
+        Log.d(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
+
+        // Convert confirmed candidates to ScannedItems
+        val items = confirmedCandidates.map { candidate ->
+            objectDetector.candidateToScannedItem(candidate)
+        }
+
+        Log.d(TAG, "processObjectDetectionWithTracking: Returning ${items.size} scanned items")
+        return items
     }
 
     /**
@@ -316,11 +408,21 @@ class CameraXManager(
      */
     fun shutdown() {
         stopScanning()
+        objectTracker.reset() // Ensure tracker is cleaned up
         objectDetector.close()
         barcodeScanner.close()
         textRecognizer.close()
         cameraExecutor.shutdown()
         detectionScope.cancel()
+    }
+
+    /**
+     * Resets the object tracker.
+     * Useful when the user wants to start a fresh scan session.
+     */
+    fun resetTracker() {
+        Log.i(TAG, "resetTracker: Manually resetting object tracker")
+        objectTracker.reset()
     }
 }
 

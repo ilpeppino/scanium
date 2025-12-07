@@ -154,42 +154,44 @@ private fun ItemRow(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = item.category.displayName,
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                // Show text preview for documents or barcode value for barcodes
-                when {
-                    item.recognizedText != null -> {
-                        Text(
-                            text = item.recognizedText.take(50) + if (item.recognizedText.length > 50) "..." else "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2
-                        )
-                    }
-                    item.barcodeValue != null -> {
-                        Text(
-                            text = "Barcode: ${item.barcodeValue}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    else -> {
-                        Text(
-                            text = item.formattedPriceRange,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                // Category with confidence badge
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = item.category.displayName,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    ConfidenceBadge(confidenceLevel = item.confidenceLevel)
                 }
 
                 Text(
-                    text = formatTimestamp(item.timestamp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = item.formattedPriceRange,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary
                 )
+
+                // Timestamp and confidence percentage
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = formatTimestamp(item.timestamp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "•",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = item.formattedConfidence,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -215,6 +217,30 @@ private fun BoxScope.EmptyItemsContent() {
             text = "Use the camera to scan objects",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/**
+ * Confidence level badge with color coding.
+ */
+@Composable
+private fun ConfidenceBadge(confidenceLevel: ConfidenceLevel) {
+    val (backgroundColor, textColor) = when (confidenceLevel) {
+        ConfidenceLevel.HIGH -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        ConfidenceLevel.MEDIUM -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        ConfidenceLevel.LOW -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+    }
+
+    Surface(
+        shape = MaterialTheme.shapes.extraSmall,
+        color = backgroundColor
+    ) {
+        Text(
+            text = confidenceLevel.displayName,
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
     }
 }
