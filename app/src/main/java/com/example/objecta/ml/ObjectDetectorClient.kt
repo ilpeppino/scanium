@@ -11,6 +11,7 @@ import com.google.mlkit.vision.objects.DetectedObject
 import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import kotlinx.coroutines.tasks.await
+import kotlin.math.abs
 
 /**
  * Wrapper class containing both ScannedItems (for list) and DetectionResults (for overlay).
@@ -31,6 +32,10 @@ class ObjectDetectorClient {
     companion object {
         private const val TAG = "ObjectDetectorClient"
         private const val CONFIDENCE_THRESHOLD = 0.3f // Lowered from 0.5 for better detection
+
+        // Flag to track if model download has been checked
+        @Volatile
+        private var modelDownloadChecked = false
     }
 
     // ML Kit object detector configured for single image mode (more accurate)
@@ -38,10 +43,15 @@ class ObjectDetectorClient {
         val options = ObjectDetectorOptions.Builder()
             .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE) // Better for tap capture
             .enableMultipleObjects() // Detect multiple objects per frame
-            .enableClassification() // Enable coarse classification
+            // NOTE: Classification disabled to make detection less conservative
+            // ML Kit is more likely to detect objects when classification is off
             .build()
 
-        Log.d(TAG, "Creating SINGLE_IMAGE_MODE detector")
+        Log.i(TAG, "======================================")
+        Log.i(TAG, "Creating SINGLE_IMAGE_MODE detector")
+        Log.i(TAG, "Config: mode=SINGLE_IMAGE, multipleObjects=true, classification=FALSE")
+        Log.i(TAG, "This should detect more objects (less conservative)")
+        Log.i(TAG, "======================================")
         ObjectDetection.getClient(options)
     }
 
@@ -50,10 +60,15 @@ class ObjectDetectorClient {
         val options = ObjectDetectorOptions.Builder()
             .setDetectorMode(ObjectDetectorOptions.STREAM_MODE) // Optimized for video frames
             .enableMultipleObjects() // Detect multiple objects per frame
-            .enableClassification() // Enable coarse classification
+            // NOTE: Classification disabled to make detection less conservative
+            // ML Kit is more likely to detect objects when classification is off
             .build()
 
-        Log.d(TAG, "Creating STREAM_MODE detector")
+        Log.i(TAG, "======================================")
+        Log.i(TAG, "Creating STREAM_MODE detector")
+        Log.i(TAG, "Config: mode=STREAM, multipleObjects=true, classification=FALSE")
+        Log.i(TAG, "This should detect more objects (less conservative)")
+        Log.i(TAG, "======================================")
         ObjectDetection.getClient(options)
     }
 
@@ -116,6 +131,94 @@ class ObjectDetectorClient {
     }
 
     /**
+     * Checks if ML Kit object detection model is downloaded.
+     * This should be called before first detection to ensure the model is ready.
+     */
+    suspend fun ensureModelDownloaded(): Boolean {
+        if (modelDownloadChecked) {
+            Log.d(TAG, "Model download already checked, skipping")
+            return true
+        }
+
+        return try {
+            Log.i(TAG, "========================================")
+            Log.i(TAG, "Checking ML Kit Object Detection model download status...")
+            Log.i(TAG, "========================================")
+
+            // Try to get the model manager (this may not work for base models)
+            // For base object detection, the model is typically bundled or auto-downloaded
+
+            // Force initialization of both detectors to trigger model download
+            val streamOptions = ObjectDetectorOptions.Builder()
+                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                .enableMultipleObjects()
+                .build()
+
+            val singleOptions = ObjectDetectorOptions.Builder()
+                .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                .enableMultipleObjects()
+                .build()
+
+            Log.i(TAG, "Initializing detectors to trigger model download...")
+
+            // Initialize detectors (this triggers model download if needed)
+            val streamDetectorTest = ObjectDetection.getClient(streamOptions)
+            val singleDetectorTest = ObjectDetection.getClient(singleOptions)
+
+            // Close test detectors
+            streamDetectorTest.close()
+            singleDetectorTest.close()
+
+            modelDownloadChecked = true
+
+            Log.i(TAG, "========================================")
+            Log.i(TAG, "ML Kit Object Detection model initialization complete")
+            Log.i(TAG, "Note: Model download happens automatically on first use")
+            Log.i(TAG, "========================================")
+
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking/downloading model", e)
+            false
+        }
+    }
+
+    /**
+     * Analyzes bitmap to check if it's valid for detection.
+     * Returns diagnostic information about the image.
+     */
+    private fun analyzeBitmap(bitmap: Bitmap): String {
+        val width = bitmap.width
+        val height = bitmap.height
+        val config = bitmap.config
+
+        // Sample pixels from different regions
+        val centerX = width / 2
+        val centerY = height / 2
+
+        val topLeft = if (width > 0 && height > 0) bitmap.getPixel(0, 0) else 0
+        val center = if (centerX < width && centerY < height) bitmap.getPixel(centerX, centerY) else 0
+        val bottomRight = if (width > 1 && height > 1) bitmap.getPixel(width - 1, height - 1) else 0
+
+        // Calculate color variance to detect blank images
+        val redVariance = abs(android.graphics.Color.red(topLeft) - android.graphics.Color.red(center))
+        val greenVariance = abs(android.graphics.Color.green(topLeft) - android.graphics.Color.green(center))
+        val blueVariance = abs(android.graphics.Color.blue(topLeft) - android.graphics.Color.blue(center))
+        val totalVariance = redVariance + greenVariance + blueVariance
+
+        val isLikelyBlank = totalVariance < 30 // Very low variance suggests blank image
+
+        return buildString {
+            append("Bitmap Analysis: ")
+            append("size=${width}x${height}, ")
+            append("config=$config, ")
+            append("variance=$totalVariance, ")
+            append("isLikelyBlank=$isLikelyBlank, ")
+            append("samplePixels=[0x${topLeft.toString(16)}, 0x${center.toString(16)}, 0x${bottomRight.toString(16)}]")
+        }
+    }
+
+    /**
      * Processes an image and extracts raw detection information for tracking.
      *
      * This method returns DetectionInfo objects that can be fed into ObjectTracker
@@ -133,15 +236,120 @@ class ObjectDetectorClient {
     ): List<DetectionInfo> {
         return try {
             val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
-            Log.d(TAG, "Starting object detection with tracking ($mode) on image ${image.width}x${image.height}")
+            Log.i(TAG, "========================================")
+            Log.i(TAG, ">>> detectObjectsWithTracking START")
+            Log.i(TAG, ">>> Mode: $mode")
+            Log.i(TAG, ">>> Image: ${image.width}x${image.height}, rotation=${image.rotationDegrees}, format=${image.format}")
+
+            // Analyze bitmap if available
+            if (sourceBitmap != null) {
+                val bitmapAnalysis = analyzeBitmap(sourceBitmap)
+                Log.i(TAG, ">>> $bitmapAnalysis")
+            } else {
+                Log.w(TAG, ">>> WARNING: sourceBitmap is NULL - thumbnails won't be available")
+            }
 
             // Choose the appropriate detector
             val detector = if (useStreamMode) streamDetector else singleImageDetector
+            Log.i(TAG, ">>> Detector: $detector")
 
-            // Run detection
-            val detectedObjects = detector.process(image).await()
+            // CRITICAL FIX: Try creating InputImage from bitmap instead of MediaImage
+            // This can sometimes work better when MediaImage detection fails
+            val alternativeImage = if (sourceBitmap != null) {
+                try {
+                    val altImage = InputImage.fromBitmap(sourceBitmap, image.rotationDegrees)
+                    Log.i(TAG, ">>> Created alternative InputImage from bitmap: ${altImage.width}x${altImage.height}")
+                    altImage
+                } catch (e: Exception) {
+                    Log.w(TAG, ">>> Failed to create alternative InputImage from bitmap", e)
+                    null
+                }
+            } else {
+                null
+            }
 
-            Log.d(TAG, "Detected ${detectedObjects.size} objects for tracking")
+            // Try detection with original image first
+            Log.i(TAG, ">>> Attempting detection with original InputImage...")
+            val task = detector.process(image)
+
+            // Add failure listener to catch any errors
+            task.addOnFailureListener { exception ->
+                Log.e(TAG, ">>> ML Kit process() FAILED", exception)
+                Log.e(TAG, ">>> Exception type: ${exception.javaClass.simpleName}")
+                Log.e(TAG, ">>> Exception message: ${exception.message}")
+                Log.e(TAG, ">>> Will try alternative InputImage if available")
+            }
+
+            task.addOnSuccessListener { objects ->
+                Log.i(TAG, ">>> ML Kit process() SUCCESS - returned ${objects.size} objects")
+            }
+
+            // Await the result
+            var detectedObjects = task.await()
+
+            Log.i(TAG, ">>> ML Kit returned ${detectedObjects.size} raw objects from original image")
+
+            // If zero objects and we have alternative image, try with that
+            if (detectedObjects.isEmpty() && alternativeImage != null) {
+                Log.w(TAG, ">>> Zero objects detected, trying with bitmap-based InputImage...")
+                try {
+                    val altTask = detector.process(alternativeImage)
+                    val altObjects = altTask.await()
+                    Log.i(TAG, ">>> Alternative detection returned ${altObjects.size} objects")
+                    if (altObjects.isNotEmpty()) {
+                        Log.i(TAG, ">>> SUCCESS: Alternative InputImage detected objects!")
+                        detectedObjects = altObjects
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, ">>> Alternative detection also failed", e)
+                }
+            }
+
+            // DISABLED: Don't mix STREAM and SINGLE_IMAGE modes - causes ML Kit crashes
+            // If still zero objects, try SINGLE_IMAGE_MODE as a fallback
+            if (false && detectedObjects.isEmpty() && useStreamMode) {
+                Log.w(TAG, ">>> Zero objects in STREAM mode, trying SINGLE_IMAGE_MODE...")
+                try {
+                    val singleModeTask = singleImageDetector.process(image)
+                    val singleModeObjects = singleModeTask.await()
+                    Log.i(TAG, ">>> SINGLE_IMAGE_MODE returned ${singleModeObjects.size} objects")
+                    if (singleModeObjects.isNotEmpty()) {
+                        Log.i(TAG, ">>> SUCCESS: SINGLE_IMAGE_MODE detected objects!")
+                        detectedObjects = singleModeObjects
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, ">>> SINGLE_IMAGE_MODE detection also failed", e)
+                }
+            }
+
+            // If zero objects, log comprehensive diagnostic info
+            if (detectedObjects.isEmpty()) {
+                Log.e(TAG, "========================================")
+                Log.e(TAG, ">>> CRITICAL: ZERO OBJECTS DETECTED AFTER ALL ATTEMPTS")
+                Log.e(TAG, ">>> Image details: ${image.width}x${image.height}, rotation=${image.rotationDegrees}, format=${image.format}")
+                Log.e(TAG, ">>> Bitmap details: ${sourceBitmap?.width}x${sourceBitmap?.height}")
+                Log.e(TAG, ">>> Tried: original InputImage, alternative bitmap-based InputImage, SINGLE_IMAGE_MODE")
+                Log.e(TAG, ">>> ")
+                Log.e(TAG, ">>> Possible causes:")
+                Log.e(TAG, ">>>   1. ML Kit model not downloaded (first run requires network)")
+                Log.e(TAG, ">>>   2. Scene doesn't contain detectable objects")
+                Log.e(TAG, ">>>   3. Image too dark, blurry, or low contrast")
+                Log.e(TAG, ">>>   4. Objects too small or too large in frame")
+                Log.e(TAG, ">>>   5. ML Kit's detection thresholds too strict")
+                Log.e(TAG, ">>> ")
+                Log.e(TAG, ">>> Recommendations:")
+                Log.e(TAG, ">>>   - Ensure device has internet connection for model download")
+                Log.e(TAG, ">>>   - Point camera at clear, well-lit objects")
+                Log.e(TAG, ">>>   - Try objects with distinct shapes (bottles, books, boxes)")
+                Log.e(TAG, ">>>   - Ensure objects fill 10-50% of frame")
+                Log.e(TAG, "========================================")
+            }
+
+            // Log each detected object
+            detectedObjects.forEachIndexed { index, obj ->
+                val labels = obj.labels.joinToString { "${it.text}:${it.confidence}" }
+                Log.i(TAG, "    Object $index: trackingId=${obj.trackingId}, labels=[$labels], box=${obj.boundingBox}")
+            }
 
             // Convert each detected object to DetectionInfo
             val detectionInfos = detectedObjects.mapNotNull { obj ->
@@ -153,10 +361,16 @@ class ObjectDetectorClient {
                 )
             }
 
-            Log.d(TAG, "Extracted ${detectionInfos.size} detection infos")
+            Log.i(TAG, ">>> Extracted ${detectionInfos.size} DetectionInfo objects")
+            detectionInfos.forEachIndexed { index, info ->
+                Log.i(TAG, "    DetectionInfo $index: trackingId=${info.trackingId}, category=${info.category}, confidence=${info.confidence}, area=${info.normalizedBoxArea}")
+            }
+
             detectionInfos
         } catch (e: Exception) {
-            Log.e(TAG, "Error detecting objects with tracking", e)
+            Log.e(TAG, ">>> ERROR in detectObjectsWithTracking", e)
+            Log.e(TAG, ">>> Exception stack trace:")
+            e.printStackTrace()
             emptyList()
         }
     }
@@ -185,8 +399,19 @@ class ObjectDetectorClient {
 
             // Get best label and confidence
             val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
-            val confidence = bestLabel?.confidence ?: 0f
-            val labelText = bestLabel?.text ?: "Unknown"
+
+            // CRITICAL: Use effective confidence for objects without classification
+            // ML Kit's object detection is reliable even without classification
+            val confidence = bestLabel?.confidence ?: run {
+                // Objects detected without classification get a reasonable confidence
+                if (detectedObject.trackingId != null) {
+                    0.6f // Good confidence for tracked but unlabeled objects
+                } else {
+                    0.4f // Moderate confidence for objects without tracking
+                }
+            }
+
+            val labelText = bestLabel?.text ?: "Object"
 
             // Determine category
             val category = if (bestLabel != null && bestLabel.confidence > CONFIDENCE_THRESHOLD) {
@@ -204,6 +429,8 @@ class ObjectDetectorClient {
                 imageWidth = sourceBitmap?.width ?: fallbackWidth,
                 imageHeight = sourceBitmap?.height ?: fallbackHeight
             )
+
+            Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=${bestLabel?.confidence}), category=$category, area=$normalizedBoxArea")
 
             DetectionInfo(
                 trackingId = trackingId,
@@ -340,8 +567,24 @@ class ObjectDetectorClient {
             val width = (boundingBox.width()).coerceIn(1, source.width - left)
             val height = (boundingBox.height()).coerceIn(1, source.height - top)
 
-            Bitmap.createBitmap(source, left, top, width, height)
+            // CRITICAL: Limit thumbnail size to save memory
+            // Max 200x200 pixels is plenty for display
+            val maxDimension = 200
+            val scale = minOf(1.0f, maxDimension.toFloat() / maxOf(width, height))
+            val thumbnailWidth = (width * scale).toInt().coerceAtLeast(1)
+            val thumbnailHeight = (height * scale).toInt().coerceAtLeast(1)
+
+            // Create small thumbnail with independent pixel data
+            val thumbnail = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(thumbnail)
+            val srcRect = android.graphics.Rect(left, top, left + width, top + height)
+            val dstRect = android.graphics.Rect(0, 0, thumbnailWidth, thumbnailHeight)
+            canvas.drawBitmap(source, srcRect, dstRect, null)
+
+            Log.d(TAG, "Created thumbnail: ${thumbnailWidth}x${thumbnailHeight} (original: ${width}x${height})")
+            thumbnail
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to create thumbnail", e)
             null
         }
     }

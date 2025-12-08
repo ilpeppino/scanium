@@ -137,7 +137,19 @@ class DocumentTextRecognitionClient {
             val height = (boundingBox.height()).coerceIn(1, source.height - top)
 
             if (width > 0 && height > 0) {
-                Bitmap.createBitmap(source, left, top, width, height)
+                // CRITICAL: Limit thumbnail size to save memory (max 200x200)
+                val maxDimension = 200
+                val scale = minOf(1.0f, maxDimension.toFloat() / maxOf(width, height))
+                val thumbnailWidth = (width * scale).toInt().coerceAtLeast(1)
+                val thumbnailHeight = (height * scale).toInt().coerceAtLeast(1)
+
+                // Create small thumbnail with independent pixel data
+                val thumbnail = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.ARGB_8888)
+                val canvas = android.graphics.Canvas(thumbnail)
+                val srcRect = android.graphics.Rect(left, top, left + width, top + height)
+                val dstRect = android.graphics.Rect(0, 0, thumbnailWidth, thumbnailHeight)
+                canvas.drawBitmap(source, srcRect, dstRect, null)
+                thumbnail
             } else {
                 null
             }
