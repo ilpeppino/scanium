@@ -3,6 +3,8 @@ package com.example.objecta.ml
 import android.graphics.Rect
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for DetectionResult data class.
@@ -12,6 +14,7 @@ import org.junit.Test
  * - Formatted price range display logic
  * - Proper handling of optional trackingId
  */
+@RunWith(RobolectricTestRunner::class)
 class DetectionResultTest {
 
     @Test

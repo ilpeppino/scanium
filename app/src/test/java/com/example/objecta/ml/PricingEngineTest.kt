@@ -2,6 +2,8 @@ package com.example.objecta.ml
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for PricingEngine EUR price range generation.
@@ -14,6 +16,7 @@ import org.junit.Test
  * - Price range bounds (no negative prices)
  * - Randomization produces valid ranges
  */
+@RunWith(RobolectricTestRunner::class)
 class PricingEngineTest {
 
     @Test
@@ -189,8 +192,10 @@ class PricingEngineTest {
 
     @Test
     fun whenPriceRangeGenerated_thenMinIsAtLeastHalfEuro() {
-        // Act - Test all categories
-        val categories = ItemCategory.values().filter { it != ItemCategory.PLACE }
+        // Act - Test all categories except non-priced ones
+        val categories = ItemCategory.values().filter {
+            it != ItemCategory.PLACE && it != ItemCategory.DOCUMENT
+        }
 
         // Assert
         categories.forEach { category ->
@@ -201,8 +206,10 @@ class PricingEngineTest {
 
     @Test
     fun whenPriceRangeGenerated_thenMaxIsAtLeastOneEuroAboveMin() {
-        // Act - Test all categories
-        val categories = ItemCategory.values().filter { it != ItemCategory.PLACE }
+        // Act - Test all categories except non-priced ones
+        val categories = ItemCategory.values().filter {
+            it != ItemCategory.PLACE && it != ItemCategory.DOCUMENT
+        }
 
         // Assert
         categories.forEach { category ->

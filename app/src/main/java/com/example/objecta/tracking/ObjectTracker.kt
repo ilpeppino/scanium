@@ -44,23 +44,23 @@ class ObjectTracker(
      */
     fun processFrame(detections: List<DetectionInfo>): List<ObjectCandidate> {
         currentFrame++
+        Log.i(TAG, ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}")
 
         val newlyConfirmed = mutableListOf<ObjectCandidate>()
         val matchedCandidates = mutableSetOf<String>()
 
         // Process each detection
-        for (detection in detections) {
-            // Skip if bounding box is too small
+        for ((index, detection) in detections.withIndex()) {
+            Log.i(TAG, "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}")
+
+            // Skip if bounding box is too small (hard filter)
             if (detection.normalizedBoxArea < config.minBoxArea) {
-                Log.d(TAG, "Skipping detection: box too small (${detection.normalizedBoxArea})")
+                Log.i(TAG, "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})")
                 continue
             }
 
-            // Skip if confidence is too low
-            if (detection.confidence < config.minConfidence) {
-                Log.d(TAG, "Skipping detection: confidence too low (${detection.confidence})")
-                continue
-            }
+            // Note: We don't filter by confidence here - candidates can be created with low confidence
+            // The confirmation logic will check minConfidence threshold later
 
             // Try to match with existing candidate
             val matchedCandidate = findMatchingCandidate(detection)
@@ -81,18 +81,14 @@ class ObjectTracker(
 
                 matchedCandidates.add(matchedCandidate.internalId)
 
-                Log.d(TAG, "Updated candidate ${matchedCandidate.internalId}: " +
-                        "seenCount=${matchedCandidate.seenCount}, " +
-                        "maxConfidence=${matchedCandidate.maxConfidence}")
+                Log.i(TAG, "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}")
 
                 // Check if it just became confirmed
                 if (!wasConfirmed && isConfirmed(matchedCandidate)) {
                     if (!confirmedIds.contains(matchedCandidate.internalId)) {
                         confirmedIds.add(matchedCandidate.internalId)
                         newlyConfirmed.add(matchedCandidate)
-                        Log.i(TAG, "✓ CONFIRMED candidate ${matchedCandidate.internalId}: " +
-                                "${matchedCandidate.category} (${matchedCandidate.labelText}) " +
-                                "after ${matchedCandidate.seenCount} frames")
+                        Log.i(TAG, "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames")
                     }
                 }
             } else {
@@ -101,15 +97,14 @@ class ObjectTracker(
                 candidates[newCandidate.internalId] = newCandidate
                 matchedCandidates.add(newCandidate.internalId)
 
-                Log.d(TAG, "Created new candidate ${newCandidate.internalId}: " +
-                        "${newCandidate.category} (${newCandidate.labelText})")
+                Log.i(TAG, "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})")
 
-                // Check if it's immediately confirmed (rare, but possible with high threshold settings)
+                // Check if it's immediately confirmed (rare, but possible with minFramesToConfirm=1)
                 if (isConfirmed(newCandidate)) {
                     if (!confirmedIds.contains(newCandidate.internalId)) {
                         confirmedIds.add(newCandidate.internalId)
                         newlyConfirmed.add(newCandidate)
-                        Log.i(TAG, "✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}")
+                        Log.i(TAG, "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}")
                     }
                 }
             }
@@ -118,6 +113,7 @@ class ObjectTracker(
         // Remove stale candidates
         removeExpiredCandidates(matchedCandidates)
 
+        Log.i(TAG, ">>> processFrame END: returning ${newlyConfirmed.size} newly confirmed candidates")
         return newlyConfirmed
     }
 
@@ -151,11 +147,21 @@ class ObjectTracker(
             val iou = candidate.calculateIoU(detection.boundingBox)
 
             // Calculate normalized center distance
+            // Use diagonal of detection box as normalization factor (more robust than fixed 1000px)
             val distance = candidate.distanceTo(detection.boundingBox)
-            val normalizedDistance = distance / 1000f // Normalize to ~0-1 range (assuming 1000px max)
+            val detectionBoxDiagonal = kotlin.math.sqrt(
+                (detection.boundingBox.width() * detection.boundingBox.width() +
+                detection.boundingBox.height() * detection.boundingBox.height()).toDouble()
+            ).toFloat()
+            val normalizedDistance = if (detectionBoxDiagonal > 0) {
+                (distance / detectionBoxDiagonal).coerceIn(0f, 2f) / 2f // Normalize to 0-1 range
+            } else {
+                1f // Maximum distance if box has no size
+            }
 
             // Combined score: prioritize IoU, but also consider distance
-            val score = iou * 0.7f + (1f - normalizedDistance) * 0.3f
+            // IoU is weighted 60%, distance is weighted 40% (more balanced for movement)
+            val score = iou * 0.6f + (1f - normalizedDistance) * 0.4f
 
             if (score > bestScore && score > config.minMatchScore) {
                 bestScore = score
