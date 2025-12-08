@@ -5,6 +5,8 @@ import com.example.objecta.ml.ItemCategory
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Integration tests for the complete object tracking pipeline.
@@ -12,6 +14,7 @@ import org.junit.Test
  * Tests realistic scenarios of multi-frame object detection and tracking,
  * including de-duplication, confirmation, and expiry behaviors.
  */
+@RunWith(RobolectricTestRunner::class)
 class TrackingPipelineIntegrationTest {
 
     private lateinit var tracker: ObjectTracker

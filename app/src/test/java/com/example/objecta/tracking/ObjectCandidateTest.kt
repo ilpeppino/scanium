@@ -4,6 +4,8 @@ import android.graphics.RectF
 import com.example.objecta.ml.ItemCategory
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for ObjectCandidate.
@@ -11,6 +13,7 @@ import org.junit.Test
  * Tests the data class methods for tracking objects across frames,
  * including spatial matching helpers (IoU, distance calculations).
  */
+@RunWith(RobolectricTestRunner::class)
 class ObjectCandidateTest {
 
     @Test

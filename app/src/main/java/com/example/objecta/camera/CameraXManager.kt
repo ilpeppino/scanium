@@ -6,6 +6,7 @@ import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.YuvImage
 import android.util.Log
+import android.util.Size
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -50,14 +51,15 @@ class CameraXManager(
     private val textRecognizer = DocumentTextRecognitionClient()
 
     // Object tracker for de-duplication
+    // Using very permissive thresholds to ensure items are actually promoted
     private val objectTracker = ObjectTracker(
         config = TrackerConfig(
-            minFramesToConfirm = 1,      // Require 1 frame to confirm (instant detection)
-            minConfidence = 0.3f,         // Minimum confidence 0.3
-            minBoxArea = 0.001f,          // Minimum 0.1% of frame
-            maxFrameGap = 5,              // Allow 5 frames gap for matching
-            minMatchScore = 0.3f,         // Minimum 0.3 match score for spatial matching
-            expiryFrames = 10             // Expire after 10 frames without detection
+            minFramesToConfirm = 1,      // Confirm immediately (rely on session-level dedup)
+            minConfidence = 0.2f,         // Very low confidence threshold (20%)
+            minBoxArea = 0.0005f,         // Very small box area (0.05% of frame)
+            maxFrameGap = 8,              // Allow 8 frames gap for matching (more forgiving)
+            minMatchScore = 0.2f,         // Lower match score threshold for better spatial matching
+            expiryFrames = 15             // Keep candidates longer (15 frames)
         )
     )
 
@@ -75,6 +77,32 @@ class CameraXManager(
     // Frame counter for periodic cleanup and stats logging
     private var frameCounter = 0
 
+    // Model initialization flag
+    private var modelInitialized = false
+
+    /**
+     * Ensures ML Kit models are downloaded and ready.
+     * Should be called before starting detection.
+     */
+    suspend fun ensureModelsReady() {
+        if (modelInitialized) return
+
+        Log.i(TAG, "========================================")
+        Log.i(TAG, "Ensuring ML Kit models are ready...")
+        Log.i(TAG, "========================================")
+
+        try {
+            // Ensure object detection model is downloaded
+            val objectDetectorReady = objectDetector.ensureModelDownloaded()
+            Log.i(TAG, "Object detection model ready: $objectDetectorReady")
+
+            modelInitialized = true
+            Log.i(TAG, "All ML Kit models initialized successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error ensuring models ready", e)
+        }
+    }
+
     /**
      * Initializes and binds camera to the PreviewView.
      */
@@ -82,6 +110,9 @@ class CameraXManager(
         previewView: PreviewView,
         onDetectionResult: (List<ScannedItem>) -> Unit
     ) = withContext(Dispatchers.Main) {
+        // Ensure models are downloaded before starting camera
+        ensureModelsReady()
+
         val provider = awaitCameraProvider(context)
         cameraProvider = provider
 
@@ -222,12 +253,17 @@ class CameraXManager(
                             onFrameSize(frameSize)
                         }
 
-                        // Use SINGLE_IMAGE_MODE for all modes (more accurate than STREAM_MODE)
+                        // Use STREAM_MODE for object detection with tracking during continuous scanning
+                        // CRITICAL: Use SINGLE_IMAGE_MODE to avoid ML Kit frame buffer crash
+                        // STREAM_MODE causes native crashes when frames get recycled
                         val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                        Log.d(TAG, "startScanning: Got ${items.size} items")
+                        Log.i(TAG, ">>> startScanning: processImageProxy returned ${items.size} items")
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
+                                Log.i(TAG, ">>> startScanning: Calling onResult callback with ${items.size} items")
                                 onResult(items)
+                            } else {
+                                Log.i(TAG, ">>> startScanning: No items to report, skipping onResult callback")
                             }
                             // Always send detection results for overlay (even if empty to clear old detections)
                             onDetectionResult(detections)
@@ -236,7 +272,7 @@ class CameraXManager(
                         // Periodic stats logging (every 10 frames)
                         if (frameCounter % 10 == 0) {
                             val stats = objectTracker.getStats()
-                            Log.d(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
+                            Log.i(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
                         }
                     } finally {
                         isProcessing = false
@@ -273,6 +309,8 @@ class CameraXManager(
         useStreamMode: Boolean = false
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         return try {
+            Log.i(TAG, ">>> processImageProxy: START - scanMode=$scanMode, useStreamMode=$useStreamMode, isScanning=$isScanning")
+
             // Convert ImageProxy to Bitmap
             val mediaImage = imageProxy.image ?: run {
                 Log.e(TAG, "processImageProxy: mediaImage is null")
@@ -280,7 +318,7 @@ class CameraXManager(
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            Log.d(TAG, "processImageProxy: Processing ${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, mode=$scanMode")
+            Log.i(TAG, ">>> processImageProxy: image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees")
 
             // Build ML Kit image directly from camera buffer
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
@@ -288,7 +326,7 @@ class CameraXManager(
             // Optional bitmap for thumbnails
             val bitmapForThumb = runCatching {
                 val bitmap = imageProxy.toBitmap()
-                Log.d(TAG, "processImageProxy: Created bitmap ${bitmap.width}x${bitmap.height}")
+                Log.i(TAG, ">>> processImageProxy: Created bitmap ${bitmap.width}x${bitmap.height}")
                 rotateBitmap(bitmap, rotationDegrees)
             }.getOrElse { e ->
                 Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
@@ -298,13 +336,25 @@ class CameraXManager(
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
-                    // Single-shot detection without tracking (always use SINGLE_IMAGE_MODE)
-                    val response = objectDetector.detectObjects(
-                        image = inputImage,
-                        sourceBitmap = bitmapForThumb,
-                        useStreamMode = useStreamMode
-                    )
-                    Pair(response.scannedItems, response.detectionResults)
+                    // Use tracking pipeline when in STREAM_MODE and scanning
+                    if (useStreamMode && isScanning) {
+                        Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
+                        val items = processObjectDetectionWithTracking(inputImage, bitmapForThumb)
+                        // For now, return empty detection results when using tracking
+                        // (overlay visualization can be added later if needed)
+                        Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items")
+                        Pair(items, emptyList())
+                    } else {
+                        // Single-shot detection without tracking
+                        Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
+                        val response = objectDetector.detectObjects(
+                            image = inputImage,
+                            sourceBitmap = bitmapForThumb,
+                            useStreamMode = useStreamMode
+                        )
+                        Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
+                        Pair(response.scannedItems, response.detectionResults)
+                    }
                 }
                 ScanMode.BARCODE -> {
                     // Barcode and text scanners don't return DetectionResults yet
@@ -323,7 +373,7 @@ class CameraXManager(
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "processImageProxy: Error processing image", e)
+            Log.e(TAG, ">>> processImageProxy: ERROR", e)
             Pair(emptyList(), emptyList())
         } finally {
             imageProxy.close()
@@ -337,6 +387,8 @@ class CameraXManager(
         inputImage: InputImage,
         sourceBitmap: Bitmap?
     ): List<ScannedItem> {
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
+
         // Get raw detections with tracking metadata
         val detections = objectDetector.detectObjectsWithTracking(
             image = inputImage,
@@ -344,23 +396,28 @@ class CameraXManager(
             useStreamMode = true
         )
 
-        Log.d(TAG, "processObjectDetectionWithTracking: Got ${detections.size} raw detections")
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${detections.size} raw DetectionInfo objects from ObjectDetectorClient")
 
         // Process through tracker
         val confirmedCandidates = objectTracker.processFrame(detections)
 
-        Log.d(TAG, "processObjectDetectionWithTracking: ${confirmedCandidates.size} newly confirmed candidates")
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: ObjectTracker returned ${confirmedCandidates.size} newly confirmed candidates")
 
         // Log tracker stats
         val stats = objectTracker.getStats()
-        Log.d(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
+        Log.i(TAG, ">>> Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
 
         // Convert confirmed candidates to ScannedItems
         val items = confirmedCandidates.map { candidate ->
             objectDetector.candidateToScannedItem(candidate)
         }
 
-        Log.d(TAG, "processObjectDetectionWithTracking: Returning ${items.size} scanned items")
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${items.size} ScannedItems")
+        items.forEachIndexed { index, item ->
+            Log.i(TAG, "    ScannedItem $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
+        }
+
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: RETURNING ${items.size} items")
         return items
     }
 

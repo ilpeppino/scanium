@@ -5,6 +5,8 @@ import com.example.objecta.ml.ItemCategory
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for ObjectTracker.
@@ -16,6 +18,7 @@ import org.junit.Test
  * - Spatial matching fallback
  * - Multi-frame tracking
  */
+@RunWith(RobolectricTestRunner::class)
 class ObjectTrackerTest {
 
     private lateinit var tracker: ObjectTracker
