@@ -17,7 +17,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## ItemsViewModel Tests
 
-**File:** `app/src/test/java/com/example/scanium/items/ItemsViewModelTest.kt`
+**File:** `app/src/test/java/com/scanium/app/items/ItemsViewModelTest.kt`
 
 **Purpose:** Unit tests for ItemsViewModel state management and detection handling.
 
@@ -54,7 +54,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## CandidateTracker Tests
 
-**File:** `app/src/test/java/com/example/scanium/ml/CandidateTrackerTest.kt`
+**File:** `app/src/test/java/com/scanium/app/ml/CandidateTrackerTest.kt`
 
 **Purpose:** Unit tests for multi-frame detection pipeline.
 
@@ -83,7 +83,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## DetectionResult Tests
 
-**File:** `app/src/test/java/com/example/scanium/ml/DetectionResultTest.kt`
+**File:** `app/src/test/java/com/scanium/app/ml/DetectionResultTest.kt`
 
 **Purpose:** Unit tests for DetectionResult data class.
 
@@ -104,7 +104,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## PricingEngine Tests
 
-**File:** `app/src/test/java/com/example/scanium/ml/PricingEngineTest.kt`
+**File:** `app/src/test/java/com/scanium/app/ml/PricingEngineTest.kt`
 
 **Purpose:** Unit tests for EUR price range generation.
 
@@ -134,7 +134,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## ObjectCandidate Tests
 
-**File:** `app/src/test/java/com/example/scanium/tracking/ObjectCandidateTest.kt`
+**File:** `app/src/test/java/com/scanium/app/tracking/ObjectCandidateTest.kt`
 
 **Purpose:** Unit tests for ObjectCandidate data class and tracking helpers.
 
@@ -159,7 +159,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## ObjectTracker Tests
 
-**File:** `app/src/test/java/com/example/scanium/tracking/ObjectTrackerTest.kt`
+**File:** `app/src/test/java/com/scanium/app/tracking/ObjectTrackerTest.kt`
 
 **Purpose:** Unit tests for ObjectTracker tracking logic.
 
@@ -189,7 +189,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## TrackingPipeline Integration Tests
 
-**File:** `app/src/test/java/com/example/scanium/tracking/TrackingPipelineIntegrationTest.kt`
+**File:** `app/src/test/java/com/scanium/app/tracking/TrackingPipelineIntegrationTest.kt`
 
 **Purpose:** Integration tests for complete object tracking pipeline with realistic scenarios.
 
@@ -208,7 +208,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ## SessionDeduplicator Tests
 
-**File:** `app/src/test/java/com/example/scanium/items/SessionDeduplicatorTest.kt`
+**File:** `app/src/test/java/com/scanium/app/items/SessionDeduplicatorTest.kt`
 
 **Purpose:** Comprehensive tests for session-level deduplication.
 
