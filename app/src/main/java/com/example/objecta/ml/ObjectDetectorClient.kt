@@ -489,6 +489,16 @@ class ObjectDetectorClient {
                 imageHeight = sourceBitmap?.height ?: fallbackHeight
             )
 
+            // Normalize bounding box to 0-1 coordinates for session deduplication
+            val imageWidth = (sourceBitmap?.width ?: fallbackWidth).toFloat()
+            val imageHeight = (sourceBitmap?.height ?: fallbackHeight).toFloat()
+            val normalizedBox = android.graphics.RectF(
+                boundingBox.left / imageWidth,
+                boundingBox.top / imageHeight,
+                boundingBox.right / imageWidth,
+                boundingBox.bottom / imageHeight
+            )
+
             // Generate price range
             val priceRange = PricingEngine.generatePriceRange(category, boxArea)
 
@@ -497,7 +507,9 @@ class ObjectDetectorClient {
                 thumbnail = thumbnail,
                 category = category,
                 priceRange = priceRange,
-                confidence = confidence
+                confidence = confidence,
+                boundingBox = normalizedBox,
+                labelText = bestLabel?.text
             )
         } catch (e: Exception) {
             // If cropping or processing fails, skip this object
@@ -622,9 +634,12 @@ class ObjectDetectorClient {
             thumbnail = candidate.thumbnail,
             category = candidate.category,
             priceRange = priceRange,
+            confidence = candidate.maxConfidence,
             timestamp = System.currentTimeMillis(),
             recognizedText = null,
-            barcodeValue = null
+            barcodeValue = null,
+            boundingBox = candidate.boundingBox,
+            labelText = candidate.labelText.takeIf { it.isNotBlank() }
         )
     }
 
