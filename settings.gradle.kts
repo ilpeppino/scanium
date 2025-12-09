@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Objecta"
+rootProject.name = "Scanium"
 include(":app")

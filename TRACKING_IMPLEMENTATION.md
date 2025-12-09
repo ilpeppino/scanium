@@ -2,13 +2,13 @@
 
 ## Overview
 
-This document describes the implementation of a robust tracking and de-duplication system for the Objecta Android app. The system uses ML Kit's Object Detection & Tracking capabilities combined with custom spatial matching heuristics to ensure that each physical object is recognized only once per scanning session.
+This document describes the implementation of a robust tracking and de-duplication system for the Scanium Android app. The system uses ML Kit's Object Detection & Tracking capabilities combined with custom spatial matching heuristics to ensure that each physical object is recognized only once per scanning session.
 
 ## Implementation Summary
 
 ### 1. New Components Created
 
-#### ObjectCandidate (`app/src/main/java/com/example/objecta/tracking/ObjectCandidate.kt`)
+#### ObjectCandidate (`app/src/main/java/com/example/scanium/tracking/ObjectCandidate.kt`)
 
 A data class representing a candidate object being tracked across multiple frames.
 
@@ -29,7 +29,7 @@ A data class representing a candidate object being tracked across multiple frame
 - `distanceTo()`: Calculates Euclidean distance to another box
 - `calculateIoU()`: Calculates Intersection over Union with another box
 
-#### ObjectTracker (`app/src/main/java/com/example/objecta/tracking/ObjectTracker.kt`)
+#### ObjectTracker (`app/src/main/java/com/example/scanium/tracking/ObjectTracker.kt`)
 
 The core tracking component that manages candidate objects and applies confirmation logic.
 
@@ -55,7 +55,7 @@ The core tracking component that manages candidate objects and applies confirmat
 - `reset()`: Clears all candidates and state
 - `getStats()`: Returns tracking statistics for debugging
 
-#### DetectionInfo (`app/src/main/java/com/example/objecta/tracking/ObjectTracker.kt`)
+#### DetectionInfo (`app/src/main/java/com/example/scanium/tracking/ObjectTracker.kt`)
 
 A data class holding raw detection information extracted from ML Kit.
 
@@ -70,7 +70,7 @@ A data class holding raw detection information extracted from ML Kit.
 
 ### 2. Updated Components
 
-#### ObjectDetectorClient (`app/src/main/java/com/example/objecta/ml/ObjectDetectorClient.kt`)
+#### ObjectDetectorClient (`app/src/main/java/com/example/scanium/ml/ObjectDetectorClient.kt`)
 
 **New Methods:**
 - `detectObjectsWithTracking()`: Extracts raw detection information for tracking pipeline
@@ -82,7 +82,7 @@ A data class holding raw detection information extracted from ML Kit.
 - Uses STREAM_MODE by default for tracking (provides better trackingId availability)
 - Extracts all necessary metadata for spatial matching (bounding box as RectF, confidence, etc.)
 
-#### CameraXManager (`app/src/main/java/com/example/objecta/camera/CameraXManager.kt`)
+#### CameraXManager (`app/src/main/java/com/example/scanium/camera/CameraXManager.kt`)
 
 **New Components:**
 - `objectTracker`: ObjectTracker instance with configured thresholds
@@ -115,7 +115,7 @@ when (scanMode) {
 }
 ```
 
-#### ItemsViewModel (`app/src/main/java/com/example/objecta/items/ItemsViewModel.kt`)
+#### ItemsViewModel (`app/src/main/java/com/example/scanium/items/ItemsViewModel.kt`)
 
 **No changes required!** The existing ID-based de-duplication using `seenIds` set works perfectly with stable tracking IDs from ObjectTracker.
 
@@ -332,7 +332,7 @@ adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetectorClient"
 
 ## Summary
 
-The tracking and de-duplication system is fully implemented and integrated into the Objecta app. It provides:
+The tracking and de-duplication system is fully implemented and integrated into the Scanium app. It provides:
 
 ✅ **Robust Tracking**: Uses ML Kit trackingId + spatial fallback
 ✅ **De-duplication**: Each physical object appears once per scan
