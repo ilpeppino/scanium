@@ -1,6 +1,7 @@
 package com.example.objecta.items
 
 import android.graphics.Bitmap
+import android.graphics.RectF
 import com.example.objecta.ml.ItemCategory
 import java.util.UUID
 
@@ -15,6 +16,8 @@ import java.util.UUID
  * @param timestamp When the item was detected
  * @param recognizedText Text extracted from document (for DOCUMENT items)
  * @param barcodeValue Barcode value (for BARCODE items)
+ * @param boundingBox Normalized bounding box position (0-1 coordinates)
+ * @param labelText ML Kit classification label (if available)
  */
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
@@ -24,7 +27,9 @@ data class ScannedItem(
     val confidence: Float = 0.0f,
     val timestamp: Long = System.currentTimeMillis(),
     val recognizedText: String? = null,
-    val barcodeValue: String? = null
+    val barcodeValue: String? = null,
+    val boundingBox: RectF? = null,
+    val labelText: String? = null
 ) {
     /**
      * Formatted price range string for display.

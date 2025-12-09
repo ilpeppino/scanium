@@ -93,7 +93,9 @@ class SessionDeduplicator {
 
         // Rule 2: Label similarity (if both have labels)
         val labelSimilarity = calculateLabelSimilarity(item1.labelText, item2.labelText)
-        if (labelSimilarity < MIN_LABEL_SIMILARITY && item1.labelText.isNotEmpty() && item2.labelText.isNotEmpty()) {
+        val bothHaveLabels = item1.labelText.isNotEmpty() && item2.labelText.isNotEmpty()
+
+        if (bothHaveLabels && labelSimilarity < MIN_LABEL_SIMILARITY) {
             Log.d(TAG, "Label mismatch: '${item1.labelText}' vs '${item2.labelText}' (sim=$labelSimilarity)")
             return false
         }
@@ -112,10 +114,23 @@ class SessionDeduplicator {
             return false
         }
 
-        // Rule 4: Spatial proximity (if we have position data)
-        // Note: This is optional since position data might not always be reliable
-        // We use it as a weak signal, not a hard requirement
-        if (item1.hasPosition && item2.hasPosition) {
+        // Rule 4: Spatial proximity (REQUIRED when labels are missing)
+        // When items don't have labels, we MUST use position to distinguish them
+        if (!bothHaveLabels) {
+            // No labels - position check is mandatory
+            if (!item1.hasPosition || !item2.hasPosition) {
+                Log.d(TAG, "No labels and missing position data - cannot determine similarity")
+                return false
+            }
+
+            val distance = calculateNormalizedDistance(item1, item2)
+            if (distance > 0.05f) {  // Much stricter: 5% of frame diagonal
+                Log.d(TAG, "No labels: positions differ (distance=$distance) - treating as different")
+                return false
+            }
+            Log.d(TAG, "No labels: positions very close (distance=$distance) - likely same object")
+        } else if (item1.hasPosition && item2.hasPosition) {
+            // Both have labels and positions - use position as additional signal
             val distance = calculateNormalizedDistance(item1, item2)
             if (distance > MAX_CENTER_DISTANCE_RATIO) {
                 Log.d(TAG, "Position too far: distance=$distance (max=$MAX_CENTER_DISTANCE_RATIO)")
@@ -132,8 +147,12 @@ class SessionDeduplicator {
      * Calculate label similarity using normalized Levenshtein distance.
      */
     private fun calculateLabelSimilarity(label1: String, label2: String): Float {
-        if (label1 == label2) return 1.0f
+        // CRITICAL: Check for empty labels FIRST, before comparing equality
+        // Empty labels provide NO distinguishing information
         if (label1.isEmpty() || label2.isEmpty()) return 0.0f
+
+        // Both have labels - check if identical
+        if (label1 == label2) return 1.0f
 
         // Normalize: lowercase and trim
         val s1 = label1.lowercase().trim()
@@ -194,25 +213,50 @@ class SessionDeduplicator {
      * Extract metadata from a ScannedItem for similarity comparison.
      */
     private fun extractMetadata(item: ScannedItem): ItemMetadata {
-        // Try to extract position and size from thumbnail dimensions if available
-        val (centerX, centerY, boxArea) = if (item.thumbnail != null) {
-            Triple(
-                0.5f, // Default center - we don't have actual position from ScannedItem
-                0.5f,
-                (item.thumbnail.width * item.thumbnail.height).toFloat() / (1280f * 720f) // Approximate normalized area
-            )
-        } else {
-            Triple(0.5f, 0.5f, 0.01f) // Default values
+        // Extract position from bounding box if available
+        val (centerX, centerY, boxArea, hasPosition) = when {
+            item.boundingBox != null -> {
+                val box = item.boundingBox
+                listOf(
+                    box.centerX(),
+                    box.centerY(),
+                    box.width() * box.height(),
+                    1f // hasPosition = true
+                )
+            }
+            item.thumbnail != null -> {
+                // Fallback: estimate from thumbnail size
+                listOf(
+                    0.5f,
+                    0.5f,
+                    (item.thumbnail.width * item.thumbnail.height).toFloat() / (1280f * 720f),
+                    0f // hasPosition = false
+                )
+            }
+            else -> {
+                listOf(0.5f, 0.5f, 0.01f, 0f) // hasPosition = false
+            }
+        }
+
+        val hasPositionBool = hasPosition > 0f
+
+        // CRITICAL: Only use actual distinguishing text as labels
+        // Priority: labelText > recognizedText > barcodeValue > empty
+        val labelText = when {
+            item.labelText?.isNotBlank() == true -> item.labelText
+            item.recognizedText?.isNotBlank() == true -> item.recognizedText
+            item.barcodeValue?.isNotBlank() == true -> item.barcodeValue
+            else -> "" // Empty string for items without distinguishing text
         }
 
         return ItemMetadata(
             id = item.id,
             category = item.category,
-            labelText = item.category.name, // Use category name as label fallback
+            labelText = labelText,
             centerX = centerX,
             centerY = centerY,
             boxArea = boxArea,
-            hasPosition = false, // We don't have reliable position data from ScannedItem
+            hasPosition = hasPositionBool,
             confidence = item.confidence
         )
     }
