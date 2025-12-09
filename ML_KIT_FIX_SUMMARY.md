@@ -56,7 +56,7 @@ This makes ML Kit detect objects based on shape/prominence alone, without requir
 
 ***REMOVED******REMOVED******REMOVED*** 1. ObjectDetectorClient.kt - Detector Configuration
 
-**File**: `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/ml/ObjectDetectorClient.kt`
+**File**: `/Users/family/dev/objecta/app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Single Image Detector
 ```kotlin

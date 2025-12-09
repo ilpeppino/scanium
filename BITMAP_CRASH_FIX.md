@@ -98,7 +98,7 @@ To verify the fix:
 
 2. Clear app data (fresh start):
    ```bash
-   adb shell pm clear com.example.scanium
+   adb shell pm clear com.scanium.app
    ```
 
 3. Open app and long-press to scan objects

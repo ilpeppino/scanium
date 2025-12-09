@@ -156,7 +156,7 @@ private fun calculateNormalizedDistance(item1: ItemMetadata, item2: ItemMetadata
 ***REMOVED******REMOVED*** Testing
 
 ***REMOVED******REMOVED******REMOVED*** Manual Test Results
-1. **Launch app**: `adb shell am start -n com.example.scanium/.MainActivity`
+1. **Launch app**: `adb shell am start -n com.scanium.app/.MainActivity`
 2. **Long-press to scan**: Camera detects objects
 3. **Observed behavior**:
    - Items with similar positions → Deduplicated ✅
@@ -185,16 +185,16 @@ This fix builds on previous work:
 
 ***REMOVED******REMOVED*** Files Modified
 
-1. `app/src/main/java/com/example/scanium/items/ScannedItem.kt`
+1. `app/src/main/java/com/scanium/app/items/ScannedItem.kt`
    - Added `boundingBox: RectF?` field
    - Added `labelText: String?` field
 
-2. `app/src/main/java/com/example/scanium/items/SessionDeduplicator.kt`
+2. `app/src/main/java/com/scanium/app/items/SessionDeduplicator.kt`
    - Fixed `calculateLabelSimilarity()` to check empty labels first
    - Updated `extractMetadata()` to use actual position and label data
    - Removed category name fallback
 
-3. `app/src/main/java/com/example/scanium/ml/ObjectDetectorClient.kt`
+3. `app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
    - Updated `convertToScannedItem()` to pass normalized boundingBox
    - Updated `convertToScannedItem()` to pass labelText from ML Kit
    - Updated `candidateToScannedItem()` to pass position and label from ObjectCandidate

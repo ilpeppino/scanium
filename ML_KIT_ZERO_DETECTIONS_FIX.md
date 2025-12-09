@@ -226,13 +226,13 @@ E ObjectDetectorClient: >>> CRITICAL: ZERO OBJECTS DETECTED AFTER ALL ATTEMPTS
 
 ***REMOVED******REMOVED*** Files Modified
 
-1. `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/ml/ObjectDetectorClient.kt`
+1. `/Users/family/dev/objecta/app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
    - Added `ensureModelDownloaded()`
    - Added `analyzeBitmap()`
    - Enhanced `detectObjectsWithTracking()` with multi-strategy fallback
    - Added comprehensive logging
 
-2. `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/camera/CameraXManager.kt`
+2. `/Users/family/dev/objecta/app/src/main/java/com/scanium/app/camera/CameraXManager.kt`
    - Added `ensureModelsReady()`
    - Call model initialization in `startCamera()`
 

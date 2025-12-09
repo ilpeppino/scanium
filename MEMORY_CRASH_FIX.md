@@ -5,7 +5,7 @@
 The app was being killed by the system (not crashing with exception) immediately after detecting objects. The log showed:
 
 ```
-Process com.example.scanium (pid 2073) has died: fg TOP
+Process com.scanium.app (pid 2073) has died: fg TOP
 ```
 
 No Java exception or stacktrace - the process just **died**, indicating the system killed it.
@@ -89,17 +89,17 @@ Replaced crop + copy with Canvas-based single bitmap creation.
 
 1. **Install the new APK**:
    ```bash
-   adb install -r /Users/family/dev/scanium/app/build/outputs/apk/debug/app-debug.apk
+   adb install -r /Users/family/dev/objecta/app/build/outputs/apk/debug/app-debug.apk
    ```
 
 2. **Clear app data** (fresh start):
    ```bash
-   adb shell pm clear com.example.scanium
+   adb shell pm clear com.scanium.app
    ```
 
 3. **Monitor memory while scanning**:
    ```bash
-   adb shell dumpsys meminfo com.example.scanium
+   adb shell dumpsys meminfo com.scanium.app
    ```
 
 4. **Test**: Open app, long-press to scan multiple objects
