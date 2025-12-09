@@ -15,7 +15,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Objecta">
+        android:theme="@style/Theme.Scanium">
 
         <!-- ML Kit Object Detection Model - auto-download at install -->
         <meta-data
@@ -25,7 +25,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Objecta">
+            android:theme="@style/Theme.Scanium">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

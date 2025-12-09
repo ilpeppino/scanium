@@ -88,12 +88,12 @@ The trade-off is acceptable because:
 
 2. **Clear app data**:
    ```bash
-   adb shell pm clear com.example.objecta
+   adb shell pm clear com.example.scanium
    ```
 
 3. **Monitor for crashes**:
    ```bash
-   adb logcat | grep -E "objecta|died|FATAL"
+   adb logcat | grep -E "scanium|died|FATAL"
    ```
 
 4. **Test**: Open app, long-press to scan multiple objects

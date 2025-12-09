@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">***REMOVED***FFFFFF</color>
+    <!-- Scanium Brand Colors -->
+    <color name="scanium_blue">***REMOVED***1F7BFF</color>
+    <color name="deep_navy">***REMOVED***050B18</color>
+    <color name="cyan_glow">***REMOVED***00D4FF</color>
+    <color name="support_purple">***REMOVED***A259FF</color>
+
+    <!-- Launcher icon background -->
+    <color name="ic_launcher_background">***REMOVED***050B18</color>
 </resources>

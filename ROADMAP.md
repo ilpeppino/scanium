@@ -12,7 +12,7 @@ Below you will find **ALL requested documents**, generated **one by one**, all i
 ***REMOVED*** 1️⃣ **OBJECTA ROADMAP — NEXT 3–6 MONTHS**
 
 ***REMOVED******REMOVED*** 🎯 **Goal**
-Turn Objecta from a strong PoC into a production-grade, scalable, multi-mode AI scanning engine suitable for public release.
+Turn Scanium from a strong PoC into a production-grade, scalable, multi-mode AI scanning engine suitable for public release.
 
 ---
 
@@ -65,7 +65,7 @@ Turn Objecta from a strong PoC into a production-grade, scalable, multi-mode AI 
     - Last used scan mode
 
 ***REMOVED******REMOVED******REMOVED*** ✔ Cloud Enhancements
-- Add optional Objecta Cloud Sync (users log in).
+- Add optional Scanium Cloud Sync (users log in).
 - Save item history across devices.
 - Add analytics pipeline (Firebase Analytics + Crashlytics).
 

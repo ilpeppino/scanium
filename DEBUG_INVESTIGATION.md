@@ -11,7 +11,7 @@ User reported that NO items are being detected in scanning mode on a real device
 **CRITICAL BUG FOUND AND FIXED**: Objects without ML Kit classification labels were getting confidence = 0.0f, which failed the `minConfidence = 0.2f` threshold check in `ObjectTracker.isConfirmed()`.
 
 ***REMOVED******REMOVED******REMOVED*** 2. Key Fix Applied
-**File**: `/Users/family/dev/objecta/app/src/main/java/com/example/objecta/ml/ObjectDetectorClient.kt`
+**File**: `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/ml/ObjectDetectorClient.kt`
 
 **Function**: `extractDetectionInfo()`
 
@@ -105,14 +105,14 @@ These are intentionally very permissive to ensure detection works.
 ***REMOVED******REMOVED*** Build Info
 
 - Built successfully: 2025-12-08
-- APK location: `/Users/family/dev/objecta/app/build/outputs/apk/debug/app-debug.apk`
+- APK location: `/Users/family/dev/scanium/app/build/outputs/apk/debug/app-debug.apk`
 - Size: 111MB
 - All 232 tests passing
 
 ***REMOVED******REMOVED*** Next Steps
 
 1. Install the new APK on device: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
-2. Clear app data: `adb shell pm clear com.example.objecta`
+2. Clear app data: `adb shell pm clear com.example.scanium`
 3. Run the app and enter scanning mode (long-press)
 4. Capture logs: `adb logcat -s CameraXManager:I ObjectDetectorClient:I ObjectTracker:I ItemsViewModel:I`
 5. Analyze the log sequence to identify where the pipeline breaks
@@ -123,17 +123,17 @@ With the confidence fallback fix, objects should now be detected and confirmed e
 
 ***REMOVED******REMOVED*** Files Modified
 
-1. `/Users/family/dev/objecta/app/src/main/java/com/example/objecta/ml/ObjectDetectorClient.kt`
+1. `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/ml/ObjectDetectorClient.kt`
    - Added fallback confidence for unlabeled objects
    - Added comprehensive logging
 
-2. `/Users/family/dev/objecta/app/src/main/java/com/example/objecta/camera/CameraXManager.kt`
+2. `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/camera/CameraXManager.kt`
    - Enhanced logging in processing pipeline
 
-3. `/Users/family/dev/objecta/app/src/main/java/com/example/objecta/tracking/ObjectTracker.kt`
+3. `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/tracking/ObjectTracker.kt`
    - Added detailed frame processing logs
 
-4. `/Users/family/dev/objecta/app/src/main/java/com/example/objecta/items/ItemsViewModel.kt`
+4. `/Users/family/dev/scanium/app/src/main/java/com/example/scanium/items/ItemsViewModel.kt`
    - Added item addition tracking logs
 
 ---

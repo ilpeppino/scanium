@@ -2,9 +2,9 @@
 
 ***REMOVED******REMOVED*** Project Structure & Module Organization
 - Single Android app module: `app/`.
-- Kotlin sources live in `app/src/main/java/com/example/objecta/` with feature folders: `camera/` (CameraX control), `items/` (scanned item state + UI), `ml/` (object detection helpers), `navigation/` (Compose routes), and `ui/` (theme, shared components).
+- Kotlin sources live in `app/src/main/java/com/example/scanium/` with feature folders: `camera/` (CameraX control), `items/` (scanned item state + UI), `ml/` (object detection helpers), `navigation/` (Compose routes), and `ui/` (theme, shared components).
 - Resources and layouts: `app/src/main/res/`; manifest: `app/src/main/AndroidManifest.xml`.
-- Keep new screens as composables named `FeatureScreen` and route entries in `navigation/ObjectaNavGraph`.
+- Keep new screens as composables named `FeatureScreen` and route entries in `navigation/ScaniumNavGraph`.
 
 ***REMOVED******REMOVED*** Build, Test, and Development Commands
 ```bash

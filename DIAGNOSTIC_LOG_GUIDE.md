@@ -293,7 +293,7 @@ When troubleshooting zero detections, check logs for:
 
 ***REMOVED******REMOVED******REMOVED*** Scenario 1: Fresh Install (Test Model Download)
 ```bash
-adb uninstall com.example.objecta
+adb uninstall com.example.scanium
 ./gradlew :app:installDebug
 ***REMOVED*** Open app, should see model initialization logs
 ```

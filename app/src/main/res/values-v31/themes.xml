@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Scanium splash screen theme for Android 12+ -->
+    <style name="Theme.Scanium" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Use Scanium Blue background for better logo visibility -->
+        <item name="android:windowSplashScreenBackground">@color/scanium_blue</item>
+        <!-- Use properly sized splash logo drawable -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="android:windowSplashScreenAnimationDuration">500</item>
+        <!-- Keep icon centered and properly sized -->
+        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
+</resources>

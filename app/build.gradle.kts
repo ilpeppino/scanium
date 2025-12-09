@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.objecta"
+    namespace = "com.scanium.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.objecta"
+        applicationId = "com.scanium.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

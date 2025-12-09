@@ -2,7 +2,7 @@
 
 ***REMOVED******REMOVED*** Overview
 
-Objecta now features a **production-ready multi-frame detection pipeline** that ensures only stable, high-confidence detections are shown to users. This document describes the complete implementation and improvements made to the ML Kit integration.
+Scanium now features a **production-ready multi-frame detection pipeline** that ensures only stable, high-confidence detections are shown to users. This document describes the complete implementation and improvements made to the ML Kit integration.
 
 ---
 
@@ -452,7 +452,7 @@ class CameraXManager {
 
 ***REMOVED******REMOVED*** Summary
 
-The Objecta ML Kit integration now features:
+The Scanium ML Kit integration now features:
 - ✅ **Multi-frame detection pipeline** with configurable thresholds
 - ✅ **Confidence-aware item tracking** (LOW/MEDIUM/HIGH)
 - ✅ **Comprehensive debug logging** for threshold tuning

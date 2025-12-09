@@ -11,5 +11,5 @@
 -dontwarn androidx.camera.**
 
 ***REMOVED*** Keep model classes
--keep class com.example.objecta.items.** { *; }
--keep class com.example.objecta.ml.** { *; }
+-keep class com.scanium.app.items.** { *; }
+-keep class com.scanium.app.ml.** { *; }

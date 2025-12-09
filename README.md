@@ -1,10 +1,10 @@
-***REMOVED*** Objecta
+***REMOVED*** Scanium
 
 An Android application that uses on-device machine learning to detect objects through the camera and estimate their prices in real-time.
 
 ***REMOVED******REMOVED*** Overview
 
-Objecta is a camera-first Android app that demonstrates object detection and price estimation using Google ML Kit. Point your camera at everyday items, and the app will identify them and provide estimated price ranges in EUR.
+Scanium is a camera-first Android app that demonstrates object detection and price estimation using Google ML Kit. Point your camera at everyday items, and the app will identify them and provide estimated price ranges in EUR.
 
 ***REMOVED******REMOVED*** Features
 
@@ -34,7 +34,7 @@ Objecta is a camera-first Android app that demonstrates object detection and pri
 ***REMOVED******REMOVED******REMOVED*** Core Technologies
 - **Kotlin** - Primary programming language
 - **Jetpack Compose** - Modern declarative UI framework
-- **Material 3** - Material Design components and theming
+- **Material 3** - Material Design components and theming with Scanium branding
 
 ***REMOVED******REMOVED******REMOVED*** Camera & ML
 - **CameraX** - Camera API for preview and image capture
@@ -55,7 +55,7 @@ Objecta is a camera-first Android app that demonstrates object detection and pri
 The project follows a **Simplified MVVM architecture** with feature-based package organization:
 
 ```
-app/src/main/java/com/example/objecta/
+app/src/main/java/com/scanium/app/
 ├── camera/          ***REMOVED*** Camera functionality, CameraX, mode switching
 ├── items/           ***REMOVED*** Detected items management and display
 ├── ml/              ***REMOVED*** Object detection and pricing logic
@@ -80,14 +80,14 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./TRACKING
 - Android Studio Hedgehog (2023.1.1) or later
 - JDK 11 or higher
 - Android SDK with minimum API 24 (Android 7.0)
-- Target API 35 (Android 15)
+- Target API 34 (Android 14)
 
 ***REMOVED******REMOVED*** Setup
 
 1. Clone the repository:
    ```bash
    git clone <repository-url>
-   cd objecta
+   cd scanium
    ```
 
 2. Open the project in Android Studio
@@ -110,18 +110,18 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./TRACKING
 
 ***REMOVED******REMOVED******REMOVED*** Testing
 ```bash
-./gradlew test                    ***REMOVED*** Run 110 unit tests
+./gradlew test                    ***REMOVED*** Run unit tests
 ./gradlew connectedAndroidTest    ***REMOVED*** Run instrumented tests (requires device)
 ```
 
 ***REMOVED******REMOVED*** Project Structure
 
 ```
-objecta/
+scanium/
 ├── app/
 │   ├── src/
 │   │   ├── main/
-│   │   │   ├── java/com/example/objecta/
+│   │   │   ├── java/com/scanium/app/
 │   │   │   │   ├── camera/
 │   │   │   │   │   ├── CameraScreen.kt
 │   │   │   │   │   ├── CameraXManager.kt
@@ -180,15 +180,14 @@ The app requires the following permission:
 ***REMOVED******REMOVED*** Test Coverage
 
 The project includes comprehensive test coverage:
-- **185 total tests** (148 passing ✅)
-- **Unit tests** (8 test files):
+- **Unit tests** (multiple test files):
   - DetectionResult (overlay data model validation)
   - ObjectTracker (tracking and de-duplication logic)
   - ObjectCandidate (spatial matching algorithms)
   - TrackingPipelineIntegration (end-to-end scenarios)
   - ItemsViewModel (state management)
   - PricingEngine, ScannedItem, ItemCategory
-- **Instrumented tests** (3 test files):
+- **Instrumented tests**:
   - DetectionOverlay UI tests (bounding box rendering)
   - ModeSwitcher UI tests
   - ItemsViewModel integration tests
@@ -208,7 +207,7 @@ The project includes comprehensive test coverage:
 ***REMOVED******REMOVED******REMOVED*** Technical Improvements
 - Multi-module architecture
 - Dependency injection (Hilt)
-- Enhanced test coverage (currently has unit & integration tests)
+- Enhanced test coverage
 - CI/CD pipeline
 - Backend service integration
 - Cloud-based ML models
@@ -221,6 +220,7 @@ The project includes comprehensive test coverage:
 - ✅ **Document Text Recognition**: OCR for document scanning
 - ✅ **Comprehensive Test Suite**: Unit and integration tests for tracking system
 - ✅ **SINGLE_IMAGE_MODE Detection**: More accurate object detection for both tap and long-press
+- ✅ **Scanium Branding**: Complete visual rebrand with new color scheme and identity
 
 ***REMOVED******REMOVED*** License
 

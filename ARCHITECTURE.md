@@ -1,11 +1,11 @@
-***REMOVED*** Objecta - Architecture Documentation
+***REMOVED*** Scanium - Architecture Documentation
 
 ***REMOVED******REMOVED*** Overview
 
-Objecta is a camera-first Android application that demonstrates real-time object detection and price estimation for the EU second-hand market. The app uses Google ML Kit for on-device object detection and provides a proof-of-concept for scanning physical items and estimating their resale value.
+Scanium is a camera-first Android application that demonstrates real-time object detection and price estimation for the EU second-hand market. The app uses Google ML Kit for on-device object detection and provides a proof-of-concept for scanning physical items and estimating their resale value.
 
-**Project Name:** Objecta (formerly ResaleVision)
-**Package:** `com.example.objecta`
+**Project Name:** Scanium (formerly ResaleVision)
+**Package:** `com.example.scanium`
 **Minimum SDK:** 24 (Android 7.0)
 **Target SDK:** 34 (Android 14)
 **Language:** Kotlin
@@ -29,7 +29,7 @@ Objecta is a camera-first Android application that demonstrates real-time object
 
 ***REMOVED******REMOVED*** High-Level Architecture
 
-Objecta follows a **simplified MVVM (Model-View-ViewModel)** architecture with clear separation of concerns:
+Scanium follows a **simplified MVVM (Model-View-ViewModel)** architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -109,9 +109,9 @@ The project uses a **single-module** structure for simplicity:
 ```
 app/
 ├── src/main/
-│   ├── java/com/example/objecta/
+│   ├── java/com/example/scanium/
 │   │   ├── MainActivity.kt                 ***REMOVED*** Entry point
-│   │   ├── ObjectaApp.kt                   ***REMOVED*** Root composable
+│   │   ├── ScaniumApp.kt                   ***REMOVED*** Root composable
 │   │   ├── camera/                         ***REMOVED*** Camera-related code
 │   │   │   ├── CameraScreen.kt            ***REMOVED*** Camera UI
 │   │   │   ├── CameraXManager.kt          ***REMOVED*** Camera logic
@@ -168,7 +168,7 @@ app/
 - `CameraScreen` - Full-screen camera with gesture detection
 - `ItemsListScreen` - List of detected items
 - `ItemDetailDialog` - Detail view for individual items
-- `ObjectaApp` - Root composable, navigation setup
+- `ScaniumApp` - Root composable, navigation setup
 
 **Responsibilities:**
 - Render UI based on ViewModel state
@@ -214,7 +214,7 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 
 **Shared ViewModel Pattern:**
 - Single `ItemsViewModel` instance shared between screens
-- Initialized at app root (`ObjectaApp`)
+- Initialized at app root (`ScaniumApp`)
 - Passed to screens via navigation
 - Enables communication between camera and list screens
 
@@ -815,7 +815,7 @@ App Launch
     ↓
 MainActivity.onCreate()
     ↓
-ObjectaApp composable
+ScaniumApp composable
     ↓
 Create shared ItemsViewModel
     ↓
@@ -1048,7 +1048,7 @@ val items by itemsViewModel.items.collectAsState()
 
 ***REMOVED******REMOVED*** Summary
 
-Objecta demonstrates a **clean, pragmatic architecture** suitable for a proof-of-concept Android application. The architecture prioritizes:
+Scanium demonstrates a **clean, pragmatic architecture** suitable for a proof-of-concept Android application. The architecture prioritizes:
 
 - **Simplicity** - No unnecessary abstractions or frameworks
 - **Modularity** - Clear separation of concerns via packages

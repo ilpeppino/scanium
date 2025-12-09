@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Objecta" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Base Scanium theme with splash screen support for pre-Android 12 -->
+    <style name="Theme.Scanium" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Splash screen background for Android < 12 -->
+        <item name="android:windowBackground">@drawable/splash_background</item>
+    </style>
 </resources>
