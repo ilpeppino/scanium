@@ -5,7 +5,7 @@
 Scanium is a camera-first Android application that demonstrates real-time object detection and price estimation for the EU second-hand market. The app uses Google ML Kit for on-device object detection and provides a proof-of-concept for scanning physical items and estimating their resale value.
 
 **Project Name:** Scanium (formerly ResaleVision)
-**Package:** `com.example.scanium`
+**Package:** `com.scanium.app`
 **Minimum SDK:** 24 (Android 7.0)
 **Target SDK:** 34 (Android 14)
 **Language:** Kotlin
@@ -109,7 +109,7 @@ The project uses a **single-module** structure for simplicity:
 ```
 app/
 ├── src/main/
-│   ├── java/com/example/scanium/
+│   ├── java/com/scanium/app/
 │   │   ├── MainActivity.kt                 # Entry point
 │   │   ├── ScaniumApp.kt                   # Root composable
 │   │   ├── camera/                         # Camera-related code

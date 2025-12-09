@@ -88,7 +88,7 @@ The trade-off is acceptable because:
 
 2. **Clear app data**:
    ```bash
-   adb shell pm clear com.example.scanium
+   adb shell pm clear com.scanium.app
    ```
 
 3. **Monitor for crashes**:

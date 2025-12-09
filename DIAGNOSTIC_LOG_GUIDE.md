@@ -293,7 +293,7 @@ When troubleshooting zero detections, check logs for:
 
 ### Scenario 1: Fresh Install (Test Model Download)
 ```bash
-adb uninstall com.example.scanium
+adb uninstall com.scanium.app
 ./gradlew :app:installDebug
 # Open app, should see model initialization logs
 ```
