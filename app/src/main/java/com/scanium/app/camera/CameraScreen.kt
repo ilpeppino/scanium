@@ -240,6 +240,15 @@ private fun CameraPreviewWithGestures(
     var isCameraStarted by remember { mutableStateOf(false) }
     val scanningState by rememberUpdatedState(isScanning)
 
+    // Automatically capture first frame when camera starts to show initial overlays
+    LaunchedEffect(isCameraStarted) {
+        if (isCameraStarted) {
+            // Small delay to ensure camera is fully initialized
+            delay(500)
+            onCapture()
+        }
+    }
+
     AndroidView(
         factory = { context ->
             PreviewView(context).apply {
@@ -376,8 +385,8 @@ private fun BoxScope.CameraOverlay(
     if (isScanning) {
         RecordingIndicator(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
+                .align(Alignment.TopCenter)
+                .padding(top = 80.dp)
         )
     }
 }
