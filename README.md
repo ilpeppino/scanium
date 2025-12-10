@@ -63,8 +63,8 @@ app/src/main/java/com/scanium/app/
 └── navigation/      ***REMOVED*** Navigation graph setup
 ```
 
-For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md).
-For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md).
+For detailed architecture documentation, see [ARCHITECTURE.md](./md/architecture/ARCHITECTURE.md).
+For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/features/TRACKING_IMPLEMENTATION.md).
 
 ***REMOVED******REMOVED******REMOVED*** Key Architectural Decisions
 
@@ -141,7 +141,15 @@ scanium/
 │   │   └── res/
 │   └── build.gradle.kts
 ├── gradle/
-├── ARCHITECTURE.md
+├── md/                ***REMOVED*** Documentation folder
+│   ├── architecture/  ***REMOVED*** Architecture docs
+│   ├── features/      ***REMOVED*** Feature documentation
+│   ├── testing/       ***REMOVED*** Test documentation
+│   ├── fixes/         ***REMOVED*** Bug fix documentation
+│   ├── improvements/  ***REMOVED*** Enhancement docs
+│   └── debugging/     ***REMOVED*** Debugging guides
+├── AGENTS.md
+├── ROADMAP.md
 └── README.md
 ```
 
@@ -221,6 +229,41 @@ The project includes comprehensive test coverage:
 - ✅ **Comprehensive Test Suite**: Unit and integration tests for tracking system
 - ✅ **SINGLE_IMAGE_MODE Detection**: More accurate object detection for both tap and long-press
 - ✅ **Scanium Branding**: Complete visual rebrand with new color scheme and identity
+
+***REMOVED******REMOVED*** Documentation
+
+All project documentation is organized in the `md/` folder by category:
+
+***REMOVED******REMOVED******REMOVED*** Architecture & Design
+- [Architecture Overview](./md/architecture/ARCHITECTURE.md) - Overall system architecture and design decisions
+
+***REMOVED******REMOVED******REMOVED*** Features
+- [Aggregation System](./md/features/AGGREGATION_SYSTEM.md) - Real-time item aggregation and similarity matching
+- [Threshold Slider](./md/features/THRESHOLD_SLIDER.md) - Interactive threshold tuning UI component
+- [Object Tracking](./md/features/TRACKING_IMPLEMENTATION.md) - Multi-frame object tracking system
+
+***REMOVED******REMOVED******REMOVED*** Testing
+- [Test Suite](./md/testing/TEST_SUITE.md) - Comprehensive test documentation and coverage
+- [Test Checklist](./md/testing/TEST_CHECKLIST.md) - Manual testing checklist and procedures
+
+***REMOVED******REMOVED******REMOVED*** Bug Fixes & Solutions
+- [ML Kit Zero Detections Fix](./md/fixes/ML_KIT_ZERO_DETECTIONS_FIX.md)
+- [ML Kit Native Crash Fix](./md/fixes/ML_KIT_NATIVE_CRASH_FIX.md)
+- [Bitmap Crash Fix](./md/fixes/BITMAP_CRASH_FIX.md)
+- [Memory Crash Fix](./md/fixes/MEMORY_CRASH_FIX.md)
+- [Session Deduplication Fix](./md/fixes/SESSION_DEDUPLICATION_FIX.md)
+- [ML Kit Fix Summary](./md/fixes/ML_KIT_FIX_SUMMARY.md)
+
+***REMOVED******REMOVED******REMOVED*** Improvements
+- [ML Kit Improvements](./md/improvements/ML_KIT_IMPROVEMENTS.md) - Performance and accuracy enhancements
+
+***REMOVED******REMOVED******REMOVED*** Debugging & Diagnostics
+- [Debug Investigation Guide](./md/debugging/DEBUG_INVESTIGATION.md)
+- [Diagnostic Logging Guide](./md/debugging/DIAGNOSTIC_LOG_GUIDE.md)
+
+***REMOVED******REMOVED******REMOVED*** Other Documentation
+- [Agents Guide](./AGENTS.md) - Information about AI agents used in development
+- [Roadmap](./ROADMAP.md) - Future development plans and priorities
 
 ***REMOVED******REMOVED*** License
 
