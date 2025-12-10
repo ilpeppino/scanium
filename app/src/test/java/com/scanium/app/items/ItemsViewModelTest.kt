@@ -1,6 +1,7 @@
 package com.scanium.app.items
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.scanium.app.data.FakeItemsRepository
 import com.scanium.app.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -18,12 +19,13 @@ import org.robolectric.RobolectricTestRunner
  * Unit tests for ItemsViewModel state management and detection handling.
  *
  * Tests verify:
- * - Adding single and multiple items
+ * - Adding single and multiple items through repository
  * - De-duplication based on item ID (and now similarity-based too)
- * - Removing items
- * - Clearing all items
- * - StateFlow emissions
+ * - Removing items from repository
+ * - Clearing all items from repository
+ * - StateFlow emissions from repository
  * - Item count tracking
+ * - Integration with repository layer
  */
 @RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -33,12 +35,14 @@ class ItemsViewModelTest {
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
     private lateinit var viewModel: ItemsViewModel
-    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var fakeRepository: FakeItemsRepository
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = ItemsViewModel()
+        fakeRepository = FakeItemsRepository()
+        viewModel = ItemsViewModel(fakeRepository)
     }
 
     @After
@@ -63,6 +67,7 @@ class ItemsViewModelTest {
 
         // Act
         viewModel.addItem(item)
+        testDispatcher.scheduler.advanceUntilIdle() // Wait for coroutine to complete
 
         // Assert
         val items = viewModel.items.first()

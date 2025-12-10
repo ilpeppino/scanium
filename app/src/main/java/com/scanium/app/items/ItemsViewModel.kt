@@ -2,85 +2,82 @@ package com.scanium.app.items
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.scanium.app.aggregation.AggregationConfig
-import com.scanium.app.aggregation.AggregationPresets
-import com.scanium.app.aggregation.ItemAggregator
+import androidx.lifecycle.viewModelScope
+import com.scanium.app.data.ItemsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing detected items across the app.
  *
  * Shared between CameraScreen and ItemsListScreen.
- * Maintains a list of detected items and provides operations to add/remove them.
+ * Uses ItemsRepository for persistence and provides in-memory de-duplication
+ * to avoid adding duplicates during scanning sessions.
  *
- * Now uses real-time item aggregation to merge similar detections into persistent
- * AggregatedItems. This replaces the previous strict deduplication logic that
- * failed when ML Kit tracking IDs changed frequently.
+ * Architecture:
+ * - Repository handles persistence (Room database)
+ * - ViewModel handles in-memory de-duplication (seenIds, SessionDeduplicator)
+ * - UI observes the repository's Flow for reactive updates
  *
- * Key improvements:
- * - Resilient to trackingId changes
- * - Weighted similarity scoring
- * - Configurable thresholds
- * - Always produces items (no "no items" failure mode)
+ * @param repository Repository for persistent item storage
  */
-class ItemsViewModel : ViewModel() {
+class ItemsViewModel(
+    private val repository: ItemsRepository
+) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
     }
 
-    // Private mutable state
-    private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
+    // Observe items from repository and convert to StateFlow
+    // SharingStarted.WhileSubscribed keeps the flow active while there are subscribers
+    val items: StateFlow<List<ScannedItem>> = repository.observeItems()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    // Public immutable state
-    val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
+    // Track IDs we've already seen to avoid duplicates during scanning session
+    private val seenIds = mutableSetOf<String>()
 
-    // Real-time item aggregator (replaces SessionDeduplicator)
-    // Using REALTIME preset optimized for continuous scanning with camera movement
-    private val itemAggregator = ItemAggregator(
-        config = AggregationPresets.REALTIME
-    )
+    // Session-level de-duplicator for similarity-based matching
+    private val sessionDeduplicator = SessionDeduplicator()
 
-    // Dynamic similarity threshold control (0.0 - 1.0)
-    // Default is REALTIME preset value (0.55)
-    // Higher threshold = fewer, more confident items
-    // Lower threshold = more items, but possibly noisier
-    //
-    // Note: To add persistence, convert to AndroidViewModel and use ThresholdPreferences:
-    //   private val thresholdPreferences = ThresholdPreferences(application)
-    //   Then load/save threshold in init{} and updateSimilarityThreshold()
-    private val _similarityThreshold = MutableStateFlow(AggregationPresets.REALTIME.similarityThreshold)
-    val similarityThreshold: StateFlow<Float> = _similarityThreshold.asStateFlow()
-
-    init {
-        // Explicitly initialize the aggregator's dynamic threshold to ensure
-        // it's synchronized with the ViewModel's state from the start
-        val initialThreshold = AggregationPresets.REALTIME.similarityThreshold
-        itemAggregator.updateSimilarityThreshold(initialThreshold)
-        Log.i(TAG, "ItemsViewModel initialized with threshold: $initialThreshold")
-    }
+    // Error state (optional, for future error handling in UI)
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
 
     /**
-     * Adds a single detected item to the list.
-     *
-     * Processes the item through the aggregator, which either:
-     * - Merges it into an existing aggregated item
-     * - Creates a new aggregated item
-     *
-     * Then updates the UI state with all current aggregated items.
+     * Adds a single detected item to the repository.
+     * Performs both ID-based and similarity-based de-duplication.
      */
     fun addItem(item: ScannedItem) {
         Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
 
-        // Process through aggregator
-        val aggregatedItem = itemAggregator.processDetection(item)
+        // Second check: similarity-based de-duplication
+        val currentItems = items.value
+        val similarItemId = sessionDeduplicator.findSimilarItem(item, currentItems)
 
         // Update UI state with all aggregated items
         updateItemsState()
 
-        Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
+        // Item is unique - add it to repository
+        Log.i(TAG, "Adding new item: ${item.id} (${item.category})")
+        viewModelScope.launch {
+            val result = repository.addItem(item)
+            if (result.isSuccess()) {
+                seenIds.add(item.id)
+            } else {
+                val error = (result as com.scanium.app.data.Result.Failure).error
+                Log.e(TAG, "Failed to add item: ${error.message}", error.cause)
+                _error.value = error.getUserMessage()
+            }
+        }
     }
 
     /**
@@ -101,120 +98,110 @@ class ItemsViewModel : ViewModel() {
             Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
         }
 
-        // Log memory before processing
-        val runtime = Runtime.getRuntime()
-        val usedMemoryBefore = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-        Log.w(TAG, ">>> MEMORY BEFORE AGGREGATION: ${usedMemoryBefore}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
+        // Deduplicate within the new batch by taking the first occurrence of each ID
+        val deduplicatedNewItems = newItems.distinctBy { it.id }
+        Log.i(TAG, ">>> After deduplication within batch: ${deduplicatedNewItems.size} items")
 
-        // Process all items through aggregator
-        val aggregatedItems = itemAggregator.processDetections(newItems)
+        // Filter using both ID-based and similarity-based de-duplication
+        val uniqueItems = mutableListOf<ScannedItem>()
+        val currentItems = items.value
+        Log.i(TAG, ">>> Current items in ViewModel: ${currentItems.size}")
 
-        // Update UI state with all aggregated items
-        updateItemsState()
+        for ((index, item) in deduplicatedNewItems.withIndex()) {
+            Log.i(TAG, "    Evaluating item $index: ${item.id}")
 
-        // Log statistics
-        val stats = itemAggregator.getStats()
-        Log.i(TAG, ">>> AGGREGATION COMPLETE:")
-        Log.i(TAG, "    - Input detections: ${newItems.size}")
-        Log.i(TAG, "    - Aggregated items: ${stats.totalItems}")
-        Log.i(TAG, "    - Total merges: ${stats.totalMerges}")
-        Log.i(TAG, "    - Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
+            // Check 1: ID already seen?
+            if (seenIds.contains(item.id)) {
+                Log.i(TAG, "    REJECTED: duplicate ID ${item.id}")
+                continue
+            }
 
-        // Log memory after processing
-        val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-        Log.w(TAG, ">>> MEMORY AFTER AGGREGATION: ${usedMemoryAfter}MB used, delta=${usedMemoryAfter - usedMemoryBefore}MB")
+            // Check 2: Similar to existing item?
+            val similarItemId = sessionDeduplicator.findSimilarItem(item, currentItems + uniqueItems)
+            if (similarItemId != null) {
+                Log.i(TAG, "    REJECTED: similar to existing item $similarItemId")
+                seenIds.add(item.id) // Mark as seen to avoid re-evaluation
+                continue
+            }
+
+            // Item is unique
+            Log.i(TAG, "    ACCEPTED: unique item ${item.id}")
+            uniqueItems.add(item)
+        }
+
+        // Add all unique items to repository at once
+        if (uniqueItems.isNotEmpty()) {
+            Log.i(TAG, ">>> ADDING ${uniqueItems.size} unique items from batch of ${newItems.size}")
+
+            // Log memory before adding items
+            val runtime = Runtime.getRuntime()
+            val usedMemoryBefore = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+            Log.w(TAG, ">>> MEMORY BEFORE ADD: ${usedMemoryBefore}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
+
+            viewModelScope.launch {
+                val result = repository.addItems(uniqueItems)
+                if (result.isSuccess()) {
+                    seenIds.addAll(uniqueItems.map { it.id })
+
+                    // Log memory after adding items
+                    val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                    Log.w(TAG, ">>> MEMORY AFTER ADD: ${usedMemoryAfter}MB used, added ${usedMemoryAfter - usedMemoryBefore}MB")
+                    Log.i(TAG, ">>> Total items now: ${items.value.size}")
+                } else {
+                    val error = (result as com.scanium.app.data.Result.Failure).error
+                    Log.e(TAG, "Failed to add items: ${error.message}", error.cause)
+                    _error.value = error.getUserMessage()
+                }
+            }
+        } else {
+            Log.i(TAG, ">>> NO unique items in batch of ${newItems.size}")
+        }
     }
 
     /**
-     * Removes a specific item by ID.
-     *
-     * Note: itemId is now an aggregatedId from the AggregatedItem.
+     * Removes a specific item by ID from the repository.
      */
     fun removeItem(itemId: String) {
-        Log.i(TAG, "Removing item: $itemId")
-
-        // Remove from aggregator
-        itemAggregator.removeItem(itemId)
-
-        // Update UI state
-        updateItemsState()
+        viewModelScope.launch {
+            val result = repository.removeItem(itemId)
+            if (result.isSuccess()) {
+                seenIds.remove(itemId)
+                sessionDeduplicator.removeItem(itemId)
+            } else {
+                val error = (result as com.scanium.app.data.Result.Failure).error
+                Log.e(TAG, "Failed to remove item: ${error.message}", error.cause)
+                _error.value = error.getUserMessage()
+            }
+        }
     }
 
     /**
-     * Clears all detected items.
+     * Clears all detected items from the repository.
      */
     fun clearAllItems() {
         Log.i(TAG, "Clearing all items")
-
-        // Reset aggregator
-        itemAggregator.reset()
-
-        // Update UI state
-        _items.value = emptyList()
+        viewModelScope.launch {
+            val result = repository.clearAll()
+            if (result.isSuccess()) {
+                seenIds.clear()
+                sessionDeduplicator.reset()
+            } else {
+                val error = (result as com.scanium.app.data.Result.Failure).error
+                Log.e(TAG, "Failed to clear items: ${error.message}", error.cause)
+                _error.value = error.getUserMessage()
+            }
+        }
     }
 
     /**
      * Returns the current count of detected items.
      */
-    fun getItemCount(): Int = _items.value.size
+    fun getItemCount(): Int = items.value.size
 
     /**
-     * Get aggregation statistics for monitoring/debugging.
+     * Clears any error message.
      */
-    fun getAggregationStats() = itemAggregator.getStats()
-
-    /**
-     * Remove stale items that haven't been seen recently.
-     *
-     * This can be called periodically to clean up old items from a long scanning session.
-     *
-     * @param maxAgeMs Maximum age in milliseconds (default: 30 seconds)
-     */
-    fun removeStaleItems(maxAgeMs: Long = 30_000L) {
-        val removed = itemAggregator.removeStaleItems(maxAgeMs)
-        if (removed > 0) {
-            Log.i(TAG, "Removed $removed stale items")
-            updateItemsState()
-        }
-    }
-
-    /**
-     * Update the similarity threshold for real-time tuning.
-     *
-     * This immediately affects how detections are aggregated:
-     * - Higher threshold = fewer, more confident items (stricter matching)
-     * - Lower threshold = more items (looser matching)
-     *
-     * @param threshold New threshold value (0.0 - 1.0)
-     */
-    fun updateSimilarityThreshold(threshold: Float) {
-        val clampedThreshold = threshold.coerceIn(0f, 1f)
-        val previousThreshold = _similarityThreshold.value
-
-        _similarityThreshold.value = clampedThreshold
-        itemAggregator.updateSimilarityThreshold(clampedThreshold)
-
-        Log.w(TAG, "╔═══════════════════════════════════════════════════════════════")
-        Log.w(TAG, "║ THRESHOLD UPDATED: $previousThreshold → $clampedThreshold")
-        Log.w(TAG, "║ Aggregator confirms: ${itemAggregator.getCurrentSimilarityThreshold()}")
-        Log.w(TAG, "╚═══════════════════════════════════════════════════════════════")
-    }
-
-    /**
-     * Get the current effective similarity threshold.
-     */
-    fun getCurrentSimilarityThreshold(): Float {
-        return itemAggregator.getCurrentSimilarityThreshold()
-    }
-
-    /**
-     * Update the UI state with current aggregated items.
-     *
-     * Converts AggregatedItems to ScannedItems for UI compatibility.
-     */
-    private fun updateItemsState() {
-        val scannedItems = itemAggregator.getScannedItems()
-        _items.value = scannedItems
-        Log.d(TAG, "Updated UI state: ${scannedItems.size} items")
+    fun clearError() {
+        _error.value = null
     }
 }
