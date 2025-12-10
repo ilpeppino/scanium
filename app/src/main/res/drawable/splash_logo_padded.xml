@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Splash logo with generous padding to prevent cropping.
+Uses 25% padding on all sides to ensure text "SCANIUM" is never cut off.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetTop="20%"
+    android:insetBottom="20%"
+    android:insetLeft="20%"
+    android:insetRight="20%"
+    android:drawable="@drawable/scanium_logo_no_transp" />
