@@ -2,39 +2,58 @@ package com.scanium.app.items
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.scanium.app.data.ItemsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing detected items across the app.
  *
  * Shared between CameraScreen and ItemsListScreen.
- * Maintains a list of detected items and provides operations to add/remove them.
+ * Uses ItemsRepository for persistence and provides in-memory de-duplication
+ * to avoid adding duplicates during scanning sessions.
  *
- * Now includes session-level de-duplication to handle cases where the same
- * physical object is detected with different tracking IDs.
+ * Architecture:
+ * - Repository handles persistence (Room database)
+ * - ViewModel handles in-memory de-duplication (seenIds, SessionDeduplicator)
+ * - UI observes the repository's Flow for reactive updates
+ *
+ * @param repository Repository for persistent item storage
  */
-class ItemsViewModel : ViewModel() {
+class ItemsViewModel(
+    private val repository: ItemsRepository
+) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
     }
 
-    // Private mutable state
-    private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
+    // Observe items from repository and convert to StateFlow
+    // SharingStarted.WhileSubscribed keeps the flow active while there are subscribers
+    val items: StateFlow<List<ScannedItem>> = repository.observeItems()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    // Public immutable state
-    val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
-
-    // Track IDs we've already seen to avoid duplicates during scanning
+    // Track IDs we've already seen to avoid duplicates during scanning session
     private val seenIds = mutableSetOf<String>()
 
     // Session-level de-duplicator for similarity-based matching
     private val sessionDeduplicator = SessionDeduplicator()
 
+    // Error state (optional, for future error handling in UI)
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     /**
-     * Adds a single detected item to the list.
+     * Adds a single detected item to the repository.
      * Performs both ID-based and similarity-based de-duplication.
      */
     fun addItem(item: ScannedItem) {
@@ -45,7 +64,7 @@ class ItemsViewModel : ViewModel() {
         }
 
         // Second check: similarity-based de-duplication
-        val currentItems = _items.value
+        val currentItems = items.value
         val similarItemId = sessionDeduplicator.findSimilarItem(item, currentItems)
 
         if (similarItemId != null) {
@@ -56,12 +75,18 @@ class ItemsViewModel : ViewModel() {
             return
         }
 
-        // Item is unique - add it
+        // Item is unique - add it to repository
         Log.i(TAG, "Adding new item: ${item.id} (${item.category})")
-        _items.update { currentItems ->
-            currentItems + item
+        viewModelScope.launch {
+            val result = repository.addItem(item)
+            if (result.isSuccess()) {
+                seenIds.add(item.id)
+            } else {
+                val error = (result as com.scanium.app.data.Result.Failure).error
+                Log.e(TAG, "Failed to add item: ${error.message}", error.cause)
+                _error.value = error.getUserMessage()
+            }
         }
-        seenIds.add(item.id)
     }
 
     /**
@@ -86,7 +111,7 @@ class ItemsViewModel : ViewModel() {
 
         // Filter using both ID-based and similarity-based de-duplication
         val uniqueItems = mutableListOf<ScannedItem>()
-        val currentItems = _items.value
+        val currentItems = items.value
         Log.i(TAG, ">>> Current items in ViewModel: ${currentItems.size}")
 
         for ((index, item) in deduplicatedNewItems.withIndex()) {
@@ -111,7 +136,7 @@ class ItemsViewModel : ViewModel() {
             uniqueItems.add(item)
         }
 
-        // Add all unique items at once
+        // Add all unique items to repository at once
         if (uniqueItems.isNotEmpty()) {
             Log.i(TAG, ">>> ADDING ${uniqueItems.size} unique items from batch of ${newItems.size}")
 
@@ -120,43 +145,70 @@ class ItemsViewModel : ViewModel() {
             val usedMemoryBefore = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
             Log.w(TAG, ">>> MEMORY BEFORE ADD: ${usedMemoryBefore}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
 
-            _items.update { currentItems ->
-                currentItems + uniqueItems
-            }
-            seenIds.addAll(uniqueItems.map { it.id })
+            viewModelScope.launch {
+                val result = repository.addItems(uniqueItems)
+                if (result.isSuccess()) {
+                    seenIds.addAll(uniqueItems.map { it.id })
 
-            // Log memory after adding items
-            val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-            Log.w(TAG, ">>> MEMORY AFTER ADD: ${usedMemoryAfter}MB used, added ${usedMemoryAfter - usedMemoryBefore}MB")
-            Log.i(TAG, ">>> Total items now: ${_items.value.size}")
+                    // Log memory after adding items
+                    val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                    Log.w(TAG, ">>> MEMORY AFTER ADD: ${usedMemoryAfter}MB used, added ${usedMemoryAfter - usedMemoryBefore}MB")
+                    Log.i(TAG, ">>> Total items now: ${items.value.size}")
+                } else {
+                    val error = (result as com.scanium.app.data.Result.Failure).error
+                    Log.e(TAG, "Failed to add items: ${error.message}", error.cause)
+                    _error.value = error.getUserMessage()
+                }
+            }
         } else {
             Log.i(TAG, ">>> NO unique items in batch of ${newItems.size}")
         }
     }
 
     /**
-     * Removes a specific item by ID.
+     * Removes a specific item by ID from the repository.
      */
     fun removeItem(itemId: String) {
-        _items.update { currentItems ->
-            currentItems.filterNot { it.id == itemId }
+        viewModelScope.launch {
+            val result = repository.removeItem(itemId)
+            if (result.isSuccess()) {
+                seenIds.remove(itemId)
+                sessionDeduplicator.removeItem(itemId)
+            } else {
+                val error = (result as com.scanium.app.data.Result.Failure).error
+                Log.e(TAG, "Failed to remove item: ${error.message}", error.cause)
+                _error.value = error.getUserMessage()
+            }
         }
-        seenIds.remove(itemId)
-        sessionDeduplicator.removeItem(itemId)
     }
 
     /**
-     * Clears all detected items.
+     * Clears all detected items from the repository.
      */
     fun clearAllItems() {
         Log.i(TAG, "Clearing all items")
-        _items.value = emptyList()
-        seenIds.clear()
-        sessionDeduplicator.reset()
+        viewModelScope.launch {
+            val result = repository.clearAll()
+            if (result.isSuccess()) {
+                seenIds.clear()
+                sessionDeduplicator.reset()
+            } else {
+                val error = (result as com.scanium.app.data.Result.Failure).error
+                Log.e(TAG, "Failed to clear items: ${error.message}", error.cause)
+                _error.value = error.getUserMessage()
+            }
+        }
     }
 
     /**
      * Returns the current count of detected items.
      */
-    fun getItemCount(): Int = _items.value.size
+    fun getItemCount(): Int = items.value.size
+
+    /**
+     * Clears any error message.
+     */
+    fun clearError() {
+        _error.value = null
+    }
 }

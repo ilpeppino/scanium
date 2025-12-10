@@ -1,8 +1,10 @@
 package com.scanium.app.items
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.scanium.app.data.FakeItemsRepository
 import com.scanium.app.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -13,16 +15,18 @@ import org.junit.runner.RunWith
  * Instrumented tests for ItemsViewModel in Android environment.
  *
  * These tests verify the ViewModel works correctly on actual Android runtime,
- * testing StateFlow behavior and Android-specific concerns.
+ * testing StateFlow behavior and Android-specific concerns with the repository layer.
  */
 @RunWith(AndroidJUnit4::class)
 class ItemsViewModelInstrumentedTest {
 
     private lateinit var viewModel: ItemsViewModel
+    private lateinit var fakeRepository: FakeItemsRepository
 
     @Before
     fun setUp() {
-        viewModel = ItemsViewModel()
+        fakeRepository = FakeItemsRepository()
+        viewModel = ItemsViewModel(fakeRepository)
     }
 
     @Test
@@ -37,6 +41,7 @@ class ItemsViewModelInstrumentedTest {
 
         // Act
         viewModel.addItem(item)
+        delay(100) // Give coroutine time to complete
 
         // Assert
         val items = viewModel.items.first()
@@ -60,6 +65,7 @@ class ItemsViewModelInstrumentedTest {
         items.forEach { item ->
             viewModel.addItem(item)
         }
+        delay(200) // Give coroutines time to complete
 
         // Assert
         val resultItems = viewModel.items.first()
@@ -76,9 +82,11 @@ class ItemsViewModelInstrumentedTest {
                 priceRange = 10.0 to 20.0
             )
         )
+        delay(100)
 
         // Act - Create new ViewModel instance (simulates process death)
-        val newViewModel = ItemsViewModel()
+        val newRepository = FakeItemsRepository()
+        val newViewModel = ItemsViewModel(newRepository)
         val items = newViewModel.items.first()
 
         // Assert - New instance should be empty
@@ -94,10 +102,13 @@ class ItemsViewModelInstrumentedTest {
             priceRange = 10.0 to 20.0
         )
         viewModel.addItem(item)
+        delay(100)
         viewModel.removeItem("test-1")
+        delay(100)
 
         // Act - Re-add the same item
         viewModel.addItem(item)
+        delay(100)
 
         // Assert
         val items = viewModel.items.first()
