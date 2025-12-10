@@ -564,7 +564,7 @@ averageBoxArea >= minBoxArea
 - Adaptive thresholds based on scene complexity
 - Persistence of tracking state across app restarts
 
-For detailed implementation documentation, see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md).
+For detailed implementation documentation, see [TRACKING_IMPLEMENTATION.md](../features/TRACKING_IMPLEMENTATION.md).
 
 ### 5. Gesture-Based Interaction
 
