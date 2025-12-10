@@ -43,6 +43,17 @@ class ItemsViewModel : ViewModel() {
         config = AggregationPresets.REALTIME
     )
 
+    // Dynamic similarity threshold control (0.0 - 1.0)
+    // Default is REALTIME preset value (0.55)
+    // Higher threshold = fewer, more confident items
+    // Lower threshold = more items, but possibly noisier
+    //
+    // Note: To add persistence, convert to AndroidViewModel and use ThresholdPreferences:
+    //   private val thresholdPreferences = ThresholdPreferences(application)
+    //   Then load/save threshold in init{} and updateSimilarityThreshold()
+    private val _similarityThreshold = MutableStateFlow(AggregationPresets.REALTIME.similarityThreshold)
+    val similarityThreshold: StateFlow<Float> = _similarityThreshold.asStateFlow()
+
     /**
      * Adds a single detected item to the list.
      *
@@ -157,6 +168,29 @@ class ItemsViewModel : ViewModel() {
             Log.i(TAG, "Removed $removed stale items")
             updateItemsState()
         }
+    }
+
+    /**
+     * Update the similarity threshold for real-time tuning.
+     *
+     * This immediately affects how detections are aggregated:
+     * - Higher threshold = fewer, more confident items (stricter matching)
+     * - Lower threshold = more items (looser matching)
+     *
+     * @param threshold New threshold value (0.0 - 1.0)
+     */
+    fun updateSimilarityThreshold(threshold: Float) {
+        val clampedThreshold = threshold.coerceIn(0f, 1f)
+        _similarityThreshold.value = clampedThreshold
+        itemAggregator.updateSimilarityThreshold(clampedThreshold)
+        Log.i(TAG, "Similarity threshold updated to: $clampedThreshold")
+    }
+
+    /**
+     * Get the current effective similarity threshold.
+     */
+    fun getCurrentSimilarityThreshold(): Float {
+        return itemAggregator.getCurrentSimilarityThreshold()
     }
 
     /**

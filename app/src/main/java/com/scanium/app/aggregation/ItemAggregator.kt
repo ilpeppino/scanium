@@ -37,6 +37,29 @@ class ItemAggregator(
     // Active aggregated items, keyed by aggregatedId
     private val aggregatedItems = mutableMapOf<String, AggregatedItem>()
 
+    // Dynamic threshold override (if set, this overrides config.similarityThreshold)
+    private var dynamicThreshold: Float? = null
+
+    /**
+     * Update the similarity threshold dynamically.
+     *
+     * This allows real-time adjustment of the threshold without recreating the aggregator.
+     * Useful for debugging and live tuning.
+     *
+     * @param threshold New threshold value (0-1), or null to use config default
+     */
+    fun updateSimilarityThreshold(threshold: Float?) {
+        dynamicThreshold = threshold?.coerceIn(0f, 1f)
+        Log.i(TAG, "Similarity threshold updated to: ${dynamicThreshold ?: config.similarityThreshold}")
+    }
+
+    /**
+     * Get the current effective similarity threshold.
+     */
+    fun getCurrentSimilarityThreshold(): Float {
+        return dynamicThreshold ?: config.similarityThreshold
+    }
+
     /**
      * Process a new detection and return the resulting aggregated item.
      *
@@ -49,14 +72,15 @@ class ItemAggregator(
      * @return The AggregatedItem (either merged or newly created)
      */
     fun processDetection(detection: ScannedItem): AggregatedItem {
-        Log.i(TAG, ">>> processDetection: id=${detection.id}, category=${detection.category}, confidence=${detection.confidence}")
+        val currentThreshold = getCurrentSimilarityThreshold()
+        Log.i(TAG, ">>> processDetection: id=${detection.id}, category=${detection.category}, confidence=${detection.confidence}, threshold=$currentThreshold")
 
         // Find best matching aggregated item
         val (bestMatch, bestSimilarity) = findBestMatch(detection)
 
-        if (bestMatch != null && bestSimilarity >= config.similarityThreshold) {
+        if (bestMatch != null && bestSimilarity >= currentThreshold) {
             // Merge into existing item
-            Log.i(TAG, "    ✓ MERGE: detection ${detection.id} → aggregated ${bestMatch.aggregatedId} (similarity=$bestSimilarity)")
+            Log.i(TAG, "    ✓ MERGE: detection ${detection.id} → aggregated ${bestMatch.aggregatedId} (similarity=$bestSimilarity >= $currentThreshold)")
             logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
 
             bestMatch.merge(detection)
@@ -67,7 +91,7 @@ class ItemAggregator(
             aggregatedItems[newItem.aggregatedId] = newItem
 
             if (bestMatch != null) {
-                Log.i(TAG, "    ✗ CREATE NEW: similarity too low ($bestSimilarity < ${config.similarityThreshold})")
+                Log.i(TAG, "    ✗ CREATE NEW: similarity too low ($bestSimilarity < $currentThreshold)")
                 logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
             } else {
                 Log.i(TAG, "    ✗ CREATE NEW: no existing items to compare")
