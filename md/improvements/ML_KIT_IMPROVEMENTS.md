@@ -476,7 +476,7 @@ The Scanium ML Kit integration now features:
 - No spatial matching for detections without trackingId
 - Same object at slightly different positions created new items
 
-**Solution**: Implemented a comprehensive tracking and de-duplication system (see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md) for details).
+**Solution**: Implemented a comprehensive tracking and de-duplication system (see [TRACKING_IMPLEMENTATION.md](../features/TRACKING_IMPLEMENTATION.md) for details).
 
 ***REMOVED******REMOVED******REMOVED*** New Components Added
 
@@ -639,4 +639,4 @@ ObjectTracker: Tracker stats: active=1, confirmed=1, frame=3
 1. Increase `maxFrameGap` (default 5 frames)
 2. Increase `expiryFrames` (default 10 frames)
 
-For detailed implementation documentation, see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md).
+For detailed implementation documentation, see [TRACKING_IMPLEMENTATION.md](../features/TRACKING_IMPLEMENTATION.md).
