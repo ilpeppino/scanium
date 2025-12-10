@@ -57,23 +57,14 @@ class ItemsViewModel(
      * Performs both ID-based and similarity-based de-duplication.
      */
     fun addItem(item: ScannedItem) {
-        // First check: exact ID match
-        if (seenIds.contains(item.id)) {
-            Log.d(TAG, "Skipping duplicate ID: ${item.id}")
-            return
-        }
+        Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
 
         // Second check: similarity-based de-duplication
         val currentItems = items.value
         val similarItemId = sessionDeduplicator.findSimilarItem(item, currentItems)
 
-        if (similarItemId != null) {
-            Log.i(TAG, "Skipping similar item: new ${item.id} is similar to existing $similarItemId")
-            // Mark this ID as seen even though we didn't add it
-            // This prevents the same detection from being re-evaluated multiple times
-            seenIds.add(item.id)
-            return
-        }
+        // Update UI state with all aggregated items
+        updateItemsState()
 
         // Item is unique - add it to repository
         Log.i(TAG, "Adding new item: ${item.id} (${item.category})")
@@ -91,18 +82,20 @@ class ItemsViewModel(
 
     /**
      * Adds multiple detected items at once.
-     * Used when processing a frame that detects multiple objects.
-     * Performs de-duplication both against existing items and within the new batch.
+     *
+     * Processes each item through the aggregator in batch, which automatically
+     * handles merging and deduplication. This is more efficient than calling
+     * addItem() multiple times.
      */
     fun addItems(newItems: List<ScannedItem>) {
-        Log.i(TAG, ">>> addItems CALLED: received ${newItems.size} items")
+        Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
         if (newItems.isEmpty()) {
             Log.i(TAG, ">>> addItems: empty list, returning")
             return
         }
 
         newItems.forEachIndexed { index, item ->
-            Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
+            Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
         }
 
         // Deduplicate within the new batch by taking the first occurrence of each ID

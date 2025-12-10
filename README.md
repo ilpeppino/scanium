@@ -63,8 +63,8 @@ app/src/main/java/com/scanium/app/
 └── navigation/      # Navigation graph setup
 ```
 
-For detailed architecture documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md).
-For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./TRACKING_IMPLEMENTATION.md).
+For detailed architecture documentation, see [ARCHITECTURE.md](./md/architecture/ARCHITECTURE.md).
+For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/features/TRACKING_IMPLEMENTATION.md).
 
 ### Key Architectural Decisions
 
@@ -141,7 +141,15 @@ scanium/
 │   │   └── res/
 │   └── build.gradle.kts
 ├── gradle/
-├── ARCHITECTURE.md
+├── md/                # Documentation folder
+│   ├── architecture/  # Architecture docs
+│   ├── features/      # Feature documentation
+│   ├── testing/       # Test documentation
+│   ├── fixes/         # Bug fix documentation
+│   ├── improvements/  # Enhancement docs
+│   └── debugging/     # Debugging guides
+├── AGENTS.md
+├── ROADMAP.md
 └── README.md
 ```
 
@@ -221,6 +229,41 @@ The project includes comprehensive test coverage:
 - ✅ **Comprehensive Test Suite**: Unit and integration tests for tracking system
 - ✅ **SINGLE_IMAGE_MODE Detection**: More accurate object detection for both tap and long-press
 - ✅ **Scanium Branding**: Complete visual rebrand with new color scheme and identity
+
+## Documentation
+
+All project documentation is organized in the `md/` folder by category:
+
+### Architecture & Design
+- [Architecture Overview](./md/architecture/ARCHITECTURE.md) - Overall system architecture and design decisions
+
+### Features
+- [Aggregation System](./md/features/AGGREGATION_SYSTEM.md) - Real-time item aggregation and similarity matching
+- [Threshold Slider](./md/features/THRESHOLD_SLIDER.md) - Interactive threshold tuning UI component
+- [Object Tracking](./md/features/TRACKING_IMPLEMENTATION.md) - Multi-frame object tracking system
+
+### Testing
+- [Test Suite](./md/testing/TEST_SUITE.md) - Comprehensive test documentation and coverage
+- [Test Checklist](./md/testing/TEST_CHECKLIST.md) - Manual testing checklist and procedures
+
+### Bug Fixes & Solutions
+- [ML Kit Zero Detections Fix](./md/fixes/ML_KIT_ZERO_DETECTIONS_FIX.md)
+- [ML Kit Native Crash Fix](./md/fixes/ML_KIT_NATIVE_CRASH_FIX.md)
+- [Bitmap Crash Fix](./md/fixes/BITMAP_CRASH_FIX.md)
+- [Memory Crash Fix](./md/fixes/MEMORY_CRASH_FIX.md)
+- [Session Deduplication Fix](./md/fixes/SESSION_DEDUPLICATION_FIX.md)
+- [ML Kit Fix Summary](./md/fixes/ML_KIT_FIX_SUMMARY.md)
+
+### Improvements
+- [ML Kit Improvements](./md/improvements/ML_KIT_IMPROVEMENTS.md) - Performance and accuracy enhancements
+
+### Debugging & Diagnostics
+- [Debug Investigation Guide](./md/debugging/DEBUG_INVESTIGATION.md)
+- [Diagnostic Logging Guide](./md/debugging/DIAGNOSTIC_LOG_GUIDE.md)
+
+### Other Documentation
+- [Agents Guide](./AGENTS.md) - Information about AI agents used in development
+- [Roadmap](./ROADMAP.md) - Future development plans and priorities
 
 ## License
 
