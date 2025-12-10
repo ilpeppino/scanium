@@ -3,7 +3,9 @@ package com.scanium.app.camera
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,6 +17,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,9 +46,6 @@ fun VerticalThresholdSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Track slider dimensions
-    var sliderHeight by remember { mutableStateOf(0f) }
-
     // Animated value for smooth transitions
     val animatedValue by animateFloatAsState(
         targetValue = value,
@@ -56,68 +56,57 @@ fun VerticalThresholdSlider(
     // Interaction state for visual feedback
     var isDragging by remember { mutableStateOf(false) }
 
-    Column(
+    Row(
         modifier = modifier
             .background(
                 Color.Black.copy(alpha = 0.7f),
                 shape = MaterialTheme.shapes.medium
             )
-            .padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Label
-        Text(
-            text = "THRESH",
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.7f),
-            fontSize = 9.sp,
-            letterSpacing = 0.5.sp
-        )
-
-        // Value display
-        Text(
-            text = "${(animatedValue * 100).roundToInt()}%",
-            style = MaterialTheme.typography.titleMedium,
-            color = if (isDragging) CyanGlow else Color.White,
-            fontSize = 14.sp
-        )
-
         // Vertical slider track
         Box(
             modifier = Modifier
                 .width(40.dp)
                 .height(200.dp)
                 .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onDragStart = {
-                            isDragging = true
-                        },
-                        onDragEnd = {
-                            isDragging = false
-                        },
-                        onDragCancel = {
-                            isDragging = false
-                        },
-                        onVerticalDrag = { change, dragAmount ->
-                            change.consume()
+                    awaitEachGesture {
+                        // Wait for touch down
+                        val down = awaitFirstDown()
+                        isDragging = true
 
-                            // Calculate new value based on drag
-                            // Dragging up increases value, dragging down decreases
-                            val delta = -dragAmount / sliderHeight
-                            val newValue = (value + delta).coerceIn(0f, 1f)
+                        // Calculate initial value from touch position
+                        val touchY = down.position.y
+                        val height = size.height.toFloat()
+                        if (height > 0) {
+                            // Map Y position to value (0 at top = 1.0, bottom = 0.0)
+                            val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
                             onValueChange(newValue)
                         }
-                    )
+
+                        // Track drag movements
+                        drag(down.id) { change ->
+                            change.consume()
+
+                            val dragY = change.position.y
+                            val height = size.height.toFloat()
+                            if (height > 0) {
+                                // Map Y position to value (0 at top = 1.0, bottom = 0.0)
+                                val newValue = (1f - (dragY / height)).coerceIn(0f, 1f)
+                                onValueChange(newValue)
+                            }
+                        }
+
+                        // Drag ended
+                        isDragging = false
+                    }
                 },
             contentAlignment = Alignment.Center
         ) {
             Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onSizeChanged { size ->
-                        sliderHeight = size.height.toFloat()
-                    }
+                modifier = Modifier.fillMaxSize()
             ) {
                 val trackWidth = 12.dp.toPx()
                 val centerX = size.width / 2f
@@ -178,27 +167,52 @@ fun VerticalThresholdSlider(
             }
         }
 
-        // Min/Max labels
+        // Vertical labels parallel to slider
         Column(
+            modifier = Modifier.height(200.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // HIGH label at top
             Text(
-                text = "HIGH",
+                text = "HI",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.5f),
-                fontSize = 8.sp
+                fontSize = 8.sp,
+                modifier = Modifier.graphicsLayer(rotationZ = -90f)
             )
+
+            // Center section with threshold label and value
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                // Vertical "THRESHOLD" text
+                Text(
+                    text = "THRESHOLD",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 7.sp,
+                    letterSpacing = 0.3.sp,
+                    modifier = Modifier.graphicsLayer(rotationZ = -90f)
+                )
+
+                // Value display - keep horizontal for readability
+                Text(
+                    text = "${(animatedValue * 100).roundToInt()}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (isDragging) CyanGlow else Color.White,
+                    fontSize = 13.sp
+                )
+            }
+
+            // LOW label at bottom
             Text(
-                text = "↕",
-                color = Color.White.copy(alpha = 0.3f),
-                fontSize = 10.sp
-            )
-            Text(
-                text = "LOW",
+                text = "LO",
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.5f),
-                fontSize = 8.sp
+                fontSize = 8.sp,
+                modifier = Modifier.graphicsLayer(rotationZ = -90f)
             )
         }
     }

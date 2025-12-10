@@ -6,25 +6,24 @@ The **Vertical Threshold Slider** is a UI control on the Camera screen that allo
 
 ## Visual Design
 
-The slider appears on the **left side** of the Camera screen, vertically centered:
+The slider appears on the **right side** of the Camera screen, vertically centered:
 
 ```
 ┌─────────────────────────────────────┐
 │  SCANIUM              Items (5)      │
 │                                      │
-│  ┌──────┐                            │
-│  │THRESH│                            │
-│  │ 55% │◄─ Current value            │
-│  │      │                            │
-│  │  ●   │◄─ Draggable thumb          │
-│  │  █   │                            │
-│  │  █   │                            │
-│  │  █   │                            │
-│  │ HIGH │                            │
-│  │  ↕   │                            │
-│  │ LOW  │                            │
-│  └──────┘                            │
-│                                      │
+│                        ┌────────────┐│
+│                        │ HI         ││
+│                        │            ││
+│                        │ THRESHOLD  ││◄─ Vertical labels
+│                        │            ││
+│                        │ ● 55%      ││◄─ Thumb + value
+│                        │ █          ││
+│                        │ █          ││
+│                        │ █          ││
+│                        │            ││
+│                        │ LO         ││
+│                        └────────────┘│
 │                                      │
 │     Tap to capture • Long-press      │
 │          to scan                     │
@@ -41,10 +40,14 @@ The slider appears on the **left side** of the Camera screen, vertically centere
 
 ### Interaction
 
+- **Tap or drag**: Direct positioning - touch anywhere on slider to set value
 - **Drag up**: Increase threshold (stricter matching)
 - **Drag down**: Decrease threshold (looser matching)
+- **Absolute positioning**: Touch position directly maps to threshold value (not delta-based)
 - **Visual feedback**: Thumb grows and glows cyan when dragging
 - **Smooth animations**: 150ms transitions for value changes
+- **Vertical labels**: "HI", "THRESHOLD", and "LO" labels rotate parallel to slider
+- **Horizontal value**: Percentage value stays horizontal for easy reading
 
 ## Functionality
 
@@ -116,10 +119,13 @@ Custom Compose component that renders the vertical slider UI.
 - `modifier: Modifier` - Positioning and styling
 
 **Features**:
-- Vertical drag gesture detection
-- Smooth animations
+- Absolute position-based gesture handling (not delta-based)
+- Direct touch-to-value mapping using `awaitEachGesture` API
+- Smooth animations (150ms transitions)
 - Visual feedback (glow on drag)
-- Percentage display
+- Percentage display (horizontal for readability)
+- Vertical rotated labels parallel to slider
+- Row-based layout with slider + labels side-by-side
 
 #### 2. ItemsViewModel.kt
 
@@ -169,8 +175,8 @@ VerticalThresholdSlider(
         itemsViewModel.updateSimilarityThreshold(newValue)
     },
     modifier = Modifier
-        .align(Alignment.CenterStart)
-        .padding(start = 16.dp)
+        .align(Alignment.CenterEnd)
+        .padding(end = 16.dp)
 )
 ```
 
@@ -303,24 +309,30 @@ ItemAggregator:       - Final weighted score: 0.58
 
 1. **Build and run** the app
 2. **Navigate** to Camera screen
-3. **Verify slider appears** on left side
-4. **Tap and drag** slider up/down
-5. **Check percentage** updates smoothly
-6. **Start scanning** (long-press)
-7. **Adjust threshold** while scanning
-8. **Observe** item count changes in real-time
-9. **Check logs** for threshold values
+3. **Verify slider appears** on right side with vertical labels
+4. **Tap anywhere** on slider - value should jump to that position
+5. **Drag** slider up/down - value should track finger position exactly
+6. **Check percentage** updates smoothly and shows correct value
+7. **Verify full range**: drag to top (100%), middle (50%), bottom (0%)
+8. **Start scanning** (long-press)
+9. **Adjust threshold** while scanning
+10. **Observe** item count changes in real-time
+11. **Check logs** for threshold values and merge/create decisions
 
 ### Expected Behavior
 
 ✅ Slider visible on Camera screen
-✅ Slider positioned on left, vertically centered
-✅ Dragging changes percentage display
-✅ Dragging changes detection behavior immediately
+✅ Slider positioned on right, vertically centered
+✅ Vertical labels ("HI", "THRESHOLD", "LO") visible and rotated
+✅ Tapping directly sets value (not just dragging)
+✅ Full range 0-100% accessible by dragging to extremes
+✅ Percentage display updates immediately
+✅ Threshold changes detection behavior in real-time
 ✅ No lag or stuttering in camera preview
 ✅ Slider works during active scanning
 ✅ Default value is 55%
-✅ Value bounded between 0% and 100%
+✅ Value clamped between 0% and 100%
+✅ Logs show threshold updates with boxed warnings
 
 ### Edge Cases
 
@@ -331,20 +343,22 @@ ItemAggregator:       - Final weighted score: 0.58
 
 ## UI Placement Considerations
 
-### Why Left Side?
+### Why Right Side?
 
-- **Right-handed users**: Most users hold phone with right hand, interact with right thumb
-- **Left side is less crowded**: Critical controls (Items button, mode switcher) on right/center
-- **Easy reach**: Left edge accessible with left hand or by shifting grip
+- **Right-handed users**: Most users hold phone with right hand, thumb naturally rests on right edge
+- **Natural ergonomics**: Easy to reach without shifting grip
+- **Consistent placement**: Aligns with other controls (Items button) on the right
+- **Less interference**: Doesn't conflict with left-edge system gestures (back navigation)
 - **No conflicts**: Doesn't block camera controls or detected objects
 
 ### Padding & Spacing
 
-- **Left padding**: 16dp from screen edge
+- **Right padding**: 16dp from screen edge
 - **Vertical centering**: Aligned to center of screen
-- **Component height**: ~320dp total (slider + labels + padding)
+- **Component height**: ~250dp total (slider track height)
 - **Touch target**: 40dp width (thumb area)
 - **Safe area**: Avoids top bar and bottom controls
+- **Compact width**: Slider + labels fit in ~80dp horizontal space
 
 ## Future Enhancements
 
@@ -448,12 +462,69 @@ ItemAggregator:       - Final weighted score: 0.58
 
 ### Related Documentation
 
-- `docs/AGGREGATION_SYSTEM.md` - Aggregation system overview
+- `./AGGREGATION_SYSTEM.md` - Aggregation system overview
 - `docs/TRACKING.md` - ObjectTracker frame-level logic
 - `docs/ML_KIT_INTEGRATION.md` - ML Kit detection pipeline
+
+## Recent Fixes (2025-12-10)
+
+### Issue #1: Slider Using Delta-Based Dragging
+
+**Problem**: The slider was using `detectVerticalDragGestures` which only provides drag deltas, not absolute positions. This resulted in:
+- Tiny incremental changes (0.55 → 0.5510147)
+- Inability to reach 0% or 100%
+- Inconsistent response to fast drags
+
+**Solution**: Rewrote gesture handling to use `awaitEachGesture` with absolute position mapping:
+```kotlin
+// OLD (broken)
+val delta = -dragAmount / sliderHeight
+val newValue = (value + delta).coerceIn(0f, 1f)
+
+// NEW (fixed)
+val touchY = change.position.y
+val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
+```
+
+**Result**: Full 0-100% range is now accessible with consistent, predictable behavior.
+
+### Issue #2: Labels Not Fully Visible
+
+**Problem**: Labels were stacked vertically above/below slider, taking excessive vertical space and sometimes getting clipped.
+
+**Solution**: Redesigned layout:
+- Changed from `Column` to `Row` layout
+- Rotated text labels 90° to run parallel to slider
+- Made labels side-by-side with slider instead of stacked
+
+**Result**: Compact horizontal layout (~80dp width) with all labels fully visible.
+
+### Issue #3: Slider Position on Left Side
+
+**Problem**: Left side placement conflicted with system gestures and felt awkward for right-handed users.
+
+**Solution**: Moved slider to right side:
+- Changed alignment from `Alignment.CenterStart` to `Alignment.CenterEnd`
+- Changed padding from `start = 16.dp` to `end = 16.dp`
+
+**Result**: Better ergonomics and no gesture conflicts.
+
+### Issue #4: Threshold Not Propagating to Aggregator
+
+**Problem**: ItemAggregator's `dynamicThreshold` was never initialized, so it used config default regardless of slider changes.
+
+**Solution**: Added explicit initialization in `ItemsViewModel.init`:
+```kotlin
+init {
+    val initialThreshold = AggregationPresets.REALTIME.similarityThreshold
+    itemAggregator.updateSimilarityThreshold(initialThreshold)
+}
+```
+
+**Result**: Threshold properly synchronized from startup and updates propagate correctly.
 
 ---
 
 **Last Updated**: 2025-12-10
-**Version**: 1.0.0
-**Status**: Production Ready
+**Version**: 2.0.0
+**Status**: Production Ready (Fixed)

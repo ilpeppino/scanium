@@ -54,6 +54,14 @@ class ItemsViewModel : ViewModel() {
     private val _similarityThreshold = MutableStateFlow(AggregationPresets.REALTIME.similarityThreshold)
     val similarityThreshold: StateFlow<Float> = _similarityThreshold.asStateFlow()
 
+    init {
+        // Explicitly initialize the aggregator's dynamic threshold to ensure
+        // it's synchronized with the ViewModel's state from the start
+        val initialThreshold = AggregationPresets.REALTIME.similarityThreshold
+        itemAggregator.updateSimilarityThreshold(initialThreshold)
+        Log.i(TAG, "ItemsViewModel initialized with threshold: $initialThreshold")
+    }
+
     /**
      * Adds a single detected item to the list.
      *
@@ -181,9 +189,15 @@ class ItemsViewModel : ViewModel() {
      */
     fun updateSimilarityThreshold(threshold: Float) {
         val clampedThreshold = threshold.coerceIn(0f, 1f)
+        val previousThreshold = _similarityThreshold.value
+
         _similarityThreshold.value = clampedThreshold
         itemAggregator.updateSimilarityThreshold(clampedThreshold)
-        Log.i(TAG, "Similarity threshold updated to: $clampedThreshold")
+
+        Log.w(TAG, "╔═══════════════════════════════════════════════════════════════")
+        Log.w(TAG, "║ THRESHOLD UPDATED: $previousThreshold → $clampedThreshold")
+        Log.w(TAG, "║ Aggregator confirms: ${itemAggregator.getCurrentSimilarityThreshold()}")
+        Log.w(TAG, "╚═══════════════════════════════════════════════════════════════")
     }
 
     /**

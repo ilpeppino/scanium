@@ -624,4 +624,170 @@ class ItemsViewModelTest {
             timestamp = System.currentTimeMillis()
         )
     }
+
+    // ==================== Threshold Control Tests ====================
+
+    @Test
+    fun whenViewModelCreated_thenThresholdIsDefault() = runTest {
+        // Assert - Default threshold should be REALTIME preset value (0.55)
+        val threshold = viewModel.similarityThreshold.first()
+        assertThat(threshold).isWithin(0.001f).of(0.55f)
+    }
+
+    @Test
+    fun whenUpdatingThreshold_thenStateFlowEmitsNewValue() = runTest {
+        // Act - Update threshold
+        viewModel.updateSimilarityThreshold(0.75f)
+
+        // Assert - StateFlow should emit new value
+        val threshold = viewModel.similarityThreshold.first()
+        assertThat(threshold).isWithin(0.001f).of(0.75f)
+    }
+
+    @Test
+    fun whenUpdatingThresholdToZero_thenAcceptsValue() = runTest {
+        // Act - Set to minimum
+        viewModel.updateSimilarityThreshold(0.0f)
+
+        // Assert
+        val threshold = viewModel.similarityThreshold.first()
+        assertThat(threshold).isWithin(0.001f).of(0.0f)
+    }
+
+    @Test
+    fun whenUpdatingThresholdToOne_thenAcceptsValue() = runTest {
+        // Act - Set to maximum
+        viewModel.updateSimilarityThreshold(1.0f)
+
+        // Assert
+        val threshold = viewModel.similarityThreshold.first()
+        assertThat(threshold).isWithin(0.001f).of(1.0f)
+    }
+
+    @Test
+    fun whenUpdatingThresholdAboveOne_thenClampsToOne() = runTest {
+        // Act - Try to set above maximum
+        viewModel.updateSimilarityThreshold(1.5f)
+
+        // Assert - Should be clamped to 1.0
+        val threshold = viewModel.similarityThreshold.first()
+        assertThat(threshold).isWithin(0.001f).of(1.0f)
+    }
+
+    @Test
+    fun whenUpdatingThresholdBelowZero_thenClampsToZero() = runTest {
+        // Act - Try to set below minimum
+        viewModel.updateSimilarityThreshold(-0.5f)
+
+        // Assert - Should be clamped to 0.0
+        val threshold = viewModel.similarityThreshold.first()
+        assertThat(threshold).isWithin(0.001f).of(0.0f)
+    }
+
+    @Test
+    fun whenUpdatingThresholdMultipleTimes_thenAlwaysReflectsLatest() = runTest {
+        // Act - Update multiple times
+        viewModel.updateSimilarityThreshold(0.3f)
+        viewModel.updateSimilarityThreshold(0.7f)
+        viewModel.updateSimilarityThreshold(0.5f)
+
+        // Assert - Should have latest value
+        val threshold = viewModel.similarityThreshold.first()
+        assertThat(threshold).isWithin(0.001f).of(0.5f)
+    }
+
+    @Test
+    fun whenGettingCurrentThreshold_thenMatchesStateFlow() = runTest {
+        // Arrange - Set specific threshold
+        viewModel.updateSimilarityThreshold(0.65f)
+
+        // Act
+        val directValue = viewModel.getCurrentSimilarityThreshold()
+        val flowValue = viewModel.similarityThreshold.first()
+
+        // Assert - Both should match
+        assertThat(directValue).isWithin(0.001f).of(0.65f)
+        assertThat(flowValue).isWithin(0.001f).of(0.65f)
+        assertThat(directValue).isWithin(0.001f).of(flowValue)
+    }
+
+    @Test
+    fun whenThresholdUpdated_thenAggregatorUsesNewValue() = runTest {
+        // This test verifies the threshold propagates to the aggregator
+        // by checking the aggregator's current threshold
+
+        // Arrange - Set custom threshold
+        val customThreshold = 0.42f
+        viewModel.updateSimilarityThreshold(customThreshold)
+
+        // Act
+        val aggregatorThreshold = viewModel.getCurrentSimilarityThreshold()
+
+        // Assert - Aggregator should use the updated threshold
+        assertThat(aggregatorThreshold).isWithin(0.001f).of(customThreshold)
+    }
+
+    @Test
+    fun whenLowerThreshold_thenMoreItemsMerged() = runTest {
+        // Test that lowering threshold results in more aggressive merging
+
+        // Arrange - Set high threshold (strict)
+        viewModel.updateSimilarityThreshold(0.9f)
+        viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200))
+        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 210, 210))
+
+        val strictCount = viewModel.items.first().size
+
+        // Clear and test with low threshold
+        viewModel.clearAllItems()
+        viewModel.updateSimilarityThreshold(0.3f)
+        viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200))
+        viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 210, 210))
+
+        val looseCount = viewModel.items.first().size
+
+        // Assert - Lower threshold should result in fewer distinct items (more merging)
+        assertThat(looseCount).isLessThan(strictCount)
+    }
+
+    @Test
+    fun whenHigherThreshold_thenFewerItemsMerged() = runTest {
+        // Test that raising threshold results in stricter matching
+
+        // Arrange - Set low threshold (loose)
+        viewModel.updateSimilarityThreshold(0.3f)
+        viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200))
+        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 220, 220))
+
+        val looseCount = viewModel.items.first().size
+
+        // Clear and test with high threshold
+        viewModel.clearAllItems()
+        viewModel.updateSimilarityThreshold(0.9f)
+        viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200))
+        viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 220, 220))
+
+        val strictCount = viewModel.items.first().size
+
+        // Assert - Higher threshold should result in more distinct items (less merging)
+        assertThat(strictCount).isGreaterThan(looseCount)
+    }
+
+    @Test
+    fun whenThresholdChangedDuringScanning_thenImmediatelyAffectsNewDetections() = runTest {
+        // Simulate scanning with threshold changes mid-session
+
+        // Arrange - Start with default threshold, add item
+        viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.ELECTRONICS, 200, 200))
+
+        // Act - Change threshold mid-session
+        viewModel.updateSimilarityThreshold(0.9f) // Very strict
+
+        // Add similar item that would normally merge
+        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.ELECTRONICS, 205, 205))
+
+        // Assert - With strict threshold, should have 2 items (not merged)
+        val items = viewModel.items.first()
+        assertThat(items).hasSize(2)
+    }
 }
