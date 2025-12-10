@@ -6,6 +6,9 @@
     <color name="cyan_glow">***REMOVED***00D4FF</color>
     <color name="support_purple">***REMOVED***A259FF</color>
 
+    <!-- Splash screen background (pure white) -->
+    <color name="splash_background_white">***REMOVED***FFFFFF</color>
+
     <!-- Launcher icon background -->
     <color name="ic_launcher_background">***REMOVED***050B18</color>
 </resources>
