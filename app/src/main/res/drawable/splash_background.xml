@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Scanium Blue background -->
-    <item android:drawable="@color/scanium_blue" />
+    <!-- White background for clean splash screen -->
+    <item android:drawable="@color/splash_background_white" />
 
-    <!-- Centered Scanium logo - using non-transparent version -->
+    <!-- Centered Scanium logo with padding to prevent cropping -->
     <item>
         <bitmap
             android:gravity="center"
-            android:src="@drawable/scanium_logo_no_transp" />
+            android:src="@drawable/splash_logo_padded" />
     </item>
 </layer-list>
