@@ -185,6 +185,18 @@ fun CameraScreen(
                     )
                 }
 
+                // Vertical threshold slider on right side
+                val currentThreshold by itemsViewModel.similarityThreshold.collectAsState()
+                VerticalThresholdSlider(
+                    value = currentThreshold,
+                    onValueChange = { newValue ->
+                        itemsViewModel.updateSimilarityThreshold(newValue)
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 16.dp)
+                )
+
                 // Overlay UI
                 CameraOverlay(
                     itemsCount = itemsCount.size,

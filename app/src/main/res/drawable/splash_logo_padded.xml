@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Splash logo with generous padding to prevent cropping.
+Uses 35% padding on all sides to ensure the full logo and "SCANIUM" text
+are never cut off on any device size or density.
+
+The Android 12+ SplashScreen API scales icons aggressively, so we need
+substantial internal padding within the drawable itself to prevent cropping.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetTop="35%"
+    android:insetBottom="35%"
+    android:insetLeft="35%"
+    android:insetRight="35%"
+    android:drawable="@drawable/scanium_logo_no_transp" />
