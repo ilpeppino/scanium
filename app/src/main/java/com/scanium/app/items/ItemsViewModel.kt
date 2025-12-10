@@ -2,6 +2,9 @@ package com.scanium.app.items
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.scanium.app.aggregation.AggregationConfig
+import com.scanium.app.aggregation.AggregationPresets
+import com.scanium.app.aggregation.ItemAggregator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,8 +16,15 @@ import kotlinx.coroutines.flow.update
  * Shared between CameraScreen and ItemsListScreen.
  * Maintains a list of detected items and provides operations to add/remove them.
  *
- * Now includes session-level de-duplication to handle cases where the same
- * physical object is detected with different tracking IDs.
+ * Now uses real-time item aggregation to merge similar detections into persistent
+ * AggregatedItems. This replaces the previous strict deduplication logic that
+ * failed when ML Kit tracking IDs changed frequently.
+ *
+ * Key improvements:
+ * - Resilient to trackingId changes
+ * - Weighted similarity scoring
+ * - Configurable thresholds
+ * - Always produces items (no "no items" failure mode)
  */
 class ItemsViewModel : ViewModel() {
     companion object {
@@ -27,122 +37,88 @@ class ItemsViewModel : ViewModel() {
     // Public immutable state
     val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 
-    // Track IDs we've already seen to avoid duplicates during scanning
-    private val seenIds = mutableSetOf<String>()
-
-    // Session-level de-duplicator for similarity-based matching
-    private val sessionDeduplicator = SessionDeduplicator()
+    // Real-time item aggregator (replaces SessionDeduplicator)
+    // Using REALTIME preset optimized for continuous scanning with camera movement
+    private val itemAggregator = ItemAggregator(
+        config = AggregationPresets.REALTIME
+    )
 
     /**
      * Adds a single detected item to the list.
-     * Performs both ID-based and similarity-based de-duplication.
+     *
+     * Processes the item through the aggregator, which either:
+     * - Merges it into an existing aggregated item
+     * - Creates a new aggregated item
+     *
+     * Then updates the UI state with all current aggregated items.
      */
     fun addItem(item: ScannedItem) {
-        // First check: exact ID match
-        if (seenIds.contains(item.id)) {
-            Log.d(TAG, "Skipping duplicate ID: ${item.id}")
-            return
-        }
+        Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
 
-        // Second check: similarity-based de-duplication
-        val currentItems = _items.value
-        val similarItemId = sessionDeduplicator.findSimilarItem(item, currentItems)
+        // Process through aggregator
+        val aggregatedItem = itemAggregator.processDetection(item)
 
-        if (similarItemId != null) {
-            Log.i(TAG, "Skipping similar item: new ${item.id} is similar to existing $similarItemId")
-            // Mark this ID as seen even though we didn't add it
-            // This prevents the same detection from being re-evaluated multiple times
-            seenIds.add(item.id)
-            return
-        }
+        // Update UI state with all aggregated items
+        updateItemsState()
 
-        // Item is unique - add it
-        Log.i(TAG, "Adding new item: ${item.id} (${item.category})")
-        _items.update { currentItems ->
-            currentItems + item
-        }
-        seenIds.add(item.id)
+        Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
     }
 
     /**
      * Adds multiple detected items at once.
-     * Used when processing a frame that detects multiple objects.
-     * Performs de-duplication both against existing items and within the new batch.
+     *
+     * Processes each item through the aggregator in batch, which automatically
+     * handles merging and deduplication. This is more efficient than calling
+     * addItem() multiple times.
      */
     fun addItems(newItems: List<ScannedItem>) {
-        Log.i(TAG, ">>> addItems CALLED: received ${newItems.size} items")
+        Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
         if (newItems.isEmpty()) {
             Log.i(TAG, ">>> addItems: empty list, returning")
             return
         }
 
         newItems.forEachIndexed { index, item ->
-            Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
+            Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
         }
 
-        // Deduplicate within the new batch by taking the first occurrence of each ID
-        val deduplicatedNewItems = newItems.distinctBy { it.id }
-        Log.i(TAG, ">>> After deduplication within batch: ${deduplicatedNewItems.size} items")
+        // Log memory before processing
+        val runtime = Runtime.getRuntime()
+        val usedMemoryBefore = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+        Log.w(TAG, ">>> MEMORY BEFORE AGGREGATION: ${usedMemoryBefore}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
 
-        // Filter using both ID-based and similarity-based de-duplication
-        val uniqueItems = mutableListOf<ScannedItem>()
-        val currentItems = _items.value
-        Log.i(TAG, ">>> Current items in ViewModel: ${currentItems.size}")
+        // Process all items through aggregator
+        val aggregatedItems = itemAggregator.processDetections(newItems)
 
-        for ((index, item) in deduplicatedNewItems.withIndex()) {
-            Log.i(TAG, "    Evaluating item $index: ${item.id}")
+        // Update UI state with all aggregated items
+        updateItemsState()
 
-            // Check 1: ID already seen?
-            if (seenIds.contains(item.id)) {
-                Log.i(TAG, "    REJECTED: duplicate ID ${item.id}")
-                continue
-            }
+        // Log statistics
+        val stats = itemAggregator.getStats()
+        Log.i(TAG, ">>> AGGREGATION COMPLETE:")
+        Log.i(TAG, "    - Input detections: ${newItems.size}")
+        Log.i(TAG, "    - Aggregated items: ${stats.totalItems}")
+        Log.i(TAG, "    - Total merges: ${stats.totalMerges}")
+        Log.i(TAG, "    - Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
 
-            // Check 2: Similar to existing item?
-            val similarItemId = sessionDeduplicator.findSimilarItem(item, currentItems + uniqueItems)
-            if (similarItemId != null) {
-                Log.i(TAG, "    REJECTED: similar to existing item $similarItemId")
-                seenIds.add(item.id) // Mark as seen to avoid re-evaluation
-                continue
-            }
-
-            // Item is unique
-            Log.i(TAG, "    ACCEPTED: unique item ${item.id}")
-            uniqueItems.add(item)
-        }
-
-        // Add all unique items at once
-        if (uniqueItems.isNotEmpty()) {
-            Log.i(TAG, ">>> ADDING ${uniqueItems.size} unique items from batch of ${newItems.size}")
-
-            // Log memory before adding items
-            val runtime = Runtime.getRuntime()
-            val usedMemoryBefore = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-            Log.w(TAG, ">>> MEMORY BEFORE ADD: ${usedMemoryBefore}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
-
-            _items.update { currentItems ->
-                currentItems + uniqueItems
-            }
-            seenIds.addAll(uniqueItems.map { it.id })
-
-            // Log memory after adding items
-            val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-            Log.w(TAG, ">>> MEMORY AFTER ADD: ${usedMemoryAfter}MB used, added ${usedMemoryAfter - usedMemoryBefore}MB")
-            Log.i(TAG, ">>> Total items now: ${_items.value.size}")
-        } else {
-            Log.i(TAG, ">>> NO unique items in batch of ${newItems.size}")
-        }
+        // Log memory after processing
+        val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+        Log.w(TAG, ">>> MEMORY AFTER AGGREGATION: ${usedMemoryAfter}MB used, delta=${usedMemoryAfter - usedMemoryBefore}MB")
     }
 
     /**
      * Removes a specific item by ID.
+     *
+     * Note: itemId is now an aggregatedId from the AggregatedItem.
      */
     fun removeItem(itemId: String) {
-        _items.update { currentItems ->
-            currentItems.filterNot { it.id == itemId }
-        }
-        seenIds.remove(itemId)
-        sessionDeduplicator.removeItem(itemId)
+        Log.i(TAG, "Removing item: $itemId")
+
+        // Remove from aggregator
+        itemAggregator.removeItem(itemId)
+
+        // Update UI state
+        updateItemsState()
     }
 
     /**
@@ -150,13 +126,47 @@ class ItemsViewModel : ViewModel() {
      */
     fun clearAllItems() {
         Log.i(TAG, "Clearing all items")
+
+        // Reset aggregator
+        itemAggregator.reset()
+
+        // Update UI state
         _items.value = emptyList()
-        seenIds.clear()
-        sessionDeduplicator.reset()
     }
 
     /**
      * Returns the current count of detected items.
      */
     fun getItemCount(): Int = _items.value.size
+
+    /**
+     * Get aggregation statistics for monitoring/debugging.
+     */
+    fun getAggregationStats() = itemAggregator.getStats()
+
+    /**
+     * Remove stale items that haven't been seen recently.
+     *
+     * This can be called periodically to clean up old items from a long scanning session.
+     *
+     * @param maxAgeMs Maximum age in milliseconds (default: 30 seconds)
+     */
+    fun removeStaleItems(maxAgeMs: Long = 30_000L) {
+        val removed = itemAggregator.removeStaleItems(maxAgeMs)
+        if (removed > 0) {
+            Log.i(TAG, "Removed $removed stale items")
+            updateItemsState()
+        }
+    }
+
+    /**
+     * Update the UI state with current aggregated items.
+     *
+     * Converts AggregatedItems to ScannedItems for UI compatibility.
+     */
+    private fun updateItemsState() {
+        val scannedItems = itemAggregator.getScannedItems()
+        _items.value = scannedItems
+        Log.d(TAG, "Updated UI state: ${scannedItems.size} items")
+    }
 }
