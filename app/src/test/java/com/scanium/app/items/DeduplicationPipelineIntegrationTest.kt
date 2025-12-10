@@ -11,7 +11,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -47,7 +47,8 @@ class DeduplicationPipelineIntegrationTest {
 
     private lateinit var tracker: ObjectTracker
     private lateinit var viewModel: ItemsViewModel
-    private val testDispatcher = StandardTestDispatcher()
+    private lateinit var fakeRepository: com.scanium.app.data.FakeItemsRepository
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
@@ -65,7 +66,8 @@ class DeduplicationPipelineIntegrationTest {
             )
         )
 
-        viewModel = ItemsViewModel()
+        fakeRepository = com.scanium.app.data.FakeItemsRepository()
+        viewModel = ItemsViewModel(fakeRepository)
     }
 
     @After
@@ -76,7 +78,7 @@ class DeduplicationPipelineIntegrationTest {
     // ==================== Critical Success Scenarios ====================
 
     @Test
-    fun whenSameObjectDetectedWithChangingTrackingIds_thenDeduplicatedCorrectly() = runTest {
+    fun whenSameObjectDetectedWithChangingTrackingIds_thenDeduplicatedCorrectly() = runTest(testDispatcher) {
         // This tests the session-level de-duplication for items that slip through frame-level tracking
         // Note: If objects are spatially close, ObjectTracker will match them even with different IDs
         // This test simulates the case where objects are far enough apart that tracker creates two separate items
@@ -136,7 +138,7 @@ class DeduplicationPipelineIntegrationTest {
     }
 
     @Test
-    fun whenMultipleDifferentObjectsScanned_thenAllAddedCorrectly() = runTest {
+    fun whenMultipleDifferentObjectsScanned_thenAllAddedCorrectly() = runTest(testDispatcher) {
         // Test the "no zero items" guarantee - different objects should all be added
 
         val objectConfigurations = listOf(
@@ -179,7 +181,7 @@ class DeduplicationPipelineIntegrationTest {
     }
 
     @Test
-    fun whenTrackingIsImperfect_thenSystemStillAddsItems() = runTest {
+    fun whenTrackingIsImperfect_thenSystemStillAddsItems() = runTest(testDispatcher) {
         // Test the "no zero items" failure mode prevention
         // Even with imperfect tracking, items should be added
 
@@ -229,7 +231,7 @@ class DeduplicationPipelineIntegrationTest {
     }
 
     @Test
-    fun whenObjectMovesAndReappears_thenStillTrackedCorrectly() = runTest {
+    fun whenObjectMovesAndReappears_thenStillTrackedCorrectly() = runTest(testDispatcher) {
         // Test handling of temporary occlusion
 
         // Frames 1-2: Object detected
@@ -276,7 +278,7 @@ class DeduplicationPipelineIntegrationTest {
     // ==================== Edge Cases ====================
 
     @Test
-    fun whenSimilarObjectsHaveDifferentCategories_thenBothAdded() = runTest {
+    fun whenSimilarObjectsHaveDifferentCategories_thenBothAdded() = runTest(testDispatcher) {
         // Two objects with similar size but different categories
 
         // Scan first object
@@ -301,7 +303,7 @@ class DeduplicationPipelineIntegrationTest {
     }
 
     @Test
-    fun whenObjectSizeChangesSignificantly_thenNotConsideredSameObject() = runTest {
+    fun whenObjectSizeChangesSignificantly_thenNotConsideredSameObject() = runTest(testDispatcher) {
         // Same category but very different size = different objects
 
         // Scan first object (small)
@@ -326,7 +328,7 @@ class DeduplicationPipelineIntegrationTest {
     }
 
     @Test
-    fun whenConfirmationHappensAcrossMultipleFrames_thenDeduplicationStillWorks() = runTest {
+    fun whenConfirmationHappensAcrossMultipleFrames_thenDeduplicationStillWorks() = runTest(testDispatcher) {
         // Test that session dedup works regardless of when confirmation happens
         // This test is covered by whenSameObjectDetectedWithChangingTrackingIds_thenDeduplicatedCorrectly
         // so we'll test a simpler scenario here
@@ -349,7 +351,7 @@ class DeduplicationPipelineIntegrationTest {
     // ==================== Batch Processing ====================
 
     @Test
-    fun whenBatchAddingConfirmedItems_thenDeduplicationApplied() = runTest {
+    fun whenBatchAddingConfirmedItems_thenDeduplicationApplied() = runTest(testDispatcher) {
         // Simulate adding multiple confirmed items at once
 
         // Confirm multiple objects
@@ -365,6 +367,7 @@ class DeduplicationPipelineIntegrationTest {
                 // On frame 3, add all confirmed items as batch
                 val items = confirmed.map { convertToScannedItem(it) }
                 viewModel.addItems(items)
+        testDispatcher.scheduler.advanceUntilIdle()
             }
         }
 
@@ -376,7 +379,7 @@ class DeduplicationPipelineIntegrationTest {
     // ==================== Reset and Clear Scenarios ====================
 
     @Test
-    fun whenClearingBetweenScans_thenDeduplicationReset() = runTest {
+    fun whenClearingBetweenScans_thenDeduplicationReset() = runTest(testDispatcher) {
         // Scan first session
         repeat(3) { frameNum ->
             val detections = listOf(
@@ -426,7 +429,7 @@ class DeduplicationPipelineIntegrationTest {
     // ==================== Stress Tests ====================
 
     @Test
-    fun whenManyObjectsScannedRapidly_thenAllProcessedCorrectly() = runTest {
+    fun whenManyObjectsScannedRapidly_thenAllProcessedCorrectly() = runTest(testDispatcher) {
         // Stress test: scan 8 different objects (one per category to avoid duplicates)
 
         val objectIds = (1..8).map { "track-$it" }
@@ -450,6 +453,7 @@ class DeduplicationPipelineIntegrationTest {
             if (frameNum == 2) {
                 val items = confirmed.map { convertToScannedItem(it) }
                 viewModel.addItems(items)
+        testDispatcher.scheduler.advanceUntilIdle()
             }
         }
 
@@ -459,7 +463,7 @@ class DeduplicationPipelineIntegrationTest {
     }
 
     @Test
-    fun whenLowConfidenceDetections_thenFilteredByTracker() = runTest {
+    fun whenLowConfidenceDetections_thenFilteredByTracker() = runTest(testDispatcher) {
         // Test that low confidence detections don't make it through
 
         repeat(5) {
