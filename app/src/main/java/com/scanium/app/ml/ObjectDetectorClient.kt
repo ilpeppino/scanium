@@ -31,7 +31,7 @@ class ObjectDetectorClient {
 
     companion object {
         private const val TAG = "ObjectDetectorClient"
-        private const val CONFIDENCE_THRESHOLD = 0.3f // Lowered from 0.5 for better detection
+        private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
 
         // Flag to track if model download has been checked
         @Volatile
@@ -43,14 +43,13 @@ class ObjectDetectorClient {
         val options = ObjectDetectorOptions.Builder()
             .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE) // Better for tap capture
             .enableMultipleObjects() // Detect multiple objects per frame
-            // NOTE: Classification disabled to make detection less conservative
-            // ML Kit is more likely to detect objects when classification is off
+            .enableClassification() // Enable labels for category mapping
             .build()
 
         Log.i(TAG, "======================================")
         Log.i(TAG, "Creating SINGLE_IMAGE_MODE detector")
-        Log.i(TAG, "Config: mode=SINGLE_IMAGE, multipleObjects=true, classification=FALSE")
-        Log.i(TAG, "This should detect more objects (less conservative)")
+        Log.i(TAG, "Config: mode=SINGLE_IMAGE, multipleObjects=true, classification=TRUE")
+        Log.i(TAG, "Classification enabled for richer categories")
         Log.i(TAG, "======================================")
         ObjectDetection.getClient(options)
     }
@@ -60,14 +59,13 @@ class ObjectDetectorClient {
         val options = ObjectDetectorOptions.Builder()
             .setDetectorMode(ObjectDetectorOptions.STREAM_MODE) // Optimized for video frames
             .enableMultipleObjects() // Detect multiple objects per frame
-            // NOTE: Classification disabled to make detection less conservative
-            // ML Kit is more likely to detect objects when classification is off
+            .enableClassification() // Enable labels for category mapping
             .build()
 
         Log.i(TAG, "======================================")
         Log.i(TAG, "Creating STREAM_MODE detector")
-        Log.i(TAG, "Config: mode=STREAM, multipleObjects=true, classification=FALSE")
-        Log.i(TAG, "This should detect more objects (less conservative)")
+        Log.i(TAG, "Config: mode=STREAM, multipleObjects=true, classification=TRUE")
+        Log.i(TAG, "Classification enabled for richer categories")
         Log.i(TAG, "======================================")
         ObjectDetection.getClient(options)
     }
@@ -152,11 +150,13 @@ class ObjectDetectorClient {
             val streamOptions = ObjectDetectorOptions.Builder()
                 .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
                 .enableMultipleObjects()
+                .enableClassification()
                 .build()
 
             val singleOptions = ObjectDetectorOptions.Builder()
                 .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
                 .enableMultipleObjects()
+                .enableClassification()
                 .build()
 
             Log.i(TAG, "Initializing detectors to trigger model download...")
@@ -399,10 +399,11 @@ class ObjectDetectorClient {
 
             // Get best label and confidence
             val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
+            val labelConfidence = bestLabel?.confidence ?: 0f
 
             // CRITICAL: Use effective confidence for objects without classification
             // ML Kit's object detection is reliable even without classification
-            val confidence = bestLabel?.confidence ?: run {
+            val confidence = labelConfidence.takeIf { it > 0f } ?: run {
                 // Objects detected without classification get a reasonable confidence
                 if (detectedObject.trackingId != null) {
                     0.6f // Good confidence for tracked but unlabeled objects
@@ -414,8 +415,8 @@ class ObjectDetectorClient {
             val labelText = bestLabel?.text ?: "Object"
 
             // Determine category
-            val category = if (bestLabel != null && bestLabel.confidence > CONFIDENCE_THRESHOLD) {
-                ItemCategory.fromMlKitLabel(bestLabel.text)
+            val category = if (labelConfidence >= CONFIDENCE_THRESHOLD) {
+                ItemCategory.fromMlKitLabel(bestLabel?.text)
             } else {
                 ItemCategory.UNKNOWN
             }
@@ -430,7 +431,7 @@ class ObjectDetectorClient {
                 imageHeight = sourceBitmap?.height ?: fallbackHeight
             )
 
-            Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=${bestLabel?.confidence}), category=$category, area=$normalizedBoxArea")
+            Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=$labelConfidence), category=$category, area=$normalizedBoxArea")
 
             DetectionInfo(
                 trackingId = trackingId,
@@ -469,10 +470,11 @@ class ObjectDetectorClient {
 
             // Determine category from labels and get confidence
             val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
+            val labelConfidence = bestLabel?.confidence ?: 0f
             val category = extractCategory(detectedObject)
 
             // Use effective confidence (fallback for objects without classification)
-            val confidence = bestLabel?.confidence ?: run {
+            val confidence = labelConfidence.takeIf { it > 0f } ?: run {
                 // Objects detected without classification get a higher confidence
                 // ML Kit's object detection is reliable even without classification
                 if (detectedObject.trackingId != null) {
@@ -558,12 +560,13 @@ class ObjectDetectorClient {
     private fun extractCategory(detectedObject: DetectedObject): ItemCategory {
         // Get the label with highest confidence
         val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
+        val labelConfidence = bestLabel?.confidence ?: 0f
 
-        return if (bestLabel != null && bestLabel.confidence > CONFIDENCE_THRESHOLD) {
-            Log.d(TAG, "Using label: ${bestLabel.text} (confidence: ${bestLabel.confidence})")
-            ItemCategory.fromMlKitLabel(bestLabel.text)
+        return if (labelConfidence >= CONFIDENCE_THRESHOLD) {
+            Log.d(TAG, "Using label: ${bestLabel?.text} (confidence: $labelConfidence)")
+            ItemCategory.fromMlKitLabel(bestLabel?.text)
         } else {
-            Log.d(TAG, "No confident label found (best: ${bestLabel?.text}:${bestLabel?.confidence})")
+            Log.d(TAG, "No confident label found (best: ${bestLabel?.text}:$labelConfidence)")
             ItemCategory.UNKNOWN
         }
     }
