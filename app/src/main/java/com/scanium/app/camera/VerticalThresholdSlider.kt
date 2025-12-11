@@ -30,11 +30,11 @@ import kotlin.math.roundToInt
  *
  * Features:
  * - Vertical orientation (drag up/down to adjust)
- * - Shows current value as percentage
+ * - Shows current value as percentage (fixed position on top)
  * - Smooth animations and feedback
  * - Uses Scanium brand colors
  * - Touch-friendly size
- * - Slim, elegant design with clear text separation
+ * - Slim, elegant design
  *
  * @param value Current threshold value (0.0 - 1.0)
  * @param onValueChange Callback when value changes
@@ -58,22 +58,30 @@ fun VerticalThresholdSlider(
     // Interaction state for visual feedback
     var isDragging by remember { mutableStateOf(false) }
 
-    // Slim design: reduced padding and width
-    Row(
+    // Column layout: percentage on top, slider below
+    Column(
         modifier = modifier
             .background(
-                Color.Black.copy(alpha = 0.6f), // Slightly more transparent
+                Color.Black.copy(alpha = 0.6f),
                 shape = MaterialTheme.shapes.medium
             )
-            .padding(horizontal = 6.dp, vertical = 10.dp), // Reduced from 8dp/12dp
-        horizontalArrangement = Arrangement.spacedBy(6.dp), // Reduced from 8dp
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 8.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Vertical slider track - slimmer design
+        // Percentage display - fixed position on top
+        Text(
+            text = "${(animatedValue * 100).roundToInt()}%",
+            style = MaterialTheme.typography.titleMedium,
+            color = if (isDragging) CyanGlow else Color.White,
+            fontSize = 16.sp
+        )
+
+        // Vertical slider track - slimmer and taller
         Box(
             modifier = Modifier
-                .width(28.dp) // Reduced from 40.dp
-                .height(200.dp)
+                .width(20.dp) // Slimmer: reduced from 28.dp
+                .height(280.dp) // Taller: increased from 200.dp
                 .pointerInput(Unit) {
                     awaitEachGesture {
                         // Wait for touch down
@@ -111,7 +119,7 @@ fun VerticalThresholdSlider(
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
-                val trackWidth = 8.dp.toPx() // Reduced from 12.dp for slimmer appearance
+                val trackWidth = 6.dp.toPx() // Slimmer track
                 val centerX = size.width / 2f
 
                 // Background track
@@ -135,7 +143,7 @@ fun VerticalThresholdSlider(
 
                 // Thumb indicator
                 val thumbY = size.height * (1f - animatedValue)
-                val thumbRadius = if (isDragging) 12.dp.toPx() else 10.dp.toPx() // Slightly smaller
+                val thumbRadius = if (isDragging) 11.dp.toPx() else 9.dp.toPx()
 
                 // Thumb outer glow (when dragging)
                 if (isDragging) {
@@ -168,38 +176,6 @@ fun VerticalThresholdSlider(
                     center = Offset(centerX, thumbY)
                 )
             }
-        }
-
-        // Labels column - reorganized for clear separation
-        Column(
-            modifier = Modifier.height(200.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "HI",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 8.sp,
-                modifier = Modifier.graphicsLayer(rotationZ = -90f)
-            )
-
-            // Middle section: Percentage value - clearly separated from labels
-            Text(
-                text = "${(animatedValue * 100).roundToInt()}%",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (isDragging) CyanGlow else Color.White,
-                fontSize = 14.sp // Slightly larger for better visibility
-            )
-
-            // Bottom section: LO label
-            Text(
-                text = "LO",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 8.sp,
-                modifier = Modifier.graphicsLayer(rotationZ = -90f)
-            )
         }
     }
 }

@@ -18,6 +18,9 @@ import java.util.UUID
  * @param barcodeValue Barcode value (for BARCODE items)
  * @param boundingBox Normalized bounding box position (0-1 coordinates)
  * @param labelText ML Kit classification label (if available)
+ * @param domainCategoryId Optional fine-grained domain category ID (e.g., "electronics_laptop", "furniture_sofa")
+ *                         from the Domain Pack taxonomy. This provides more specific classification
+ *                         than the coarse ItemCategory enum. Used for future CLIP/cloud integration.
  */
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
@@ -29,7 +32,8 @@ data class ScannedItem(
     val recognizedText: String? = null,
     val barcodeValue: String? = null,
     val boundingBox: RectF? = null,
-    val labelText: String? = null
+    val labelText: String? = null,
+    val domainCategoryId: String? = null
 ) {
     /**
      * Formatted price range string for display.

@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp") version "2.0.0-1.0.24"
+    kotlin("plugin.serialization") version "2.0.0"
 }
 
 android {
@@ -101,6 +102,9 @@ dependencies {
 
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+
+    // Kotlinx Serialization (for Domain Pack JSON)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 
     // Room Database
     val roomVersion = "2.6.1"

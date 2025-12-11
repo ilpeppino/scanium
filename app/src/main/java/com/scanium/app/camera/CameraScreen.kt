@@ -366,7 +366,7 @@ private fun BoxScope.CameraOverlay(
         }
     }
 
-    // Bottom UI: Mode switcher and hint text
+    // Bottom UI: Mode switcher
     Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
@@ -374,27 +374,6 @@ private fun BoxScope.CameraOverlay(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Hint text
-        Text(
-            text = if (isScanning) {
-                "Double-tap to stop scanning"
-            } else {
-                when (scanMode) {
-                    ScanMode.OBJECT_DETECTION -> "Tap to capture • Long-press to scan"
-                    ScanMode.BARCODE -> "Tap to scan barcode • Long-press for continuous scan"
-                    ScanMode.DOCUMENT_TEXT -> "Tap to scan document • Long-press for continuous scan"
-                }
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White,
-            modifier = Modifier
-                .background(
-                    Color.Black.copy(alpha = 0.6f),
-                    shape = MaterialTheme.shapes.small
-                )
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-
         // Mode switcher
         ModeSwitcher(
             currentMode = scanMode,
@@ -503,12 +482,6 @@ private fun ClassificationModeToggle(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = "Classification",
-            style = MaterialTheme.typography.labelMedium,
-            color = Color.White
-        )
-
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
                 selected = currentMode == ClassificationMode.ON_DEVICE,

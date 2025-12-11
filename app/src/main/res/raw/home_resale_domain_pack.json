@@ -1,0 +1,434 @@
+{
+  "id": "home_resale",
+  "name": "Home Resale",
+  "version": "1.0.0",
+  "description": "Domain pack for second-hand home goods classification and price estimation",
+  "categories": [
+    {
+      "id": "furniture_sofa",
+      "displayName": "Sofa",
+      "parentId": "furniture",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a sofa",
+        "a photo of a couch",
+        "a photo of a living room sofa",
+        "a photo of a modern sofa"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "furniture_chair",
+      "displayName": "Chair",
+      "parentId": "furniture",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a chair",
+        "a photo of a dining chair",
+        "a photo of an office chair",
+        "a photo of a desk chair"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "furniture_table",
+      "displayName": "Table",
+      "parentId": "furniture",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a table",
+        "a photo of a dining table",
+        "a photo of a coffee table",
+        "a photo of a desk"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "furniture_bookshelf",
+      "displayName": "Bookshelf",
+      "parentId": "furniture",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a bookshelf",
+        "a photo of a bookcase",
+        "a photo of shelving unit"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "electronics_laptop",
+      "displayName": "Laptop",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a laptop computer",
+        "a photo of a notebook computer",
+        "a photo of a laptop"
+      ],
+      "priority": 15,
+      "enabled": true
+    },
+    {
+      "id": "electronics_monitor",
+      "displayName": "Monitor",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a computer monitor",
+        "a photo of a display screen",
+        "a photo of a monitor"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "electronics_tv",
+      "displayName": "Television",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a television",
+        "a photo of a TV",
+        "a photo of a flat screen TV"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "electronics_phone",
+      "displayName": "Smartphone",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a smartphone",
+        "a photo of a mobile phone",
+        "a photo of a phone"
+      ],
+      "priority": 15,
+      "enabled": true
+    },
+    {
+      "id": "electronics_tablet",
+      "displayName": "Tablet",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a tablet",
+        "a photo of an iPad",
+        "a photo of a tablet computer"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "electronics_speaker",
+      "displayName": "Speaker",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a speaker",
+        "a photo of a Bluetooth speaker",
+        "a photo of an audio speaker"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "clothing_shoes",
+      "displayName": "Shoes",
+      "parentId": "clothing",
+      "itemCategoryName": "FASHION",
+      "prompts": [
+        "a photo of shoes",
+        "a photo of sneakers",
+        "a photo of running shoes",
+        "a photo of boots"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "clothing_jacket",
+      "displayName": "Jacket",
+      "parentId": "clothing",
+      "itemCategoryName": "FASHION",
+      "prompts": [
+        "a photo of a jacket",
+        "a photo of a coat",
+        "a photo of outerwear"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "clothing_bag",
+      "displayName": "Bag",
+      "parentId": "clothing",
+      "itemCategoryName": "FASHION",
+      "prompts": [
+        "a photo of a backpack",
+        "a photo of a handbag",
+        "a photo of a bag",
+        "a photo of a purse"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "kitchenware_pan",
+      "displayName": "Pan",
+      "parentId": "kitchenware",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a frying pan",
+        "a photo of a pan",
+        "a photo of a skillet"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "kitchenware_pot",
+      "displayName": "Pot",
+      "parentId": "kitchenware",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a cooking pot",
+        "a photo of a pot",
+        "a photo of a saucepan"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "kitchenware_blender",
+      "displayName": "Blender",
+      "parentId": "kitchenware",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a blender",
+        "a photo of a kitchen blender",
+        "a photo of a food blender"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "appliance_microwave",
+      "displayName": "Microwave",
+      "parentId": "appliance",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a microwave",
+        "a photo of a microwave oven"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "appliance_vacuum",
+      "displayName": "Vacuum Cleaner",
+      "parentId": "appliance",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a vacuum cleaner",
+        "a photo of a vacuum"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "toys_action_figure",
+      "displayName": "Action Figure",
+      "parentId": "toys",
+      "itemCategoryName": "UNKNOWN",
+      "prompts": [
+        "a photo of an action figure",
+        "a photo of a toy figure",
+        "a photo of a collectible figure"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "toys_board_game",
+      "displayName": "Board Game",
+      "parentId": "toys",
+      "itemCategoryName": "UNKNOWN",
+      "prompts": [
+        "a photo of a board game",
+        "a photo of a board game box"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "plant_indoor",
+      "displayName": "Indoor Plant",
+      "parentId": "plant",
+      "itemCategoryName": "PLANT",
+      "prompts": [
+        "a photo of an indoor plant",
+        "a photo of a houseplant",
+        "a photo of a potted plant"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "book",
+      "displayName": "Book",
+      "parentId": null,
+      "itemCategoryName": "UNKNOWN",
+      "prompts": [
+        "a photo of a book",
+        "a photo of books"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "bicycle",
+      "displayName": "Bicycle",
+      "parentId": null,
+      "itemCategoryName": "UNKNOWN",
+      "prompts": [
+        "a photo of a bicycle",
+        "a photo of a bike"
+      ],
+      "priority": 10,
+      "enabled": true
+    }
+  ],
+  "attributes": [
+    {
+      "name": "brand",
+      "type": "STRING",
+      "extractionMethod": "OCR",
+      "appliesToCategoryIds": [
+        "electronics_laptop",
+        "electronics_monitor",
+        "electronics_tv",
+        "electronics_phone",
+        "electronics_tablet",
+        "electronics_speaker",
+        "clothing_shoes",
+        "clothing_jacket",
+        "appliance_microwave",
+        "appliance_vacuum"
+      ],
+      "required": false
+    },
+    {
+      "name": "color",
+      "type": "STRING",
+      "extractionMethod": "CLIP",
+      "appliesToCategoryIds": [
+        "furniture_sofa",
+        "furniture_chair",
+        "clothing_shoes",
+        "clothing_jacket",
+        "clothing_bag"
+      ],
+      "required": false
+    },
+    {
+      "name": "material",
+      "type": "STRING",
+      "extractionMethod": "CLIP",
+      "appliesToCategoryIds": [
+        "furniture_sofa",
+        "furniture_chair",
+        "furniture_table",
+        "kitchenware_pan",
+        "kitchenware_pot"
+      ],
+      "required": false
+    },
+    {
+      "name": "size",
+      "type": "STRING",
+      "extractionMethod": "HEURISTIC",
+      "appliesToCategoryIds": [
+        "clothing_shoes",
+        "clothing_jacket",
+        "electronics_tv",
+        "electronics_monitor"
+      ],
+      "required": false
+    },
+    {
+      "name": "condition",
+      "type": "ENUM",
+      "extractionMethod": "CLOUD",
+      "appliesToCategoryIds": [
+        "electronics_laptop",
+        "electronics_monitor",
+        "electronics_tv",
+        "electronics_phone",
+        "electronics_tablet",
+        "furniture_sofa",
+        "furniture_chair",
+        "furniture_table"
+      ],
+      "required": true
+    },
+    {
+      "name": "model",
+      "type": "STRING",
+      "extractionMethod": "OCR",
+      "appliesToCategoryIds": [
+        "electronics_laptop",
+        "electronics_monitor",
+        "electronics_tv",
+        "electronics_phone",
+        "electronics_tablet"
+      ],
+      "required": false
+    },
+    {
+      "name": "year",
+      "type": "NUMBER",
+      "extractionMethod": "OCR",
+      "appliesToCategoryIds": [
+        "electronics_laptop",
+        "electronics_phone",
+        "electronics_tablet",
+        "bicycle"
+      ],
+      "required": false
+    },
+    {
+      "name": "sku",
+      "type": "STRING",
+      "extractionMethod": "BARCODE",
+      "appliesToCategoryIds": [
+        "book",
+        "toys_board_game"
+      ],
+      "required": false
+    },
+    {
+      "name": "isbn",
+      "type": "STRING",
+      "extractionMethod": "BARCODE",
+      "appliesToCategoryIds": [
+        "book"
+      ],
+      "required": false
+    },
+    {
+      "name": "plant_type",
+      "type": "STRING",
+      "extractionMethod": "CLIP",
+      "appliesToCategoryIds": [
+        "plant_indoor"
+      ],
+      "required": false
+    }
+  ]
+}
