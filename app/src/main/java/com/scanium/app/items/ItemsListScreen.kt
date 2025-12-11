@@ -136,6 +136,7 @@ fun ItemsListScreen(
 /**
  * Single item row in the list.
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ItemRow(
     item: ScannedItem,

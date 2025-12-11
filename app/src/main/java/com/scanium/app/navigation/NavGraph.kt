@@ -88,16 +88,22 @@ fun ScaniumNavGraph(
 }
 
 // Backward compatibility alias
-@Deprecated("Use ScaniumNavGraph instead", ReplaceWith("ScaniumNavGraph(navController, itemsViewModel)"))
+@Deprecated("Use ScaniumNavGraph instead", ReplaceWith("ScaniumNavGraph(navController, itemsViewModel, classificationModeViewModel, marketplaceService)"))
 @Composable
 fun ObjectaNavGraph(
     navController: NavHostController,
     itemsViewModel: ItemsViewModel,
     classificationModeViewModel: ClassificationModeViewModel
 ) {
+    // Create marketplace service for backward compatibility
+    val marketplaceService = androidx.compose.ui.platform.LocalContext.current.let { context ->
+        androidx.compose.runtime.remember { EbayMarketplaceService(context, com.scanium.app.selling.data.MockEbayApi()) }
+    }
+
     ScaniumNavGraph(
         navController = navController,
         itemsViewModel = itemsViewModel,
-        classificationModeViewModel = classificationModeViewModel
+        classificationModeViewModel = classificationModeViewModel,
+        marketplaceService = marketplaceService
     )
 }

@@ -19,5 +19,4 @@ captures/
 
 # log files
 crash.log
-*.sh
 tombstone_23
