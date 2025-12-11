@@ -33,5 +33,22 @@ enum class ItemCategory(val displayName: String) {
                 else -> UNKNOWN
             }
         }
+
+        /**
+         * Maps labels coming from enhanced classifiers (on-device or cloud) into ItemCategory values.
+         */
+        fun fromClassifierLabel(label: String?): ItemCategory {
+            val normalized = label?.trim()?.lowercase() ?: return UNKNOWN
+
+            return when {
+                normalized.contains("shoe") || normalized.contains("sneaker") || normalized.contains("bag") -> FASHION
+                normalized.contains("chair") || normalized.contains("sofa") || normalized.contains("table") -> HOME_GOOD
+                normalized.contains("food") || normalized.contains("snack") || normalized.contains("drink") -> FOOD
+                normalized.contains("plant") || normalized.contains("flower") -> PLANT
+                normalized.contains("phone") || normalized.contains("laptop") || normalized.contains("device") || normalized.contains("monitor") -> ELECTRONICS
+                normalized.contains("document") || normalized.contains("paper") -> DOCUMENT
+                else -> fromMlKitLabel(label)
+            }
+        }
     }
 }
