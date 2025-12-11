@@ -2,6 +2,7 @@ package com.scanium.app.items
 
 import android.graphics.Bitmap
 import android.graphics.RectF
+import android.net.Uri
 import com.scanium.app.ml.ItemCategory
 import java.util.UUID
 
@@ -18,6 +19,7 @@ import java.util.UUID
  * @param barcodeValue Barcode value (for BARCODE items)
  * @param boundingBox Normalized bounding box position (0-1 coordinates)
  * @param labelText ML Kit classification label (if available)
+ * @param fullImageUri Optional high-resolution image reference for marketplace listings
  */
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
@@ -29,7 +31,8 @@ data class ScannedItem(
     val recognizedText: String? = null,
     val barcodeValue: String? = null,
     val boundingBox: RectF? = null,
-    val labelText: String? = null
+    val labelText: String? = null,
+    val fullImageUri: Uri? = null
 ) {
     /**
      * Formatted price range string for display.

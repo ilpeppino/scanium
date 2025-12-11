@@ -7,6 +7,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
 import androidx.navigation.compose.rememberNavController
+import com.scanium.app.selling.data.EbayMarketplaceService
+import com.scanium.app.selling.data.MockEbayApi
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.navigation.ScaniumNavGraph
 import com.scanium.app.data.ClassificationPreferences
@@ -46,10 +48,13 @@ fun ScaniumApp() {
         }
     )
 
+    val marketplaceService = remember { EbayMarketplaceService(context, MockEbayApi()) }
+
     ScaniumNavGraph(
         navController = navController,
         itemsViewModel = itemsViewModel,
-        classificationModeViewModel = classificationModeViewModel
+        classificationModeViewModel = classificationModeViewModel,
+        marketplaceService = marketplaceService
     )
 }
 
