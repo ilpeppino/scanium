@@ -2,7 +2,7 @@ package com.scanium.app.items
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,15 +33,27 @@ import java.util.*
 @Composable
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToSell: (List<String>) -> Unit,
     itemsViewModel: ItemsViewModel = viewModel()
 ) {
     val items by itemsViewModel.items.collectAsState()
     var selectedItem by remember { mutableStateOf<ScannedItem?>(null) }
+    val selectedIds = remember { mutableStateListOf<String>() }
+    var selectionMode by remember { mutableStateOf(false) }
+
+    fun toggleSelection(item: ScannedItem) {
+        if (selectedIds.contains(item.id)) {
+            selectedIds.remove(item.id)
+        } else {
+            selectedIds.add(item.id)
+        }
+        selectionMode = selectedIds.isNotEmpty()
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detected Items") },
+                title = { Text(if (selectionMode) "Select items" else "Detected Items") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -51,7 +63,17 @@ fun ItemsListScreen(
                     }
                 },
                 actions = {
-                    if (items.isNotEmpty()) {
+                    if (selectionMode) {
+                        TextButton(onClick = {
+                            selectedIds.clear()
+                            selectionMode = false
+                        }) {
+                            Text("Cancel")
+                        }
+                        TextButton(onClick = { onNavigateToSell(selectedIds.toList()) }) {
+                            Text("Sell on eBay")
+                        }
+                    } else if (items.isNotEmpty()) {
                         IconButton(onClick = { itemsViewModel.clearAllItems() }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -83,7 +105,17 @@ fun ItemsListScreen(
                         items(items = items, key = { it.id }) { item ->
                             ItemRow(
                                 item = item,
-                                onClick = { selectedItem = item }
+                                isSelected = selectedIds.contains(item.id),
+                                onClick = {
+                                    if (selectionMode) {
+                                        toggleSelection(item)
+                                    } else {
+                                        selectedItem = item
+                                    }
+                                },
+                                onLongClick = {
+                                    toggleSelection(item)
+                                }
                             )
                         }
                     }
@@ -107,12 +139,22 @@ fun ItemsListScreen(
 @Composable
 private fun ItemRow(
     item: ScannedItem,
-    onClick: () -> Unit
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        colors = if (isSelected) {
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        } else {
+            CardDefaults.cardColors()
+        },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
