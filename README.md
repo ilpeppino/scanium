@@ -9,10 +9,16 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
 ***REMOVED******REMOVED*** Features
 
 - **Real-Time Object Detection**: Uses Google ML Kit for on-device object detection and classification
+- **Domain Pack Category System**: Config-driven fine-grained categorization beyond ML Kit's 5 coarse categories
+  - 23 specific categories (sofa, chair, laptop, TV, shoes, etc.)
+  - 10 extractable attributes (brand, color, material, size, condition, etc.)
+  - JSON-based configuration for easy extension
+  - Ready for CLIP, OCR, and cloud-based attribute extraction
 - **Visual Detection Overlay**: Real-time bounding boxes and labels displayed on detected objects
   - Live visualization of ML Kit detections with category labels
   - Confidence scores shown on each detection
   - Automatic overlay updates during continuous scanning
+  - Clean UI with minimal overlay text
 - **Intelligent Object Tracking**: Multi-frame tracking system that eliminates duplicate detections of the same object
   - ML Kit trackingId-based matching with spatial fallback
   - Confirmation thresholds ensure stable, confident detections
@@ -49,6 +55,7 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
 - **StateFlow** - Reactive state management
 - **Navigation Compose** - Type-safe navigation
 - **Lifecycle Components** - Android lifecycle-aware components
+- **Kotlinx Serialization** - JSON parsing for Domain Pack configuration
 
 ***REMOVED******REMOVED*** Architecture
 
@@ -57,9 +64,11 @@ The project follows a **Simplified MVVM architecture** with feature-based packag
 ```
 app/src/main/java/com/scanium/app/
 ├── camera/          ***REMOVED*** Camera functionality, CameraX, mode switching
+├── domain/          ***REMOVED*** Domain Pack system (config, repository, category engine)
 ├── items/           ***REMOVED*** Detected items management and display
 ├── ml/              ***REMOVED*** Object detection and pricing logic
 ├── tracking/        ***REMOVED*** Object tracking and de-duplication system
+├── selling/         ***REMOVED*** eBay marketplace integration (mock)
 └── navigation/      ***REMOVED*** Navigation graph setup
 ```
 
@@ -78,11 +87,15 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/featu
 ***REMOVED******REMOVED*** Prerequisites
 
 - Android Studio Hedgehog (2023.1.1) or later
-- JDK 11 or higher
+- **JDK 17** (required) - See [SETUP.md](./SETUP.md) for installation instructions
 - Android SDK with minimum API 24 (Android 7.0)
 - Target API 34 (Android 14)
 
 ***REMOVED******REMOVED*** Setup
+
+For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SETUP.md](./SETUP.md).
+
+**Quick Start:**
 
 1. Clone the repository:
    ```bash
@@ -90,9 +103,12 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/featu
    cd scanium
    ```
 
-2. Open the project in Android Studio
+2. Ensure Java 17 is installed (see SETUP.md if needed)
 
-3. Sync Gradle dependencies
+3. Open the project in Android Studio, or build from command line:
+   ```bash
+   ./build.sh assembleDebug  ***REMOVED*** Auto-detects Java 17
+   ```
 
 4. Run the app on an emulator or physical device
 
