@@ -358,6 +358,27 @@ class ItemAggregator(
     }
 
     /**
+     * Returns a snapshot of aggregated items for downstream components (e.g., classification).
+     */
+    fun getAggregatedItems(): List<AggregatedItem> = aggregatedItems.values.toList()
+
+    /**
+     * Applies enhanced classification results without altering tracking behavior.
+     */
+    fun applyEnhancedClassification(
+        aggregatedId: String,
+        category: ItemCategory?,
+        label: String?,
+        priceRange: Pair<Double, Double>?
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            category?.let { item.enhancedCategory = it }
+            label?.let { item.enhancedLabelText = it }
+            priceRange?.let { item.enhancedPriceRange = it }
+        }
+    }
+
+    /**
      * Clear all aggregated items (call when starting new session).
      */
     fun reset() {

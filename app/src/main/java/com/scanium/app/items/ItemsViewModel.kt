@@ -2,9 +2,16 @@ package com.scanium.app.items
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.scanium.app.aggregation.AggregationConfig
+import androidx.lifecycle.viewModelScope
+import com.scanium.app.BuildConfig
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.ItemAggregator
+import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ml.PricingEngine
+import com.scanium.app.ml.classification.ClassificationMode
+import com.scanium.app.ml.classification.ClassificationOrchestrator
+import com.scanium.app.ml.classification.ItemClassifier
+import com.scanium.app.ml.classification.NoopClassifier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,7 +33,11 @@ import kotlinx.coroutines.flow.update
  * - Configurable thresholds
  * - Always produces items (no "no items" failure mode)
  */
-class ItemsViewModel : ViewModel() {
+class ItemsViewModel(
+    classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
+    onDeviceClassifier: ItemClassifier = NoopClassifier,
+    cloudClassifier: ItemClassifier = NoopClassifier
+) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
     }
@@ -41,6 +52,13 @@ class ItemsViewModel : ViewModel() {
     // Using REALTIME preset optimized for continuous scanning with camera movement
     private val itemAggregator = ItemAggregator(
         config = AggregationPresets.REALTIME
+    )
+
+    private val classificationOrchestrator = ClassificationOrchestrator(
+        modeFlow = classificationMode,
+        onDeviceClassifier = onDeviceClassifier,
+        cloudClassifier = cloudClassifier,
+        scope = viewModelScope
     )
 
     // Dynamic similarity threshold control (0.0 - 1.0)
@@ -149,6 +167,9 @@ class ItemsViewModel : ViewModel() {
         // Reset aggregator
         itemAggregator.reset()
 
+        // Reset classifier cache to avoid stale matches
+        classificationOrchestrator.reset()
+
         // Update UI state
         _items.value = emptyList()
     }
@@ -216,5 +237,39 @@ class ItemsViewModel : ViewModel() {
         val scannedItems = itemAggregator.getScannedItems()
         _items.value = scannedItems
         Log.d(TAG, "Updated UI state: ${scannedItems.size} items")
+
+        triggerEnhancedClassification()
+    }
+
+    private fun triggerEnhancedClassification() {
+        val pendingItems = itemAggregator.getAggregatedItems()
+            .filter { it.thumbnail != null && !classificationOrchestrator.hasResult(it.aggregatedId) }
+
+        if (pendingItems.isEmpty()) return
+
+        classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
+            val boxArea = aggregatedItem.boundingBox.width() * aggregatedItem.boundingBox.height()
+            val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
+            val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
+                result.category
+            } else {
+                aggregatedItem.enhancedCategory ?: aggregatedItem.category
+            }
+
+            itemAggregator.applyEnhancedClassification(
+                aggregatedId = aggregatedItem.aggregatedId,
+                category = categoryOverride,
+                label = result.label ?: aggregatedItem.labelText,
+                priceRange = priceRange
+            )
+
+            // Propagate updates to the UI layer
+            val updatedItems = itemAggregator.getScannedItems()
+            _items.value = updatedItems
+
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}")
+            }
+        }
     }
 }

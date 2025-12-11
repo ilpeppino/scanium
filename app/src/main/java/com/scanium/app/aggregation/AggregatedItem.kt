@@ -46,7 +46,10 @@ data class AggregatedItem(
     val firstSeenTimestamp: Long = System.currentTimeMillis(),
     var lastSeenTimestamp: Long = System.currentTimeMillis(),
     val sourceDetectionIds: MutableSet<String> = mutableSetOf(),
-    var dominantColor: Int? = null // For future thumbnail-based similarity
+    var dominantColor: Int? = null, // For future thumbnail-based similarity
+    var enhancedCategory: ItemCategory? = null,
+    var enhancedLabelText: String? = null,
+    var enhancedPriceRange: Pair<Double, Double>? = null
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -58,12 +61,12 @@ data class AggregatedItem(
         return ScannedItem(
             id = aggregatedId,
             thumbnail = thumbnail,
-            category = category,
-            priceRange = priceRange,
+            category = enhancedCategory ?: category,
+            priceRange = enhancedPriceRange ?: priceRange,
             confidence = maxConfidence,
             timestamp = lastSeenTimestamp,
             boundingBox = boundingBox,
-            labelText = labelText
+            labelText = enhancedLabelText ?: labelText
         )
     }
 

@@ -16,6 +16,9 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"\"")
+        buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
