@@ -16,3 +16,8 @@ captures/
 # Signing / keys (none should be committed)
 *.keystore
 *.jks
+
+# log files
+crash.log
+*.sh
+tombstone_23
