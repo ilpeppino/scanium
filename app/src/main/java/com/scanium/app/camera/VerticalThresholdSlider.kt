@@ -13,7 +13,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -53,6 +52,8 @@ fun VerticalThresholdSlider(
         animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
         label = "threshold_value"
     )
+    val step = 0.05f
+    fun snapToStep(raw: Float) = (raw / step).roundToInt().times(step).coerceIn(0f, 1f)
 
     // Interaction state for visual feedback
     var isDragging by remember { mutableStateOf(false) }
@@ -85,7 +86,7 @@ fun VerticalThresholdSlider(
                         if (height > 0) {
                             // Map Y position to value (0 at top = 1.0, bottom = 0.0)
                             val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
-                            onValueChange(newValue)
+                            onValueChange(snapToStep(newValue))
                         }
 
                         // Track drag movements
@@ -97,7 +98,7 @@ fun VerticalThresholdSlider(
                             if (height > 0) {
                                 // Map Y position to value (0 at top = 1.0, bottom = 0.0)
                                 val newValue = (1f - (dragY / height)).coerceIn(0f, 1f)
-                                onValueChange(newValue)
+                                onValueChange(snapToStep(newValue))
                             }
                         }
 
@@ -175,28 +176,13 @@ fun VerticalThresholdSlider(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Top section: HI label + THRESHOLD label
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp) // Increased spacing for rotated text
-            ) {
-                Text(
-                    text = "HI",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 8.sp,
-                    modifier = Modifier.graphicsLayer(rotationZ = -90f)
-                )
-
-                Text(
-                    text = "THRESHOLD",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 7.sp,
-                    letterSpacing = 0.3.sp,
-                    modifier = Modifier.graphicsLayer(rotationZ = -90f)
-                )
-            }
+            Text(
+                text = "HI",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.5f),
+                fontSize = 8.sp,
+                modifier = Modifier.graphicsLayer(rotationZ = -90f)
+            )
 
             // Middle section: Percentage value - clearly separated from labels
             Text(
