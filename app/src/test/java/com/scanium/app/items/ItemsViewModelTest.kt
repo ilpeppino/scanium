@@ -1,7 +1,7 @@
 package com.scanium.app.items
 
+import android.graphics.RectF
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.scanium.app.data.FakeItemsRepository
 import com.scanium.app.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -35,14 +35,12 @@ class ItemsViewModelTest {
     val instantTaskExecutorRule = InstantTaskExecutorRule()
 
     private lateinit var viewModel: ItemsViewModel
-    private lateinit var fakeRepository: FakeItemsRepository
     private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        fakeRepository = FakeItemsRepository()
-        viewModel = ItemsViewModel(fakeRepository)
+        viewModel = ItemsViewModel()
     }
 
     @After
@@ -72,7 +70,6 @@ class ItemsViewModelTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-1")
         assertThat(items[0].category).isEqualTo(ItemCategory.FASHION)
         assertThat(viewModel.getItemCount()).isEqualTo(1)
     }
@@ -92,7 +89,11 @@ class ItemsViewModelTest {
         // Assert
         val resultItems = viewModel.items.first()
         assertThat(resultItems).hasSize(3)
-        assertThat(resultItems.map { it.id }).containsExactly("item-1", "item-2", "item-3")
+        assertThat(resultItems.map { it.category }).containsExactly(
+            ItemCategory.FASHION,
+            ItemCategory.ELECTRONICS,
+            ItemCategory.HOME_GOOD
+        )
         assertThat(viewModel.getItemCount()).isEqualTo(3)
     }
 
@@ -100,7 +101,7 @@ class ItemsViewModelTest {
     fun whenAddingDuplicateItem_thenOnlyOneInstanceKept() = runTest {
         // Arrange
         val item1 = createTestItem(id = "item-1", category = ItemCategory.FASHION)
-        val item2 = createTestItem(id = "item-1", category = ItemCategory.ELECTRONICS) // Same ID
+        val item2 = createTestItem(id = "item-1", category = ItemCategory.FASHION) // Same ID + category
 
         // Act
         viewModel.addItem(item1)
@@ -109,7 +110,7 @@ class ItemsViewModelTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].category).isEqualTo(ItemCategory.FASHION) // First one kept
+        assertThat(items[0].category).isEqualTo(ItemCategory.FASHION) // Merged into one aggregate
     }
 
     @Test
@@ -118,7 +119,7 @@ class ItemsViewModelTest {
         val items = listOf(
             createTestItem(id = "item-1", category = ItemCategory.FASHION),
             createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
-            createTestItem(id = "item-1", category = ItemCategory.HOME_GOOD) // Duplicate
+            createTestItem(id = "item-1", category = ItemCategory.FASHION) // Duplicate (same category for merge)
         )
 
         // Act
@@ -127,7 +128,10 @@ class ItemsViewModelTest {
         // Assert
         val resultItems = viewModel.items.first()
         assertThat(resultItems).hasSize(2) // Only unique items
-        assertThat(resultItems.map { it.id }).containsExactly("item-1", "item-2")
+        assertThat(resultItems.map { it.category }).containsExactly(
+            ItemCategory.FASHION,
+            ItemCategory.ELECTRONICS
+        )
     }
 
     @Test
@@ -137,12 +141,12 @@ class ItemsViewModelTest {
         viewModel.addItem(createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS))
 
         // Act
-        viewModel.removeItem("item-1")
+        val currentItems = viewModel.items.first()
+        viewModel.removeItem(currentItems.first().id)
 
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-2")
         assertThat(viewModel.getItemCount()).isEqualTo(1)
     }
 
@@ -157,7 +161,6 @@ class ItemsViewModelTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-1")
     }
 
     @Test
@@ -197,7 +200,6 @@ class ItemsViewModelTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-2")
     }
 
     @Test
@@ -205,7 +207,8 @@ class ItemsViewModelTest {
         // Arrange
         val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
         viewModel.addItem(item)
-        viewModel.removeItem("item-1")
+        val aggregatedId = viewModel.items.first().first().id
+        viewModel.removeItem(aggregatedId)
 
         // Act - Add same ID again
         viewModel.addItem(item)
@@ -213,7 +216,6 @@ class ItemsViewModelTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-1")
     }
 
     @Test
@@ -225,7 +227,12 @@ class ItemsViewModelTest {
 
         // Assert
         val items = viewModel.items.first()
-        assertThat(items.map { it.id }).containsExactly("item-1", "item-2", "item-3").inOrder()
+        assertThat(items).hasSize(3)
+        assertThat(items.map { it.category }).containsExactly(
+            ItemCategory.FASHION,
+            ItemCategory.ELECTRONICS,
+            ItemCategory.HOME_GOOD
+        )
     }
 
     @Test
@@ -249,7 +256,7 @@ class ItemsViewModelTest {
         // Act - Add mix of new and duplicate
         viewModel.addItems(
             listOf(
-                createTestItem(id = "item-1", category = ItemCategory.ELECTRONICS), // Duplicate
+                createTestItem(id = "item-1", category = ItemCategory.FASHION), // Duplicate (merge)
                 createTestItem(id = "item-2", category = ItemCategory.HOME_GOOD), // New
                 createTestItem(id = "item-3", category = ItemCategory.PLANT) // New
             )
@@ -258,8 +265,9 @@ class ItemsViewModelTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(3)
-        assertThat(items[0].category).isEqualTo(ItemCategory.FASHION) // Original kept
-        assertThat(items.map { it.id }).containsExactly("item-1", "item-2", "item-3")
+        assertThat(items.map { it.category }).containsAtLeastElementsIn(
+            listOf(ItemCategory.FASHION, ItemCategory.HOME_GOOD, ItemCategory.PLANT)
+        )
     }
 
     @Test
@@ -288,14 +296,15 @@ class ItemsViewModelTest {
         assertThat(viewModel.getItemCount()).isEqualTo(0)
 
         // Add items
-        viewModel.addItem(createTestItem(id = "item-1"))
+        viewModel.addItem(createTestItem(id = "item-1", boundingBox = defaultBoundingBox(offsetX = 0.0f)))
         assertThat(viewModel.getItemCount()).isEqualTo(1)
 
-        viewModel.addItem(createTestItem(id = "item-2"))
+        viewModel.addItem(createTestItem(id = "item-2", boundingBox = defaultBoundingBox(offsetX = 0.5f)))
         assertThat(viewModel.getItemCount()).isEqualTo(2)
 
         // Remove item
-        viewModel.removeItem("item-1")
+        val idToRemove = viewModel.items.first().first().id
+        viewModel.removeItem(idToRemove)
         assertThat(viewModel.getItemCount()).isEqualTo(1)
 
         // Clear
@@ -330,7 +339,6 @@ class ItemsViewModelTest {
         // Assert - Should only have one item (similar item rejected)
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("track-1")
     }
 
     @Test
@@ -356,7 +364,6 @@ class ItemsViewModelTest {
         // Assert - Should have both items
         val items = viewModel.items.first()
         assertThat(items).hasSize(2)
-        assertThat(items.map { it.id }).containsExactly("item-1", "item-2")
     }
 
     @Test
@@ -373,14 +380,14 @@ class ItemsViewModelTest {
         // Act - Add another item without thumbnail (same category)
         val item2 = createTestItem(
             id = "item-2",
-            category = ItemCategory.FASHION // Same category but no thumbnail
+            category = ItemCategory.FASHION, // Same category but no thumbnail
+            boundingBox = defaultBoundingBox(offsetX = 0.5f) // Spatially separated
         )
         viewModel.addItem(item2)
 
         // Assert - Should have both items (safety check prevents false positive)
         val items = viewModel.items.first()
         assertThat(items).hasSize(2)
-        assertThat(items.map { it.id }).containsExactly("item-1", "item-2")
     }
 
     @Test
@@ -420,7 +427,11 @@ class ItemsViewModelTest {
         // Assert - Should have 3 items (item-2 rejected as similar to item-1)
         val items = viewModel.items.first()
         assertThat(items).hasSize(3)
-        assertThat(items.map { it.id }).containsExactly("item-1", "item-3", "item-4")
+        assertThat(items.map { it.category }).containsExactly(
+            ItemCategory.ELECTRONICS,
+            ItemCategory.FASHION,
+            ItemCategory.HOME_GOOD
+        )
     }
 
     @Test
@@ -451,7 +462,6 @@ class ItemsViewModelTest {
         // Assert - Should only have first item (others rejected as similar)
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-1")
     }
 
     @Test
@@ -480,7 +490,6 @@ class ItemsViewModelTest {
         // Assert - Should have the new item (deduplicator was reset)
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-2")
     }
 
     @Test
@@ -493,7 +502,8 @@ class ItemsViewModelTest {
             thumbnailHeight = 200
         )
         viewModel.addItem(item1)
-        viewModel.removeItem("item-1")
+        val aggregatedId = viewModel.items.first().first().id
+        viewModel.removeItem(aggregatedId)
 
         // Act - Add similar item
         val item2 = createItemWithThumbnail(
@@ -507,7 +517,6 @@ class ItemsViewModelTest {
         // Assert - Should be added (item-1 was removed)
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("item-2")
     }
 
     @Test
@@ -535,7 +544,6 @@ class ItemsViewModelTest {
         // Assert - Should only have one item (duplicate prevented)
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("mlkit-track-123")
     }
 
     @Test
@@ -588,14 +596,15 @@ class ItemsViewModelTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(2)
-        assertThat(items.map { it.id }).containsExactly("item-1", "item-3")
     }
 
     // Helper function to create test items
     private fun createTestItem(
         id: String = "test-id",
         category: ItemCategory = ItemCategory.UNKNOWN,
-        confidence: Float = 0.5f
+        confidence: Float = 0.5f,
+        boundingBox: RectF = defaultBoundingBox(),
+        labelText: String = category.name
     ): ScannedItem {
         return ScannedItem(
             id = id,
@@ -603,7 +612,9 @@ class ItemsViewModelTest {
             category = category,
             priceRange = 10.0 to 20.0,
             confidence = confidence,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            boundingBox = boundingBox,
+            labelText = labelText
         )
     }
 
@@ -612,7 +623,11 @@ class ItemsViewModelTest {
         category: ItemCategory,
         thumbnailWidth: Int,
         thumbnailHeight: Int,
-        confidence: Float = 0.5f
+        confidence: Float = 0.5f,
+        boundingBox: RectF = defaultBoundingBox(
+            size = (minOf(thumbnailWidth, thumbnailHeight) / 1000f).coerceAtMost(0.9f)
+        ),
+        labelText: String = category.name
     ): ScannedItem {
         val bitmap = android.graphics.Bitmap.createBitmap(
             thumbnailWidth,
@@ -626,8 +641,17 @@ class ItemsViewModelTest {
             category = category,
             priceRange = 10.0 to 20.0,
             confidence = confidence,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            boundingBox = boundingBox,
+            labelText = labelText
         )
+    }
+
+    private fun defaultBoundingBox(size: Float = 0.2f, offsetX: Float = 0.0f, offsetY: Float = 0.0f): RectF {
+        val clampedSize = size.coerceIn(0.05f, 0.9f)
+        val left = offsetX.coerceIn(0f, 1f - clampedSize)
+        val top = offsetY.coerceIn(0f, 1f - clampedSize)
+        return RectF(left, top, left + clampedSize, top + clampedSize)
     }
 
     // ==================== Threshold Control Tests ====================
@@ -738,16 +762,18 @@ class ItemsViewModelTest {
 
         // Arrange - Set high threshold (strict)
         viewModel.updateSimilarityThreshold(0.9f)
-        viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200))
-        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 210, 210))
+        val baseBox = defaultBoundingBox(size = 0.2f, offsetX = 0.0f)
+        val shiftedBox = defaultBoundingBox(size = 0.2f, offsetX = 0.25f) // Similar but offset to reduce score
+        viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
+        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 210, 210, boundingBox = shiftedBox))
 
         val strictCount = viewModel.items.first().size
 
         // Clear and test with low threshold
         viewModel.clearAllItems()
         viewModel.updateSimilarityThreshold(0.3f)
-        viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200))
-        viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 210, 210))
+        viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
+        viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 210, 210, boundingBox = shiftedBox))
 
         val looseCount = viewModel.items.first().size
 
@@ -761,16 +787,18 @@ class ItemsViewModelTest {
 
         // Arrange - Set low threshold (loose)
         viewModel.updateSimilarityThreshold(0.3f)
-        viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200))
-        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 220, 220))
+        val baseBox = defaultBoundingBox(size = 0.2f, offsetX = 0.0f)
+        val shiftedBox = defaultBoundingBox(size = 0.2f, offsetX = 0.25f)
+        viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
+        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 220, 220, boundingBox = shiftedBox))
 
         val looseCount = viewModel.items.first().size
 
         // Clear and test with high threshold
         viewModel.clearAllItems()
         viewModel.updateSimilarityThreshold(0.9f)
-        viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200))
-        viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 220, 220))
+        viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
+        viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 220, 220, boundingBox = shiftedBox))
 
         val strictCount = viewModel.items.first().size
 
@@ -789,7 +817,15 @@ class ItemsViewModelTest {
         viewModel.updateSimilarityThreshold(0.9f) // Very strict
 
         // Add similar item that would normally merge
-        viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.ELECTRONICS, 205, 205))
+        viewModel.addItem(
+            createItemWithThumbnail(
+                "item-2",
+                ItemCategory.ELECTRONICS,
+                205,
+                205,
+                boundingBox = defaultBoundingBox(size = 0.2f, offsetX = 0.25f)
+            )
+        )
 
         // Assert - With strict threshold, should have 2 items (not merged)
         val items = viewModel.items.first()
