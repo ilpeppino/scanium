@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.ui.theme.ScaniumTheme
 
 /**
@@ -18,6 +19,11 @@ import com.scanium.app.ui.theme.ScaniumTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize Domain Pack provider (config-driven category taxonomy)
+        // This loads the home_resale_domain_pack.json and sets up the CategoryEngine
+        // for future CLIP/cloud classification integration (Track A foundation)
+        DomainPackProvider.initialize(this)
 
         setContent {
             ScaniumTheme {
