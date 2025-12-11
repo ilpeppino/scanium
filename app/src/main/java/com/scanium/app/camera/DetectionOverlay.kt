@@ -4,23 +4,23 @@ import android.graphics.RectF
 import android.util.Size
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ml.DetectionResult
-import com.scanium.app.ui.theme.ScaniumBlue
 import com.scanium.app.ui.theme.CyanGlow
+import com.scanium.app.ui.theme.ScaniumBlue
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  * Overlay that renders center point markers for detected objects.
@@ -39,6 +39,9 @@ fun DetectionOverlay(
     previewSize: Size,
     modifier: Modifier = Modifier
 ) {
+    val textMeasurer = rememberTextMeasurer()
+    val labelTextStyle = MaterialTheme.typography.labelMedium.copy(color = Color.White)
+
     Canvas(modifier = modifier.fillMaxSize()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
@@ -55,6 +58,11 @@ fun DetectionOverlay(
         val circleRadius = 8.dp.toPx() // Small but visible marker
         val glowRadius = 12.dp.toPx() // Subtle glow effect
         val strokeWidth = 2.dp.toPx()
+        val labelHorizontalPadding = 8.dp.toPx()
+        val labelVerticalPadding = 4.dp.toPx()
+        val labelCornerRadius = 10.dp.toPx()
+        val labelMargin = 6.dp.toPx()
+        val labelBackgroundColor = DeepNavy.copy(alpha = 0.85f)
 
         detections.forEach { detection ->
             // Transform bounding box from image coordinates to preview coordinates
@@ -92,6 +100,44 @@ fun DetectionOverlay(
                 color = Color.White,
                 radius = 2.dp.toPx(),
                 center = center
+            )
+
+            val priceLabel = detection.formattedPriceRange.ifBlank { "N/A" }
+            val textLayoutResult = textMeasurer.measure(
+                text = AnnotatedString(priceLabel),
+                style = labelTextStyle
+            )
+
+            val textWidth = textLayoutResult.size.width.toFloat()
+            val textHeight = textLayoutResult.size.height.toFloat()
+            val labelWidth = textWidth + labelHorizontalPadding * 2
+            val labelHeight = textHeight + labelVerticalPadding * 2
+
+            val maxLabelLeft = max(0f, canvasWidth - labelWidth)
+            var labelLeft = (centerX - labelWidth / 2f).coerceIn(0f, maxLabelLeft)
+
+            val preferredTop = centerY - circleRadius - labelMargin - labelHeight
+            var labelTop = if (preferredTop < 0f) {
+                centerY + circleRadius + labelMargin
+            } else {
+                preferredTop
+            }
+            val maxLabelTop = max(0f, canvasHeight - labelHeight)
+            labelTop = labelTop.coerceIn(0f, maxLabelTop)
+
+            drawRoundRect(
+                color = labelBackgroundColor,
+                topLeft = Offset(labelLeft, labelTop),
+                size = ComposeSize(labelWidth, labelHeight),
+                cornerRadius = CornerRadius(labelCornerRadius, labelCornerRadius)
+            )
+
+            drawText(
+                textLayoutResult = textLayoutResult,
+                topLeft = Offset(
+                    x = labelLeft + labelHorizontalPadding,
+                    y = labelTop + labelVerticalPadding
+                )
             )
         }
     }
