@@ -35,6 +35,7 @@ import kotlin.math.roundToInt
  * - Smooth animations and feedback
  * - Uses Scanium brand colors
  * - Touch-friendly size
+ * - Slim, elegant design with clear text separation
  *
  * @param value Current threshold value (0.0 - 1.0)
  * @param onValueChange Callback when value changes
@@ -56,20 +57,21 @@ fun VerticalThresholdSlider(
     // Interaction state for visual feedback
     var isDragging by remember { mutableStateOf(false) }
 
+    // Slim design: reduced padding and width
     Row(
         modifier = modifier
             .background(
-                Color.Black.copy(alpha = 0.7f),
+                Color.Black.copy(alpha = 0.6f), // Slightly more transparent
                 shape = MaterialTheme.shapes.medium
             )
-            .padding(horizontal = 8.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 6.dp, vertical = 10.dp), // Reduced from 8dp/12dp
+        horizontalArrangement = Arrangement.spacedBy(6.dp), // Reduced from 8dp
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Vertical slider track
+        // Vertical slider track - slimmer design
         Box(
             modifier = Modifier
-                .width(40.dp)
+                .width(28.dp) // Reduced from 40.dp
                 .height(200.dp)
                 .pointerInput(Unit) {
                     awaitEachGesture {
@@ -108,7 +110,7 @@ fun VerticalThresholdSlider(
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
-                val trackWidth = 12.dp.toPx()
+                val trackWidth = 8.dp.toPx() // Reduced from 12.dp for slimmer appearance
                 val centerX = size.width / 2f
 
                 // Background track
@@ -132,7 +134,7 @@ fun VerticalThresholdSlider(
 
                 // Thumb indicator
                 val thumbY = size.height * (1f - animatedValue)
-                val thumbRadius = if (isDragging) 14.dp.toPx() else 12.dp.toPx()
+                val thumbRadius = if (isDragging) 12.dp.toPx() else 10.dp.toPx() // Slightly smaller
 
                 // Thumb outer glow (when dragging)
                 if (isDragging) {
@@ -161,33 +163,31 @@ fun VerticalThresholdSlider(
                 // Inner dot
                 drawCircle(
                     color = Color.White,
-                    radius = 3.dp.toPx(),
+                    radius = 2.5.dp.toPx(),
                     center = Offset(centerX, thumbY)
                 )
             }
         }
 
-        // Vertical labels parallel to slider
+        // Labels column - reorganized for clear separation
         Column(
             modifier = Modifier.height(200.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // HIGH label at top
-            Text(
-                text = "HI",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.5f),
-                fontSize = 8.sp,
-                modifier = Modifier.graphicsLayer(rotationZ = -90f)
-            )
-
-            // Center section with threshold label and value
+            // Top section: HI label + THRESHOLD label
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp) // Increased spacing for rotated text
             ) {
-                // Vertical "THRESHOLD" text
+                Text(
+                    text = "HI",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 8.sp,
+                    modifier = Modifier.graphicsLayer(rotationZ = -90f)
+                )
+
                 Text(
                     text = "THRESHOLD",
                     style = MaterialTheme.typography.labelSmall,
@@ -196,17 +196,17 @@ fun VerticalThresholdSlider(
                     letterSpacing = 0.3.sp,
                     modifier = Modifier.graphicsLayer(rotationZ = -90f)
                 )
-
-                // Value display - keep horizontal for readability
-                Text(
-                    text = "${(animatedValue * 100).roundToInt()}%",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isDragging) CyanGlow else Color.White,
-                    fontSize = 13.sp
-                )
             }
 
-            // LOW label at bottom
+            // Middle section: Percentage value - clearly separated from labels
+            Text(
+                text = "${(animatedValue * 100).roundToInt()}%",
+                style = MaterialTheme.typography.titleMedium,
+                color = if (isDragging) CyanGlow else Color.White,
+                fontSize = 14.sp // Slightly larger for better visibility
+            )
+
+            // Bottom section: LO label
             Text(
                 text = "LO",
                 style = MaterialTheme.typography.labelSmall,
