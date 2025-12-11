@@ -219,7 +219,7 @@ TrackerConfig(
     maxFrameGap = 5,              // Frames allowed between detections
     minMatchScore = 0.3f,         // Spatial matching threshold (IoU * 0.7 + dist * 0.3)
     expiryFrames = 30,            // Frames before candidate expires
-    candidateTimeoutMs = 3000L    // Time-based expiry (3 seconds)
+    candidateTimeoutMs = 3000L    ***REMOVED*** Time-based expiry (3 seconds)
 )
 ```
 
@@ -346,6 +346,6 @@ When the app grows, consider:
 
 ***REMOVED******REMOVED*** Reference Documentation
 
-- **Architecture details**: See `ARCHITECTURE.md` for comprehensive architecture documentation
-- **Tracking implementation**: See `TRACKING_IMPLEMENTATION.md` for tracking system details
+- **Architecture details**: See `md/architecture/ARCHITECTURE.md` for comprehensive architecture documentation
+- **Tracking implementation**: See `md/features/TRACKING_IMPLEMENTATION.md` for tracking system details
 - **General usage**: See `README.md` for setup and usage instructions
