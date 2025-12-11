@@ -11,15 +11,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **UI**: Jetpack Compose with Material 3
 - **Min SDK**: 24 (Android 7.0)
 - **Target SDK**: 34 (Android 14)
+- **Required Java**: 17 (See SETUP.md for cross-platform installation)
 
 ## Common Commands
 
 ### Building
 ```bash
-./gradlew assembleDebug          # Build debug APK
-./gradlew assembleRelease        # Build release APK
-./gradlew clean                  # Clean build artifacts
+./build.sh assembleDebug         # Build debug APK (auto-detects Java 17)
+./build.sh assembleRelease       # Build release APK
+./build.sh clean                 # Clean build artifacts
+
+# Alternative: Direct Gradle (ensure Java 17 is active)
+./gradlew assembleDebug
+./gradlew assembleRelease
+./gradlew clean
 ```
+
+**Note**: The `build.sh` script automatically finds Java 17 on macOS, Linux, and Windows (via SDKMAN, mise, or standard paths). See `SETUP.md` for detailed cross-platform setup instructions.
 
 ### Testing
 ```bash
@@ -62,10 +70,15 @@ adb logcat | grep "Tracker stats"        # See tracking statistics
 ```
 app/src/main/java/com/scanium/app/
 ├── camera/          # CameraX integration, scan modes, gesture handling
+├── domain/          # Domain Pack system (config, repository, category engine)
+│   ├── config/      # Domain Pack data models and enums
+│   ├── repository/  # Domain Pack loading and caching
+│   └── category/    # Category matching and mapping
 ├── items/           # Items list, ViewModel, data models
 ├── ml/              # ML Kit wrappers (object detection, barcode, OCR)
 ├── tracking/        # Multi-frame object tracking and de-duplication
 ├── navigation/      # Navigation graph
+├── selling/         # eBay marketplace integration (mock)
 └── ui/theme/        # Material 3 theming
 ```
 
@@ -93,6 +106,15 @@ app/src/main/java/com/scanium/app/
 - Starting a new scan session
 - Switching scan modes
 - Stopping scanning
+
+**UI Components** (`camera/`):
+- `VerticalThresholdSlider.kt`: Confidence threshold slider
+  - Slim vertical design (20dp width, 280dp height)
+  - Percentage display at top in fixed position
+  - Minimal design without HI/LO labels
+- `ClassificationModeToggle.kt`: Cloud/On-device mode switcher
+  - Clean toggle without extra labels
+- Camera screen optimized for clarity with minimal overlay text
 
 ### 2. ML Kit Integration (`ml/`)
 
@@ -174,24 +196,122 @@ ImageProxy → ML Kit (STREAM_MODE) → List<DetectedObject>
 - ItemsViewModel instantiated at app root, passed to screens
 - No fragment transactions, cleaner lifecycle
 
+### 6. Domain Pack & Category System (`domain/`)
+
+**NEW**: Config-driven category taxonomy for fine-grained object classification beyond ML Kit's 5 coarse categories.
+
+**DomainPack** (`domain/config/DomainPack.kt`):
+- JSON-based configuration in `res/raw/home_resale_domain_pack.json`
+- Contains 23 fine-grained categories (furniture, electronics, clothing, etc.)
+- Defines 10 extractable attributes (brand, color, material, size, condition, etc.)
+- Each category maps to an ML Kit `ItemCategory` with matching prompts
+
+**LocalDomainPackRepository** (`domain/repository/LocalDomainPackRepository.kt`):
+- Loads and validates Domain Pack JSON from resources
+- Singleton pattern with thread-safe lazy initialization
+- Caches parsed configuration in memory
+- Provides fallback empty pack on error
+- Validates category IDs and itemCategoryName references
+
+**BasicCategoryEngine** (`domain/category/BasicCategoryEngine.kt`):
+- Implements `CategoryEngine` interface for ML Kit label matching
+- Matches detected labels against DomainCategory prompts
+- Uses priority-based tie-breaking for overlapping categories
+- Returns scored category candidates with confidence
+
+**CategoryMapper** (`domain/category/CategoryMapper.kt`):
+- Extension functions for DomainCategory ↔ ItemCategory conversion
+- Validates itemCategoryName references
+- Provides safe fallback to UNKNOWN category
+
+**DomainPackProvider** (`domain/DomainPackProvider.kt`):
+- Singleton provider for app-wide access to domain system
+- Initialized in `MainActivity.onCreate()`
+- Provides repository and engine instances
+
+**Integration**:
+- `ScannedItem` has optional `domainCategoryId` field (non-breaking)
+- Ready for future attribute extraction pipelines (CLIP, OCR, Cloud)
+- Fully tested with 61 unit tests
+
+**Configuration Example** (`res/raw/home_resale_domain_pack.json`):
+- 23 fine-grained categories: sofa, chair, table, laptop, TV, phone, shoes, jacket, bag, etc.
+- 10 extractable attributes: brand, color, material, size, condition, weight, dimensions, etc.
+- Each category has ML Kit prompts for matching (e.g., sofa matches "sofa", "couch", "sectional")
+- Priority-based disambiguation for overlapping categories
+
+See `md/architecture/DOMAIN_PACK_ARCHITECTURE.md` for complete documentation.
+
 ## Data Models
 
-### ItemCategory Enum (`ml/ItemCategory.kt`)
-Maps ML Kit's 5 coarse categories to app categories:
-- `FASHION`, `FOOD`, `HOME_GOODS`, `PLACES`, `PLANTS`, `UNKNOWN`, `BARCODE`, `DOCUMENT`
+### Core Detection Models
+
+**ItemCategory Enum** (`ml/ItemCategory.kt`):
+- Maps ML Kit's 5 coarse categories to app categories
+- Values: `FASHION`, `FOOD`, `HOME_GOODS`, `PLACES`, `PLANTS`, `UNKNOWN`, `BARCODE`, `DOCUMENT`
 - Method: `fromMlKitLabel(text: String)` for mapping ML Kit labels
 
-### ConfidenceLevel Enum (`items/ScannedItem.kt`)
+**ConfidenceLevel Enum** (`items/ScannedItem.kt`):
 - `LOW` (0.0-0.5), `MEDIUM` (0.5-0.75), `HIGH` (0.75-1.0)
 
-### ScanMode Enum (`camera/ScanMode.kt`)
+**ScanMode Enum** (`camera/ScanMode.kt`):
 - `OBJECT_DETECTION`, `BARCODE`, `DOCUMENT_TEXT`
+
+**ScannedItem** (`items/ScannedItem.kt`):
+- Properties: `id`, `thumbnail`, `category`, `priceRange`, `confidence`, `timestamp`, `domainCategoryId` (optional)
+- Computed: `confidenceLevel`, `formattedConfidence`, `formattedPriceRange`
+
+### Domain Pack Models
+
+**DomainPack** (`domain/config/DomainPack.kt`):
+```kotlin
+@Serializable
+data class DomainPack(
+    val id: String,
+    val version: String,
+    val categories: List<DomainCategory>,
+    val attributes: List<DomainAttribute>
+)
+```
+- Helper methods: `getEnabledCategories()`, `getCategoryById()`, `getCategoriesForItemCategory()`, `getCategoriesByPriority()`
+
+**DomainCategory** (`domain/config/DomainCategory.kt`):
+```kotlin
+@Serializable
+data class DomainCategory(
+    val id: String,              // e.g., "furniture.sofa"
+    val displayName: String,     // e.g., "Sofa"
+    val parentId: String?,       // e.g., "furniture"
+    val itemCategoryName: String, // Maps to ItemCategory enum
+    val prompts: List<String>,   // ML Kit label matching prompts
+    val priority: Int? = null,   // Disambiguation priority
+    val enabled: Boolean
+)
+```
+
+**DomainAttribute** (`domain/config/DomainAttribute.kt`):
+```kotlin
+@Serializable
+data class DomainAttribute(
+    val id: String,
+    val displayName: String,
+    val type: AttributeType,           // STRING, NUMBER, ENUM, BOOLEAN
+    val extractionMethod: ExtractionMethod, // OCR, CLIP, CLOUD, HEURISTIC, etc.
+    val enabled: Boolean
+)
+```
+
+**AttributeType Enum**: `STRING`, `NUMBER`, `ENUM`, `BOOLEAN`
+
+**ExtractionMethod Enum**: `OCR`, `BARCODE`, `CLIP`, `CLOUD`, `HEURISTIC`, `NONE`
 
 ## Testing
 
-**110 total tests** across unit and instrumented tests:
+**171 total tests** across unit and instrumented tests:
 
 **Unit Tests** (`app/src/test/`):
+
+*Tracking & Detection (original 110 tests):*
 - `ObjectTrackerTest.kt` - Tracking logic, confirmation, expiry
 - `ObjectCandidateTest.kt` - Spatial matching (IoU, distance)
 - `TrackingPipelineIntegrationTest.kt` - End-to-end tracking scenarios
@@ -200,12 +320,19 @@ Maps ML Kit's 5 coarse categories to app categories:
 - `PricingEngineTest.kt` - EUR price generation
 - `ItemCategoryTest.kt` - ML Kit label mapping
 
+*Domain Pack System (61 new tests):*
+- `DomainPackTest.kt` (10 tests) - DomainPack data model and helper methods
+- `LocalDomainPackRepositoryTest.kt` (14 tests) - JSON loading, caching, validation
+- `CategoryMapperTest.kt` (11 tests) - DomainCategory ↔ ItemCategory conversion
+- `BasicCategoryEngineTest.kt` (16 tests) - ML Kit label matching, priority handling
+- `DomainPackProviderTest.kt` (10 tests) - Singleton initialization, thread safety
+
 **Instrumented Tests** (`app/src/androidTest/`):
 - `ModeSwitcherInstrumentedTest.kt` - Compose UI for mode switching
 - `DetectionOverlayInstrumentedTest.kt` - Bounding box rendering
 
 **Test Frameworks**:
-- JUnit 4, Robolectric, Truth assertions, MockK, Coroutines Test, Compose Testing
+- JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose Testing, Kotlinx Serialization Test
 
 ## Configuration & Tuning
 
@@ -219,7 +346,7 @@ TrackerConfig(
     maxFrameGap = 5,              // Frames allowed between detections
     minMatchScore = 0.3f,         // Spatial matching threshold (IoU * 0.7 + dist * 0.3)
     expiryFrames = 30,            // Frames before candidate expires
-    candidateTimeoutMs = 3000L    # Time-based expiry (3 seconds)
+    candidateTimeoutMs = 3000L    // Time-based expiry (3 seconds)
 )
 ```
 
@@ -313,6 +440,24 @@ DisposableEffect(Unit) {
 3. Test on device with debug logs: `adb logcat | grep ObjectTracker`
 4. Check confirmation timing and duplicate prevention
 
+### Adding Domain Pack Categories
+1. Edit `res/raw/home_resale_domain_pack.json`
+2. Add new category with:
+   - Unique `id` (e.g., "electronics.tablet")
+   - `displayName` for UI
+   - `itemCategoryName` mapping to ML Kit category
+   - `prompts` array for label matching
+   - Optional `priority` for disambiguation
+3. Test with: `./gradlew test --tests "*DomainPack*"`
+4. Verify loading: `adb logcat | grep DomainPack`
+
+### Creating a New Domain Pack
+1. Create JSON file in `res/raw/` (e.g., `fashion_domain_pack.json`)
+2. Follow schema from `home_resale_domain_pack.json`
+3. Update `LocalDomainPackRepository` to load new pack
+4. Initialize in `MainActivity` with appropriate pack ID
+5. Add validation tests
+
 ### Implementing Real Pricing API
 1. Create `PricingRepository` interface in `ml/`
 2. Implement with Retrofit/OkHttp
@@ -330,10 +475,12 @@ DisposableEffect(Unit) {
 ## Known Limitations
 
 - **ML Kit categories**: Only 5 coarse categories (Fashion, Food, Home goods, Places, Plants)
+  - ✅ **Mitigated**: Domain Pack system provides 23 fine-grained categories with extensible config
 - **No persistence**: Items cleared on app close
 - **Mocked pricing**: Local price generation, no real API
 - **Single module**: Will need multi-module architecture at scale
 - **No DI framework**: Manual dependency injection may not scale
+- **Attribute extraction**: Domain Pack defines attributes but extraction not yet implemented (CLIP, OCR, Cloud pipelines pending)
 
 ## Future Architecture Considerations
 
@@ -346,6 +493,15 @@ When the app grows, consider:
 
 ## Reference Documentation
 
-- **Architecture details**: See `md/architecture/ARCHITECTURE.md` for comprehensive architecture documentation
-- **Tracking implementation**: See `md/features/TRACKING_IMPLEMENTATION.md` for tracking system details
-- **General usage**: See `README.md` for setup and usage instructions
+### Setup & Environment
+- **Cross-platform setup**: See `SETUP.md` for Java 17 installation and multi-machine development workflow
+- **General usage**: See `README.md` for app features and usage instructions
+
+### Architecture
+- **Architecture overview**: See `md/architecture/ARCHITECTURE.md` for comprehensive system architecture
+- **Domain Pack system**: See `md/architecture/DOMAIN_PACK_ARCHITECTURE.md` for category taxonomy and config schema
+- **Tracking implementation**: See `md/features/TRACKING_IMPLEMENTATION.md` for object tracking and de-duplication
+
+### Testing & Debugging
+- **Test suite**: See `md/testing/TEST_SUITE.md` for test coverage and frameworks
+- **Debug guide**: See `md/debugging/DIAGNOSTIC_LOG_GUIDE.md` for debugging ML Kit issues

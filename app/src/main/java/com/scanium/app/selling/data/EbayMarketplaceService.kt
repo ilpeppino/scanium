@@ -63,14 +63,7 @@ class EbayMarketplaceService(
     }
 
     private fun prepareListingImage(item: ScannedItem, draft: ListingDraft): ListingImage? {
-        val existingHighRes = item.fullImageUri?.toString()
-        if (existingHighRes != null) {
-            return ListingImage(
-                source = ListingImageSource.HIGH_RES_CAPTURE,
-                uri = existingHighRes
-            )
-        }
-
+        // Note: fullImageUri was removed from ScannedItem, using thumbnail only
         val bitmap = item.thumbnail ?: return null
         val uri = writeBitmapToCache(bitmap, draft.scannedItemId)
         return ListingImage(
