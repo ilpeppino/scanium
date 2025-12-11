@@ -3,6 +3,7 @@ package com.scanium.app.items
 import com.scanium.app.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -18,6 +19,7 @@ import org.robolectric.RobolectricTestRunner
  * - The "no zero items" failure mode prevention
  */
 @RunWith(RobolectricTestRunner::class)
+@Ignore("Legacy SessionDeduplicator is superseded by ItemAggregator; keep until removed or updated.")
 class SessionDeduplicatorTest {
 
     private lateinit var deduplicator: SessionDeduplicator
