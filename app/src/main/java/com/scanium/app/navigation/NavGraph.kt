@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import com.scanium.app.camera.CameraScreen
 import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.settings.ClassificationModeViewModel
 
 /**
  * Navigation routes for the app.
@@ -27,7 +28,8 @@ object Routes {
 @Composable
 fun ScaniumNavGraph(
     navController: NavHostController,
-    itemsViewModel: ItemsViewModel
+    itemsViewModel: ItemsViewModel,
+    classificationModeViewModel: ClassificationModeViewModel
 ) {
     NavHost(
         navController = navController,
@@ -38,7 +40,8 @@ fun ScaniumNavGraph(
                 onNavigateToItems = {
                     navController.navigate(Routes.ITEMS_LIST)
                 },
-                itemsViewModel = itemsViewModel
+                itemsViewModel = itemsViewModel,
+                classificationModeViewModel = classificationModeViewModel
             )
         }
 
@@ -58,7 +61,12 @@ fun ScaniumNavGraph(
 @Composable
 fun ObjectaNavGraph(
     navController: NavHostController,
-    itemsViewModel: ItemsViewModel
+    itemsViewModel: ItemsViewModel,
+    classificationModeViewModel: ClassificationModeViewModel
 ) {
-    ScaniumNavGraph(navController = navController, itemsViewModel = itemsViewModel)
+    ScaniumNavGraph(
+        navController = navController,
+        itemsViewModel = itemsViewModel,
+        classificationModeViewModel = classificationModeViewModel
+    )
 }

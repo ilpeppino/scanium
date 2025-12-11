@@ -29,6 +29,8 @@ import com.scanium.app.ml.DetectionResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
+import com.scanium.app.ml.classification.ClassificationMode
+import com.scanium.app.settings.ClassificationModeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -46,7 +48,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun CameraScreen(
     onNavigateToItems: () -> Unit,
-    itemsViewModel: ItemsViewModel = viewModel()
+    itemsViewModel: ItemsViewModel = viewModel(),
+    classificationModeViewModel: ClassificationModeViewModel
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -76,6 +79,7 @@ fun CameraScreen(
 
     // Items count from ViewModel
     val itemsCount by itemsViewModel.items.collectAsState()
+    val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
 
     // Detection overlay state
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
@@ -202,6 +206,10 @@ fun CameraScreen(
                     itemsCount = itemsCount.size,
                     isScanning = isScanning,
                     scanMode = currentScanMode,
+                    classificationMode = classificationMode,
+                    onClassificationModeChanged = { mode ->
+                        classificationModeViewModel.updateMode(mode)
+                    },
                     onNavigateToItems = onNavigateToItems,
                     onModeChanged = { newMode ->
                         if (newMode != currentScanMode) {
@@ -314,6 +322,8 @@ private fun BoxScope.CameraOverlay(
     itemsCount: Int,
     isScanning: Boolean,
     scanMode: ScanMode,
+    classificationMode: ClassificationMode,
+    onClassificationModeChanged: (ClassificationMode) -> Unit,
     onNavigateToItems: () -> Unit,
     onModeChanged: (ScanMode) -> Unit
 ) {
@@ -390,6 +400,11 @@ private fun BoxScope.CameraOverlay(
             currentMode = scanMode,
             onModeChanged = onModeChanged,
             modifier = Modifier
+        )
+
+        ClassificationModeToggle(
+            currentMode = classificationMode,
+            onModeSelected = onClassificationModeChanged
         )
     }
 
@@ -475,5 +490,43 @@ private fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
         Button(onClick = onRequestPermission) {
             Text("Grant Permission")
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ClassificationModeToggle(
+    currentMode: ClassificationMode,
+    onModeSelected: (ClassificationMode) -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "Classification",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = currentMode == ClassificationMode.ON_DEVICE,
+                onClick = { onModeSelected(ClassificationMode.ON_DEVICE) },
+                label = { Text("On-device") }
+            )
+
+            FilterChip(
+                selected = currentMode == ClassificationMode.CLOUD,
+                onClick = { onModeSelected(ClassificationMode.CLOUD) },
+                label = { Text("Cloud") }
+            )
+        }
+
+        Text(
+            text = if (currentMode == ClassificationMode.CLOUD) "Higher quality • Uses data" else "Fast • Offline",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White.copy(alpha = 0.85f)
+        )
     }
 }
