@@ -20,13 +20,16 @@ enum class ItemCategory(val displayName: String) {
          * ML Kit provides categories like "Fashion good", "Home good", "Food", etc.
          */
         fun fromMlKitLabel(label: String?): ItemCategory {
-            return when (label?.lowercase()) {
-                "fashion good", "fashion", "clothing" -> FASHION
-                "home good", "home", "furniture" -> HOME_GOOD
-                "food", "food product" -> FOOD
+            val normalized = label?.trim()?.lowercase()
+            if (normalized.isNullOrEmpty()) return UNKNOWN
+
+            return when (normalized) {
+                "fashion good", "fashion", "clothing", "apparel", "shoe", "bag" -> FASHION
+                "home good", "home", "furniture", "sofa", "chair", "kitchen" -> HOME_GOOD
+                "food", "food product", "fruit", "vegetable", "drink", "snack" -> FOOD
                 "place" -> PLACE
-                "plant" -> PLANT
-                "electronics", "electronic" -> ELECTRONICS
+                "plant", "flower" -> PLANT
+                "electronics", "electronic", "device", "phone", "laptop", "monitor", "tv", "gadget" -> ELECTRONICS
                 else -> UNKNOWN
             }
         }
