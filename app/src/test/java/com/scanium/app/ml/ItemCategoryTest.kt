@@ -162,4 +162,35 @@ class ItemCategoryTest {
                 .isEqualTo(ItemCategory.ELECTRONICS)
         }
     }
+
+    @Test
+    fun whenAdditionalMlKitLabels_thenMapToExpectedCategories() {
+        // Fashion/accessories
+        assertThat(ItemCategory.fromMlKitLabel("apparel")).isEqualTo(ItemCategory.FASHION)
+        assertThat(ItemCategory.fromMlKitLabel("shoe")).isEqualTo(ItemCategory.FASHION)
+        assertThat(ItemCategory.fromMlKitLabel("bag")).isEqualTo(ItemCategory.FASHION)
+
+        // Home goods / furniture
+        assertThat(ItemCategory.fromMlKitLabel("sofa")).isEqualTo(ItemCategory.HOME_GOOD)
+        assertThat(ItemCategory.fromMlKitLabel("chair")).isEqualTo(ItemCategory.HOME_GOOD)
+        assertThat(ItemCategory.fromMlKitLabel("kitchen")).isEqualTo(ItemCategory.HOME_GOOD)
+
+        // Food and grocery
+        assertThat(ItemCategory.fromMlKitLabel("fruit")).isEqualTo(ItemCategory.FOOD)
+        assertThat(ItemCategory.fromMlKitLabel("vegetable")).isEqualTo(ItemCategory.FOOD)
+        assertThat(ItemCategory.fromMlKitLabel("drink")).isEqualTo(ItemCategory.FOOD)
+        assertThat(ItemCategory.fromMlKitLabel("snack")).isEqualTo(ItemCategory.FOOD)
+
+        // Electronics / devices
+        assertThat(ItemCategory.fromMlKitLabel("device")).isEqualTo(ItemCategory.ELECTRONICS)
+        assertThat(ItemCategory.fromMlKitLabel("phone")).isEqualTo(ItemCategory.ELECTRONICS)
+        assertThat(ItemCategory.fromMlKitLabel("laptop")).isEqualTo(ItemCategory.ELECTRONICS)
+        assertThat(ItemCategory.fromMlKitLabel("monitor")).isEqualTo(ItemCategory.ELECTRONICS)
+        assertThat(ItemCategory.fromMlKitLabel("tv")).isEqualTo(ItemCategory.ELECTRONICS)
+        assertThat(ItemCategory.fromMlKitLabel("gadget")).isEqualTo(ItemCategory.ELECTRONICS)
+
+        // Plants
+        assertThat(ItemCategory.fromMlKitLabel("flower")).isEqualTo(ItemCategory.PLANT)
+        assertThat(ItemCategory.fromMlKitLabel(" plant ")).isEqualTo(ItemCategory.PLANT)
+    }
 }

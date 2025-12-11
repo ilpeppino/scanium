@@ -367,12 +367,19 @@ class ItemAggregatorTest {
     @Test
     fun `test reset clears all items`() {
         // Add multiple items
+        val categories = listOf(
+            ItemCategory.FASHION,
+            ItemCategory.HOME_GOOD,
+            ItemCategory.FOOD,
+            ItemCategory.PLANT,
+            ItemCategory.ELECTRONICS
+        )
         for (i in 0 until 5) {
             val detection = createTestDetection(
                 id = "det_$i",
-                category = ItemCategory.FASHION,
+                category = categories[i % categories.size],
                 labelText = "Item $i",
-                boundingBox = RectF(0.1f * i, 0.1f, 0.2f * i + 0.2f, 0.3f),
+                boundingBox = RectF(0.15f * i, 0.1f, 0.15f * i + 0.05f, 0.2f),
                 confidence = 0.8f
             )
             aggregator.processDetection(detection)
