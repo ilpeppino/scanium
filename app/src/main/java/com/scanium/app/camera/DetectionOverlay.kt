@@ -11,16 +11,22 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.scanium.app.ml.DetectionResult
+import com.scanium.app.ui.theme.ScaniumBlue
+import com.scanium.app.ui.theme.CyanGlow
 import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Overlay that renders bounding boxes and price labels for detected objects.
+ * Overlay that renders center point markers for detected objects.
+ *
+ * Uses small circular markers instead of full bounding boxes to reduce visual clutter
+ * while still providing location feedback for each detected item.
  *
  * @param detections List of detection results to render
  * @param imageSize Size of the analyzed image (from ML Kit)
@@ -45,66 +51,48 @@ fun DetectionOverlay(
             previewHeight = canvasHeight
         )
 
+        // Circle appearance constants
+        val circleRadius = 8.dp.toPx() // Small but visible marker
+        val glowRadius = 12.dp.toPx() // Subtle glow effect
+        val strokeWidth = 2.dp.toPx()
+
         detections.forEach { detection ->
             // Transform bounding box from image coordinates to preview coordinates
             val transformedBox = transformBoundingBox(detection.boundingBox, transform)
 
-            // Draw bounding box
-            drawRect(
-                color = Color.Green,
-                topLeft = Offset(transformedBox.left, transformedBox.top),
-                size = androidx.compose.ui.geometry.Size(
-                    transformedBox.width(),
-                    transformedBox.height()
-                ),
-                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 4.dp.toPx())
+            // Calculate center point of the bounding box
+            val centerX = transformedBox.left + transformedBox.width() / 2f
+            val centerY = transformedBox.top + transformedBox.height() / 2f
+            val center = Offset(centerX, centerY)
+
+            // Draw subtle glow effect (outer circle with transparency)
+            drawCircle(
+                color = CyanGlow.copy(alpha = 0.2f),
+                radius = glowRadius,
+                center = center
             )
 
-            // Draw price label with background
-            val labelText = "${detection.category.name}: ${detection.formattedPriceRange}"
+            // Draw main filled circle marker
+            drawCircle(
+                color = ScaniumBlue,
+                radius = circleRadius,
+                center = center
+            )
 
-            drawIntoCanvas { canvas ->
-                val paint = Paint().asFrameworkPaint().apply {
-                    isAntiAlias = true
-                    textSize = 40f
-                    color = Color.White.toArgb()
-                }
+            // Draw white border for better visibility against all backgrounds
+            drawCircle(
+                color = Color.White,
+                radius = circleRadius,
+                center = center,
+                style = Stroke(width = strokeWidth)
+            )
 
-                val backgroundPaint = Paint().asFrameworkPaint().apply {
-                    color = Color.Green.copy(alpha = 0.8f).toArgb()
-                    style = android.graphics.Paint.Style.FILL
-                }
-
-                // Measure text
-                val textBounds = android.graphics.Rect()
-                paint.getTextBounds(labelText, 0, labelText.length, textBounds)
-
-                // Position label above the bounding box (or below if too close to top)
-                val labelX = transformedBox.left
-                val labelY = if (transformedBox.top > textBounds.height() + 20) {
-                    transformedBox.top - 10
-                } else {
-                    transformedBox.bottom + textBounds.height() + 10
-                }
-
-                // Draw background rectangle
-                val padding = 8f
-                canvas.nativeCanvas.drawRect(
-                    labelX - padding,
-                    labelY - textBounds.height() - padding,
-                    labelX + textBounds.width() + padding,
-                    labelY + padding,
-                    backgroundPaint
-                )
-
-                // Draw text
-                canvas.nativeCanvas.drawText(
-                    labelText,
-                    labelX,
-                    labelY,
-                    paint
-                )
-            }
+            // Draw small inner dot for precise center indication
+            drawCircle(
+                color = Color.White,
+                radius = 2.dp.toPx(),
+                center = center
+            )
         }
     }
 }
