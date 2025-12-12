@@ -2,7 +2,6 @@ package com.scanium.app.selling.data
 
 import android.content.Context
 import android.util.Log
-import com.scanium.app.items.ScannedItem
 import com.scanium.app.selling.domain.Listing
 import com.scanium.app.selling.domain.ListingDraft
 import com.scanium.app.selling.domain.ListingError
@@ -10,7 +9,6 @@ import com.scanium.app.selling.domain.ListingId
 import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
 import com.scanium.app.selling.domain.ListingStatus
-import com.scanium.app.selling.util.ListingDraftMapper
 import com.scanium.app.selling.util.ListingImagePreparer
 
 /**
@@ -42,37 +40,33 @@ class EbayMarketplaceService(
     private val imagePreparer = ListingImagePreparer(context)
 
     /**
-     * Creates listings for multiple items.
-     * Processes each item independently, so partial failures are allowed.
+     * Creates listings for multiple drafts.
+     * Processes each draft independently, so partial failures are allowed.
      */
-    suspend fun createListingsForItems(items: List<ScannedItem>): List<ListingCreationResult> {
-        return items.map { createListingForItem(it) }
+    suspend fun createListingsForItems(drafts: List<ListingDraft>): List<ListingCreationResult> {
+        return drafts.map { createListingForDraft(it) }
     }
 
     /**
-     * Creates a single eBay listing for a scanned item.
+     * Creates a single eBay listing from a prepared draft.
      *
      * Steps:
-     * 1. Convert ScannedItem to ListingDraft
-     * 2. Prepare high-quality listing image (background thread)
-     * 3. Call eBay API to create listing
-     * 4. Cache the result locally
+     * 1. Prepare high-quality listing image (background thread)
+     * 2. Call eBay API to create listing
+     * 3. Cache the result locally
      *
      * All image processing happens on Dispatchers.IO automatically.
      */
-    suspend fun createListingForItem(item: ScannedItem): ListingCreationResult {
+    suspend fun createListingForDraft(draft: ListingDraft): ListingCreationResult {
         Log.i(TAG, "═════════════════════════════════════════════════════")
-        Log.i(TAG, "Creating listing for item: ${item.id}")
-
-        // Step 1: Create draft
-        val draft = ListingDraftMapper.fromScannedItem(item)
+        Log.i(TAG, "Creating listing for item: ${draft.scannedItemId}")
         Log.i(TAG, "Draft: ${draft.title} - €${draft.price}")
 
-        // Step 2: Prepare image (runs on background thread)
+        // Step 1: Prepare image (runs on background thread)
         val imageResult = imagePreparer.prepareListingImage(
-            itemId = item.id,
-            fullImageUri = item.fullImageUri,
-            thumbnail = item.thumbnail
+            itemId = draft.scannedItemId,
+            fullImageUri = draft.originalItem.fullImageUri,
+            thumbnail = draft.originalItem.thumbnail
         )
 
         val listingImage = when (imageResult) {
@@ -95,7 +89,7 @@ class EbayMarketplaceService(
             }
         }
 
-        // Step 3: Create listing via API
+        // Step 2: Create listing via API
         return try {
             val listing = ebayApi.createListing(draft, listingImage)
             repository.save(listing)
