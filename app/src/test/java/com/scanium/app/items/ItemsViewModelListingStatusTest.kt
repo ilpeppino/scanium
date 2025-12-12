@@ -1,0 +1,101 @@
+package com.scanium.app.items
+
+import android.graphics.Bitmap
+import android.graphics.RectF
+import com.google.common.truth.Truth.assertThat
+import com.scanium.app.ml.ItemCategory
+import org.junit.Before
+import org.junit.Test
+
+class ItemsViewModelListingStatusTest {
+
+    private lateinit var viewModel: ItemsViewModel
+
+    @Before
+    fun setup() {
+        viewModel = ItemsViewModel()
+    }
+
+    @Test
+    fun `updateListingStatus changes item status`() {
+        // Add an item
+        val item = createTestItem(id = "item1")
+        viewModel.addItem(item)
+
+        // Update listing status
+        viewModel.updateListingStatus(
+            itemId = "item1",
+            status = ItemListingStatus.LISTED_ACTIVE,
+            listingId = "EBAY-123",
+            listingUrl = "https://ebay.com/listing/123"
+        )
+
+        // Verify status was updated
+        val updatedItem = viewModel.getItem("item1")
+        assertThat(updatedItem).isNotNull()
+        assertThat(updatedItem!!.listingStatus).isEqualTo(ItemListingStatus.LISTED_ACTIVE)
+        assertThat(updatedItem.listingId).isEqualTo("EBAY-123")
+        assertThat(updatedItem.listingUrl).isEqualTo("https://ebay.com/listing/123")
+    }
+
+    @Test
+    fun `updateListingStatus only affects target item`() {
+        // Add multiple items
+        viewModel.addItem(createTestItem(id = "item1"))
+        viewModel.addItem(createTestItem(id = "item2"))
+
+        // Update only one item
+        viewModel.updateListingStatus(
+            itemId = "item1",
+            status = ItemListingStatus.LISTED_ACTIVE
+        )
+
+        // Verify only item1 was updated
+        val item1 = viewModel.getItem("item1")
+        val item2 = viewModel.getItem("item2")
+
+        assertThat(item1!!.listingStatus).isEqualTo(ItemListingStatus.LISTED_ACTIVE)
+        assertThat(item2!!.listingStatus).isEqualTo(ItemListingStatus.NOT_LISTED)
+    }
+
+    @Test
+    fun `getListingStatus returns correct status`() {
+        val item = createTestItem(id = "item1")
+        viewModel.addItem(item)
+
+        // Initial status
+        assertThat(viewModel.getListingStatus("item1")).isEqualTo(ItemListingStatus.NOT_LISTED)
+
+        // After update
+        viewModel.updateListingStatus("item1", ItemListingStatus.LISTING_IN_PROGRESS)
+        assertThat(viewModel.getListingStatus("item1")).isEqualTo(ItemListingStatus.LISTING_IN_PROGRESS)
+    }
+
+    @Test
+    fun `getItem returns null for non-existent item`() {
+        val item = viewModel.getItem("non-existent")
+        assertThat(item).isNull()
+    }
+
+    @Test
+    fun `getListingStatus returns null for non-existent item`() {
+        val status = viewModel.getListingStatus("non-existent")
+        assertThat(status).isNull()
+    }
+
+    private fun createTestItem(
+        id: String,
+        category: ItemCategory = ItemCategory.HOME_GOOD,
+        confidence: Float = 0.8f
+    ): ScannedItem {
+        return ScannedItem(
+            id = id,
+            thumbnail = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888),
+            category = category,
+            priceRange = Pair(20.0, 50.0),
+            confidence = confidence,
+            boundingBox = RectF(0f, 0f, 1f, 1f),
+            labelText = "Test item"
+        )
+    }
+}

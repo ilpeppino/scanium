@@ -19,6 +19,10 @@ import java.util.UUID
  * @param barcodeValue Barcode value (for BARCODE items)
  * @param boundingBox Normalized bounding box position (0-1 coordinates)
  * @param labelText ML Kit classification label (if available)
+ * @param fullImageUri Optional URI to higher quality image (for listing purposes)
+ * @param listingStatus Current eBay listing status
+ * @param listingId eBay listing ID (if posted)
+ * @param listingUrl External URL to view the listing (if posted)
  */
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
@@ -30,7 +34,11 @@ data class ScannedItem(
     val recognizedText: String? = null,
     val barcodeValue: String? = null,
     val boundingBox: RectF? = null,
-    val labelText: String? = null
+    val labelText: String? = null,
+    val fullImageUri: Uri? = null,
+    val listingStatus: ItemListingStatus = ItemListingStatus.NOT_LISTED,
+    val listingId: String? = null,
+    val listingUrl: String? = null
 ) {
     /**
      * Formatted price range string for display.
@@ -79,5 +87,30 @@ enum class ConfidenceLevel(
         threshold = 0.75f,
         displayName = "High",
         description = "Detection confidence is high"
+    )
+}
+
+/**
+ * Represents the eBay listing status of a scanned item.
+ */
+enum class ItemListingStatus(
+    val displayName: String,
+    val description: String
+) {
+    NOT_LISTED(
+        displayName = "Not Listed",
+        description = "Item has not been posted to eBay"
+    ),
+    LISTING_IN_PROGRESS(
+        displayName = "Posting...",
+        description = "Item is currently being posted to eBay"
+    ),
+    LISTED_ACTIVE(
+        displayName = "Listed",
+        description = "Item is actively listed on eBay"
+    ),
+    LISTING_FAILED(
+        displayName = "Failed",
+        description = "Failed to post item to eBay"
     )
 }

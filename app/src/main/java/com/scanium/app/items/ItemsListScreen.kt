@@ -1,5 +1,7 @@
 package com.scanium.app.items
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -9,12 +11,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
@@ -235,6 +239,41 @@ private fun ItemRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+
+                // Listing status badge and view listing button
+                if (item.listingStatus != ItemListingStatus.NOT_LISTED) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        ListingStatusBadge(status = item.listingStatus)
+
+                        // "View listing" button for active listings
+                        if (item.listingStatus == ItemListingStatus.LISTED_ACTIVE && item.listingUrl != null) {
+                            val context = LocalContext.current
+                            TextButton(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(item.listingUrl))
+                                    context.startActivity(intent)
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                modifier = Modifier.height(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.OpenInNew,
+                                    contentDescription = "View listing",
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "View",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -281,6 +320,43 @@ private fun ConfidenceBadge(confidenceLevel: ConfidenceLevel) {
     ) {
         Text(
             text = confidenceLevel.displayName,
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
+
+/**
+ * Listing status badge with color coding.
+ */
+@Composable
+private fun ListingStatusBadge(status: ItemListingStatus) {
+    val (backgroundColor, textColor, text) = when (status) {
+        ItemListingStatus.LISTED_ACTIVE -> Triple(
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.onPrimaryContainer,
+            status.displayName
+        )
+        ItemListingStatus.LISTING_IN_PROGRESS -> Triple(
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer,
+            status.displayName
+        )
+        ItemListingStatus.LISTING_FAILED -> Triple(
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer,
+            status.displayName
+        )
+        ItemListingStatus.NOT_LISTED -> return // Don't show badge for not listed
+    }
+
+    Surface(
+        shape = MaterialTheme.shapes.extraSmall,
+        color = backgroundColor
+    ) {
+        Text(
+            text = text,
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
