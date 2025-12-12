@@ -79,6 +79,10 @@ app/src/main/java/com/scanium/app/
 ├── tracking/        ***REMOVED*** Multi-frame object tracking and de-duplication
 ├── navigation/      ***REMOVED*** Navigation graph
 ├── selling/         ***REMOVED*** eBay marketplace integration (mock)
+│   ├── data/        ***REMOVED*** EbayApi, MockEbayApi, EbayMarketplaceService, ListingRepository
+│   ├── domain/      ***REMOVED*** Listing, ListingDraft, ListingStatus, ListingCondition, ListingImage
+│   ├── ui/          ***REMOVED*** SellOnEbayScreen, ListingViewModel, DebugSettingsDialog
+│   └── util/        ***REMOVED*** ListingImagePreparer, ListingDraftMapper
 └── ui/theme/        ***REMOVED*** Material 3 theming
 ```
 
@@ -234,6 +238,74 @@ ImageProxy → ML Kit (STREAM_MODE) → List<DetectedObject>
 - Ready for future attribute extraction pipelines (CLIP, OCR, Cloud)
 - Fully tested with 61 unit tests
 
+***REMOVED******REMOVED******REMOVED*** 7. eBay Selling Integration (`selling/`)
+
+**NEW**: Complete marketplace integration with real on-device scanning and mocked eBay API for demo and testing purposes.
+
+**Key Components**:
+
+**ListingImagePreparer** (`selling/util/ListingImagePreparer.kt`):
+- Prepares high-quality images for web/mobile viewing
+- Priority: `fullImageUri` → `thumbnail` (with scaling if needed)
+- Minimum resolution: 500×500, preferred: 1600×1600
+- JPEG quality: 85 (high quality, reasonable size)
+- All processing on `Dispatchers.IO` (background thread)
+- Comprehensive logging: resolution, file size, source, quality
+- Returns sealed `PrepareResult` (Success/Failure)
+
+**MockEbayApi** (`selling/data/MockEbayApi.kt`):
+- Realistic simulation with configurable behavior
+- Network delays: 400-1200ms random (configurable)
+- Failure modes: NONE, NETWORK_TIMEOUT, VALIDATION_ERROR, IMAGE_TOO_SMALL, RANDOM
+- Failure rate: 0.0 (never) to 1.0 (always)
+- Generates mock listing IDs: `EBAY-MOCK-{timestamp}-{random}`
+- Mock URLs: `https://mock.ebay.local/listing/{id}`
+- Controlled via `MockEbayConfigManager` singleton
+
+**EbayMarketplaceService** (`selling/data/EbayMarketplaceService.kt`):
+- Orchestrates listing creation workflow
+- Uses `ListingImagePreparer` for image processing
+- Communicates with `EbayApi` (mock or real)
+- Returns `ListingCreationResult` (Success/Error)
+- Cleans up old cached images automatically
+
+**ListingViewModel** (`selling/ui/ListingViewModel.kt`):
+- Manages listing drafts and posting workflow
+- Communicates with `ItemsViewModel` for status updates
+- Tracks per-item posting status (IDLE → POSTING → SUCCESS/FAILURE)
+- Prevents double-posting with disabled button state
+- Logs comprehensive debugging information
+
+**ItemsViewModel** (enhanced):
+- Added `updateListingStatus()`: Updates item listing state
+- Added `getListingStatus()`: Queries item listing status
+- Added `getItem()`: Retrieves item by ID
+- Communicates with `ListingViewModel` for status tracking
+
+**ScannedItem** (enhanced):
+- `fullImageUri`: Optional URI to high-quality image
+- `listingStatus`: `ItemListingStatus` enum (NOT_LISTED, LISTING_IN_PROGRESS, LISTED_ACTIVE, LISTING_FAILED)
+- `listingId`: eBay listing ID when posted
+- `listingUrl`: External URL to view listing
+
+**User Journey**:
+1. Scan items (real on-device ML Kit detection)
+2. Long-press item in list → enter selection mode
+3. Tap to select multiple items
+4. Tap "Sell on eBay" → navigate to sell screen
+5. Review/edit drafts (title, price, condition)
+6. Tap "Post to eBay (Mock)" → sequential posting with progress
+7. Return to items list → see status badges (Listed/Posting.../Failed)
+8. Tap "View" on listed items → open mock URL
+
+**Debug Settings**:
+- `MockEbayConfigManager`: Singleton config with `StateFlow`
+- `DebugSettingsDialog`: UI for configuring mock behavior
+- Toggle network delay simulation
+- Select failure mode (radio buttons with descriptions)
+- Adjust failure rate (0-100% slider)
+- Reset to defaults button
+
 **Configuration Example** (`res/raw/home_resale_domain_pack.json`):
 - 23 fine-grained categories: sofa, chair, table, laptop, TV, phone, shoes, jacket, bag, etc.
 - 10 extractable attributes: brand, color, material, size, condition, weight, dimensions, etc.
@@ -307,11 +379,11 @@ data class DomainAttribute(
 
 ***REMOVED******REMOVED*** Testing
 
-**171 total tests** across unit and instrumented tests:
+**175+ total tests** across unit and instrumented tests:
 
 **Unit Tests** (`app/src/test/`):
 
-*Tracking & Detection (original 110 tests):*
+*Tracking & Detection (110 tests):*
 - `ObjectTrackerTest.kt` - Tracking logic, confirmation, expiry
 - `ObjectCandidateTest.kt` - Spatial matching (IoU, distance)
 - `TrackingPipelineIntegrationTest.kt` - End-to-end tracking scenarios
@@ -320,12 +392,18 @@ data class DomainAttribute(
 - `PricingEngineTest.kt` - EUR price generation
 - `ItemCategoryTest.kt` - ML Kit label mapping
 
-*Domain Pack System (61 new tests):*
+*Domain Pack System (61 tests):*
 - `DomainPackTest.kt` (10 tests) - DomainPack data model and helper methods
 - `LocalDomainPackRepositoryTest.kt` (14 tests) - JSON loading, caching, validation
 - `CategoryMapperTest.kt` (11 tests) - DomainCategory ↔ ItemCategory conversion
 - `BasicCategoryEngineTest.kt` (16 tests) - ML Kit label matching, priority handling
 - `DomainPackProviderTest.kt` (10 tests) - Singleton initialization, thread safety
+
+*eBay Selling Integration (4+ tests):*
+- `ListingImagePreparerTest.kt` - Image preparation, scaling, quality
+- `MockEbayConfigManagerTest.kt` - Configuration management, state updates
+- `ItemListingStatusTest.kt` - Listing status enum validation
+- `ItemsViewModelListingStatusTest.kt` - Status tracking and updates
 
 **Instrumented Tests** (`app/src/androidTest/`):
 - `ModeSwitcherInstrumentedTest.kt` - Compose UI for mode switching
@@ -476,8 +554,10 @@ DisposableEffect(Unit) {
 
 - **ML Kit categories**: Only 5 coarse categories (Fashion, Food, Home goods, Places, Plants)
   - ✅ **Mitigated**: Domain Pack system provides 23 fine-grained categories with extensible config
-- **No persistence**: Items cleared on app close
+- **No persistence**: Items and listing status cleared on app close
 - **Mocked pricing**: Local price generation, no real API
+- **Mocked eBay**: Complete UI flow implemented, but uses mock API
+  - ✅ **Ready for real integration**: Clean interface separation, just swap MockEbayApi for RealEbayApi
 - **Single module**: Will need multi-module architecture at scale
 - **No DI framework**: Manual dependency injection may not scale
 - **Attribute extraction**: Domain Pack defines attributes but extraction not yet implemented (CLIP, OCR, Cloud pipelines pending)
@@ -501,6 +581,9 @@ When the app grows, consider:
 - **Architecture overview**: See `md/architecture/ARCHITECTURE.md` for comprehensive system architecture
 - **Domain Pack system**: See `md/architecture/DOMAIN_PACK_ARCHITECTURE.md` for category taxonomy and config schema
 - **Tracking implementation**: See `md/features/TRACKING_IMPLEMENTATION.md` for object tracking and de-duplication
+
+***REMOVED******REMOVED******REMOVED*** Features
+- **eBay Selling Integration**: See `md/features/EBAY_SELLING_INTEGRATION.md` for complete marketplace flow documentation
 
 ***REMOVED******REMOVED******REMOVED*** Testing & Debugging
 - **Test suite**: See `md/testing/TEST_SUITE.md` for test coverage and frameworks

@@ -34,8 +34,9 @@ fun SellOnEbayScreen(
     onNavigateBack: () -> Unit,
     selectedItems: List<ScannedItem>,
     marketplaceService: EbayMarketplaceService,
+    itemsViewModel: com.scanium.app.items.ItemsViewModel,
     viewModel: ListingViewModel = viewModel(
-        factory = ListingViewModelFactory(selectedItems, marketplaceService)
+        factory = ListingViewModelFactory(selectedItems, marketplaceService, itemsViewModel)
     )
 ) {
     val uiState by viewModel.uiState.collectAsState()

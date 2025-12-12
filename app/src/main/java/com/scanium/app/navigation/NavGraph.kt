@@ -81,7 +81,8 @@ fun ScaniumNavGraph(
             SellOnEbayScreen(
                 onNavigateBack = { navController.popBackStack() },
                 selectedItems = selectedItems,
-                marketplaceService = marketplaceService
+                marketplaceService = marketplaceService,
+                itemsViewModel = itemsViewModel
             )
         }
     }
