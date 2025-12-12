@@ -243,7 +243,7 @@ class ItemsViewModel(
 
     private fun triggerEnhancedClassification() {
         val pendingItems = itemAggregator.getAggregatedItems()
-            .filter { it.thumbnail != null && !classificationOrchestrator.hasResult(it.aggregatedId) }
+            .filter { it.thumbnail != null && classificationOrchestrator.shouldClassify(it.aggregatedId) }
 
         if (pendingItems.isEmpty()) return
 
