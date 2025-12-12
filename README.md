@@ -32,6 +32,14 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
   - Long-press to scan: Continuous detection while holding the button
 - **Price Estimation**: Category-based price ranges for detected objects
 - **Items Management**: View and manage all detected items with their estimated prices
+- **eBay Selling Integration (Mock)**: Complete marketplace flow with realistic simulation
+  - Multi-select items from detected list
+  - Review and edit listing drafts (title, price, condition)
+  - High-quality image preparation for web/mobile listings
+  - Mock eBay API with configurable delays and failure modes
+  - Real-time listing status tracking (Posting, Listed, Failed)
+  - View listing URLs and status badges
+  - Debug settings for testing various scenarios
 - **Privacy-First**: All processing happens on-device with no cloud calls
 - **Debug Logging**: Comprehensive detection statistics and threshold tuning in debug builds
 
@@ -69,6 +77,10 @@ app/src/main/java/com/scanium/app/
 ├── ml/              # Object detection and pricing logic
 ├── tracking/        # Object tracking and de-duplication system
 ├── selling/         # eBay marketplace integration (mock)
+│   ├── data/        # API, repository, marketplace service
+│   ├── domain/      # Listing models, status, conditions
+│   ├── ui/          # Sell screen, listing VM, debug settings
+│   └── util/        # Image preparation, draft mapping
 └── navigation/      # Navigation graph setup
 ```
 
@@ -114,18 +126,20 @@ For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SET
 
 ## Building
 
-### Debug Build
+### Using Portable Build Script (Recommended)
 ```bash
-./gradlew assembleDebug
+./build.sh assembleDebug          # Build debug APK (auto-detects Java 17)
+./build.sh assembleRelease        # Build release APK
+./build.sh test                   # Run unit tests
+./build.sh clean                  # Clean build artifacts
 ```
 
-### Release Build
+The `build.sh` script automatically finds Java 17 on your system across macOS, Linux, and Windows.
+
+### Using Gradle Directly
 ```bash
+./gradlew assembleDebug           # Ensure Java 17 is active
 ./gradlew assembleRelease
-```
-
-### Testing
-```bash
 ./gradlew test                    # Run unit tests
 ./gradlew connectedAndroidTest    # Run instrumented tests (requires device)
 ```
@@ -187,7 +201,16 @@ scanium/
    - In continuous scanning mode, each physical object appears only once (de-duplicated)
    - The tracker confirms objects instantly for responsive detection
 6. **Manage items** - Tap "View Items" to see all detected objects
-7. **Delete items** - Swipe left on items in the list to remove them
+7. **Sell on eBay (Mock)**:
+   - **Long-press** an item to enter selection mode
+   - **Tap** to select multiple items
+   - Tap **"Sell on eBay"** in the top bar
+   - **Review and edit** listing drafts (title, price, condition)
+   - Tap **"Post to eBay (Mock)"** to create listings
+   - Watch **real-time status updates** (Posting → Listed/Failed)
+   - Return to items list to see **status badges**
+   - Tap **"View"** on listed items to open mock listing URL
+8. **Delete items** - Tap the delete icon in the top bar to clear all items
 
 ## Permissions
 
@@ -203,19 +226,30 @@ The app requires the following permission:
 
 ## Test Coverage
 
-The project includes comprehensive test coverage:
-- **Unit tests** (multiple test files):
-  - DetectionResult (overlay data model validation)
+The project includes comprehensive test coverage with **171 total tests**:
+
+**Unit Tests:**
+- **Tracking & Detection** (110 tests):
   - ObjectTracker (tracking and de-duplication logic)
   - ObjectCandidate (spatial matching algorithms)
   - TrackingPipelineIntegration (end-to-end scenarios)
+  - DetectionResult (overlay data model validation)
   - ItemsViewModel (state management)
   - PricingEngine, ScannedItem, ItemCategory
-- **Instrumented tests**:
-  - DetectionOverlay UI tests (bounding box rendering)
-  - ModeSwitcher UI tests
-  - ItemsViewModel integration tests
-- **Test framework**: JUnit 4, Robolectric, Truth assertions, Mockk, Coroutines Test, Compose Testing
+- **Domain Pack System** (61 tests):
+  - DomainPack (data model and helper methods)
+  - LocalDomainPackRepository (JSON loading, caching, validation)
+  - CategoryMapper (category conversion and validation)
+  - BasicCategoryEngine (ML Kit label matching, priority handling)
+  - DomainPackProvider (singleton initialization, thread safety)
+
+**Instrumented Tests:**
+- DetectionOverlay UI tests (bounding box rendering)
+- ModeSwitcher UI tests
+- ItemsViewModel integration tests
+
+**Test Frameworks:**
+JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose Testing, Kotlinx Serialization Test
 
 ## Future Enhancements
 
@@ -238,11 +272,25 @@ The project includes comprehensive test coverage:
 - Adaptive tracking thresholds based on scene complexity
 
 ### Recently Implemented ✅
+- ✅ **eBay Selling Integration (Mock)**: Complete end-to-end marketplace flow with real scanning + mocked eBay
+  - Multi-selection UI with long-press and tap gestures
+  - Draft review screen with editable titles, prices, and conditions
+  - High-quality image preparation (ListingImagePreparer) with resolution scaling and quality logging
+  - Realistic Mock eBay API with configurable network delays (400-1200ms) and failure modes
+  - Real-time listing status tracking (NOT_LISTED → LISTING_IN_PROGRESS → LISTED_ACTIVE/LISTING_FAILED)
+  - Status badges with color coding in items list
+  - "View listing" button to open mock URLs
+  - Debug settings dialog for testing failure scenarios
+  - Full ViewModel communication layer (ItemsViewModel ↔ ListingViewModel)
+  - 4 new unit tests for selling components
+- ✅ **Domain Pack Category System** (Track A): Config-driven fine-grained categorization with 23 categories and 10 attributes
+- ✅ **Cross-Platform Build System**: Portable build.sh script and Java 17 toolchain for multi-machine development
+- ✅ **UI Refinements**: Slim vertical slider, clean overlay text, minimal camera interface
 - ✅ **Visual Detection Overlay**: Real-time bounding boxes and labels on camera preview
 - ✅ **Object Tracking & De-duplication**: Multi-frame tracking with ML Kit integration
 - ✅ **Barcode/QR Code Scanning**: Real-time barcode detection
 - ✅ **Document Text Recognition**: OCR for document scanning
-- ✅ **Comprehensive Test Suite**: Unit and integration tests for tracking system
+- ✅ **Comprehensive Test Suite**: 175+ tests covering tracking, detection, domain pack, and selling systems
 - ✅ **SINGLE_IMAGE_MODE Detection**: More accurate object detection for both tap and long-press
 - ✅ **Scanium Branding**: Complete visual rebrand with new color scheme and identity
 
@@ -257,6 +305,7 @@ All project documentation is organized in the `md/` folder by category:
 - [Aggregation System](./md/features/AGGREGATION_SYSTEM.md) - Real-time item aggregation and similarity matching
 - [Threshold Slider](./md/features/THRESHOLD_SLIDER.md) - Interactive threshold tuning UI component
 - [Object Tracking](./md/features/TRACKING_IMPLEMENTATION.md) - Multi-frame object tracking system
+- [eBay Selling Integration](./md/features/EBAY_SELLING_INTEGRATION.md) - Complete marketplace flow with mock eBay API
 
 ### Testing
 - [Test Suite](./md/testing/TEST_SUITE.md) - Comprehensive test documentation and coverage

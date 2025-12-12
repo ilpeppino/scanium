@@ -35,14 +35,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Camera screen with full-screen preview, tap/long-press gestures, and overlay UI.
+ * Camera screen with full-screen preview and Android-style shutter button.
  *
  * Features:
- * - Tap to capture single frame and detect objects
+ * - Single shutter button for all capture interactions
+ * - Tap to capture single frame
  * - Long-press to start continuous scanning
- * - Top bar with app title and items count button
- * - Bottom hint text
- * - Scanning indicator when in scan mode
+ * - Tap while scanning to stop
+ * - Advanced controls (threshold slider, classification toggle) hidden by default
+ * - Tap preview to show advanced controls (auto-hide after 3 seconds)
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -68,8 +69,8 @@ fun CameraScreen(
         CameraSoundManager()
     }
 
-    // Scanning state
-    var isScanning by remember { mutableStateOf(false) }
+    // Camera state machine
+    var cameraState by remember { mutableStateOf(CameraState.IDLE) }
 
     // Current scan mode
     var currentScanMode by remember { mutableStateOf(ScanMode.OBJECT_DETECTION) }
@@ -77,14 +78,34 @@ fun CameraScreen(
     // Flash animation state for mode transitions
     var showFlash by remember { mutableStateOf(false) }
 
+    // Advanced controls visibility state
+    var advancedControlsVisible by remember { mutableStateOf(false) }
+    var autoHideJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+
     // Items count from ViewModel
     val itemsCount by itemsViewModel.items.collectAsState()
     val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
 
     // Detection overlay state
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
-    var imageSize by remember { mutableStateOf(Size(1280, 720)) } // Updated from actual ImageProxy dimensions
+    var imageSize by remember { mutableStateOf(Size(1280, 720)) }
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
+
+    // Auto-hide timer for advanced controls
+    fun startAutoHideTimer() {
+        autoHideJob?.cancel()
+        autoHideJob = scope.launch {
+            delay(3000)
+            advancedControlsVisible = false
+        }
+    }
+
+    // Reset auto-hide timer when controls are interacted with
+    fun resetAutoHideTimer() {
+        if (advancedControlsVisible) {
+            startAutoHideTimer()
+        }
+    }
 
     // Request permission on first launch
     LaunchedEffect(Unit) {
@@ -98,73 +119,21 @@ fun CameraScreen(
         onDispose {
             cameraManager.shutdown()
             soundManager.release()
+            autoHideJob?.cancel()
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             cameraPermissionState.status.isGranted -> {
-                // Camera preview with gesture detection
-                CameraPreviewWithGestures(
+                // Camera preview with tap detection
+                CameraPreviewWithTapDetection(
                     cameraManager = cameraManager,
-                    soundManager = soundManager,
-                    scanMode = currentScanMode,
-                    isScanning = isScanning,
-                    onScanningChanged = { scanning ->
-                        isScanning = scanning
-                        if (scanning) {
-                            // Play scan start melody
-                            soundManager.playScanStartMelody()
-                            cameraManager.startScanning(
-                                scanMode = currentScanMode,
-                                onResult = { items ->
-                                    if (items.isNotEmpty()) {
-                                        itemsViewModel.addItems(items)
-                                    }
-                                },
-                                onDetectionResult = { detections ->
-                                    currentDetections = detections
-                                },
-                                onFrameSize = { size ->
-                                    imageSize = size
-                                }
-                            )
-                        } else {
-                            // Play scan stop melody
-                            soundManager.playScanStopMelody()
-                            cameraManager.stopScanning()
-                            currentDetections = emptyList() // Clear overlay when stopped
-                        }
-                    },
-                    onCapture = {
-                        // Play shutter click
-                        soundManager.playShutterClick()
-                        cameraManager.captureSingleFrame(
-                            scanMode = currentScanMode,
-                            onResult = { items ->
-                                if (items.isEmpty()) {
-                                    val message = when (currentScanMode) {
-                                        ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
-                                        ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
-                                        ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
-                                    }
-                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                                } else {
-                                    itemsViewModel.addItems(items)
-                                    Toast.makeText(
-                                        context,
-                                        "Detected ${items.size} item(s)",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            },
-                            onDetectionResult = { detections ->
-                                currentDetections = detections
-                            },
-                            onFrameSize = { size ->
-                                imageSize = size
-                            }
-                        )
+                    cameraState = cameraState,
+                    onPreviewTap = {
+                        // Show advanced controls on preview tap
+                        advancedControlsVisible = true
+                        startAutoHideTimer()
                     },
                     onPreviewSizeChanged = { size ->
                         previewSize = Size(size.width, size.height)
@@ -189,34 +158,47 @@ fun CameraScreen(
                     )
                 }
 
-                // Vertical threshold slider on right side
-                val currentThreshold by itemsViewModel.similarityThreshold.collectAsState()
-                VerticalThresholdSlider(
-                    value = currentThreshold,
-                    onValueChange = { newValue ->
-                        itemsViewModel.updateSimilarityThreshold(newValue)
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = 16.dp)
-                )
+                // Advanced controls (hidden by default)
+                if (advancedControlsVisible) {
+                    // Vertical threshold slider on right side
+                    val currentThreshold by itemsViewModel.similarityThreshold.collectAsState()
+                    VerticalThresholdSlider(
+                        value = currentThreshold,
+                        onValueChange = { newValue ->
+                            itemsViewModel.updateSimilarityThreshold(newValue)
+                            resetAutoHideTimer()
+                        },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 16.dp)
+                    )
+
+                    // Classification mode toggle on left side
+                    ClassificationModeToggle(
+                        currentMode = classificationMode,
+                        onModeSelected = { mode ->
+                            classificationModeViewModel.updateMode(mode)
+                            resetAutoHideTimer()
+                        },
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 16.dp)
+                    )
+                }
 
                 // Overlay UI
                 CameraOverlay(
                     itemsCount = itemsCount.size,
-                    isScanning = isScanning,
+                    cameraState = cameraState,
                     scanMode = currentScanMode,
-                    classificationMode = classificationMode,
-                    onClassificationModeChanged = { mode ->
-                        classificationModeViewModel.updateMode(mode)
-                    },
                     onNavigateToItems = onNavigateToItems,
                     onModeChanged = { newMode ->
                         if (newMode != currentScanMode) {
                             // Stop scanning if active
-                            if (isScanning) {
-                                isScanning = false
+                            if (cameraState == CameraState.SCANNING) {
+                                cameraState = CameraState.IDLE
                                 cameraManager.stopScanning()
+                                currentDetections = emptyList()
                             }
 
                             // Trigger flash animation
@@ -227,6 +209,70 @@ fun CameraScreen(
                                 delay(100)
                                 showFlash = false
                             }
+                        }
+                    },
+                    onShutterTap = {
+                        // Single tap: capture one frame
+                        if (cameraState == CameraState.IDLE) {
+                            cameraState = CameraState.CAPTURING
+                            soundManager.playShutterClick()
+                            cameraManager.captureSingleFrame(
+                                scanMode = currentScanMode,
+                                onResult = { items ->
+                                    cameraState = CameraState.IDLE
+                                    if (items.isEmpty()) {
+                                        val message = when (currentScanMode) {
+                                            ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
+                                            ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
+                                            ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
+                                        }
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        itemsViewModel.addItems(items)
+                                        Toast.makeText(
+                                            context,
+                                            "Detected ${items.size} item(s)",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                },
+                                onDetectionResult = { detections ->
+                                    currentDetections = detections
+                                },
+                                onFrameSize = { size ->
+                                    imageSize = size
+                                }
+                            )
+                        }
+                    },
+                    onShutterLongPress = {
+                        // Long press: start scanning
+                        if (cameraState == CameraState.IDLE) {
+                            cameraState = CameraState.SCANNING
+                            soundManager.playScanStartMelody()
+                            cameraManager.startScanning(
+                                scanMode = currentScanMode,
+                                onResult = { items ->
+                                    if (items.isNotEmpty()) {
+                                        itemsViewModel.addItems(items)
+                                    }
+                                },
+                                onDetectionResult = { detections ->
+                                    currentDetections = detections
+                                },
+                                onFrameSize = { size ->
+                                    imageSize = size
+                                }
+                            )
+                        }
+                    },
+                    onStopScanning = {
+                        // Tap while scanning: stop
+                        if (cameraState == CameraState.SCANNING) {
+                            cameraState = CameraState.IDLE
+                            soundManager.playScanStopMelody()
+                            cameraManager.stopScanning()
+                            currentDetections = emptyList()
                         }
                     }
                 )
@@ -244,30 +290,17 @@ fun CameraScreen(
 }
 
 /**
- * Camera preview integrated with AndroidView and gesture detection.
+ * Camera preview integrated with AndroidView and tap detection.
  */
 @Composable
-private fun CameraPreviewWithGestures(
+private fun CameraPreviewWithTapDetection(
     cameraManager: CameraXManager,
-    soundManager: CameraSoundManager,
-    scanMode: ScanMode,
-    isScanning: Boolean,
-    onScanningChanged: (Boolean) -> Unit,
-    onCapture: () -> Unit,
+    cameraState: CameraState,
+    onPreviewTap: () -> Unit,
     onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     var isCameraStarted by remember { mutableStateOf(false) }
-    val scanningState by rememberUpdatedState(isScanning)
-
-    // Automatically capture first frame when camera starts to show initial overlays
-    LaunchedEffect(isCameraStarted) {
-        if (isCameraStarted) {
-            // Small delay to ensure camera is fully initialized
-            delay(500)
-            onCapture()
-        }
-    }
 
     AndroidView(
         factory = { context ->
@@ -280,25 +313,11 @@ private fun CameraPreviewWithGestures(
             .onSizeChanged { intSize ->
                 onPreviewSizeChanged(intSize)
             }
-            .pointerInput(scanningState) {
+            .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = {
-                        // Single tap: capture one frame
-                        if (!scanningState) {
-                            onCapture()
-                        }
-                    },
-                    onLongPress = {
-                        // Long press: start scanning
-                        if (!scanningState) {
-                            onScanningChanged(true)
-                        }
-                    },
-                    onDoubleTap = {
-                        // Double tap: stop scanning if active
-                        if (scanningState) {
-                            onScanningChanged(false)
-                        }
+                        // Tap on preview shows advanced controls
+                        onPreviewTap()
                     }
                 )
             }
@@ -320,12 +339,13 @@ private fun CameraPreviewWithGestures(
 @Composable
 private fun BoxScope.CameraOverlay(
     itemsCount: Int,
-    isScanning: Boolean,
+    cameraState: CameraState,
     scanMode: ScanMode,
-    classificationMode: ClassificationMode,
-    onClassificationModeChanged: (ClassificationMode) -> Unit,
     onNavigateToItems: () -> Unit,
-    onModeChanged: (ScanMode) -> Unit
+    onModeChanged: (ScanMode) -> Unit,
+    onShutterTap: () -> Unit,
+    onShutterLongPress: () -> Unit,
+    onStopScanning: () -> Unit
 ) {
     // Top bar
     Row(
@@ -366,80 +386,29 @@ private fun BoxScope.CameraOverlay(
         }
     }
 
-    // Bottom UI: Mode switcher
+    // Bottom UI: Mode switcher and shutter button
     Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
             .padding(bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        // Mode switcher
+        // Mode switcher (always visible)
         ModeSwitcher(
             currentMode = scanMode,
             onModeChanged = onModeChanged,
             modifier = Modifier
         )
 
-        ClassificationModeToggle(
-            currentMode = classificationMode,
-            onModeSelected = onClassificationModeChanged
-        )
-    }
-
-    // Scanning indicator - animated recording icon
-    if (isScanning) {
-        RecordingIndicator(
+        // Shutter button
+        ShutterButton(
+            cameraState = cameraState,
+            onTap = onShutterTap,
+            onLongPress = onShutterLongPress,
+            onStopScanning = onStopScanning,
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 80.dp)
         )
-    }
-}
-
-/**
- * Animated recording indicator with pulsing red dot.
- */
-@Composable
-private fun RecordingIndicator(modifier: Modifier = Modifier) {
-    // Pulsing animation for the recording dot
-    val infiniteTransition = rememberInfiniteTransition(label = "recording")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "scale"
-    )
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0.6f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "alpha"
-    )
-
-    Box(
-        modifier = modifier
-            .background(
-                Color.Black.copy(alpha = 0.6f),
-                shape = MaterialTheme.shapes.medium
-            )
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        Canvas(
-            modifier = Modifier.size(16.dp)
-        ) {
-            drawCircle(
-                color = Color.Red,
-                radius = size.minDimension / 2 * scale,
-                alpha = alpha
-            )
-        }
     }
 }
 
@@ -472,34 +441,36 @@ private fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
     }
 }
 
+/**
+ * Classification mode toggle (shown only when advanced controls are visible).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ClassificationModeToggle(
     currentMode: ClassificationMode,
-    onModeSelected: (ClassificationMode) -> Unit
+    onModeSelected: (ClassificationMode) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
+        modifier = modifier
+            .background(
+                Color.Black.copy(alpha = 0.6f),
+                shape = MaterialTheme.shapes.medium
+            )
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = currentMode == ClassificationMode.ON_DEVICE,
-                onClick = { onModeSelected(ClassificationMode.ON_DEVICE) },
-                label = { Text("On-device") }
-            )
+        FilterChip(
+            selected = currentMode == ClassificationMode.ON_DEVICE,
+            onClick = { onModeSelected(ClassificationMode.ON_DEVICE) },
+            label = { Text("On-device", style = MaterialTheme.typography.bodySmall) }
+        )
 
-            FilterChip(
-                selected = currentMode == ClassificationMode.CLOUD,
-                onClick = { onModeSelected(ClassificationMode.CLOUD) },
-                label = { Text("Cloud") }
-            )
-        }
-
-        Text(
-            text = if (currentMode == ClassificationMode.CLOUD) "Higher quality • Uses data" else "Fast • Offline",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.85f)
+        FilterChip(
+            selected = currentMode == ClassificationMode.CLOUD,
+            onClick = { onModeSelected(ClassificationMode.CLOUD) },
+            label = { Text("Cloud", style = MaterialTheme.typography.bodySmall) }
         )
     }
 }

@@ -272,4 +272,51 @@ class ItemsViewModel(
             }
         }
     }
+
+    /**
+     * Updates the listing status of a scanned item.
+     *
+     * Called by ListingViewModel after posting to eBay.
+     *
+     * @param itemId The ID of the scanned item
+     * @param status The new listing status
+     * @param listingId Optional eBay listing ID
+     * @param listingUrl Optional URL to view the listing
+     */
+    fun updateListingStatus(
+        itemId: String,
+        status: ItemListingStatus,
+        listingId: String? = null,
+        listingUrl: String? = null
+    ) {
+        Log.i(TAG, "Updating listing status for item $itemId: $status")
+
+        _items.update { currentItems ->
+            currentItems.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        listingStatus = status,
+                        listingId = listingId,
+                        listingUrl = listingUrl
+                    )
+                } else {
+                    item
+                }
+            }
+        }
+    }
+
+    /**
+     * Gets the listing status for a specific item.
+     */
+    fun getListingStatus(itemId: String): ItemListingStatus? {
+        return _items.value.find { it.id == itemId }?.listingStatus
+    }
+
+    /**
+     * Gets a specific item by ID.
+     */
+    fun getItem(itemId: String): ScannedItem? {
+        return _items.value.find { it.id == itemId }
+    }
 }

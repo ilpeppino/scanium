@@ -1,6 +1,8 @@
 package com.scanium.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -9,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.rememberNavController
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.data.MockEbayApi
+import com.scanium.app.selling.data.MockEbayConfigManager
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.navigation.ScaniumNavGraph
 import com.scanium.app.data.ClassificationPreferences
@@ -48,7 +51,11 @@ fun ScaniumApp() {
         }
     )
 
-    val marketplaceService = remember { EbayMarketplaceService(context, MockEbayApi()) }
+    // Use the config manager's current config for MockEbayApi
+    val mockEbayConfig by MockEbayConfigManager.config.collectAsState()
+    val marketplaceService = remember(mockEbayConfig) {
+        EbayMarketplaceService(context, MockEbayApi(mockEbayConfig))
+    }
 
     ScaniumNavGraph(
         navController = navController,
