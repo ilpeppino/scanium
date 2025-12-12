@@ -6,13 +6,14 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.selling.util.ListingDraftMapper
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class EbayMarketplaceServiceTest {
 
     @Test
-    fun `createListingForItem returns success with listing`() = runTest {
+    fun `createListingForDraft returns success with listing`() = runTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val api = MockEbayApi()
         val service = EbayMarketplaceService(context, api)
@@ -23,7 +24,9 @@ class EbayMarketplaceServiceTest {
             priceRange = 20.0 to 40.0
         )
 
-        val result = service.createListingForItem(item)
+        val draft = ListingDraftMapper.fromScannedItem(item)
+
+        val result = service.createListingForDraft(draft)
 
         assertThat(result).isInstanceOf(ListingCreationResult.Success::class.java)
         val listing = (result as ListingCreationResult.Success).listing
