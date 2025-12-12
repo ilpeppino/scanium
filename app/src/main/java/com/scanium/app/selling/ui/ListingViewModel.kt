@@ -43,7 +43,6 @@ class ListingViewModel(
         private const val TAG = "ListingViewModel"
     }
 
-    private val draftsById = selectedItems.associateBy { it.id }
     private val _uiState = MutableStateFlow(
         ListingUiState(
             drafts = selectedItems.map { item ->
@@ -96,25 +95,12 @@ class ListingViewModel(
 
             // Process each item sequentially (could be parallelized if needed)
             val results = updatedDrafts.map { draftState ->
-                val itemId = draftState.draft.scannedItemId
-                val item = draftsById[itemId]
-
-                if (item == null) {
-                    Log.e(TAG, "✗ Item not found: $itemId")
-                    itemsViewModel.updateListingStatus(
-                        itemId = itemId,
-                        status = ItemListingStatus.LISTING_FAILED
-                    )
-                    return@map draftState.copy(
-                        status = PostingStatus.FAILURE,
-                        error = ListingError.VALIDATION_ERROR,
-                        errorMessage = "Item not found"
-                    )
-                }
+                val draft = draftState.draft
+                val itemId = draft.scannedItemId
 
                 Log.i(TAG, "Posting item: $itemId")
 
-                when (val result = marketplaceService.createListingForItem(item)) {
+                when (val result = marketplaceService.createListingForDraft(draft)) {
                     is ListingCreationResult.Success -> {
                         val listing = result.listing
                         Log.i(TAG, "✓ Success: ${listing.listingId.value}")
