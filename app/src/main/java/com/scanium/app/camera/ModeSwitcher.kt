@@ -163,8 +163,8 @@ private fun CameraModeButton(
     ) {
         Text(
             text = mode.displayName.uppercase(),
-            style = MaterialTheme.typography.titleMedium,
-            fontSize = if (isSelected) 18.sp else 16.sp,
+            style = MaterialTheme.typography.titleSmall,
+            fontSize = if (isSelected) 16.sp else 14.sp,
             color = Color.White.copy(alpha = alpha),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
             letterSpacing = if (isSelected) 0.5.sp else 0.2.sp
