@@ -149,3 +149,178 @@ val resolution = Size(BuildConfig.CAMERA_WIDTH, BuildConfig.CAMERA_HEIGHT)
 ## Related Issues
 
 - Issue #009 (Tracker config mismatch between code and docs)
+
+---
+
+## Assessment
+
+**Status:** ❌ NOT RELEVANT (Premature Abstraction)
+
+**Decision:** Do not implement centralized configuration object at this time.
+
+### Why This Is Not Relevant
+
+**1. YAGNI Principle Violation**
+- No evidence of frequent tuning needed
+- No A/B testing requirements for PoC/demo app
+- No production hotfix requirements
+- "You Aren't Gonna Need It" - don't add abstraction until proven necessary
+
+**2. Current Approach Is Appropriate**
+The hardcoded values are **tuning parameters**, not user configuration:
+- ✅ Well-documented with inline comments
+- ✅ Co-located near usage (easier to understand)
+- ✅ Discoverable via simple grep (`grep "private const val"`)
+- ✅ Named constants are self-documenting
+
+**3. Proposed Solution Adds Complexity Without Benefit**
+```kotlin
+// Current (clear and simple):
+private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
+
+// Proposed (unnecessary indirection):
+ScaniumConfig.Detection.confidenceThreshold
+```
+- Requires jumping between files to understand values
+- Adds layer of abstraction with no proven ROI
+- Makes code harder to read, not easier
+
+**4. Android Best Practices**
+- **Co-location**: Keep config near usage for clarity
+- **KISS**: Inline constants are simpler than config objects
+- **Documentation**: Comments explain "why" better than config files
+- **Maintainability**: Fewer files/abstractions = easier maintenance
+
+### The Real Problem
+
+The issue correctly identifies a documentation problem, but proposes the wrong solution:
+
+**Real Issue:** CLAUDE.md is **out of sync** with actual code
+
+**Example - TrackerConfig mismatch:**
+
+CLAUDE.md documents:
+```kotlin
+minConfidence = 0.25f
+minBoxArea = 0.0f
+maxFrameGap = 5
+minMatchScore = 0.3f
+expiryFrames = 30
+```
+
+Actual code (CameraXManager.kt:56-63):
+```kotlin
+minConfidence = 0.2f      // DIFFERENT!
+minBoxArea = 0.0005f      // DIFFERENT!
+maxFrameGap = 8           // DIFFERENT!
+minMatchScore = 0.2f      // DIFFERENT!
+expiryFrames = 15         // DIFFERENT!
+```
+
+**Solution:** Fix the documentation, not the code structure (see Issue #009).
+
+### Current State Verification
+
+**✅ All values are well-documented:**
+
+1. **CameraXManager.kt:131**
+   ```kotlin
+   .setTargetResolution(android.util.Size(1280, 720)) // Higher resolution for better detection
+   ```
+
+2. **CameraXManager.kt:218**
+   ```kotlin
+   val analysisIntervalMs = 800L // Analyze every 800ms for better tracking
+   ```
+
+3. **CameraXManager.kt:56-63** - TrackerConfig with 7 documented parameters
+
+4. **ObjectDetectorClient.kt:34**
+   ```kotlin
+   private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
+   ```
+
+5. **ObjectDetectorClient.kt:209**
+   ```kotlin
+   val isLikelyBlank = totalVariance < 30 // Very low variance suggests blank image
+   ```
+
+6. **ObjectDetectorClient.kt:587** (+ BarcodeScannerClient, DocumentTextRecognitionClient)
+   ```kotlin
+   // CRITICAL: Limit thumbnail size to save memory
+   val maxDimension = 200
+   ```
+
+7. **CloudClassifier.kt:43-44**
+   ```kotlin
+   connectTimeout = 5_000
+   readTimeout = 8_000
+   ```
+
+**✅ Values are discoverable:**
+```bash
+# Find all tuning constants
+grep -r "private const val" app/src/main/java/
+grep -r "val.*= [0-9]" app/src/main/java/com/scanium/app/camera/
+```
+
+**✅ CLAUDE.md has "Configuration & Tuning" section** (though out of date - see Issue #009)
+
+### When to Revisit
+
+Consider centralized configuration **only if**:
+
+1. **Production deployment** with need for:
+   - A/B testing different thresholds
+   - Feature flags for gradual rollout
+   - Remote config updates
+
+2. **Multiple build variants** requiring different values:
+   - Debug vs Release
+   - Free vs Premium
+   - Per-customer configurations
+
+3. **Frequent tuning** evidenced by:
+   - Multiple PRs changing same constants
+   - User-reported issues requiring threshold adjustments
+   - Performance testing requiring parameter sweeps
+
+4. **Dynamic configuration** requirements:
+   - Runtime adjustment via settings UI
+   - Server-driven configuration
+   - ML-based auto-tuning
+
+**None of these apply to current PoC/demo scope.**
+
+### Recommended Actions
+
+**Instead of creating ScaniumConfig:**
+
+1. ✅ **Keep inline constants** with descriptive comments
+2. ✅ **Fix CLAUDE.md** to match actual code (Issue #009)
+3. ✅ **Add "Why" documentation** for non-obvious values
+4. ✅ **Follow YAGNI** - defer abstraction until needed
+
+**Example of good inline documentation:**
+```kotlin
+// Analyze every 800ms to balance:
+// - Responsiveness: Catch objects quickly as user pans
+// - Battery life: Avoid excessive processing
+// - Tracking stability: Allow tracker to correlate frames
+val analysisIntervalMs = 800L
+```
+
+### Benefits of Current Approach
+
+✅ **Simplicity**: Fewer files, less indirection
+✅ **Clarity**: Values near usage, easier to understand
+✅ **Maintainability**: No config layer to keep in sync
+✅ **Performance**: No runtime config lookup overhead
+✅ **Discoverability**: grep works perfectly
+✅ **Flexibility**: Easy to change when actually needed
+
+### Conclusion
+
+This issue represents **premature optimization**. The current approach is appropriate for a PoC/demo app. Creating a centralized config object would add complexity without solving any real problem.
+
+**Close this issue and focus on Issue #009** (fixing CLAUDE.md documentation mismatch) instead.
