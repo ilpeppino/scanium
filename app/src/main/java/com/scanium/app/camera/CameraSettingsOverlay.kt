@@ -1,0 +1,248 @@
+package com.scanium.app.camera
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Divider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import com.scanium.app.ml.classification.ClassificationMode
+import kotlin.math.abs
+
+@Composable
+fun CameraSettingsOverlay(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    similarityThreshold: Float,
+    onThresholdChange: (Float) -> Unit,
+    classificationMode: ClassificationMode,
+    onProcessingModeChange: (ClassificationMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(onClick = onDismiss)
+            )
+        }
+
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInHorizontally(initialOffsetX = { -it }) + fadeIn(),
+            exit = slideOutHorizontally(targetOffsetX = { -it }) + fadeOut()
+        ) {
+            Surface(
+                tonalElevation = 8.dp,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(320.dp)
+            ) {
+                val scrollState = rememberScrollState()
+
+                Column(
+                    modifier = Modifier
+                        .padding(vertical = 24.dp, horizontal = 16.dp)
+                        .verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Settings",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    SettingsSectionCard(sectionLabel = "Mode")
+                    AccuracySettingsCard(
+                        similarityThreshold = similarityThreshold,
+                        onThresholdChange = onThresholdChange
+                    )
+                    ProcessingSettingsCard(
+                        classificationMode = classificationMode,
+                        onProcessingModeChange = onProcessingModeChange
+                    )
+                    SettingsSectionCard(sectionLabel = "Tuning")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionCard(sectionLabel: String) {
+    Surface(tonalElevation = 2.dp) {
+        Column {
+            Text(
+                text = sectionLabel,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+            Divider()
+            ListItem(
+                headlineContent = { Text("Coming soon") },
+                trailingContent = {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null
+                    )
+                }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+    }
+}
+
+@Composable
+private fun ProcessingSettingsCard(
+    classificationMode: ClassificationMode,
+    onProcessingModeChange: (ClassificationMode) -> Unit
+) {
+    Surface(tonalElevation = 2.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Processing",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Divider()
+
+            ListItem(
+                headlineContent = { Text("Processing mode") },
+                supportingContent = {
+                    val modeLabel = if (classificationMode == ClassificationMode.ON_DEVICE) {
+                        "On-device"
+                    } else {
+                        "Cloud"
+                    }
+                    Text(modeLabel)
+                },
+                trailingContent = {
+                    Switch(
+                        checked = classificationMode == ClassificationMode.CLOUD,
+                        onCheckedChange = { isChecked ->
+                            val newMode = if (isChecked) {
+                                ClassificationMode.CLOUD
+                            } else {
+                                ClassificationMode.ON_DEVICE
+                            }
+                            onProcessingModeChange(newMode)
+                        },
+                        modifier = Modifier.semantics {
+                            contentDescription = "Processing mode"
+                        }
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccuracySettingsCard(
+    similarityThreshold: Float,
+    onThresholdChange: (Float) -> Unit
+) {
+    val accuracyOptions = AccuracyLevel.values()
+    val selectedLevel = accuracyOptions.minBy { option ->
+        abs(option.targetThreshold - similarityThreshold)
+    }
+
+    Surface(tonalElevation = 2.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Accuracy",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Divider()
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Item accuracy",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "Choose how strict matching should be when saving detections.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    accuracyOptions.forEach { option ->
+                        ListItem(
+                            headlineContent = { Text(option.label) },
+                            supportingContent = {
+                                Text(option.supportingText)
+                            },
+                            leadingContent = {
+                                RadioButton(
+                                    selected = option == selectedLevel,
+                                    onClick = { onThresholdChange(option.targetThreshold) }
+                                )
+                            }
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Current target: ${(selectedLevel.targetThreshold * 100).toInt()}% similarity",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+// Slider previously used 0f..1f range with 0.55f default (ItemsViewModel / AggregationPresets.REALTIME);
+// map Low/Medium/High to representative targets on that same scale.
+private enum class AccuracyLevel(val label: String, val targetThreshold: Float, val supportingText: String) {
+    LOW(label = "Low", targetThreshold = 0.45f, supportingText = "Looser matching; saves more items."),
+    MEDIUM(label = "Medium", targetThreshold = 0.55f, supportingText = "Balanced (matches previous default)."),
+    HIGH(label = "High", targetThreshold = 0.7f, supportingText = "Stricter matching; keeps high-confidence items.");
+}
