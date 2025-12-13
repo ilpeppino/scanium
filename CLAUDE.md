@@ -69,6 +69,7 @@ adb logcat | grep "Tracker stats"        # See tracking statistics
 ### Package Structure
 ```
 app/src/main/java/com/scanium/app/
+├── aggregation/     # Session-level similarity-based item aggregation
 ├── camera/          # CameraX integration, scan modes, gesture handling
 ├── domain/          # Domain Pack system (config, repository, category engine)
 │   ├── config/      # Domain Pack data models and enums
@@ -190,9 +191,140 @@ ImageProxy → ML Kit (STREAM_MODE) → List<DetectedObject>
 - Properties: `id`, `thumbnail`, `category`, `priceRange`, `confidence`, `timestamp`
 - Computed: `confidenceLevel`, `formattedConfidence`, `formattedPriceRange`
 
-**Important**: ViewModel de-duplication works seamlessly with tracking because ObjectTracker provides stable IDs.
+**Important**: ViewModel integrates with ItemAggregator for similarity-based deduplication (see Aggregation System below).
 
-### 5. Navigation
+### 5. Aggregation System (`aggregation/`)
+
+**Purpose:** Session-level similarity-based deduplication that complements frame-level tracking.
+
+**Why Aggregation Is Needed:**
+
+ObjectTracker handles frame-to-frame tracking but has limitations:
+- ML Kit `trackingId` changes frequently for the same physical object
+- Camera movement causes bounding box shifts
+- Users panning slowly across objects creates new IDs
+
+ItemAggregator solves this by merging detections based on **weighted similarity scoring** rather than exact ID match.
+
+**Core Components:**
+
+**ItemAggregator** (`aggregation/ItemAggregator.kt`):
+- Maintains collection of `AggregatedItem` representing unique physical objects
+- Compares new detections against existing items using multi-factor similarity
+- Merges similar detections or creates new aggregated items
+- Provides dynamic threshold adjustment for real-time tuning
+
+**Similarity Scoring Algorithm:**
+
+Weighted combination of 4 factors:
+```kotlin
+similarity = (categoryWeight * categorySimilarity) +
+             (labelWeight * labelSimilarity) +
+             (sizeWeight * sizeSimilarity) +
+             (distanceWeight * distanceSimilarity)
+```
+
+Default weights (REALTIME preset):
+- Category: 40% (most stable across frames)
+- Label: 15% (can change)
+- Size: 20% (normalized bounding box area)
+- Distance: 25% (center point proximity)
+
+**AggregationPresets** (`aggregation/AggregationPresets.kt`):
+
+Six preconfigured presets for different use cases:
+
+1. **BALANCED** (threshold 0.6):
+   - Good default for most scenarios
+   - Balanced precision/recall
+   - Weights: category 30%, label 25%, size 20%, distance 25%
+
+2. **STRICT** (threshold 0.75):
+   - High precision, fewer merges
+   - Good for dense scenes with similar objects
+   - Requires category AND label match
+   - Weights: category 35%, label 35%, size 15%, distance 15%
+
+3. **LOOSE** (threshold 0.5):
+   - High recall, more aggressive merging
+   - Good for quick inventory counts
+   - Tolerant of camera movement
+   - Weights: category 35%, label 20%, size 15%, distance 30%
+
+4. **REALTIME** (threshold 0.55) - **Currently Used**:
+   - Optimized for continuous scanning with camera movement
+   - Tolerant of bounding box jitter and trackingId changes
+   - Good for long-press continuous scanning mode
+   - Weights: category 40%, label 15%, size 20%, distance 25%
+
+5. **LABEL_FOCUSED** (threshold 0.65):
+   - Emphasizes label text similarity
+   - Good for branded products with clear text
+   - Requires labels to match
+   - Weights: category 25%, label 45%, size 15%, distance 15%
+
+6. **SPATIAL_FOCUSED** (threshold 0.6):
+   - Emphasizes spatial proximity and size
+   - Good for generic objects without clear labels
+   - Stricter distance/size requirements
+   - Weights: category 30%, label 10%, size 30%, distance 30%
+
+**Integration Flow:**
+
+```
+Camera → ML Kit → ObjectTracker (frame-level)
+  → ScannedItem with trackingId
+  → ItemAggregator (session-level)
+  → AggregatedItem (merged detections)
+  → ItemsViewModel → UI
+```
+
+**Usage in ItemsViewModel:**
+
+```kotlin
+// Initialize with REALTIME preset
+private val itemAggregator = ItemAggregator(
+    config = AggregationPresets.REALTIME
+)
+
+// Process detections
+fun addItem(item: ScannedItem) {
+    val aggregatedItem = itemAggregator.processDetection(item)
+    updateItemsState()
+}
+
+// Dynamic threshold adjustment
+fun updateSimilarityThreshold(threshold: Float) {
+    itemAggregator.updateSimilarityThreshold(threshold)
+}
+```
+
+**Key Methods:**
+
+- `processDetection(ScannedItem)`: Process single detection, returns AggregatedItem
+- `processDetections(List<ScannedItem>)`: Batch processing
+- `updateSimilarityThreshold(Float)`: Dynamic threshold adjustment (0.0-1.0)
+- `removeItem(String)`: Remove aggregated item by ID
+- `reset()`: Clear all aggregated items
+- `getStats()`: Get aggregation statistics (total items, merges, etc.)
+
+**Tuning:**
+
+Current configuration (REALTIME preset):
+- `similarityThreshold = 0.55f` - Lower = more aggressive merging
+- `maxCenterDistanceRatio = 0.30f` - Max 30% of frame diagonal
+- `maxSizeDifferenceRatio = 0.6f` - Max 60% size difference
+- `categoryMatchRequired = true` - Category must match
+- `labelMatchRequired = false` - Labels optional (can be inconsistent)
+
+To change preset:
+```kotlin
+val itemAggregator = ItemAggregator(
+    config = AggregationPresets.STRICT  // or LOOSE, BALANCED, etc.
+)
+```
+
+### 6. Navigation
 
 **Single-Activity architecture** with Compose Navigation:
 - `MainActivity` hosts `NavHost`
