@@ -48,7 +48,7 @@ class ItemsViewModel(
     // Public immutable state
     val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 
-    // Real-time item aggregator (replaces SessionDeduplicator)
+    // Real-time item aggregator for similarity-based deduplication
     // Using REALTIME preset optimized for continuous scanning with camera movement
     private val itemAggregator = ItemAggregator(
         config = AggregationPresets.REALTIME
