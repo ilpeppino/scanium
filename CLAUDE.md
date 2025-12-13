@@ -418,21 +418,32 @@ data class DomainAttribute(
 Located in `CameraXManager.kt`:
 ```kotlin
 TrackerConfig(
-    minFramesToConfirm = 1,      // Frames needed for confirmation
-    minConfidence = 0.25f,        // Minimum confidence threshold
-    minBoxArea = 0.0f,            // Minimum normalized box area
-    maxFrameGap = 5,              // Frames allowed between detections
-    minMatchScore = 0.3f,         // Spatial matching threshold (IoU * 0.7 + dist * 0.3)
-    expiryFrames = 30,            // Frames before candidate expires
-    candidateTimeoutMs = 3000L    // Time-based expiry (3 seconds)
+    minFramesToConfirm = 1,      // Instant confirmation (rely on aggregator for quality)
+    minConfidence = 0.2f,         // Very low (20%) - aggressive detection
+    minBoxArea = 0.0005f,         // Accept tiny objects (0.05% of frame)
+    maxFrameGap = 8,              // Forgiving matching (allow 8 frames gap)
+    minMatchScore = 0.2f,         // Low spatial matching threshold
+    expiryFrames = 15             // Keep candidates 15 frames (~12 seconds at 800ms)
 )
 ```
 
-**Tuning Guidelines**:
-- Increase `minFramesToConfirm` to reduce false positives (slower confirmation)
-- Increase `minConfidence` for higher quality detections
-- Increase `minBoxArea` to ignore small/distant objects
-- Decrease thresholds for faster, more inclusive detection
+**Rationale for Aggressive Thresholds:**
+- **Session-level deduplication**: ItemAggregator handles quality filtering
+- **Responsive UX**: Instant confirmation feels more natural
+- **Inclusive detection**: Low confidence catches edge cases
+- **Forgiving tracking**: maxFrameGap=8 handles occlusion/movement
+
+**Trade-offs:**
+- More false positives at tracker level (filtered by aggregator)
+- Potentially more noise (mitigated by 0.2f confidence minimum)
+- Higher memory usage (more candidates stay active longer)
+
+**Tuning Guidelines:**
+- Increase `minFramesToConfirm` to 3 for more stable confirmations
+- Increase `minConfidence` to 0.4f to reduce false positives
+- Increase `minBoxArea` to 0.001f to ignore very small objects
+- Decrease `expiryFrames` to 10 to reduce memory usage
+- Balance: tracker permissiveness vs aggregator strictness
 
 ### Image Analysis Interval
 In `CameraXManager.kt`:
