@@ -52,11 +52,11 @@ Documentation was written for earlier tracker config and never updated when valu
 
 ***REMOVED******REMOVED*** Acceptance Criteria
 
-- [ ] Update CLAUDE.md with correct TrackerConfig values
-- [ ] Remove `candidateTimeoutMs` from docs (ObjectTracker doesn't use it)
-- [ ] Add comments explaining why each value was chosen
-- [ ] Document the trade-offs of the aggressive thresholds
-- [ ] Cross-reference with TRACKING_IMPLEMENTATION.md
+- [x] Update CLAUDE.md with correct TrackerConfig values
+- [x] Remove `candidateTimeoutMs` from docs (ObjectTracker doesn't use it)
+- [x] Add comments explaining why each value was chosen
+- [x] Document the trade-offs of the aggressive thresholds
+- [x] Cross-reference with TRACKING_IMPLEMENTATION.md
 
 ***REMOVED******REMOVED*** Suggested Fix
 
@@ -105,3 +105,72 @@ Add rationale section explaining:
 ***REMOVED******REMOVED*** Related Issues
 
 - Issue ***REMOVED***006 (Extract hardcoded configuration values)
+
+---
+
+***REMOVED******REMOVED*** Resolution
+
+**Status:** ✅ RESOLVED
+
+**Changes Made:**
+
+Updated CLAUDE.md (lines 417-446) to reflect actual TrackerConfig values:
+
+**Corrected Values:**
+| Parameter | Was (Wrong) | Now (Correct) | Change |
+|-----------|-------------|---------------|--------|
+| `minFramesToConfirm` | 1 | 1 | ✅ No change |
+| `minConfidence` | 0.25f | **0.2f** | ❌ Fixed |
+| `minBoxArea` | 0.0f | **0.0005f** | ❌ Fixed |
+| `maxFrameGap` | 5 | **8** | ❌ Fixed |
+| `minMatchScore` | 0.3f | **0.2f** | ❌ Fixed |
+| `expiryFrames` | 30 | **15** | ❌ Fixed |
+| `candidateTimeoutMs` | 3000L | **REMOVED** | ❌ Not used |
+
+**5 out of 6 parameters were wrong, plus 1 non-existent parameter documented.**
+
+**Enhanced Documentation:**
+
+Added three new sections to CLAUDE.md:
+
+1. **Rationale for Aggressive Thresholds:**
+   - Explains why values are permissive (ItemAggregator handles quality)
+   - Describes UX benefits (responsive, instant confirmation)
+   - Notes forgiving tracking for camera movement
+
+2. **Trade-offs:**
+   - Documents false positive risk (mitigated by aggregator)
+   - Notes potential noise (0.2f minimum confidence helps)
+   - Mentions memory usage (15 frames vs 30)
+
+3. **Enhanced Tuning Guidelines:**
+   - Specific examples with numeric values
+   - Explains tracker vs aggregator balance
+   - Provides concrete threshold recommendations
+
+**Verification:**
+
+```bash
+***REMOVED*** Confirmed actual values in code
+cat app/src/main/java/com/scanium/app/camera/CameraXManager.kt | grep -A 10 "TrackerConfig"
+
+***REMOVED*** Output matches new documentation
+minFramesToConfirm = 1
+minConfidence = 0.2f
+minBoxArea = 0.0005f
+maxFrameGap = 8
+minMatchScore = 0.2f
+expiryFrames = 15
+```
+
+**Impact:**
+- ✅ Documentation now matches code exactly
+- ✅ Developers can trust CLAUDE.md for tuning
+- ✅ Added context explains "why" behind aggressive values
+- ✅ Removed confusion about non-existent candidateTimeoutMs
+
+**Benefits:**
+- Accurate reference for developers
+- Clear rationale for threshold choices
+- Better understanding of tracker/aggregator relationship
+- Actionable tuning guidance with specific values
