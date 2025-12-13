@@ -148,8 +148,8 @@ class CameraXManager(
                 imageAnalysis
             )
         } catch (e: Exception) {
-            // Handle camera binding failure
-            e.printStackTrace()
+            // Handle camera binding failure (Log.e includes full stack trace)
+            Log.e(TAG, "Failed to bind camera use cases", e)
         }
     }
 
