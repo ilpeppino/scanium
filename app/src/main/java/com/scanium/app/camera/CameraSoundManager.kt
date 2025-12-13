@@ -130,8 +130,9 @@ class CameraSoundManager {
 
     /**
      * Plays a tone at the specified frequency for the given duration.
+     * Suspends until the tone completes.
      */
-    private fun playTone(frequencyHz: Int, durationMs: Int) {
+    private suspend fun playTone(frequencyHz: Int, durationMs: Int) {
         try {
             toneGenerator?.let { generator ->
                 // Generate a simple sine wave tone
@@ -149,7 +150,7 @@ class CameraSoundManager {
                 }
 
                 generator.startTone(dtmfTone, durationMs)
-                Thread.sleep(durationMs.toLong())
+                delay(durationMs.toLong()) // Non-blocking wait for tone to complete
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error playing tone at ${frequencyHz}Hz", e)
