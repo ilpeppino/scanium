@@ -368,9 +368,8 @@ class ObjectDetectorClient {
 
             detectionInfos
         } catch (e: Exception) {
+            // Log.e() with exception parameter automatically includes full stack trace
             Log.e(TAG, ">>> ERROR in detectObjectsWithTracking", e)
-            Log.e(TAG, ">>> Exception stack trace:")
-            e.printStackTrace()
             emptyList()
         }
     }
