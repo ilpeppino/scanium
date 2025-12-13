@@ -12,8 +12,8 @@ Scanium now features a **production-ready multi-frame detection pipeline** that 
 
 1. **ObjectDetectorClient** - ML Kit Object Detection wrapper
 2. **BarcodeScannerClient** - ML Kit Barcode Scanning wrapper
-3. **CandidateTracker** - Multi-frame detection pipeline
-4. **DetectionCandidate** - Candidate state tracking
+3. **ObjectTracker** - Multi-frame tracking and de-duplication pipeline
+4. **ObjectCandidate + DetectionInfo** - Tracking data structures
 5. **RawDetection** - Raw ML Kit output wrapper
 6. **DetectionLogger** - Debug logging and statistics
 7. **CameraXManager** - Camera integration and pipeline orchestration
@@ -78,64 +78,53 @@ ML Kit's object detection can produce:
 - **Flickering detections** - Objects appearing/disappearing rapidly
 - **Duplicate items** - Same object detected multiple times with different IDs
 
-***REMOVED******REMOVED******REMOVED*** Solution: Candidate Tracking System
+***REMOVED******REMOVED******REMOVED*** Solution: Object Tracking System
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** CandidateTracker (CandidateTracker.kt)
+***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectTracker (ObjectTracker.kt)
 
-**Purpose:** Track detections across multiple frames and promote only stable, high-confidence items.
+**Purpose:** Track detections across multiple frames and promote only stable, high-confidence objects.
 
 **Workflow:**
 ```
-Frame 1: Object detected → Create candidate (seenCount=1, conf=0.4)
-Frame 2: Same object → Update candidate (seenCount=2, conf=0.6)
+Frame 1: Object detected → Create candidate (seenCount=1)
+Frame 2: Same object → Update candidate using trackingId or spatial match
 Frame 3: Meets criteria → PROMOTE to ScannedItem
 ```
 
-**Promotion Criteria:**
-- `minSeenCount`: Default **1 frame** (relaxed for responsiveness)
-- `minConfidence`: Default **0.25** (25% confidence threshold)
-- `candidateTimeoutMs`: Default **3000ms** (expire after 3 seconds)
-- Optional: Bounding box area threshold
+**Confirmation Criteria (TrackerConfig defaults):**
+- `minFramesToConfirm`: **3 frames**
+- `minConfidence`: **0.4**
+- `minBoxArea`: **0.001** (normalized)
+- `maxFrameGap`: **5** (frames for spatial matching)
+- `minMatchScore`: **0.3** (IoU + distance)
+- `expiryFrames`: **10** (remove stale candidates)
 
 **Key Features:**
-1. **Confidence Tracking**: Tracks max confidence across all observations
-2. **Category Selection**: Uses category from highest confidence observation
-3. **Automatic Expiration**: Removes stale candidates to prevent memory leaks
-4. **Statistics**: Tracks detections, promotions, timeouts, promotion rate
-5. **Duplicate Prevention**: Removes candidate after promotion
+1. **Tracking ID Preference**: Uses ML Kit `trackingId` when available
+2. **Spatial Fallback**: IoU + center distance when trackingId is missing
+3. **Statistics**: Active/confirmed counts and frame number for debugging
+4. **Expiry Management**: Removes stale candidates automatically
+5. **Duplicate Prevention**: Keeps confirmed IDs to avoid re-promotions
 
-**Statistics Example:**
-```
-Tracker Stats:
-  Active candidates: 3
-  Total detections: 45
-  Promotions: 12
-  Timeouts: 8
-  Promotion rate: 26.7%
-```
+***REMOVED******REMOVED******REMOVED******REMOVED*** ObjectCandidate (ObjectCandidate.kt)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** DetectionCandidate (DetectionCandidate.kt)
+Intermediate representation storing per-object state:
+- `internalId` (trackingId or generated)
+- `boundingBox` (RectF)
+- `seenCount`, `lastSeenFrame`, `firstSeenFrame`
+- `maxConfidence`, `category`, `labelText`
+- `thumbnail`, `averageBoxArea`
 
-**Data Model:**
-```kotlin
-data class DetectionCandidate(
-    val id: String,                   // Tracking ID from ML Kit or UUID
-    val seenCount: Int,               // Number of frames observed
-    val maxConfidence: Float,         // Peak confidence score
-    val category: ItemCategory,       // Best category observed
-    val categoryLabel: String,        // ML Kit label text
-    val lastBoundingBox: Rect?,       // Most recent bounding box
-    val thumbnail: Bitmap?,           // Most recent thumbnail
-    val firstSeenTimestamp: Long,     // When first detected
-    val lastSeenTimestamp: Long       // When last seen
-)
-```
+***REMOVED******REMOVED******REMOVED******REMOVED*** DetectionInfo (ObjectTracker.kt)
 
-**Methods:**
-- `isReadyForPromotion()` - Check if promotion criteria met
-- `withNewObservation()` - Create updated candidate with new frame data
-- `ageMs()` - Time since first detection
-- `timeSinceLastSeenMs()` - Time since last observed
+Tracking metadata produced by `ObjectDetectorClient.detectObjectsWithTracking()`:
+- `trackingId`: ML Kit tracking ID (nullable)
+- `boundingBox`: RectF
+- `confidence`: Label confidence
+- `category`: Derived ItemCategory
+- `labelText`: Most confident label text
+- `thumbnail`: Cropped thumbnail
+- `normalizedBoxArea`: Normalized bounding box area
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** RawDetection (RawDetection.kt)
 
@@ -270,29 +259,27 @@ adb logcat | grep "Frame.*Summary"
 **Multi-Frame Pipeline Integration:**
 ```kotlin
 class CameraXManager {
-    private val candidateTracker = CandidateTracker(
-        minSeenCount = 1,
-        minConfidence = 0.25f,
-        candidateTimeoutMs = 3000L
+    private val objectTracker = ObjectTracker(
+        TrackerConfig(
+            minFramesToConfirm = 3,
+            minConfidence = 0.4f,
+            minBoxArea = 0.001f,
+            maxFrameGap = 5,
+            minMatchScore = 0.3f,
+            expiryFrames = 10
+        )
     )
 
     fun startScanning(scanMode: ScanMode, onResult: (List<ScannedItem>) -> Unit) {
         // Clear previous session
-        candidateTracker.clear()
+        objectTracker.reset()
 
         // Set up image analyzer with 800ms interval
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
-            // Process frame with candidate tracking
-            val promotedItems = processImageProxyWithCandidateTracking(imageProxy)
+            val promotedItems = processImageProxy(imageProxy, scanMode, useStreamMode = true).first
 
-            // Return only newly promoted items
             if (promotedItems.isNotEmpty()) {
                 onResult(promotedItems)
-            }
-
-            // Periodic cleanup (every 10 frames)
-            if (frameCounter % 10 == 0) {
-                candidateTracker.cleanupExpiredCandidates()
             }
         }
     }
@@ -301,10 +288,10 @@ class CameraXManager {
 
 **Processing Pipeline:**
 1. Convert ImageProxy → InputImage
-2. Call ML Kit detector
-3. Convert DetectedObject → RawDetection
-4. Process through CandidateTracker
-5. Return promoted ScannedItems only
+2. Call ML Kit detector in STREAM mode
+3. Convert DetectedObject → DetectionInfo
+4. Process through ObjectTracker
+5. Convert confirmed candidates → ScannedItems
 6. Log all events (debug builds)
 
 **Frame Rate:** 800ms between analyses (~1.25 FPS)
@@ -320,9 +307,12 @@ class CameraXManager {
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| `minSeenCount` | 1 frame | Relaxed for better responsiveness; unlabeled objects still work |
-| `minConfidence` | 0.25 (25%) | Lower threshold allows more detections; multi-frame stability compensates |
-| `candidateTimeoutMs` | 3000ms | 3-second window for object reappearance |
+| `minFramesToConfirm` | 3 frames | Ensures stability before promotion |
+| `minConfidence` | 0.4 (40%) | Filters out weak detections before confirmation |
+| `minBoxArea` | 0.001 | Prevents tiny/erroneous boxes from promoting |
+| `maxFrameGap` | 5 frames | Allows short occlusions while matching |
+| `minMatchScore` | 0.3 | Balanced IoU + distance weighting for spatial fallback |
+| `expiryFrames` | 10 | Cleans up stale candidates to conserve memory |
 | `analysisIntervalMs` | 800ms | Balance between speed and accuracy |
 | Image Resolution | 1280x720 | Higher res improves detection; good performance balance |
 | Detector Mode | STREAM_MODE | Optimized for video; fast enough for real-time |
@@ -330,42 +320,39 @@ class CameraXManager {
 ***REMOVED******REMOVED******REMOVED*** Tuning Recommendations
 
 **For fewer false positives:**
-- Increase `minSeenCount` to 2 or 3
-- Increase `minConfidence` to 0.4 or 0.5
+- Increase `minFramesToConfirm` to 4
+- Increase `minConfidence` to 0.5
 
 **For faster detection:**
-- Keep `minSeenCount` at 1
-- Lower `minConfidence` to 0.2 (with caution)
+- Reduce `minFramesToConfirm` to 2 (use only if duplicates are acceptable)
+- Lower `minConfidence` slightly (with caution)
 - Reduce `analysisIntervalMs` to 600ms
 
 **For higher quality only:**
 - Increase `minConfidence` to 0.5+
-- Increase `minSeenCount` to 3+
-- Add bounding box area threshold
+- Increase `minFramesToConfirm` to 3+
+- Raise `minBoxArea` threshold for tiny boxes
 
 ---
 
 ***REMOVED******REMOVED*** 7. Testing Infrastructure
 
-***REMOVED******REMOVED******REMOVED*** Test Coverage: 110 Tests (All Passing ✅)
+***REMOVED******REMOVED******REMOVED*** Test Coverage
 
 **Unit Tests:**
 
-1. **CandidateTrackerTest.kt** (20 tests)
-   - Promotion after multiple frames
-   - Confidence threshold enforcement
-   - Candidate expiration
-   - Statistics tracking
+1. **ObjectTrackerTest.kt**
+   - Confirmation thresholds across frames
+   - Spatial matching fallback
+   - Expiry logic and statistics
    - Parallel candidate handling
 
-2. **DetectionCandidateTest.kt** (16 tests)
-   - Promotion criteria validation
-   - Max confidence tracking across frames
-   - Category selection logic
-   - Bounding box area filtering
-   - Observation updates
+2. **ObjectCandidateTest.kt**
+   - IoU and distance helpers
+   - Confidence tracking across updates
+   - Bounding box averaging
 
-3. **ItemsViewModelTest.kt** (18 tests)
+3. **ItemsViewModelTest.kt**
    - Add/remove items
    - Deduplication (single and batch)
    - StateFlow emissions
@@ -394,7 +381,7 @@ class CameraXManager {
 
 ***REMOVED******REMOVED******REMOVED*** Memory Usage
 - **Candidate Map**: O(n) where n = active candidates
-- **Automatic Cleanup**: Expires candidates after 3 seconds
+- **Automatic Cleanup**: Expires candidates after configured frame gap
 - **Bounded Growth**: Max ~5-10 candidates typically
 - **Bitmap Reuse**: Old thumbnails replaced by new ones
 
@@ -406,8 +393,8 @@ class CameraXManager {
 
 ***REMOVED******REMOVED******REMOVED*** Detection Latency
 - **First Detection**: 800ms - 1600ms (1-2 frames)
-- **Promotion Delay**: Immediate with `minSeenCount=1`
-- **User Perception**: Feels real-time
+- **Promotion Delay**: Confirmation after ~3 frames with default thresholds
+- **User Perception**: Feels real-time while filtering duplicates
 
 ---
 

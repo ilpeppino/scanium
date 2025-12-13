@@ -1,5 +1,7 @@
 ***REMOVED*** Remove Duplicate CandidateTracker (Dead Code)
 
+**Status:** Resolved
+
 **Labels:** `tech-debt`, `priority:p0`, `area:ml`, `area:tracking`
 **Type:** Tech Debt
 **Severity:** Critical
@@ -50,12 +52,12 @@ grep -r "CandidateTracker" app/src/main/java
 
 ***REMOVED******REMOVED*** Acceptance Criteria
 
-- [ ] Delete `/app/src/main/java/com/scanium/app/ml/CandidateTracker.kt`
-- [ ] Delete `/app/src/main/java/com/scanium/app/ml/DetectionCandidate.kt`
-- [ ] Delete `/app/src/test/java/com/scanium/app/ml/CandidateTrackerTest.kt`
-- [ ] Delete `/app/src/test/java/com/scanium/app/ml/DetectionCandidateTest.kt`
-- [ ] Verify all tests still pass after deletion
-- [ ] Update any comments/docs that reference CandidateTracker to use ObjectTracker
+- [x] Delete `/app/src/main/java/com/scanium/app/ml/CandidateTracker.kt`
+- [x] Delete `/app/src/main/java/com/scanium/app/ml/DetectionCandidate.kt`
+- [x] Delete `/app/src/test/java/com/scanium/app/ml/CandidateTrackerTest.kt`
+- [x] Delete `/app/src/test/java/com/scanium/app/ml/DetectionCandidateTest.kt`
+- [ ] Verify all tests still pass after deletion *(blocked: local environment missing Android SDK/JDK 17)*
+- [x] Update any comments/docs that reference CandidateTracker to use ObjectTracker
 
 ***REMOVED******REMOVED*** Suggested Approach
 
@@ -64,6 +66,19 @@ grep -r "CandidateTracker" app/src/main/java
 3. Run tests again - should pass (no code depends on these)
 4. Search codebase for "CandidateTracker" string and update comments
 5. Commit with message: "Remove legacy CandidateTracker (replaced by ObjectTracker)"
+
+***REMOVED******REMOVED*** Resolution Notes
+
+- Removed the legacy CandidateTracker/DetectionCandidate implementations and their unit tests so ObjectTracker is the single tracking pipeline.
+- Updated CameraXManager KDoc plus architecture/testing/improvements docs to reference ObjectTracker and current TrackerConfig values.
+- Marked related documentation and review summaries as completed for this cleanup.
+
+***REMOVED******REMOVED*** Verification
+
+- Commands attempted (failures due to missing SDK/Java 17 toolchain in container):
+  - `./gradlew test`
+  - `./gradlew assembleDebug`
+- Manual check: `rg "CandidateTracker"` now only references historical issue records.
 
 ***REMOVED******REMOVED*** Related Issues
 
