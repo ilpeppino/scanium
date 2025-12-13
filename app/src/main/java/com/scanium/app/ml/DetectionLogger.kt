@@ -120,17 +120,15 @@ object DetectionLogger {
     /**
      * Logs tracker statistics.
      */
-    fun logTrackerStats(stats: TrackerStats) {
+    fun logTrackerStats(stats: com.scanium.app.tracking.TrackerStats) {
         if (!isDebug) return
 
         Log.i(
             TAG,
             "Tracker Stats | " +
                     "active=${stats.activeCandidates}, " +
-                    "totalDetections=${stats.totalDetections}, " +
-                    "promotions=${stats.totalPromotions}, " +
-                    "timeouts=${stats.totalTimeouts}, " +
-                    "promoteRate=${String.format("%.1f%%", stats.promotionRate * 100)}"
+                    "confirmed=${stats.confirmedCandidates}, " +
+                    "frame=${stats.currentFrame}"
         )
     }
 
