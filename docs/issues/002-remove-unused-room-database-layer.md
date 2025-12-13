@@ -118,3 +118,99 @@ Choose ONE of these options:
 ## Related Issues
 
 None
+
+---
+
+## Resolution
+
+**Status:** ✅ RESOLVED
+**Date:** 2025-12-13
+**Approach:** Option A - Delete Database Layer
+**Branch:** `claude/fix-002-remove-unused-room-database-014whnexQzX44P7C5Sc83JjH`
+
+### Changes Made
+
+1. **Deleted unused Room database files (main source):**
+   - `app/src/main/java/com/scanium/app/data/ScaniumDatabase.kt`
+   - `app/src/main/java/com/scanium/app/data/ScannedItemEntity.kt`
+   - `app/src/main/java/com/scanium/app/data/ItemsDao.kt`
+   - `app/src/main/java/com/scanium/app/data/ItemsRepository.kt`
+   - `app/src/main/java/com/scanium/app/data/ItemsRepositoryImpl.kt`
+
+2. **Deleted unused Room database test files:**
+   - `app/src/test/java/com/scanium/app/data/ItemsDaoTest.kt`
+   - `app/src/test/java/com/scanium/app/data/ItemsRepositoryTest.kt`
+   - `app/src/test/java/com/scanium/app/data/ScannedItemEntityTest.kt`
+   - `app/src/test/java/com/scanium/app/data/FakeItemsRepository.kt`
+
+3. **Removed Room dependencies from `app/build.gradle.kts`:**
+   - Removed `androidx.room:room-runtime`
+   - Removed `androidx.room:room-ktx`
+   - Removed `androidx.room:room-compiler` (KSP)
+   - Removed `androidx.room:room-testing`
+
+4. **Updated CLAUDE.md:**
+   - Added note in "No Persistence Layer" section documenting removal
+   - Confirmed intentional decision to have no persistence for PoC
+
+### Rationale
+
+- **Architectural Alignment:** Matches documented architecture ("No Persistence Layer" for PoC)
+- **Build Optimization:** Removes unused Room annotation processing, reducing compile time
+- **APK Size Reduction:** Eliminates unused Room runtime library from APK
+- **Code Clarity:** Removes dead code that confused developers about persistence strategy
+- **Test Cleanup:** Removes 4 test files testing code never used in production
+- **Prevents Schema Drift:** Entity was already outdated (missing 4 eBay integration fields)
+
+### Benefits Achieved
+
+✅ Reduced build complexity (no KSP annotation processing for Room)
+✅ Smaller APK size (Room runtime removed)
+✅ Clearer architecture (code matches documented intent)
+✅ Reduced maintenance burden (less dead code to maintain)
+✅ Eliminated schema drift risk
+✅ Cleaner test suite (no tests for unused code)
+
+### Files Preserved in `data/` Package
+
+The following files in `app/src/main/java/com/scanium/app/data/` were **kept** as they serve active purposes:
+
+- `AppError.kt` - Error handling types
+- `ClassificationPreferences.kt` - ML classification settings
+- `Result.kt` - Result wrapper type
+- `ThresholdPreferences.kt` - Detection threshold settings
+
+### Verification Steps
+
+To verify the fix:
+
+```bash
+# Check that Room files are deleted
+ls app/src/main/java/com/scanium/app/data/ | grep -E "Room|Database|Entity|Dao|Repository"
+# Should return nothing
+
+# Check that Room dependencies are removed
+grep -i "room" app/build.gradle.kts
+# Should return nothing
+
+# Verify other data files are preserved
+ls app/src/main/java/com/scanium/app/data/
+# Should show: AppError.kt, ClassificationPreferences.kt, Result.kt, ThresholdPreferences.kt
+
+# Build should complete successfully (when Java 17 available)
+./gradlew clean assembleDebug
+```
+
+### Future Considerations
+
+If persistence is needed in the future:
+
+1. Re-add Room dependencies to `app/build.gradle.kts`
+2. Create new database entities matching current domain models (including eBay fields)
+3. Implement Repository pattern with DAO
+4. Refactor `ItemsViewModel` to use repository instead of direct StateFlow
+5. Add database migration strategy from day one
+6. Document schema versioning approach
+7. Add comprehensive integration tests for persistence flow
+
+The removal was a clean slate that prevents inheriting technical debt from the outdated schema.
