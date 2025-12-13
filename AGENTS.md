@@ -29,17 +29,16 @@
 - **Unit tests**: `app/src/test/java/` - Pure Kotlin/JVM logic with JUnit4
 - **Instrumented tests**: `app/src/androidTest/java/` - UI and Android framework tests
 
-### Current Test Coverage (110 tests - all passing ✅)
-- **Unit tests** (7 files):
-  - `CandidateTrackerTest.kt` - Multi-frame detection pipeline (20 tests)
-  - `DetectionCandidateTest.kt` - Promotion criteria validation (16 tests)
-  - `ItemsViewModelTest.kt` - State management & deduplication (18 tests)
+### Current Test Coverage (all passing ✅)
+- **Unit tests** focus on:
+  - `ObjectTrackerTest.kt` and `ObjectCandidateTest.kt` - Multi-frame tracking pipeline
+  - `ItemsViewModelTest.kt` - State management & deduplication
   - `PricingEngineTest.kt` - EUR price generation
   - `ScannedItemTest.kt` - Confidence level classification
   - `ItemCategoryTest.kt` - ML Kit label mapping
   - `FakeObjectDetector.kt` - Test fixtures
 
-- **Instrumented tests** (2 files):
+- **Instrumented tests**:
   - `ModeSwitcherTest.kt` - Compose UI interaction
   - `ItemsViewModelInstrumentedTest.kt` - Integration tests
 
