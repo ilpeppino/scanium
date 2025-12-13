@@ -166,16 +166,5 @@ fun ShutterButton(
             }
         }
 
-        // Hint text
-        Text(
-            text = when (cameraState) {
-                CameraState.IDLE -> "Tap to capture • Hold to scan"
-                CameraState.CAPTURING -> "Capturing..."
-                CameraState.SCANNING -> "Tap to stop"
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.85f),
-            fontSize = 12.sp
-        )
     }
 }

@@ -24,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -316,7 +317,7 @@ private fun BoxScope.CameraOverlay(
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .padding(16.dp),
-        horizontalArrangement = Arrangement.Start,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
@@ -335,13 +336,22 @@ private fun BoxScope.CameraOverlay(
             )
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
-
-        Image(
-            painter = painterResource(id = R.drawable.scanium_logo),
-            contentDescription = null,
-            modifier = Modifier.height(28.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .background(
+                    Color.Black.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.small
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.scanium_logo),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        }
     }
 
     // Bottom UI: Mode switcher and shutter button
@@ -405,7 +415,7 @@ private fun BoxScope.CameraOverlay(
                     onTap = onShutterTap,
                     onLongPress = onShutterLongPress,
                     onStopScanning = onStopScanning,
-                    modifier = Modifier
+                    modifier = Modifier.offset(y = 6.dp)
                 )
             }
 
