@@ -3,27 +3,32 @@ package com.scanium.app.camera
 import android.Manifest
 import android.util.Size
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -42,8 +47,7 @@ import kotlinx.coroutines.launch
  * - Tap to capture single frame
  * - Long-press to start continuous scanning
  * - Tap while scanning to stop
- * - Advanced controls (threshold slider, classification toggle) hidden by default
- * - Tap preview to show advanced controls (auto-hide after 3 seconds)
+ * - Slide-in settings overlay for tuning and processing controls
  */
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -78,34 +82,18 @@ fun CameraScreen(
     // Flash animation state for mode transitions
     var showFlash by remember { mutableStateOf(false) }
 
-    // Advanced controls visibility state
-    var advancedControlsVisible by remember { mutableStateOf(false) }
-    var autoHideJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    // Settings overlay state
+    var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
 
     // Items count from ViewModel
     val itemsCount by itemsViewModel.items.collectAsState()
+    val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
     val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
 
     // Detection overlay state
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
     var imageSize by remember { mutableStateOf(Size(1280, 720)) }
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
-
-    // Auto-hide timer for advanced controls
-    fun startAutoHideTimer() {
-        autoHideJob?.cancel()
-        autoHideJob = scope.launch {
-            delay(3000)
-            advancedControlsVisible = false
-        }
-    }
-
-    // Reset auto-hide timer when controls are interacted with
-    fun resetAutoHideTimer() {
-        if (advancedControlsVisible) {
-            startAutoHideTimer()
-        }
-    }
 
     // Request permission on first launch
     LaunchedEffect(Unit) {
@@ -114,27 +102,25 @@ fun CameraScreen(
         }
     }
 
+    // Close settings on system back when open
+    BackHandler(enabled = isSettingsOpen) {
+        isSettingsOpen = false
+    }
+
     // Cleanup on dispose
     DisposableEffect(Unit) {
         onDispose {
             cameraManager.shutdown()
             soundManager.release()
-            autoHideJob?.cancel()
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
             cameraPermissionState.status.isGranted -> {
-                // Camera preview with tap detection
-                CameraPreviewWithTapDetection(
+                // Camera preview
+                CameraPreview(
                     cameraManager = cameraManager,
-                    cameraState = cameraState,
-                    onPreviewTap = {
-                        // Show advanced controls on preview tap
-                        advancedControlsVisible = true
-                        startAutoHideTimer()
-                    },
                     onPreviewSizeChanged = { size ->
                         previewSize = Size(size.width, size.height)
                     }
@@ -158,40 +144,13 @@ fun CameraScreen(
                     )
                 }
 
-                // Advanced controls (hidden by default)
-                if (advancedControlsVisible) {
-                    // Vertical threshold slider on right side
-                    val currentThreshold by itemsViewModel.similarityThreshold.collectAsState()
-                    VerticalThresholdSlider(
-                        value = currentThreshold,
-                        onValueChange = { newValue ->
-                            itemsViewModel.updateSimilarityThreshold(newValue)
-                            resetAutoHideTimer()
-                        },
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 16.dp)
-                    )
-
-                    // Classification mode toggle on left side
-                    ClassificationModeToggle(
-                        currentMode = classificationMode,
-                        onModeSelected = { mode ->
-                            classificationModeViewModel.updateMode(mode)
-                            resetAutoHideTimer()
-                        },
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(start = 16.dp)
-                    )
-                }
-
                 // Overlay UI
                 CameraOverlay(
                     itemsCount = itemsCount.size,
                     cameraState = cameraState,
                     scanMode = currentScanMode,
                     onNavigateToItems = onNavigateToItems,
+                    onOpenSettings = { isSettingsOpen = true },
                     onModeChanged = { newMode ->
                         if (newMode != currentScanMode) {
                             // Stop scanning if active
@@ -276,6 +235,15 @@ fun CameraScreen(
                         }
                     }
                 )
+
+                CameraSettingsOverlay(
+                    visible = isSettingsOpen,
+                    onDismiss = { isSettingsOpen = false },
+                    similarityThreshold = similarityThreshold,
+                    onThresholdChange = itemsViewModel::updateSimilarityThreshold,
+                    classificationMode = classificationMode,
+                    onProcessingModeChange = classificationModeViewModel::updateMode
+                )
             }
             else -> {
                 // Permission denied UI
@@ -290,13 +258,11 @@ fun CameraScreen(
 }
 
 /**
- * Camera preview integrated with AndroidView and tap detection.
+ * Camera preview integrated with AndroidView.
  */
 @Composable
-private fun CameraPreviewWithTapDetection(
+private fun CameraPreview(
     cameraManager: CameraXManager,
-    cameraState: CameraState,
-    onPreviewTap: () -> Unit,
     onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -312,14 +278,6 @@ private fun CameraPreviewWithTapDetection(
             .fillMaxSize()
             .onSizeChanged { intSize ->
                 onPreviewSizeChanged(intSize)
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        // Tap on preview shows advanced controls
-                        onPreviewTap()
-                    }
-                )
             }
     ) { previewView ->
         if (!isCameraStarted) {
@@ -342,6 +300,7 @@ private fun BoxScope.CameraOverlay(
     cameraState: CameraState,
     scanMode: ScanMode,
     onNavigateToItems: () -> Unit,
+    onOpenSettings: () -> Unit,
     onModeChanged: (ScanMode) -> Unit,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -353,44 +312,40 @@ private fun BoxScope.CameraOverlay(
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // App title
-        Text(
-            text = "Scanium",
-            style = MaterialTheme.typography.titleLarge,
-            color = Color.White,
+        IconButton(
+            onClick = onOpenSettings,
             modifier = Modifier
+                .size(48.dp)
                 .background(
                     Color.Black.copy(alpha = 0.5f),
                     shape = MaterialTheme.shapes.small
                 )
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-
-        // Items button
-        Button(
-            onClick = onNavigateToItems,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Black.copy(alpha = 0.7f)
-            )
         ) {
             Icon(
-                imageVector = Icons.Default.List,
-                contentDescription = "View items",
+                imageVector = Icons.Default.Menu,
+                contentDescription = "Open settings",
                 tint = Color.White
             )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text("Items ($itemsCount)", color = Color.White)
         }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        Image(
+            painter = painterResource(id = R.drawable.scanium_logo),
+            contentDescription = null,
+            modifier = Modifier.height(28.dp)
+        )
     }
 
     // Bottom UI: Mode switcher and shutter button
     Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
-            .padding(bottom = 24.dp),
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
@@ -401,14 +356,62 @@ private fun BoxScope.CameraOverlay(
             modifier = Modifier
         )
 
-        // Shutter button
-        ShutterButton(
-            cameraState = cameraState,
-            onTap = onShutterTap,
-            onLongPress = onShutterLongPress,
-            onStopScanning = onStopScanning,
+        Row(
             modifier = Modifier
-        )
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                BadgedBox(
+                    badge = {
+                        if (itemsCount > 0) {
+                            Badge {
+                                Text(itemsCount.toString())
+                            }
+                        }
+                    }
+                ) {
+                    IconButton(
+                        onClick = onNavigateToItems,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(
+                                Color.Black.copy(alpha = 0.5f),
+                                shape = MaterialTheme.shapes.small
+                            )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "View items",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                ShutterButton(
+                    cameraState = cameraState,
+                    onTap = onShutterTap,
+                    onLongPress = onShutterLongPress,
+                    onStopScanning = onStopScanning,
+                    modifier = Modifier
+                )
+            }
+
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterEnd
+            ) {
+                Spacer(modifier = Modifier.size(48.dp))
+            }
+        }
     }
 }
 
@@ -441,36 +444,3 @@ private fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
     }
 }
 
-/**
- * Classification mode toggle (shown only when advanced controls are visible).
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ClassificationModeToggle(
-    currentMode: ClassificationMode,
-    onModeSelected: (ClassificationMode) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .background(
-                Color.Black.copy(alpha = 0.6f),
-                shape = MaterialTheme.shapes.medium
-            )
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        FilterChip(
-            selected = currentMode == ClassificationMode.ON_DEVICE,
-            onClick = { onModeSelected(ClassificationMode.ON_DEVICE) },
-            label = { Text("On-device", style = MaterialTheme.typography.bodySmall) }
-        )
-
-        FilterChip(
-            selected = currentMode == ClassificationMode.CLOUD,
-            onClick = { onModeSelected(ClassificationMode.CLOUD) },
-            label = { Text("Cloud", style = MaterialTheme.typography.bodySmall) }
-        )
-    }
-}
