@@ -501,6 +501,7 @@ DisposableEffect(Unit) {
 ***REMOVED******REMOVED******REMOVED*** 5. No Persistence Layer
 - All data is in-memory (ViewModel state)
 - Items lost on app close (intentional for PoC)
+- Previously implemented Room database layer was removed to align with PoC scope (Issue 002)
 - Future: Add Room database if persistence needed
 
 ***REMOVED******REMOVED*** Common Development Tasks
