@@ -189,7 +189,7 @@ class CameraXManager(
 
     /**
      * Starts continuous scanning mode with multi-frame candidate tracking.
-     * Captures frames periodically and uses CandidateTracker to promote only stable detections.
+     * Captures frames periodically and uses ObjectTracker to promote only stable detections.
      */
     fun startScanning(
         scanMode: ScanMode,
