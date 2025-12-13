@@ -116,7 +116,7 @@ Comprehensive roadmap including:
 ***REMOVED******REMOVED******REMOVED*** Critical Issues Discovered
 
 1. **Dead Code Accumulation (3 issues):**
-   - CandidateTracker + DetectionCandidate in ml/ package (replaced by ObjectTracker)
+   - CandidateTracker + DetectionCandidate in ml/ package (replaced by ObjectTracker) ✅ Removed
    - SessionDeduplicator in items/ package (replaced by ItemAggregator)
    - Complete Room database layer (implemented but never used)
    - **Impact:** Confusion, maintenance burden, outdated tests
@@ -124,7 +124,7 @@ Comprehensive roadmap including:
 2. **Documentation Drift (3 issues):**
    - TrackerConfig values in CLAUDE.md don't match actual code
    - ItemAggregator system completely undocumented
-   - Comments reference wrong tracker (CandidateTracker vs ObjectTracker)
+   - Comments reference wrong tracker (CandidateTracker vs ObjectTracker) ✅ CameraXManager updated
    - **Impact:** Onboarding difficulty, tuning mistakes
 
 3. **Memory Management Concerns:**
@@ -153,10 +153,9 @@ Comprehensive roadmap including:
 
 ***REMOVED******REMOVED******REMOVED*** Architecture Inconsistencies
 
-1. **Dual Tracking Systems:**
-   - CandidateTracker (dead) vs ObjectTracker (active)
-   - Only ObjectTracker is actually used
-   - Tests exist for both
+1. **Tracking System Cleanup:**
+   - Legacy CandidateTracker removed; ObjectTracker is the single implementation
+   - Tests now focus on ObjectTracker/ObjectCandidate
 
 2. **Dual Deduplication Systems:**
    - SessionDeduplicator (dead) vs ItemAggregator (active)
@@ -195,7 +194,7 @@ Comprehensive roadmap including:
 ***REMOVED******REMOVED******REMOVED*** Immediate (This Week):
 
 1. **Delete dead code:**
-   - CandidateTracker, DetectionCandidate
+   - CandidateTracker, DetectionCandidate ✅ Completed
    - SessionDeduplicator
    - Room database layer (or make activation decision)
 
@@ -277,12 +276,14 @@ Comprehensive roadmap including:
 
 ***REMOVED******REMOVED******REMOVED*** Dead Code Identified:
 
-- **Files to delete:** 7
+- **Files removed:**
   - CandidateTracker.kt
   - DetectionCandidate.kt
-  - SessionDeduplicator.kt
   - CandidateTrackerTest.kt
   - DetectionCandidateTest.kt
+
+- **Remaining cleanup:**
+  - SessionDeduplicator.kt
   - SessionDeduplicatorTest.kt
   - Database layer (5 files) - OR activate with fixes
 
