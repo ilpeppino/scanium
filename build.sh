@@ -9,15 +9,15 @@ find_java17() {
     ***REMOVED*** Try macOS java_home utility
     if command -v /usr/libexec/java_home &> /dev/null; then
         JAVA17=$(/usr/libexec/java_home -v 17 2>/dev/null || echo "")
-        if [ -n "$JAVA17" ]; then
+        if [ -n "$JAVA17" ] && [ -x "$JAVA17/bin/java" ]; then
             echo "$JAVA17"
             return 0
         fi
     fi
 
-    ***REMOVED*** Try common Linux paths
+    ***REMOVED*** Try common Linux paths - verify bin/java exists and is executable
     for path in /usr/lib/jvm/java-17-* /usr/lib/jvm/jdk-17* /opt/java/jdk-17*; do
-        if [ -d "$path" ]; then
+        if [ -d "$path" ] && [ -x "$path/bin/java" ]; then
             echo "$path"
             return 0
         fi
@@ -26,7 +26,7 @@ find_java17() {
     ***REMOVED*** Try SDKMAN
     if [ -n "$SDKMAN_DIR" ] && [ -d "$SDKMAN_DIR/candidates/java" ]; then
         for path in "$SDKMAN_DIR/candidates/java"/17*; do
-            if [ -d "$path" ]; then
+            if [ -d "$path" ] && [ -x "$path/bin/java" ]; then
                 echo "$path"
                 return 0
             fi
@@ -36,7 +36,7 @@ find_java17() {
     ***REMOVED*** Try mise
     if command -v mise &> /dev/null; then
         MISE_JAVA=$(mise where java@17 2>/dev/null || echo "")
-        if [ -n "$MISE_JAVA" ]; then
+        if [ -n "$MISE_JAVA" ] && [ -x "$MISE_JAVA/bin/java" ]; then
             echo "$MISE_JAVA"
             return 0
         fi
@@ -52,6 +52,9 @@ echo "🔍 Looking for Java 17..."
 if JAVA17_HOME=$(find_java17); then
     echo "✅ Found Java 17 at: $JAVA17_HOME"
     export JAVA_HOME="$JAVA17_HOME"
+
+    ***REMOVED*** Verify Java version
+    echo "☕ Using Java: $("$JAVA_HOME/bin/java" -version 2>&1 | head -n 1)"
 else
     echo "❌ Java 17 not found!"
     echo ""
@@ -64,9 +67,6 @@ else
     echo "Or download from: https://adoptium.net/temurin/releases/?version=17"
     exit 1
 fi
-
-***REMOVED*** Verify Java version
-echo "☕ Using Java: $("$JAVA_HOME/bin/java" -version 2>&1 | head -n 1)"
 
 ***REMOVED*** Run Gradle command
 echo "🔨 Building Scanium..."
