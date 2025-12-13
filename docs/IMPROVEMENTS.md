@@ -64,10 +64,10 @@ These issues block maintainability and create confusion for current/future devel
 **Impact:** High - Reduces confusion, speeds up navigation, clarifies architecture
 
 **Tasks:**
-- Delete CandidateTracker + DetectionCandidate (ml/ package) - replaced by ObjectTracker
+- ✅ Delete CandidateTracker + DetectionCandidate (ml/ package) - replaced by ObjectTracker
 - Delete SessionDeduplicator - replaced by ItemAggregator
 - Delete unused Room database layer OR activate it (decision required)
-- Remove associated test files (CandidateTrackerTest, SessionDeduplicatorTest, etc.)
+- ✅ Remove associated test files (CandidateTrackerTest, SessionDeduplicatorTest, etc.)
 - Update documentation to reference correct components
 
 **Why This Matters:**
@@ -710,7 +710,7 @@ P3: Analytics & CI/CD
 
 ### Immediate Actions (This Week):
 
-1. **Delete dead code** (CandidateTracker, SessionDeduplicator, unused database)
+1. **Delete dead code** (remaining: SessionDeduplicator, unused database)
 2. **Fix documentation** (CLAUDE.md tracker configs, ItemAggregator)
 3. **Externalize configs** (create ScaniumConfig object)
 

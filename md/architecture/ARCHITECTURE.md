@@ -51,7 +51,7 @@ Scanium follows a **simplified MVVM (Model-View-ViewModel)** architecture with c
 ┌─────────────────────────────────────────────────────────────┐
 │                   Domain/Business Logic                     │
 │  - CameraXManager (camera lifecycle & analysis)            │
-│  - CandidateTracker (multi-frame detection pipeline)       │
+│  - ObjectTracker (multi-frame tracking pipeline)           │
 │  - ObjectDetectorClient (ML Kit object detection wrapper)  │
 │  - BarcodeScannerClient (ML Kit barcode scanner wrapper)   │
 │  - DetectionLogger (debug logging & statistics)            │
@@ -64,7 +64,7 @@ Scanium follows a **simplified MVVM (Model-View-ViewModel)** architecture with c
 │  - ScannedItem (promoted detection data model)             │
 │  - DetectionResult (overlay visualization data)            │
 │  - DetectionResponse (wrapper for items + results)         │
-│  - DetectionCandidate (multi-frame tracking data)          │
+│  - ObjectCandidate (multi-frame tracking data)             │
 │  - RawDetection (ML Kit raw output)                        │
 │  - ItemCategory (enum with ML Kit mapping)                 │
 │  - ConfidenceLevel (LOW/MEDIUM/HIGH classification)        │
@@ -263,17 +263,17 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 - Simpler API (no multi-frame tracking needed)
 - Clear separation of scan modes
 
-#### CandidateTracker
+#### ObjectTracker
 - **Core of multi-frame detection pipeline**
-- Tracks detection candidates across multiple frames
-- Maintains map of `trackingId -> DetectionCandidate`
-- Promotes candidates to `ScannedItem` when criteria met:
-  - Minimum seen count (default: 1 frame)
-  - Minimum confidence (default: 0.25)
-  - Optional bounding box area threshold
-- Expires stale candidates (timeout: 3 seconds)
-- Tracks statistics (detections, promotions, timeouts)
-- Prevents duplicate promotions by removing after confirmation
+- Tracks object candidates across multiple frames using tracking IDs with spatial fallback
+- Maintains map of `internalId -> ObjectCandidate`
+- Confirms candidates to `ScannedItem` when criteria met:
+  - Minimum frames observed (default: 3 frames)
+  - Minimum confidence (default: 0.4)
+  - Minimum bounding box area (default: 0.001 normalized)
+- Expires stale candidates after configurable frame gaps
+- Tracks statistics (active, confirmed, current frame)
+- Prevents duplicate promotions by keeping confirmed IDs
 
 **Why separate tracker?**
 - Encapsulates complex multi-frame logic
@@ -332,19 +332,21 @@ data class ScannedItem(
     val formattedPriceRange: String       // "€20 - €50"
 }
 
-data class DetectionCandidate(
-    val id: String,                       // Tracking ID
-    val seenCount: Int,                   // Frames observed
-    val maxConfidence: Float,             // Peak confidence
-    val category: ItemCategory,           // Best category
-    val categoryLabel: String,            // ML Kit label text
-    val lastBoundingBox: Rect?,           // Most recent box
-    val thumbnail: Bitmap?,               // Most recent thumbnail
-    val firstSeenTimestamp: Long,         // First detection time
-    val lastSeenTimestamp: Long           // Last detection time
+data class ObjectCandidate(
+    val internalId: String,               // Tracking ID or generated UUID
+    var boundingBox: RectF,               // Current bounding box
+    var lastSeenFrame: Long,              // Last observed frame
+    var seenCount: Int = 1,               // Frames observed
+    var maxConfidence: Float = 0f,        // Peak confidence
+    var category: ItemCategory = ItemCategory.UNKNOWN, // Best category
+    var labelText: String = "",           // ML Kit label text
+    var thumbnail: Bitmap? = null,        // Best thumbnail
+    val firstSeenFrame: Long = lastSeenFrame,
+    var averageBoxArea: Float = 0f        // Running average area
 ) {
-    fun isReadyForPromotion(...): Boolean
-    fun withNewObservation(...): DetectionCandidate
+    fun update(...)
+    fun calculateIoU(...): Float
+    fun distanceTo(...): Float
 }
 
 data class RawDetection(
@@ -716,7 +718,7 @@ User taps scan button
     ↓
 CameraScreen → CameraXManager.startScanning(scanMode)
     ↓
-CandidateTracker.clear() (reset state)
+ObjectTracker.reset() (reset state)
     ↓
 ImageAnalysis analyzer set with 800ms interval
     ↓
@@ -726,41 +728,37 @@ Every 800ms:
     ↓
     Convert to InputImage
     ↓
-    ObjectDetectorClient.detectObjectsRaw()
+    ObjectDetectorClient.detectObjectsWithTracking()
     ↓
     ML Kit returns List<DetectedObject>
     ↓
-    Convert to List<RawDetection> with:
-        - trackingId (from ML Kit or UUID)
-        - labels with confidences
-        - bounding box
+    Convert to List<DetectionInfo> with:
+        - trackingId (from ML Kit or generated stable ID)
+        - label text + confidence
+        - bounding box (RectF)
         - cropped thumbnail
+        - normalized bounding box area
     ↓
-    For each RawDetection:
+    For each DetectionInfo:
         ↓
         DetectionLogger.logRawDetection() [debug only]
         ↓
-        Calculate effective confidence
-        ↓
-        CandidateTracker.processDetection()
+        ObjectTracker.processFrame()
             ↓
-            Get existing candidate OR create new
+            Find existing candidate by trackingId or spatial match
             ↓
-            Update: seenCount++, maxConfidence, category
+            Update candidate (seenCount++, maxConfidence, category, label)
             ↓
-            Check promotion criteria:
-                - seenCount >= minSeenCount (1)
-                - maxConfidence >= minConfidence (0.25)
+            Check confirmation criteria:
+                - seenCount >= minFramesToConfirm (3)
+                - maxConfidence >= minConfidence (0.4)
+                - normalized box area >= minBoxArea (0.001)
             ↓
-            IF ready for promotion:
-                - Remove from candidates map
-                - Generate price via PricingEngine
-                - Create ScannedItem
+            IF confirmed this frame:
+                - Keep candidate in map for continued tracking
+                - Convert to ScannedItem via ObjectDetectorClient
                 - DetectionLogger.logCandidateUpdate(promoted=true)
                 - Return ScannedItem
-            ELSE:
-                - Keep in candidates map
-                - Return null
     ↓
     Collect promoted items
     ↓
@@ -771,15 +769,14 @@ Every 800ms:
         ↓
         UI updates item count
     ↓
-    Every 10 frames:
-        - CandidateTracker.cleanupExpiredCandidates()
-        - DetectionLogger.logTrackerStats()
+    ObjectTracker removes expired candidates based on frame gaps
+    DetectionLogger.logTrackerStats()
     ↓
 User stops scanning
     ↓
 CameraXManager.stopScanning()
     ↓
-CandidateTracker.clear()
+ObjectTracker.reset()
 ```
 
 ### Barcode Scanning Flow
@@ -896,16 +893,14 @@ Return to CameraScreen
 | Core Testing | 2.2.0 | LiveData/Flow testing utilities |
 
 **Test Coverage:**
-- **110 total tests** (all passing ✅)
-- **7 unit test files** covering:
-  - CandidateTracker (multi-frame promotion logic)
-  - DetectionCandidate (promotion criteria validation)
+- Unit tests cover:
+  - ObjectTracker and ObjectCandidate (multi-frame promotion logic)
   - ItemsViewModel (state management & deduplication)
   - PricingEngine (EUR price generation)
   - ScannedItem (confidence classification)
   - ItemCategory (ML Kit label mapping)
   - FakeObjectDetector (test fixtures)
-- **2 instrumented test files** covering:
+- Instrumented tests cover:
   - ModeSwitcher (Compose UI interaction)
   - ItemsViewModel (integration tests)
 
