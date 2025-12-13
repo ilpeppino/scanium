@@ -5,7 +5,6 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 ## Table of Contents
 
 - [ItemsViewModel Tests](#itemsviewmodel-tests)
-- [CandidateTracker Tests](#candidatetracker-tests)
 - [DetectionResult Tests](#detectionresult-tests)
 - [PricingEngine Tests](#pricingengine-tests)
 - [ObjectCandidate Tests](#objectcandidate-tests)
@@ -49,35 +48,6 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 | `whenSamePhysicalObjectDetectedWithDifferentTrackingIds_thenOnlyOneKept` | Simulates ML Kit changing tracking IDs for same object |
 | `whenMultipleDifferentObjectsScanned_thenAllAdded` | Tests no false positives when scanning multiple different objects |
 | `whenAddingSimilarItemsWithDifferentSizes_thenOnlyDissimilarOnesAdded` | Tests size-based similarity threshold (40% tolerance) |
-
----
-
-## CandidateTracker Tests
-
-**File:** `app/src/test/java/com/scanium/app/ml/CandidateTrackerTest.kt`
-
-**Purpose:** Unit tests for multi-frame detection pipeline.
-
-| Test Name | Description |
-|-----------|-------------|
-| `whenFirstDetection_thenNullReturned` | First detection creates candidate but doesn't promote |
-| `whenSecondDetectionMeetsThresholds_thenItemPromoted` | Item promoted after meeting minSeenCount threshold |
-| `whenBelowConfidenceThreshold_thenNotPromoted` | Low confidence detections are not promoted |
-| `whenConfidenceIncreases_thenPromotedWithMaxConfidence` | Tracks and uses maximum confidence across frames |
-| `whenCategoryChangesWithHigherConfidence_thenUsesNewCategory` | Category updated when higher confidence is observed |
-| `whenMultipleCandidatesTrackedInParallel_thenEachPromotedIndependently` | Multiple objects tracked simultaneously |
-| `whenCleanupCalled_thenExpiredCandidatesRemoved` | Expired candidates cleaned up after timeout |
-| `whenCleanupCalledBeforeExpiration_thenCandidatesKept` | Candidates kept if within timeout window |
-| `whenClearCalled_thenAllCandidatesRemoved` | Clear operation removes all candidates |
-| `whenGettingStats_thenReturnsCorrectCounts` | Statistics tracking is accurate |
-| `whenZeroDetections_thenPromotionRateIsZero` | Handles zero detections gracefully |
-| `whenThreeFramesRequired_thenPromotesOnThirdFrame` | Configurable frame count threshold works |
-| `whenPricingIncluded_thenPromotedItemHasPriceRange` | Promoted items include price range |
-| `whenBoundingBoxAreaProvided_thenUsedForPricing` | Bounding box area influences pricing |
-| `whenHighConfidenceButOnlyOneSeen_thenNotPromoted` | High confidence alone insufficient without frame count |
-| `whenMultipleFramesWithFluctuatingConfidence_thenUsesMaxConfidence` | Tracks maximum confidence across all frames |
-| `whenGetCurrentCandidates_thenReturnsCopyOfInternalState` | Returns snapshot of current candidates |
-| `whenExpiredCandidatesCleaned_thenStatsReflectTimeouts` | Timeout statistics tracked correctly |
 
 ---
 
@@ -248,7 +218,7 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 ### Key Testing Areas
 
 1. **State Management** - ItemsViewModel tests verify CRUD operations and StateFlow emissions
-2. **Multi-Frame Detection** - CandidateTracker ensures stable object detection over time
+2. **Multi-Frame Detection** - ObjectTracker ensures stable object detection over time
 3. **Spatial Tracking** - ObjectTracker and ObjectCandidate test IoU and distance-based matching
 4. **Deduplication** - SessionDeduplicator prevents duplicate item additions via similarity matching
 5. **Pricing** - PricingEngine validates category-based and size-adjusted price generation
@@ -256,8 +226,6 @@ This document provides a comprehensive overview of the Scanium test suite, organ
 
 ### Test Statistics
 
-- **Total Test Files**: 8
-- **Total Test Methods**: 150+
 - **Testing Framework**: JUnit 4 with Robolectric
 - **Assertion Library**: Google Truth
 
