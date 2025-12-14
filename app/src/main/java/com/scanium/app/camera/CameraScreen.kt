@@ -190,6 +190,7 @@ fun CameraScreen(
                     itemsCount = itemsCount.size,
                     cameraState = cameraState,
                     scanMode = currentScanMode,
+                    captureResolution = captureResolution,
                     onNavigateToItems = onNavigateToItems,
                     onOpenSettings = { isSettingsOpen = true },
                     onModeChanged = { newMode ->
@@ -396,6 +397,7 @@ private fun BoxScope.CameraOverlay(
     itemsCount: Int,
     cameraState: CameraState,
     scanMode: ScanMode,
+    captureResolution: CaptureResolution,
     onNavigateToItems: () -> Unit,
     onOpenSettings: () -> Unit,
     onModeChanged: (ScanMode) -> Unit,
@@ -535,6 +537,30 @@ private fun BoxScope.CameraOverlay(
                 }
             }
         }
+
+        // Resolution indicator
+        Text(
+            text = getResolutionLabel(captureResolution),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White.copy(alpha = 0.7f),
+            modifier = Modifier
+                .background(
+                    Color.Black.copy(alpha = 0.4f),
+                    shape = MaterialTheme.shapes.small
+                )
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+    }
+}
+
+/**
+ * Formats the resolution setting for display.
+ */
+private fun getResolutionLabel(resolution: CaptureResolution): String {
+    return when (resolution) {
+        CaptureResolution.LOW -> "Resolution: Low (720p)"
+        CaptureResolution.NORMAL -> "Resolution: Normal (1080p)"
+        CaptureResolution.HIGH -> "Resolution: High (4K)"
     }
 }
 
