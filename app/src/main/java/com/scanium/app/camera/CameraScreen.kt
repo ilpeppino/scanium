@@ -1,14 +1,17 @@
 package com.scanium.app.camera
 
 import android.Manifest
+import android.util.Log
 import android.util.Size
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.camera.core.CameraSelector
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Badge
@@ -80,6 +83,11 @@ fun CameraScreen(
     // Camera state machine
     var cameraState by remember { mutableStateOf(CameraState.IDLE) }
 
+    // Camera lens state
+    var lensFacing by rememberSaveable { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
+    var boundLensFacing by rememberSaveable { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
+    var isCameraBinding by remember { mutableStateOf(false) }
+
     // Current scan mode
     var currentScanMode by remember { mutableStateOf(ScanMode.OBJECT_DETECTION) }
 
@@ -125,8 +133,34 @@ fun CameraScreen(
                 // Camera preview
                 CameraPreview(
                     cameraManager = cameraManager,
+                    lensFacing = lensFacing,
                     onPreviewSizeChanged = { size ->
                         previewSize = Size(size.width, size.height)
+                    },
+                    onBindingStateChange = { isBinding ->
+                        isCameraBinding = isBinding
+                    },
+                    onLensFacingResolved = { resolvedLens ->
+                        boundLensFacing = resolvedLens
+                        if (lensFacing != resolvedLens) {
+                            lensFacing = resolvedLens
+                            Toast.makeText(
+                                context,
+                                "Selected lens unavailable. Switched cameras.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    onBindingFailed = { error ->
+                        lensFacing = boundLensFacing
+                        error?.let {
+                            Toast.makeText(
+                                context,
+                                "Unable to start camera.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            Log.e("CameraScreen", "Failed to bind camera", it)
+                        }
                     }
                 )
 
@@ -237,7 +271,18 @@ fun CameraScreen(
                             cameraManager.stopScanning()
                             currentDetections = emptyList()
                         }
-                    }
+                    },
+                    onFlipCamera = {
+                        cameraState = CameraState.IDLE
+                        currentDetections = emptyList()
+                        cameraManager.stopScanning()
+                        lensFacing = if (boundLensFacing == CameraSelector.LENS_FACING_BACK) {
+                            CameraSelector.LENS_FACING_FRONT
+                        } else {
+                            CameraSelector.LENS_FACING_BACK
+                        }
+                    },
+                    isFlipEnabled = !isCameraBinding
                 )
 
                 CameraSettingsOverlay(
@@ -267,15 +312,20 @@ fun CameraScreen(
 @Composable
 private fun CameraPreview(
     cameraManager: CameraXManager,
-    onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit
+    lensFacing: Int,
+    onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit,
+    onBindingStateChange: (Boolean) -> Unit,
+    onLensFacingResolved: (Int) -> Unit,
+    onBindingFailed: (Throwable?) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-    var isCameraStarted by remember { mutableStateOf(false) }
+    var previewView by remember { mutableStateOf<PreviewView?>(null) }
 
     AndroidView(
         factory = { context ->
             PreviewView(context).apply {
                 implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            }.also { createdView ->
+                previewView = createdView
             }
         },
         modifier = Modifier
@@ -283,14 +333,17 @@ private fun CameraPreview(
             .onSizeChanged { intSize ->
                 onPreviewSizeChanged(intSize)
             }
-    ) { previewView ->
-        if (!isCameraStarted) {
-            scope.launch {
-                cameraManager.startCamera(previewView) { items ->
-                    // Handle any additional detection results if needed
-                }
-                isCameraStarted = true
-            }
+    )
+
+    LaunchedEffect(previewView, lensFacing) {
+        val view = previewView ?: return@LaunchedEffect
+        onBindingStateChange(true)
+        val result = cameraManager.startCamera(view, lensFacing)
+        onBindingStateChange(false)
+        if (result.success) {
+            onLensFacingResolved(result.lensFacingUsed)
+        } else {
+            onBindingFailed(result.error)
         }
     }
 }
@@ -309,7 +362,9 @@ private fun BoxScope.CameraOverlay(
     onModeChanged: (ScanMode) -> Unit,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
-    onStopScanning: () -> Unit
+    onStopScanning: () -> Unit,
+    onFlipCamera: () -> Unit,
+    isFlipEnabled: Boolean
 ) {
     // Top bar
     Row(
@@ -423,7 +478,22 @@ private fun BoxScope.CameraOverlay(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.CenterEnd
             ) {
-                Spacer(modifier = Modifier.size(48.dp))
+                IconButton(
+                    onClick = onFlipCamera,
+                    enabled = isFlipEnabled,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.5f),
+                            shape = MaterialTheme.shapes.small
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cameraswitch,
+                        contentDescription = "Flip camera",
+                        tint = Color.White
+                    )
+                }
             }
         }
     }
