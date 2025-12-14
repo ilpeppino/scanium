@@ -1,0 +1,108 @@
+package com.scanium.app.camera
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlin.math.min
+
+/**
+ * Utility functions for image processing and thumbnail generation.
+ */
+object ImageUtils {
+    private const val TAG = "ImageUtils"
+
+    /**
+     * Maximum dimension (width or height) for thumbnail bitmaps.
+     * Keeps memory usage reasonable while maintaining acceptable UI quality.
+     */
+    private const val THUMBNAIL_MAX_DIMENSION = 800
+
+    /**
+     * Creates a memory-safe thumbnail from a high-resolution image URI.
+     *
+     * Uses inSampleSize to decode only the required resolution, avoiding
+     * OutOfMemoryError on large images.
+     *
+     * @param context Application context
+     * @param uri URI of the high-resolution image
+     * @param maxDimension Maximum width/height for the thumbnail (default: 800px)
+     * @return Scaled thumbnail bitmap, or null if loading fails
+     */
+    suspend fun createThumbnailFromUri(
+        context: Context,
+        uri: Uri,
+        maxDimension: Int = THUMBNAIL_MAX_DIMENSION
+    ): Bitmap? = withContext(Dispatchers.IO) {
+        try {
+            val contentResolver = context.contentResolver
+
+            // First pass: Decode image bounds without loading the full bitmap
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+
+            contentResolver.openInputStream(uri)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream, null, options)
+            }
+
+            val imageWidth = options.outWidth
+            val imageHeight = options.outHeight
+
+            if (imageWidth <= 0 || imageHeight <= 0) {
+                Log.e(TAG, "Invalid image dimensions: ${imageWidth}x${imageHeight}")
+                return@withContext null
+            }
+
+            // Calculate inSampleSize to reduce memory footprint
+            val maxOriginalDimension = maxOf(imageWidth, imageHeight)
+            val sampleSize = if (maxOriginalDimension > maxDimension) {
+                maxOriginalDimension / maxDimension
+            } else {
+                1
+            }
+
+            // Second pass: Decode the scaled-down bitmap
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+                inJustDecodeBounds = false
+            }
+
+            val bitmap = contentResolver.openInputStream(uri)?.use { inputStream ->
+                BitmapFactory.decodeStream(inputStream, null, decodeOptions)
+            }
+
+            if (bitmap == null) {
+                Log.e(TAG, "Failed to decode bitmap from URI: $uri")
+                return@withContext null
+            }
+
+            // Final resize if needed (inSampleSize is a power of 2, so we may still be over target)
+            val scaledBitmap = if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
+                val scale = min(
+                    maxDimension.toFloat() / bitmap.width,
+                    maxDimension.toFloat() / bitmap.height
+                )
+                val targetWidth = (bitmap.width * scale).toInt()
+                val targetHeight = (bitmap.height * scale).toInt()
+
+                val scaled = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                if (scaled != bitmap) {
+                    bitmap.recycle() // Recycle the intermediate bitmap
+                }
+                scaled
+            } else {
+                bitmap
+            }
+
+            Log.d(TAG, "Created thumbnail: ${scaledBitmap.width}x${scaledBitmap.height} from ${imageWidth}x${imageHeight} (sample: $sampleSize)")
+            scaledBitmap
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to create thumbnail from URI: $uri", e)
+            null
+        }
+    }
+}

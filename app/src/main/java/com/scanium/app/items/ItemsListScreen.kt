@@ -68,21 +68,23 @@ fun ItemsListScreen(
         when (selectedAction) {
             SelectedItemsAction.SAVE_TO_DEVICE -> {
                 scope.launch {
-                    // Get selected items with their bitmaps
+                    // Get selected items with their images (prefer high-res URI, fallback to thumbnail)
                     val selectedItems = items.filter { selectedIds.contains(it.id) }
-                    val bitmapsToSave = selectedItems.mapNotNull { item ->
-                        item.thumbnail?.let { bitmap ->
-                            item.id to bitmap
+                    val imagesToSave = selectedItems.mapNotNull { item ->
+                        if (item.fullImageUri != null || item.thumbnail != null) {
+                            Triple(item.id, item.fullImageUri, item.thumbnail)
+                        } else {
+                            null
                         }
                     }
 
-                    if (bitmapsToSave.isEmpty()) {
+                    if (imagesToSave.isEmpty()) {
                         snackbarHostState.showSnackbar("No images to save")
                         return@launch
                     }
 
-                    // Save to gallery
-                    val result = MediaStoreSaver.saveBitmapsToGallery(context, bitmapsToSave)
+                    // Save to gallery (uses high-res URIs when available)
+                    val result = MediaStoreSaver.saveImagesToGallery(context, imagesToSave)
 
                     // Show result to user
                     snackbarHostState.showSnackbar(result.getStatusMessage())

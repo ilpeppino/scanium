@@ -2,9 +2,11 @@ package com.scanium.app.camera
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.YuvImage
+import android.net.Uri
 import android.util.Log
 import android.util.Size
 import androidx.camera.core.*
@@ -22,8 +24,13 @@ import com.scanium.app.tracking.TrackerConfig
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * Manages CameraX lifecycle, preview, and image analysis.
@@ -51,6 +58,7 @@ class CameraXManager(
     private var camera: Camera? = null
     private var preview: Preview? = null
     private var imageAnalysis: ImageAnalysis? = null
+    private var imageCapture: ImageCapture? = null
 
     private val objectDetector = ObjectDetectorClient()
     private val barcodeScanner = BarcodeScannerClient()
@@ -114,7 +122,8 @@ class CameraXManager(
      */
     suspend fun startCamera(
         previewView: PreviewView,
-        lensFacing: Int
+        lensFacing: Int,
+        captureResolution: CaptureResolution = CaptureResolution.DEFAULT
     ): CameraBindResult = withContext(Dispatchers.Main) {
         // Ensure models are downloaded before starting camera
         ensureModelsReady()
@@ -138,6 +147,10 @@ class CameraXManager(
             .build()
 
         Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
+
+        // Setup high-resolution image capture for saving high-quality item images
+        imageCapture = buildImageCapture(captureResolution, previewView.display.rotation)
+        Log.d(TAG, "ImageCapture configured for resolution: $captureResolution")
 
         val requestedSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
@@ -175,12 +188,13 @@ class CameraXManager(
             provider.unbindAll()
             stopScanning()
 
-            // Bind use cases to lifecycle
+            // Bind use cases to lifecycle (Preview, ImageAnalysis, ImageCapture)
             camera = provider.bindToLifecycle(
                 lifecycleOwner,
                 selectorToUse,
                 preview,
-                imageAnalysis
+                imageAnalysis,
+                imageCapture
             )
             CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
         } catch (e: Exception) {
@@ -500,6 +514,74 @@ class CameraXManager(
             bitmap.width, bitmap.height,
             matrix, true
         )
+    }
+
+    /**
+     * Builds an ImageCapture use case configured for the specified resolution.
+     */
+    private fun buildImageCapture(resolution: CaptureResolution, rotation: Int): ImageCapture {
+        val builder = ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+            .setTargetRotation(rotation)
+
+        // Configure target resolution based on setting
+        val targetSize = when (resolution) {
+            CaptureResolution.LOW -> android.util.Size(1280, 720)      // HD
+            CaptureResolution.NORMAL -> android.util.Size(1920, 1080)  // Full HD
+            CaptureResolution.HIGH -> android.util.Size(3840, 2160)    // 4K
+        }
+
+        builder.setTargetResolution(targetSize)
+
+        return builder.build()
+    }
+
+    /**
+     * Captures a high-resolution image to a file and returns the URI.
+     * This is used for storing the full-quality source image for items.
+     *
+     * @return Uri of the saved image file, or null if capture failed
+     */
+    suspend fun captureHighResImage(): Uri? = withContext(Dispatchers.IO) {
+        val capture = imageCapture ?: run {
+            Log.e(TAG, "captureHighResImage: ImageCapture not initialized")
+            return@withContext null
+        }
+
+        try {
+            // Create output file
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())
+            val photoFile = File(
+                context.cacheDir,
+                "SCANIUM_${timestamp}.jpg"
+            )
+
+            val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+
+            // Capture image
+            val result = suspendCancellableCoroutine<ImageCapture.OutputFileResults> { continuation ->
+                capture.takePicture(
+                    outputOptions,
+                    cameraExecutor,
+                    object : ImageCapture.OnImageSavedCallback {
+                        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                            continuation.resume(outputFileResults)
+                        }
+
+                        override fun onError(exception: ImageCaptureException) {
+                            continuation.resumeWithException(exception)
+                        }
+                    }
+                )
+            }
+
+            val savedUri = result.savedUri ?: Uri.fromFile(photoFile)
+            Log.i(TAG, "High-res image captured: $savedUri (size: ${photoFile.length()} bytes)")
+            savedUri
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to capture high-res image", e)
+            null
+        }
     }
 
     /**
