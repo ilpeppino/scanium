@@ -10,17 +10,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.media.MediaStoreSaver
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -44,6 +48,12 @@ fun ItemsListScreen(
     var selectedItem by remember { mutableStateOf<ScannedItem?>(null) }
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectionMode by remember { mutableStateOf(false) }
+    var selectedAction by remember { mutableStateOf(SelectedItemsAction.SAVE_TO_DEVICE) }
+    var showActionMenu by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     fun toggleSelection(item: ScannedItem) {
         if (selectedIds.contains(item.id)) {
@@ -52,6 +62,42 @@ fun ItemsListScreen(
             selectedIds.add(item.id)
         }
         selectionMode = selectedIds.isNotEmpty()
+    }
+
+    fun executeAction() {
+        when (selectedAction) {
+            SelectedItemsAction.SAVE_TO_DEVICE -> {
+                scope.launch {
+                    // Get selected items with their bitmaps
+                    val selectedItems = items.filter { selectedIds.contains(it.id) }
+                    val bitmapsToSave = selectedItems.mapNotNull { item ->
+                        item.thumbnail?.let { bitmap ->
+                            item.id to bitmap
+                        }
+                    }
+
+                    if (bitmapsToSave.isEmpty()) {
+                        snackbarHostState.showSnackbar("No images to save")
+                        return@launch
+                    }
+
+                    // Save to gallery
+                    val result = MediaStoreSaver.saveBitmapsToGallery(context, bitmapsToSave)
+
+                    // Show result to user
+                    snackbarHostState.showSnackbar(result.getStatusMessage())
+
+                    // Clear selection after successful save
+                    if (result.isSuccess) {
+                        selectedIds.clear()
+                        selectionMode = false
+                    }
+                }
+            }
+            SelectedItemsAction.SELL_ON_EBAY -> {
+                onNavigateToSell(selectedIds.toList())
+            }
+        }
     }
 
     Scaffold(
@@ -74,8 +120,50 @@ fun ItemsListScreen(
                         }) {
                             Text("Cancel")
                         }
-                        TextButton(onClick = { onNavigateToSell(selectedIds.toList()) }) {
-                            Text("Sell on eBay")
+
+                        // Action dropdown button
+                        Box {
+                            TextButton(
+                                onClick = { showActionMenu = true }
+                            ) {
+                                Text(selectedAction.displayName)
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Select action",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            DropdownMenu(
+                                expanded = showActionMenu,
+                                onDismissRequest = { showActionMenu = false }
+                            ) {
+                                SelectedItemsAction.values().forEach { action ->
+                                    DropdownMenuItem(
+                                        text = { Text(action.displayName) },
+                                        onClick = {
+                                            selectedAction = action
+                                            showActionMenu = false
+                                        },
+                                        leadingIcon = if (selectedAction == action) {
+                                            {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = "Selected"
+                                                )
+                                            }
+                                        } else null
+                                    )
+                                }
+                            }
+                        }
+
+                        // Execute button
+                        TextButton(
+                            onClick = { executeAction() },
+                            enabled = selectedIds.isNotEmpty()
+                        ) {
+                            Text("Go")
                         }
                     } else if (items.isNotEmpty()) {
                         IconButton(onClick = { itemsViewModel.clearAllItems() }) {
@@ -87,7 +175,8 @@ fun ItemsListScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(
             modifier = Modifier
