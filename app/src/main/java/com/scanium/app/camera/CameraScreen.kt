@@ -61,7 +61,8 @@ import kotlinx.coroutines.launch
 fun CameraScreen(
     onNavigateToItems: () -> Unit,
     itemsViewModel: ItemsViewModel = viewModel(),
-    classificationModeViewModel: ClassificationModeViewModel
+    classificationModeViewModel: ClassificationModeViewModel,
+    cameraViewModel: CameraViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -101,6 +102,7 @@ fun CameraScreen(
     val itemsCount by itemsViewModel.items.collectAsState()
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
     val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
+    val captureResolution by cameraViewModel.captureResolution.collectAsState()
 
     // Detection overlay state
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
@@ -134,6 +136,7 @@ fun CameraScreen(
                 CameraPreview(
                     cameraManager = cameraManager,
                     lensFacing = lensFacing,
+                    captureResolution = captureResolution,
                     onPreviewSizeChanged = { size ->
                         previewSize = Size(size.width, size.height)
                     },
@@ -225,12 +228,29 @@ fun CameraScreen(
                                         }
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                     } else {
-                                        itemsViewModel.addItems(items)
-                                        Toast.makeText(
-                                            context,
-                                            "Detected ${items.size} item(s)",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        // Capture high-res image and update items with it
+                                        scope.launch {
+                                            val highResUri = cameraManager.captureHighResImage()
+                                            val itemsWithHighRes = if (highResUri != null) {
+                                                // Generate high-quality thumbnails from the high-res image
+                                                items.map { item ->
+                                                    val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
+                                                    item.copy(
+                                                        fullImageUri = highResUri,
+                                                        thumbnail = newThumbnail ?: item.thumbnail
+                                                    )
+                                                }
+                                            } else {
+                                                // Fallback: use original items if high-res capture failed
+                                                items
+                                            }
+                                            itemsViewModel.addItems(itemsWithHighRes)
+                                            Toast.makeText(
+                                                context,
+                                                "Detected ${items.size} item(s)",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     }
                                 },
                                 onDetectionResult = { detections ->
@@ -251,7 +271,22 @@ fun CameraScreen(
                                 scanMode = currentScanMode,
                                 onResult = { items ->
                                     if (items.isNotEmpty()) {
-                                        itemsViewModel.addItems(items)
+                                        // Capture high-res image for continuous scan items
+                                        scope.launch {
+                                            val highResUri = cameraManager.captureHighResImage()
+                                            val itemsWithHighRes = if (highResUri != null) {
+                                                items.map { item ->
+                                                    val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
+                                                    item.copy(
+                                                        fullImageUri = highResUri,
+                                                        thumbnail = newThumbnail ?: item.thumbnail
+                                                    )
+                                                }
+                                            } else {
+                                                items
+                                            }
+                                            itemsViewModel.addItems(itemsWithHighRes)
+                                        }
                                     }
                                 },
                                 onDetectionResult = { detections ->
@@ -291,7 +326,9 @@ fun CameraScreen(
                     similarityThreshold = similarityThreshold,
                     onThresholdChange = itemsViewModel::updateSimilarityThreshold,
                     classificationMode = classificationMode,
-                    onProcessingModeChange = classificationModeViewModel::updateMode
+                    onProcessingModeChange = classificationModeViewModel::updateMode,
+                    captureResolution = captureResolution,
+                    onResolutionChange = cameraViewModel::updateCaptureResolution
                 )
             }
             else -> {
@@ -313,6 +350,7 @@ fun CameraScreen(
 private fun CameraPreview(
     cameraManager: CameraXManager,
     lensFacing: Int,
+    captureResolution: CaptureResolution,
     onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit,
     onBindingStateChange: (Boolean) -> Unit,
     onLensFacingResolved: (Int) -> Unit,
@@ -335,10 +373,11 @@ private fun CameraPreview(
             }
     )
 
-    LaunchedEffect(previewView, lensFacing) {
+    // Rebind camera when lens or resolution changes
+    LaunchedEffect(previewView, lensFacing, captureResolution) {
         val view = previewView ?: return@LaunchedEffect
         onBindingStateChange(true)
-        val result = cameraManager.startCamera(view, lensFacing)
+        val result = cameraManager.startCamera(view, lensFacing, captureResolution)
         onBindingStateChange(false)
         if (result.success) {
             onLensFacingResolved(result.lensFacingUsed)
