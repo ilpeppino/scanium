@@ -74,12 +74,23 @@ Show explanation dialog:
 
 ***REMOVED******REMOVED*** Acceptance Criteria
 
-- [ ] Add visual state indicator to classification mode toggle
-- [ ] Show confirmation when mode changes
-- [ ] Add tooltip/help text explaining modes
-- [ ] Persist mode selection across app restarts (already done via DataStore?)
-- [ ] Consider showing explanatory dialog on first toggle
+- [x] Add visual state indicator to classification mode toggle
+- [x] Show confirmation when mode changes
+- [x] Add tooltip/help text explaining modes
+- [x] Persist mode selection across app restarts (already done via DataStore)
+- [ ] Consider showing explanatory dialog on first toggle (deferred)
 - [ ] Update CLAUDE.md to document the UX
+
+***REMOVED******REMOVED*** Resolution
+
+- Added mode-specific iconography and brief descriptions to the Processing settings card so users can see whether they are on-device or cloud along with trade-offs.
+- Added a toast in `CameraScreen` that confirms the classification mode after the user switches it (initial value is skipped).
+- Persistence continues via `ClassificationPreferences` DataStore; no change needed.
+
+***REMOVED******REMOVED*** Verification
+
+- Manual: Open the Camera settings panel → toggle Processing mode; observe icon/color/text change and toast confirmation. Reopen to confirm state persisted.
+- Automated: `./gradlew test` (fails in container: Android SDK not installed; unable to fetch via apt due to unsigned/blocked repositories). `./gradlew assembleDebug` (fails: Java 17 toolchain not available and repository download blocked).
 
 ***REMOVED******REMOVED*** Suggested Implementation
 

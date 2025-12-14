@@ -20,7 +20,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -179,12 +180,31 @@ private fun ProcessingSettingsCard(
             ListItem(
                 headlineContent = { Text("Processing mode") },
                 supportingContent = {
-                    val modeLabel = if (classificationMode == ClassificationMode.ON_DEVICE) {
-                        "On-device"
+                    val (modeLabel, modeDescription) = if (classificationMode == ClassificationMode.ON_DEVICE) {
+                        "On-device" to "Fastest and private. Works offline."
                     } else {
-                        "Cloud"
+                        "Cloud" to "Requires internet. Higher accuracy but slower."
                     }
-                    Text(modeLabel)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(modeLabel)
+                        Text(
+                            text = modeDescription,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                leadingContent = {
+                    val (icon, tint) = if (classificationMode == ClassificationMode.ON_DEVICE) {
+                        Icons.Filled.PhoneAndroid to MaterialTheme.colorScheme.secondary
+                    } else {
+                        Icons.Filled.Cloud to MaterialTheme.colorScheme.primary
+                    }
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = tint
+                    )
                 },
                 trailingContent = {
                     Switch(
