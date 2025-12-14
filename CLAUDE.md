@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-Guidance for Claude Code when working with **Scanium** – a privacy-first Android app for real-time object detection, barcode scanning, and document OCR. All processing happens **on-device** using Google ML Kit (no cloud calls).
+Guidance for Claude Code when working with **Scanium** – a privacy-first Android app for real-time object detection, barcode scanning, and document OCR.
+
+**Primary detection** happens **on-device** using Google ML Kit. **Enhanced classification** uses cloud API (default) or on-device CLIP (future) for fine-grained category recognition (23 categories via Domain Pack).
 
 ## Project Essentials
 
@@ -105,6 +107,15 @@ UI (CameraScreen, ItemsListScreen, SellOnEbayScreen)
 - `domain/category/BasicCategoryEngine.kt` – ML Kit label → DomainCategory matching
 - `domain/DomainPackProvider.kt` – Singleton initialized in `MainActivity`
 
+**Cloud Classification System**
+- `ml/classification/CloudClassifier.kt` – Uploads cropped items to backend API (multipart, retry, EXIF stripping)
+- `ml/classification/ClassificationOrchestrator.kt` – Queue with max concurrency=2, exponential backoff retry
+- `ml/classification/ClassificationResult.kt` – Domain category, attributes, status (PENDING/SUCCESS/FAILED)
+- `ml/classification/ClassificationMode.kt` – Enum: ON_DEVICE | CLOUD (default: CLOUD)
+- `data/ClassificationPreferences.kt` – Persists user's mode selection (DataStore)
+- `settings/ClassificationModeViewModel.kt` – Exposes classification mode as StateFlow
+- **Configuration**: Set `scanium.api.base.url` and `scanium.api.key` in `local.properties` (see `/docs/features/CLOUD_CLASSIFICATION.md`)
+
 **eBay Selling (Mock)**
 - `selling/data/MockEbayApi.kt` – Configurable mock (delays, failure modes)
 - `selling/data/EbayMarketplaceService.kt` – Orchestrates listing creation
@@ -188,9 +199,11 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - **No persistence**: In-memory only (ViewModel state cleared on app close)
 - **Mocked pricing**: `PricingEngine.kt` generates EUR ranges locally
 - **Mocked eBay**: `MockEbayApi` simulates marketplace (ready for real API swap)
-- **ML Kit categories**: 5 coarse categories → mitigated by Domain Pack (23 fine-grained)
+- **ML Kit categories**: 5 coarse categories → mitigated by Domain Pack (23 fine-grained) + Cloud Classification
 - **Single module**: Will need multi-module for KMP (`:shared`, `:app`, `:iosApp`)
-- **Attribute extraction**: Domain Pack schema defined, pipelines (CLIP, OCR, Cloud) not implemented
+- **Cloud classification**: Requires backend API (see `/docs/features/CLOUD_CLASSIFICATION.md` for setup)
+- **On-device CLIP**: Placeholder implementation; real TFLite CLIP model not integrated yet
+- **Attribute extraction**: Cloud API supports attributes map; on-device extraction not implemented
 
 ## Reference Documentation
 
@@ -202,6 +215,7 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - `md/features/TRACKING_IMPLEMENTATION.md` – Tracking deep-dive
 
 **Features**:
+- `docs/features/CLOUD_CLASSIFICATION.md` – Cloud-first classification, API contract, retry logic, privacy
 - `md/features/EBAY_SELLING_INTEGRATION.md` – Marketplace flow, mock config
 
 **Testing**:
