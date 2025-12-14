@@ -107,6 +107,7 @@ class ObjectDetectorClient {
                 val scannedItem = convertToScannedItem(
                     detectedObject = obj,
                     sourceBitmap = sourceBitmap,
+                    imageRotationDegrees = image.rotationDegrees,
                     fallbackWidth = image.width,
                     fallbackHeight = image.height
                 )
@@ -356,6 +357,7 @@ class ObjectDetectorClient {
                 extractDetectionInfo(
                     detectedObject = obj,
                     sourceBitmap = sourceBitmap,
+                    imageRotationDegrees = image.rotationDegrees,
                     fallbackWidth = image.width,
                     fallbackHeight = image.height
                 )
@@ -380,6 +382,7 @@ class ObjectDetectorClient {
     private fun extractDetectionInfo(
         detectedObject: DetectedObject,
         sourceBitmap: Bitmap?,
+        imageRotationDegrees: Int,
         fallbackWidth: Int,
         fallbackHeight: Int
     ): DetectionInfo? {
@@ -420,8 +423,8 @@ class ObjectDetectorClient {
                 ItemCategory.UNKNOWN
             }
 
-            // Crop thumbnail
-            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
+            // Crop thumbnail with rotation for correct display orientation
+            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
 
             // Calculate normalized area
             val normalizedBoxArea = calculateNormalizedArea(
@@ -453,6 +456,7 @@ class ObjectDetectorClient {
     private fun convertToScannedItem(
         detectedObject: DetectedObject,
         sourceBitmap: Bitmap?,
+        imageRotationDegrees: Int,
         fallbackWidth: Int,
         fallbackHeight: Int
     ): ScannedItem? {
@@ -464,8 +468,8 @@ class ObjectDetectorClient {
             // Get bounding box
             val boundingBox = detectedObject.boundingBox
 
-            // Crop thumbnail from source bitmap
-            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
+            // Crop thumbnail from source bitmap with rotation for correct display
+            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
 
             // Determine category from labels and get confidence
             val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
@@ -572,8 +576,12 @@ class ObjectDetectorClient {
 
     /**
      * Crops a thumbnail from the source bitmap using the bounding box.
+     *
+     * @param source Source bitmap (in original sensor orientation)
+     * @param boundingBox Bounding box in source bitmap coordinates
+     * @param rotationDegrees Rotation to apply after cropping for correct display orientation
      */
-    private fun cropThumbnail(source: Bitmap, boundingBox: Rect): Bitmap? {
+    private fun cropThumbnail(source: Bitmap, boundingBox: Rect, rotationDegrees: Int = 0): Bitmap? {
         return try {
             // Ensure bounding box is within bitmap bounds
             val left = boundingBox.left.coerceIn(0, source.width - 1)
@@ -589,14 +597,29 @@ class ObjectDetectorClient {
             val thumbnailHeight = (height * scale).toInt().coerceAtLeast(1)
 
             // Create small thumbnail with independent pixel data
-            val thumbnail = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(thumbnail)
+            val croppedBitmap = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(croppedBitmap)
             val srcRect = android.graphics.Rect(left, top, left + width, top + height)
             val dstRect = android.graphics.Rect(0, 0, thumbnailWidth, thumbnailHeight)
             canvas.drawBitmap(source, srcRect, dstRect, null)
 
-            Log.d(TAG, "Created thumbnail: ${thumbnailWidth}x${thumbnailHeight} (original: ${width}x${height})")
-            thumbnail
+            // Rotate thumbnail to match display orientation
+            val rotatedBitmap = if (rotationDegrees != 0) {
+                val matrix = android.graphics.Matrix()
+                matrix.postRotate(rotationDegrees.toFloat())
+                val rotated = Bitmap.createBitmap(
+                    croppedBitmap, 0, 0,
+                    croppedBitmap.width, croppedBitmap.height,
+                    matrix, true
+                )
+                croppedBitmap.recycle() // Free the unrotated bitmap
+                rotated
+            } else {
+                croppedBitmap
+            }
+
+            Log.d(TAG, "Created thumbnail: ${rotatedBitmap.width}x${rotatedBitmap.height} (cropped: ${thumbnailWidth}x${thumbnailHeight}, rotation: ${rotationDegrees}°)")
+            rotatedBitmap
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create thumbnail", e)
             null
