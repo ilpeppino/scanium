@@ -20,7 +20,8 @@ class ClassificationPreferences(private val context: Context) {
     val mode: Flow<ClassificationMode> = context.classificationDataStore.data
         .map { preferences ->
             val raw = preferences[CLASSIFICATION_MODE_KEY]
-            raw?.let { runCatching { ClassificationMode.valueOf(it) }.getOrNull() } ?: ClassificationMode.ON_DEVICE
+            // Default to CLOUD mode for production cloud-first classification
+            raw?.let { runCatching { ClassificationMode.valueOf(it) }.getOrNull() } ?: ClassificationMode.CLOUD
         }
 
     suspend fun setMode(mode: ClassificationMode) {

@@ -15,7 +15,7 @@ class ClassificationModeViewModel(
 ) : ViewModel() {
 
     val classificationMode: StateFlow<ClassificationMode> = preferences.mode
-        .stateIn(viewModelScope, SharingStarted.Eagerly, ClassificationMode.ON_DEVICE)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, ClassificationMode.CLOUD)
 
     fun updateMode(mode: ClassificationMode) {
         viewModelScope.launch {
