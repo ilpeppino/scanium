@@ -83,11 +83,13 @@ fun CameraScreen(
 
     // Camera state machine
     var cameraState by remember { mutableStateOf(CameraState.IDLE) }
+    var cameraErrorState by remember { mutableStateOf<CameraErrorState?>(null) }
 
     // Camera lens state
     var lensFacing by rememberSaveable { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     var boundLensFacing by rememberSaveable { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
     var isCameraBinding by remember { mutableStateOf(false) }
+    var rebindAttempts by remember { mutableStateOf(0) }
 
     // Current scan mode
     var currentScanMode by remember { mutableStateOf(ScanMode.OBJECT_DETECTION) }
@@ -116,6 +118,15 @@ fun CameraScreen(
     LaunchedEffect(Unit) {
         if (!cameraPermissionState.status.isGranted) {
             cameraPermissionState.launchPermissionRequest()
+        }
+    }
+
+    LaunchedEffect(cameraPermissionState.status.isGranted) {
+        if (!cameraPermissionState.status.isGranted) {
+            cameraManager.stopScanning()
+            cameraState = CameraState.IDLE
+            cameraErrorState = null
+            currentDetections = emptyList()
         }
     }
 
@@ -150,12 +161,26 @@ fun CameraScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
+            cameraPermissionState.status.isGranted && cameraState == CameraState.ERROR -> {
+                CameraErrorContent(
+                    error = cameraErrorState,
+                    onRetry = {
+                        cameraManager.stopScanning()
+                        cameraErrorState = null
+                        cameraState = CameraState.IDLE
+                        currentDetections = emptyList()
+                        rebindAttempts++
+                    },
+                    onViewItems = onNavigateToItems
+                )
+            }
             cameraPermissionState.status.isGranted -> {
                 // Camera preview
                 CameraPreview(
                     cameraManager = cameraManager,
                     lensFacing = lensFacing,
                     captureResolution = captureResolution,
+                    rebindKey = rebindAttempts,
                     onPreviewSizeChanged = { size ->
                         previewSize = Size(size.width, size.height)
                     },
@@ -164,6 +189,10 @@ fun CameraScreen(
                     },
                     onLensFacingResolved = { resolvedLens ->
                         boundLensFacing = resolvedLens
+                        cameraErrorState = null
+                        if (cameraState == CameraState.ERROR) {
+                            cameraState = CameraState.IDLE
+                        }
                         if (lensFacing != resolvedLens) {
                             lensFacing = resolvedLens
                             Toast.makeText(
@@ -176,11 +205,14 @@ fun CameraScreen(
                     onBindingFailed = { error ->
                         lensFacing = boundLensFacing
                         error?.let {
-                            Toast.makeText(
-                                context,
-                                "Unable to start camera.",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            cameraManager.stopScanning()
+                            cameraState = CameraState.ERROR
+                            cameraErrorState = CameraErrorState(
+                                title = "Camera unavailable",
+                                message = it.message ?: "Unable to start camera.",
+                                canRetry = true
+                            )
+                            Toast.makeText(context, "Unable to start camera.", Toast.LENGTH_SHORT).show()
                             Log.e("CameraScreen", "Failed to bind camera", it)
                         }
                     }
@@ -404,6 +436,7 @@ private fun CameraPreview(
     cameraManager: CameraXManager,
     lensFacing: Int,
     captureResolution: CaptureResolution,
+    rebindKey: Int,
     onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit,
     onBindingStateChange: (Boolean) -> Unit,
     onLensFacingResolved: (Int) -> Unit,
@@ -427,7 +460,7 @@ private fun CameraPreview(
     )
 
     // Rebind camera when lens or resolution changes
-    LaunchedEffect(previewView, lensFacing, captureResolution) {
+    LaunchedEffect(previewView, lensFacing, captureResolution, rebindKey) {
         val view = previewView ?: return@LaunchedEffect
         onBindingStateChange(true)
         val result = cameraManager.startCamera(view, lensFacing, captureResolution)
@@ -613,6 +646,55 @@ private fun getResolutionLabel(resolution: CaptureResolution): String {
         CaptureResolution.LOW -> "Resolution: Low (720p)"
         CaptureResolution.NORMAL -> "Resolution: Normal (1080p)"
         CaptureResolution.HIGH -> "Resolution: High (4K)"
+    }
+}
+
+/**
+ * UI shown when camera hardware is unavailable or binding fails.
+ */
+@Composable
+private fun CameraErrorContent(
+    error: CameraErrorState?,
+    onRetry: () -> Unit,
+    onViewItems: () -> Unit
+) {
+    val resolvedError = error ?: CameraErrorState(
+        title = "Camera unavailable",
+        message = "Unable to access the camera right now.",
+        canRetry = true
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = resolvedError.title,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = resolvedError.message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (resolvedError.canRetry) {
+            Button(onClick = onRetry) {
+                Text("Retry")
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        androidx.compose.material3.TextButton(onClick = onViewItems) {
+            Text("View Items")
+        }
     }
 }
 

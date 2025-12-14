@@ -111,13 +111,13 @@ Manifest says `android:required="false"` but no runtime check.
 
 ## Acceptance Criteria
 
-- [ ] Handle permission denied state with UI prompt
-- [ ] Handle camera binding failures with user-friendly message
-- [ ] Detect if device has camera hardware
-- [ ] Provide "Retry" and "View Items" actions on errors
-- [ ] Add error state to CameraState enum
-- [ ] Show toast or dialog for transient errors
-- [ ] Log errors for debugging but don't expose technical details to users
+- [x] Handle permission denied state with UI prompt
+- [x] Handle camera binding failures with user-friendly message
+- [x] Detect if device has camera hardware
+- [x] Provide "Retry" and "View Items" actions on errors
+- [x] Add error state to CameraState enum
+- [x] Show toast or dialog for transient errors
+- [x] Log errors for debugging but don't expose technical details to users
 
 ## Suggested Implementation
 
@@ -291,3 +291,15 @@ Manual test scenarios:
 ## Related Issues
 
 None
+
+## Resolution
+
+- Added a `CameraState.ERROR` branch with a dedicated `CameraErrorState` UI so users see actionable messaging instead of a blank preview when binding fails or the device has no camera hardware. The UI now offers retry and navigation to the items list.
+- `CameraXManager` now checks for camera hardware and empty providers, and returns descriptive failures when the camera is unavailable.
+- `CameraScreen` stops scanning when permission is lost, surfaces binding failures as retryable errors, and allows rebind attempts without restarting the app. Toasts remain minimal while logs keep stack traces for debugging.
+
+### Verification
+
+- Launch without a camera (emulator): verify "Camera unavailable" card with Retry/View Items.
+- Deny permission: permission-required UI displayed; granting permission re-attempts binding.
+- Start with another app using the camera: expect binding failure, then tap Retry after freeing the camera.
