@@ -148,6 +148,106 @@ buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY",
     "\"${project.findProperty("cloud.classifier.api.key") ?: ""}\"")
 ```
 
+***REMOVED******REMOVED*** Assessment (2025-12-14)
+
+**Status**: ✅ **NOT A BUG - Intentional PoC Architecture**
+
+***REMOVED******REMOVED******REMOVED*** Investigation Summary
+
+The classification system was reviewed against:
+- Android best practices (lifecycle, threading, memory)
+- Jetpack Compose best practices
+- CameraX & ML Kit integration patterns
+- Project's documented PoC scope and architecture
+
+***REMOVED******REMOVED******REMOVED*** Key Findings
+
+1. **System is Working as Designed**
+   - Classification infrastructure is **actively integrated** in production (`ScaniumApp.kt:45-48`)
+   - OnDeviceClassifier and CloudClassifier are instantiated (not NoopClassifier in production)
+   - ClassificationOrchestrator correctly orchestrates the pipeline
+   - System provides optional "enhanced classification" on top of core ML Kit detection
+   - Graceful degradation: returns null on failure, no crashes or functional issues
+
+2. **Consistent with Project Architecture**
+   - Multiple components use PoC-appropriate implementations:
+     - `PricingEngine` - mocked EUR price generation
+     - `MockEbayApi` - simulated marketplace
+     - `OnDeviceClassifier` - brightness/contrast heuristics
+   - All documented in "Known Limitations" sections across README.md, CLAUDE.md, ARCHITECTURE.md
+   - Project explicitly scoped as "proof-of-concept" throughout documentation
+
+3. **No Android Best Practice Violations**
+   - Clean separation of concerns with pluggable interfaces
+   - Proper coroutine usage (Dispatchers.Default, Dispatchers.IO)
+   - Safe bitmap handling with recycling
+   - Appropriate error handling and logging
+   - No lifecycle, threading, or memory issues
+
+4. **User Experience Not Impacted**
+   - Core ML Kit object detection works independently
+   - Enhanced classification is supplementary/optional
+   - App delivers on its core value proposition
+
+***REMOVED******REMOVED******REMOVED*** Decision: Follow Option 1 (Document as Intentional)
+
+**Rationale:**
+- Placeholder implementations are **expected and appropriate** for PoC scope
+- Issue is correctly tagged `priority:p3` (low) and `feature-incomplete`
+- Code is well-architected and ready for real ML model integration when needed
+- No functional bugs or user-facing issues to fix
+
+***REMOVED******REMOVED******REMOVED*** Recommended Next Actions
+
+**Priority 1: Documentation (Immediate)**
+- [ ] Add "Classification System (Placeholder)" section to `CLAUDE.md`
+- [ ] Update "Known Limitations" to explicitly mention classification placeholders
+- [ ] Document expected classification quality ("PoC heuristics only")
+
+**Priority 2: Configuration Guidance (Optional)**
+- [ ] Add CloudClassifier setup instructions to `SETUP.md` or `CLAUDE.md`
+- [ ] Show how to configure `local.properties` for cloud endpoint testing
+- [ ] Provide example cloud API contract/payload format
+
+**Priority 3: Future Roadmap (When Transitioning to Production)**
+- Create `docs/roadmap/ML_MODEL_INTEGRATION.md` with:
+  - CLIP model selection and TFLite conversion guide
+  - On-device model integration steps
+  - Cloud API design and integration
+  - Performance benchmarking approach
+  - Estimated effort (2-3 sprints)
+
+***REMOVED******REMOVED******REMOVED*** Why Not Implement Real Classifiers Now?
+
+1. **Out of PoC Scope**: Requires significant research, training, and integration effort
+2. **Core Features Work**: ML Kit provides primary object detection
+3. **Architecture Ready**: Pluggable design makes future integration straightforward
+4. **Resource Allocation**: Better to validate PoC value proposition first
+
+***REMOVED******REMOVED******REMOVED*** Verification Checklist
+
+- [x] Classification system files exist and are used in production
+- [x] No crashes, memory leaks, or threading issues
+- [x] Graceful degradation when classifiers return null
+- [x] Consistent with documented PoC architecture
+- [x] No Android/Compose best practice violations
+- [x] Core app functionality unaffected
+
+***REMOVED******REMOVED******REMOVED*** When to Revisit
+
+**Triggers for implementing real classifiers:**
+- PoC validated and moving to production
+- User feedback requests better category refinement
+- Business case established for enhanced classification
+- Backend infrastructure ready for cloud classifier API
+- Team bandwidth available for 2-3 sprint ML integration effort
+
+**Metrics to Track:**
+- User engagement with detected items
+- Category accuracy needs (ML Kit 5 coarse categories sufficient?)
+- Classification confidence distribution
+- Performance impact of enhanced classification
+
 ***REMOVED******REMOVED*** Related Issues
 
 None (this is expected PoC limitation)
