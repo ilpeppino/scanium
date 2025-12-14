@@ -16,5 +16,8 @@ enum class CameraState {
     CAPTURING,
 
     /** Continuous scanning active */
-    SCANNING
+    SCANNING,
+
+    /** An error occurred while preparing or using the camera */
+    ERROR
 }
