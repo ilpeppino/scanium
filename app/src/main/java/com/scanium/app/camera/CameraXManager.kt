@@ -398,10 +398,13 @@ class CameraXManager(
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
             // Optional bitmap for thumbnails
+            // IMPORTANT: Do NOT rotate the bitmap here! ML Kit's InputImage already has rotation
+            // metadata, so bounding boxes will be in the original (unrotated) coordinate space.
+            // Rotating the bitmap would cause a coordinate mismatch when cropping thumbnails.
             val bitmapForThumb = runCatching {
                 val bitmap = imageProxy.toBitmap()
-                Log.i(TAG, ">>> processImageProxy: Created bitmap ${bitmap.width}x${bitmap.height}")
-                rotateBitmap(bitmap, rotationDegrees)
+                Log.i(TAG, ">>> processImageProxy: Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees")
+                bitmap // Keep original orientation to match ML Kit's coordinate space
             }.getOrElse { e ->
                 Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
                 null
