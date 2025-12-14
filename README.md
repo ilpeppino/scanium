@@ -144,6 +144,11 @@ The `build.sh` script automatically finds Java 17 on your system across macOS, L
 ./gradlew connectedAndroidTest    ***REMOVED*** Run instrumented tests (requires device)
 ```
 
+***REMOVED******REMOVED******REMOVED*** Mobile testing via GitHub Actions artifact
+- Each push to `main` builds a debug APK in the **Android Debug APK** workflow.
+- In GitHub Actions, download the `scanium-app-debug-apk` artifact from the latest run.
+- Unzip the archive and install `app-debug.apk` on your device (enable unknown sources if needed).
+
 ***REMOVED******REMOVED*** Project Structure
 
 ```
