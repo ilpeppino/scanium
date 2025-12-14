@@ -6,6 +6,14 @@ plugins {
     kotlin("plugin.serialization") version "2.0.0"
 }
 
+// Load local.properties for API configuration (not committed to git)
+val localProperties = java.util.Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 android {
     namespace = "com.scanium.app"
     compileSdk = 34
@@ -17,8 +25,24 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"\"")
-        buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"\"")
+        // Cloud classification API configuration
+        // Read from local.properties (dev) or environment variables (CI/production)
+        // Required keys in local.properties:
+        //   scanium.api.base.url=https://your-backend.com/api/v1
+        //   scanium.api.key=your-dev-api-key
+        val apiBaseUrl = localProperties.getProperty("scanium.api.base.url")
+            ?: System.getenv("SCANIUM_API_BASE_URL")
+            ?: ""
+        val apiKey = localProperties.getProperty("scanium.api.key")
+            ?: System.getenv("SCANIUM_API_KEY")
+            ?: ""
+
+        buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
+
+        // Legacy fields for backward compatibility (deprecated)
+        buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")
+        buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"$apiKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -107,6 +131,9 @@ dependencies {
 
     // Kotlinx Serialization (for Domain Pack JSON)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+    // OkHttp for cloud classification API
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Testing - Unit Tests
     testImplementation("junit:junit:4.13.2")

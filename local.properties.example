@@ -1,0 +1,27 @@
+***REMOVED*** Scanium Local Configuration Template
+***REMOVED*** Copy this file to local.properties and fill in your values
+***REMOVED*** IMPORTANT: local.properties is gitignored - never commit secrets!
+
+***REMOVED*** =============================================================================
+***REMOVED*** Cloud Classification API Configuration
+***REMOVED*** =============================================================================
+
+***REMOVED*** Backend API base URL (required for cloud classification)
+***REMOVED*** Examples:
+***REMOVED***   Production: https://api.scanium.example.com/v1
+***REMOVED***   Staging:    https://staging-api.scanium.example.com/v1
+***REMOVED***   Local dev:  http://localhost:8080/api/v1
+scanium.api.base.url=
+
+***REMOVED*** API authentication key (required for cloud classification)
+***REMOVED*** Obtain from your backend team or developer portal
+***REMOVED*** Format: alphanumeric string, typically 32-64 characters
+scanium.api.key=
+
+***REMOVED*** =============================================================================
+***REMOVED*** SDK Location (standard Android property)
+***REMOVED*** =============================================================================
+
+***REMOVED*** Android SDK path
+***REMOVED*** Auto-detected by Android Studio, uncomment if needed:
+***REMOVED*** sdk.dir=/Users/yourname/Library/Android/sdk
