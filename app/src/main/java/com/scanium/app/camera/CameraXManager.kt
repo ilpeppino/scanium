@@ -1,6 +1,7 @@
 package com.scanium.app.camera
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
@@ -10,6 +11,7 @@ import android.net.Uri
 import android.util.Log
 import android.util.Size
 import androidx.camera.core.*
+import androidx.camera.core.CameraUnavailableException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -125,11 +127,29 @@ class CameraXManager(
         lensFacing: Int,
         captureResolution: CaptureResolution = CaptureResolution.DEFAULT
     ): CameraBindResult = withContext(Dispatchers.Main) {
+        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+            Log.e(TAG, "No camera hardware detected on this device")
+            return@withContext CameraBindResult(
+                success = false,
+                lensFacingUsed = lensFacing,
+                error = IllegalStateException("No camera hardware available")
+            )
+        }
+
         // Ensure models are downloaded before starting camera
         ensureModelsReady()
 
         val provider = awaitCameraProvider(context)
         cameraProvider = provider
+
+        if (provider.availableCameraInfos.isEmpty()) {
+            Log.e(TAG, "Camera provider returned no available camera infos")
+            return@withContext CameraBindResult(
+                success = false,
+                lensFacingUsed = lensFacing,
+                error = IllegalStateException("No available camera from provider")
+            )
+        }
 
         // Setup preview
         preview = Preview.Builder()
@@ -197,6 +217,9 @@ class CameraXManager(
                 imageCapture
             )
             CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
+        } catch (e: CameraUnavailableException) {
+            Log.e(TAG, "Camera unavailable during binding", e)
+            CameraBindResult(success = false, lensFacingUsed = resolvedLensFacing, error = e)
         } catch (e: Exception) {
             // Handle camera binding failure (Log.e includes full stack trace)
             Log.e(TAG, "Failed to bind camera use cases", e)
