@@ -108,6 +108,7 @@ fun CameraScreen(
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
     val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
     val captureResolution by cameraViewModel.captureResolution.collectAsState()
+    var previousClassificationMode by remember { mutableStateOf<ClassificationMode?>(null) }
 
     // Detection overlay state
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
@@ -144,6 +145,18 @@ fun CameraScreen(
                 modelDownloadState = ModelDownloadState.Error("Error initializing ML Kit: ${e.message}")
             }
         }
+    }
+
+    LaunchedEffect(classificationMode) {
+        val previousMode = previousClassificationMode
+        if (previousMode != null && previousMode != classificationMode) {
+            Toast.makeText(
+                context,
+                "Using ${classificationMode.displayName} classification",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+        previousClassificationMode = classificationMode
     }
 
     // Close settings on system back when open
