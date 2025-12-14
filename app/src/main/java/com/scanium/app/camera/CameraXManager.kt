@@ -41,6 +41,12 @@ class CameraXManager(
         private const val TAG = "CameraXManager"
     }
 
+    data class CameraBindResult(
+        val success: Boolean,
+        val lensFacingUsed: Int,
+        val error: Throwable? = null
+    )
+
     private var cameraProvider: ProcessCameraProvider? = null
     private var camera: Camera? = null
     private var preview: Preview? = null
@@ -108,8 +114,8 @@ class CameraXManager(
      */
     suspend fun startCamera(
         previewView: PreviewView,
-        onDetectionResult: (List<ScannedItem>) -> Unit
-    ) = withContext(Dispatchers.Main) {
+        lensFacing: Int
+    ): CameraBindResult = withContext(Dispatchers.Main) {
         // Ensure models are downloaded before starting camera
         ensureModelsReady()
 
@@ -133,23 +139,54 @@ class CameraXManager(
 
         Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
 
-        // Select back camera
-        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        val requestedSelector = CameraSelector.Builder()
+            .requireLensFacing(lensFacing)
+            .build()
+        val fallbackLensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+            CameraSelector.LENS_FACING_FRONT
+        } else {
+            CameraSelector.LENS_FACING_BACK
+        }
+        val fallbackSelector = CameraSelector.Builder()
+            .requireLensFacing(fallbackLensFacing)
+            .build()
+
+        val selectorToUse = when {
+            provider.hasCamera(requestedSelector) -> requestedSelector
+            provider.hasCamera(fallbackSelector) -> {
+                Log.w(TAG, "Requested lens $lensFacing not available. Falling back to $fallbackLensFacing")
+                fallbackSelector
+            }
+
+            else -> {
+                Log.e(TAG, "No available camera for requested or fallback lens")
+                return@withContext CameraBindResult(
+                    success = false,
+                    lensFacingUsed = lensFacing,
+                    error = IllegalStateException("No available camera for requested or fallback lens")
+                )
+            }
+        }
+
+        val resolvedLensFacing = if (selectorToUse == requestedSelector) lensFacing else fallbackLensFacing
 
         try {
             // Unbind any existing use cases
             provider.unbindAll()
+            stopScanning()
 
             // Bind use cases to lifecycle
             camera = provider.bindToLifecycle(
                 lifecycleOwner,
-                cameraSelector,
+                selectorToUse,
                 preview,
                 imageAnalysis
             )
+            CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
         } catch (e: Exception) {
             // Handle camera binding failure (Log.e includes full stack trace)
             Log.e(TAG, "Failed to bind camera use cases", e)
+            CameraBindResult(success = false, lensFacingUsed = lensFacing, error = e)
         }
     }
 
