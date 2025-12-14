@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network Security Configuration for Scanium
+
+    Enforces HTTPS-only communication to prevent MITM attacks.
+
+    References:
+    - https://developer.android.com/privacy-and-security/security-config
+    - OWASP Mobile Top 10 M5: Insecure Communication
+    - SEC-008: Network Security Config
+-->
+<network-security-config>
+    <!-- Block all cleartext traffic for production -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system certificates (preinstalled CAs) -->
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Debug-only exceptions for localhost/emulator testing -->
+    <debug-overrides>
+        <domain-config cleartextTrafficPermitted="true">
+            <!-- Allow HTTP for localhost testing -->
+            <domain includeSubdomains="true">localhost</domain>
+            <!-- Android emulator host -->
+            <domain includeSubdomains="true">10.0.2.2</domain>
+            <!-- Localhost IPv4 -->
+            <domain includeSubdomains="true">127.0.0.1</domain>
+        </domain-config>
+    </debug-overrides>
+</network-security-config>
