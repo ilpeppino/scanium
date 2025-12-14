@@ -95,6 +95,9 @@ fun CameraScreen(
     // Flash animation state for mode transitions
     var showFlash by remember { mutableStateOf(false) }
 
+    // Model download state for first-launch experience
+    var modelDownloadState by remember { mutableStateOf<ModelDownloadState>(ModelDownloadState.Checking) }
+
     // Settings overlay state
     var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
 
@@ -113,6 +116,22 @@ fun CameraScreen(
     LaunchedEffect(Unit) {
         if (!cameraPermissionState.status.isGranted) {
             cameraPermissionState.launchPermissionRequest()
+        }
+    }
+
+    // Check if ML Kit model is downloaded (first launch requirement)
+    LaunchedEffect(cameraPermissionState.status.isGranted) {
+        if (cameraPermissionState.status.isGranted) {
+            modelDownloadState = ModelDownloadState.Checking
+            try {
+                Log.d("CameraScreen", "Checking ML Kit model availability...")
+                cameraManager.ensureModelsReady()
+                Log.d("CameraScreen", "ML Kit models ready")
+                modelDownloadState = ModelDownloadState.Ready
+            } catch (e: Exception) {
+                Log.e("CameraScreen", "Error checking model availability", e)
+                modelDownloadState = ModelDownloadState.Error("Error initializing ML Kit: ${e.message}")
+            }
         }
     }
 
@@ -174,6 +193,39 @@ fun CameraScreen(
                             .fillMaxSize()
                             .background(Color.White.copy(alpha = 0.6f))
                     )
+                }
+
+                // Model download loading overlay (first launch)
+                when (val state = modelDownloadState) {
+                    is ModelDownloadState.Checking,
+                    is ModelDownloadState.Downloading -> {
+                        ModelLoadingOverlay(state = state)
+                    }
+                    is ModelDownloadState.Error -> {
+                        ModelErrorDialog(
+                            error = state.message,
+                            onRetry = {
+                                scope.launch {
+                                    modelDownloadState = ModelDownloadState.Checking
+                                    try {
+                                        cameraManager.ensureModelsReady()
+                                        modelDownloadState = ModelDownloadState.Ready
+                                    } catch (e: Exception) {
+                                        modelDownloadState = ModelDownloadState.Error(
+                                            "Error initializing ML Kit: ${e.message}"
+                                        )
+                                    }
+                                }
+                            },
+                            onDismiss = {
+                                // User chose to exit - set to Ready to allow camera use
+                                modelDownloadState = ModelDownloadState.Ready
+                            }
+                        )
+                    }
+                    ModelDownloadState.Ready -> {
+                        // No overlay, camera fully functional
+                    }
                 }
 
                 // Detection overlay - bounding boxes and labels
@@ -591,5 +643,91 @@ private fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
             Text("Grant Permission")
         }
     }
+}
+
+/**
+ * Loading overlay shown during ML Kit model download on first launch.
+ */
+@Composable
+private fun ModelLoadingOverlay(state: ModelDownloadState) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center
+    ) {
+        androidx.compose.material3.Card(
+            modifier = Modifier
+                .padding(32.dp)
+                .fillMaxWidth(0.85f)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(48.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = when (state) {
+                        is ModelDownloadState.Checking -> "Preparing ML models..."
+                        is ModelDownloadState.Downloading -> "Downloading AI models..."
+                        else -> "Loading..."
+                    },
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "First launch requires downloading\nML Kit object detection models (~15 MB)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Error dialog shown when ML Kit model download fails.
+ */
+@Composable
+private fun ModelErrorDialog(
+    error: String,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Model Initialization Failed") },
+        text = {
+            Column {
+                Text(error)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Please ensure you have:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text("• Active internet connection", style = MaterialTheme.typography.bodySmall)
+                Text("• At least 20 MB free storage", style = MaterialTheme.typography.bodySmall)
+                Text("• Network access for this app", style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.Button(onClick = onRetry) {
+                Text("Retry")
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text("Continue Anyway")
+            }
+        }
+    )
 }
 

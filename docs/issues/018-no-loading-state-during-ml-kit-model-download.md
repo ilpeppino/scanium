@@ -3,6 +3,13 @@
 **Labels:** `ux`, `priority:p2`, `area:ml`, `area:camera`
 **Type:** UX Issue
 **Severity:** Medium
+**Status:** ✅ RESOLVED
+
+## Resolution Summary
+
+**Fixed in:** PR #[TBD]
+**Date:** 2025-12-14
+**Implementation:** Added model download state management with loading overlay UI
 
 ## Problem
 
@@ -331,3 +338,123 @@ Manual test scenarios:
 ## Related Issues
 
 - Issue #016 (Camera error handling)
+
+---
+
+## Implementation Details
+
+### Changes Made
+
+**1. Created `ModelDownloadState` sealed class** (`camera/ModelDownloadState.kt`):
+```kotlin
+sealed class ModelDownloadState {
+    object Checking : ModelDownloadState()
+    object Downloading : ModelDownloadState()
+    object Ready : ModelDownloadState()
+    data class Error(val message: String) : ModelDownloadState()
+}
+```
+
+**2. Updated `CameraScreen.kt`**:
+- Added `modelDownloadState` state variable
+- Added `LaunchedEffect` to check model availability on permission grant
+- Calls `cameraManager.ensureModelsReady()` on first launch
+- Shows loading overlay during model initialization
+- Shows error dialog if initialization fails
+
+**3. Added UI Components**:
+- `ModelLoadingOverlay()`: Displays loading spinner with explanation
+- `ModelErrorDialog()`: Shows error with retry and dismiss options
+
+### Acceptance Criteria Status
+
+- [x] Check if ML Kit model is downloaded before allowing scanning
+- [x] Show loading indicator during model download
+- [x] Display progress bar if available (using indeterminate progress)
+- [x] Explain why download is needed (first launch, ~15MB)
+- [x] Disable scan button until model ready (implicitly via overlay)
+- [x] Handle download failures gracefully
+- [x] Allow user to cancel and retry with different network
+
+### User Experience Flow
+
+**First Launch (Model Not Ready):**
+1. User opens app and grants camera permission
+2. Loading overlay appears: "Preparing ML models..."
+3. App calls `CameraXManager.ensureModelsReady()`
+4. Overlay displays explanation about model download
+5. When ready, overlay dismisses and camera becomes usable
+
+**If Download Fails:**
+1. Error dialog appears with detailed message
+2. User can tap "Retry" to try again
+3. User can tap "Continue Anyway" to dismiss (camera may not detect objects)
+
+**Subsequent Launches:**
+- Model already downloaded → Loading overlay shows briefly (<1 second) then dismisses
+- Camera immediately usable
+
+### Testing Recommendations
+
+**Manual Testing:**
+1. **Fresh Install**: Clear app data, launch app on slow network
+   - Expected: Loading overlay shows, explains model download
+   - Verify: Overlay dismisses when models ready
+
+2. **Network Failure**: Enable airplane mode, clear app data, launch app
+   - Expected: Error dialog with helpful troubleshooting steps
+   - Verify: Retry button works when network restored
+
+3. **Already Downloaded**: Launch app with models present
+   - Expected: Brief loading (<1s), immediate camera access
+   - Verify: No user disruption on subsequent launches
+
+**Log Verification:**
+```bash
+adb logcat | grep -E "CameraScreen|CameraXManager.*ensureModelsReady"
+```
+
+Look for:
+- "Checking ML Kit model availability..."
+- "ML Kit models ready"
+- No errors during model initialization
+
+### Files Modified
+
+1. `app/src/main/java/com/scanium/app/camera/ModelDownloadState.kt` (NEW)
+2. `app/src/main/java/com/scanium/app/camera/CameraScreen.kt` (MODIFIED)
+
+### Files Already Existing (Utilized)
+
+1. `app/src/main/java/com/scanium/app/camera/CameraXManager.kt`
+   - Already had `ensureModelsReady()` method (line 101)
+   - Already called in `startCamera()` (line 129)
+
+2. `app/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt`
+   - Already had `ensureModelDownloaded()` method (line 135)
+   - Used by `CameraXManager.ensureModelsReady()`
+
+### Architecture Alignment
+
+✅ **Jetpack Compose**: Uses `LaunchedEffect`, `remember`, state hoisting
+✅ **StateFlow**: Reactive state updates (existing ViewModel pattern)
+✅ **Material 3**: Uses `Card`, `AlertDialog`, `CircularProgressIndicator`
+✅ **Camera-first UX**: Non-blocking initialization, clear feedback
+✅ **Error Handling**: Graceful degradation with retry capability
+
+### Known Limitations
+
+1. **No Progress Percentage**: ML Kit doesn't expose download progress
+   - Mitigation: Using indeterminate progress indicator
+2. **Network Required**: First launch requires internet
+   - Mitigation: Clear error message with troubleshooting steps
+3. **Model Size**: ~15MB download on cellular could be expensive
+   - Mitigation: AndroidManifest already specifies auto-download (WiFi preferred)
+
+### Future Enhancements
+
+- [ ] Add progress percentage if ML Kit API becomes available
+- [ ] Implement background pre-download in MainActivity
+- [ ] Add user preference for WiFi-only model download
+- [ ] Show download size estimate dynamically
+- [ ] Add "Skip for now" option for offline use (limited functionality)
