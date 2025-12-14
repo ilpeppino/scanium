@@ -47,6 +47,8 @@ fun CameraSettingsOverlay(
     onThresholdChange: (Float) -> Unit,
     classificationMode: ClassificationMode,
     onProcessingModeChange: (ClassificationMode) -> Unit,
+    captureResolution: CaptureResolution,
+    onResolutionChange: (CaptureResolution) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -87,7 +89,10 @@ fun CameraSettingsOverlay(
                         style = MaterialTheme.typography.headlineSmall
                     )
 
-                    SettingsSectionCard(sectionLabel = "Mode")
+                    ResolutionSettingsCard(
+                        captureResolution = captureResolution,
+                        onResolutionChange = onResolutionChange
+                    )
                     AccuracySettingsCard(
                         similarityThreshold = similarityThreshold,
                         onThresholdChange = onThresholdChange
@@ -96,7 +101,6 @@ fun CameraSettingsOverlay(
                         classificationMode = classificationMode,
                         onProcessingModeChange = onProcessingModeChange
                     )
-                    SettingsSectionCard(sectionLabel = "Tuning")
                 }
             }
         }
@@ -104,27 +108,52 @@ fun CameraSettingsOverlay(
 }
 
 @Composable
-private fun SettingsSectionCard(sectionLabel: String) {
+private fun ResolutionSettingsCard(
+    captureResolution: CaptureResolution,
+    onResolutionChange: (CaptureResolution) -> Unit
+) {
     Surface(tonalElevation = 2.dp) {
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Text(
-                text = sectionLabel,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                text = "Image Quality",
+                style = MaterialTheme.typography.titleMedium
             )
             Divider()
-            ListItem(
-                headlineContent = { Text("Coming soon") },
-                trailingContent = {
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null
-                    )
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Resolution",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "Choose image quality for saved items. Higher quality creates larger files.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CaptureResolution.values().forEach { resolution ->
+                        ListItem(
+                            headlineContent = { Text(resolution.displayName) },
+                            supportingContent = {
+                                Text(resolution.description)
+                            },
+                            leadingContent = {
+                                RadioButton(
+                                    selected = resolution == captureResolution,
+                                    onClick = { onResolutionChange(resolution) }
+                                )
+                            },
+                            modifier = Modifier.clickable { onResolutionChange(resolution) }
+                        )
+                    }
                 }
-            )
-            Spacer(modifier = Modifier.height(4.dp))
+            }
         }
     }
 }
