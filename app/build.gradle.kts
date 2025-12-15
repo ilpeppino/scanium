@@ -4,6 +4,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp") version "2.0.0-1.0.24"
     kotlin("plugin.serialization") version "2.0.0"
+    // SEC-002: SBOM generation for supply chain security
+    id("org.cyclonedx.bom") version "1.8.2"
 }
 
 // Load local.properties for API configuration (not committed to git)
@@ -81,6 +83,23 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+// SEC-002: Configure SBOM (Software Bill of Materials) generation
+// Generates CycloneDX SBOM in JSON format for supply chain security
+cyclonedxBom {
+    // Include all build variants
+    includeConfigs.set(listOf("releaseRuntimeClasspath", "debugRuntimeClasspath"))
+    // Skip configurations that aren't needed
+    skipConfigs.set(listOf("lintClassPath", "jacocoAgent", "jacocoAnt"))
+    // Output format
+    outputFormat.set("json")
+    outputName.set("scanium-bom")
+    // Include license information
+    includeLicenseText.set(false)
+    // Component version comes from project version
+    projectType.set("application")
+    schemaVersion.set("1.5")
 }
 
 dependencies {
