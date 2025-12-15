@@ -1,7 +1,9 @@
 package com.scanium.app.items
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
+import android.view.WindowManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -54,6 +56,18 @@ fun ItemsListScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // SEC-010: Prevent screenshots of sensitive item data (prices, images)
+    DisposableEffect(Unit) {
+        val window = (context as? Activity)?.window
+        window?.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
+        onDispose {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
 
     fun toggleSelection(item: ScannedItem) {
         if (selectedIds.contains(item.id)) {
