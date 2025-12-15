@@ -137,6 +137,14 @@ dependencyCheck {
 }
 
 dependencies {
+    implementation(project(":core-models"))
+    implementation(project(":core-tracking"))
+    implementation(project(":core-domainpack"))
+    implementation(project(":core-scan"))
+    implementation(project(":core-contracts"))
+    implementation(project(":android-ml-mlkit"))
+    implementation(project(":android-camera-camerax"))
+
     // AndroidX Core
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
