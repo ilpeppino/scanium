@@ -5,8 +5,6 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
 import com.scanium.app.items.ScannedItem
-import com.scanium.app.platform.toImageRefJpeg
-import com.scanium.app.platform.toNormalizedRect
 import com.scanium.app.tracking.DetectionInfo
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect

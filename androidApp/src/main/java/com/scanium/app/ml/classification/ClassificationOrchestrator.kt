@@ -3,7 +3,7 @@ package com.scanium.app.ml.classification
 import android.util.Log
 import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.app.model.ImageRef
-import com.scanium.app.platform.toBitmap
+import com.scanium.android.platform.adapters.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
