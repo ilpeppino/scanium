@@ -207,7 +207,9 @@ class CloudClassifier(
     /**
      * Parse successful API response into ClassificationResult.
      */
-    private fun parseSuccessResponse(apiResponse: CloudClassificationResponse): ClassificationResult {
+    private suspend fun parseSuccessResponse(
+        apiResponse: CloudClassificationResponse
+    ): ClassificationResult {
         val domainCategoryId = apiResponse.domainCategoryId
         val confidence = apiResponse.confidence ?: 0f
         val label = apiResponse.label ?: domainCategoryId
@@ -217,10 +219,10 @@ class CloudClassifier(
         // Map domain category ID to ItemCategory
         val itemCategory = if (domainCategoryId != null && DomainPackProvider.isInitialized) {
             try {
-                val domainPack = DomainPackProvider.repository.getDomainPack()
+                val domainPack = DomainPackProvider.repository.getActiveDomainPack()
                 val domainCategory = domainPack.categories.find { it.id == domainCategoryId }
-                domainCategory?.let {
-                    ItemCategory.valueOf(it.itemCategoryName)
+                domainCategory?.let { category ->
+                    ItemCategory.valueOf(category.itemCategoryName)
                 } ?: ItemCategory.fromClassifierLabel(label)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to map domain category: $domainCategoryId", e)
