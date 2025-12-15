@@ -1,7 +1,7 @@
 package com.scanium.app.items
 
+import com.scanium.app.core.image.ImageRef
 import com.scanium.app.ml.ItemCategory
-import com.scanium.app.model.ImageRef
 import com.scanium.app.model.NormalizedRect
 import java.util.UUID
 
@@ -31,6 +31,7 @@ import java.util.UUID
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
     val thumbnail: ImageRef? = null,
+    val thumbnailRef: ImageRef? = null,
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
     val confidence: Float = 0.0f,
