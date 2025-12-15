@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.scanium.core.tracking"
+    namespace = "com.scanium.app"
     compileSdk = 34
 
     defaultConfig {
