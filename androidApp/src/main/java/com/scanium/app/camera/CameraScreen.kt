@@ -41,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
+import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
@@ -363,8 +364,9 @@ fun CameraScreen(
                                                 items.map { item ->
                                                     val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
                                                     item.copy(
-                                                        fullImageUri = highResUri,
-                                                        thumbnail = newThumbnail ?: item.thumbnail
+                                                        fullImagePath = highResUri.toString(),
+                                                        thumbnail = newThumbnail?.toImageRefJpeg()
+                                                            ?: item.thumbnail
                                                     )
                                                 }
                                             } else {
@@ -405,8 +407,9 @@ fun CameraScreen(
                                                 items.map { item ->
                                                     val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
                                                     item.copy(
-                                                        fullImageUri = highResUri,
-                                                        thumbnail = newThumbnail ?: item.thumbnail
+                                                        fullImagePath = highResUri.toString(),
+                                                        thumbnail = newThumbnail?.toImageRefJpeg()
+                                                            ?: item.thumbnail
                                                     )
                                                 }
                                             } else {
@@ -854,4 +857,3 @@ private fun ModelErrorDialog(
         }
     )
 }
-

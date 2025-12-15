@@ -23,13 +23,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.domain.ListingCondition
 
@@ -119,9 +119,9 @@ private fun ListingDraftCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                draftState.draft.originalItem.thumbnail?.let { bitmap ->
+                draftState.draft.originalItem.thumbnail.toImageBitmap()?.let { bitmap ->
                     Image(
-                        bitmap = bitmap.asImageBitmap(),
+                        bitmap = bitmap,
                         contentDescription = null,
                         modifier = Modifier
                             .size(96.dp)

@@ -24,9 +24,10 @@ import com.scanium.app.media.MediaStoreSaver
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.scanium.app.model.toBitmap
+import com.scanium.app.model.toImageBitmap
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -85,11 +86,11 @@ fun ItemsListScreen(
                     // Get selected items with their images (prefer high-res URI, fallback to thumbnail)
                     val selectedItems = items.filter { selectedIds.contains(it.id) }
                     val imagesToSave = selectedItems.mapNotNull { item ->
-                        if (item.fullImageUri != null || item.thumbnail != null) {
-                            Triple(item.id, item.fullImageUri, item.thumbnail)
-                        } else {
-                            null
-                        }
+                        val uri = item.fullImagePath?.let(Uri::parse)
+                        val bitmap = item.thumbnail.toBitmap()
+                        if (uri != null || bitmap != null) {
+                            Triple(item.id, uri, bitmap)
+                        } else null
                     }
 
                     if (imagesToSave.isEmpty()) {
@@ -274,9 +275,9 @@ private fun ItemRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Thumbnail
-            item.thumbnail?.let { bitmap ->
+            item.thumbnail.toImageBitmap()?.let { bitmap ->
                 Image(
-                    bitmap = bitmap.asImageBitmap(),
+                    bitmap = bitmap,
                     contentDescription = "Item thumbnail",
                     modifier = Modifier
                         .size(80.dp)
