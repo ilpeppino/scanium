@@ -8,6 +8,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.scanium.app.platform.toImageRefJpeg
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -93,9 +94,11 @@ class DocumentTextRecognitionClient {
             // Generate price range (documents have symbolic pricing)
             val priceRange = PricingEngine.generatePriceRange(ItemCategory.DOCUMENT, boxArea)
 
+            val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
             val item = ScannedItem(
                 id = id,
-                thumbnail = thumbnail,
+                thumbnail = thumbnailRef,
+                thumbnailRef = thumbnailRef,
                 category = ItemCategory.DOCUMENT,
                 priceRange = priceRange,
                 recognizedText = fullText
