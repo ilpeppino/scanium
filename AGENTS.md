@@ -1,9 +1,11 @@
 ***REMOVED*** Repository Guidelines
 
 ***REMOVED******REMOVED*** Project Structure & Module Organization
-- Single Android app module: `app/`.
-- Kotlin sources live in `app/src/main/java/com/scanium/app/` with feature folders: `camera/` (CameraX control), `items/` (scanned item state + UI), `ml/` (object detection helpers), `navigation/` (Compose routes), and `ui/` (theme, shared components).
-- Resources and layouts: `app/src/main/res/`; manifest: `app/src/main/AndroidManifest.xml`.
+- Android UI module: `androidApp/` (Compose UI, feature orchestration).
+- Portable/shared modules: `core-models/` (ScannedItem, ImageRef, NormalizedRect, ItemCategory), `core-tracking/` (ObjectTracker, AggregatedItem, ObjectCandidate), `core-domainpack/`, `core-scan/`, `core-contracts/`.
+- Platform adapters: `android-platform-adapters/` (Bitmap/Rect ↔ ImageRef/NormalizedRect), `android-camera-camerax/`, `android-ml-mlkit/`.
+- Kotlin sources under `androidApp/src/main/java/com/scanium/app/` with feature folders: `camera/`, `items/`, `ml/`, `navigation/`, `ui/`.
+- Resources: `androidApp/src/main/res/`; manifest: `androidApp/src/main/AndroidManifest.xml`.
 - Keep new screens as composables named `FeatureScreen` and route entries in `navigation/ScaniumNavGraph`.
 
 ***REMOVED******REMOVED*** Build, Test, and Development Commands

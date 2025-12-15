@@ -153,36 +153,19 @@ The `build.sh` script automatically finds Java 17 on your system across macOS, L
 
 ```
 scanium/
-├── app/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/scanium/app/
-│   │   │   │   ├── camera/
-│   │   │   │   │   ├── CameraScreen.kt
-│   │   │   │   │   ├── CameraXManager.kt
-│   │   │   │   │   ├── DetectionOverlay.kt
-│   │   │   │   │   └── ModeSwitcher.kt
-│   │   │   │   ├── items/
-│   │   │   │   │   ├── ItemsScreen.kt
-│   │   │   │   │   └── ItemsViewModel.kt
-│   │   │   │   ├── ml/
-│   │   │   │   │   ├── DetectedItem.kt
-│   │   │   │   │   ├── ObjectDetectorClient.kt
-│   │   │   │   │   └── PricingEngine.kt
-│   │   │   │   ├── navigation/
-│   │   │   │   │   └── NavGraph.kt
-│   │   │   │   └── MainActivity.kt
-│   │   │   └── AndroidManifest.xml
-│   │   └── res/
-│   └── build.gradle.kts
-├── gradle/
-├── md/                ***REMOVED*** Documentation folder
-│   ├── architecture/  ***REMOVED*** Architecture docs
-│   ├── features/      ***REMOVED*** Feature documentation
-│   ├── testing/       ***REMOVED*** Test documentation
-│   ├── fixes/         ***REMOVED*** Bug fix documentation
-│   ├── improvements/  ***REMOVED*** Enhancement docs
-│   └── debugging/     ***REMOVED*** Debugging guides
+├── androidApp/                ***REMOVED*** Compose UI + feature orchestration
+│   ├── camera/                ***REMOVED*** CameraScreen, CameraXManager, DetectionOverlay
+│   ├── items/                 ***REMOVED*** ItemsListScreen, ItemDetailDialog, ItemsViewModel
+│   ├── ml/                    ***REMOVED*** ObjectDetectorClient, BarcodeScannerClient, DocumentTextRecognitionClient, PricingEngine
+│   ├── navigation/            ***REMOVED*** ScaniumNavGraph + routes
+│   └── ui/                    ***REMOVED*** Material 3 theme and shared components
+├── android-platform-adapters/ ***REMOVED*** Bitmap/Rect adapters → ImageRef/NormalizedRect
+├── android-camera-camerax/    ***REMOVED*** CameraX helpers
+├── android-ml-mlkit/          ***REMOVED*** ML Kit plumbing
+├── core-models/               ***REMOVED*** Portable models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
+├── core-tracking/             ***REMOVED*** Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
+├── core-domainpack/, core-scan/, core-contracts/ ***REMOVED*** Shared contracts and config stubs
+├── md/                        ***REMOVED*** Architecture, features, testing, fixes, improvements, debugging
 ├── AGENTS.md
 ├── ROADMAP.md
 └── README.md
