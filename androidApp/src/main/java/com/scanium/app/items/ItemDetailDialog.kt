@@ -7,10 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.scanium.app.model.toImageBitmap
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -45,9 +45,9 @@ fun ItemDetailDialog(
                 Divider()
 
                 // Thumbnail (larger)
-                item.thumbnail?.let { bitmap ->
+                item.thumbnail.toImageBitmap()?.let { bitmap ->
                     Image(
-                        bitmap = bitmap.asImageBitmap(),
+                        bitmap = bitmap,
                         contentDescription = "Item detail thumbnail",
                         modifier = Modifier
                             .fillMaxWidth()

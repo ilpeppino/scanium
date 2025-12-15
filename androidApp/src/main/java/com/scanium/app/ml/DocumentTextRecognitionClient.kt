@@ -8,6 +8,8 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.scanium.android.platform.adapters.toImageRefJpeg
+import com.scanium.android.platform.adapters.toNormalizedRect
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -95,10 +97,14 @@ class DocumentTextRecognitionClient {
 
             val item = ScannedItem(
                 id = id,
-                thumbnail = thumbnail,
+                thumbnail = thumbnail?.toImageRefJpeg(),
                 category = ItemCategory.DOCUMENT,
                 priceRange = priceRange,
-                recognizedText = fullText
+                recognizedText = fullText,
+                boundingBox = boundingBox?.toNormalizedRect(
+                    frameWidth = sourceBitmap?.width ?: image.width,
+                    frameHeight = sourceBitmap?.height ?: image.height
+                )
             )
 
             Log.d(TAG, "Created document item with ${fullText.length} characters")

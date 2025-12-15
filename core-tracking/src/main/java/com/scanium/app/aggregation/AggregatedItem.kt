@@ -103,9 +103,7 @@ data class AggregatedItem(
         }
 
         // Always update bounding box to latest position (object may have moved)
-        if (detection.boundingBox != null) {
-            boundingBox = detection.boundingBox
-        }
+        detection.boundingBox?.let { boundingBox = it }
 
         // Update price range (take the wider range if different)
         val newMin = minOf(priceRange.first, detection.priceRange.first)

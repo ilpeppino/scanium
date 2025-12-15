@@ -1,6 +1,7 @@
 package com.scanium.app.selling.data
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.scanium.app.selling.domain.Listing
 import com.scanium.app.selling.domain.ListingDraft
@@ -10,6 +11,7 @@ import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
 import com.scanium.app.selling.domain.ListingStatus
 import com.scanium.app.selling.util.ListingImagePreparer
+import com.scanium.app.model.toBitmap
 
 /**
  * Result of a listing creation operation.
@@ -65,8 +67,8 @@ class EbayMarketplaceService(
         // Step 1: Prepare image (runs on background thread)
         val imageResult = imagePreparer.prepareListingImage(
             itemId = draft.scannedItemId,
-            fullImageUri = draft.originalItem.fullImageUri,
-            thumbnail = draft.originalItem.thumbnail
+            fullImageUri = draft.originalItem.fullImagePath?.let(Uri::parse),
+            thumbnail = draft.originalItem.thumbnail.toBitmap()
         )
 
         val listingImage = when (imageResult) {
