@@ -6,6 +6,8 @@ plugins {
     kotlin("plugin.serialization") version "2.0.0"
     // SEC-002: SBOM generation for supply chain security
     id("org.cyclonedx.bom") version "1.8.2"
+    // SEC-003: Automated CVE scanning
+    id("org.owasp.dependencycheck") version "10.0.4"
 }
 
 // Load local.properties for API configuration (not committed to git)
@@ -100,6 +102,36 @@ cyclonedxBom {
     // Component version comes from project version
     projectType.set("application")
     schemaVersion.set("1.5")
+}
+
+// SEC-003: Configure OWASP Dependency-Check for CVE scanning
+// Scans dependencies for known vulnerabilities from NVD database
+dependencyCheck {
+    // Formats for vulnerability reports
+    formats = listOf("HTML", "JSON", "SARIF")
+
+    // Fail build on CVSS score >= 7.0 (HIGH severity)
+    failBuildOnCVSS = 7.0f
+
+    // Suppress false positives (can be configured per-project)
+    suppressionFile = file("dependency-check-suppressions.xml").takeIf { it.exists() }?.absolutePath
+
+    // Analyzer configurations
+    analyzers.apply {
+        // Enable experimental analyzers
+        experimentalEnabled = false
+        // Disable slow analyzers not needed for Android
+        archiveEnabled = false
+        assemblyEnabled = false
+        nuspecEnabled = false
+    }
+
+    // NVD API key (optional, improves download speed)
+    // Set via environment variable: DEPENDENCY_CHECK_NVD_API_KEY
+    nvd.apiKey = System.getenv("DEPENDENCY_CHECK_NVD_API_KEY") ?: ""
+
+    // Cache NVD data for faster subsequent runs
+    data.directory = "${project.buildDir}/dependency-check-data"
 }
 
 dependencies {
