@@ -1,5 +1,6 @@
 package com.scanium.app.items
 
+import android.net.Uri
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.NormalizedRect
@@ -23,7 +24,8 @@ import java.util.UUID
  * @param barcodeValue Barcode value (for BARCODE items)
  * @param boundingBox Normalized bounding box position (0-1 coordinates)
  * @param labelText ML Kit classification label (if available)
- * @param fullImagePath Optional path to higher quality image (for listing purposes)
+ * @param fullImageUri Optional URI to a higher quality image (for listing purposes)
+ * @param fullImagePath Optional path to higher quality image (legacy storage)
  * @param listingStatus Current eBay listing status
  * @param listingId eBay listing ID (if posted)
  * @param listingUrl External URL to view the listing (if posted)
@@ -31,6 +33,7 @@ import java.util.UUID
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
     val thumbnail: ImageRef? = null,
+    val thumbnailRef: ImageRef? = null,
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
     val confidence: Float = 0.0f,
@@ -39,6 +42,7 @@ data class ScannedItem(
     val barcodeValue: String? = null,
     val boundingBox: NormalizedRect? = null,
     val labelText: String? = null,
+    val fullImageUri: Uri? = null,
     val fullImagePath: String? = null,
     val listingStatus: ItemListingStatus = ItemListingStatus.NOT_LISTED,
     val listingId: String? = null,
