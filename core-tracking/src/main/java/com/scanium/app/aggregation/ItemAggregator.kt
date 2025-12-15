@@ -1,9 +1,9 @@
 package com.scanium.app.aggregation
 
-import android.graphics.RectF
-import android.util.Log
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.model.NormalizedRect
+import com.scanium.app.tracking.Logger
 import java.util.UUID
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -26,9 +26,11 @@ import kotlin.math.sqrt
  * - Comprehensive logging for debugging and tuning
  *
  * @property config Configuration for aggregation behavior
+ * @property logger Platform-specific logger implementation
  */
 class ItemAggregator(
-    private val config: AggregationConfig = AggregationConfig()
+    private val config: AggregationConfig = AggregationConfig(),
+    private val logger: Logger = Logger.NONE
 ) {
     companion object {
         private const val TAG = "ItemAggregator"
@@ -53,10 +55,10 @@ class ItemAggregator(
         dynamicThreshold = threshold?.coerceIn(0f, 1f)
         val newThreshold = getCurrentSimilarityThreshold()
 
-        Log.w(TAG, "╔═══════════════════════════════════════════════════════════════")
-        Log.w(TAG, "║ AGGREGATOR THRESHOLD UPDATED: $oldThreshold → $newThreshold")
-        Log.w(TAG, "║ Dynamic override: $dynamicThreshold | Config default: ${config.similarityThreshold}")
-        Log.w(TAG, "╚═══════════════════════════════════════════════════════════════")
+        logger.w(TAG, "╔═══════════════════════════════════════════════════════════════")
+        logger.w(TAG, "║ AGGREGATOR THRESHOLD UPDATED: $oldThreshold → $newThreshold")
+        logger.w(TAG, "║ Dynamic override: $dynamicThreshold | Config default: ${config.similarityThreshold}")
+        logger.w(TAG, "╚═══════════════════════════════════════════════════════════════")
     }
 
     /**
@@ -79,16 +81,16 @@ class ItemAggregator(
      */
     fun processDetection(detection: ScannedItem): AggregatedItem {
         val currentThreshold = getCurrentSimilarityThreshold()
-        Log.i(TAG, ">>> processDetection: id=${detection.id}, category=${detection.category}, confidence=${detection.confidence}")
-        Log.i(TAG, "    Using THRESHOLD=$currentThreshold (dynamic=${dynamicThreshold != null})")
+        logger.i(TAG, ">>> processDetection: id=${detection.id}, category=${detection.category}, confidence=${detection.confidence}")
+        logger.i(TAG, "    Using THRESHOLD=$currentThreshold (dynamic=${dynamicThreshold != null})")
 
         // Find best matching aggregated item
         val (bestMatch, bestSimilarity) = findBestMatch(detection)
 
         if (bestMatch != null && bestSimilarity >= currentThreshold) {
             // Merge into existing item
-            Log.w(TAG, "    ✓ MERGE: detection ${detection.id} → aggregated ${bestMatch.aggregatedId}")
-            Log.w(TAG, "    Similarity $bestSimilarity >= threshold $currentThreshold")
+            logger.w(TAG, "    ✓ MERGE: detection ${detection.id} → aggregated ${bestMatch.aggregatedId}")
+            logger.w(TAG, "    Similarity $bestSimilarity >= threshold $currentThreshold")
             logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
 
             bestMatch.merge(detection)
@@ -99,13 +101,13 @@ class ItemAggregator(
             aggregatedItems[newItem.aggregatedId] = newItem
 
             if (bestMatch != null) {
-                Log.w(TAG, "    ✗ CREATE NEW: similarity $bestSimilarity < threshold $currentThreshold")
+                logger.w(TAG, "    ✗ CREATE NEW: similarity $bestSimilarity < threshold $currentThreshold")
                 logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
             } else {
-                Log.i(TAG, "    ✗ CREATE NEW: no existing items to compare")
+                logger.i(TAG, "    ✗ CREATE NEW: no existing items to compare")
             }
 
-            Log.i(TAG, "    Created aggregated item ${newItem.aggregatedId}")
+            logger.i(TAG, "    Created aggregated item ${newItem.aggregatedId}")
             return newItem
         }
     }
@@ -117,7 +119,7 @@ class ItemAggregator(
      * @return List of resulting aggregated items (may be newly created or existing)
      */
     fun processDetections(detections: List<ScannedItem>): List<AggregatedItem> {
-        Log.i(TAG, ">>> processDetections BATCH: ${detections.size} detections")
+        logger.i(TAG, ">>> processDetections BATCH: ${detections.size} detections")
         return detections.map { processDetection(it) }
     }
 
@@ -188,8 +190,8 @@ class ItemAggregator(
         val itemBox = item.boundingBox
 
         if (detectionBox != null) {
-            val detectionArea = detectionBox.width() * detectionBox.height()
-            val itemArea = itemBox.width() * itemBox.height()
+            val detectionArea = detectionBox.area
+            val itemArea = itemBox.area
 
             if (detectionArea > 0.0001f && itemArea > 0.0001f) {
                 val sizeRatio = minOf(detectionArea, itemArea) / maxOf(detectionArea, itemArea)
@@ -197,7 +199,7 @@ class ItemAggregator(
                 // Check hard limit
                 val sizeDiff = abs(1f - sizeRatio)
                 if (sizeDiff > config.maxSizeDifferenceRatio) {
-                    Log.d(TAG, "    Size difference too large: $sizeDiff > ${config.maxSizeDifferenceRatio}")
+                    logger.d(TAG, "    Size difference too large: $sizeDiff > ${config.maxSizeDifferenceRatio}")
                     return 0f // Size too different - definitely not the same object
                 }
 
@@ -207,11 +209,12 @@ class ItemAggregator(
 
         // 3. Center distance
         if (detectionBox != null) {
-            val detectionCenter = Pair(detectionBox.centerX(), detectionBox.centerY())
+            val detectionCenterX = (detectionBox.left + detectionBox.right) / 2f
+            val detectionCenterY = (detectionBox.top + detectionBox.bottom) / 2f
             val itemCenter = item.getCenterPoint()
 
-            val dx = detectionCenter.first - itemCenter.first
-            val dy = detectionCenter.second - itemCenter.second
+            val dx = detectionCenterX - itemCenter.first
+            val dy = detectionCenterY - itemCenter.second
             val distance = sqrt(dx * dx + dy * dy)
 
             // Normalize by frame diagonal (assume normalized coords 0-1)
@@ -220,7 +223,7 @@ class ItemAggregator(
 
             // Check hard limit
             if (normalizedDistance > config.maxCenterDistanceRatio) {
-                Log.d(TAG, "    Center distance too large: $normalizedDistance > ${config.maxCenterDistanceRatio}")
+                logger.d(TAG, "    Center distance too large: $normalizedDistance > ${config.maxCenterDistanceRatio}")
                 return 0f // Too far apart - not the same object
             }
 
@@ -234,7 +237,7 @@ class ItemAggregator(
                          weights.sizeWeight + weights.distanceWeight
 
         if (totalWeight == 0f) {
-            Log.w(TAG, "Total weight is zero - returning 0 similarity")
+            logger.w(TAG, "Total weight is zero - returning 0 similarity")
             return 0f
         }
 
@@ -305,7 +308,7 @@ class ItemAggregator(
             aggregatedId = aggregatedId,
             category = detection.category,
             labelText = detection.labelText ?: "",
-            boundingBox = detection.boundingBox ?: RectF(0f, 0f, 0f, 0f),
+            boundingBox = detection.boundingBox ?: NormalizedRect(0f, 0f, 0f, 0f),
             thumbnail = detection.thumbnail,
             maxConfidence = detection.confidence,
             averageConfidence = detection.confidence,
@@ -341,7 +344,7 @@ class ItemAggregator(
         val toRemove = aggregatedItems.values.filter { it.isStale(maxAgeMs) }
 
         for (item in toRemove) {
-            Log.d(TAG, "Removing stale item ${item.aggregatedId} (age=${System.currentTimeMillis() - item.lastSeenTimestamp}ms)")
+            logger.d(TAG, "Removing stale item ${item.aggregatedId} (age=${System.currentTimeMillis() - item.lastSeenTimestamp}ms)")
             item.cleanup()
             aggregatedItems.remove(item.aggregatedId)
         }
@@ -382,7 +385,7 @@ class ItemAggregator(
      * Clear all aggregated items (call when starting new session).
      */
     fun reset() {
-        Log.i(TAG, "Resetting aggregator: clearing ${aggregatedItems.size} items")
+        logger.i(TAG, "Resetting aggregator: clearing ${aggregatedItems.size} items")
 
         for (item in aggregatedItems.values) {
             item.cleanup()
@@ -417,8 +420,6 @@ class ItemAggregator(
         item: AggregatedItem,
         finalScore: Float
     ) {
-        if (!Log.isLoggable(TAG, Log.DEBUG)) return
-
         val categoryMatch = detection.category == item.category
         val detectionLabel = detection.labelText ?: ""
         val itemLabel = item.labelText
@@ -433,26 +434,31 @@ class ItemAggregator(
         var distanceSim = 0f
 
         if (detectionBox != null) {
-            val detectionArea = detectionBox.width() * detectionBox.height()
+            val detectionArea = detectionBox.area
             val itemArea = item.getBoxArea()
             if (detectionArea > 0.0001f && itemArea > 0.0001f) {
                 sizeSim = minOf(detectionArea, itemArea) / maxOf(detectionArea, itemArea)
             }
 
-            val dx = detectionBox.centerX() - item.boundingBox.centerX()
-            val dy = detectionBox.centerY() - item.boundingBox.centerY()
+            val detectionCenterX = (detectionBox.left + detectionBox.right) / 2f
+            val detectionCenterY = (detectionBox.top + detectionBox.bottom) / 2f
+            val itemCenterX = (item.boundingBox.left + item.boundingBox.right) / 2f
+            val itemCenterY = (item.boundingBox.top + item.boundingBox.bottom) / 2f
+
+            val dx = detectionCenterX - itemCenterX
+            val dy = detectionCenterY - itemCenterY
             val distance = sqrt(dx * dx + dy * dy)
             val frameDiagonal = sqrt(2f)
             val normalizedDistance = distance / frameDiagonal
             distanceSim = 1f - (normalizedDistance / config.maxCenterDistanceRatio).coerceIn(0f, 1f)
         }
 
-        Log.d(TAG, "    Similarity breakdown:")
-        Log.d(TAG, "      - Category match: $categoryMatch (${detection.category} vs ${item.category})")
-        Log.d(TAG, "      - Label similarity: $labelSim ('$detectionLabel' vs '$itemLabel')")
-        Log.d(TAG, "      - Size similarity: $sizeSim")
-        Log.d(TAG, "      - Distance similarity: $distanceSim")
-        Log.d(TAG, "      - Final weighted score: $finalScore")
+        logger.d(TAG, "    Similarity breakdown:")
+        logger.d(TAG, "      - Category match: $categoryMatch (${detection.category} vs ${item.category})")
+        logger.d(TAG, "      - Label similarity: $labelSim ('$detectionLabel' vs '$itemLabel')")
+        logger.d(TAG, "      - Size similarity: $sizeSim")
+        logger.d(TAG, "      - Distance similarity: $distanceSim")
+        logger.d(TAG, "      - Final weighted score: $finalScore")
     }
 }
 
