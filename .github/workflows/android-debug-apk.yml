@@ -34,5 +34,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: scanium-app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: apk/app-debug.apk
           if-no-files-found: error
