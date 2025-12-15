@@ -11,7 +11,20 @@ Guidance for Claude Code when working with **Scanium** – a privacy-first Andro
 - **UI**: Jetpack Compose + Material 3
 - **Min/Target SDK**: 24 / 34 (Android 7.0 / 14)
 - **Required Java**: 17 (see `SETUP.md`)
-- **Architecture**: Single-module MVVM, no DI framework
+- **Architecture**: Multi-module Gradle (`:app`, `:core-models`, `:core-tracking`), MVVM, no DI framework
+
+## Module Structure
+
+```
+scanium/
+├── app/                    # Android app module (UI, ML Kit integration, platform-specific code)
+├── core-models/            # Platform-independent data models and portable types
+│   └── ImageRef, NormalizedRect, ItemCategory, ScanMode, ScannedItem
+├── core-tracking/          # Platform-independent tracking and aggregation logic
+    └── ObjectTracker, ItemAggregator, Logger interface
+```
+
+**Dependencies**: `app` → `core-tracking` → `core-models`
 
 ## Commands
 
@@ -20,14 +33,18 @@ Guidance for Claude Code when working with **Scanium** – a privacy-first Andro
 ./build.sh assembleDebug
 ./build.sh assembleRelease
 
-# Test
+# Test (local with Android SDK + Java 17)
 ./gradlew test                              # All unit tests (175+)
 ./gradlew test --tests "*ObjectTracker*"    # Single test class
 ./gradlew connectedAndroidTest              # Instrumented tests
 
+# CI-First Testing (Codex container without Android SDK)
+# Push to main → GitHub Actions builds APK → Download artifact → Install on device
+# See docs/CI_TESTING.md for details
+
 # Install & Debug
 ./gradlew installDebug
-adb logcat | grep -E "ObjectTracker|CameraXManager|ObjectDetector"
+adb logcat | grep -E "ObjectTraacker|CameraXManager|ObjectDetector"
 ```
 
 ## Architecture Flow
@@ -74,31 +91,39 @@ UI (CameraScreen, ItemsListScreen, SellOnEbayScreen)
 
 ## Key Files Map
 
-**Camera & Processing**
-- `camera/CameraXManager.kt` – CameraX lifecycle, mode routing, gesture handling
-- `camera/ScanMode.kt` – Enum for OBJECT_DETECTION | BARCODE | DOCUMENT_TEXT
-- `camera/ui/VerticalThresholdSlider.kt`, `ClassificationModeToggle.kt` – UI controls
+### Core Modules (Platform-Independent)
 
-**ML Kit Integration**
-- `ml/ObjectDetectorClient.kt` – Wraps ML Kit Object Detection
-- `ml/BarcodeScannerClient.kt` – Wraps ML Kit Barcode Scanning
-- `ml/DocumentTextRecognitionClient.kt` – Wraps ML Kit Text Recognition
+**:core-models** – Portable types and data models
+- `model/ImageRef.kt` – Platform-agnostic image reference (KMP-ready)
+- `model/NormalizedRect.kt` – Normalized bounding box (0-1 coordinates)
 - `ml/ItemCategory.kt` – Enum mapping ML Kit's 5 coarse categories
-- `ml/PricingEngine.kt` – Mock EUR price generation (replace with real API)
+- `items/ScannedItem.kt` – Immutable item model (uses ImageRef, NormalizedRect)
+- `camera/ScanMode.kt` – Enum for OBJECT_DETECTION | BARCODE | DOCUMENT_TEXT
+- `ml/classification/ClassificationMode.kt` – Enum: ON_DEVICE | CLOUD
 
-**Tracking System**
-- `tracking/ObjectTracker.kt` – Multi-frame tracking, candidate confirmation/expiry
-- `tracking/ObjectCandidate.kt` – Spatial data (bbox, center, IoU/distance methods)
-- `tracking/TrackerConfig.kt` – Tunable thresholds (see `CameraXManager.kt`)
-
-**Aggregation System**
-- `aggregation/ItemAggregator.kt` – Similarity-based session deduplication
+**:core-tracking** – Platform-independent tracking and aggregation
+- `tracking/ObjectTracker.kt` – Multi-frame tracking, candidate confirmation/expiry (uses Logger)
+- `tracking/ObjectCandidate.kt` – Spatial data (IoU/distance using NormalizedRect)
+- `tracking/TrackerConfig.kt` – Tunable thresholds
+- `tracking/Logger.kt` – Platform-agnostic logging interface
+- `aggregation/ItemAggregator.kt` – Similarity-based session deduplication (uses Logger)
 - `aggregation/AggregationPresets.kt` – 6 presets (REALTIME used by default)
 - `aggregation/AggregatedItem.kt` – Merged detection with confidence/timestamps
 
+### App Module (Android-Specific)
+
+**Camera & Processing**
+- `camera/CameraXManager.kt` – CameraX lifecycle, mode routing, gesture handling
+- `camera/ui/VerticalThresholdSlider.kt`, `ClassificationModeToggle.kt` – UI controls
+
+**ML Kit Integration** (Android wrappers)
+- `ml/ObjectDetectorClient.kt` – Wraps ML Kit Object Detection, converts to portable types
+- `ml/BarcodeScannerClient.kt` – Wraps ML Kit Barcode Scanning
+- `ml/DocumentTextRecognitionClient.kt` – Wraps ML Kit Text Recognition
+- `ml/PricingEngine.kt` – Mock EUR price generation (replace with real API)
+
 **State Management**
 - `items/ItemsViewModel.kt` – Centralized `StateFlow<List<ScannedItem>>`, ID-based dedup
-- `items/ScannedItem.kt` – Immutable item model (id, thumbnail, category, confidence, etc.)
 - `items/ItemListingStatus.kt` – eBay listing states (NOT_LISTED, LISTING_IN_PROGRESS, etc.)
 
 **Domain Pack (Fine-Grained Categories)**
@@ -156,43 +181,54 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - **Instrumented**: `app/src/androidTest/` (Compose Testing)
 - See `md/testing/TEST_SUITE.md` for detailed coverage
 
-## KMP/iOS Porting Guardrails
+## KMP/iOS Porting Status
 
 **Goal**: Share Scanium's "brain" (tracking, aggregation, state management) across Android/iOS while keeping platform-specific UI/camera/ML.
 
-### Shared Code Rules (Future `shared/` Module)
-1. **NO Android Dependencies**:
-   - Forbidden: `android.*`, `androidx.*`, `CameraX`, `ML Kit` classes
-   - Allowed: Kotlin stdlib, Coroutines, Kotlinx Serialization, expect/actual
+### ✅ Completed (Phase 1: Core Modules)
+1. **Multi-module Gradle structure established**:
+   - `:core-models` – Platform-independent data models
+   - `:core-tracking` – Platform-independent tracking/aggregation
+   - `:app` – Android-specific implementation
+2. **Portable types introduced**:
+   - `ImageRef` – Platform-agnostic image reference (replaces `Bitmap`)
+   - `NormalizedRect` – Portable bounding box with 0-1 coordinates (replaces `RectF`)
+   - `Logger` – Platform-agnostic logging interface (replaces `android.util.Log`)
+3. **Core modules are Android-free**:
+   - ✅ `core-models`: No Android dependencies
+   - ✅ `core-tracking`: No Android dependencies (uses Logger, ImageRef, NormalizedRect)
+   - ✅ CI builds successfully without Android SDK in core modules
+
+### 🚧 Remaining Work (Phase 2: KMP Conversion)
+1. Convert `:core-models` to KMP `commonMain`
+2. Convert `:core-tracking` to KMP `commonMain`
+3. Implement platform actuals:
+   - Android: `AndroidLogger` wrapping `android.util.Log`
+   - iOS: `IOSLogger` wrapping `NSLog`/`os_log`
+4. Create iOS app target (`:iosApp`) with SwiftUI
+5. Implement iOS platform providers for ML/camera
+
+### Shared Code Rules
+1. **NO Android Dependencies** in `:core-*` modules:
+   - ❌ Forbidden: `android.*`, `androidx.*`, `CameraX`, `ML Kit` classes
+   - ✅ Allowed: Kotlin stdlib, Coroutines, Kotlinx Serialization, expect/actual
 2. **Platform Interfaces**:
-   - Define `expect interface CameraProvider` (actual: `AndroidCameraProvider`, `IOSCameraProvider`)
-   - Define `expect interface MLKitProvider` (actual: platform-specific ML Kit wrappers)
-   - Define `expect class ImageBitmap` (actual: Android `Bitmap`, iOS `UIImage`)
-3. **Shared Components** (Candidates for KMP):
-   - `ObjectTracker` (pure Kotlin, no platform deps)
-   - `ItemAggregator` (pure Kotlin)
-   - `ItemsViewModel` logic (extract platform-agnostic state)
-   - `DomainPack` models + `BasicCategoryEngine` (pure Kotlin)
-   - `ScannedItem`, `TrackerConfig`, `AggregationPresets` (data models)
-4. **Platform-Specific** (Stays in `app/` or `iosApp/`):
+   - ✅ `Logger` – Platform-agnostic logging (implemented)
+   - ✅ `ImageRef` – Platform-agnostic image (implemented)
+   - ✅ `NormalizedRect` – Platform-agnostic geometry (implemented)
+   - 🚧 Future: `expect interface CameraProvider`, `expect interface MLProvider`
+3. **Platform-Specific** (Stays in `:app` or future `:iosApp`):
    - `CameraXManager` → Android only
-   - `ObjectDetectorClient`, `BarcodeScannerClient`, `DocumentTextRecognitionClient` → Wrap in platform providers
+   - `ObjectDetectorClient`, `BarcodeScannerClient` → Wrap in platform providers
    - Compose UI → Android; SwiftUI → iOS
    - `MainActivity`, navigation → Platform-specific entry points
-
-### Migration Strategy
-1. Extract shared models to `shared/commonMain` (no android.* deps)
-2. Define platform interfaces (`CameraProvider`, `MLKitProvider`, `ImageBitmap`)
-3. Implement Android actuals in `shared/androidMain`
-4. Create iOS actuals in `shared/iosMain` (Swift-Kotlin interop)
-5. Keep Android build green after every PR (CI gate)
-6. Gradually move business logic to `shared/` (tracker → aggregator → ViewModel)
 
 ### Non-Negotiables
 - Android must remain fully functional during/after KMP migration
 - No breaking changes to Android UI/UX
 - Platform-specific optimizations allowed (e.g., Android ML Kit vs iOS Core ML)
 - Shared code must not assume Android threading (use `Dispatchers.Default`, not `Dispatchers.Main`)
+- CI must validate Android builds on every push (enforced via GitHub Actions)
 
 ## Known Limitations
 
@@ -200,7 +236,7 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - **Mocked pricing**: `PricingEngine.kt` generates EUR ranges locally
 - **Mocked eBay**: `MockEbayApi` simulates marketplace (ready for real API swap)
 - **ML Kit categories**: 5 coarse categories → mitigated by Domain Pack (23 fine-grained) + Cloud Classification
-- **Single module**: Will need multi-module for KMP (`:shared`, `:app`, `:iosApp`)
+- **Core modules not yet KMP**: Platform-independent but need conversion to `commonMain/androidMain/iosMain`
 - **Cloud classification**: Requires backend API (see `/docs/features/CLOUD_CLASSIFICATION.md` for setup)
 - **On-device CLIP**: Placeholder implementation; real TFLite CLIP model not integrated yet
 - **Attribute extraction**: Cloud API supports attributes map; on-device extraction not implemented
@@ -219,9 +255,14 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - `md/features/EBAY_SELLING_INTEGRATION.md` – Marketplace flow, mock config
 
 **Testing**:
+- `docs/CI_TESTING.md` – CI-first testing workflow for Codex containers
 - `md/testing/TEST_SUITE.md` – Coverage matrix, frameworks
 - `md/testing/TEST_CHECKLIST.md` – Pre-release validation
 - `md/debugging/DIAGNOSTIC_LOG_GUIDE.md` – ML Kit debugging
+
+**CI/CD**:
+- `.github/workflows/android-debug-apk.yml` – Builds APK on every push to main
+- Artifact: `scanium-app-debug-apk` (download from GitHub Actions)
 
 **Config**:
 - `res/raw/home_resale_domain_pack.json` – 23 categories, 10 attributes (live config)
