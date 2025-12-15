@@ -8,7 +8,8 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import com.scanium.app.platform.toImageRefJpeg
+import com.scanium.android.platform.adapters.toImageRefJpeg
+import com.scanium.android.platform.adapters.toNormalizedRect
 import kotlinx.coroutines.tasks.await
 
 /**

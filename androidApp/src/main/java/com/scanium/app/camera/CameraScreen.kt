@@ -41,13 +41,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
-import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
-import com.scanium.app.platform.toImageRefJpeg
+import com.scanium.android.platform.adapters.toImageRefJpeg
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

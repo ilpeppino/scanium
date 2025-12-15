@@ -3,13 +3,14 @@ package com.scanium.app.ml
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
-import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import com.scanium.app.platform.toImageRefJpeg
+import com.scanium.android.platform.adapters.toImageRefJpeg
+import com.scanium.android.platform.adapters.toNormalizedRect
+import com.scanium.app.items.ScannedItem
 import kotlinx.coroutines.tasks.await
 
 /**
