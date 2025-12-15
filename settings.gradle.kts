@@ -31,5 +31,6 @@ include(
     ":core-scan",
     ":core-contracts",
     ":android-ml-mlkit",
-    ":android-camera-camerax"
+    ":android-camera-camerax",
+    ":android-platform-adapters",
 )
