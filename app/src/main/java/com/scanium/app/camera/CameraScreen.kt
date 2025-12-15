@@ -1,6 +1,8 @@
 package com.scanium.app.camera
 
 import android.Manifest
+import android.view.OrientationEventListener
+import android.view.Surface
 import android.util.Log
 import android.util.Size
 import android.widget.Toast
@@ -31,6 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -66,6 +69,7 @@ fun CameraScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val view = LocalView.current
     val scope = rememberCoroutineScope()
 
     // Camera permission state
@@ -114,6 +118,31 @@ fun CameraScreen(
     var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
     var imageSize by remember { mutableStateOf(Size(1280, 720)) }
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
+
+    var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
+
+    DisposableEffect(view) {
+        val orientationListener = object : OrientationEventListener(context) {
+            override fun onOrientationChanged(orientation: Int) {
+                val rotation = view.display?.rotation ?: Surface.ROTATION_0
+                if (rotation != targetRotation) {
+                    targetRotation = rotation
+                }
+            }
+        }
+
+        if (orientationListener.canDetectOrientation()) {
+            orientationListener.enable()
+        }
+
+        onDispose {
+            orientationListener.disable()
+        }
+    }
+
+    LaunchedEffect(targetRotation) {
+        cameraManager.updateTargetRotation(targetRotation)
+    }
 
     // Request permission on first launch
     LaunchedEffect(Unit) {
