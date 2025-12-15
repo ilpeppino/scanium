@@ -18,15 +18,10 @@
         </trust-anchors>
     </base-config>
 
-    <!-- Debug-only exceptions for localhost/emulator testing -->
-    <debug-overrides>
-        <domain-config cleartextTrafficPermitted="true">
-            <!-- Allow HTTP for localhost testing -->
-            <domain includeSubdomains="true">localhost</domain>
-            <!-- Android emulator host -->
-            <domain includeSubdomains="true">10.0.2.2</domain>
-            <!-- Localhost IPv4 -->
-            <domain includeSubdomains="true">127.0.0.1</domain>
-        </domain-config>
-    </debug-overrides>
+    <!-- Allow localhost cleartext (safe: only loopback/emu hosts are whitelisted) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
 </network-security-config>

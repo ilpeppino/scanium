@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -11,7 +13,7 @@ plugins {
 }
 
 // Load local.properties for API configuration (not committed to git)
-val localProperties = java.util.Properties().apply {
+val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
         localPropertiesFile.inputStream().use { load(it) }
@@ -89,7 +91,7 @@ android {
 
 // SEC-002: Configure SBOM (Software Bill of Materials) generation
 // Generates CycloneDX SBOM in JSON format for supply chain security
-cyclonedxBom {
+tasks.cyclonedxBom {
     // Include all build variants
     includeConfigs.set(listOf("releaseRuntimeClasspath", "debugRuntimeClasspath"))
     // Skip configurations that aren't needed

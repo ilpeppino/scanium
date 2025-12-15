@@ -153,9 +153,10 @@ class MockEbayApi(
         }
 
         // Price validation
-        val priceValue = draft.price.toDoubleOrNull() ?: throw IllegalArgumentException(
-            "Price must be a valid number: ${draft.price}"
-        )
+        val priceValue = draft.price
+        if (!priceValue.isFinite()) {
+            throw IllegalArgumentException("Price must be a valid number: ${draft.price}")
+        }
         when {
             priceValue < MIN_PRICE -> {
                 throw IllegalArgumentException(
