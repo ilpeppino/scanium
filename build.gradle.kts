@@ -9,3 +9,17 @@ plugins {
 tasks.register("clean", Delete::class) {
     delete(rootProject.layout.buildDirectory)
 }
+
+subprojects {
+    if (path != ":androidApp") {
+        configurations.configureEach {
+            withDependencies {
+                filterIsInstance<org.gradle.api.artifacts.ProjectDependency>()
+                    .firstOrNull { it.dependencyProject.path == ":androidApp" }
+                    ?.let {
+                        throw GradleException("$path must not depend on :androidApp to keep module layering clean")
+                    }
+            }
+        }
+    }
+}
