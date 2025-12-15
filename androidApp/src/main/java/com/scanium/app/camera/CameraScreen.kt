@@ -46,6 +46,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
+import com.scanium.app.platform.toImageRefJpeg
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -362,9 +363,11 @@ fun CameraScreen(
                                                 // Generate high-quality thumbnails from the high-res image
                                                 items.map { item ->
                                                     val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
+                                                    val newThumbnailRef = newThumbnail?.toImageRefJpeg(quality = 85)
                                                     item.copy(
                                                         fullImageUri = highResUri,
-                                                        thumbnail = newThumbnail ?: item.thumbnail
+                                                        thumbnail = newThumbnailRef ?: item.thumbnail,
+                                                        thumbnailRef = newThumbnailRef ?: item.thumbnailRef
                                                     )
                                                 }
                                             } else {
@@ -404,9 +407,11 @@ fun CameraScreen(
                                             val itemsWithHighRes = if (highResUri != null) {
                                                 items.map { item ->
                                                     val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
+                                                    val newThumbnailRef = newThumbnail?.toImageRefJpeg(quality = 85)
                                                     item.copy(
                                                         fullImageUri = highResUri,
-                                                        thumbnail = newThumbnail ?: item.thumbnail
+                                                        thumbnail = newThumbnailRef ?: item.thumbnail,
+                                                        thumbnailRef = newThumbnailRef ?: item.thumbnailRef
                                                     )
                                                 }
                                             } else {
@@ -854,4 +859,3 @@ private fun ModelErrorDialog(
         }
     )
 }
-
