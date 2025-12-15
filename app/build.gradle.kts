@@ -167,6 +167,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
     implementation("androidx.camera:camera-view:$cameraxVersion")
 
+    implementation("androidx.exifinterface:exifinterface:1.3.6")
+
     // ML Kit Object Detection
     implementation("com.google.mlkit:object-detection:17.0.1")
 

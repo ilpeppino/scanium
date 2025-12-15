@@ -89,6 +89,7 @@ class CameraXManager(
     private var isScanning = false
     private var scanJob: Job? = null
     private var currentScanMode: ScanMode? = null
+    private var targetRotation: Int? = null
 
     // Frame counter for periodic cleanup and stats logging
     private var frameCounter = 0
@@ -159,18 +160,21 @@ class CameraXManager(
             }
 
         // Setup image analysis for object detection
+        val displayRotation = previewView.display.rotation
+        targetRotation = displayRotation
+
         imageAnalysis = ImageAnalysis.Builder()
             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .setTargetRotation(previewView.display.rotation)
+            .setTargetRotation(displayRotation)
             .setTargetResolution(android.util.Size(1280, 720)) // Higher resolution for better detection
             .build()
 
         Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
 
         // Setup high-resolution image capture for saving high-quality item images
-        imageCapture = buildImageCapture(captureResolution, previewView.display.rotation)
-        Log.d(TAG, "ImageCapture configured for resolution: $captureResolution")
+        imageCapture = buildImageCapture(captureResolution, displayRotation)
+        Log.d(TAG, "ImageCapture configured for resolution: $captureResolution (rotation=$displayRotation)")
 
         val requestedSelector = CameraSelector.Builder()
             .requireLensFacing(lensFacing)
@@ -371,6 +375,17 @@ class CameraXManager(
         // Reset tracker when stopping scan
         objectTracker.reset()
         currentScanMode = null
+    }
+
+    /**
+     * Updates target rotation for capture and analysis when the display orientation changes.
+     */
+    fun updateTargetRotation(rotation: Int) {
+        if (targetRotation == rotation) return
+        targetRotation = rotation
+        imageCapture?.targetRotation = rotation
+        imageAnalysis?.targetRotation = rotation
+        Log.d(TAG, "Updated target rotation to $rotation")
     }
 
     /**
