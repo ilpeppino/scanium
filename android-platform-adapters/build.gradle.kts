@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.scanium.core.models"
+    namespace = "com.scanium.android.platform.adapters"
     compileSdk = 34
 
     defaultConfig {
@@ -22,5 +22,9 @@ android {
 }
 
 dependencies {
+    implementation(project(":core-models"))
+
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("com.google.truth:truth:1.1.5")
 }
