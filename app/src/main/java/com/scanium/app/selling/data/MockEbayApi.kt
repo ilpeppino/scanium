@@ -23,6 +23,12 @@ class MockEbayApi(
 
     companion object {
         private const val TAG = "MockEbayApi"
+
+        // SEC-007: Listing field validation limits
+        private const val MAX_TITLE_LENGTH = 80
+        private const val MAX_DESCRIPTION_LENGTH = 4000
+        private const val MIN_PRICE = 0.01
+        private const val MAX_PRICE = 1_000_000.0
     }
 
     private val listings = mutableMapOf<String, Listing>()
@@ -65,10 +71,8 @@ class MockEbayApi(
             }
         }
 
-        // Validate title (basic check)
-        if (draft.title.isBlank()) {
-            throw IllegalArgumentException("Title cannot be empty")
-        }
+        // SEC-007: Comprehensive field validation
+        validateListingFields(draft)
 
         // Create successful listing
         val id = ListingId("EBAY-MOCK-${System.currentTimeMillis()}-${Random.nextInt(1000, 9999)}")
@@ -113,6 +117,57 @@ class MockEbayApi(
             listings[id.value] = updated
         }
         return updated?.status ?: ListingStatus.UNKNOWN
+    }
+
+    /**
+     * SEC-007: Validates listing fields according to eBay API requirements.
+     * Throws IllegalArgumentException if validation fails.
+     */
+    private fun validateListingFields(draft: ListingDraft) {
+        // Title validation
+        when {
+            draft.title.isBlank() -> {
+                throw IllegalArgumentException("Title cannot be empty")
+            }
+            draft.title.length > MAX_TITLE_LENGTH -> {
+                throw IllegalArgumentException(
+                    "Title exceeds maximum length ($MAX_TITLE_LENGTH characters): ${draft.title.length}"
+                )
+            }
+            !draft.title.matches(Regex("^[\\w\\s.,!?'\"()-]+$")) -> {
+                throw IllegalArgumentException(
+                    "Title contains invalid characters (alphanumeric and basic punctuation only)"
+                )
+            }
+        }
+
+        // Description validation
+        if (draft.description != null) {
+            when {
+                draft.description.length > MAX_DESCRIPTION_LENGTH -> {
+                    throw IllegalArgumentException(
+                        "Description exceeds maximum length ($MAX_DESCRIPTION_LENGTH characters): ${draft.description.length}"
+                    )
+                }
+            }
+        }
+
+        // Price validation
+        val priceValue = draft.price.toDoubleOrNull() ?: throw IllegalArgumentException(
+            "Price must be a valid number: ${draft.price}"
+        )
+        when {
+            priceValue < MIN_PRICE -> {
+                throw IllegalArgumentException(
+                    "Price too low (minimum: $MIN_PRICE): $priceValue"
+                )
+            }
+            priceValue > MAX_PRICE -> {
+                throw IllegalArgumentException(
+                    "Price too high (maximum: $MAX_PRICE): $priceValue"
+                )
+            }
+        }
     }
 
     /**

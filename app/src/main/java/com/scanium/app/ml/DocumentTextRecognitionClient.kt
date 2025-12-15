@@ -21,6 +21,7 @@ class DocumentTextRecognitionClient {
     companion object {
         private const val TAG = "DocumentTextRecognitionClient"
         private const val MIN_TEXT_LENGTH = 3 // Minimum text length to consider valid
+        private const val MAX_TEXT_LENGTH = 10_000 // Maximum text length (10KB) - SEC-006
     }
 
     // ML Kit text recognizer configured for Latin script
@@ -46,12 +47,20 @@ class DocumentTextRecognitionClient {
             // Run text recognition
             val visionText = recognizer.process(image).await()
 
-            val fullText = visionText.text
-            Log.d(TAG, "Recognized text length: ${fullText.length} characters")
+            val rawText = visionText.text
+            Log.d(TAG, "Recognized text length: ${rawText.length} characters")
 
-            if (fullText.isBlank() || fullText.length < MIN_TEXT_LENGTH) {
+            if (rawText.isBlank() || rawText.length < MIN_TEXT_LENGTH) {
                 Log.d(TAG, "No meaningful text detected")
                 return emptyList()
+            }
+
+            // SEC-006: Limit text length to 10KB for memory/UI performance
+            val fullText = if (rawText.length > MAX_TEXT_LENGTH) {
+                Log.w(TAG, "Text exceeds maximum length (${rawText.length} > $MAX_TEXT_LENGTH), truncating")
+                rawText.take(MAX_TEXT_LENGTH) + "..."
+            } else {
+                rawText
             }
 
             Log.d(TAG, "Recognized text preview: ${fullText.take(100)}...")
