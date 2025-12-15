@@ -1,10 +1,9 @@
 package com.scanium.app.core.image
 
-sealed interface ImageRef {
-    data class Bytes(
-        val bytes: ByteArray,
-        val mimeType: String,
-        val width: Int,
-        val height: Int,
-    ) : ImageRef
-}
+/**
+ * Backwards-compatible alias for the shared ImageRef model.
+ *
+ * The canonical definition lives in com.scanium.app.model.ImageRef. This alias keeps
+ * existing imports compiling while we migrate callers to the shared package.
+ */
+typealias ImageRef = com.scanium.app.model.ImageRef

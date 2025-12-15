@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.scanium.app.core.image.ImageRef
+import com.scanium.app.model.ImageRef
 import com.scanium.app.platform.toBitmap
 import java.text.SimpleDateFormat
 import java.util.*
@@ -47,9 +47,9 @@ fun ItemDetailDialog(
                 Divider()
 
                 // Thumbnail (larger)
-                val thumbnailBitmap = when (val ref = item.thumbnailRef) {
+                val thumbnailBitmap = when (val ref = item.thumbnailRef ?: item.thumbnail) {
                     is ImageRef.Bytes -> ref.toBitmap()
-                    else -> item.thumbnail
+                    else -> null
                 }
 
                 thumbnailBitmap?.let { bitmap ->

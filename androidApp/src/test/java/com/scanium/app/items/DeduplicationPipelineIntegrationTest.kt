@@ -7,6 +7,7 @@ import com.scanium.app.ml.ItemCategory
 import com.scanium.app.tracking.DetectionInfo
 import com.scanium.app.tracking.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
+import com.scanium.app.platform.toNormalizedRect
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,6 +49,9 @@ class DeduplicationPipelineIntegrationTest {
     private lateinit var tracker: ObjectTracker
     private lateinit var viewModel: ItemsViewModel
     private val testDispatcher = UnconfinedTestDispatcher()
+    private companion object {
+        private const val TEST_FRAME_SIZE = 1000
+    }
 
     @Before
     fun setUp() {
@@ -504,12 +508,7 @@ class DeduplicationPipelineIntegrationTest {
         category: ItemCategory,
         confidence: Float
     ): DetectionInfo {
-        val normalizedBox = RectF(
-            boundingBox.left / 1000f,
-            boundingBox.top / 1000f,
-            boundingBox.right / 1000f,
-            boundingBox.bottom / 1000f
-        )
+        val normalizedBox = boundingBox.toNormalizedRect(TEST_FRAME_SIZE, TEST_FRAME_SIZE)
 
         return DetectionInfo(
             trackingId = trackingId,
@@ -522,15 +521,15 @@ class DeduplicationPipelineIntegrationTest {
         )
     }
 
-    private fun createMockBitmap(boundingBox: RectF): Bitmap {
-        val width = (boundingBox.width() * 2000).toInt().coerceAtLeast(1)
-        val height = (boundingBox.height() * 2000).toInt().coerceAtLeast(1)
+    private fun createMockBitmap(boundingBox: com.scanium.app.model.NormalizedRect): Bitmap {
+        val width = (boundingBox.width * 2000).toInt().coerceAtLeast(1)
+        val height = (boundingBox.height * 2000).toInt().coerceAtLeast(1)
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     }
 
-    private fun calculateNormalizedArea(boundingBox: RectF): Float {
+    private fun calculateNormalizedArea(boundingBox: com.scanium.app.model.NormalizedRect): Float {
         // boundingBox already normalized to 0-1 space
-        return (boundingBox.width() * boundingBox.height()).coerceIn(0f, 1f)
+        return boundingBox.area.coerceIn(0f, 1f)
     }
 
     private fun convertToScannedItem(candidate: com.scanium.app.tracking.ObjectCandidate): ScannedItem {

@@ -10,6 +10,8 @@ import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
 import com.scanium.app.selling.domain.ListingStatus
 import com.scanium.app.selling.util.ListingImagePreparer
+import com.scanium.app.model.ImageRef
+import com.scanium.app.platform.toBitmap
 
 /**
  * Result of a listing creation operation.
@@ -63,10 +65,11 @@ class EbayMarketplaceService(
         Log.i(TAG, "Draft: ${draft.title} - €${draft.price}")
 
         // Step 1: Prepare image (runs on background thread)
+        val thumbnailBitmap = (draft.originalItem.thumbnail as? ImageRef.Bytes)?.toBitmap()
         val imageResult = imagePreparer.prepareListingImage(
             itemId = draft.scannedItemId,
             fullImageUri = draft.originalItem.fullImageUri,
-            thumbnail = draft.originalItem.thumbnail
+            thumbnail = thumbnailBitmap
         )
 
         val listingImage = when (imageResult) {

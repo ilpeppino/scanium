@@ -1,22 +1,24 @@
 package com.scanium.app.core.geometry
 
 /**
- * Normalized rectangle where coordinates are expressed between 0f and 1f.
+ * Backwards-compatible alias for the shared NormalizedRect model.
+ *
+ * The canonical definition lives in com.scanium.app.model.NormalizedRect. This alias keeps
+ * existing imports compiling while we migrate callers to the shared package.
  */
-data class NormalizedRect(
-    val left: Float,
-    val top: Float,
-    val right: Float,
-    val bottom: Float,
-) {
-    fun clamp01(): NormalizedRect = NormalizedRect(
-        left = left.coerceIn(0f, 1f),
-        top = top.coerceIn(0f, 1f),
-        right = right.coerceIn(0f, 1f),
-        bottom = bottom.coerceIn(0f, 1f),
-    )
+typealias NormalizedRect = com.scanium.app.model.NormalizedRect
 
-    fun width(): Float = right - left
+/**
+ * Compatibility helper mirroring the old API.
+ */
+fun NormalizedRect.clamp01(): NormalizedRect = clampToUnit()
 
-    fun height(): Float = bottom - top
-}
+/**
+ * Compatibility helper mirroring the old API.
+ */
+fun NormalizedRect.width(): Float = width
+
+/**
+ * Compatibility helper mirroring the old API.
+ */
+fun NormalizedRect.height(): Float = height

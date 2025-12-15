@@ -9,6 +9,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.scanium.app.platform.toImageRefJpeg
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -91,6 +92,7 @@ class BarcodeScannerClient {
 
             // Crop thumbnail from source bitmap
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
+            val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
             // Determine category from barcode format
             val category = determineCategoryFromBarcode(barcode)
@@ -111,7 +113,8 @@ class BarcodeScannerClient {
 
             ScannedItem(
                 id = id,
-                thumbnail = thumbnail,
+                thumbnail = thumbnailRef,
+                thumbnailRef = thumbnailRef,
                 category = category,
                 priceRange = priceRange,
                 confidence = confidence

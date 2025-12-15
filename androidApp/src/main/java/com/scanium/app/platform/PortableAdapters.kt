@@ -4,8 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.graphics.RectF
-import com.scanium.app.core.geometry.NormalizedRect
-import com.scanium.app.core.image.ImageRef
+import com.scanium.app.model.ImageRef
+import com.scanium.app.model.NormalizedRect
 import java.io.ByteArrayOutputStream
 
 fun Rect.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
@@ -18,7 +18,7 @@ fun Rect.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
         top = top.toFloat() / frameH,
         right = right.toFloat() / frameW,
         bottom = bottom.toFloat() / frameH,
-    ).clamp01()
+    ).clampToUnit()
 }
 
 fun RectF.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
@@ -31,11 +31,11 @@ fun RectF.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
         top = top / frameH,
         right = right / frameW,
         bottom = bottom / frameH,
-    ).clamp01()
+    ).clampToUnit()
 }
 
 fun NormalizedRect.toRectF(frameW: Int, frameH: Int): RectF {
-    val clamped = clamp01()
+    val clamped = clampToUnit()
     return RectF(
         clamped.left * frameW,
         clamped.top * frameH,
