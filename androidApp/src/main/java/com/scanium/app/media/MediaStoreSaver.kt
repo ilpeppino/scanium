@@ -8,6 +8,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import com.scanium.app.model.ImageRef
+import com.scanium.app.platform.toBitmap
+import com.scanium.app.platform.toImageRefJpeg
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -54,7 +57,7 @@ object MediaStoreSaver {
      */
     suspend fun saveImagesToGallery(
         context: Context,
-        images: List<Triple<String, Uri?, Bitmap?>>
+        images: List<Triple<String, Uri?, ImageRef?>>
     ): SaveResult = withContext(Dispatchers.IO) {
         var successCount = 0
         var failureCount = 0
@@ -68,8 +71,10 @@ object MediaStoreSaver {
                     // Prefer high-res URI
                     saveFromUri(context, fullImageUri, itemId, index)
                 } else if (thumbnail != null) {
+                    val thumbnailBitmap = (thumbnail as? ImageRef.Bytes)?.toBitmap()
+                        ?: throw IllegalArgumentException("Unsupported thumbnail type: ${thumbnail::class.java.simpleName}")
                     // Fallback to thumbnail
-                    saveSingleBitmap(context, thumbnail, itemId, index)
+                    saveSingleBitmap(context, thumbnailBitmap, itemId, index)
                 } else {
                     throw IllegalArgumentException("No image source available")
                 }
@@ -97,7 +102,7 @@ object MediaStoreSaver {
         context: Context,
         bitmaps: List<Pair<String, Bitmap>>
     ): SaveResult {
-        val images = bitmaps.map { (id, bitmap) -> Triple(id, null, bitmap) }
+        val images = bitmaps.map { (id, bitmap) -> Triple(id, null, bitmap.toImageRefJpeg()) }
         return saveImagesToGallery(context, images)
     }
 

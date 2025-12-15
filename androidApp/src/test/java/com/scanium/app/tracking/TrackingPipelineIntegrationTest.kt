@@ -2,6 +2,7 @@ package com.scanium.app.tracking
 
 import android.graphics.RectF
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.platform.toNormalizedRect
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -16,6 +17,10 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class TrackingPipelineIntegrationTest {
+
+    private companion object {
+        private const val TEST_FRAME_SIZE = 1000
+    }
 
     private lateinit var tracker: ObjectTracker
 
@@ -40,7 +45,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 1: Initial detection
         var confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.6f,
@@ -56,7 +61,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 2: Object moved slightly
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(105f, 105f, 205f, 205f),
                     confidence = 0.7f,
@@ -72,7 +77,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 3: Object stabilized
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(108f, 108f, 208f, 208f),
                     confidence = 0.8f,
@@ -103,7 +108,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 1: Detect 3 objects
         var confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.6f,
@@ -112,7 +117,7 @@ class TrackingPipelineIntegrationTest {
                     thumbnail = null,
                     normalizedBoxArea = 0.01f
                 ),
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_2",
                     boundingBox = RectF(300f, 100f, 400f, 200f),
                     confidence = 0.5f,
@@ -121,7 +126,7 @@ class TrackingPipelineIntegrationTest {
                     thumbnail = null,
                     normalizedBoxArea = 0.008f
                 ),
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_3",
                     boundingBox = RectF(500f, 100f, 600f, 200f),
                     confidence = 0.7f,
@@ -137,9 +142,9 @@ class TrackingPipelineIntegrationTest {
         // Frame 2: All objects still present
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo("obj_1", RectF(102f, 102f, 202f, 202f), 0.6f, ItemCategory.FASHION, "Shirt", null, 0.01f),
-                DetectionInfo("obj_2", RectF(302f, 102f, 402f, 202f), 0.5f, ItemCategory.ELECTRONICS, "Phone", null, 0.008f),
-                DetectionInfo("obj_3", RectF(502f, 102f, 602f, 202f), 0.7f, ItemCategory.FOOD, "Apple", null, 0.012f)
+                detectionInfo("obj_1", RectF(102f, 102f, 202f, 202f), 0.6f, ItemCategory.FASHION, "Shirt", null, 0.01f),
+                detectionInfo("obj_2", RectF(302f, 102f, 402f, 202f), 0.5f, ItemCategory.ELECTRONICS, "Phone", null, 0.008f),
+                detectionInfo("obj_3", RectF(502f, 102f, 602f, 202f), 0.7f, ItemCategory.FOOD, "Apple", null, 0.012f)
             )
         )
         assertEquals(0, confirmed.size)
@@ -147,9 +152,9 @@ class TrackingPipelineIntegrationTest {
         // Frame 3: All objects confirmed
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo("obj_1", RectF(104f, 104f, 204f, 204f), 0.6f, ItemCategory.FASHION, "Shirt", null, 0.01f),
-                DetectionInfo("obj_2", RectF(304f, 104f, 404f, 204f), 0.5f, ItemCategory.ELECTRONICS, "Phone", null, 0.008f),
-                DetectionInfo("obj_3", RectF(504f, 104f, 604f, 204f), 0.7f, ItemCategory.FOOD, "Apple", null, 0.012f)
+                detectionInfo("obj_1", RectF(104f, 104f, 204f, 204f), 0.6f, ItemCategory.FASHION, "Shirt", null, 0.01f),
+                detectionInfo("obj_2", RectF(304f, 104f, 404f, 204f), 0.5f, ItemCategory.ELECTRONICS, "Phone", null, 0.008f),
+                detectionInfo("obj_3", RectF(504f, 104f, 604f, 204f), 0.7f, ItemCategory.FOOD, "Apple", null, 0.012f)
             )
         )
 
@@ -168,7 +173,7 @@ class TrackingPipelineIntegrationTest {
         repeat(2) {
             tracker.processFrame(
                 listOf(
-                    DetectionInfo(
+                    detectionInfo(
                         trackingId = "obj_1",
                         boundingBox = RectF(100f, 100f, 200f, 200f),
                         confidence = 0.6f,
@@ -192,7 +197,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 7: Object returns
         var confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.7f,
@@ -218,7 +223,7 @@ class TrackingPipelineIntegrationTest {
         repeat(2) {
             tracker.processFrame(
                 listOf(
-                    DetectionInfo(
+                    detectionInfo(
                         trackingId = "obj_1",
                         boundingBox = RectF(100f, 100f, 200f, 200f),
                         confidence = 0.6f,
@@ -255,7 +260,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 1: No trackingId
         var confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = null,
                     boundingBox = boundingBox1,
                     confidence = 0.6f,
@@ -271,7 +276,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 2: No trackingId, similar position
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = null,
                     boundingBox = boundingBox2,
                     confidence = 0.7f,
@@ -287,7 +292,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 3: No trackingId, similar position
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = null,
                     boundingBox = boundingBox3,
                     confidence = 0.8f,
@@ -313,7 +318,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 1: Low confidence, UNKNOWN category
         var confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.4f,
@@ -329,7 +334,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 2: Higher confidence, category identified as ELECTRONICS
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.6f,
@@ -345,7 +350,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 3: Highest confidence, category confirmed
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_1",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.8f,
@@ -371,7 +376,7 @@ class TrackingPipelineIntegrationTest {
         // Frame 1: Good detection
         var confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_good",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.7f,
@@ -380,7 +385,7 @@ class TrackingPipelineIntegrationTest {
                     thumbnail = null,
                     normalizedBoxArea = 0.015f
                 ),
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_noise1",
                     boundingBox = RectF(300f, 300f, 310f, 310f),
                     confidence = 0.3f, // Too low
@@ -389,7 +394,7 @@ class TrackingPipelineIntegrationTest {
                     thumbnail = null,
                     normalizedBoxArea = 0.0001f // Too small
                 ),
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_noise2",
                     boundingBox = RectF(500f, 500f, 502f, 502f),
                     confidence = 0.5f,
@@ -408,7 +413,7 @@ class TrackingPipelineIntegrationTest {
         repeat(2) {
             tracker.processFrame(
                 listOf(
-                    DetectionInfo(
+                    detectionInfo(
                         trackingId = "obj_good",
                         boundingBox = RectF(100f, 100f, 200f, 200f),
                         confidence = 0.7f,
@@ -424,7 +429,7 @@ class TrackingPipelineIntegrationTest {
         // Only the good object should be confirmed
         confirmed = tracker.processFrame(
             listOf(
-                DetectionInfo(
+                detectionInfo(
                     trackingId = "obj_good",
                     boundingBox = RectF(100f, 100f, 200f, 200f),
                     confidence = 0.7f,
@@ -449,7 +454,7 @@ class TrackingPipelineIntegrationTest {
         repeat(3) {
             tracker.processFrame(
                 listOf(
-                    DetectionInfo(
+                    detectionInfo(
                         trackingId = "obj_1",
                         boundingBox = RectF(100f, 100f, 200f, 200f),
                         confidence = 0.6f,
@@ -479,7 +484,7 @@ class TrackingPipelineIntegrationTest {
         repeat(3) {
             tracker.processFrame(
                 listOf(
-                    DetectionInfo(
+                    detectionInfo(
                         trackingId = "obj_1", // Same trackingId
                         boundingBox = RectF(100f, 100f, 200f, 200f),
                         confidence = 0.6f,
@@ -496,5 +501,26 @@ class TrackingPipelineIntegrationTest {
         assertEquals(1, stats.activeCandidates)
         assertEquals(1, stats.confirmedCandidates) // Confirmed again in new session
         assertEquals(3, stats.currentFrame)
+    }
+
+    private fun detectionInfo(
+        trackingId: String?,
+        boundingBox: RectF,
+        confidence: Float,
+        category: ItemCategory,
+        labelText: String,
+        thumbnail: com.scanium.app.model.ImageRef? = null,
+        normalizedBoxArea: Float
+    ): DetectionInfo {
+        val normalizedBoundingBox = boundingBox.toNormalizedRect(TEST_FRAME_SIZE, TEST_FRAME_SIZE)
+        return detectionInfo(
+            trackingId = trackingId,
+            boundingBox = normalizedBoundingBox,
+            confidence = confidence,
+            category = category,
+            labelText = labelText,
+            thumbnail = thumbnail,
+            normalizedBoxArea = normalizedBoxArea
+        )
     }
 }

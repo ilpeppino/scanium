@@ -248,7 +248,7 @@ class ItemsViewModel(
         if (pendingItems.isEmpty()) return
 
         classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
-            val boxArea = aggregatedItem.boundingBox.width * aggregatedItem.boundingBox.height
+            val boxArea = aggregatedItem.boundingBox.area
             val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
             val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
                 result.category

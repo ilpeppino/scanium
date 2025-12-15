@@ -29,7 +29,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.items.ScannedItem
-import com.scanium.app.model.toImageBitmap
+import com.scanium.app.model.ImageRef
+import com.scanium.app.platform.toBitmap
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.domain.ListingCondition
 
@@ -119,15 +120,18 @@ private fun ListingDraftCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                draftState.draft.originalItem.thumbnail.toImageBitmap()?.let { bitmap ->
-                    Image(
-                        bitmap = bitmap,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(96.dp)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentScale = ContentScale.Crop
-                    )
+                draftState.draft.originalItem.thumbnail?.let { ref ->
+                    val bitmap = (ref as? ImageRef.Bytes)?.toBitmap()
+                    if (bitmap != null) {
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(96.dp)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     OutlinedTextField(
