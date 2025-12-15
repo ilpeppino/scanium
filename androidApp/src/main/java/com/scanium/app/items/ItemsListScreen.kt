@@ -25,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.scanium.app.core.image.ImageRef
+import com.scanium.app.model.ImageRef
 import com.scanium.app.media.MediaStoreSaver
 import com.scanium.app.platform.toBitmap
 import kotlinx.coroutines.launch
@@ -276,9 +276,9 @@ private fun ItemRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Thumbnail
-            val thumbnailBitmap = when (val ref = item.thumbnailRef) {
+            val thumbnailBitmap = when (val ref = item.thumbnailRef ?: item.thumbnail) {
                 is ImageRef.Bytes -> ref.toBitmap()
-                else -> item.thumbnail
+                else -> null
             }
 
             thumbnailBitmap?.let { bitmap ->

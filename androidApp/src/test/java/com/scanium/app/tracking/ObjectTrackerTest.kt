@@ -2,6 +2,7 @@ package com.scanium.app.tracking
 
 import android.graphics.RectF
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.platform.toNormalizedRect
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -20,6 +21,10 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class ObjectTrackerTest {
+
+    private companion object {
+        private const val TEST_FRAME_SIZE = 1000f
+    }
 
     private lateinit var tracker: ObjectTracker
     private lateinit var config: TrackerConfig
@@ -554,16 +559,18 @@ class ObjectTrackerTest {
         confidence: Float,
         category: ItemCategory = ItemCategory.FASHION,
         labelText: String = "Test",
-        boxArea: Float = 0.01f
+        boxArea: Float? = null
     ): DetectionInfo {
+        val normalizedBoundingBox = boundingBox.toNormalizedRect(TEST_FRAME_SIZE.toInt(), TEST_FRAME_SIZE.toInt())
+        val normalizedArea = boxArea ?: normalizedBoundingBox.area
         return DetectionInfo(
             trackingId = trackingId,
-            boundingBox = boundingBox,
+            boundingBox = normalizedBoundingBox,
             confidence = confidence,
             category = category,
             labelText = labelText,
             thumbnail = null,
-            normalizedBoxArea = boxArea
+            normalizedBoxArea = normalizedArea
         )
     }
 }

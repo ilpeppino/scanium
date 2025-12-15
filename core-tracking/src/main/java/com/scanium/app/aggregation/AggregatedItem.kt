@@ -97,15 +97,11 @@ data class AggregatedItem(
             labelText = detection.labelText ?: labelText
 
             // Update thumbnail if new one is better quality
-            if (detection.thumbnail != null) {
-                thumbnail = detection.thumbnail
-            }
+            detection.thumbnail?.let { thumbnail = it }
         }
 
         // Always update bounding box to latest position (object may have moved)
-        if (detection.boundingBox != null) {
-            boundingBox = detection.boundingBox
-        }
+        detection.boundingBox?.let { boundingBox = it }
 
         // Update price range (take the wider range if different)
         val newMin = minOf(priceRange.first, detection.priceRange.first)
