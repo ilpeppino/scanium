@@ -80,6 +80,7 @@ class ObjectTracker(
                     newThumbnail = detection.thumbnail,
                     boxArea = detection.normalizedBoxArea
                 )
+                matchedCandidate.boundingBoxNorm = detection.boundingBox
 
                 matchedCandidates.add(matchedCandidate.internalId)
 
@@ -188,6 +189,7 @@ class ObjectTracker(
         return ObjectCandidate(
             internalId = id,
             boundingBox = detection.boundingBox,
+            boundingBoxNorm = detection.boundingBox,
             lastSeenFrame = currentFrame,
             seenCount = 1,
             maxConfidence = detection.confidence,
