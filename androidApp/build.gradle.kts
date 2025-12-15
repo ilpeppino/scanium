@@ -144,6 +144,7 @@ dependencies {
     implementation(project(":core-contracts"))
     implementation(project(":android-ml-mlkit"))
     implementation(project(":android-camera-camerax"))
+    implementation(project(":android-platform-adapters"))
 
     // AndroidX Core
     implementation("androidx.core:core-ktx:1.12.0")
