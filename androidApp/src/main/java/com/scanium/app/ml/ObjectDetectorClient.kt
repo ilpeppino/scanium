@@ -5,6 +5,8 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.platform.toImageRefJpeg
+import com.scanium.app.platform.toNormalizedRect
 import com.scanium.app.tracking.DetectionInfo
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.DetectedObject
@@ -390,17 +392,19 @@ class ObjectDetectorClient {
             // Extract tracking ID (may be null)
             val trackingId = detectedObject.trackingId?.toString()
 
-            // Get bounding box and convert to RectF
+            // Get bounding box and convert to normalized coordinates
             val boundingBox = detectedObject.boundingBox
-            val boundingBoxF = RectF(
-                boundingBox.left.toFloat(),
-                boundingBox.top.toFloat(),
-                boundingBox.right.toFloat(),
-                boundingBox.bottom.toFloat()
-            )
+
+            val labels = detectedObject.labels.mapIndexed { index, label ->
+                LabelWithConfidence(
+                    text = label.text,
+                    confidence = label.confidence,
+                    index = index,
+                )
+            }
 
             // Get best label and confidence
-            val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
+            val bestLabel = labels.maxByOrNull { it.confidence }
             val labelConfidence = bestLabel?.confidence ?: 0f
 
             // CRITICAL: Use effective confidence for objects without classification
@@ -425,23 +429,24 @@ class ObjectDetectorClient {
 
             // Crop thumbnail with rotation for correct display orientation
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
+            val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
+
+            val frameWidth = sourceBitmap?.width ?: fallbackWidth
+            val frameHeight = sourceBitmap?.height ?: fallbackHeight
+            val bboxNorm = boundingBox.toNormalizedRect(frameWidth, frameHeight)
 
             // Calculate normalized area
-            val normalizedBoxArea = calculateNormalizedArea(
-                box = boundingBox,
-                imageWidth = sourceBitmap?.width ?: fallbackWidth,
-                imageHeight = sourceBitmap?.height ?: fallbackHeight
-            )
+            val normalizedBoxArea = bboxNorm.area
 
             Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=$labelConfidence), category=$category, area=$normalizedBoxArea")
 
             DetectionInfo(
                 trackingId = trackingId,
-                boundingBox = boundingBoxF,
+                boundingBox = bboxNorm,
                 confidence = confidence,
                 category = category,
                 labelText = labelText,
-                thumbnail = thumbnail,
+                thumbnail = thumbnailRef,
                 normalizedBoxArea = normalizedBoxArea
             )
         } catch (e: Exception) {
@@ -470,6 +475,7 @@ class ObjectDetectorClient {
 
             // Crop thumbnail from source bitmap with rotation for correct display
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
+            val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
             // Determine category from labels and get confidence
             val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
@@ -497,19 +503,15 @@ class ObjectDetectorClient {
             // Normalize bounding box to 0-1 coordinates for session deduplication
             val imageWidth = (sourceBitmap?.width ?: fallbackWidth).toFloat()
             val imageHeight = (sourceBitmap?.height ?: fallbackHeight).toFloat()
-            val normalizedBox = android.graphics.RectF(
-                boundingBox.left / imageWidth,
-                boundingBox.top / imageHeight,
-                boundingBox.right / imageWidth,
-                boundingBox.bottom / imageHeight
-            )
+            val normalizedBox = boundingBox.toNormalizedRect(imageWidth.toInt(), imageHeight.toInt())
 
             // Generate price range
             val priceRange = PricingEngine.generatePriceRange(category, boxArea)
 
             ScannedItem(
                 id = trackingId,
-                thumbnail = thumbnail,
+                thumbnail = thumbnailRef,
+                thumbnailRef = thumbnailRef,
                 category = category,
                 priceRange = priceRange,
                 confidence = confidence,
@@ -657,6 +659,7 @@ class ObjectDetectorClient {
         return ScannedItem(
             id = candidate.internalId,
             thumbnail = candidate.thumbnail,
+            thumbnailRef = candidate.thumbnail,
             category = candidate.category,
             priceRange = priceRange,
             confidence = candidate.maxConfidence,
