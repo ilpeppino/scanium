@@ -20,7 +20,7 @@ echo ""
 
 ***REMOVED*** Build and install app
 echo "Building and installing app..."
-./gradlew :app:installDebug --quiet
+./gradlew :androidApp:installDebug --quiet
 
 if [ $? -ne 0 ]; then
     echo "ERROR: Build or installation failed"
