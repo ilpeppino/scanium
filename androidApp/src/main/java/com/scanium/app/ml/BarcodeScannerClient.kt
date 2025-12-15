@@ -3,7 +3,7 @@ package com.scanium.app.ml
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
-import com.scanium.app.items.ScannedItem
+import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
@@ -89,6 +89,8 @@ class BarcodeScannerClient {
 
             // Get bounding box
             val boundingBox = barcode.boundingBox ?: Rect(0, 0, 100, 100)
+            val frameWidth = sourceBitmap?.width ?: fallbackWidth
+            val frameHeight = sourceBitmap?.height ?: fallbackHeight
 
             // Crop thumbnail from source bitmap
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
@@ -104,8 +106,8 @@ class BarcodeScannerClient {
             // Calculate normalized bounding box area for pricing
             val boxArea = calculateNormalizedArea(
                 box = boundingBox,
-                imageWidth = sourceBitmap?.width ?: fallbackWidth,
-                imageHeight = sourceBitmap?.height ?: fallbackHeight
+                imageWidth = frameWidth,
+                imageHeight = frameHeight
             )
 
             // Generate price range
@@ -117,7 +119,11 @@ class BarcodeScannerClient {
                 thumbnailRef = thumbnailRef,
                 category = category,
                 priceRange = priceRange,
-                confidence = confidence
+                confidence = confidence,
+                boundingBox = boundingBox.toNormalizedRect(
+                    frameWidth = frameWidth,
+                    frameHeight = frameHeight
+                )
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error converting barcode to item", e)

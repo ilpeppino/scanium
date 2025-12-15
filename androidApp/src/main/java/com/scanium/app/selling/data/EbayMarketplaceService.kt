@@ -1,6 +1,7 @@
 package com.scanium.app.selling.data
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.scanium.app.selling.domain.Listing
 import com.scanium.app.selling.domain.ListingDraft

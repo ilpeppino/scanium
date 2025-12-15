@@ -102,61 +102,33 @@ Scanium follows a **simplified MVVM (Model-View-ViewModel)** architecture with c
 
 ## Module Organization
 
-### Single-Module Architecture
+### Multi-Module Architecture (Android + Portable Core)
 
-The project uses a **single-module** structure for simplicity:
+The app is split into Android UI plus reusable core libraries:
 
 ```
-app/
-├── src/main/
-│   ├── java/com/scanium/app/
-│   │   ├── MainActivity.kt                 # Entry point
-│   │   ├── ScaniumApp.kt                   # Root composable
-│   │   ├── camera/                         # Camera-related code
-│   │   │   ├── CameraScreen.kt            # Camera UI
-│   │   │   ├── CameraXManager.kt          # Camera logic
-│   │   │   ├── DetectionOverlay.kt        # Visual detection overlay
-│   │   │   ├── ModeSwitcher.kt            # Scan mode selector
-│   │   │   └── ScanMode.kt                # Scan mode enum
-│   │   ├── items/                          # Items/detection results
-│   │   │   ├── ScannedItem.kt             # Data model
-│   │   │   ├── ItemsViewModel.kt          # State management
-│   │   │   ├── ItemsListScreen.kt         # List UI
-│   │   │   └── ItemDetailDialog.kt        # Detail dialog
-│   │   ├── ml/                             # Machine learning
-│   │   │   ├── ObjectDetectorClient.kt    # ML Kit wrapper
-│   │   │   ├── DetectionResult.kt         # Overlay data model
-│   │   │   ├── DetectionResponse.kt       # Response wrapper
-│   │   │   ├── ItemCategory.kt            # Category enum
-│   │   │   ├── PricingEngine.kt           # Price logic
-│   │   │   ├── BarcodeScannerClient.kt    # Barcode scanning
-│   │   │   └── DocumentTextRecognitionClient.kt  # OCR
-│   │   ├── tracking/                       # Object tracking & de-duplication
-│   │   │   ├── ObjectCandidate.kt         # Candidate data class
-│   │   │   └── ObjectTracker.kt           # Tracking engine
-│   │   ├── navigation/                     # Navigation
-│   │   │   └── NavGraph.kt                # Navigation setup
-│   │   └── ui/theme/                       # Material 3 theme
-│   │       ├── Color.kt
-│   │       ├── Theme.kt
-│   │       └── Type.kt
-│   ├── AndroidManifest.xml
-│   └── res/                                # Resources
-└── build.gradle.kts
+androidApp/                  # Compose UI, feature orchestration, ML clients
+├── src/main/java/com/scanium/app/
+│   ├── camera/              # Camera screens, overlay, CameraXManager
+│   ├── items/               # Items UI + ItemsViewModel
+│   ├── ml/                  # ML Kit wrappers (object, barcode, OCR), pricing
+│   ├── navigation/          # ScaniumNavGraph + routes
+│   └── ui/                  # Theming and shared components
+android-camera-camerax/      # CameraX helpers shared across features
+android-ml-mlkit/            # ML Kit typealiases/helpers (Android-only)
+android-platform-adapters/   # Rect/Image adapters to portable models (ImageRef, NormalizedRect)
+core-models/                 # Portable data models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
+core-tracking/               # Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
+core-domainpack/, core-scan, core-contracts # Domain pack/config stubs and shared contracts
 ```
 
-**Why Single-Module?**
-- **Simplicity:** Appropriate for PoC/prototype scope
-- **Fast Builds:** No multi-module compilation overhead
-- **Easy Navigation:** All code in one place
-- **Reduced Complexity:** No module dependency management
-
-**Package Organization Rationale:**
-- **Feature-based packages** (`camera/`, `items/`, `ml/`, `tracking/`) for logical grouping
-- **Shared infrastructure** (`navigation/`, `ui/theme/`) in dedicated packages
-- Each package contains related UI, logic, and models together
-- Clear ownership boundaries between features
-- Tracking package provides reusable de-duplication logic across scan modes
+**Key cross-module contracts:**
+- UI and ML clients produce `ScannedItem` instances defined in `core-models` using portable fields:
+  - `thumbnail: ImageRef?` instead of `Bitmap`
+  - `boundingBox: NormalizedRect?` instead of `RectF`
+  - `fullImagePath: String?` for high-res captures
+- Platform adapters (`android-platform-adapters`) normalize `Rect/RectF` via `toNormalizedRect(frameW, frameH)` and convert `Bitmap` to `ImageRef`.
+- Tracking runs in `core-tracking`, consuming portable `NormalizedRect` + `ImageRef` and emitting `AggregatedItem`/`DetectionInfo` back to the Android UI.
 
 ---
 
@@ -311,54 +283,49 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 
 ### 4. Data Layer
 
-**Components:**
-- `ScannedItem` - Detected object data model
-- `ItemCategory` - Category enum with ML Kit mapping
+**Components (portable, shared in `core-models`):**
+- `ScannedItem` - Detected/aggregated item for UI and selling flows
+- `ItemCategory` - Category enum with ML Kit + domain mapping
+- `ImageRef` - Encoded image reference (no Bitmap dependency)
+- `NormalizedRect` - 0-1 bounding boxes used across tracking + UI
 - In-memory state (no persistence)
 
-**Data Models:**
+**Data Models (simplified):**
 
 ```kotlin
 data class ScannedItem(
-    val id: String,                       // Tracking ID
-    val thumbnail: Bitmap?,               // Cropped image
-    val category: ItemCategory,           // Classification
-    val priceRange: Pair<Double, Double>, // EUR prices
-    val confidence: Float,                // Detection confidence (0.0-1.0)
-    val timestamp: Long                   // Detection time
-) {
-    val confidenceLevel: ConfidenceLevel  // LOW/MEDIUM/HIGH
-    val formattedConfidence: String       // "85%"
-    val formattedPriceRange: String       // "€20 - €50"
-}
+    val id: String,
+    val thumbnail: ImageRef?,              // Cropped image (JPEG bytes)
+    val category: ItemCategory,
+    val priceRange: Pair<Double, Double>,  // EUR prices
+    val confidence: Float,                 // Detection confidence (0.0-1.0)
+    val timestamp: Long = System.currentTimeMillis(),
+    val recognizedText: String? = null,
+    val barcodeValue: String? = null,
+    val boundingBox: NormalizedRect? = null, // Normalized via toNormalizedRect(frameW, frameH)
+    val labelText: String? = null,
+    val fullImagePath: String? = null      // High-res capture path
+)
 
 data class ObjectCandidate(
-    val internalId: String,               // Tracking ID or generated UUID
-    var boundingBox: RectF,               // Current bounding box
-    var lastSeenFrame: Long,              // Last observed frame
-    var seenCount: Int = 1,               // Frames observed
-    var maxConfidence: Float = 0f,        // Peak confidence
-    var category: ItemCategory = ItemCategory.UNKNOWN, // Best category
-    var labelText: String = "",           // ML Kit label text
-    var thumbnail: Bitmap? = null,        // Best thumbnail
+    val internalId: String,
+    var boundingBox: NormalizedRect,
+    var lastSeenFrame: Long,
+    var seenCount: Int = 1,
+    var maxConfidence: Float = 0f,
+    var category: ItemCategory = ItemCategory.UNKNOWN,
+    var labelText: String = "",
+    var thumbnail: ImageRef? = null,
     val firstSeenFrame: Long = lastSeenFrame,
-    var averageBoxArea: Float = 0f        // Running average area
-) {
-    fun update(...)
-    fun calculateIoU(...): Float
-    fun distanceTo(...): Float
-}
+    var averageBoxArea: Float = 0f
+)
 
 data class RawDetection(
-    val trackingId: String,               // ML Kit tracking ID
-    val boundingBox: Rect?,               // Object bounding box
-    val labels: List<LabelWithConfidence>,// All classification labels
-    val thumbnail: Bitmap?                // Cropped thumbnail
-) {
-    val bestLabel: LabelWithConfidence?   // Highest confidence label
-    val category: ItemCategory            // Derived category
-    fun getEffectiveConfidence(): Float   // Confidence with fallback
-}
+    val trackingId: String,
+    val boundingBox: Rect?,               // ML Kit coordinates before normalization
+    val labels: List<LabelWithConfidence>,
+    val thumbnail: Bitmap?
+)
 
 enum class ConfidenceLevel(val threshold: Float) {
     LOW(0.0f),

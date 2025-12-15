@@ -153,36 +153,19 @@ The `build.sh` script automatically finds Java 17 on your system across macOS, L
 
 ```
 scanium/
-├── app/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/scanium/app/
-│   │   │   │   ├── camera/
-│   │   │   │   │   ├── CameraScreen.kt
-│   │   │   │   │   ├── CameraXManager.kt
-│   │   │   │   │   ├── DetectionOverlay.kt
-│   │   │   │   │   └── ModeSwitcher.kt
-│   │   │   │   ├── items/
-│   │   │   │   │   ├── ItemsScreen.kt
-│   │   │   │   │   └── ItemsViewModel.kt
-│   │   │   │   ├── ml/
-│   │   │   │   │   ├── DetectedItem.kt
-│   │   │   │   │   ├── ObjectDetectorClient.kt
-│   │   │   │   │   └── PricingEngine.kt
-│   │   │   │   ├── navigation/
-│   │   │   │   │   └── NavGraph.kt
-│   │   │   │   └── MainActivity.kt
-│   │   │   └── AndroidManifest.xml
-│   │   └── res/
-│   └── build.gradle.kts
-├── gradle/
-├── md/                # Documentation folder
-│   ├── architecture/  # Architecture docs
-│   ├── features/      # Feature documentation
-│   ├── testing/       # Test documentation
-│   ├── fixes/         # Bug fix documentation
-│   ├── improvements/  # Enhancement docs
-│   └── debugging/     # Debugging guides
+├── androidApp/                # Compose UI + feature orchestration
+│   ├── camera/                # CameraScreen, CameraXManager, DetectionOverlay
+│   ├── items/                 # ItemsListScreen, ItemDetailDialog, ItemsViewModel
+│   ├── ml/                    # ObjectDetectorClient, BarcodeScannerClient, DocumentTextRecognitionClient, PricingEngine
+│   ├── navigation/            # ScaniumNavGraph + routes
+│   └── ui/                    # Material 3 theme and shared components
+├── android-platform-adapters/ # Bitmap/Rect adapters → ImageRef/NormalizedRect
+├── android-camera-camerax/    # CameraX helpers
+├── android-ml-mlkit/          # ML Kit plumbing
+├── core-models/               # Portable models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
+├── core-tracking/             # Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
+├── core-domainpack/, core-scan/, core-contracts/ # Shared contracts and config stubs
+├── md/                        # Architecture, features, testing, fixes, improvements, debugging
 ├── AGENTS.md
 ├── ROADMAP.md
 └── README.md

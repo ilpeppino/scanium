@@ -8,6 +8,8 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.platform.toImageRefJpeg
 import com.scanium.app.platform.toNormalizedRect
 import com.scanium.app.tracking.DetectionInfo
+import com.scanium.android.platform.adapters.toImageRefJpeg
+import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.DetectedObject
 import com.google.mlkit.vision.objects.ObjectDetection
@@ -472,6 +474,8 @@ class ObjectDetectorClient {
 
             // Get bounding box
             val boundingBox = detectedObject.boundingBox
+            val frameWidth = sourceBitmap?.width ?: fallbackWidth
+            val frameHeight = sourceBitmap?.height ?: fallbackHeight
 
             // Crop thumbnail from source bitmap with rotation for correct display
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
@@ -496,8 +500,8 @@ class ObjectDetectorClient {
             // Calculate normalized bounding box area for pricing
             val boxArea = calculateNormalizedArea(
                 box = boundingBox,
-                imageWidth = sourceBitmap?.width ?: fallbackWidth,
-                imageHeight = sourceBitmap?.height ?: fallbackHeight
+                imageWidth = frameWidth,
+                imageHeight = frameHeight
             )
 
             // Normalize bounding box to 0-1 coordinates for session deduplication
