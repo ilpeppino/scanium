@@ -102,61 +102,33 @@ Scanium follows a **simplified MVVM (Model-View-ViewModel)** architecture with c
 
 ***REMOVED******REMOVED*** Module Organization
 
-***REMOVED******REMOVED******REMOVED*** Single-Module Architecture
+***REMOVED******REMOVED******REMOVED*** Multi-Module Architecture (Android + Portable Core)
 
-The project uses a **single-module** structure for simplicity:
+The app is split into Android UI plus reusable core libraries:
 
 ```
-app/
-├── src/main/
-│   ├── java/com/scanium/app/
-│   │   ├── MainActivity.kt                 ***REMOVED*** Entry point
-│   │   ├── ScaniumApp.kt                   ***REMOVED*** Root composable
-│   │   ├── camera/                         ***REMOVED*** Camera-related code
-│   │   │   ├── CameraScreen.kt            ***REMOVED*** Camera UI
-│   │   │   ├── CameraXManager.kt          ***REMOVED*** Camera logic
-│   │   │   ├── DetectionOverlay.kt        ***REMOVED*** Visual detection overlay
-│   │   │   ├── ModeSwitcher.kt            ***REMOVED*** Scan mode selector
-│   │   │   └── ScanMode.kt                ***REMOVED*** Scan mode enum
-│   │   ├── items/                          ***REMOVED*** Items/detection results
-│   │   │   ├── ScannedItem.kt             ***REMOVED*** Data model
-│   │   │   ├── ItemsViewModel.kt          ***REMOVED*** State management
-│   │   │   ├── ItemsListScreen.kt         ***REMOVED*** List UI
-│   │   │   └── ItemDetailDialog.kt        ***REMOVED*** Detail dialog
-│   │   ├── ml/                             ***REMOVED*** Machine learning
-│   │   │   ├── ObjectDetectorClient.kt    ***REMOVED*** ML Kit wrapper
-│   │   │   ├── DetectionResult.kt         ***REMOVED*** Overlay data model
-│   │   │   ├── DetectionResponse.kt       ***REMOVED*** Response wrapper
-│   │   │   ├── ItemCategory.kt            ***REMOVED*** Category enum
-│   │   │   ├── PricingEngine.kt           ***REMOVED*** Price logic
-│   │   │   ├── BarcodeScannerClient.kt    ***REMOVED*** Barcode scanning
-│   │   │   └── DocumentTextRecognitionClient.kt  ***REMOVED*** OCR
-│   │   ├── tracking/                       ***REMOVED*** Object tracking & de-duplication
-│   │   │   ├── ObjectCandidate.kt         ***REMOVED*** Candidate data class
-│   │   │   └── ObjectTracker.kt           ***REMOVED*** Tracking engine
-│   │   ├── navigation/                     ***REMOVED*** Navigation
-│   │   │   └── NavGraph.kt                ***REMOVED*** Navigation setup
-│   │   └── ui/theme/                       ***REMOVED*** Material 3 theme
-│   │       ├── Color.kt
-│   │       ├── Theme.kt
-│   │       └── Type.kt
-│   ├── AndroidManifest.xml
-│   └── res/                                ***REMOVED*** Resources
-└── build.gradle.kts
+androidApp/                  ***REMOVED*** Compose UI, feature orchestration, ML clients
+├── src/main/java/com/scanium/app/
+│   ├── camera/              ***REMOVED*** Camera screens, overlay, CameraXManager
+│   ├── items/               ***REMOVED*** Items UI + ItemsViewModel
+│   ├── ml/                  ***REMOVED*** ML Kit wrappers (object, barcode, OCR), pricing
+│   ├── navigation/          ***REMOVED*** ScaniumNavGraph + routes
+│   └── ui/                  ***REMOVED*** Theming and shared components
+android-camera-camerax/      ***REMOVED*** CameraX helpers shared across features
+android-ml-mlkit/            ***REMOVED*** ML Kit typealiases/helpers (Android-only)
+android-platform-adapters/   ***REMOVED*** Rect/Image adapters to portable models (ImageRef, NormalizedRect)
+core-models/                 ***REMOVED*** Portable data models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
+core-tracking/               ***REMOVED*** Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
+core-domainpack/, core-scan, core-contracts ***REMOVED*** Domain pack/config stubs and shared contracts
 ```
 
-**Why Single-Module?**
-- **Simplicity:** Appropriate for PoC/prototype scope
-- **Fast Builds:** No multi-module compilation overhead
-- **Easy Navigation:** All code in one place
-- **Reduced Complexity:** No module dependency management
-
-**Package Organization Rationale:**
-- **Feature-based packages** (`camera/`, `items/`, `ml/`, `tracking/`) for logical grouping
-- **Shared infrastructure** (`navigation/`, `ui/theme/`) in dedicated packages
-- Each package contains related UI, logic, and models together
-- Clear ownership boundaries between features
-- Tracking package provides reusable de-duplication logic across scan modes
+**Key cross-module contracts:**
+- UI and ML clients produce `ScannedItem` instances defined in `core-models` using portable fields:
+  - `thumbnail: ImageRef?` instead of `Bitmap`
+  - `boundingBox: NormalizedRect?` instead of `RectF`
+  - `fullImagePath: String?` for high-res captures
+- Platform adapters (`android-platform-adapters`) normalize `Rect/RectF` via `toNormalizedRect(frameW, frameH)` and convert `Bitmap` to `ImageRef`.
+- Tracking runs in `core-tracking`, consuming portable `NormalizedRect` + `ImageRef` and emitting `AggregatedItem`/`DetectionInfo` back to the Android UI.
 
 ---
 
@@ -311,54 +283,49 @@ val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
 
 ***REMOVED******REMOVED******REMOVED*** 4. Data Layer
 
-**Components:**
-- `ScannedItem` - Detected object data model
-- `ItemCategory` - Category enum with ML Kit mapping
+**Components (portable, shared in `core-models`):**
+- `ScannedItem` - Detected/aggregated item for UI and selling flows
+- `ItemCategory` - Category enum with ML Kit + domain mapping
+- `ImageRef` - Encoded image reference (no Bitmap dependency)
+- `NormalizedRect` - 0-1 bounding boxes used across tracking + UI
 - In-memory state (no persistence)
 
-**Data Models:**
+**Data Models (simplified):**
 
 ```kotlin
 data class ScannedItem(
-    val id: String,                       // Tracking ID
-    val thumbnail: Bitmap?,               // Cropped image
-    val category: ItemCategory,           // Classification
-    val priceRange: Pair<Double, Double>, // EUR prices
-    val confidence: Float,                // Detection confidence (0.0-1.0)
-    val timestamp: Long                   // Detection time
-) {
-    val confidenceLevel: ConfidenceLevel  // LOW/MEDIUM/HIGH
-    val formattedConfidence: String       // "85%"
-    val formattedPriceRange: String       // "€20 - €50"
-}
+    val id: String,
+    val thumbnail: ImageRef?,              // Cropped image (JPEG bytes)
+    val category: ItemCategory,
+    val priceRange: Pair<Double, Double>,  // EUR prices
+    val confidence: Float,                 // Detection confidence (0.0-1.0)
+    val timestamp: Long = System.currentTimeMillis(),
+    val recognizedText: String? = null,
+    val barcodeValue: String? = null,
+    val boundingBox: NormalizedRect? = null, // Normalized via toNormalizedRect(frameW, frameH)
+    val labelText: String? = null,
+    val fullImagePath: String? = null      // High-res capture path
+)
 
 data class ObjectCandidate(
-    val internalId: String,               // Tracking ID or generated UUID
-    var boundingBox: RectF,               // Current bounding box
-    var lastSeenFrame: Long,              // Last observed frame
-    var seenCount: Int = 1,               // Frames observed
-    var maxConfidence: Float = 0f,        // Peak confidence
-    var category: ItemCategory = ItemCategory.UNKNOWN, // Best category
-    var labelText: String = "",           // ML Kit label text
-    var thumbnail: Bitmap? = null,        // Best thumbnail
+    val internalId: String,
+    var boundingBox: NormalizedRect,
+    var lastSeenFrame: Long,
+    var seenCount: Int = 1,
+    var maxConfidence: Float = 0f,
+    var category: ItemCategory = ItemCategory.UNKNOWN,
+    var labelText: String = "",
+    var thumbnail: ImageRef? = null,
     val firstSeenFrame: Long = lastSeenFrame,
-    var averageBoxArea: Float = 0f        // Running average area
-) {
-    fun update(...)
-    fun calculateIoU(...): Float
-    fun distanceTo(...): Float
-}
+    var averageBoxArea: Float = 0f
+)
 
 data class RawDetection(
-    val trackingId: String,               // ML Kit tracking ID
-    val boundingBox: Rect?,               // Object bounding box
-    val labels: List<LabelWithConfidence>,// All classification labels
-    val thumbnail: Bitmap?                // Cropped thumbnail
-) {
-    val bestLabel: LabelWithConfidence?   // Highest confidence label
-    val category: ItemCategory            // Derived category
-    fun getEffectiveConfidence(): Float   // Confidence with fallback
-}
+    val trackingId: String,
+    val boundingBox: Rect?,               // ML Kit coordinates before normalization
+    val labels: List<LabelWithConfidence>,
+    val thumbnail: Bitmap?
+)
 
 enum class ConfidenceLevel(val threshold: Float) {
     LOW(0.0f),

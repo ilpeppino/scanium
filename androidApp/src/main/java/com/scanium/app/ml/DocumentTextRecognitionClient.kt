@@ -101,7 +101,11 @@ class DocumentTextRecognitionClient {
                 thumbnailRef = thumbnailRef,
                 category = ItemCategory.DOCUMENT,
                 priceRange = priceRange,
-                recognizedText = fullText
+                recognizedText = fullText,
+                boundingBox = boundingBox?.toNormalizedRect(
+                    frameWidth = sourceBitmap?.width ?: image.width,
+                    frameHeight = sourceBitmap?.height ?: image.height
+                )
             )
 
             Log.d(TAG, "Created document item with ${fullText.length} characters")
