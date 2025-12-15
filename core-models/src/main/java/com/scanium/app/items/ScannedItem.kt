@@ -1,16 +1,20 @@
 package com.scanium.app.items
 
-import android.graphics.Bitmap
-import android.graphics.RectF
-import android.net.Uri
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.model.ImageRef
+import com.scanium.app.model.NormalizedRect
 import java.util.UUID
 
 /**
  * Represents a detected object from the camera with pricing information.
  *
+ * Uses portable types for cross-platform compatibility:
+ * - ImageRef instead of Bitmap
+ * - NormalizedRect instead of RectF
+ * - String path instead of Uri
+ *
  * @param id Stable identifier (ML Kit tracking ID or generated UUID)
- * @param thumbnail Cropped image of the detected object
+ * @param thumbnail Cropped image of the detected object (platform-agnostic)
  * @param category Classified category
  * @param priceRange Price range in EUR (low to high)
  * @param confidence Detection confidence score (0.0 to 1.0)
@@ -19,23 +23,23 @@ import java.util.UUID
  * @param barcodeValue Barcode value (for BARCODE items)
  * @param boundingBox Normalized bounding box position (0-1 coordinates)
  * @param labelText ML Kit classification label (if available)
- * @param fullImageUri Optional URI to higher quality image (for listing purposes)
+ * @param fullImagePath Optional path to higher quality image (for listing purposes)
  * @param listingStatus Current eBay listing status
  * @param listingId eBay listing ID (if posted)
  * @param listingUrl External URL to view the listing (if posted)
  */
 data class ScannedItem(
     val id: String = UUID.randomUUID().toString(),
-    val thumbnail: Bitmap? = null,
+    val thumbnail: ImageRef? = null,
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
     val confidence: Float = 0.0f,
     val timestamp: Long = System.currentTimeMillis(),
     val recognizedText: String? = null,
     val barcodeValue: String? = null,
-    val boundingBox: RectF? = null,
+    val boundingBox: NormalizedRect? = null,
     val labelText: String? = null,
-    val fullImageUri: Uri? = null,
+    val fullImagePath: String? = null,
     val listingStatus: ItemListingStatus = ItemListingStatus.NOT_LISTED,
     val listingId: String? = null,
     val listingUrl: String? = null
