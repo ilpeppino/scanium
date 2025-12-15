@@ -547,6 +547,7 @@ class ObjectDetectorClient {
 
             DetectionResult(
                 boundingBox = boundingBox,
+                bboxNorm = boundingBox.toNormalizedRect(imageWidth, imageHeight),
                 category = category,
                 priceRange = priceRange,
                 confidence = confidence,
