@@ -97,9 +97,7 @@ data class AggregatedItem(
             labelText = detection.labelText ?: labelText
 
             // Update thumbnail if new one is better quality
-            if (detection.thumbnail != null) {
-                thumbnail = detection.thumbnail
-            }
+            detection.thumbnail?.let { thumbnail = it }
         }
 
         // Always update bounding box to latest position (object may have moved)
