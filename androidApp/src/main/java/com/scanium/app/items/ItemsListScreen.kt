@@ -20,13 +20,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.scanium.app.media.MediaStoreSaver
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.scanium.app.core.image.ImageRef
+import com.scanium.app.media.MediaStoreSaver
+import com.scanium.app.platform.toBitmap
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -274,7 +276,12 @@ private fun ItemRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Thumbnail
-            item.thumbnail?.let { bitmap ->
+            val thumbnailBitmap = when (val ref = item.thumbnailRef) {
+                is ImageRef.Bytes -> ref.toBitmap()
+                else -> item.thumbnail
+            }
+
+            thumbnailBitmap?.let { bitmap ->
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = "Item thumbnail",

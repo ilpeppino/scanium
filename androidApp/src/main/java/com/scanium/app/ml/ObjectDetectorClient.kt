@@ -5,6 +5,8 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.platform.toImageRefJpeg
+import com.scanium.app.platform.toNormalizedRect
 import com.scanium.app.tracking.DetectionInfo
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.objects.DetectedObject
@@ -399,8 +401,16 @@ class ObjectDetectorClient {
                 boundingBox.bottom.toFloat()
             )
 
+            val labels = detectedObject.labels.mapIndexed { index, label ->
+                LabelWithConfidence(
+                    text = label.text,
+                    confidence = label.confidence,
+                    index = index,
+                )
+            }
+
             // Get best label and confidence
-            val bestLabel = detectedObject.labels.maxByOrNull { it.confidence }
+            val bestLabel = labels.maxByOrNull { it.confidence }
             val labelConfidence = bestLabel?.confidence ?: 0f
 
             // CRITICAL: Use effective confidence for objects without classification
@@ -426,12 +436,19 @@ class ObjectDetectorClient {
             // Crop thumbnail with rotation for correct display orientation
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
 
-            // Calculate normalized area
-            val normalizedBoxArea = calculateNormalizedArea(
-                box = boundingBox,
-                imageWidth = sourceBitmap?.width ?: fallbackWidth,
-                imageHeight = sourceBitmap?.height ?: fallbackHeight
+            val frameWidth = sourceBitmap?.width ?: fallbackWidth
+            val frameHeight = sourceBitmap?.height ?: fallbackHeight
+            val bboxNorm = boundingBox.toNormalizedRect(frameWidth, frameHeight)
+            val rawDetection = RawDetection(
+                trackingId = trackingId ?: "",
+                boundingBox = boundingBox,
+                bboxNorm = bboxNorm,
+                labels = labels,
+                thumbnail = thumbnail,
             )
+
+            // Calculate normalized area
+            val normalizedBoxArea = rawDetection.getNormalizedArea(frameWidth, frameHeight)
 
             Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=$labelConfidence), category=$category, area=$normalizedBoxArea")
 
@@ -510,6 +527,7 @@ class ObjectDetectorClient {
             ScannedItem(
                 id = trackingId,
                 thumbnail = thumbnail,
+                thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85),
                 category = category,
                 priceRange = priceRange,
                 confidence = confidence,
@@ -657,6 +675,7 @@ class ObjectDetectorClient {
         return ScannedItem(
             id = candidate.internalId,
             thumbnail = candidate.thumbnail,
+            thumbnailRef = candidate.thumbnail?.toImageRefJpeg(quality = 85),
             category = candidate.category,
             priceRange = priceRange,
             confidence = candidate.maxConfidence,
