@@ -2,7 +2,8 @@ package com.scanium.app.ml.classification
 
 import android.util.Log
 import com.scanium.app.aggregation.AggregatedItem
-import com.scanium.app.model.toBitmap
+import com.scanium.app.model.ImageRef
+import com.scanium.app.platform.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -222,7 +223,10 @@ class ClassificationOrchestrator(
                 delay(delayMs)
             }
 
-            val result = item.thumbnail?.toBitmap()?.let { classifier.classifySingle(it) }
+            val result = when (val thumbnail = item.thumbnail) {
+                is ImageRef.Bytes -> classifier.classifySingle(thumbnail.toBitmap())
+                else -> null
+            }
 
             when {
                 result == null -> {

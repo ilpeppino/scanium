@@ -1,6 +1,7 @@
 package com.scanium.app.ml
 
 import android.graphics.Rect
+import com.scanium.app.core.geometry.NormalizedRect
 
 /**
  * Represents a real-time object detection result with bounding box and metadata.
@@ -14,6 +15,7 @@ import android.graphics.Rect
  */
 data class DetectionResult(
     val boundingBox: Rect,
+    val bboxNorm: NormalizedRect? = null,
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
     val confidence: Float,

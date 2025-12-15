@@ -2,6 +2,7 @@ package com.scanium.app.ml
 
 import android.graphics.Bitmap
 import android.graphics.Rect
+import com.scanium.app.core.geometry.NormalizedRect
 
 /**
  * Represents raw detection data from ML Kit before conversion to ScannedItem.
@@ -15,6 +16,7 @@ import android.graphics.Rect
 data class RawDetection(
     val trackingId: String,
     val boundingBox: Rect?,
+    val bboxNorm: NormalizedRect? = null,
     val labels: List<LabelWithConfidence>,
     val thumbnail: Bitmap?
 ) {
