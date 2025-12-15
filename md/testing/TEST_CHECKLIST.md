@@ -2,8 +2,9 @@
 
 ## Build & Deploy
 - [x] Code changes implemented
-- [x] Build successful: `./gradlew clean assembleDebug`
-- [ ] Install on device: `adb install -r app/build/outputs/apk/debug/app-debug.apk`
+- [x] Push to `main` branch (CI builds APK automatically)
+- [ ] Download `scanium-app-debug-apk` artifact from GitHub Actions (see `docs/CI_TESTING.md`)
+- [ ] Install APK on device (enable "Install unknown apps" if needed)
 
 ## Expected Log Output (Success Case)
 
