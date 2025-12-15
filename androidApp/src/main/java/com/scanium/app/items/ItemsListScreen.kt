@@ -24,9 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.scanium.app.model.ImageRef
 import com.scanium.app.media.MediaStoreSaver
-import com.scanium.app.platform.toBitmap
+import com.scanium.app.model.ImageRef
+import com.scanium.app.model.toBitmap
+import com.scanium.app.model.toImageBitmap
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -86,10 +87,10 @@ fun ItemsListScreen(
                     // Get selected items with their images (prefer high-res URI, fallback to thumbnail)
                     val selectedItems = items.filter { selectedIds.contains(it.id) }
                     val imagesToSave = selectedItems.mapNotNull { item ->
-                        val uri = item.fullImagePath?.let(Uri::parse)
-                        val bitmap = item.thumbnail.toBitmap()
-                        if (uri != null || bitmap != null) {
-                            Triple(item.id, uri, bitmap)
+                        val uri = item.fullImagePath?.let(Uri::parse) ?: item.fullImageUri
+                        val imageRef = item.thumbnailRef ?: item.thumbnail
+                        if (uri != null || imageRef != null) {
+                            Triple(item.id, uri, imageRef)
                         } else null
                     }
 
@@ -275,10 +276,7 @@ private fun ItemRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Thumbnail
-            val thumbnailBitmap = when (val ref = item.thumbnailRef ?: item.thumbnail) {
-                is ImageRef.Bytes -> ref.toBitmap()
-                else -> null
-            }
+            val thumbnailBitmap = (item.thumbnailRef ?: item.thumbnail).toImageBitmap()
 
             thumbnailBitmap?.let { bitmap ->
                 Image(

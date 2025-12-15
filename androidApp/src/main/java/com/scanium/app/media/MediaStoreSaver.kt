@@ -9,8 +9,8 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import com.scanium.app.model.ImageRef
-import com.scanium.app.platform.toBitmap
-import com.scanium.app.platform.toImageRefJpeg
+import com.scanium.android.platform.adapters.toBitmap
+import com.scanium.android.platform.adapters.toImageRefJpeg
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
