@@ -3,8 +3,10 @@ package com.scanium.app.camera
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.min
@@ -98,11 +100,51 @@ object ImageUtils {
                 bitmap
             }
 
-            Log.d(TAG, "Created thumbnail: ${scaledBitmap.width}x${scaledBitmap.height} from ${imageWidth}x${imageHeight} (sample: $sampleSize)")
-            scaledBitmap
+            val rotationDegrees = readExifRotation(context, uri)
+            val finalBitmap = if (rotationDegrees != 0) {
+                val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+                Bitmap.createBitmap(
+                    scaledBitmap,
+                    0,
+                    0,
+                    scaledBitmap.width,
+                    scaledBitmap.height,
+                    matrix,
+                    true
+                ).also {
+                    if (it != scaledBitmap) {
+                        scaledBitmap.recycle()
+                    }
+                }
+            } else {
+                scaledBitmap
+            }
+
+            Log.d(
+                TAG,
+                "Created thumbnail: ${finalBitmap.width}x${finalBitmap.height} from ${imageWidth}x${imageHeight} (sample: $sampleSize, rotation: $rotationDegrees)"
+            )
+            finalBitmap
         } catch (e: Exception) {
             Log.e(TAG, "Failed to create thumbnail from URI: $uri", e)
             null
+        }
+    }
+
+    private fun readExifRotation(context: Context, uri: Uri): Int {
+        return runCatching {
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val exif = ExifInterface(inputStream)
+                when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_90, ExifInterface.ORIENTATION_TRANSPOSE -> 90
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                    ExifInterface.ORIENTATION_ROTATE_270, ExifInterface.ORIENTATION_TRANSVERSE -> 270
+                    else -> 0
+                }
+            } ?: 0
+        }.getOrElse { exception ->
+            Log.w(TAG, "Unable to read EXIF rotation for $uri", exception)
+            0
         }
     }
 }
