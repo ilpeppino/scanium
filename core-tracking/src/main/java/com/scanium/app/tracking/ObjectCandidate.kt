@@ -1,8 +1,9 @@
 package com.scanium.app.tracking
 
-import android.graphics.Bitmap
-import android.graphics.RectF
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.model.ImageRef
+import com.scanium.app.model.NormalizedRect
+import kotlin.math.sqrt
 
 /**
  * Represents a candidate object being tracked across multiple frames.
@@ -11,7 +12,7 @@ import com.scanium.app.ml.ItemCategory
  * when an object should be promoted to a confirmed ScannedItem.
  *
  * @property internalId Stable identifier for this candidate (ML Kit trackingId or generated)
- * @property boundingBox Current bounding box of the object
+ * @property boundingBox Current bounding box of the object (normalized coordinates)
  * @property lastSeenFrame Frame number when this candidate was last observed
  * @property seenCount Number of frames this candidate has been detected in
  * @property maxConfidence Maximum label confidence observed across all frames
@@ -23,13 +24,13 @@ import com.scanium.app.ml.ItemCategory
  */
 data class ObjectCandidate(
     val internalId: String,
-    var boundingBox: RectF,
+    var boundingBox: NormalizedRect,
     var lastSeenFrame: Long,
     var seenCount: Int = 1,
     var maxConfidence: Float = 0f,
     var category: ItemCategory = ItemCategory.UNKNOWN,
     var labelText: String = "",
-    var thumbnail: Bitmap? = null,
+    var thumbnail: ImageRef? = null,
     val firstSeenFrame: Long = lastSeenFrame,
     var averageBoxArea: Float = 0f
 ) {
@@ -37,12 +38,12 @@ data class ObjectCandidate(
      * Update this candidate with new detection information from the current frame.
      */
     fun update(
-        newBoundingBox: RectF,
+        newBoundingBox: NormalizedRect,
         frameNumber: Long,
         confidence: Float,
         newCategory: ItemCategory,
         newLabelText: String,
-        newThumbnail: Bitmap?,
+        newThumbnail: ImageRef?,
         boxArea: Float
     ) {
         boundingBox = newBoundingBox
@@ -57,7 +58,6 @@ data class ObjectCandidate(
 
             // Update thumbnail when we get better confidence
             if (newThumbnail != null) {
-                thumbnail?.recycle()
                 thumbnail = newThumbnail
             }
         }
@@ -71,37 +71,45 @@ data class ObjectCandidate(
      */
     fun getCenterPoint(): Pair<Float, Float> {
         return Pair(
-            boundingBox.centerX(),
-            boundingBox.centerY()
+            (boundingBox.left + boundingBox.right) / 2f,
+            (boundingBox.top + boundingBox.bottom) / 2f
         )
     }
 
     /**
      * Calculate Euclidean distance to another bounding box center.
      */
-    fun distanceTo(otherBox: RectF): Float {
+    fun distanceTo(otherBox: NormalizedRect): Float {
         val (cx1, cy1) = getCenterPoint()
-        val cx2 = otherBox.centerX()
-        val cy2 = otherBox.centerY()
+        val cx2 = (otherBox.left + otherBox.right) / 2f
+        val cy2 = (otherBox.top + otherBox.bottom) / 2f
 
         val dx = cx1 - cx2
         val dy = cy1 - cy2
 
-        return kotlin.math.sqrt(dx * dx + dy * dy)
+        return sqrt(dx * dx + dy * dy)
     }
 
     /**
      * Calculate Intersection over Union (IoU) with another bounding box.
      */
-    fun calculateIoU(otherBox: RectF): Float {
-        val intersection = RectF()
-        if (!intersection.setIntersect(boundingBox, otherBox)) {
+    fun calculateIoU(otherBox: NormalizedRect): Float {
+        // Calculate intersection rectangle
+        val intersectLeft = maxOf(boundingBox.left, otherBox.left)
+        val intersectTop = maxOf(boundingBox.top, otherBox.top)
+        val intersectRight = minOf(boundingBox.right, otherBox.right)
+        val intersectBottom = minOf(boundingBox.bottom, otherBox.bottom)
+
+        // Check if there's no intersection
+        if (intersectLeft >= intersectRight || intersectTop >= intersectBottom) {
             return 0f
         }
 
-        val intersectionArea = intersection.width() * intersection.height()
-        val unionArea = boundingBox.width() * boundingBox.height() +
-                otherBox.width() * otherBox.height() - intersectionArea
+        val intersectionWidth = intersectRight - intersectLeft
+        val intersectionHeight = intersectBottom - intersectTop
+        val intersectionArea = intersectionWidth * intersectionHeight
+
+        val unionArea = boundingBox.area + otherBox.area - intersectionArea
 
         return if (unionArea > 0) intersectionArea / unionArea else 0f
     }

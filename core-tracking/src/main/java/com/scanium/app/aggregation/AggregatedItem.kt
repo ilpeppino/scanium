@@ -1,9 +1,9 @@
 package com.scanium.app.aggregation
 
-import android.graphics.Bitmap
-import android.graphics.RectF
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.model.ImageRef
+import com.scanium.app.model.NormalizedRect
 
 /**
  * Represents a unique physical object aggregated from multiple detections.
@@ -22,7 +22,7 @@ import com.scanium.app.ml.ItemCategory
  * @property aggregatedId Stable unique identifier for this aggregated item
  * @property category Item category (must match for merging)
  * @property labelText Primary label text (from highest confidence detection)
- * @property boundingBox Current bounding box (updated on merge)
+ * @property boundingBox Current bounding box (updated on merge, normalized coordinates)
  * @property thumbnail Best thumbnail image captured
  * @property maxConfidence Highest confidence seen across all detections
  * @property averageConfidence Running average of confidence scores
@@ -37,8 +37,8 @@ data class AggregatedItem(
     val aggregatedId: String,
     var category: ItemCategory,
     var labelText: String,
-    var boundingBox: RectF,
-    var thumbnail: Bitmap?,
+    var boundingBox: NormalizedRect,
+    var thumbnail: ImageRef?,
     var maxConfidence: Float,
     var averageConfidence: Float,
     var priceRange: Pair<Double, Double>,
@@ -98,7 +98,6 @@ data class AggregatedItem(
 
             // Update thumbnail if new one is better quality
             if (detection.thumbnail != null) {
-                thumbnail?.recycle()
                 thumbnail = detection.thumbnail
             }
         }
@@ -121,14 +120,17 @@ data class AggregatedItem(
      * Calculate the center point of the bounding box.
      */
     fun getCenterPoint(): Pair<Float, Float> {
-        return Pair(boundingBox.centerX(), boundingBox.centerY())
+        return Pair(
+            (boundingBox.left + boundingBox.right) / 2f,
+            (boundingBox.top + boundingBox.bottom) / 2f
+        )
     }
 
     /**
      * Get normalized bounding box area.
      */
     fun getBoxArea(): Float {
-        return boundingBox.width() * boundingBox.height()
+        return boundingBox.area
     }
 
     /**
@@ -143,9 +145,9 @@ data class AggregatedItem(
 
     /**
      * Cleanup resources (call before removing from memory).
+     * Note: ImageRef is immutable and doesn't require explicit cleanup.
      */
     fun cleanup() {
-        thumbnail?.recycle()
         thumbnail = null
     }
 }

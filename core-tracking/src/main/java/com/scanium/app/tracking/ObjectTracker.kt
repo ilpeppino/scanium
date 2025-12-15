@@ -1,10 +1,10 @@
 package com.scanium.app.tracking
 
-import android.graphics.Bitmap
-import android.graphics.RectF
-import android.util.Log
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.model.ImageRef
+import com.scanium.app.model.NormalizedRect
 import java.util.UUID
+import kotlin.math.sqrt
 
 /**
  * Tracks detected objects across multiple frames to reduce duplicates and ensure stable tracking.
@@ -19,9 +19,11 @@ import java.util.UUID
  * - Automatic expiry of stale candidates
  *
  * @property config Configuration parameters for tracking behavior
+ * @property logger Platform-specific logger implementation
  */
 class ObjectTracker(
-    private val config: TrackerConfig = TrackerConfig()
+    private val config: TrackerConfig = TrackerConfig(),
+    private val logger: Logger = Logger.NONE
 ) {
     companion object {
         private const val TAG = "ObjectTracker"
@@ -44,18 +46,18 @@ class ObjectTracker(
      */
     fun processFrame(detections: List<DetectionInfo>): List<ObjectCandidate> {
         currentFrame++
-        Log.i(TAG, ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}")
+        logger.i(TAG, ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}")
 
         val newlyConfirmed = mutableListOf<ObjectCandidate>()
         val matchedCandidates = mutableSetOf<String>()
 
         // Process each detection
         for ((index, detection) in detections.withIndex()) {
-            Log.i(TAG, "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}")
+            logger.i(TAG, "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}")
 
             // Skip if bounding box is too small (hard filter)
             if (detection.normalizedBoxArea < config.minBoxArea) {
-                Log.i(TAG, "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})")
+                logger.i(TAG, "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})")
                 continue
             }
 
@@ -81,14 +83,14 @@ class ObjectTracker(
 
                 matchedCandidates.add(matchedCandidate.internalId)
 
-                Log.i(TAG, "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}")
+                logger.i(TAG, "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}")
 
                 // Check if it just became confirmed
                 if (!wasConfirmed && isConfirmed(matchedCandidate)) {
                     if (!confirmedIds.contains(matchedCandidate.internalId)) {
                         confirmedIds.add(matchedCandidate.internalId)
                         newlyConfirmed.add(matchedCandidate)
-                        Log.i(TAG, "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames")
+                        logger.i(TAG, "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames")
                     }
                 }
             } else {
@@ -97,14 +99,14 @@ class ObjectTracker(
                 candidates[newCandidate.internalId] = newCandidate
                 matchedCandidates.add(newCandidate.internalId)
 
-                Log.i(TAG, "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})")
+                logger.i(TAG, "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})")
 
                 // Check if it's immediately confirmed (rare, but possible with minFramesToConfirm=1)
                 if (isConfirmed(newCandidate)) {
                     if (!confirmedIds.contains(newCandidate.internalId)) {
                         confirmedIds.add(newCandidate.internalId)
                         newlyConfirmed.add(newCandidate)
-                        Log.i(TAG, "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}")
+                        logger.i(TAG, "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}")
                     }
                 }
             }
@@ -113,7 +115,7 @@ class ObjectTracker(
         // Remove stale candidates
         removeExpiredCandidates(matchedCandidates)
 
-        Log.i(TAG, ">>> processFrame END: returning ${newlyConfirmed.size} newly confirmed candidates")
+        logger.i(TAG, ">>> processFrame END: returning ${newlyConfirmed.size} newly confirmed candidates")
         return newlyConfirmed
     }
 
@@ -149,9 +151,9 @@ class ObjectTracker(
             // Calculate normalized center distance
             // Use diagonal of detection box as normalization factor (more robust than fixed 1000px)
             val distance = candidate.distanceTo(detection.boundingBox)
-            val detectionBoxDiagonal = kotlin.math.sqrt(
-                (detection.boundingBox.width() * detection.boundingBox.width() +
-                detection.boundingBox.height() * detection.boundingBox.height()).toDouble()
+            val detectionBoxDiagonal = sqrt(
+                (detection.boundingBox.width * detection.boundingBox.width +
+                detection.boundingBox.height * detection.boundingBox.height).toDouble()
             ).toFloat()
             val normalizedDistance = if (detectionBoxDiagonal > 0) {
                 (distance / detectionBoxDiagonal).coerceIn(0f, 2f) / 2f // Normalize to 0-1 range
@@ -170,7 +172,7 @@ class ObjectTracker(
         }
 
         if (bestMatch != null) {
-            Log.d(TAG, "Spatial match found: ${bestMatch.internalId} (score=$bestScore)")
+            logger.d(TAG, "Spatial match found: ${bestMatch.internalId} (score=$bestScore)")
         }
 
         return bestMatch
@@ -205,7 +207,9 @@ class ObjectTracker(
     private fun generateStableId(detection: DetectionInfo): String {
         // Create a hash based on initial position and category
         val box = detection.boundingBox
-        val positionHash = "${box.centerX().toInt()}_${box.centerY().toInt()}_${detection.category}"
+        val centerX = (box.left + box.right) / 2f
+        val centerY = (box.top + box.bottom) / 2f
+        val positionHash = "${(centerX * 100).toInt()}_${(centerY * 100).toInt()}_${detection.category}"
 
         // Use UUID for now, but include position hash for debugging
         return "gen_${UUID.randomUUID()}_$positionHash"
@@ -231,12 +235,11 @@ class ObjectTracker(
 
             if (framesSinceLastSeen > config.expiryFrames) {
                 toRemove.add(id)
-                Log.d(TAG, "Expiring candidate $id: not seen for $framesSinceLastSeen frames")
+                logger.d(TAG, "Expiring candidate $id: not seen for $framesSinceLastSeen frames")
             }
         }
 
         for (id in toRemove) {
-            candidates[id]?.thumbnail?.recycle()
             candidates.remove(id)
             confirmedIds.remove(id)
         }
@@ -247,12 +250,7 @@ class ObjectTracker(
      * Call this when starting a new scan session or switching modes.
      */
     fun reset() {
-        Log.i(TAG, "Resetting tracker: clearing ${candidates.size} candidates")
-
-        // Clean up bitmaps
-        for (candidate in candidates.values) {
-            candidate.thumbnail?.recycle()
-        }
+        logger.i(TAG, "Resetting tracker: clearing ${candidates.size} candidates")
 
         candidates.clear()
         confirmedIds.clear()
@@ -273,14 +271,18 @@ class ObjectTracker(
 
 /**
  * Raw detection information extracted from ML Kit.
+ *
+ * Uses portable types for cross-platform compatibility:
+ * - NormalizedRect for bounding boxes (0-1 coordinates)
+ * - ImageRef for thumbnails (platform-agnostic image reference)
  */
 data class DetectionInfo(
     val trackingId: String?,
-    val boundingBox: RectF,
+    val boundingBox: NormalizedRect,
     val confidence: Float,
     val category: ItemCategory,
     val labelText: String,
-    val thumbnail: Bitmap?,
+    val thumbnail: ImageRef?,
     val normalizedBoxArea: Float
 )
 
