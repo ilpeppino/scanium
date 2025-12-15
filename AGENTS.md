@@ -1,18 +1,23 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Single Android app module: `app/`.
-- Kotlin sources live in `app/src/main/java/com/scanium/app/` with feature folders: `camera/` (CameraX control), `items/` (scanned item state + UI), `ml/` (object detection helpers), `navigation/` (Compose routes), and `ui/` (theme, shared components).
-- Resources and layouts: `app/src/main/res/`; manifest: `app/src/main/AndroidManifest.xml`.
-- Keep new screens as composables named `FeatureScreen` and route entries in `navigation/ScaniumNavGraph`.
+- Multi-module Gradle project.
+- `androidApp/`: Android app (Jetpack Compose UI, CameraX, ML Kit wrappers, selling flow, navigation). Sources at `androidApp/src/main/java/com/scanium/app/` (camera, items, ml, selling, navigation, ui/theme, settings, data, media, platform). Resources: `androidApp/src/main/res`; manifest: `androidApp/src/main/AndroidManifest.xml`.
+- `core-models/`: Shared models (ImageRef, NormalizedRect, ScannedItem, ScanMode, domain pack config/category). Backwards-compatible aliases in `com.scanium.app.core.*`; prefer `com.scanium.app.model` in new code.
+- `core-tracking/`: Platform-free tracking and aggregation (ObjectTracker, ItemAggregator, AggregationPresets, Logger).
+- `core-domainpack/`: Domain pack provider, config models, repository, category engine/mapping.
+- `android-platform-adapters/`: Android adapters for Bitmap↔ImageRef and Rect/RectF↔NormalizedRect conversions.
+- Library shells (`android-ml-mlkit`, `android-camera-camerax`, `core-contracts`, `core-scan`) hold namespaces; do not add `package` attributes to their manifests.
+- Navigation entry: `androidApp/src/main/java/com/scanium/app/navigation/NavGraph.kt`; keep new screens as composables named `FeatureScreen` and add routes there.
 
 ## Build, Test, and Development Commands
 ```bash
+./build.sh assembleDebug      # Builds with auto-detected Java 17
 ./gradlew assembleDebug       # Build debug APK
 ./gradlew installDebug        # Deploy to connected device/emulator
 ./gradlew test                # JVM unit tests
 ./gradlew connectedAndroidTest # Instrumented + Compose UI tests (needs device)
-./gradlew lint                # Android Lint across the module
+./gradlew lint                # Android Lint across modules
 ```
 - Use Android Studio’s “Apply Changes” for quick UI tweaks; prefer `./gradlew clean` before reproducing build issues.
 
@@ -21,25 +26,28 @@
 - Compose composables in `PascalCase` with `@Composable` at top; preview functions end with `Preview`.
 - ViewModels hold `StateFlow`/`MutableStateFlow`; UI observes via `collectAsState()`. Keep side effects in `LaunchedEffect`/`DisposableEffect`.
 - Filenames mirror primary class/composable (e.g., `CameraScreen.kt`, `ItemsViewModel.kt`); new resources follow lowercase_underscore.
+- Prefer shared models from `com.scanium.app.model` (`ImageRef`, `NormalizedRect`, `ScannedItem`, domain config). Legacy aliases live in `com.scanium.app.core.*` for compatibility—new code should import the shared package.
+- Keep Bitmaps/Rects at Android edges only; convert using `android-platform-adapters` (`Bitmap.toImageRefJpeg`, `ImageRef.Bytes.toBitmap`, `Rect/RectF.toNormalizedRect`, `NormalizedRect.toRectF/toRect`).
+- Library manifests rely on Gradle `namespace`; do not set `package` attributes.
 - Run `./gradlew lint` (or Android Studio formatting) before sending changes; avoid storing secrets in code or `local.properties`.
 
 ## Testing Guidelines
 
 ### Test Organization
-- **Unit tests**: `app/src/test/java/` - Pure Kotlin/JVM logic with JUnit4
-- **Instrumented tests**: `app/src/androidTest/java/` - UI and Android framework tests
+- **Unit tests**: `androidApp/src/test/java/` (JUnit4, Truth, MockK, Coroutines Test, Robolectric)
+- **Instrumented tests**: `androidApp/src/androidTest/java/` (Compose UI and Android framework)
 
 ### Current Test Coverage (all passing ✅)
 - **Unit tests** focus on:
-  - `ObjectTrackerTest.kt` and `ObjectCandidateTest.kt` - Multi-frame tracking pipeline
-  - `ItemsViewModelTest.kt` - State management & deduplication
-  - `PricingEngineTest.kt` - EUR price generation
-  - `ScannedItemTest.kt` - Confidence level classification
-  - `ItemCategoryTest.kt` - ML Kit label mapping
-  - `FakeObjectDetector.kt` - Test fixtures
+  - Tracking & aggregation: `ObjectTrackerTest.kt`, `ObjectCandidateTest.kt`, `TrackingPipelineIntegrationTest.kt`, `ItemAggregatorTest.kt`
+  - Items & deduplication: `ItemsViewModelTest.kt`, `ItemsViewModelAggregationTest.kt`, `ItemsViewModelListingStatusTest.kt`, `DeduplicationPipelineIntegrationTest.kt`, `ScannedItemTest.kt`
+  - Domain pack: `DomainPackTest.kt`, `DomainPackProviderTest.kt`, `CategoryMapperTest.kt`, `BasicCategoryEngineTest.kt`
+  - ML & pricing: `PricingEngineTest.kt`, `ClassificationOrchestratorTest.kt`, `DetectionResultTest.kt`, `ScanModeTest.kt`, `DocumentScanningIntegrationTest.kt`
+  - Selling flow: `ListingImagePreparerTest.kt`, `ListingDraftMapperTest.kt`, `EbayMarketplaceServiceTest.kt`, `MockEbayApiTest.kt`
+  - Models/adapters: `ImageRefTest.kt`, `NormalizedRectTest.kt`, `PlatformAdaptersTest.kt`
 
 - **Instrumented tests**:
-  - `ModeSwitcherTest.kt` - Compose UI interaction
+  - `ModeSwitcherTest.kt` and `DetectionOverlayTest.kt` - Compose UI interaction
   - `ItemsViewModelInstrumentedTest.kt` - Integration tests
 
 ### Test Dependencies
