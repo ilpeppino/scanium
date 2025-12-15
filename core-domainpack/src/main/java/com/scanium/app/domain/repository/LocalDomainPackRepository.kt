@@ -2,7 +2,7 @@ package com.scanium.app.domain.repository
 
 import android.content.Context
 import android.util.Log
-import com.scanium.app.R
+import com.scanium.app.domain.R
 import com.scanium.app.domain.config.DomainPack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

@@ -4,6 +4,14 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "com.android.application" || requested.id.id == "com.android.library") {
+                useModule("com.android.tools.build:gradle:8.5.0")
+            }
+        }
+    }
 }
 
 dependencyResolutionManagement {
@@ -15,4 +23,13 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Scanium"
-include(":app")
+include(
+    ":androidApp",
+    ":core-models",
+    ":core-tracking",
+    ":core-domainpack",
+    ":core-scan",
+    ":core-contracts",
+    ":android-ml-mlkit",
+    ":android-camera-camerax"
+)
