@@ -41,6 +41,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
+import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
