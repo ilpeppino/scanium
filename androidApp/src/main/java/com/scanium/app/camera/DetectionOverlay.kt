@@ -1,5 +1,6 @@
 package com.scanium.app.camera
 
+import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Size
 import androidx.compose.foundation.Canvas
@@ -16,8 +17,9 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ml.DetectionResult
+import com.scanium.app.platform.toRectF
+import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.CyanGlow
 import com.scanium.app.ui.theme.ScaniumBlue
 import kotlin.math.max
@@ -65,8 +67,12 @@ fun DetectionOverlay(
         val labelBackgroundColor = DeepNavy.copy(alpha = 0.85f)
 
         detections.forEach { detection ->
+            val imageSpaceRect = detection.bboxNorm?.toRectF(
+                imageSize.width,
+                imageSize.height
+            ) ?: RectF(detection.boundingBox)
             // Transform bounding box from image coordinates to preview coordinates
-            val transformedBox = transformBoundingBox(detection.boundingBox, transform)
+            val transformedBox = transformBoundingBox(imageSpaceRect, transform)
 
             // Calculate center point of the bounding box
             val centerX = transformedBox.left + transformedBox.width() / 2f
@@ -193,7 +199,7 @@ private fun calculateTransform(
  * Transforms a bounding box from image coordinates to preview coordinates.
  */
 private fun transformBoundingBox(
-    box: android.graphics.Rect,
+    box: RectF,
     transform: Transform
 ): RectF {
     val left = box.left * transform.scaleX + transform.offsetX
