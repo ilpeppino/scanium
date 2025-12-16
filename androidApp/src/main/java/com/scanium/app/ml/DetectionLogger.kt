@@ -1,7 +1,9 @@
 package com.scanium.app.ml
 
 import android.util.Log
+import com.scanium.app.model.ImageRef
 import com.scanium.app.model.NormalizedRect
+import com.scanium.app.platform.toBitmap
 
 /**
  * Centralized logging utility for object detection debugging and tuning.
@@ -26,6 +28,11 @@ object DetectionLogger {
         val bestLabel = detection.bestLabel
         val normalizedArea = detection.getNormalizedArea(imageWidth, imageHeight)
         val box = detection.bboxNorm
+        val thumbnail = when (val ref = detection.thumbnailRef) {
+            is ImageRef.Bytes -> ref.toBitmap()
+            else -> null
+        }
+        val thumbInfo = thumbnail?.let { "${it.width}x${it.height}" } ?: "none"
 
         Log.d(
             TAG,
@@ -35,7 +42,8 @@ object DetectionLogger {
                     "label=${bestLabel?.text ?: "none"}, " +
                     "conf=${formatConfidence(bestLabel?.confidence)}, " +
                     "box=${formatBox(box)}, " +
-                    "area=${formatArea(normalizedArea)}"
+                    "area=${formatArea(normalizedArea)}, " +
+                    "thumb=$thumbInfo"
         )
 
         // Log all labels if there are multiple
