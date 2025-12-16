@@ -1,0 +1,84 @@
+// Prisma schema for Scanium Backend
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - minimal now, extensible later
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Optional fields for future expansion
+  email       String? @unique
+  displayName String?
+
+  // Relations
+  ebayConnections EbayConnection[]
+  listings        Listing[]
+
+  @@map("users")
+}
+
+// eBay OAuth connection
+model EbayConnection {
+  id     String @id @default(uuid())
+  userId String
+
+  // eBay environment (sandbox or production)
+  environment String // "sandbox" | "production"
+
+  // OAuth tokens
+  // NOTE: In production, consider encrypting these at rest
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  tokenType    String  @default("Bearer")
+  scopes       String // Space-delimited scopes
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, environment])
+  @@map("ebay_connections")
+}
+
+// Listing model - placeholder for future eBay listing creation
+model Listing {
+  id     String @id @default(uuid())
+  userId String
+
+  // Marketplace identifier
+  marketplace String // "ebay", "mercari", etc.
+
+  // Listing status
+  status String // "draft", "pending", "active", "sold", "failed"
+
+  // External marketplace references
+  externalId  String? // eBay listing ID
+  externalUrl String? // Public listing URL
+
+  // Listing data (JSON for flexibility)
+  data Json? // Store title, description, price, images, etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([marketplace])
+  @@index([status])
+  @@map("listings")
+}
