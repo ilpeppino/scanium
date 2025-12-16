@@ -3,7 +3,7 @@
 ## Project Structure & Module Organization
 - Multi-module Gradle project.
 - `androidApp/`: Android app (Jetpack Compose UI, CameraX, ML Kit wrappers, selling flow, navigation). Sources at `androidApp/src/main/java/com/scanium/app/` (camera, items, ml, selling, navigation, ui/theme, settings, data, media, platform). Resources: `androidApp/src/main/res`; manifest: `androidApp/src/main/AndroidManifest.xml`.
-- `core-models/`: Shared models (ImageRef, NormalizedRect, ScannedItem, ScanMode, domain pack config/category). Backwards-compatible aliases in `com.scanium.app.core.*`; prefer `com.scanium.app.model` in new code.
+- `core-models/`: Shared models (ImageRef, NormalizedRect, ScannedItem, ScanMode, domain pack config/category). Backwards-compatible aliases in `com.scanium.app.core.*`; prefer `com.scanium.app.model` in new code. `RawDetection` stays portable-only (NormalizedRect + ImageRef thumbnailRef; no android.* fields).
 - `core-tracking/`: Platform-free tracking and aggregation (ObjectTracker, ItemAggregator, AggregationPresets, Logger).
 - `core-domainpack/`: Domain pack provider, config models, repository, category engine/mapping.
 - `android-platform-adapters/`: Android adapters for Bitmap↔ImageRef and Rect/RectF↔NormalizedRect conversions.
@@ -27,7 +27,7 @@
 - ViewModels hold `StateFlow`/`MutableStateFlow`; UI observes via `collectAsState()`. Keep side effects in `LaunchedEffect`/`DisposableEffect`.
 - Filenames mirror primary class/composable (e.g., `CameraScreen.kt`, `ItemsViewModel.kt`); new resources follow lowercase_underscore.
 - Prefer shared models from `com.scanium.app.model` (`ImageRef`, `NormalizedRect`, `ScannedItem`, domain config). Legacy aliases live in `com.scanium.app.core.*` for compatibility—new code should import the shared package.
-- Keep Bitmaps/Rects at Android edges only; convert using `android-platform-adapters` (`Bitmap.toImageRefJpeg`, `ImageRef.Bytes.toBitmap`, `Rect/RectF.toNormalizedRect`, `NormalizedRect.toRectF/toRect`).
+- Keep Bitmaps/Rects at Android edges only; convert using `android-platform-adapters` (`Bitmap.toImageRefJpeg`, `ImageRef.Bytes.toBitmap`, `Rect/RectF.toNormalizedRect`, `NormalizedRect.toRectF/toRect`). Portable models (RawDetection, DetectionResult) should remain android-free.
 - Library manifests rely on Gradle `namespace`; do not set `package` attributes.
 - Run `./gradlew lint` (or Android Studio formatting) before sending changes; avoid storing secrets in code or `local.properties`.
 
