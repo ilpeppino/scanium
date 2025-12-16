@@ -1,26 +1,21 @@
 package com.scanium.app.ml
 
-import android.graphics.Bitmap
-import android.graphics.Rect
-import com.scanium.app.core.geometry.NormalizedRect
-import com.scanium.app.core.image.ImageRef
+import com.scanium.app.model.ImageRef
+import com.scanium.app.model.NormalizedRect
 
 /**
  * Represents raw detection data from ML Kit before conversion to ScannedItem.
  * This allows the multi-frame pipeline to access all detection metadata.
  *
  * @param trackingId Tracking ID from ML Kit, or generated UUID
- * @param boundingBox Object bounding box in image coordinates
+ * @param bboxNorm Normalized bounding box in image coordinates (0-1)
  * @param labels List of classification labels with confidences
- * @param thumbnail Cropped thumbnail of the detected object
  * @param thumbnailRef Portable thumbnail reference (platform-neutral)
  */
 data class RawDetection(
     val trackingId: String,
-    val boundingBox: Rect?,
     val bboxNorm: NormalizedRect? = null,
     val labels: List<LabelWithConfidence>,
-    val thumbnail: Bitmap?,
     val thumbnailRef: ImageRef? = null
 ) {
     /**
@@ -44,7 +39,7 @@ data class RawDetection(
         return bestLabel?.confidence ?: run {
             // Objects detected without classification get a higher confidence
             // ML Kit's object detection is reliable even without classification
-            if (trackingId.isNotEmpty() && boundingBox != null) {
+            if (trackingId.isNotEmpty() && bboxNorm != null) {
                 0.6f // Good confidence for tracked but unlabeled objects
             } else {
                 0.4f // Moderate confidence for objects without tracking
@@ -56,14 +51,8 @@ data class RawDetection(
      * Returns normalized bounding box area (0.0 to 1.0).
      */
     fun getNormalizedArea(imageWidth: Int, imageHeight: Int): Float {
-        val box = boundingBox ?: return 0f
-        val boxArea = box.width() * box.height()
-        val totalArea = imageWidth * imageHeight
-        return if (totalArea > 0) {
-            (boxArea.toFloat() / totalArea).coerceIn(0f, 1f)
-        } else {
-            0f
-        }
+        val box = bboxNorm ?: return 0f
+        return box.area.coerceIn(0f, 1f)
     }
 }
 

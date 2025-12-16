@@ -445,10 +445,8 @@ class ObjectDetectorClient {
             onRawDetection(
                 RawDetection(
                     trackingId = trackingId ?: "gen_${UUID.randomUUID()}",
-                    boundingBox = boundingBox,
                     bboxNorm = bboxNorm,
                     labels = labels,
-                    thumbnail = thumbnail,
                     thumbnailRef = thumbnailRef
                 )
             )
