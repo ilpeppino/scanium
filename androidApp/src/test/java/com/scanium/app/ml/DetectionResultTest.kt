@@ -1,7 +1,7 @@
 package com.scanium.app.ml
 
-import android.graphics.Rect
 import com.google.common.truth.Truth.assertThat
+import com.scanium.app.model.NormalizedRect
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -20,14 +20,14 @@ class DetectionResultTest {
     @Test
     fun whenDetectionResultCreated_thenAllFieldsAreSet() {
         // Arrange & Act
-        val boundingBox = Rect(100, 200, 300, 400)
+        val bboxNorm = NormalizedRect(0.1f, 0.2f, 0.3f, 0.4f)
         val category = ItemCategory.FASHION
         val priceRange = Pair(10.0, 50.0)
         val confidence = 0.85f
         val trackingId = 12345
 
         val result = DetectionResult(
-            boundingBox = boundingBox,
+            bboxNorm = bboxNorm,
             category = category,
             priceRange = priceRange,
             confidence = confidence,
@@ -35,7 +35,7 @@ class DetectionResultTest {
         )
 
         // Assert
-        assertThat(result.boundingBox).isEqualTo(boundingBox)
+        assertThat(result.bboxNorm).isEqualTo(bboxNorm)
         assertThat(result.category).isEqualTo(category)
         assertThat(result.priceRange).isEqualTo(priceRange)
         assertThat(result.confidence).isEqualTo(confidence)
@@ -46,7 +46,7 @@ class DetectionResultTest {
     fun whenTrackingIdIsNull_thenDetectionResultIsValid() {
         // Arrange & Act
         val result = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.FOOD,
             priceRange = Pair(5.0, 15.0),
             confidence = 0.9f,
@@ -61,7 +61,7 @@ class DetectionResultTest {
     fun whenFormattedPriceRange_thenReturnsCorrectFormat() {
         // Arrange
         val result = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.HOME_GOOD,
             priceRange = Pair(20.0, 50.0),
             confidence = 0.75f
@@ -78,7 +78,7 @@ class DetectionResultTest {
     fun whenPriceRangeHasDecimals_thenRoundsToWholeNumbers() {
         // Arrange
         val result = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.PLACE,
             priceRange = Pair(10.99, 25.49),
             confidence = 0.6f
@@ -95,7 +95,7 @@ class DetectionResultTest {
     fun whenPriceRangeIsZero_thenFormatsCorrectly() {
         // Arrange
         val result = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.PLANT,
             priceRange = Pair(0.0, 0.0),
             confidence = 0.5f
@@ -112,7 +112,7 @@ class DetectionResultTest {
     fun whenPriceRangeIsLarge_thenFormatsWithoutDecimals() {
         // Arrange
         val result = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.UNKNOWN,
             priceRange = Pair(500.0, 1000.0),
             confidence = 0.95f
@@ -128,28 +128,28 @@ class DetectionResultTest {
     @Test
     fun whenBoundingBoxHasDimensions_thenCanAccessProperties() {
         // Arrange
-        val boundingBox = Rect(50, 100, 250, 400)
+        val boundingBox = NormalizedRect(0.05f, 0.1f, 0.25f, 0.4f)
         val result = DetectionResult(
-            boundingBox = boundingBox,
+            bboxNorm = boundingBox,
             category = ItemCategory.FASHION,
             priceRange = Pair(10.0, 20.0),
             confidence = 0.8f
         )
 
         // Act & Assert
-        assertThat(result.boundingBox.left).isEqualTo(50)
-        assertThat(result.boundingBox.top).isEqualTo(100)
-        assertThat(result.boundingBox.right).isEqualTo(250)
-        assertThat(result.boundingBox.bottom).isEqualTo(400)
-        assertThat(result.boundingBox.width()).isEqualTo(200)
-        assertThat(result.boundingBox.height()).isEqualTo(300)
+        assertThat(result.bboxNorm.left).isEqualTo(0.05f)
+        assertThat(result.bboxNorm.top).isEqualTo(0.1f)
+        assertThat(result.bboxNorm.right).isEqualTo(0.25f)
+        assertThat(result.bboxNorm.bottom).isEqualTo(0.4f)
+        assertThat(result.bboxNorm.width).isEqualTo(0.2f)
+        assertThat(result.bboxNorm.height).isEqualTo(0.3f)
     }
 
     @Test
     fun whenConfidenceIsLow_thenStillCreatesValidResult() {
         // Arrange & Act
         val result = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.UNKNOWN,
             priceRange = Pair(1.0, 5.0),
             confidence = 0.1f
@@ -163,7 +163,7 @@ class DetectionResultTest {
     fun whenConfidenceIsHigh_thenStillCreatesValidResult() {
         // Arrange & Act
         val result = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.FOOD,
             priceRange = Pair(5.0, 15.0),
             confidence = 1.0f
@@ -177,7 +177,7 @@ class DetectionResultTest {
     fun whenMultipleDetectionsCreated_thenEachIsIndependent() {
         // Arrange & Act
         val detection1 = DetectionResult(
-            boundingBox = Rect(0, 0, 100, 100),
+            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.FASHION,
             priceRange = Pair(10.0, 20.0),
             confidence = 0.8f,
@@ -185,7 +185,7 @@ class DetectionResultTest {
         )
 
         val detection2 = DetectionResult(
-            boundingBox = Rect(200, 200, 300, 300),
+            bboxNorm = NormalizedRect(0.2f, 0.2f, 0.3f, 0.3f),
             category = ItemCategory.FOOD,
             priceRange = Pair(5.0, 10.0),
             confidence = 0.9f,
@@ -196,6 +196,6 @@ class DetectionResultTest {
         assertThat(detection1.trackingId).isEqualTo(1)
         assertThat(detection2.trackingId).isEqualTo(2)
         assertThat(detection1.category).isNotEqualTo(detection2.category)
-        assertThat(detection1.boundingBox).isNotEqualTo(detection2.boundingBox)
+        assertThat(detection1.bboxNorm).isNotEqualTo(detection2.bboxNorm)
     }
 }
