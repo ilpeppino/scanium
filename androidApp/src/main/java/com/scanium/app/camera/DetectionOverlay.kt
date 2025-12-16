@@ -1,6 +1,5 @@
 package com.scanium.app.camera
 
-import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Size
 import androidx.compose.foundation.Canvas
@@ -67,10 +66,10 @@ fun DetectionOverlay(
         val labelBackgroundColor = DeepNavy.copy(alpha = 0.85f)
 
         detections.forEach { detection ->
-            val imageSpaceRect = detection.bboxNorm?.toRectF(
+            val imageSpaceRect = detection.bboxNorm.toRectF(
                 imageSize.width,
                 imageSize.height
-            ) ?: RectF(detection.boundingBox)
+            )
             // Transform bounding box from image coordinates to preview coordinates
             val transformedBox = transformBoundingBox(imageSpaceRect, transform)
 
