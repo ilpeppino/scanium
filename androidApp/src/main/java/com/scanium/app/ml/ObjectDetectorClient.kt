@@ -548,7 +548,6 @@ class ObjectDetectorClient {
             val confidence = detectedObject.labels.maxByOrNull { it.confidence }?.confidence ?: 0f
 
             DetectionResult(
-                boundingBox = boundingBox,
                 bboxNorm = boundingBox.toNormalizedRect(imageWidth, imageHeight),
                 category = category,
                 priceRange = priceRange,

@@ -500,15 +500,14 @@ class CameraXManager(
         val frameHeight = sourceBitmap?.height ?: inputImage.height
         val normalizedBoxesById = detectionResponse.detectionResults
             .mapNotNull { result ->
-                val normalizedBox = result.bboxNorm ?: result.boundingBox.toNormalizedRect(frameWidth, frameHeight)
-                result.trackingId?.toString()?.let { it to normalizedBox }
+                result.trackingId?.toString()?.let { it to result.bboxNorm }
             }
             .toMap()
 
         val trackerDetections = detections.mapIndexed { index, detectionInfo ->
             val normalizedBox = normalizedBoxesById[detectionInfo.trackingId]
                 ?: detectionResponse.detectionResults.getOrNull(index)?.let { result ->
-                    result.bboxNorm ?: result.boundingBox.toNormalizedRect(frameWidth, frameHeight)
+                    result.bboxNorm
                 }
                 ?: detectionInfo.boundingBox
 
