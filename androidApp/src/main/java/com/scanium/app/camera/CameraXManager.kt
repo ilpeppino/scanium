@@ -23,6 +23,7 @@ import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
 import com.scanium.app.tracking.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
+import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
@@ -490,8 +491,35 @@ class CameraXManager(
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${detections.size} raw DetectionInfo objects from ObjectDetectorClient")
 
+        val detectionResponse = objectDetector.detectObjects(
+            image = inputImage,
+            sourceBitmap = sourceBitmap,
+            useStreamMode = true
+        )
+        val frameWidth = sourceBitmap?.width ?: inputImage.width
+        val frameHeight = sourceBitmap?.height ?: inputImage.height
+        val normalizedBoxesById = detectionResponse.detectionResults
+            .mapNotNull { result ->
+                val normalizedBox = result.bboxNorm ?: result.boundingBox.toNormalizedRect(frameWidth, frameHeight)
+                result.trackingId?.toString()?.let { it to normalizedBox }
+            }
+            .toMap()
+
+        val trackerDetections = detections.mapIndexed { index, detectionInfo ->
+            val normalizedBox = normalizedBoxesById[detectionInfo.trackingId]
+                ?: detectionResponse.detectionResults.getOrNull(index)?.let { result ->
+                    result.bboxNorm ?: result.boundingBox.toNormalizedRect(frameWidth, frameHeight)
+                }
+                ?: detectionInfo.boundingBox
+
+            detectionInfo.copy(
+                boundingBox = normalizedBox,
+                normalizedBoxArea = normalizedBox.area
+            )
+        }
+
         // Process through tracker
-        val confirmedCandidates = objectTracker.processFrame(detections)
+        val confirmedCandidates = objectTracker.processFrame(trackerDetections)
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: ObjectTracker returned ${confirmedCandidates.size} newly confirmed candidates")
 
