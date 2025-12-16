@@ -64,18 +64,34 @@ adb logcat | grep -E "ObjectTraacker|CameraXManager|ObjectDetector"
 ## Architecture Flow
 
 ```
-Camera (CameraXManager)
-  ↓ routes by ScanMode (OBJECT_DETECTION | BARCODE | DOCUMENT_TEXT)
-ML Kit (ObjectDetectorClient | BarcodeScannerClient | DocumentTextRecognitionClient)
-  ↓ STREAM_MODE (continuous) or SINGLE_IMAGE_MODE (tap)
-ObjectTracker (frame-level deduplication via trackingId + spatial matching)
-  ↓ confirms candidates → ScannedItem
-ItemAggregator (session-level similarity-based deduplication)
-  ↓ merges by weighted scoring (category/label/size/distance)
-ItemsViewModel (StateFlow, shared across screens)
-  ↓ ID-based final dedup
-UI (CameraScreen, ItemsListScreen, SellOnEbayScreen)
+┌─ :androidApp ──────────────────────────────────────────────────────┐
+│ Camera (CameraXManager)                                             │
+│   ↓ routes by ScanMode (OBJECT_DETECTION | BARCODE | DOCUMENT_TEXT)│
+│ ML Kit (ObjectDetectorClient | BarcodeScannerClient | ...)         │
+│   ↓ STREAM_MODE (continuous) or SINGLE_IMAGE_MODE (tap)            │
+│   ↓ converts to RawDetection (Bitmap → ImageRef via adapters)      │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─ :core-tracking ───────────────────────────────────────────────────┐
+│ ObjectTracker (frame-level deduplication)                          │
+│   ↓ uses trackingId + NormalizedRect spatial matching (IoU+distance)│
+│   ↓ confirms candidates → ScannedItem (portable types)             │
+│ ItemAggregator (session-level similarity-based deduplication)      │
+│   ↓ merges by weighted scoring (category 40%, label 15%, etc.)     │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─ :androidApp ──────────────────────────────────────────────────────┐
+│ ItemsViewModel (StateFlow, shared across screens)                  │
+│   ↓ ID-based final dedup, classification orchestration             │
+│ UI (CameraScreen, ItemsListScreen, SellOnEbayScreen)               │
+│   ↓ ImageRef → Bitmap conversion for display via adapters          │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+**Module Boundaries**:
+- `:androidApp` → Platform-specific (CameraX, ML Kit, Compose, Android types)
+- `:core-tracking` → Platform-independent (uses Logger, ImageRef, NormalizedRect)
+- `:android-platform-adapters` → Conversion layer at module boundaries
 
 ## Critical Invariants
 
@@ -253,16 +269,21 @@ val analysisIntervalMs = 800L  // Process every 800ms
 1. **NO Android Dependencies** in `:core-*` modules:
    - ❌ Forbidden: `android.*`, `androidx.*`, `CameraX`, `ML Kit` classes
    - ✅ Allowed: Kotlin stdlib, Coroutines, Kotlinx Serialization, expect/actual
+   - **Exception**: `core-domainpack` currently uses Android library plugin (pending KMP conversion)
 2. **Platform Interfaces**:
    - ✅ `Logger` – Platform-agnostic logging (implemented)
    - ✅ `ImageRef` – Platform-agnostic image (implemented)
    - ✅ `NormalizedRect` – Platform-agnostic geometry (implemented)
    - 🚧 Future: `expect interface CameraProvider`, `expect interface MLProvider`
-3. **Platform-Specific** (Stays in `:app` or future `:iosApp`):
-   - `CameraXManager` → Android only
-   - `ObjectDetectorClient`, `BarcodeScannerClient` → Wrap in platform providers
+3. **Platform-Specific** (Stays in `:androidApp` or future `:iosApp`):
+   - `CameraXManager` → Android only (`:androidApp` or future `:android-camera-camerax`)
+   - `ObjectDetectorClient`, `BarcodeScannerClient` → Android only (`:androidApp` or future `:android-ml-mlkit`)
    - Compose UI → Android; SwiftUI → iOS
-   - `MainActivity`, navigation → Platform-specific entry points
+   - `MainActivity`, `ScaniumApp`, navigation → Platform-specific entry points
+4. **Platform Adapters** (`:android-platform-adapters`):
+   - Conversion functions between Android types and portable types
+   - `Bitmap ↔ ImageRef`, `Rect/RectF ↔ NormalizedRect`
+   - Used at boundaries when calling ML Kit or displaying images in Compose
 
 ### Non-Negotiables
 - Android must remain fully functional during/after KMP migration
@@ -277,7 +298,9 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - **Mocked pricing**: `PricingEngine.kt` generates EUR ranges locally
 - **Mocked eBay**: `MockEbayApi` simulates marketplace (ready for real API swap)
 - **ML Kit categories**: 5 coarse categories → mitigated by Domain Pack (23 fine-grained) + Cloud Classification
-- **Core modules not yet KMP**: Platform-independent but need conversion to `commonMain/androidMain/iosMain`
+- **Core modules not yet KMP**: Platform-independent and Android-free, but still using Android library plugin (need conversion to `commonMain/androidMain/iosMain`)
+- **Transitional data models**: `RawDetection` has both legacy and portable fields during migration
+- **Platform dependencies in ScannedItem**: Still uses Android `Uri` (pending removal)
 - **Cloud classification**: Requires backend API (see `/docs/features/CLOUD_CLASSIFICATION.md` for setup)
 - **On-device CLIP**: Placeholder implementation; real TFLite CLIP model not integrated yet
 - **Attribute extraction**: Cloud API supports attributes map; on-device extraction not implemented
@@ -290,6 +313,10 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - `md/architecture/ARCHITECTURE.md` – Comprehensive system design
 - `md/architecture/DOMAIN_PACK_ARCHITECTURE.md` – Category taxonomy, JSON schema
 - `md/features/TRACKING_IMPLEMENTATION.md` – Tracking deep-dive
+
+**KMP Migration**:
+- `docs/kmp-migration/PLAN.md` – KMP migration strategy, incremental steps, rules
+- `docs/kmp-migration/TARGETS.md` – Top files for migration, leak inventory
 
 **Features**:
 - `docs/features/CLOUD_CLASSIFICATION.md` – Cloud-first classification, API contract, retry logic, privacy
@@ -306,7 +333,7 @@ val analysisIntervalMs = 800L  // Process every 800ms
 - Artifact: `scanium-app-debug-apk` (download from GitHub Actions)
 
 **Config**:
-- `res/raw/home_resale_domain_pack.json` – 23 categories, 10 attributes (live config)
+- `androidApp/src/main/res/raw/home_resale_domain_pack.json` – 23 categories, 10 attributes (live config)
 
 ---
 
