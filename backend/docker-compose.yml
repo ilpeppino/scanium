@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  ***REMOVED*** PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: scanium-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scanium}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scanium}
+      POSTGRES_DB: ${POSTGRES_DB:-scanium}
+    ports:
+      - '5432:5432'  ***REMOVED*** Expose to localhost for local development
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - scanium-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-scanium}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ***REMOVED*** Scanium Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scanium-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 8080
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scanium}:${POSTGRES_PASSWORD:-scanium}@postgres:5432/${POSTGRES_DB:-scanium}
+      EBAY_ENV: ${EBAY_ENV:-sandbox}
+      EBAY_CLIENT_ID: ${EBAY_CLIENT_ID}
+      EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET}
+      EBAY_REDIRECT_PATH: ${EBAY_REDIRECT_PATH:-/auth/ebay/callback}
+      EBAY_SCOPES: ${EBAY_SCOPES}
+      SESSION_SIGNING_SECRET: ${SESSION_SIGNING_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-scanium://}
+    networks:
+      - scanium-network
+    ***REMOVED*** Note: Port not exposed externally - accessed via Cloudflare Tunnel
+    expose:
+      - '8080'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:8080/healthz', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  ***REMOVED*** Cloudflare Tunnel
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: scanium-cloudflared
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARED_TOKEN}
+    command: tunnel --no-autoupdate run
+    networks:
+      - scanium-network
+
+networks:
+  scanium-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
