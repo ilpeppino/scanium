@@ -14,6 +14,7 @@ import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import kotlinx.coroutines.tasks.await
 import kotlin.math.abs
+import java.util.UUID
 
 /**
  * Wrapper class containing both ScannedItems (for list) and DetectionResults (for overlay).
@@ -386,7 +387,8 @@ class ObjectDetectorClient {
         sourceBitmap: Bitmap?,
         imageRotationDegrees: Int,
         fallbackWidth: Int,
-        fallbackHeight: Int
+        fallbackHeight: Int,
+        onRawDetection: (RawDetection) -> Unit = {}
     ): DetectionInfo? {
         return try {
             // Extract tracking ID (may be null)
@@ -439,6 +441,17 @@ class ObjectDetectorClient {
             val normalizedBoxArea = bboxNorm.area
 
             Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=$labelConfidence), category=$category, area=$normalizedBoxArea")
+
+            onRawDetection(
+                RawDetection(
+                    trackingId = trackingId ?: "gen_${UUID.randomUUID()}",
+                    boundingBox = boundingBox,
+                    bboxNorm = bboxNorm,
+                    labels = labels,
+                    thumbnail = thumbnail,
+                    thumbnailRef = thumbnailRef
+                )
+            )
 
             DetectionInfo(
                 trackingId = trackingId,
