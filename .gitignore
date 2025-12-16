@@ -21,3 +21,4 @@ captures/
 ***REMOVED*** log files
 crash.log
 tombstone_23
+/androidApp/
