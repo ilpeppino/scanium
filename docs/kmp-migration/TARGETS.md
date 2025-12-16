@@ -13,7 +13,7 @@
 - androidApp/src/main/java/com/scanium/app/ml/DocumentTextRecognitionClient.kt
 
 ***REMOVED******REMOVED*** Leak Inventory
-- core-models/src/main/java/com/scanium/app/ml/RawDetection.kt — uses `android.graphics.Bitmap` and `android.graphics.Rect` as model fields.
+- core-models/src/main/java/com/scanium/app/ml/RawDetection.kt — now portable (NormalizedRect + ImageRef thumbnailRef; no android.* fields).
 - core-models/src/main/java/com/scanium/app/ml/DetectionResult.kt — uses `android.graphics.Rect` for overlay bounding boxes.
 - androidApp/src/main/java/com/scanium/app/items/ItemsListScreen.kt — renders thumbnails via `asImageBitmap()` assuming platform `Bitmap` instances.
 - androidApp/src/main/java/com/scanium/app/items/ItemDetailDialog.kt — displays thumbnails with Compose `Image` backed by `Bitmap`.

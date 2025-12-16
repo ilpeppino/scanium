@@ -133,9 +133,9 @@ Tracking metadata produced by `ObjectDetectorClient.detectObjectsWithTracking()`
 ```kotlin
 data class RawDetection(
     val trackingId: String,               // ML Kit tracking ID or generated UUID
-    val boundingBox: Rect?,               // Object bounding box
+    val bboxNorm: NormalizedRect?,        // Normalized bounding box (0-1)
     val labels: List<LabelWithConfidence>, // All classification labels
-    val thumbnail: Bitmap?                // Cropped thumbnail
+    val thumbnailRef: ImageRef?           // Portable thumbnail (JPEG bytes)
 ) {
     val bestLabel: LabelWithConfidence?   // Highest confidence label
     val category: ItemCategory            // Derived category

@@ -11,20 +11,34 @@ Guidance for Claude Code when working with **Scanium** – a privacy-first Andro
 - **UI**: Jetpack Compose + Material 3
 - **Min/Target SDK**: 24 / 34 (Android 7.0 / 14)
 - **Required Java**: 17 (see `SETUP.md`)
-- **Architecture**: Multi-module Gradle (`:app`, `:core-models`, `:core-tracking`), MVVM, no DI framework
+- **Architecture**: Multi-module Gradle (9 modules), MVVM, no DI framework
 
 ***REMOVED******REMOVED*** Module Structure
 
 ```
 scanium/
-├── app/                    ***REMOVED*** Android app module (UI, ML Kit integration, platform-specific code)
-├── core-models/            ***REMOVED*** Platform-independent data models and portable types
-│   └── ImageRef, NormalizedRect, ItemCategory, ScanMode, ScannedItem
-├── core-tracking/          ***REMOVED*** Platform-independent tracking and aggregation logic
-    └── ObjectTracker, ItemAggregator, Logger interface
+├── androidApp/                    ***REMOVED*** Main Android app module (UI, navigation, entry point)
+├── core-models/                   ***REMOVED*** Platform-independent data models and portable types
+│   └── ImageRef, NormalizedRect, ItemCategory, ScanMode, ScannedItem, DetectionResult, RawDetection
+├── core-tracking/                 ***REMOVED*** Platform-independent tracking and aggregation logic
+│   └── ObjectTracker, ObjectCandidate, ItemAggregator, Logger interface
+├── core-domainpack/               ***REMOVED*** Domain Pack system (categories, attributes, repository)
+│   └── DomainPack, DomainCategory, BasicCategoryEngine, LocalDomainPackRepository
+├── core-scan/                     ***REMOVED*** Scan-related logic (placeholder for future KMP scan contracts)
+├── core-contracts/                ***REMOVED*** Platform-independent contracts and interfaces
+├── android-ml-mlkit/              ***REMOVED*** ML Kit Android wrappers (placeholder for modularization)
+├── android-camera-camerax/        ***REMOVED*** CameraX Android wrappers (placeholder for modularization)
+├── android-platform-adapters/     ***REMOVED*** Conversions between Android types and portable types
+    └── ImageAdapters (Bitmap ↔ ImageRef), RectAdapters (Rect/RectF ↔ NormalizedRect)
 ```
 
-**Dependencies**: `app` → `core-tracking` → `core-models`
+**Dependencies**:
+- `androidApp` → `android-platform-adapters`, `android-ml-mlkit`, `android-camera-camerax`, `core-scan`, `core-domainpack`, `core-tracking`, `core-contracts`, `core-models`
+- `core-domainpack` → `core-models`
+- `core-tracking` → `core-models`
+- `android-platform-adapters` → `core-models`
+
+**Note**: `app/` module is legacy (resources only), all code moved to `androidApp/`
 
 ***REMOVED******REMOVED*** Commands
 
@@ -93,22 +107,37 @@ UI (CameraScreen, ItemsListScreen, SellOnEbayScreen)
 
 ***REMOVED******REMOVED******REMOVED*** Core Modules (Platform-Independent)
 
-**:core-models** – Portable types and data models
-- `model/ImageRef.kt` – Platform-agnostic image reference (KMP-ready)
-- `model/NormalizedRect.kt` – Normalized bounding box (0-1 coordinates)
+**:core-models** – Portable types and data models (Android-free)
+- `model/ImageRef.kt` – Platform-agnostic image reference (sealed class: `ImageRef.Bytes`)
+- `model/NormalizedRect.kt` – Normalized bounding box (0-1 coordinates) with `isNormalized()`, `clampToUnit()`
 - `ml/ItemCategory.kt` – Enum mapping ML Kit's 5 coarse categories
-- `items/ScannedItem.kt` – Immutable item model (uses ImageRef, NormalizedRect)
+- `ml/DetectionResult.kt` – Real-time detection result (uses `NormalizedRect`, removed legacy `Rect`)
+- `ml/RawDetection.kt` – Raw ML Kit detection (transitioning: has `boundingBox: Rect?`, `bboxNorm: NormalizedRect?`, `thumbnailRef: ImageRef?`)
+- `items/ScannedItem.kt` – Immutable item model (uses `ImageRef`, `NormalizedRect`, still has `Uri` for platform compatibility)
 - `camera/ScanMode.kt` – Enum for OBJECT_DETECTION | BARCODE | DOCUMENT_TEXT
 - `ml/classification/ClassificationMode.kt` – Enum: ON_DEVICE | CLOUD
 
-**:core-tracking** – Platform-independent tracking and aggregation
-- `tracking/ObjectTracker.kt` – Multi-frame tracking, candidate confirmation/expiry (uses Logger)
-- `tracking/ObjectCandidate.kt` – Spatial data (IoU/distance using NormalizedRect)
+**:core-tracking** – Platform-independent tracking and aggregation (Android-free)
+- `tracking/ObjectTracker.kt` – Multi-frame tracking using `NormalizedRect` for spatial matching (prefers normalized boxes)
+- `tracking/ObjectCandidate.kt` – Candidate state (uses `NormalizedRect`, removed legacy `RectF`)
 - `tracking/TrackerConfig.kt` – Tunable thresholds
 - `tracking/Logger.kt` – Platform-agnostic logging interface
+- `tracking/DetectionInfo.kt` – Input to tracker (uses `NormalizedRect`, `ImageRef`)
 - `aggregation/ItemAggregator.kt` – Similarity-based session deduplication (uses Logger)
 - `aggregation/AggregationPresets.kt` – 6 presets (REALTIME used by default)
 - `aggregation/AggregatedItem.kt` – Merged detection with confidence/timestamps
+
+**:core-domainpack** – Domain Pack system (moved from androidApp)
+- `domain/config/DomainPack.kt` – 23 categories + 10 attributes schema
+- `domain/config/DomainCategory.kt`, `DomainAttribute.kt` – Category and attribute models
+- `domain/repository/DomainPackRepository.kt` – Repository interface
+- `domain/repository/LocalDomainPackRepository.kt` – Loads JSON from `res/raw/home_resale_domain_pack.json`
+- `domain/category/BasicCategoryEngine.kt` – ML Kit label → DomainCategory matching
+- `domain/DomainPackProvider.kt` – Singleton initialized in `MainActivity`
+
+**:android-platform-adapters** – Android ↔ portable type conversions
+- `adapters/ImageAdapters.kt` – `Bitmap.toImageRefJpeg()`, `ImageRef.Bytes.toBitmap()`
+- `adapters/RectAdapters.kt` – Rect/RectF ↔ NormalizedRect conversions (placeholder)
 
 ***REMOVED******REMOVED******REMOVED*** App Module (Android-Specific)
 

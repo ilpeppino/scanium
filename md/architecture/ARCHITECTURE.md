@@ -322,9 +322,9 @@ data class ObjectCandidate(
 
 data class RawDetection(
     val trackingId: String,
-    val boundingBox: Rect?,               // ML Kit coordinates before normalization
+    val bboxNorm: NormalizedRect?,        // Normalized box (0-1)
     val labels: List<LabelWithConfidence>,
-    val thumbnail: Bitmap?
+    val thumbnailRef: ImageRef?           // Portable thumbnail (JPEG bytes)
 )
 
 enum class ConfidenceLevel(val threshold: Float) {
