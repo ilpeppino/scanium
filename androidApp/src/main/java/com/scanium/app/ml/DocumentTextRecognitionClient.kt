@@ -104,10 +104,8 @@ class DocumentTextRecognitionClient {
             if (thumbnail != null) {
                 RawDetection(
                     trackingId = id,
-                    boundingBox = boundingBox,
                     bboxNorm = bboxNorm,
                     labels = emptyList(),
-                    thumbnail = thumbnail,
                     thumbnailRef = thumbnailRef
                 )
             }

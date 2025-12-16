@@ -1,8 +1,8 @@
 package com.scanium.app.ml
 
-import android.graphics.Rect
 import android.util.Log
 import com.scanium.app.model.ImageRef
+import com.scanium.app.model.NormalizedRect
 import com.scanium.app.platform.toBitmap
 
 /**
@@ -27,10 +27,10 @@ object DetectionLogger {
 
         val bestLabel = detection.bestLabel
         val normalizedArea = detection.getNormalizedArea(imageWidth, imageHeight)
-        val box = detection.boundingBox
+        val box = detection.bboxNorm
         val thumbnail = when (val ref = detection.thumbnailRef) {
             is ImageRef.Bytes -> ref.toBitmap()
-            else -> detection.thumbnail
+            else -> null
         }
         val thumbInfo = thumbnail?.let { "${it.width}x${it.height}" } ?: "none"
 
@@ -187,11 +187,17 @@ object DetectionLogger {
         return confidence?.let { String.format("%.2f", it) } ?: "N/A"
     }
 
-    private fun formatBox(box: Rect?): String {
-        return box?.let { "[${it.width()}x${it.height()}]" } ?: "[none]"
+    private fun formatBox(box: NormalizedRect?): String {
+        return box?.let {
+            "[l=${formatCoord(it.left)}, t=${formatCoord(it.top)}, r=${formatCoord(it.right)}, b=${formatCoord(it.bottom)}]"
+        } ?: "[none]"
     }
 
     private fun formatArea(area: Float): String {
         return String.format("%.3f", area)
+    }
+
+    private fun formatCoord(value: Float): String {
+        return String.format("%.3f", value)
     }
 }

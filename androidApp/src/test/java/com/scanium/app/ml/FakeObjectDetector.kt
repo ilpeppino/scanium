@@ -1,6 +1,6 @@
 package com.scanium.app.ml
 
-import android.graphics.Rect
+import com.scanium.app.model.NormalizedRect
 
 /**
  * Fake ObjectDetector for testing purposes.
@@ -18,19 +18,18 @@ class FakeObjectDetector {
         confidence: Float,
         category: ItemCategory,
         categoryLabel: String,
-        boundingBox: Rect = Rect(0, 0, 100, 100)
+        boundingBox: NormalizedRect = defaultBoundingBox()
     ): RawDetection {
         return RawDetection(
             trackingId = trackingId,
-            boundingBox = boundingBox,
+            bboxNorm = boundingBox,
             labels = listOf(
                 LabelWithConfidence(
                     text = categoryLabel,
                     confidence = confidence,
                     index = 0
                 )
-            ),
-            thumbnail = null
+            )
         )
     }
 
@@ -43,15 +42,14 @@ class FakeObjectDetector {
         return detections.map { spec ->
             RawDetection(
                 trackingId = spec.trackingId,
-                boundingBox = spec.boundingBox,
+                bboxNorm = spec.boundingBox,
                 labels = listOf(
                     LabelWithConfidence(
                         text = spec.categoryLabel,
                         confidence = spec.confidence,
                         index = 0
                     )
-                ),
-                thumbnail = null
+                )
             )
         }
     }
@@ -69,19 +67,18 @@ class FakeObjectDetector {
     fun detectWithMultipleLabels(
         trackingId: String,
         labels: List<LabelSpec>,
-        boundingBox: Rect = Rect(0, 0, 100, 100)
+        boundingBox: NormalizedRect = defaultBoundingBox()
     ): RawDetection {
         return RawDetection(
             trackingId = trackingId,
-            boundingBox = boundingBox,
+            bboxNorm = boundingBox,
             labels = labels.mapIndexed { index, spec ->
                 LabelWithConfidence(
                     text = spec.text,
                     confidence = spec.confidence,
                     index = index
                 )
-            },
-            thumbnail = null
+            )
         )
     }
 
@@ -93,7 +90,7 @@ class FakeObjectDetector {
         val confidence: Float,
         val category: ItemCategory,
         val categoryLabel: String,
-        val boundingBox: Rect = Rect(0, 0, 100, 100)
+        val boundingBox: NormalizedRect = defaultBoundingBox()
     )
 
     /**
@@ -104,5 +101,12 @@ class FakeObjectDetector {
         val confidence: Float
     )
 }
+
+private fun defaultBoundingBox(): NormalizedRect = NormalizedRect(
+    left = 0f,
+    top = 0f,
+    right = 0.1f,
+    bottom = 0.1f
+)
 
 // Note: LabelWithConfidence is defined in RawDetection.kt
