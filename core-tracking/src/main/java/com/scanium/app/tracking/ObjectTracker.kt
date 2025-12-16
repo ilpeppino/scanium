@@ -151,11 +151,20 @@ class ObjectTracker(
 
             // Calculate normalized center distance
             // Use diagonal of detection box as normalization factor (more robust than fixed 1000px)
-            val distance = candidate.distanceTo(detection.boundingBox)
             val detectionBoxDiagonal = sqrt(
                 (detection.boundingBox.width * detection.boundingBox.width +
                 detection.boundingBox.height * detection.boundingBox.height).toDouble()
             ).toFloat()
+            val normalizedBoxes = candidate.boundingBoxNorm
+            val distance = if (
+                normalizedBoxes != null &&
+                normalizedBoxes.isNormalized() &&
+                detection.boundingBox.isNormalized()
+            ) {
+                centerDistance(normalizedBoxes, detection.boundingBox)
+            } else {
+                candidate.distanceTo(detection.boundingBox)
+            }
             val normalizedDistance = if (detectionBoxDiagonal > 0) {
                 (distance / detectionBoxDiagonal).coerceIn(0f, 2f) / 2f // Normalize to 0-1 range
             } else {
@@ -177,6 +186,18 @@ class ObjectTracker(
         }
 
         return bestMatch
+    }
+
+    private fun centerDistance(a: NormalizedRect, b: NormalizedRect): Float {
+        val centerAx = (a.left + a.right) / 2f
+        val centerAy = (a.top + a.bottom) / 2f
+        val centerBx = (b.left + b.right) / 2f
+        val centerBy = (b.top + b.bottom) / 2f
+
+        val dx = centerAx - centerBx
+        val dy = centerAy - centerBy
+
+        return sqrt(dx * dx + dy * dy)
     }
 
     /**
