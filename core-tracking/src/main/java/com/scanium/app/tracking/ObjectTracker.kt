@@ -80,7 +80,7 @@ class ObjectTracker(
                     newThumbnail = detection.thumbnail,
                     boxArea = detection.normalizedBoxArea
                 )
-                matchedCandidate.boundingBoxNorm = detection.boundingBox
+                matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
 
                 matchedCandidates.add(matchedCandidate.internalId)
 
@@ -232,7 +232,7 @@ class ObjectTracker(
         return ObjectCandidate(
             internalId = id,
             boundingBox = detection.boundingBox,
-            boundingBoxNorm = detection.boundingBox,
+            boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox,
             lastSeenFrame = currentFrame,
             seenCount = 1,
             maxConfidence = detection.confidence,
@@ -258,6 +258,20 @@ class ObjectTracker(
 
         // Use UUID for now, but include position hash for debugging
         return "gen_${UUID.randomUUID()}_$positionHash"
+    }
+
+    private fun iou(a: NormalizedRect, b: NormalizedRect): Float {
+        val intersectLeft = maxOf(a.left, b.left)
+        val intersectTop = maxOf(a.top, b.top)
+        val intersectRight = minOf(a.right, b.right)
+        val intersectBottom = minOf(a.bottom, b.bottom)
+
+        val intersectionWidth = (intersectRight - intersectLeft).coerceAtLeast(0f)
+        val intersectionHeight = (intersectBottom - intersectTop).coerceAtLeast(0f)
+        val intersectionArea = intersectionWidth * intersectionHeight
+
+        val unionArea = a.area + b.area - intersectionArea
+        return if (unionArea > 0) intersectionArea / unionArea else 0f
     }
 
     /**
@@ -328,7 +342,8 @@ data class DetectionInfo(
     val category: ItemCategory,
     val labelText: String,
     val thumbnail: ImageRef?,
-    val normalizedBoxArea: Float
+    val normalizedBoxArea: Float,
+    val boundingBoxNorm: NormalizedRect? = null
 )
 
 /**
