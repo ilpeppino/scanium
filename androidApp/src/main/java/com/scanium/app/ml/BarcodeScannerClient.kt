@@ -76,6 +76,9 @@ class BarcodeScannerClient {
 
     /**
      * Converts a Barcode from ML Kit to a ScannedItem.
+     *
+     * Prefers NormalizedRect (portable type) over Rect (Android-specific).
+     * Converts to pixel coordinates only when needed for cropping.
      */
     private fun convertToScannedItem(
         barcode: Barcode,
@@ -88,13 +91,20 @@ class BarcodeScannerClient {
             val barcodeValue = barcode.rawValue ?: barcode.displayValue ?: return null
             val id = "barcode_$barcodeValue" // Prefix to distinguish from object detection IDs
 
-            // Get bounding box
-            val boundingBox = barcode.boundingBox ?: Rect(0, 0, 100, 100)
             val frameWidth = sourceBitmap?.width ?: fallbackWidth
             val frameHeight = sourceBitmap?.height ?: fallbackHeight
 
+            // Convert to NormalizedRect early (prefer portable type)
+            val bboxNorm = barcode.boundingBox?.toNormalizedRect(
+                frameWidth = frameWidth,
+                frameHeight = frameHeight
+            ) ?: com.scanium.app.model.NormalizedRect(0f, 0f, 0.1f, 0.1f)
+
+            // For cropping, convert back to pixel coordinates temporarily
+            val boundingBoxPixels = barcode.boundingBox ?: Rect(0, 0, 100, 100)
+
             // Crop thumbnail from source bitmap
-            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox) }
+            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBoxPixels) }
             val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
             // Determine category from barcode format
@@ -104,12 +114,8 @@ class BarcodeScannerClient {
             // Use a high confidence value for barcodes since they're binary (detected or not)
             val confidence = 0.95f
 
-            // Calculate normalized bounding box area for pricing
-            val boxArea = calculateNormalizedArea(
-                box = boundingBox,
-                imageWidth = frameWidth,
-                imageHeight = frameHeight
-            )
+            // Calculate normalized area from portable type
+            val boxArea = bboxNorm.area
 
             // Generate price range
             val priceRange = PricingEngine.generatePriceRange(category, boxArea)
@@ -121,10 +127,7 @@ class BarcodeScannerClient {
                 category = category,
                 priceRange = priceRange,
                 confidence = confidence,
-                boundingBox = boundingBox.toNormalizedRect(
-                    frameWidth = frameWidth,
-                    frameHeight = frameHeight
-                )
+                boundingBox = bboxNorm
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error converting barcode to item", e)
@@ -186,19 +189,6 @@ class BarcodeScannerClient {
         } catch (e: Exception) {
             Log.w(TAG, "Failed to crop thumbnail", e)
             null
-        }
-    }
-
-    /**
-     * Calculates normalized bounding box area (0.0 to 1.0).
-     */
-    private fun calculateNormalizedArea(box: Rect, imageWidth: Int, imageHeight: Int): Float {
-        val boxArea = box.width() * box.height()
-        val totalArea = imageWidth * imageHeight
-        return if (totalArea > 0) {
-            (boxArea.toFloat() / totalArea).coerceIn(0f, 1f)
-        } else {
-            0f
         }
     }
 
