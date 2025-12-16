@@ -81,6 +81,7 @@ class DocumentTextRecognitionClient {
                     it
                 }
             }
+            val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
             // Generate unique ID from text hash
             val id = "document_${fullText.hashCode()}_${System.currentTimeMillis()}"
@@ -95,7 +96,22 @@ class DocumentTextRecognitionClient {
             // Generate price range (documents have symbolic pricing)
             val priceRange = PricingEngine.generatePriceRange(ItemCategory.DOCUMENT, boxArea)
 
-            val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
+            val bboxNorm = boundingBox?.toNormalizedRect(
+                frameWidth = sourceBitmap?.width ?: image.width,
+                frameHeight = sourceBitmap?.height ?: image.height
+            )
+
+            if (thumbnail != null) {
+                RawDetection(
+                    trackingId = id,
+                    boundingBox = boundingBox,
+                    bboxNorm = bboxNorm,
+                    labels = emptyList(),
+                    thumbnail = thumbnail,
+                    thumbnailRef = thumbnailRef
+                )
+            }
+
             val item = ScannedItem(
                 id = id,
                 thumbnail = thumbnailRef,
@@ -103,10 +119,7 @@ class DocumentTextRecognitionClient {
                 category = ItemCategory.DOCUMENT,
                 priceRange = priceRange,
                 recognizedText = fullText,
-                boundingBox = boundingBox?.toNormalizedRect(
-                    frameWidth = sourceBitmap?.width ?: image.width,
-                    frameHeight = sourceBitmap?.height ?: image.height
-                )
+                boundingBox = bboxNorm
             )
 
             Log.d(TAG, "Created document item with ${fullText.length} characters")
