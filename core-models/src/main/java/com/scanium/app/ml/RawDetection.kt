@@ -3,6 +3,7 @@ package com.scanium.app.ml
 import android.graphics.Bitmap
 import android.graphics.Rect
 import com.scanium.app.core.geometry.NormalizedRect
+import com.scanium.app.core.image.ImageRef
 
 /**
  * Represents raw detection data from ML Kit before conversion to ScannedItem.
@@ -12,13 +13,15 @@ import com.scanium.app.core.geometry.NormalizedRect
  * @param boundingBox Object bounding box in image coordinates
  * @param labels List of classification labels with confidences
  * @param thumbnail Cropped thumbnail of the detected object
+ * @param thumbnailRef Portable thumbnail reference (platform-neutral)
  */
 data class RawDetection(
     val trackingId: String,
     val boundingBox: Rect?,
     val bboxNorm: NormalizedRect? = null,
     val labels: List<LabelWithConfidence>,
-    val thumbnail: Bitmap?
+    val thumbnail: Bitmap?,
+    val thumbnailRef: ImageRef? = null
 ) {
     /**
      * Returns the best (highest confidence) label.
