@@ -146,28 +146,28 @@ class ObjectTracker(
                 continue
             }
 
+            val useNormalizedBoxes = candidate.boundingBoxNorm?.isNormalized() == true &&
+                    detection.boundingBox.isNormalized()
+            val candidateBox = if (useNormalizedBoxes) candidate.boundingBoxNorm!! else candidate.boundingBox
+            val detectionBox = detection.boundingBox
+
             // Calculate IoU (Intersection over Union)
-            val iou = if (candidate.boundingBoxNorm != null && detection.boundingBoxNorm != null) {
-                iou(candidate.boundingBoxNorm!!, detection.boundingBoxNorm)
+            val iou = if (useNormalizedBoxes) {
+                calculateIoU(candidateBox, detectionBox)
             } else {
-                candidate.calculateIoU(detection.boundingBox)
+                candidate.calculateIoU(detectionBox)
             }
 
             // Calculate normalized center distance
             // Use diagonal of detection box as normalization factor (more robust than fixed 1000px)
             val detectionBoxDiagonal = sqrt(
-                (detection.boundingBox.width * detection.boundingBox.width +
-                detection.boundingBox.height * detection.boundingBox.height).toDouble()
+                (detectionBox.width * detectionBox.width +
+                detectionBox.height * detectionBox.height).toDouble()
             ).toFloat()
-            val normalizedBoxes = candidate.boundingBoxNorm
-            val distance = if (
-                normalizedBoxes != null &&
-                normalizedBoxes.isNormalized() &&
-                detection.boundingBox.isNormalized()
-            ) {
-                centerDistance(normalizedBoxes, detection.boundingBox)
+            val distance = if (useNormalizedBoxes) {
+                centerDistance(candidateBox, detectionBox)
             } else {
-                candidate.distanceTo(detection.boundingBox)
+                candidate.distanceTo(detectionBox)
             }
             val normalizedDistance = if (detectionBoxDiagonal > 0) {
                 (distance / detectionBoxDiagonal).coerceIn(0f, 2f) / 2f // Normalize to 0-1 range
@@ -190,6 +190,24 @@ class ObjectTracker(
         }
 
         return bestMatch
+    }
+
+    private fun calculateIoU(a: NormalizedRect, b: NormalizedRect): Float {
+        val intersectLeft = maxOf(a.left, b.left)
+        val intersectTop = maxOf(a.top, b.top)
+        val intersectRight = minOf(a.right, b.right)
+        val intersectBottom = minOf(a.bottom, b.bottom)
+
+        if (intersectLeft >= intersectRight || intersectTop >= intersectBottom) {
+            return 0f
+        }
+
+        val intersectionWidth = intersectRight - intersectLeft
+        val intersectionHeight = intersectBottom - intersectTop
+        val intersectionArea = intersectionWidth * intersectionHeight
+        val unionArea = a.area + b.area - intersectionArea
+
+        return if (unionArea > 0) intersectionArea / unionArea else 0f
     }
 
     private fun centerDistance(a: NormalizedRect, b: NormalizedRect): Float {
