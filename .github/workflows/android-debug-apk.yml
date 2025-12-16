@@ -27,12 +27,20 @@ jobs:
       - name: Build debug APK
         run: ./gradlew clean assembleDebug
 
-      - name: Verify APK output
-        run: ls -la app/build/outputs/apk/debug/
+      - name: Verify build outputs (diagnostic)
+        run: |
+          set -e
+          echo "=== Outputs under app/build ==="
+          ls -la app/build || true
+          echo "=== Outputs under app/build/outputs ==="
+          ls -la app/build/outputs || true
+          echo "=== Any APKs produced ==="
+          find . -type f -path "*/build/outputs/apk/*" -name "*.apk" -print
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: scanium-app-debug-apk
-          path: apk/app-debug.apk
+          path: |
+            **/build/outputs/apk/**/*.apk
           if-no-files-found: error
