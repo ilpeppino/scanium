@@ -23,3 +23,40 @@ subprojects {
         }
     }
 }
+
+tasks.register("checkPortableModules") {
+    description = "Verifies core-models and core-tracking have no Android platform imports"
+    group = "verification"
+
+    doLast {
+        val portableModules = listOf("core-models", "core-tracking")
+        val forbiddenImports = listOf("android.graphics", "android.util")
+        val violations = mutableListOf<String>()
+
+        portableModules.forEach { moduleName ->
+            val moduleDir = file(moduleName)
+            if (moduleDir.exists()) {
+                fileTree(moduleDir) {
+                    include("**/*.kt")
+                }.forEach { sourceFile ->
+                    val content = sourceFile.readText()
+                    forbiddenImports.forEach { forbidden ->
+                        if (content.contains("import $forbidden")) {
+                            violations.add("${sourceFile.relativeTo(rootDir)}: import $forbidden.*")
+                        }
+                    }
+                }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Portability violation: core modules must not import Android platform types.\n" +
+                "Found forbidden imports:\n  ${violations.joinToString("\n  ")}\n" +
+                "See CLAUDE.md 'Shared Code Rules' for guidance."
+            )
+        }
+
+        println("✓ Portability check passed: core-models and core-tracking are Android-free")
+    }
+}
