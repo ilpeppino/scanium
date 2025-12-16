@@ -139,33 +139,26 @@ UI (CameraScreen, ItemsListScreen, SellOnEbayScreen)
 - `adapters/ImageAdapters.kt` – `Bitmap.toImageRefJpeg()`, `ImageRef.Bytes.toBitmap()`
 - `adapters/RectAdapters.kt` – Rect/RectF ↔ NormalizedRect conversions (placeholder)
 
-***REMOVED******REMOVED******REMOVED*** App Module (Android-Specific)
+***REMOVED******REMOVED******REMOVED*** :androidApp Module (Android-Specific)
 
 **Camera & Processing**
 - `camera/CameraXManager.kt` – CameraX lifecycle, mode routing, gesture handling
 - `camera/ui/VerticalThresholdSlider.kt`, `ClassificationModeToggle.kt` – UI controls
+- `camera/DetectionOverlay.kt` – Real-time detection visualization
 
 **ML Kit Integration** (Android wrappers)
-- `ml/ObjectDetectorClient.kt` – Wraps ML Kit Object Detection, converts to portable types
+- `ml/ObjectDetectorClient.kt` – Wraps ML Kit Object Detection, converts to portable types (populates `RawDetection.thumbnailRef`)
 - `ml/BarcodeScannerClient.kt` – Wraps ML Kit Barcode Scanning
 - `ml/DocumentTextRecognitionClient.kt` – Wraps ML Kit Text Recognition
 - `ml/PricingEngine.kt` – Mock EUR price generation (replace with real API)
 
 **State Management**
 - `items/ItemsViewModel.kt` – Centralized `StateFlow<List<ScannedItem>>`, ID-based dedup
-- `items/ItemListingStatus.kt` – eBay listing states (NOT_LISTED, LISTING_IN_PROGRESS, etc.)
-
-**Domain Pack (Fine-Grained Categories)**
-- `domain/config/DomainPack.kt` – 23 categories + 10 attributes schema
-- `domain/repository/LocalDomainPackRepository.kt` – Loads JSON from `res/raw/home_resale_domain_pack.json`
-- `domain/category/BasicCategoryEngine.kt` – ML Kit label → DomainCategory matching
-- `domain/DomainPackProvider.kt` – Singleton initialized in `MainActivity`
 
 **Cloud Classification System**
 - `ml/classification/CloudClassifier.kt` – Uploads cropped items to backend API (multipart, retry, EXIF stripping)
 - `ml/classification/ClassificationOrchestrator.kt` – Queue with max concurrency=2, exponential backoff retry
 - `ml/classification/ClassificationResult.kt` – Domain category, attributes, status (PENDING/SUCCESS/FAILED)
-- `ml/classification/ClassificationMode.kt` – Enum: ON_DEVICE | CLOUD (default: CLOUD)
 - `data/ClassificationPreferences.kt` – Persists user's mode selection (DataStore)
 - `settings/ClassificationModeViewModel.kt` – Exposes classification mode as StateFlow
 - **Configuration**: Set `scanium.api.base.url` and `scanium.api.key` in `local.properties` (see `/docs/features/CLOUD_CLASSIFICATION.md`)
@@ -178,6 +171,7 @@ UI (CameraScreen, ItemsListScreen, SellOnEbayScreen)
 
 **Navigation & Entry**
 - `MainActivity.kt` – Initializes DomainPackProvider, hosts NavHost
+- `ScaniumApp.kt` – App-level Compose setup
 - `navigation/Routes.kt` – Compose nav destinations (CAMERA, ITEMS_LIST, SELL_ON_EBAY)
 
 ***REMOVED******REMOVED*** Configuration Tuning
@@ -206,36 +200,54 @@ val analysisIntervalMs = 800L  // Process every 800ms
 ***REMOVED******REMOVED*** Testing
 
 - **175+ tests**: 110 tracking/detection, 61 domain pack, 4+ eBay selling
-- **Unit**: `app/src/test/` (JUnit 4, Robolectric, Truth, MockK, Coroutines Test)
-- **Instrumented**: `app/src/androidTest/` (Compose Testing)
+- **Unit**: `androidApp/src/test/` (JUnit 4, Robolectric, Truth, MockK, Coroutines Test)
+- **Instrumented**: `androidApp/src/androidTest/` (Compose Testing)
+- **Core tracking tests**: `core-tracking/src/test/` (Platform-independent unit tests)
 - See `md/testing/TEST_SUITE.md` for detailed coverage
 
 ***REMOVED******REMOVED*** KMP/iOS Porting Status
 
 **Goal**: Share Scanium's "brain" (tracking, aggregation, state management) across Android/iOS while keeping platform-specific UI/camera/ML.
 
-***REMOVED******REMOVED******REMOVED*** ✅ Completed (Phase 1: Core Modules)
-1. **Multi-module Gradle structure established**:
-   - `:core-models` – Platform-independent data models
-   - `:core-tracking` – Platform-independent tracking/aggregation
-   - `:app` – Android-specific implementation
-2. **Portable types introduced**:
-   - `ImageRef` – Platform-agnostic image reference (replaces `Bitmap`)
-   - `NormalizedRect` – Portable bounding box with 0-1 coordinates (replaces `RectF`)
-   - `Logger` – Platform-agnostic logging interface (replaces `android.util.Log`)
-3. **Core modules are Android-free**:
-   - ✅ `core-models`: No Android dependencies
+***REMOVED******REMOVED******REMOVED*** ✅ Completed (Phase 1: Module Restructuring & Portable Types)
+1. **Multi-module Gradle structure established** (9 modules):
+   - `:core-models` – Platform-independent data models (Android-free)
+   - `:core-tracking` – Platform-independent tracking/aggregation (Android-free)
+   - `:core-domainpack` – Domain Pack system (Android library, ready for KMP)
+   - `:core-scan`, `:core-contracts` – Placeholder modules for future shared contracts
+   - `:androidApp` – Main Android app module
+   - `:android-ml-mlkit`, `:android-camera-camerax` – Platform-specific wrappers (placeholders)
+   - `:android-platform-adapters` – Conversion layer between Android and portable types
+2. **Portable types fully implemented and integrated**:
+   - ✅ `ImageRef` – Platform-agnostic image reference (replaces `Bitmap`)
+   - ✅ `NormalizedRect` – Portable bounding box with 0-1 coordinates (replaces `RectF`)
+   - ✅ `Logger` – Platform-agnostic logging interface (replaces `android.util.Log`)
+3. **Core data models migrated to portable types**:
+   - ✅ `DetectionResult` – Uses `NormalizedRect` (removed `Rect`)
+   - ✅ `RawDetection` – Transitioning: has both legacy (`boundingBox`, `thumbnail`) and portable (`bboxNorm`, `thumbnailRef`) fields
+   - ✅ `ScannedItem` – Uses `ImageRef` and `NormalizedRect` (still has `Uri` for platform compatibility)
+   - ✅ `ObjectCandidate` – Uses `NormalizedRect` (removed `RectF`)
+   - ✅ `ObjectTracker` – Prefers `NormalizedRect` for spatial matching with fallback to legacy types
+4. **Platform adapter layer established**:
+   - ✅ `android-platform-adapters` module created
+   - ✅ `ImageAdapters.kt` – `Bitmap ↔ ImageRef` conversions (`toImageRefJpeg()`, `toBitmap()`)
+   - 🚧 `RectAdapters.kt` – Placeholder for `Rect/RectF ↔ NormalizedRect` conversions
+5. **Core modules are Android-free**:
+   - ✅ `core-models`: No Android dependencies (except `Uri` in `ScannedItem` - pending removal)
    - ✅ `core-tracking`: No Android dependencies (uses Logger, ImageRef, NormalizedRect)
    - ✅ CI builds successfully without Android SDK in core modules
 
 ***REMOVED******REMOVED******REMOVED*** 🚧 Remaining Work (Phase 2: KMP Conversion)
-1. Convert `:core-models` to KMP `commonMain`
-2. Convert `:core-tracking` to KMP `commonMain`
-3. Implement platform actuals:
+1. Remove remaining Android dependencies from `core-models` (`Uri` in `ScannedItem`)
+2. Complete `RawDetection` migration (remove legacy `boundingBox`/`thumbnail` fields)
+3. Convert `:core-models` to KMP `commonMain`
+4. Convert `:core-tracking` to KMP `commonMain`
+5. Convert `:core-domainpack` to KMP `commonMain`
+6. Implement platform actuals:
    - Android: `AndroidLogger` wrapping `android.util.Log`
    - iOS: `IOSLogger` wrapping `NSLog`/`os_log`
-4. Create iOS app target (`:iosApp`) with SwiftUI
-5. Implement iOS platform providers for ML/camera
+7. Create iOS app target (`:iosApp`) with SwiftUI
+8. Implement iOS platform providers for ML/camera
 
 ***REMOVED******REMOVED******REMOVED*** Shared Code Rules
 1. **NO Android Dependencies** in `:core-*` modules:
