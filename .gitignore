@@ -2,7 +2,7 @@
 .gradle/
 build/
 app/build/
-androidApp
+androidApp/
 
 ***REMOVED*** IDE & tooling
 .idea/
