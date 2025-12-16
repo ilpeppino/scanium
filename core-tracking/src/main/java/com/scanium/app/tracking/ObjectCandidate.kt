@@ -2,7 +2,7 @@ package com.scanium.app.tracking
 
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.model.ImageRef
-import com.scanium.app.core.geometry.NormalizedRect
+import com.scanium.app.model.NormalizedRect
 import kotlin.math.sqrt
 
 /**
@@ -26,6 +26,7 @@ data class ObjectCandidate(
     val internalId: String,
     var boundingBox: NormalizedRect,
     var boundingBoxNorm: NormalizedRect? = null,
+    var boundingBoxPx: FloatRect? = null,
     var lastSeenFrame: Long,
     var seenCount: Int = 1,
     var maxConfidence: Float = 0f,
@@ -115,3 +116,10 @@ data class ObjectCandidate(
         return if (unionArea > 0) intersectionArea / unionArea else 0f
     }
 }
+
+data class FloatRect(
+    val left: Float,
+    val top: Float,
+    val right: Float,
+    val bottom: Float
+)
