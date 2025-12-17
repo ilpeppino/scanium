@@ -1,6 +1,10 @@
 import Foundation
 
-/// Temporary glue for wiring the KMP-generated Shared.xcframework into the SwiftUI app.
+***REMOVED***if canImport(Shared)
+import Shared
+***REMOVED***endif
+
+/// Single entry point for importing the `Shared` XCFramework and exposing Swift-friendly facades.
 /// The functions here remain no-ops until the framework is available.
 enum SharedBridge {
     /// Captures configuration that the shared Kotlin entry point will eventually require.
@@ -40,9 +44,6 @@ private struct StubSession: SharedBridge.Session {
         // No-op until the Shared.xcframework is integrated.
     }
 }
-
-***REMOVED***if canImport(Shared)
-import Shared
 
 /// Placeholder adapter that will wrap the real shared entry point once the Kotlin framework is built.
 private struct KmpBackedSession: SharedBridge.Session {
