@@ -137,8 +137,8 @@ dependencyCheck {
 }
 
 dependencies {
-    implementation(project(":core-models"))
-    implementation(project(":core-tracking"))
+    implementation(project(":shared:core-models"))
+    implementation(project(":shared:core-tracking"))
     implementation(project(":core-domainpack"))
     implementation(project(":core-scan"))
     implementation(project(":core-contracts"))
