@@ -11,8 +11,8 @@ import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
 import com.scanium.app.selling.domain.ListingStatus
 import com.scanium.app.selling.util.ListingImagePreparer
-import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toBitmap
+import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Result of a listing creation operation.
