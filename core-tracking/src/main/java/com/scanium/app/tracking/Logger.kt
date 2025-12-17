@@ -1,28 +1,10 @@
 package com.scanium.app.tracking
 
 /**
- * Platform-agnostic logging interface for core-tracking module.
+ * Backwards-compatible alias for the shared Logger interface.
  *
- * Platform-specific implementations should use appropriate logging mechanisms:
- * - Android: android.util.Log
- * - iOS: NSLog / os_log
- * - JVM: println or SLF4J
+ * The canonical definition now lives in shared:core-tracking at
+ * com.scanium.core.tracking.Logger. This alias keeps existing imports
+ * compiling during the KMP migration.
  */
-interface Logger {
-    fun d(tag: String, message: String)
-    fun i(tag: String, message: String)
-    fun w(tag: String, message: String)
-    fun e(tag: String, message: String)
-
-    companion object {
-        /**
-         * No-op logger for platforms that don't need logging.
-         */
-        val NONE: Logger = object : Logger {
-            override fun d(tag: String, message: String) {}
-            override fun i(tag: String, message: String) {}
-            override fun w(tag: String, message: String) {}
-            override fun e(tag: String, message: String) {}
-        }
-    }
-}
+typealias Logger = com.scanium.core.tracking.Logger
