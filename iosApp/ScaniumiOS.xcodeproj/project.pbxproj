@@ -1,0 +1,288 @@
+// !$*UTF8*$!
+{
+archiveVersion = 1;
+classes = {};
+objectVersion = 56;
+objects = {
+
+/* Begin PBXBuildFile section */
+D0D33B0B28FD4F2F9B9DB001 /* ScaniumiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D33B0628FD4F2F9B9DB001 /* ScaniumiOSApp.swift */; };
+D0D33B0C28FD4F2F9B9DB001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D33B0728FD4F2F9B9DB001 /* ContentView.swift */; };
+D0D33B0D28FD4F2F9B9DB001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D0D33B0828FD4F2F9B9DB001 /* Assets.xcassets */; };
+D0D33B0E28FD4F2F9B9DB001 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D0D33B0928FD4F2F9B9DB001 /* Preview Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+D0D33B0228FD4F2F9B9DB001 /* ScaniumiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScaniumiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+D0D33B0628FD4F2F9B9DB001 /* ScaniumiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaniumiOSApp.swift; sourceTree = "<group>"; };
+D0D33B0728FD4F2F9B9DB001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+D0D33B0828FD4F2F9B9DB001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+D0D33B0928FD4F2F9B9DB001 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+D0D33B0A28FD4F2F9B9DB001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+D0D33B0428FD4F2F9B9DB001 /* Frameworks */ = {
+isa = PBXFrameworksBuildPhase;
+buildActionMask = 2147483647;
+files = (
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+D0D33AF728FD4F2F9B9DB001 = {
+isa = PBXGroup;
+children = (
+D0D33AF928FD4F2F9B9DB001 /* ScaniumiOS */,
+D0D33AF828FD4F2F9B9DB001 /* Products */,
+);
+sourceTree = "<group>";
+};
+D0D33AF828FD4F2F9B9DB001 /* Products */ = {
+isa = PBXGroup;
+children = (
+D0D33B0228FD4F2F9B9DB001 /* ScaniumiOS.app */,
+);
+name = Products;
+sourceTree = "<group>";
+};
+D0D33AF928FD4F2F9B9DB001 /* ScaniumiOS */ = {
+isa = PBXGroup;
+children = (
+D0D33B0628FD4F2F9B9DB001 /* ScaniumiOSApp.swift */,
+D0D33B0728FD4F2F9B9DB001 /* ContentView.swift */,
+D0D33B0828FD4F2F9B9DB001 /* Assets.xcassets */,
+D0D33B0928FD4F2F9B9DB001 /* Preview Assets.xcassets */,
+D0D33B0A28FD4F2F9B9DB001 /* Info.plist */,
+);
+path = ScaniumiOS;
+sourceTree = "<group>";
+};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+D0D33B0128FD4F2F9B9DB001 /* ScaniumiOS */ = {
+isa = PBXNativeTarget;
+buildConfigurationList = D0D33B1128FD4F2F9B9DB001 /* Build configuration list for PBXNativeTarget "ScaniumiOS" */;
+buildPhases = (
+D0D33B0328FD4F2F9B9DB001 /* Sources */,
+D0D33B0428FD4F2F9B9DB001 /* Frameworks */,
+D0D33B0528FD4F2F9B9DB001 /* Resources */,
+);
+buildRules = (
+);
+dependencies = (
+);
+name = ScaniumiOS;
+productName = ScaniumiOS;
+productReference = D0D33B0228FD4F2F9B9DB001 /* ScaniumiOS.app */;
+productType = "com.apple.product-type.application";
+};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+D0D33AF228FD4F2F9B9DB001 /* Project object */ = {
+isa = PBXProject;
+attributes = {
+BuildIndependentTargetsInParallel = YES;
+LastSwiftUpdateCheck = 1500;
+LastUpgradeCheck = 1500;
+TargetAttributes = {
+D0D33B0128FD4F2F9B9DB001 = {
+CreatedOnToolsVersion = 15.0;
+};
+};
+};
+buildConfigurationList = D0D33B1428FD4F2F9B9DB001 /* Build configuration list for PBXProject "ScaniumiOS" */;
+compatibilityVersion = "Xcode 14.0";
+developmentRegion = en;
+hasScannedForEncodings = 0;
+knownRegions = (
+en,
+Base,
+);
+mainGroup = D0D33AF728FD4F2F9B9DB001;
+productRefGroup = D0D33AF828FD4F2F9B9DB001 /* Products */;
+projectDirPath = "";
+projectRoot = "";
+targets = (
+D0D33B0128FD4F2F9B9DB001 /* ScaniumiOS */,
+);
+};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+D0D33B0528FD4F2F9B9DB001 /* Resources */ = {
+isa = PBXResourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+D0D33B0D28FD4F2F9B9DB001 /* Assets.xcassets in Resources */,
+D0D33B0E28FD4F2F9B9DB001 /* Preview Assets.xcassets in Resources */,
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+D0D33B0328FD4F2F9B9DB001 /* Sources */ = {
+isa = PBXSourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+D0D33B0B28FD4F2F9B9DB001 /* ScaniumiOSApp.swift in Sources */,
+D0D33B0C28FD4F2F9B9DB001 /* ContentView.swift in Sources */,
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+D0D33B0F28FD4F2F9B9DB001 /* Debug */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ALWAYS_SEARCH_USER_PATHS = NO;
+CLANG_ANALYZER_NONNULL = YES;
+CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+CLANG_ENABLE_MODULES = YES;
+CLANG_ENABLE_OBJC_ARC = YES;
+CLANG_ENABLE_OBJC_WEAK = YES;
+CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+COPY_PHASE_STRIP = NO;
+DEBUG_INFORMATION_FORMAT = dwarf;
+ENABLE_STRICT_OBJC_MSGSEND = YES;
+ENABLE_TESTABILITY = YES;
+GCC_C_LANGUAGE_STANDARD = gnu11;
+GCC_DYNAMIC_NO_PIC = NO;
+GCC_NO_COMMON_BLOCKS = YES;
+GCC_OPTIMIZATION_LEVEL = 0;
+GCC_PREPROCESSOR_DEFINITIONS = (
+"DEBUG=1",
+"$(inherited)",
+);
+GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+GCC_WARN_UNUSED_FUNCTION = YES;
+GCC_WARN_UNUSED_VARIABLE = YES;
+IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+ONLY_ACTIVE_ARCH = YES;
+SDKROOT = iphoneos;
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+};
+name = Debug;
+};
+D0D33B1028FD4F2F9B9DB001 /* Release */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ALWAYS_SEARCH_USER_PATHS = NO;
+CLANG_ANALYZER_NONNULL = YES;
+CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+CLANG_ENABLE_MODULES = YES;
+CLANG_ENABLE_OBJC_ARC = YES;
+CLANG_ENABLE_OBJC_WEAK = YES;
+CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+COPY_PHASE_STRIP = NO;
+DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+ENABLE_NS_ASSERTIONS = NO;
+ENABLE_STRICT_OBJC_MSGSEND = YES;
+GCC_C_LANGUAGE_STANDARD = gnu11;
+GCC_NO_COMMON_BLOCKS = YES;
+GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+GCC_WARN_UNUSED_FUNCTION = YES;
+GCC_WARN_UNUSED_VARIABLE = YES;
+IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+MTL_ENABLE_DEBUG_INFO = NO;
+SDKROOT = iphoneos;
+SWIFT_COMPILATION_MODE = wholemodule;
+SWIFT_OPTIMIZATION_LEVEL = "-O";
+VALIDATE_PRODUCT = YES;
+};
+name = Release;
+};
+D0D33B1528FD4F2F9B9DB001 /* Debug */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ASSETCATALOG_COMPILER_APPICON_NAME = "";
+CLANG_ENABLE_MODULES = YES;
+CODE_SIGN_STYLE = Automatic;
+CURRENT_PROJECT_VERSION = 1;
+DEVELOPMENT_ASSET_PATHS = "\"ScaniumiOS/Preview Content\"";
+DEVELOPMENT_TEAM = "";
+ENABLE_PREVIEWS = YES;
+GENERATE_INFOPLIST_FILE = NO;
+INFOPLIST_FILE = ScaniumiOS/Info.plist;
+IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+LD_RUNPATH_SEARCH_PATHS = (
+"$(inherited)",
+"@executable_path/Frameworks",
+);
+MARKETING_VERSION = 1.0;
+PRODUCT_BUNDLE_IDENTIFIER = com.scanium.app.ios;
+PRODUCT_NAME = "$(TARGET_NAME)";
+SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+SWIFT_EMIT_LOC_STRINGS = YES;
+SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+SWIFT_VERSION = 5.0;
+TARGETED_DEVICE_FAMILY = "1,2";
+};
+name = Debug;
+};
+D0D33B1628FD4F2F9B9DB001 /* Release */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ASSETCATALOG_COMPILER_APPICON_NAME = "";
+CLANG_ENABLE_MODULES = YES;
+CODE_SIGN_STYLE = Automatic;
+CURRENT_PROJECT_VERSION = 1;
+DEVELOPMENT_ASSET_PATHS = "\"ScaniumiOS/Preview Content\"";
+DEVELOPMENT_TEAM = "";
+ENABLE_PREVIEWS = YES;
+GENERATE_INFOPLIST_FILE = NO;
+INFOPLIST_FILE = ScaniumiOS/Info.plist;
+IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+LD_RUNPATH_SEARCH_PATHS = (
+"$(inherited)",
+"@executable_path/Frameworks",
+);
+MARKETING_VERSION = 1.0;
+PRODUCT_BUNDLE_IDENTIFIER = com.scanium.app.ios;
+PRODUCT_NAME = "$(TARGET_NAME)";
+SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+SWIFT_EMIT_LOC_STRINGS = YES;
+SWIFT_VERSION = 5.0;
+TARGETED_DEVICE_FAMILY = "1,2";
+};
+name = Release;
+};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+D0D33B1128FD4F2F9B9DB001 /* Build configuration list for PBXNativeTarget "ScaniumiOS" */ = {
+isa = XCConfigurationList;
+buildConfigurations = (
+D0D33B1528FD4F2F9B9DB001 /* Debug */,
+D0D33B1628FD4F2F9B9DB001 /* Release */,
+);
+defaultConfigurationIsVisible = 0;
+defaultConfigurationName = Release;
+};
+D0D33B1428FD4F2F9B9DB001 /* Build configuration list for PBXProject "ScaniumiOS" */ = {
+isa = XCConfigurationList;
+buildConfigurations = (
+D0D33B0F28FD4F2F9B9DB001 /* Debug */,
+D0D33B1028FD4F2F9B9DB001 /* Release */,
+);
+defaultConfigurationIsVisible = 0;
+defaultConfigurationName = Release;
+};
+/* End XCConfigurationList section */
+};
+rootObject = D0D33AF228FD4F2F9B9DB001 /* Project object */;
+}
