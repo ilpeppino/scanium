@@ -6,8 +6,18 @@ plugins {
 kotlin {
     androidTarget()
 
-    val iosArm64Target = iosArm64()
-    val iosSimulatorArm64Target = iosSimulatorArm64()
+    val iosArm64Target = iosArm64() {
+        binaries.framework {
+            baseName = "ScaniumCoreModels"
+            isStatic = true
+        }
+    }
+    val iosSimulatorArm64Target = iosSimulatorArm64() {
+        binaries.framework {
+            baseName = "ScaniumCoreModels"
+            isStatic = true
+        }
+    }
 
     sourceSets {
         val commonMain by getting {
