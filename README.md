@@ -2,6 +2,10 @@
 
 An Android application that uses on-device machine learning to detect objects through the camera and estimate their prices in real-time.
 
+***REMOVED******REMOVED*** Documentation
+
+See [docs/INDEX.md](docs/INDEX.md) for the canonical doc set and entry point.
+
 ***REMOVED******REMOVED*** Overview
 
 Scanium is a camera-first Android app that demonstrates object detection and price estimation using Google ML Kit. Point your camera at everyday items, and the app will identify them and provide estimated price ranges in EUR.
