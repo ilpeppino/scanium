@@ -1,27 +1,10 @@
 package com.scanium.app.model
 
 /**
- * Portable reference to an image used across shared modules.
+ * Backwards-compatible alias for the shared ImageRef model.
  *
- * Current implementation embeds the encoded bytes directly (Option A), which is safer when
- * a cross-platform cache is not yet available. A key-based indirection (Option B) can be
- * added later without breaking consumers.
+ * The canonical definition now lives in shared:core-models at
+ * com.scanium.core.models.image.ImageRef. This alias keeps existing imports
+ * compiling during the KMP migration.
  */
-sealed class ImageRef {
-    abstract val mimeType: String
-    abstract val width: Int
-    abstract val height: Int
-
-    data class Bytes(
-        val bytes: ByteArray,
-        override val mimeType: String,
-        override val width: Int,
-        override val height: Int,
-    ) : ImageRef() {
-        init {
-            require(bytes.isNotEmpty()) { "bytes must not be empty" }
-            require(mimeType.isNotBlank()) { "mimeType must not be blank" }
-            require(width > 0 && height > 0) { "width and height must be positive" }
-        }
-    }
-}
+typealias ImageRef = com.scanium.core.models.image.ImageRef
