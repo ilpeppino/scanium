@@ -22,5 +22,8 @@ android {
 }
 
 dependencies {
+    // Depend on shared KMP module for portable primitives
+    api(project(":shared:core-models"))
+
     testImplementation("junit:junit:4.13.2")
 }
