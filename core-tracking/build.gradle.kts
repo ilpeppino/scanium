@@ -25,6 +25,6 @@ dependencies {
     // Depend on shared KMP module for tracking logic
     api(project(":shared:core-tracking"))
 
-    implementation(project(":core-models"))
+    implementation(project(":shared:core-models"))
     testImplementation("junit:junit:4.13.2")
 }

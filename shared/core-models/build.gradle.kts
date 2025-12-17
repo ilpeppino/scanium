@@ -10,6 +10,7 @@ kotlin {
     val iosSimulatorArm64Target = iosSimulatorArm64()
 
     sourceSets {
+        // Common source sets
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
