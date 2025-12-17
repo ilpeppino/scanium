@@ -6,11 +6,20 @@ plugins {
 kotlin {
     androidTarget()
 
-    val iosArm64Target = iosArm64()
-    val iosSimulatorArm64Target = iosSimulatorArm64()
+    val iosArm64Target = iosArm64() {
+        binaries.framework {
+            baseName = "ScaniumCoreModels"
+            isStatic = true
+        }
+    }
+    val iosSimulatorArm64Target = iosSimulatorArm64() {
+        binaries.framework {
+            baseName = "ScaniumCoreModels"
+            isStatic = true
+        }
+    }
 
     sourceSets {
-        // Common source sets
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
