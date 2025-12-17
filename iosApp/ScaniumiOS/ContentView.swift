@@ -1,22 +1,48 @@
 import SwiftUI
 
 struct ContentView: View {
-    private let placeholderItems: [String] = [
-        "Vintage camera",
-        "Sneakers",
-        "Vinyl record",
-        "Designer bag"
-    ]
+    private let mockedItems: [ScannedItem] = MockItems.sample
 
     var body: some View {
         NavigationStack {
-            List(placeholderItems, id: \.self) { item in
-                HStack {
+            List(mockedItems) { item in
+                HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "shippingbox")
                         .foregroundColor(.accentColor)
-                    Text(item)
-                        .font(.body)
+                        .padding(.top, 4)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(item.labelText ?? item.category.displayName)
+                                .font(.headline)
+                            Spacer()
+                            Text(item.priceRange.formatted)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text("Confidence: \(item.formattedConfidence) (\(item.confidenceLevel.displayName))")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        if let recognizedText = item.recognizedText {
+                            Text(recognizedText)
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let barcode = item.barcodeValue {
+                            Text("Barcode: \(barcode)")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text("Listing: \(item.listingStatus.displayName)")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .padding(.vertical, 4)
             }
             .navigationTitle("Scanium (iOS)")
         }
