@@ -1,6 +1,5 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
 }
 
 kotlin {
@@ -14,13 +13,7 @@ kotlin {
 
     sourceSets {
         // Common source sets
-        val commonMain by getting {
-            dependencies {
-                // Kotlinx Serialization for data models
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-            }
-        }
-
+        val commonMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
@@ -28,12 +21,7 @@ kotlin {
         }
 
         // Android source sets
-        val androidMain by getting {
-            dependencies {
-                // Android-specific dependencies if needed
-            }
-        }
-
+        val androidMain by getting
         val androidUnitTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
@@ -62,7 +50,7 @@ kotlin {
 
 // Android configuration
 android {
-    namespace = "com.scanium.core.models"
+    namespace = "com.scanium.shared.core.models"
     compileSdk = 34
 
     defaultConfig {
