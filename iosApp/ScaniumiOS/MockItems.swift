@@ -1,18 +1,71 @@
 import Foundation
+import CoreGraphics
 
 // Temporary Swift-side mirror of the shared models so the UI can be wired up
 // before the KMP framework is available.
 struct ImageRef {
+    let data: Data?
     let uri: URL?
+    let mimeType: String?
     let width: Int
     let height: Int
+
+    init(uri: URL?, width: Int, height: Int, mimeType: String? = nil, data: Data? = nil) {
+        self.data = data
+        self.uri = uri
+        self.mimeType = mimeType
+        self.width = width
+        self.height = height
+    }
+
+    init(bytes: Data, mimeType: String, width: Int, height: Int) {
+        self.init(uri: nil, width: width, height: height, mimeType: mimeType, data: bytes)
+    }
 }
 
 struct NormalizedRect {
-    let x: Double
-    let y: Double
-    let width: Double
-    let height: Double
+    let left: Double
+    let top: Double
+    let right: Double
+    let bottom: Double
+
+    var width: Double { right - left }
+    var height: Double { bottom - top }
+
+    init(left: Double, top: Double, right: Double, bottom: Double) {
+        self.left = left
+        self.top = top
+        self.right = right
+        self.bottom = bottom
+    }
+
+    init(x: Double, y: Double, width: Double, height: Double) {
+        self.init(left: x, top: y, right: x + width, bottom: y + height)
+    }
+
+    init(visionBoundingBox: CGRect) {
+        let normalizedTop = 1.0 - Double(visionBoundingBox.origin.y + visionBoundingBox.height)
+        self.init(
+            left: Double(visionBoundingBox.origin.x),
+            top: normalizedTop,
+            right: Double(visionBoundingBox.origin.x + visionBoundingBox.width),
+            bottom: normalizedTop + Double(visionBoundingBox.height)
+        )
+    }
+
+    func clamped() -> NormalizedRect {
+        let clampedLeft = max(0.0, min(1.0, left))
+        let clampedTop = max(0.0, min(1.0, top))
+        let clampedRight = max(0.0, min(1.0, right))
+        let clampedBottom = max(0.0, min(1.0, bottom))
+
+        return NormalizedRect(
+            left: min(clampedLeft, clampedRight),
+            top: min(clampedTop, clampedBottom),
+            right: max(clampedLeft, clampedRight),
+            bottom: max(clampedTop, clampedBottom)
+        )
+    }
 }
 
 struct PriceRange {
