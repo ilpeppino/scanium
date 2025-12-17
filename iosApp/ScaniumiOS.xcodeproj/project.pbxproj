@@ -7,6 +7,7 @@ objects = {
 
 /* Begin PBXBuildFile section */
 D0A19B3B2C5A34F200C8D2A0 /* SharedBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A19B3A2C5A34F200C8D2A0 /* SharedBridge.swift */; };
+D0F1B6A02C6A1B3F00C12345 /* ScaniumSharedTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0F1B69F2C6A1B3F00C12345 /* ScaniumSharedTypes.swift */; };
 D0D33B0B28FD4F2F9B9DB001 /* ScaniumiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D33B0628FD4F2F9B9DB001 /* ScaniumiOSApp.swift */; };
 D0D33B0C28FD4F2F9B9DB001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D33B0728FD4F2F9B9DB001 /* ContentView.swift */; };
 D0D33B0D28FD4F2F9B9DB001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D0D33B0828FD4F2F9B9DB001 /* Assets.xcassets */; };
@@ -16,6 +17,7 @@ D0D33B0E28FD4F2F9B9DB001 /* Preview Assets.xcassets in Resources */ = {isa = PBX
 /* Begin PBXFileReference section */
 D0A19B392C5A34F200C8D2A0 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 D0A19B3A2C5A34F200C8D2A0 /* SharedBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedBridge.swift; sourceTree = "<group>"; };
+D0F1B69F2C6A1B3F00C12345 /* ScaniumSharedTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaniumSharedTypes.swift; sourceTree = "<group>"; };
 D0D33B0228FD4F2F9B9DB001 /* ScaniumiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScaniumiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 D0D33B0628FD4F2F9B9DB001 /* ScaniumiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScaniumiOSApp.swift; sourceTree = "<group>"; };
 D0D33B0728FD4F2F9B9DB001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -56,6 +58,7 @@ D0D33AF928FD4F2F9B9DB001 /* ScaniumiOS */ = {
 isa = PBXGroup;
 children = (
 D0A19B3A2C5A34F200C8D2A0 /* SharedBridge.swift */,
+D0F1B69F2C6A1B3F00C12345 /* ScaniumSharedTypes.swift */,
 D0D33B0628FD4F2F9B9DB001 /* ScaniumiOSApp.swift */,
 D0D33B0728FD4F2F9B9DB001 /* ContentView.swift */,
 D0D33B0828FD4F2F9B9DB001 /* Assets.xcassets */,
@@ -144,6 +147,7 @@ isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
 D0A19B3B2C5A34F200C8D2A0 /* SharedBridge.swift in Sources */,
+D0F1B6A02C6A1B3F00C12345 /* ScaniumSharedTypes.swift in Sources */,
 D0D33B0B28FD4F2F9B9DB001 /* ScaniumiOSApp.swift in Sources */,
 D0D33B0C28FD4F2F9B9DB001 /* ContentView.swift in Sources */,
 );
