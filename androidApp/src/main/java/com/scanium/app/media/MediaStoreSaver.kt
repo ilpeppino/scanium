@@ -8,7 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
-import com.scanium.app.model.ImageRef
+import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.android.platform.adapters.toBitmap
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import kotlinx.coroutines.Dispatchers

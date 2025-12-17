@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.scanium.android.platform.adapters.toBitmap
+import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Platform helpers to bridge portable ImageRef into Android types.

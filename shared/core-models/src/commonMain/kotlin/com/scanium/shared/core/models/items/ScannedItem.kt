@@ -3,8 +3,8 @@ package com.scanium.shared.core.models.items
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
+import kotlinx.datetime.Clock
 import kotlin.math.roundToInt
-import kotlin.system.getTimeMillis
 import kotlin.random.Random
 
 private const val HEX_DIGITS = "0123456789abcdef"
@@ -62,7 +62,7 @@ data class ScannedItem<FullImageUri>(
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
     val confidence: Float = 0.0f,
-    val timestamp: Long = getTimeMillis(),
+    val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
     val recognizedText: String? = null,
     val barcodeValue: String? = null,
     val boundingBox: NormalizedRect? = null,
