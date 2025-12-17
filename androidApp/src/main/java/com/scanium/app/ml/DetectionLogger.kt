@@ -1,9 +1,9 @@
 package com.scanium.app.ml
 
 import android.util.Log
-import com.scanium.app.model.ImageRef
 import com.scanium.app.model.NormalizedRect
 import com.scanium.app.platform.toBitmap
+import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Centralized logging utility for object detection debugging and tuning.

@@ -2,7 +2,7 @@ package com.scanium.android.platform.adapters
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.scanium.app.model.ImageRef
+import com.scanium.shared.core.models.model.ImageRef
 import java.io.ByteArrayOutputStream
 
 /**

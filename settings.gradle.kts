@@ -33,6 +33,8 @@ include(
     ":android-ml-mlkit",
     ":android-camera-camerax",
     ":android-platform-adapters",
+    ":shared:core-models",
+    ":shared:core-tracking",
 )
 
 // Map shared modules to their directories under /shared
