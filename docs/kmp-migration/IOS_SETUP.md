@@ -9,11 +9,12 @@ A starter SwiftUI project lives in `iosApp/ScaniumiOS.xcodeproj`.
 
 ## Preparing for the KMP framework
 - Build the shared XCFramework when available (planned Gradle task: `./gradlew :shared:assembleXCFramework`). The output will live at `shared/build/XCFrameworks/release/Shared.xcframework`.
-- Copy the generated `Shared.xcframework` into `iosApp/Frameworks/` (kept in git so Xcode can reference it).
+- Copy or symlink the generated `Shared.xcframework` into `iosApp/Frameworks/` (kept in git so Xcode can reference it). The project already looks for the binary at `iosApp/Frameworks/Shared.xcframework`.
 - In Xcode, drag `Shared.xcframework` from `Frameworks` into the `ScaniumiOS` target and set **Embed** to **Embed & Sign** under **Frameworks, Libraries, and Embedded Content**. This will ensure the app bundles the framework once it exists.
 
 ## Swift glue
-- `iosApp/ScaniumiOS/SharedBridge.swift` exposes stubbed session hooks so SwiftUI screens can call into the shared framework once it is linked. The implementation is a no-op until the KMP build is available.
+- `iosApp/ScaniumiOS/SharedBridge.swift` is the single import point for the `Shared` XCFramework and will house Swift-friendly façade functions. The implementation is a no-op until the KMP build is available.
+- `iosApp/ScaniumiOS/ScaniumSharedTypes.swift` centralizes mapping helpers to adapt KMP models into SwiftUI-facing types.
 
 ## Next steps
 - The app currently shows a single SwiftUI screen with placeholder items.
