@@ -1,11 +1,13 @@
 import SwiftUI
 
 struct ContentView: View {
-    private let mockedItems: [ScannedItem] = MockItems.sample
+    private let items: [ScannedItem] = SharedBridge
+        .makeDataSource(useMocks: FeatureFlags.useMocks)
+        .loadItems()
 
     var body: some View {
         NavigationStack {
-            List(mockedItems) { item in
+            List(items) { item in
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "shippingbox")
                         .foregroundColor(.accentColor)

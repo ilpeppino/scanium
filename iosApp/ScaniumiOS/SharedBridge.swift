@@ -23,12 +23,33 @@ enum SharedBridge {
         func stop()
     }
 
+    /// Abstracts the source of items for SwiftUI surfaces.
+    protocol DataSource {
+        func loadItems() -> [ScannedItem]
+    }
+
     /// Creates a session backed by the Shared.xcframework when available; otherwise returns a stub.
     static func makeSession(configuration: BootstrapConfiguration = BootstrapConfiguration()) -> Session {
         ***REMOVED***if canImport(Shared)
         return KmpBackedSession(configuration: configuration)
         ***REMOVED***else
         return StubSession(configuration: configuration)
+        ***REMOVED***endif
+    }
+
+    /// Returns either mock Swift data or the shared KMP-backed items based on the active toggle.
+    static func makeDataSource(
+        configuration: BootstrapConfiguration = BootstrapConfiguration(),
+        useMocks: Bool = FeatureFlags.useMocks
+    ) -> DataSource {
+        if useMocks {
+            return MockDataSource(configuration: configuration)
+        }
+
+        ***REMOVED***if canImport(Shared)
+        return SharedDataSource(configuration: configuration)
+        ***REMOVED***else
+        return MockDataSource(configuration: configuration)
         ***REMOVED***endif
     }
 }
@@ -55,6 +76,97 @@ private struct KmpBackedSession: SharedBridge.Session {
 
     func stop() {
         // TODO: Tear down the shared scan session and release shared resources.
+    }
+}
+
+private struct MockDataSource: SharedBridge.DataSource {
+    let configuration: SharedBridge.BootstrapConfiguration
+
+    func loadItems() -> [ScannedItem] {
+        _ = configuration
+        return MockItems.sample
+    }
+}
+
+***REMOVED***if canImport(Shared)
+private struct SharedDataSource: SharedBridge.DataSource {
+    let configuration: SharedBridge.BootstrapConfiguration
+
+    func loadItems() -> [ScannedItem] {
+        _ = configuration
+        let sampleItems = SampleItemsProvider().sampleItems()
+        return sampleItems.compactMap(ScannedItem.init(shared:))
+    }
+}
+
+private extension ScannedItem {
+    init?(shared: SharedScannedItem) {
+        guard let pricePair = shared.priceRange as? KotlinPair else { return nil }
+        let low = pricePair.first as? Double ?? 0
+        let high = pricePair.second as? Double ?? 0
+
+        let mappedCategory: ItemCategory
+        switch shared.category {
+        case SharedItemCategory.fashion:
+            mappedCategory = .fashion
+        case SharedItemCategory.homeGood:
+            mappedCategory = .homeGood
+        case SharedItemCategory.food:
+            mappedCategory = .food
+        case SharedItemCategory.place:
+            mappedCategory = .place
+        case SharedItemCategory.plant:
+            mappedCategory = .plant
+        case SharedItemCategory.electronics:
+            mappedCategory = .electronics
+        case SharedItemCategory.document:
+            mappedCategory = .document
+        default:
+            mappedCategory = .unknown
+        }
+
+        let mappedListing: ItemListingStatus
+        switch shared.listingStatus {
+        case .listingInProgress:
+            mappedListing = .listingInProgress
+        case .listedActive:
+            mappedListing = .listedActive
+        case .listingFailed:
+            mappedListing = .listingFailed
+        default:
+            mappedListing = .notListed
+        }
+
+        let boundingBox: NormalizedRect?
+        if let sharedBox = shared.boundingBox as? SharedNormalizedRect {
+            boundingBox = NormalizedRect(
+                x: Double(sharedBox.left),
+                y: Double(sharedBox.top),
+                width: Double(sharedBox.width),
+                height: Double(sharedBox.height)
+            )
+        } else {
+            boundingBox = nil
+        }
+
+        self.init(
+            id: shared.id,
+            thumbnail: nil,
+            thumbnailRef: nil,
+            category: mappedCategory,
+            priceRange: PriceRange(low: low, high: high),
+            confidence: Double(shared.confidence),
+            timestamp: Date(timeIntervalSince1970: TimeInterval(shared.timestamp) / 1000),
+            recognizedText: shared.recognizedText,
+            barcodeValue: shared.barcodeValue,
+            boundingBox: boundingBox,
+            labelText: shared.labelText,
+            fullImageUri: (shared.fullImageUri as? String).flatMap(URL.init(string:)),
+            fullImagePath: shared.fullImagePath,
+            listingStatus: mappedListing,
+            listingId: shared.listingId,
+            listingUrl: (shared.listingUrl as? String).flatMap(URL.init(string:))
+        )
     }
 }
 ***REMOVED***endif
