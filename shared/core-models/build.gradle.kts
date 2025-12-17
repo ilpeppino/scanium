@@ -4,16 +4,12 @@ plugins {
 }
 
 kotlin {
-    // Android target
     androidTarget()
 
-    // iOS targets
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    val iosArm64Target = iosArm64()
+    val iosSimulatorArm64Target = iosSimulatorArm64()
 
     sourceSets {
-        // Common source sets
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
@@ -25,7 +21,6 @@ kotlin {
             }
         }
 
-        // Android source sets
         val androidMain by getting
         val androidUnitTest by getting {
             dependencies {
@@ -33,23 +28,18 @@ kotlin {
             }
         }
 
-        // iOS source sets
         val iosMain by creating {
             dependsOn(commonMain)
         }
-
         val iosTest by creating {
             dependsOn(commonTest)
         }
 
-        // Configure individual iOS targets to use shared iosMain/iosTest
-        val iosX64Main by getting { dependsOn(iosMain) }
-        val iosArm64Main by getting { dependsOn(iosMain) }
-        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+        iosArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
+        iosSimulatorArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
 
-        val iosX64Test by getting { dependsOn(iosTest) }
-        val iosArm64Test by getting { dependsOn(iosTest) }
-        val iosSimulatorArm64Test by getting { dependsOn(iosTest) }
+        iosArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
+        iosSimulatorArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
     }
 }
 
