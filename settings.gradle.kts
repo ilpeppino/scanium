@@ -34,3 +34,7 @@ include(
     ":android-camera-camerax",
     ":android-platform-adapters",
 )
+
+// Map shared modules to their directories under /shared
+project(":shared:core-models").projectDir = file("shared/core-models")
+project(":shared:core-tracking").projectDir = file("shared/core-tracking")
