@@ -1,9 +1,9 @@
 package com.scanium.app.aggregation
 
-import com.scanium.app.items.ScannedItem
-import com.scanium.app.ml.ItemCategory
-import com.scanium.app.model.ImageRef
-import com.scanium.app.model.NormalizedRect
+import com.scanium.shared.core.models.items.ScannedItem
+import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.model.ImageRef
+import com.scanium.shared.core.models.model.NormalizedRect
 
 /**
  * Represents a unique physical object aggregated from multiple detections.
