@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.graphics.RectF
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.model.NormalizedRect
+import com.scanium.core.models.geometry.NormalizedRect
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
