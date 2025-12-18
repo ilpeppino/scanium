@@ -1,7 +1,7 @@
 package com.scanium.app.items
 
-import com.scanium.app.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
+import com.scanium.core.models.ml.ItemCategory
 import org.junit.Test
 
 /**

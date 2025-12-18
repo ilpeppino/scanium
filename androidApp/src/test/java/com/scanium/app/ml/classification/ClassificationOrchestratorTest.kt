@@ -1,10 +1,11 @@
 package com.scanium.app.ml.classification
 
 import android.graphics.Bitmap
-import android.graphics.RectF
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.aggregation.AggregatedItem
-import com.scanium.app.ml.ItemCategory
+import com.scanium.core.models.geometry.NormalizedRect
+import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -186,8 +187,8 @@ class ClassificationOrchestratorTest {
             aggregatedId = id,
             category = ItemCategory.FASHION,
             labelText = "label",
-            boundingBox = RectF(0f, 0f, 1f, 1f),
-            thumbnail = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888),
+            boundingBox = NormalizedRect(0f, 0f, 1f, 1f),
+            thumbnail = testImageRef(),
             maxConfidence = 0.8f,
             averageConfidence = 0.8f,
             priceRange = 0.0 to 0.0
@@ -280,5 +281,15 @@ class ClassificationOrchestratorTest {
                 status = ClassificationStatus.SUCCESS
             )
         }
+    }
+
+    private fun testImageRef(width: Int = 4, height: Int = 4): ImageRef.Bytes {
+        val bytes = ByteArray((width * height).coerceAtLeast(1)) { 1 }
+        return ImageRef.Bytes(
+            bytes = bytes,
+            mimeType = "image/jpeg",
+            width = width,
+            height = height
+        )
     }
 }
