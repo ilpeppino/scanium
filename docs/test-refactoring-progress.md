@@ -1,13 +1,37 @@
 ***REMOVED*** Test Refactoring Progress Summary
 ***REMOVED******REMOVED*** Scanium KMP Migration - Test Infrastructure Complete
 
-**Status**: ✅ **Phase 1 & 2 COMPLETE**
+**Status**: ✅ **Phase 1, 2 & 4 COMPLETE**
 **Date**: 2025-12-18
 **Branch**: `claude/plan-kmp-test-refactor-EugFw`
 
 ---
 
 ***REMOVED******REMOVED*** What We've Accomplished
+
+***REMOVED******REMOVED******REMOVED*** ✅ Phase 4: Core Tracking Tests Migration (COMPLETE)
+
+Core tracking coverage has been moved to the shared KMP module with Android-specific tests removed.
+
+**Created Files**
+- `shared/core-tracking/src/commonTest/kotlin/com/scanium/core/tracking/`
+  - **ObjectTrackerTest.kt** – confirmation thresholds, spatial matching, expiry/reset, category/area updates
+  - **ObjectCandidateTest.kt** – state transitions, IoU/center distance math, average area tracking
+  - **ItemAggregatorTest.kt** – similarity merges, thresholds, jitter tolerance, stats and stale-item cleanup
+  - **TrackingPipelineIntegrationTest.kt** – end-to-end tracker → aggregator flow (single and multi-object)
+  - **DetectionInfoTest.kt** – normalized box handling
+- **Shared models**: `com.scanium.core.models.items.ScannedItem` (portable, merge-aware) plus KMP `ItemAggregator`/`AggregationPresets` implementations.
+
+**Removed Legacy Android Tests**
+- `androidApp/src/test/java/com/scanium/app/tracking/ObjectTrackerTest.kt`
+- `androidApp/src/test/java/com/scanium/app/tracking/ObjectCandidateTest.kt`
+- `androidApp/src/test/java/com/scanium/app/tracking/TrackingPipelineIntegrationTest.kt`
+- `androidApp/src/test/java/com/scanium/app/aggregation/ItemAggregatorTest.kt`
+
+**Result**
+- 5 new shared test suites covering tracking + aggregation behavior
+- Android test suite no longer duplicates tracking coverage
+- Aggregation logic now lives in `shared/core-tracking` with portable models
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Phase 2: Test-Utils Infrastructure (COMPLETE)
 
@@ -159,13 +183,6 @@ import com.scanium.core.models.items.ScannedItem
 - Migrate `DetectionResultTest.kt` (10 tests)
 - Target: `shared/core-models/commonTest/`
 - **Value**: Establish KMP model test coverage
-
-**Phase 4: Migrate Core Tracking Tests** (6-8 hours) ← **HIGHEST VALUE**
-- Migrate `ObjectTrackerTest.kt` (19 tests) ← CRITICAL
-- Migrate `ItemAggregatorTest.kt` (15 tests) ← CRITICAL
-- Migrate `ObjectCandidateTest.kt` (14 tests)
-- Target: `shared/core-tracking/commonTest/`
-- **Value**: Cover critical business logic in KMP
 
 **Phase 5: Update AndroidApp Imports** (3-4 hours)
 - Run automated import replacement script
