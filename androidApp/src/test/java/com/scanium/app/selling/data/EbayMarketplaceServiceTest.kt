@@ -7,6 +7,7 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.selling.util.ListingDraftMapper
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.image.Bytes
+import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
