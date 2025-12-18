@@ -7,6 +7,14 @@
 
 ---
 
+***REMOVED******REMOVED*** Phase 6 Execution (re-run verification)
+- Confirmed legacy test directories remain removed: `core-models/src/test`, `core-tracking/src/test`, `core-scan/src/test`, `core-contracts/src/test`.
+- `settings.gradle.kts` still includes legacy wrapper modules for compatibility; removal deferred until downstream dependencies are updated.
+- Gradle guard `checkNoLegacyImports` already present in `build.gradle.kts` (covers Phase 6.4).
+- Fixed lingering KMP build issues: `ItemAggregator` now uses portable `Clock.System.now()` (kotlinx-datetime dependency added); legacy `core-tracking` wrapper namespace changed to `com.scanium.core.tracking.legacy` to avoid manifest collision; shared KMP aliases for `RawDetection`/`LabelWithConfidence` restored; added `ImageRefBytes` typealias so test-utils can consume shared image bytes.
+- Targeted compilation of shared modules now succeeds: `GRADLE_USER_HOME=./.gradle ./gradlew :shared:test-utils:compileDebugKotlinAndroid` ✅.
+- Full suite run still pending: `./gradlew clean test` currently fails in this environment with “Could not determine a usable wildcard IP” (environment/network constraint). Re-run in CI or a non-sandboxed host to finalize Phase 6.5 validation.
+
 ***REMOVED******REMOVED*** What We've Accomplished
 
 ***REMOVED******REMOVED******REMOVED*** ✅ Phase 4: Core Tracking Tests Migration (COMPLETE)

@@ -3,17 +3,40 @@ package com.scanium.app.items
 import com.google.common.truth.Truth.assertThat
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
+import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
+import org.junit.After
+import org.junit.Rule
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class ItemsViewModelListingStatusTest {
 
+    @get:Rule
+    val instantTaskExecutorRule = InstantTaskExecutorRule()
+
     private lateinit var viewModel: ItemsViewModel
+    private val dispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setup() {
+        Dispatchers.setMain(dispatcher)
         viewModel = ItemsViewModel()
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -90,7 +113,7 @@ class ItemsViewModelListingStatusTest {
     ): ScannedItem {
         return ScannedItem(
             id = id,
-            thumbnail = ImageRef.Bytes(
+            thumbnail = Bytes(
                 bytes = ByteArray(16) { 1 },
                 mimeType = "image/jpeg",
                 width = 100,

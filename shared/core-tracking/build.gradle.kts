@@ -25,6 +25,9 @@ kotlin {
 
                 // Kotlinx Serialization
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+                // Cross-platform time source for timestamps
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
             }
         }
 

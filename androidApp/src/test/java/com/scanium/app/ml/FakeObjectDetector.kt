@@ -1,9 +1,9 @@
 package com.scanium.app.ml
 
-import com.scanium.shared.core.models.ml.ItemCategory
-import com.scanium.shared.core.models.ml.LabelWithConfidence
-import com.scanium.shared.core.models.ml.RawDetection
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.core.models.ml.ItemCategory
+import com.scanium.core.models.ml.LabelWithConfidence
+import com.scanium.core.models.ml.RawDetection
+import com.scanium.core.models.geometry.NormalizedRect
 
 /**
  * Fake ObjectDetector for testing purposes.
@@ -41,20 +41,18 @@ class FakeObjectDetector {
      */
     fun detectMultipleObjects(
         detections: List<DetectionSpec>
-    ): List<RawDetection> {
-        return detections.map { spec ->
-            RawDetection(
-                trackingId = spec.trackingId,
-                bboxNorm = spec.boundingBox,
-                labels = listOf(
-                    LabelWithConfidence(
-                        text = spec.categoryLabel,
-                        confidence = spec.confidence,
-                        index = 0
-                    )
+    ): List<RawDetection> = detections.map { spec ->
+        RawDetection(
+            trackingId = spec.trackingId,
+            bboxNorm = spec.boundingBox,
+            labels = listOf(
+                LabelWithConfidence(
+                    text = spec.categoryLabel,
+                    confidence = spec.confidence,
+                    index = 0
                 )
             )
-        }
+        )
     }
 
     /**
@@ -71,39 +69,37 @@ class FakeObjectDetector {
         trackingId: String,
         labels: List<LabelSpec>,
         boundingBox: NormalizedRect = defaultBoundingBox()
-    ): RawDetection {
-        return RawDetection(
-            trackingId = trackingId,
-            bboxNorm = boundingBox,
-            labels = labels.mapIndexed { index, spec ->
-                LabelWithConfidence(
-                    text = spec.text,
-                    confidence = spec.confidence,
-                    index = index
-                )
+    ): RawDetection = RawDetection(
+        trackingId = trackingId,
+        bboxNorm = boundingBox,
+        labels = labels.mapIndexed { index, spec ->
+            LabelWithConfidence(
+                text = spec.text,
+                confidence = spec.confidence,
+                index = index
             )
-        )
-    }
-
-    /**
-     * Specification for a single detection.
-     */
-    data class DetectionSpec(
-        val trackingId: String,
-        val confidence: Float,
-        val category: ItemCategory,
-        val categoryLabel: String,
-        val boundingBox: NormalizedRect = defaultBoundingBox()
-    )
-
-    /**
-     * Specification for a label.
-     */
-    data class LabelSpec(
-        val text: String,
-        val confidence: Float
+        }
     )
 }
+
+/**
+ * Specification for a single detection.
+ */
+data class DetectionSpec(
+    val trackingId: String,
+    val confidence: Float,
+    val category: ItemCategory,
+    val categoryLabel: String,
+    val boundingBox: NormalizedRect = defaultBoundingBox()
+)
+
+/**
+ * Specification for a label.
+ */
+data class LabelSpec(
+    val text: String,
+    val confidence: Float
+)
 
 private fun defaultBoundingBox(): NormalizedRect = NormalizedRect(
     left = 0f,

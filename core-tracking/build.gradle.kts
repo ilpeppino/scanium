@@ -4,7 +4,8 @@ plugins {
 }
 
 android {
-    namespace = "com.scanium.app"
+    // Legacy Android wrapper; keep namespace distinct from androidApp to avoid manifest collisions.
+    namespace = "com.scanium.core.tracking.legacy"
     compileSdk = 34
 
     defaultConfig {

@@ -4,10 +4,10 @@ import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.items.ScannedItem
 import com.scanium.core.models.ml.ItemCategory
+import kotlinx.datetime.Clock
 import kotlin.math.abs
 import kotlin.math.sqrt
 import kotlin.random.Random
-import kotlin.system.getTimeMillis
 
 /**
  * Session-level aggregation engine that merges similar detections into stable items.
@@ -68,7 +68,7 @@ class ItemAggregator(
     fun getScannedItems(): List<ScannedItem> = aggregatedItems.values.map { it.toScannedItem() }
 
     fun removeStaleItems(maxAgeMs: Long): Int {
-        val now = getTimeMillis()
+        val now = nowMillis()
         val stale = aggregatedItems.values.filter { item ->
             now - item.lastSeenTimestamp > maxAgeMs
         }
@@ -301,8 +301,8 @@ data class AggregatedItem(
     var averageConfidence: Float,
     var priceRange: Pair<Double, Double>,
     var mergeCount: Int = 1,
-    val firstSeenTimestamp: Long = getTimeMillis(),
-    var lastSeenTimestamp: Long = getTimeMillis(),
+    val firstSeenTimestamp: Long = nowMillis(),
+    var lastSeenTimestamp: Long = nowMillis(),
     val sourceDetectionIds: MutableSet<String> = mutableSetOf(),
     var dominantColor: Int? = null,
     var enhancedCategory: ItemCategory? = null,
@@ -336,7 +336,7 @@ data class AggregatedItem(
 
     fun getBoxArea(): Float = boundingBox.area
 
-    fun isStale(maxAgeMs: Long): Boolean = getTimeMillis() - lastSeenTimestamp > maxAgeMs
+    fun isStale(maxAgeMs: Long): Boolean = nowMillis() - lastSeenTimestamp > maxAgeMs
 
     fun toScannedItem(): ScannedItem {
         return ScannedItem(
@@ -497,3 +497,5 @@ private fun NormalizedRect.center(): Pair<Float, Float> {
         (top + bottom) / 2f
     )
 }
+
+private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()

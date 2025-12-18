@@ -2,6 +2,7 @@ package com.scanium.app.domain
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.scanium.app.domain.category.BasicCategoryEngine
 import com.scanium.app.domain.category.CategoryEngine
 import com.scanium.app.domain.repository.DomainPackRepository
@@ -127,7 +128,8 @@ object DomainPackProvider {
      * WARNING: Only use this in tests. Calling in production code may cause
      * IllegalStateException in other parts of the app.
      */
-    internal fun reset() {
+    @VisibleForTesting
+    fun reset() {
         synchronized(initLock) {
             _repository = null
             _categoryEngine = null
