@@ -25,6 +25,7 @@ dependencyResolutionManagement {
 rootProject.name = "Scanium"
 include(
     ":androidApp",
+    // Legacy Android wrapper modules retained for compatibility; replace with shared modules once dependencies are updated.
     ":core-models",
     ":core-tracking",
     ":core-domainpack",
