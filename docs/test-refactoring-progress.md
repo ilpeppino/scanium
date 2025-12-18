@@ -15,9 +15,8 @@
   - `./gradlew :androidApp:jacocoTestReport`
   - `./gradlew koverVerify` (thresholds configured: ≥85% shared modules, ≥75% androidApp)
 - Pending tasks:
-  - Enable Kover plugin in shared modules and root verification.
   - Analyze coverage gaps (tracking/model paths) and add missing tests if needed.
-  - Update TESTING.md and CI workflow to publish coverage.
+  - Update CI workflow to publish coverage artifacts.
 
 ## Phase 6 Execution (re-run verification)
 - Confirmed legacy test directories remain removed: `core-models/src/test`, `core-tracking/src/test`, `core-scan/src/test`, `core-contracts/src/test`.

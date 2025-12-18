@@ -11,6 +11,7 @@ plugins {
     // SEC-003: Automated CVE scanning
     id("org.owasp.dependencycheck") version "10.0.4"
     id("org.jetbrains.kotlinx.kover")
+    jacoco
 }
 
 // Load local.properties for API configuration (not committed to git)
@@ -236,4 +237,25 @@ koverReport {
             }
         }
     }
+}
+
+// Jacoco HTML report for androidApp unit tests
+tasks.register<JacocoReport>("jacocoTestReport") {
+    dependsOn("testDebugUnitTest")
+    reports {
+        xml.required.set(false)
+        csv.required.set(false)
+        html.required.set(true)
+    }
+    // Collect execution data from unit tests
+    executionData(fileTree(buildDir).include("**/jacoco/testDebugUnitTest.exec"))
+    // Source sets for coverage
+    val javaSrc = fileTree("src/main/java")
+    val kotlinSrc = fileTree("src/main/kotlin")
+    sourceDirectories.setFrom(files(javaSrc, kotlinSrc))
+    classDirectories.setFrom(
+        fileTree("$buildDir/tmp/kotlin-classes/debug") {
+            exclude("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
+        }
+    )
 }

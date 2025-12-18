@@ -43,6 +43,8 @@ Scanium uses cloud classification by default to identify items. To enable this f
 - `./gradlew test` – JVM unit tests (fast path).
 - `./gradlew connectedAndroidTest` – instrumented/Compose UI tests (device required).
 - `./gradlew lint` – static checks.
+- Coverage: `./gradlew koverVerify` (thresholds: shared modules ≥85%, androidApp ≥75%; HTML under `*/build/reports/kover/html` and `androidApp/build/reports/jacoco/testDebugUnitTest/html`).
+- See also `docs/TESTING.md` for more commands and tips.
 
 ## Debugging tips
 - Use Logcat filters for tags like `CameraXManager`, `ObjectDetectorClient`, `CloudClassifier`, `ItemsViewModel`.
