@@ -4,6 +4,7 @@ plugins {
     id("com.android.library") version "8.5.0" apply false
     id("org.jetbrains.kotlin.android") version "2.0.0" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0" apply false
+    id("org.jetbrains.kotlinx.kover") version "0.7.4" apply false
 }
 
 tasks.register("clean", Delete::class) {

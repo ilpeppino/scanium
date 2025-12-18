@@ -74,11 +74,11 @@ class ItemsViewModelListingStatusTest {
         )
 
         // Verify only item1 was updated (item2 may have merged away)
-        val items = viewModel.items.value
         val item1Status = viewModel.getListingStatus("item1")
+        val item2Status = viewModel.getListingStatus("item2")
 
         assertThat(item1Status).isEqualTo(ItemListingStatus.LISTED_ACTIVE)
-        assertThat(items.any { it.id == "item2" }).isFalse()
+        assertThat(item2Status).isNotEqualTo(ItemListingStatus.LISTED_ACTIVE)
     }
 
     @Test
