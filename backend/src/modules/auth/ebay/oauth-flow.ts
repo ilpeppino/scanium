@@ -10,19 +10,11 @@ export function generateState(): string {
 }
 
 /**
- * Generate cryptographically strong random nonce
- */
-export function generateNonce(): string {
-  return crypto.randomBytes(32).toString('base64url');
-}
-
-/**
  * Build eBay authorization URL
  */
 export function buildAuthorizationUrl(
   config: Config,
-  state: string,
-  nonce: string
+  state: string
 ): string {
   const endpoint = getEbayAuthEndpoint(config);
   const redirectUri = `${config.publicBaseUrl}${config.ebay.redirectPath}`;
@@ -84,13 +76,23 @@ export async function exchangeCodeForTokens(
       });
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as Partial<{
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+      token_type: string;
+      scope: string;
+    }>;
+
+    if (!data.access_token || !data.refresh_token) {
+      throw new OAuthTokenExchangeError({ message: 'Missing tokens from eBay' });
+    }
 
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
-      expiresIn: data.expires_in,
-      tokenType: data.token_type,
+      expiresIn: data.expires_in ?? 0,
+      tokenType: data.token_type ?? 'Bearer',
       scope: data.scope || config.ebay.scopes,
     };
   } catch (error) {

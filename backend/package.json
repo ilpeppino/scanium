@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
+    "postbuild": "mkdir -p dist/modules/classifier/domain && cp src/modules/classifier/domain/*.json dist/modules/classifier/domain/ || true",
     "start": "node dist/main.js",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -34,11 +35,15 @@
     "@fastify/cookie": "^9.3.1",
     "@fastify/cors": "^9.0.1",
     "@fastify/formbody": "^7.4.0",
+    "@fastify/multipart": "^7.7.3",
+    "@fastify/rate-limit": "^8.1.1",
+    "@google-cloud/vision": "^4.3.3",
     "@prisma/client": "^5.19.0",
     "docker-compose": "^1.3.0",
     "fastify": "^4.28.1",
     "pino": "^9.3.2",
     "pino-pretty": "^11.2.2",
+    "sharp": "^0.33.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -46,6 +51,7 @@
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "eslint": "^8.57.0",
+    "form-data": "^4.0.0",
     "prettier": "^3.3.3",
     "prisma": "^5.19.0",
     "tsx": "^4.17.0",

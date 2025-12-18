@@ -1,0 +1,47 @@
+{
+  "id": "home_resale",
+  "name": "Home Resale (MVP)",
+  "threshold": 0.28,
+  "categories": [
+    {
+      "id": "chair",
+      "label": "Chair",
+      "tokens": ["chair", "armchair", "stool", "seat"],
+      "attributes": {
+        "segment": "seating"
+      }
+    },
+    {
+      "id": "table",
+      "label": "Table / Desk",
+      "tokens": ["table", "desk", "dining", "work table"],
+      "attributes": {
+        "segment": "surface"
+      }
+    },
+    {
+      "id": "sofa",
+      "label": "Sofa / Couch",
+      "tokens": ["sofa", "couch", "loveseat", "sectional"],
+      "attributes": {
+        "segment": "seating"
+      }
+    },
+    {
+      "id": "lighting",
+      "label": "Lighting",
+      "tokens": ["lamp", "lighting", "lantern", "light"],
+      "attributes": {
+        "segment": "lighting"
+      }
+    },
+    {
+      "id": "decor",
+      "label": "Decor / Wall Art",
+      "tokens": ["art", "painting", "poster", "frame", "decor"],
+      "attributes": {
+        "segment": "decor"
+      }
+    }
+  ]
+}

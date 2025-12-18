@@ -14,7 +14,7 @@ export const corsPlugin: FastifyPluginAsync<{ config: Config }> = async (
     origin: opts.config.corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    exposedHeaders: ['Content-Type'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+    exposedHeaders: ['Content-Type', 'X-API-Key'],
   });
 };

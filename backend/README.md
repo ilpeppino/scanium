@@ -1,163 +1,105 @@
-# Scanium Backend API
+# Scanium Backend – Vision Proxy
 
-Production-grade TypeScript backend for Scanium mobile app, providing eBay OAuth and marketplace integration.
+Cloud classification proxy for Scanium mobile apps. Provides `/v1/classify` that forwards images to Google Cloud Vision (or deterministic mock), maps signals to Scanium’s domain pack, and returns a normalized payload. Images are processed **in-memory only** and EXIF is stripped on ingestion.
 
-## 🏗️ Architecture
+## What it ships
+- `GET /health` – liveness with version
+- `POST /v1/classify` – multipart image → Vision/mock → domain category/attributes
+- API key auth via `X-API-Key`
+- Per-key rate limit + per-key concurrency gate
+- Mock mode for offline/local dev (no cloud dependency)
+- Domain pack mapper (home_resale JSON) with configurable path
+- Request size guard (default 5 MB) and EXIF stripping via in-memory re-encode
+- Legacy eBay OAuth routes remain available under `/auth/ebay/*` for future listing flows
 
-- **Runtime**: Node.js 20 LTS
-- **Framework**: Fastify (high-performance HTTP server)
-- **Language**: TypeScript (strict mode)
-- **Database**: PostgreSQL 16 + Prisma ORM
-- **Validation**: Zod
-- **Logging**: Pino (structured logging)
-- **Container**: Docker + Docker Compose
-- **Deployment**: Synology NAS + Cloudflare Tunnel
-
-## 📁 Project Structure
-
-```
-backend/
-├── src/
-│   ├── config/           # Environment validation (Zod)
-│   ├── infra/
-│   │   ├── db/           # Prisma client wrapper
-│   │   └── http/plugins/ # Fastify plugins (CORS, cookies, errors)
-│   ├── modules/
-│   │   ├── health/       # Health check endpoints
-│   │   ├── auth/ebay/    # eBay OAuth flow
-│   │   ├── marketplaces/ # Marketplace adapter interfaces
-│   │   ├── listings/     # Future: listing creation
-│   │   └── media/        # Future: image upload
-│   ├── shared/           # Shared utilities and error types
-│   ├── app.ts            # Fastify app builder
-│   └── main.ts           # Application entrypoint
-├── prisma/
-│   ├── schema.prisma     # Database schema
-│   └── migrations/       # Database migrations
-├── Dockerfile            # Multi-stage production build
-├── docker-compose.yml    # NAS deployment stack
-└── package.json          # Dependencies and scripts
-```
-
-## 🚀 Local Development
-
-### Prerequisites
-
-- Node.js 20 LTS
-- Docker + Docker Compose
-- PostgreSQL (via Docker)
-
-### Setup
-
-1. **Install dependencies:**
-   ```bash
-   cd backend
-   npm install
-   ```
-
-2. **Create `.env` file:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-3. **Start PostgreSQL:**
-   ```bash
-   docker-compose up postgres -d
-   ```
-
-4. **Run database migrations:**
-   ```bash
-   npm run prisma:migrate
-   ```
-
-5. **Generate Prisma client:**
-   ```bash
-   npm run prisma:generate
-   ```
-
-6. **Start development server:**
-   ```bash
-   npm run dev
-   ```
-
-Server will start on `http://localhost:8080`
-
-### Testing Endpoints
-
+## Quickstart (mock mode)
 ```bash
-# Health check
-curl http://localhost:8080/healthz
+cd backend
+npm install
+cp .env.example .env
+# set SCANIUM_API_KEYS=dev-key
+npm run dev
 
-# Readiness check (DB connectivity)
-curl http://localhost:8080/readyz
+# Test health
+curl http://localhost:8080/health
 
-# Start OAuth flow
-curl -X POST http://localhost:8080/auth/ebay/start
-
-# Check eBay connection status
-curl http://localhost:8080/auth/ebay/status
+# Classify (mock)
+curl -X POST http://localhost:8080/v1/classify \
+  -H "X-API-Key: dev-key" \
+  -F "image=@fixtures/chair.jpg" \
+  -F "domainPackId=home_resale"
 ```
 
-## 🐳 Docker Build
+## Google Vision mode
+Set in `.env`:
+```
+SCANIUM_CLASSIFIER_PROVIDER=google
+SCANIUM_API_KEYS=your-key
+GOOGLE_APPLICATION_CREDENTIALS=/secrets/vision-sa.json
+VISION_FEATURE=LABEL_DETECTION   # or OBJECT_LOCALIZATION
+```
+Run: `npm run build && npm start`
 
-### Build image:
+## Environment variables (required unless noted)
+- `SCANIUM_API_KEYS` – comma-separated API keys for `X-API-Key`
+- `SCANIUM_CLASSIFIER_PROVIDER` – `mock` (default) | `google`
+- `VISION_FEATURE` – `LABEL_DETECTION` (default) | `OBJECT_LOCALIZATION`
+- `GOOGLE_APPLICATION_CREDENTIALS` – path to Service Account JSON (google mode)
+- `MAX_UPLOAD_BYTES` – request file cap (default 5 MB)
+- `CLASSIFIER_RATE_LIMIT_PER_MINUTE` – per-key limit (default 60)
+- `CLASSIFIER_CONCURRENCY_LIMIT` – per-key in-flight cap (default 2)
+- `DOMAIN_PACK_ID` / `DOMAIN_PACK_PATH` – active pack + JSON file path
+- `CLASSIFIER_RETAIN_UPLOADS` – keep false; future opt-in to persist uploads
+- `SESSION_SIGNING_SECRET` – required for Fastify cookies
+- `PUBLIC_BASE_URL`, `DATABASE_URL`, `EBAY_*`, `CORS_ORIGINS` – kept for legacy eBay auth endpoints
+
+## API reference (classifier)
+**POST /v1/classify**
+- Multipart: `image` (jpg/png/webp, required), `domainPackId` (optional, defaults to env), `hints` (JSON string, optional)
+- Headers: `X-API-Key: <key>`
+- Response:
+```json
+{
+  "requestId": "uuid",
+  "domainPackId": "home_resale",
+  "domainCategoryId": "chair",
+  "confidence": 0.82,
+  "attributes": {"segment": "seating"},
+  "provider": "google-vision",
+  "timingsMs": { "total": 180, "vision": 120, "mapping": 5 }
+}
+```
+- Errors: `401` (missing/invalid key), `400` (bad multipart/unsupported file), `429` (per-key concurrency or rate limit)
+
+**GET /health**
+```json
+{ "status": "ok", "ts": "2024-01-01T00:00:00Z", "version": "1.0.0" }
+```
+
+## Build, test, and lint
+```bash
+npm test          # vitest (mock mode, includes request validation + mapper)
+npm run build     # tsc
+npm run start     # runs dist/main.js
+```
+
+## Docker (NAS-friendly)
 ```bash
 docker build -t scanium-backend .
+docker-compose up -d
 ```
+- Health check hits `/health`
+- API key + rate limit enforced; images never persisted
+- Cloudflare Tunnel supported via `cloudflared` service in compose
 
-### Run with Docker Compose (local testing):
-```bash
-docker-compose up
-```
+## Deployment notes
+- Run behind Cloudflare Tunnel; keep `/v1/classify` private via API key
+- Use Service Account credentials mounted at `GOOGLE_APPLICATION_CREDENTIALS`
+- Only one Vision feature enabled by default to control cost; change via `VISION_FEATURE`
+- Logs (pino) include `requestId`, provider, timings; raw images are never logged
 
-## 📦 NAS Deployment
-
-### Step 1: Prepare Environment
-
-1. Create `.env` file with production values (see `.env.example`)
-2. Ensure `PUBLIC_BASE_URL` matches your Cloudflare Tunnel URL
-3. Set strong `SESSION_SIGNING_SECRET` (min 32 chars):
-   ```bash
-   openssl rand -base64 32
-   ```
-
-### Step 2: Setup Cloudflare Tunnel
-
-1. Go to Cloudflare Zero Trust Dashboard
-2. Navigate to **Access > Tunnels**
-3. Click **Create a tunnel**
-4. Choose **Docker** connector
-5. Name it (e.g., "scanium-api")
-6. Copy the tunnel token
-7. Add to `.env` as `CLOUDFLARED_TOKEN=...`
-
-### Step 3: Configure Public Hostname
-
-In Cloudflare Tunnel configuration:
-
-1. Click **Add a public hostname**
-2. **Subdomain**: `api` (or your choice)
-3. **Domain**: Your domain (e.g., `yourdomain.com`)
-4. **Service Type**: `HTTP`
-5. **URL**: `api:8080` (Docker service name + port)
-6. Save
-
-Your API will be accessible at `https://api.yourdomain.com`
-
-### Step 4: Get eBay Credentials
-
-1. Go to [eBay Developer Portal](https://developer.ebay.com/my/keys)
-2. Create Application Keyset (Sandbox or Production)
-3. Copy **Client ID** and **Client Secret**
-4. Add to `.env`:
-   ```
-   EBAY_CLIENT_ID=your_client_id
-   EBAY_CLIENT_SECRET=your_client_secret
-   EBAY_ENV=sandbox  # or production
-   ```
-
-5. Configure **RuName** (Redirect URL):
+## Legacy eBay flow
+Routes under `/auth/ebay/*` stay intact; Postgres/Prisma remain in the stack for future listing work. They do not block classifier startup when unused.
    - Go to **User Tokens > Get a Token from eBay**
    - Add redirect URL: `https://api.yourdomain.com/auth/ebay/callback`
 

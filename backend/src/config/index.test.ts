@@ -1,27 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { z } from 'zod';
-
-// Note: We can't directly test loadConfig() as it reads from process.env
-// Instead, we'll test the schema validation logic
-
-const configSchema = z.object({
-  nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
-  port: z.coerce.number().int().min(1).max(65535).default(8080),
-  publicBaseUrl: z.string().url(),
-  databaseUrl: z.string().min(1),
-  ebay: z.object({
-    env: z.enum(['sandbox', 'production']),
-    clientId: z.string().min(1),
-    clientSecret: z.string().min(1),
-    redirectPath: z.string().default('/auth/ebay/callback'),
-    scopes: z.string().min(1),
-  }),
-  sessionSigningSecret: z.string().min(32),
-  corsOrigins: z
-    .string()
-    .transform((val) => val.split(',').map((o) => o.trim()))
-    .pipe(z.array(z.string().min(1))),
-});
+import { configSchema } from './index.js';
 
 describe('Config Schema Validation', () => {
   it('should validate valid configuration', () => {
@@ -30,6 +8,12 @@ describe('Config Schema Validation', () => {
       port: 8080,
       publicBaseUrl: 'http://localhost:8080',
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+        visionFeature: 'LABEL_DETECTION',
+        apiKeys: 'dev-key',
+      },
+      googleCredentialsPath: '/tmp/creds.json',
       ebay: {
         env: 'sandbox',
         clientId: 'test-client-id',
@@ -47,6 +31,7 @@ describe('Config Schema Validation', () => {
     if (result.success) {
       expect(result.data.nodeEnv).toBe('development');
       expect(result.data.port).toBe(8080);
+      expect(result.data.classifier.apiKeys).toEqual(['dev-key']);
       expect(result.data.corsOrigins).toEqual([
         'scanium://',
         'http://localhost:3000',
@@ -58,6 +43,9 @@ describe('Config Schema Validation', () => {
     const invalidConfig = {
       publicBaseUrl: 'not-a-url',
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+      },
       ebay: {
         env: 'sandbox',
         clientId: 'test',
@@ -76,6 +64,9 @@ describe('Config Schema Validation', () => {
     const invalidConfig = {
       publicBaseUrl: 'http://localhost:8080',
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+      },
       ebay: {
         env: 'sandbox',
         clientId: 'test',
@@ -99,6 +90,9 @@ describe('Config Schema Validation', () => {
     const invalidConfig = {
       publicBaseUrl: 'http://localhost:8080',
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+      },
       ebay: {
         env: 'invalid-env',
         clientId: 'test',
@@ -122,6 +116,9 @@ describe('Config Schema Validation', () => {
     const config = {
       publicBaseUrl: 'http://localhost:8080',
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+      },
       ebay: {
         env: 'sandbox',
         clientId: 'test',
@@ -148,6 +145,9 @@ describe('Config Schema Validation', () => {
     const minimalConfig = {
       publicBaseUrl: 'http://localhost:8080',
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+      },
       ebay: {
         env: 'sandbox',
         clientId: 'test',
@@ -165,6 +165,7 @@ describe('Config Schema Validation', () => {
       expect(result.data.nodeEnv).toBe('development');
       expect(result.data.port).toBe(8080);
       expect(result.data.ebay.redirectPath).toBe('/auth/ebay/callback');
+      expect(result.data.classifier.domainPackId).toBe('home_resale');
     }
   });
 });
