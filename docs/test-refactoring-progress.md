@@ -13,7 +13,7 @@
   - `./gradlew :shared:core-models:koverHtmlReport`
   - `./gradlew :shared:core-tracking:koverHtmlReport`
   - `./gradlew :androidApp:jacocoTestReport`
-  - `./gradlew koverVerify` (after adding Kover configs with thresholds: ≥85% shared modules, ≥75% androidApp)
+  - `./gradlew koverVerify` (thresholds configured: ≥85% shared modules, ≥75% androidApp)
 - Pending tasks:
   - Enable Kover plugin in shared modules and root verification.
   - Analyze coverage gaps (tracking/model paths) and add missing tests if needed.
