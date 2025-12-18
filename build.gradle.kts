@@ -60,3 +60,42 @@ tasks.register("checkPortableModules") {
         println("✓ Portability check passed: core-models and core-tracking are Android-free")
     }
 }
+
+tasks.register("checkNoLegacyImports") {
+    description = "Fails build if legacy com.scanium.app.* imports are used after KMP migration"
+    group = "verification"
+
+    doLast {
+        val legacyPatterns = listOf(
+            "import com.scanium.app.tracking.ObjectTracker",
+            "import com.scanium.app.aggregation",
+            "import com.scanium.app.items.ScannedItem",
+            "import com.scanium.app.model.NormalizedRect",
+            "import com.scanium.app.ml.ItemCategory"
+        )
+
+        val offendingFiles = fileTree("androidApp/src") {
+            include("**/*.kt")
+        }.mapNotNull { sourceFile ->
+            val matchedImports = legacyPatterns.filter { pattern ->
+                sourceFile.readText().contains(pattern)
+            }
+
+            if (matchedImports.isNotEmpty()) {
+                "${sourceFile.relativeTo(rootDir)} -> ${matchedImports.joinToString(", ")}"
+            } else {
+                null
+            }
+        }
+
+        if (offendingFiles.isNotEmpty()) {
+            throw GradleException(
+                "Found legacy com.scanium.app.* imports in Android sources:\n" +
+                    offendingFiles.joinToString("\n") +
+                    "\nUpdate imports to shared KMP modules (com.scanium.core.*)."
+            )
+        }
+
+        println("✓ No legacy com.scanium.app.* imports found in androidApp sources")
+    }
+}
