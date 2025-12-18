@@ -247,6 +247,12 @@ class ItemsViewModel(
 
         if (pendingItems.isEmpty()) return
 
+        // Mark items as PENDING before classification
+        pendingItems.forEach { item ->
+            item.classificationStatus = "PENDING"
+        }
+        _items.value = itemAggregator.getScannedItems()
+
         classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
             val boxArea = aggregatedItem.boundingBox.area
             val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
@@ -263,12 +269,18 @@ class ItemsViewModel(
                 priceRange = priceRange
             )
 
+            // Update classification status based on result
+            aggregatedItem.classificationStatus = result.status.name
+            aggregatedItem.domainCategoryId = result.domainCategoryId
+            aggregatedItem.classificationErrorMessage = result.errorMessage
+            aggregatedItem.classificationRequestId = result.requestId
+
             // Propagate updates to the UI layer
             val updatedItems = itemAggregator.getScannedItems()
             _items.value = updatedItems
 
             if (BuildConfig.DEBUG) {
-                Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}")
+                Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
             }
         }
     }
@@ -318,5 +330,59 @@ class ItemsViewModel(
      */
     fun getItem(itemId: String): ScannedItem? {
         return _items.value.find { it.id == itemId }
+    }
+
+    /**
+     * Retry classification for a failed item.
+     *
+     * @param itemId The aggregated item ID to retry
+     */
+    fun retryClassification(itemId: String) {
+        val aggregatedItems = itemAggregator.getAggregatedItems()
+        val item = aggregatedItems.find { it.aggregatedId == itemId }
+
+        if (item == null) {
+            Log.w(TAG, "Cannot retry classification: item $itemId not found")
+            return
+        }
+
+        Log.i(TAG, "Retrying classification for item $itemId")
+
+        // Mark as pending
+        item.classificationStatus = "PENDING"
+        item.classificationErrorMessage = null
+        _items.value = itemAggregator.getScannedItems()
+
+        // Trigger retry via orchestrator
+        classificationOrchestrator.retry(itemId, item) { aggregatedItem, result ->
+            val boxArea = aggregatedItem.boundingBox.area
+            val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
+            val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
+                result.category
+            } else {
+                aggregatedItem.enhancedCategory ?: aggregatedItem.category
+            }
+
+            itemAggregator.applyEnhancedClassification(
+                aggregatedId = aggregatedItem.aggregatedId,
+                category = categoryOverride,
+                label = result.label ?: aggregatedItem.labelText,
+                priceRange = priceRange
+            )
+
+            // Update classification status
+            aggregatedItem.classificationStatus = result.status.name
+            aggregatedItem.domainCategoryId = result.domainCategoryId
+            aggregatedItem.classificationErrorMessage = result.errorMessage
+            aggregatedItem.classificationRequestId = result.requestId
+
+            // Propagate updates to the UI layer
+            val updatedItems = itemAggregator.getScannedItems()
+            _items.value = updatedItems
+
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Retry classification result for ${aggregatedItem.aggregatedId}: status=${result.status}")
+            }
+        }
     }
 }
