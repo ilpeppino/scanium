@@ -556,24 +556,26 @@ import com.scanium.core.tracking.ItemAggregator
 - Establish coverage baselines for CI
 
 #### Tasks
-- [ ] **8.1** Generate coverage reports:
+- [x] **8.1** Generate coverage reports:
   ```bash
   ./gradlew :shared:core-models:koverHtmlReport
   ./gradlew :shared:core-tracking:koverHtmlReport
   ./gradlew :androidApp:jacocoTestReport
   ```
 
-- [ ] **8.2** Set up Kover for KMP coverage:
+- [x] **8.2** Set up Kover for KMP coverage:
   ```kotlin
   // In shared module build files
   plugins {
     id("org.jetbrains.kotlinx.kover") version "0.7.4"
   }
 
-  kover {
-    verify {
-      rule {
-        minBound(80) // Minimum 80% coverage
+  koverReport {
+    defaults {
+      verify {
+        rule {
+          bound { minValue = 85 } // shared modules
+        }
       }
     }
   }
@@ -588,7 +590,7 @@ import com.scanium.core.tracking.ItemAggregator
   - Use Kotest for randomized testing
   - Example: Test tracking with random bounding boxes
 
-- [ ] **8.5** Establish coverage requirements:
+- [x] **8.5** Establish coverage requirements:
   - **KMP modules**: ≥ 85% line coverage
   - **Android-specific**: ≥ 75% line coverage
   - **UI tests**: Critical paths covered
@@ -622,12 +624,12 @@ import com.scanium.core.tracking.ItemAggregator
 **Risk**: Low
 
 #### Objectives
-- Document the new test architecture
-- Update developer onboarding guides
-- Ensure CI validates tests on every PR
+ - Document the new test architecture
+ - Update developer onboarding guides
+ - Ensure CI validates tests on every PR
 
 #### Tasks
-- [ ] **9.1** Create `docs/TESTING.md`:
+- [x] **9.1** Create `docs/TESTING.md`:
   - Test architecture overview
   - How to run tests locally
   - How to write new tests
@@ -638,7 +640,7 @@ import com.scanium.core.tracking.ItemAggregator
   - Add KMP testing guidelines
   - Reference new test structure
 
-- [ ] **9.3** Update `README.md`:
+- [x] **9.3** Update `README.md`:
   - Add testing section
   - Link to TESTING.md
 
