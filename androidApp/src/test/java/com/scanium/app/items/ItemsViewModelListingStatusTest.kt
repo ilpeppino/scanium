@@ -1,9 +1,9 @@
 package com.scanium.app.items
 
-import android.graphics.Bitmap
-import android.graphics.RectF
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.test.toNormalizedRect
+import com.scanium.app.test.toTestImageRef
 import org.junit.Before
 import org.junit.Test
 
@@ -90,11 +90,11 @@ class ItemsViewModelListingStatusTest {
     ): ScannedItem {
         return ScannedItem(
             id = id,
-            thumbnail = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888),
+            thumbnail = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888).toTestImageRef(),
             category = category,
             priceRange = Pair(20.0, 50.0),
             confidence = confidence,
-            boundingBox = RectF(0f, 0f, 1f, 1f),
+            boundingBox = RectF(0f, 0f, 1f, 1f).toNormalizedRect(),
             labelText = "Test item"
         )
     }

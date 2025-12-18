@@ -3,6 +3,7 @@ package com.scanium.app.aggregation
 import android.graphics.RectF
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.test.toNormalizedRect
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -473,7 +474,7 @@ class ItemAggregatorTest {
             category = category,
             priceRange = Pair(10.0, 50.0),
             confidence = confidence,
-            boundingBox = boundingBox,
+            boundingBox = boundingBox.toNormalizedRect(),
             labelText = labelText
         )
     }

@@ -1,5 +1,6 @@
 package com.scanium.app.model
 
+import com.scanium.shared.core.models.model.ImageRef
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
