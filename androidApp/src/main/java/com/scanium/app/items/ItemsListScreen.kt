@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -226,6 +227,9 @@ fun ItemsListScreen(
                                 },
                                 onLongClick = {
                                     toggleSelection(item)
+                                },
+                                onRetryClassification = {
+                                    itemsViewModel.retryClassification(item.id)
                                 }
                             )
                         }
@@ -253,7 +257,8 @@ private fun ItemRow(
     item: ScannedItem,
     isSelected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    onRetryClassification: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -310,7 +315,7 @@ private fun ItemRow(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // Category with confidence badge
+                // Category with confidence badge and classification status
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -320,6 +325,7 @@ private fun ItemRow(
                         style = MaterialTheme.typography.titleMedium
                     )
                     ConfidenceBadge(confidenceLevel = item.confidenceLevel)
+                    ClassificationStatusBadge(status = item.classificationStatus)
                 }
 
                 Text(
@@ -347,6 +353,39 @@ private fun ItemRow(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                // Classification error message and retry button
+                if (item.classificationStatus == "FAILED" && item.classificationErrorMessage != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        Text(
+                            text = item.classificationErrorMessage!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        TextButton(
+                            onClick = onRetryClassification,
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "Retry",
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Retry",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                 }
 
                 // Listing status badge and view listing button
@@ -458,6 +497,44 @@ private fun ListingStatusBadge(status: ItemListingStatus) {
             status.displayName
         )
         ItemListingStatus.NOT_LISTED -> return // Don't show badge for not listed
+    }
+
+    Surface(
+        shape = MaterialTheme.shapes.extraSmall,
+        color = backgroundColor
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}
+
+/**
+ * Classification status badge with color coding.
+ */
+@Composable
+private fun ClassificationStatusBadge(status: String) {
+    val (backgroundColor, textColor, text) = when (status) {
+        "PENDING" -> Triple(
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer,
+            "Classifying..."
+        )
+        "SUCCESS" -> Triple(
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.onPrimaryContainer,
+            "Cloud"
+        )
+        "FAILED" -> Triple(
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer,
+            "Failed"
+        )
+        "NOT_STARTED" -> return // Don't show badge for not started
+        else -> return // Unknown status
     }
 
     Surface(
