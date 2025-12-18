@@ -2,7 +2,7 @@ package com.scanium.android.platform.adapters
 
 import android.graphics.Rect
 import android.graphics.RectF
-import com.scanium.app.model.NormalizedRect
+import com.scanium.core.models.geometry.NormalizedRect
 
 private fun requirePositiveDimensions(frameWidth: Int, frameHeight: Int) {
     require(frameWidth > 0 && frameHeight > 0) { "frame dimensions must be positive" }

@@ -1,8 +1,7 @@
 package com.scanium.app.items
 
-import android.graphics.RectF
-import com.scanium.app.ml.ItemCategory
-import com.scanium.app.test.toNormalizedRect
+import com.scanium.core.models.geometry.NormalizedRect
+import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -39,14 +38,14 @@ class ItemsViewModelAggregationTest {
             id = "det_1",
             category = ItemCategory.FASHION,
             labelText = "Shirt",
-            boundingBox = RectF(0.3f, 0.3f, 0.5f, 0.5f).toNormalizedRect().toNormalizedRect()
+            boundingBox = normalizedRect(0.3f, 0.3f, 0.5f, 0.5f)
         )
 
         val item2 = createTestItem(
             id = "det_2",
             category = ItemCategory.FASHION,
             labelText = "Shirt",
-            boundingBox = RectF(0.31f, 0.31f, 0.51f, 0.51f).toNormalizedRect().toNormalizedRect() // Slightly shifted
+            boundingBox = normalizedRect(0.31f, 0.31f, 0.51f, 0.51f) // Slightly shifted
         )
 
         viewModel.addItem(item1)
@@ -66,14 +65,14 @@ class ItemsViewModelAggregationTest {
             id = "det_1",
             category = ItemCategory.FASHION,
             labelText = "Shirt",
-            boundingBox = RectF(0.1f, 0.1f, 0.3f, 0.3f).toNormalizedRect().toNormalizedRect()
+            boundingBox = normalizedRect(0.1f, 0.1f, 0.3f, 0.3f)
         )
 
         val item2 = createTestItem(
             id = "det_2",
             category = ItemCategory.ELECTRONICS,
             labelText = "Phone",
-            boundingBox = RectF(0.7f, 0.7f, 0.9f, 0.9f).toNormalizedRect().toNormalizedRect()
+            boundingBox = normalizedRect(0.7f, 0.7f, 0.9f, 0.9f)
         )
 
         viewModel.addItem(item1)
@@ -87,10 +86,10 @@ class ItemsViewModelAggregationTest {
     @Test
     fun `test addItems batch processing`() = runBlocking {
         val items = listOf(
-            createTestItem("det_1", ItemCategory.FASHION, "Shirt", RectF(0.1f, 0.1f, 0.3f, 0.3f).toNormalizedRect().toNormalizedRect()),
-            createTestItem("det_2", ItemCategory.FASHION, "Shirt", RectF(0.12f, 0.12f, 0.32f, 0.32f).toNormalizedRect().toNormalizedRect()),
-            createTestItem("det_3", ItemCategory.ELECTRONICS, "Phone", RectF(0.6f, 0.6f, 0.8f, 0.8f).toNormalizedRect().toNormalizedRect()),
-            createTestItem("det_4", ItemCategory.ELECTRONICS, "Phone", RectF(0.61f, 0.61f, 0.81f, 0.81f).toNormalizedRect().toNormalizedRect())
+            createTestItem("det_1", ItemCategory.FASHION, "Shirt", normalizedRect(0.1f, 0.1f, 0.3f, 0.3f)),
+            createTestItem("det_2", ItemCategory.FASHION, "Shirt", normalizedRect(0.12f, 0.12f, 0.32f, 0.32f)),
+            createTestItem("det_3", ItemCategory.ELECTRONICS, "Phone", normalizedRect(0.6f, 0.6f, 0.8f, 0.8f)),
+            createTestItem("det_4", ItemCategory.ELECTRONICS, "Phone", normalizedRect(0.61f, 0.61f, 0.81f, 0.81f))
         )
 
         viewModel.addItems(items)
@@ -103,8 +102,8 @@ class ItemsViewModelAggregationTest {
     @Test
     fun `test clearAllItems`() = runBlocking {
         val items = listOf(
-            createTestItem("det_1", ItemCategory.FASHION, "Shirt", RectF(0.1f, 0.1f, 0.3f, 0.3f).toNormalizedRect().toNormalizedRect()),
-            createTestItem("det_2", ItemCategory.ELECTRONICS, "Phone", RectF(0.6f, 0.6f, 0.8f, 0.8f).toNormalizedRect().toNormalizedRect())
+            createTestItem("det_1", ItemCategory.FASHION, "Shirt", normalizedRect(0.1f, 0.1f, 0.3f, 0.3f)),
+            createTestItem("det_2", ItemCategory.ELECTRONICS, "Phone", normalizedRect(0.6f, 0.6f, 0.8f, 0.8f))
         )
 
         viewModel.addItems(items)
@@ -121,7 +120,7 @@ class ItemsViewModelAggregationTest {
 
     @Test
     fun `test removeItem`() = runBlocking {
-        val item1 = createTestItem("det_1", ItemCategory.FASHION, "Shirt", RectF(0.1f, 0.1f, 0.3f, 0.3f).toNormalizedRect().toNormalizedRect())
+        val item1 = createTestItem("det_1", ItemCategory.FASHION, "Shirt", normalizedRect(0.1f, 0.1f, 0.3f, 0.3f))
 
         viewModel.addItem(item1)
 
@@ -142,8 +141,8 @@ class ItemsViewModelAggregationTest {
         assertEquals("Initial count should be 0", 0, viewModel.getItemCount())
 
         val items = listOf(
-            createTestItem("det_1", ItemCategory.FASHION, "Shirt", RectF(0.1f, 0.1f, 0.3f, 0.3f).toNormalizedRect().toNormalizedRect()),
-            createTestItem("det_2", ItemCategory.ELECTRONICS, "Phone", RectF(0.6f, 0.6f, 0.8f, 0.8f).toNormalizedRect().toNormalizedRect())
+            createTestItem("det_1", ItemCategory.FASHION, "Shirt", normalizedRect(0.1f, 0.1f, 0.3f, 0.3f)),
+            createTestItem("det_2", ItemCategory.ELECTRONICS, "Phone", normalizedRect(0.6f, 0.6f, 0.8f, 0.8f))
         )
 
         viewModel.addItems(items)
@@ -154,9 +153,9 @@ class ItemsViewModelAggregationTest {
     @Test
     fun `test aggregation stats`() = runBlocking {
         val items = listOf(
-            createTestItem("det_1", ItemCategory.FASHION, "Shirt", RectF(0.1f, 0.1f, 0.3f, 0.3f).toNormalizedRect().toNormalizedRect()),
-            createTestItem("det_2", ItemCategory.FASHION, "Shirt", RectF(0.12f, 0.12f, 0.32f, 0.32f).toNormalizedRect().toNormalizedRect()),
-            createTestItem("det_3", ItemCategory.ELECTRONICS, "Phone", RectF(0.6f, 0.6f, 0.8f, 0.8f).toNormalizedRect().toNormalizedRect())
+            createTestItem("det_1", ItemCategory.FASHION, "Shirt", normalizedRect(0.1f, 0.1f, 0.3f, 0.3f)),
+            createTestItem("det_2", ItemCategory.FASHION, "Shirt", normalizedRect(0.12f, 0.12f, 0.32f, 0.32f)),
+            createTestItem("det_3", ItemCategory.ELECTRONICS, "Phone", normalizedRect(0.6f, 0.6f, 0.8f, 0.8f))
         )
 
         viewModel.addItems(items)
@@ -169,7 +168,7 @@ class ItemsViewModelAggregationTest {
 
     @Test
     fun `test removeStaleItems`() = runBlocking {
-        val item = createTestItem("det_1", ItemCategory.FASHION, "Shirt", RectF(0.1f, 0.1f, 0.3f, 0.3f).toNormalizedRect().toNormalizedRect())
+        val item = createTestItem("det_1", ItemCategory.FASHION, "Shirt", normalizedRect(0.1f, 0.1f, 0.3f, 0.3f))
 
         viewModel.addItem(item)
 
@@ -188,7 +187,7 @@ class ItemsViewModelAggregationTest {
 
     @Test
     fun `test UI state updates after aggregation`() = runBlocking {
-        val item1 = createTestItem("det_1", ItemCategory.FASHION, "Shirt", RectF(0.3f, 0.3f, 0.5f, 0.5f).toNormalizedRect().toNormalizedRect())
+        val item1 = createTestItem("det_1", ItemCategory.FASHION, "Shirt", normalizedRect(0.3f, 0.3f, 0.5f, 0.5f))
 
         viewModel.addItem(item1)
 
@@ -198,7 +197,7 @@ class ItemsViewModelAggregationTest {
         assertEquals("Category should be FASHION", ItemCategory.FASHION, items.first().category)
 
         // Add similar item
-        val item2 = createTestItem("det_2", ItemCategory.FASHION, "Shirt", RectF(0.31f, 0.31f, 0.51f, 0.51f).toNormalizedRect().toNormalizedRect())
+        val item2 = createTestItem("det_2", ItemCategory.FASHION, "Shirt", normalizedRect(0.31f, 0.31f, 0.51f, 0.51f))
         viewModel.addItem(item2)
 
         // Should still have 1 item (merged)
@@ -214,7 +213,7 @@ class ItemsViewModelAggregationTest {
                 id = "det_$i",
                 category = ItemCategory.FASHION,
                 labelText = "Shirt",
-                boundingBox = RectF(0.3f + i * 0.01f, 0.3f, 0.5f + i * 0.01f, 0.5f).toNormalizedRect().toNormalizedRect() // Slight movement
+                boundingBox = normalizedRect(0.3f + i * 0.01f, 0.3f, 0.5f + i * 0.01f, 0.5f) // Slight movement
             )
             viewModel.addItem(item)
         }
@@ -238,7 +237,7 @@ class ItemsViewModelAggregationTest {
             id = "det_1",
             category = ItemCategory.FASHION,
             labelText = "Shirt",
-            boundingBox = RectF(0.3f, 0.3f, 0.5f, 0.5f).toNormalizedRect().toNormalizedRect(),
+            boundingBox = normalizedRect(0.3f, 0.3f, 0.5f, 0.5f),
             confidence = 0.7f
         )
 
@@ -246,7 +245,7 @@ class ItemsViewModelAggregationTest {
             id = "det_2",
             category = ItemCategory.FASHION,
             labelText = "Shirt",
-            boundingBox = RectF(0.31f, 0.31f, 0.51f, 0.51f).toNormalizedRect().toNormalizedRect(),
+            boundingBox = normalizedRect(0.31f, 0.31f, 0.51f, 0.51f),
             confidence = 0.9f // Higher confidence
         )
 
@@ -262,8 +261,8 @@ class ItemsViewModelAggregationTest {
 
     @Test
     fun `test aggregated items maintain correct bounding box`() = runBlocking {
-        val box1 = RectF(0.3f, 0.3f, 0.5f, 0.5f).toNormalizedRect().toNormalizedRect()
-        val box2 = RectF(0.31f, 0.31f, 0.51f, 0.51f).toNormalizedRect().toNormalizedRect()
+        val box1 = normalizedRect(0.3f, 0.3f, 0.5f, 0.5f)
+        val box2 = normalizedRect(0.31f, 0.31f, 0.51f, 0.51f)
 
         val item1 = createTestItem("det_1", ItemCategory.FASHION, "Shirt", box1)
         val item2 = createTestItem("det_2", ItemCategory.FASHION, "Shirt", box2)
@@ -284,7 +283,7 @@ class ItemsViewModelAggregationTest {
         id: String,
         category: ItemCategory,
         labelText: String,
-        boundingBox: RectF,
+        boundingBox: NormalizedRect,
         confidence: Float = 0.8f
     ): ScannedItem {
         return ScannedItem(
@@ -293,8 +292,15 @@ class ItemsViewModelAggregationTest {
             category = category,
             priceRange = Pair(10.0, 50.0),
             confidence = confidence,
-            boundingBox = boundingBox.toNormalizedRect(),
+            boundingBox = boundingBox,
             labelText = labelText
         )
     }
+
+    private fun normalizedRect(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float
+    ): NormalizedRect = NormalizedRect(left, top, right, bottom).clampToUnit()
 }
