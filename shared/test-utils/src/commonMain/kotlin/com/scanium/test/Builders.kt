@@ -106,6 +106,7 @@ fun testScannedItem(
     labelText: String = "Test Item",
     confidence: Float = 0.8f,
     boundingBox: NormalizedRect = testCenteredRect(),
+    priceRange: Pair<Double, Double> = 10.0 to 50.0,
     thumbnail: ImageRef? = null,
     timestampMs: Long = System.currentTimeMillis(),
     mergeCount: Int = 1,
@@ -115,12 +116,14 @@ fun testScannedItem(
         aggregatedId = id,
         category = category,
         labelText = labelText,
+        boundingBox = boundingBox,
+        priceRange = priceRange,
         confidence = confidence,
-        normalizedBoundingBox = boundingBox,
         thumbnail = thumbnail,
         timestampMs = timestampMs,
         mergeCount = mergeCount,
-        sourceDetectionIds = sourceDetectionIds
+        averageConfidence = confidence,
+        sourceDetectionIds = sourceDetectionIds.toMutableSet()
     )
 }
 
