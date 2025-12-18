@@ -130,7 +130,7 @@ object TestFixtures {
             trackingId = "collectible_card_1",
             boundingBox = BoundingBoxes.bottomRight,
             confidence = 0.68f,
-            category = ItemCategory.COLLECTIBLE,
+            category = ItemCategory.FASHION,
             labelText = "Trading Card"
         )
 
@@ -138,7 +138,7 @@ object TestFixtures {
             trackingId = "low_conf_1",
             boundingBox = BoundingBoxes.centerSmall,
             confidence = 0.25f,
-            category = ItemCategory.OTHER,
+            category = ItemCategory.UNKNOWN,
             labelText = "Unknown"
         )
 
@@ -274,6 +274,6 @@ object TestFixtures {
     object CategoryPairs {
         val same = ItemCategory.FASHION to ItemCategory.FASHION
         val different = ItemCategory.FASHION to ItemCategory.ELECTRONICS
-        val similarDomain = ItemCategory.FASHION to ItemCategory.COLLECTIBLE
+        val similarDomain = ItemCategory.FASHION to ItemCategory.HOME_GOOD
     }
 }

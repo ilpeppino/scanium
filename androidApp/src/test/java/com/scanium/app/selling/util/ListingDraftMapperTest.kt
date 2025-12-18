@@ -3,6 +3,7 @@ package com.scanium.app.selling.util
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.items.ScannedItem
 import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
 import org.junit.Test
 
@@ -27,9 +28,9 @@ class ListingDraftMapperTest {
         assertThat(draft.currency).isEqualTo("EUR")
     }
 
-    private fun testImageRef(width: Int = 10, height: Int = 10): ImageRef.Bytes {
+    private fun testImageRef(width: Int = 10, height: Int = 10): Bytes {
         val bytes = ByteArray((width * height).coerceAtLeast(1)) { 1 }
-        return ImageRef.Bytes(
+        return Bytes(
             bytes = bytes,
             mimeType = "image/jpeg",
             width = width,

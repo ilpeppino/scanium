@@ -6,10 +6,14 @@ import com.google.common.truth.Truth.assertThat
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.selling.util.ListingDraftMapper
 import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class EbayMarketplaceServiceTest {
 
     @Test
@@ -21,7 +25,9 @@ class EbayMarketplaceServiceTest {
             id = "1",
             thumbnail = testImageRef(20, 20),
             category = ItemCategory.HOME_GOOD,
-            priceRange = 20.0 to 40.0
+            priceRange = 20.0 to 40.0,
+            labelText = "Test item",
+            boundingBox = NormalizedRect(0f, 0f, 1f, 1f)
         )
 
         val draft = ListingDraftMapper.fromScannedItem(item)
@@ -34,11 +40,11 @@ class EbayMarketplaceServiceTest {
         assertThat(listing.status).isEqualTo(com.scanium.app.selling.domain.ListingStatus.ACTIVE)
     }
 
-    private fun testImageRef(width: Int, height: Int): ImageRef.Bytes {
+    private fun testImageRef(width: Int, height: Int): Bytes {
         val safeWidth = width.coerceAtLeast(1)
         val safeHeight = height.coerceAtLeast(1)
         val bytes = ByteArray((safeWidth * safeHeight).coerceAtLeast(1)) { 1 }
-        return ImageRef.Bytes(
+        return Bytes(
             bytes = bytes,
             mimeType = "image/jpeg",
             width = safeWidth,

@@ -198,7 +198,7 @@ fun assertTrackerStats(
     stats: TrackerStats,
     expectedActiveCandidates: Int? = null,
     expectedConfirmedCandidates: Int? = null,
-    expectedCurrentFrame: Int? = null
+    expectedCurrentFrame: Long? = null
 ) {
     expectedActiveCandidates?.let {
         assertEquals(

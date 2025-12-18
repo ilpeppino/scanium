@@ -2,9 +2,11 @@ package com.scanium.test
 
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.image.ImageRefBytes
 import com.scanium.core.models.items.ScannedItem
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.models.ml.RawDetection
+import com.scanium.core.models.ml.LabelWithConfidence
 import com.scanium.core.tracking.DetectionInfo
 
 /**
@@ -139,15 +141,15 @@ fun testScannedItem(
  * ```
  */
 fun testRawDetection(
-    trackingId: String? = "raw_track_${randomId()}",
+    trackingId: String = "raw_track_${randomId()}",
     boundingBox: NormalizedRect = testCenteredRect(),
     labels: List<Pair<ItemCategory, Float>> = listOf(ItemCategory.FASHION to 0.8f)
 ): RawDetection {
     return RawDetection(
         trackingId = trackingId,
-        boundingBox = boundingBox,
+        bboxNorm = boundingBox,
         labels = labels.map { (category, confidence) ->
-            RawDetection.LabelWithConfidence(category, confidence)
+            LabelWithConfidence(category.name, confidence)
         }
     )
 }
@@ -164,10 +166,10 @@ fun testImageRef(
     width: Int = 800,
     height: Int = 600,
     mimeType: String = "image/jpeg"
-): ImageRef.Bytes {
+): ImageRefBytes {
     // Create minimal valid JPEG header for testing
     val dummyBytes = ByteArray(100) { it.toByte() }
-    return ImageRef.Bytes(
+    return ImageRefBytes(
         bytes = dummyBytes,
         width = width,
         height = height,
