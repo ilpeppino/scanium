@@ -8,7 +8,6 @@ import {
 import {
   buildAuthorizationUrl,
   exchangeCodeForTokens,
-  generateNonce,
   generateState,
 } from './oauth-flow.js';
 import {
@@ -35,7 +34,6 @@ export const ebayAuthRoutes: FastifyPluginAsync<{ config: Config }> = async (
   fastify.post('/start', async (request, reply) => {
     // Generate state and nonce for CSRF protection
     const state = generateState();
-    const nonce = generateNonce();
 
     // Store state and nonce in signed cookies
     reply
@@ -46,18 +44,10 @@ export const ebayAuthRoutes: FastifyPluginAsync<{ config: Config }> = async (
         sameSite: 'lax',
         maxAge: COOKIE_MAX_AGE,
         path: '/',
-      })
-      .setCookie('oauth_nonce', nonce, {
-        signed: true,
-        httpOnly: true,
-        secure: config.nodeEnv === 'production',
-        sameSite: 'lax',
-        maxAge: COOKIE_MAX_AGE,
-        path: '/',
       });
 
     // Build authorization URL
-    const authorizeUrl = buildAuthorizationUrl(config, state, nonce);
+    const authorizeUrl = buildAuthorizationUrl(config, state);
 
     request.log.info({ state }, 'OAuth flow initiated');
 
@@ -102,7 +92,7 @@ export const ebayAuthRoutes: FastifyPluginAsync<{ config: Config }> = async (
     }
 
     // Clear cookies
-    reply.clearCookie('oauth_state').clearCookie('oauth_nonce');
+    reply.clearCookie('oauth_state');
 
     // Exchange code for tokens
     const tokens = await exchangeCodeForTokens(config, code);
@@ -200,7 +190,7 @@ export const ebayAuthRoutes: FastifyPluginAsync<{ config: Config }> = async (
    * Returns eBay connection status
    * Used by mobile app to check if OAuth is connected
    */
-  fastify.get('/status', async (request, reply) => {
+  fastify.get('/status', async (_request, reply) => {
     const status = await getEbayConnectionStatus(config);
 
     return reply.status(200).send({

@@ -1,5 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
+import { createRequire } from 'module';
 import { checkDatabaseConnection } from '../../infra/db/prisma.js';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('../../../package.json') as { version?: string };
 
 /**
  * Health check routes
@@ -7,10 +11,22 @@ import { checkDatabaseConnection } from '../../infra/db/prisma.js';
  */
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   /**
+   * GET /health
+   * Cloud-friendly health for the classifier proxy
+   */
+  fastify.get('/health', async (_request, reply) => {
+    return reply.status(200).send({
+      status: 'ok',
+      ts: new Date().toISOString(),
+      version: packageJson.version ?? 'unknown',
+    });
+  });
+
+  /**
    * GET /healthz
    * Basic liveness check - returns 200 if process is running
    */
-  fastify.get('/healthz', async (request, reply) => {
+  fastify.get('/healthz', async (_request, reply) => {
     return reply.status(200).send({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -22,7 +38,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
    * Readiness check - returns 200 only if database is reachable
    * Used to verify database connectivity before routing traffic
    */
-  fastify.get('/readyz', async (request, reply) => {
+  fastify.get('/readyz', async (_request, reply) => {
     const dbConnected = await checkDatabaseConnection();
 
     if (!dbConnected) {
