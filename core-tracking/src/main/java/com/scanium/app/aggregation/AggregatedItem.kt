@@ -49,7 +49,12 @@ data class AggregatedItem(
     var dominantColor: Int? = null, // For future thumbnail-based similarity
     var enhancedCategory: ItemCategory? = null,
     var enhancedLabelText: String? = null,
-    var enhancedPriceRange: Pair<Double, Double>? = null
+    var enhancedPriceRange: Pair<Double, Double>? = null,
+    // Classification status tracking (Phase 9)
+    var classificationStatus: String = "NOT_STARTED", // NOT_STARTED, PENDING, SUCCESS, FAILED
+    var domainCategoryId: String? = null,
+    var classificationErrorMessage: String? = null,
+    var classificationRequestId: String? = null
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -66,7 +71,11 @@ data class AggregatedItem(
             confidence = maxConfidence,
             timestamp = lastSeenTimestamp,
             boundingBox = boundingBox,
-            labelText = enhancedLabelText ?: labelText
+            labelText = enhancedLabelText ?: labelText,
+            classificationStatus = classificationStatus,
+            domainCategoryId = domainCategoryId,
+            classificationErrorMessage = classificationErrorMessage,
+            classificationRequestId = classificationRequestId
         )
     }
 
