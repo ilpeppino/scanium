@@ -1,8 +1,9 @@
 package com.scanium.app.items
 
-import android.graphics.RectF
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.scanium.app.ml.ItemCategory
+import com.scanium.core.models.geometry.NormalizedRect
+import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -603,7 +604,7 @@ class ItemsViewModelTest {
         id: String = "test-id",
         category: ItemCategory = ItemCategory.UNKNOWN,
         confidence: Float = 0.5f,
-        boundingBox: RectF = defaultBoundingBox(),
+        boundingBox: NormalizedRect = defaultBoundingBox(),
         labelText: String = category.name
     ): ScannedItem {
         return ScannedItem(
@@ -624,20 +625,14 @@ class ItemsViewModelTest {
         thumbnailWidth: Int,
         thumbnailHeight: Int,
         confidence: Float = 0.5f,
-        boundingBox: RectF = defaultBoundingBox(
+        boundingBox: NormalizedRect = defaultBoundingBox(
             size = (minOf(thumbnailWidth, thumbnailHeight) / 1000f).coerceAtMost(0.9f)
         ),
         labelText: String = category.name
     ): ScannedItem {
-        val bitmap = android.graphics.Bitmap.createBitmap(
-            thumbnailWidth,
-            thumbnailHeight,
-            android.graphics.Bitmap.Config.ARGB_8888
-        )
-
         return ScannedItem(
             id = id,
-            thumbnail = bitmap,
+            thumbnail = testImageRef(thumbnailWidth, thumbnailHeight),
             category = category,
             priceRange = 10.0 to 20.0,
             confidence = confidence,
@@ -647,11 +642,23 @@ class ItemsViewModelTest {
         )
     }
 
-    private fun defaultBoundingBox(size: Float = 0.2f, offsetX: Float = 0.0f, offsetY: Float = 0.0f): RectF {
+    private fun defaultBoundingBox(size: Float = 0.2f, offsetX: Float = 0.0f, offsetY: Float = 0.0f): NormalizedRect {
         val clampedSize = size.coerceIn(0.05f, 0.9f)
         val left = offsetX.coerceIn(0f, 1f - clampedSize)
         val top = offsetY.coerceIn(0f, 1f - clampedSize)
-        return RectF(left, top, left + clampedSize, top + clampedSize)
+        return NormalizedRect(left, top, left + clampedSize, top + clampedSize)
+    }
+
+    private fun testImageRef(width: Int, height: Int): ImageRef.Bytes {
+        val safeWidth = width.coerceAtLeast(1)
+        val safeHeight = height.coerceAtLeast(1)
+        val bytes = ByteArray((safeWidth * safeHeight).coerceAtLeast(1)) { 1 }
+        return ImageRef.Bytes(
+            bytes = bytes,
+            mimeType = "image/jpeg",
+            width = safeWidth,
+            height = safeHeight
+        )
     }
 
     // ==================== Threshold Control Tests ====================

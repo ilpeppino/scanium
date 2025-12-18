@@ -1,14 +1,16 @@
 package com.scanium.app.items
 
-import android.graphics.Bitmap
 import android.graphics.RectF
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.scanium.app.ml.ItemCategory
-import com.scanium.app.tracking.DetectionInfo
-import com.scanium.app.tracking.ObjectTracker
-import com.scanium.app.tracking.TrackerConfig
-import com.scanium.app.platform.toNormalizedRect
 import com.google.common.truth.Truth.assertThat
+import com.scanium.android.platform.adapters.toNormalizedRect
+import com.scanium.core.models.geometry.NormalizedRect
+import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.ml.ItemCategory
+import com.scanium.core.tracking.DetectionInfo
+import com.scanium.core.tracking.ObjectCandidate
+import com.scanium.core.tracking.ObjectTracker
+import com.scanium.core.tracking.TrackerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -86,7 +88,7 @@ class DeduplicationPipelineIntegrationTest {
         // This test simulates the case where objects are far enough apart that tracker creates two separate items
 
         // Frame 1-3: Object detected with first tracking ID
-        var allConfirmed = mutableListOf<com.scanium.app.tracking.ObjectCandidate>()
+        var allConfirmed = mutableListOf<ObjectCandidate>()
         repeat(3) { frameNum ->
             val detections = listOf(
                 createDetection(
@@ -148,7 +150,7 @@ class DeduplicationPipelineIntegrationTest {
         )
 
         // Scan all objects over 3 frames
-        val allConfirmed = mutableListOf<com.scanium.app.tracking.ObjectCandidate>()
+        val allConfirmed = mutableListOf<ObjectCandidate>()
         repeat(3) { frameNum ->
             val detections = objectConfigurations.map { (category, box, id) ->
                 createDetection(
@@ -490,7 +492,7 @@ class DeduplicationPipelineIntegrationTest {
         confidence: Float = 0.6f,
         frames: Int = 3
     ): ScannedItem {
-        val allConfirmed = mutableListOf<com.scanium.app.tracking.ObjectCandidate>()
+        val allConfirmed = mutableListOf<ObjectCandidate>()
         repeat(frames) {
             val detections = listOf(
                 createDetection(trackingId, boundingBox, category, confidence)
@@ -516,23 +518,24 @@ class DeduplicationPipelineIntegrationTest {
             confidence = confidence,
             category = category,
             labelText = category.name,
-            thumbnail = createMockBitmap(normalizedBox),
-            normalizedBoxArea = calculateNormalizedArea(normalizedBox)
+            thumbnail = createMockImageRef(normalizedBox),
+            normalizedBoxArea = normalizedBox.area
         )
     }
 
-    private fun createMockBitmap(boundingBox: com.scanium.app.model.NormalizedRect): Bitmap {
+    private fun createMockImageRef(boundingBox: NormalizedRect): ImageRef.Bytes {
         val width = (boundingBox.width * 2000).toInt().coerceAtLeast(1)
         val height = (boundingBox.height * 2000).toInt().coerceAtLeast(1)
-        return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val bytes = ByteArray((width * height).coerceAtLeast(1)) { 1 }
+        return ImageRef.Bytes(
+            bytes = bytes,
+            mimeType = "image/jpeg",
+            width = width,
+            height = height
+        )
     }
 
-    private fun calculateNormalizedArea(boundingBox: com.scanium.app.model.NormalizedRect): Float {
-        // boundingBox already normalized to 0-1 space
-        return boundingBox.area.coerceIn(0f, 1f)
-    }
-
-    private fun convertToScannedItem(candidate: com.scanium.app.tracking.ObjectCandidate): ScannedItem {
+    private fun convertToScannedItem(candidate: ObjectCandidate): ScannedItem {
         return ScannedItem(
             id = candidate.internalId,
             thumbnail = candidate.thumbnail,

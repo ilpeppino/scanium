@@ -207,6 +207,7 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.2.0") // For LiveData/Flow testing
     testImplementation("org.robolectric:robolectric:4.11.1") // For Android framework classes in unit tests
     testImplementation("androidx.test:core:1.5.0") // For ApplicationProvider
+    testImplementation(project(":shared:test-utils"))
 
     // Testing - Instrumented Tests
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

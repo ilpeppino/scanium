@@ -1,7 +1,7 @@
 # Test Refactoring Progress Summary
 ## Scanium KMP Migration - Test Infrastructure Complete
 
-**Status**: ✅ **Phase 1, 2 & 4 COMPLETE**
+**Status**: ✅ **Phase 1, 2, 4 & 5 COMPLETE**
 **Date**: 2025-12-18
 **Branch**: `claude/plan-kmp-test-refactor-EugFw`
 
@@ -32,6 +32,14 @@ Core tracking coverage has been moved to the shared KMP module with Android-spec
 - 5 new shared test suites covering tracking + aggregation behavior
 - Android test suite no longer duplicates tracking coverage
 - Aggregation logic now lives in `shared/core-tracking` with portable models
+
+### ✅ Phase 5: AndroidApp Imports & Model Alignment (COMPLETE)
+
+Android unit tests now target the shared KMP models and tracking APIs:
+- Replaced legacy `com.scanium.app.*` imports with `com.scanium.core.*` across androidApp tests and platform adapters.
+- Updated tests to use portable `ImageRef` and `NormalizedRect` instead of `Bitmap`/`RectF` where business models expect shared types.
+- Added `shared:test-utils` dependency to androidApp tests to unblock further KMP-aligned testing.
+- Fixed classification and deduplication flows to build against shared tracker/aggregator data classes.
 
 ### ✅ Phase 2: Test-Utils Infrastructure (COMPLETE)
 
@@ -184,15 +192,15 @@ import com.scanium.core.models.items.ScannedItem
 - Target: `shared/core-models/commonTest/`
 - **Value**: Establish KMP model test coverage
 
-**Phase 5: Update AndroidApp Imports** (3-4 hours)
-- Run automated import replacement script
-- Update 21 test files (186 tests)
-- **Value**: Unblock all androidApp tests
-
 **Phase 6: Clean Up Legacy Tests** (1 hour)
 - Delete `core-models/src/test/`
 - Delete `core-tracking/src/test/`
 - **Value**: Remove confusion and duplication
+
+**Phase 7: Refresh Instrumented Tests** (2-3 hours)
+- Update androidTest imports to shared models
+- Verify `ItemsViewModelInstrumentedTest`, `ModeSwitcherTest`, and `DetectionOverlayTest` on device/emulator
+- **Value**: Keep UI coverage aligned with shared contracts
 
 ---
 
@@ -277,7 +285,7 @@ class ObjectTrackerTest {
 - ✅ Complete inventory of 39 test files
 - ✅ Migration paths documented for 127 tests
 - ✅ Import conflicts identified (25 files)
-- ✅ Estimated effort calculated (15-20 hours remaining)
+- ✅ Estimated effort calculated (7-10 hours remaining)
 
 **Target Metrics (After All Phases)**:
 - 🎯 100% test migration (39 files processed)
@@ -292,14 +300,14 @@ class ObjectTrackerTest {
 **Completed**:
 - Phase 1: 2 hours (inventory & analysis)
 - Phase 2: 2 hours (test-utils infrastructure)
-- **Total**: 4 hours
+- Phase 4: 6-8 hours (tracking tests)
+- Phase 5: 3-4 hours (android imports & model alignment)
+- **Total**: 13-16 hours
 
 **Remaining**:
 - Phase 3: 3-4 hours (model tests)
-- Phase 4: 6-8 hours (tracking tests)
-- Phase 5: 3-4 hours (import updates)
 - Phase 6-9: 4-6 hours (cleanup, coverage, docs)
-- **Total**: 16-22 hours
+- **Total**: 7-10 hours
 
 **Grand Total**: 20-26 hours (matches original plan estimate)
 
@@ -354,10 +362,10 @@ class MyNewTest {
 
 **Next Action**: Choose one:
 1. Continue with Phase 3 (migrate model tests)
-2. Continue with Phase 4 (migrate tracking tests)
-3. Continue with Phase 5 (update imports)
+2. Start Phase 6 (legacy test cleanup)
+3. Refresh Phase 7 instrumented tests (androidTest)
 4. Review and adjust plan based on priorities
 
 ---
 
-**Status**: Phase 1 & 2 Complete - Ready to Execute Phase 3-9 ✅
+**Status**: Phases 1, 2, 4 & 5 Complete - Ready for Phase 3 & 6-9 ✅

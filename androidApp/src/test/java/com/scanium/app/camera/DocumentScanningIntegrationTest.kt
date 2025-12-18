@@ -1,6 +1,6 @@
 package com.scanium.app.camera
 
-import com.scanium.app.ml.ItemCategory
+import com.scanium.core.models.ml.ItemCategory
 import org.junit.Assert.*
 import org.junit.Test
 
