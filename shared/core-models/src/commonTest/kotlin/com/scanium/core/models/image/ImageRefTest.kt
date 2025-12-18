@@ -1,5 +1,6 @@
 package com.scanium.core.models.image
 
+import com.scanium.shared.core.models.model.ImageRef
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals

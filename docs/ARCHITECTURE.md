@@ -1,109 +1,108 @@
 # Architecture
 
-This document is the single source of truth for how Scanium is structured and how we will evolve it. The goals are Android-first delivery, cloud classification as the primary categorization path, and a shared “brain” that can be reused by iOS without blocking Android builds.
+Single source of truth for how Scanium is structured and how we evolve it. Goal: ship Android first, keep builds green, make cloud classification primary, and grow a shared “brain” that iOS can consume without blocking Android.
 
 ---
 
-## Principles
-- Android-first: `./gradlew assembleDebug` must stay green at every step.
-- Shared brain: business logic, contracts, and models live in KMP-ready modules; platform layers stay thin.
-- Cloud-primary classification: Google Vision (via backend) is the canonical classifier; on-device labels are a fallback.
-- Responsive pipeline: detection/tracking/aggregation remain on-device; cloud classification runs asynchronously for stable items only.
-- No secrets in the app: endpoints/keys come from `local.properties` or environment, never committed.
-- Safe increments: additive scaffolding first, then migrations guarded by tests.
+## Current State (from repo inspection)
+- **Build/tooling:** Java 17 toolchain; AGP 8.5.0; Kotlin 2.0.x; Compose BOM 2023.10. `./gradlew assembleDebug` is the main gate; SBOM + OWASP checks in `androidApp`.
+- **Modules:**  
+  - Platform UI: `androidApp/` (Compose, navigation, view models).  
+  - Platform scanning: `android-camera-camerax` (CameraX), `android-ml-mlkit` (ML Kit analyzers), `android-platform-adapters` (Bitmap/Rect adapters).  
+  - Shared brain: `shared/core-models` (ImageRef, NormalizedRect, RawDetection, DetectionResult, ItemCategory + classification/config contracts), `shared/core-tracking` (ObjectTracker, math).  
+  - Domain taxonomy: `core-domainpack` (DomainPackRepository, BasicCategoryEngine, JSON config).  
+  - Shell namespaces: `core-contracts`, `core-scan` (empty/placeholder).  
+  - Android wrappers: `core-models`, `core-tracking` (typealiases to shared KMP).
+- **Pipeline today:** CameraX → ML Kit detection → adapters to `RawDetection` → `ObjectTracker` + `ItemAggregator` → `ClassificationOrchestrator` (cloud/offline paths) → UI state in view models. Cloud classifier is available but gated by config; on-device labels act as fallback.
+
+---
+
+## Target Architecture (layers)
+- **Presentation (platform-specific):** Compose UI (Android), future SwiftUI (iOS). Pure UI + state wiring only.
+- **Platform Scanning Layer:** Camera + on-device detectors; emits portable `RawDetection` + thumbnails. Android = CameraX/ML Kit; iOS (future) = AVFoundation/Apple Vision.
+- **Shared Brain (portable/KMP-ready):** Models, tracking/aggregation, classification/config contracts, domain mapping. No Android types allowed.
+- **Integration:** `androidApp` wires platform scanning to shared brain and domain pack; iOS will mirror the same contracts later.
+
+Mermaid (layered view):
+```mermaid
+flowchart TD
+    UI[Presentation: Compose/SwiftUI] --> VM[ViewModels]
+    VM --> Platform[Platform Scanning Layer<br/>CameraX+ML Kit / AVFoundation+Vision]
+    Platform --> Adapters[Platform Adapters<br/>Bitmap/Rect -> ImageRef/NormalizedRect]
+    Adapters --> Tracking[Shared Tracking & Aggregation]
+    Tracking --> Classify[Classification Orchestrator]
+    Classify --> Cloud[Cloud Classifier (backend proxy -> Google Vision)]
+    Classify --> Fallback[On-device labels (fallback)]
+    Classify --> Domain[Domain Pack Mapping]
+    Domain --> VM
+```
+
+---
+
+## Data Flow (stable items only for cloud)
+1. Camera frame → ML Kit detector → `RawDetection` (normalized bbox, coarse label, thumbnail).
+2. `ObjectTracker` + `ItemAggregator` merge detections; only **stable items** (confirmed + thumbnail) are eligible for cloud upload.
+3. `ClassificationOrchestrator` (bounded concurrency=2, retries) decides mode:
+   - `CLOUD`: send thumbnail to backend proxy (Google Vision), async.
+   - `ON_DEVICE`/`FALLBACK`: use coarse labels when cloud unavailable/unconfigured.
+4. `DomainPackRepository` + `BasicCategoryEngine` map classifier output to domain categories/attributes.
+5. View models push updated UI state (overlays, item list, selling flow).
+
+Mermaid (pipeline):
+```mermaid
+flowchart LR
+    Frames[Camera Frames] --> Detect[On-device Detection (ML Kit)]
+    Detect --> Raw[RawDetection]
+    Raw --> Track[ObjectTracker]
+    Track --> Agg[ItemAggregator]
+    Agg -- stable items only --> Queue[ClassificationOrchestrator]
+    Queue -->|cloud| Cloud[Backend Proxy -> Google Vision]
+    Queue -->|fallback| OnDevice[Coarse labels]
+    Cloud --> Map[Domain Pack Mapping]
+    OnDevice --> Map
+    Map --> VM[ViewModels/StateFlow]
+    VM --> UI[Compose UI]
+```
+
+---
+
+## Module/Package Boundaries & Dependency Rules
+- Shared modules (`shared/*`) are Android-free; enforced by `checkPortableModules`.
+- Platform modules (`android-*`) do not depend on each other except adapters can be a leaf helper; none depend on `androidApp`.
+- `androidApp` is the only integration point (wires UI + platform + shared).
+- `core-domainpack` depends on shared models but not on platform code.
+- Shell modules (`core-contracts`, `core-scan`) stay lightweight; no Android types.
+
+---
+
+## Cloud Classification Flow (Google Vision via backend proxy)
+- **Trigger:** Only stable aggregated items with thumbnails.
+- **Config:** `CloudClassifierConfig` + `CloudConfigProvider` (Android impl reads BuildConfig from `local.properties`/env: `scanium.api.base.url`, `scanium.api.key`). No secrets in source.
+- **Transport:** OkHttp multipart JPEG upload to backend proxy; timeouts 10s/10s; retries on 408/429/5xx; EXIF stripped via re-encode.
+- **Backend:** Holds Google credentials, rate limits, logs, maps Vision output to domain categories.
+- **Fallback:** When config missing or network down, orchestrator uses on-device labels; results marked as fallback.
+- **Testing:** Mock classifier for JVM tests; cloud path optional/gated by env.
 
 ---
 
 ## Build Guardrails
-- Toolchain: Java 17 enforced via Gradle toolchains (root + androidApp).
-- Android Gradle Plugin 8.5.0, Kotlin 2.0.x, Compose BOM 2023.10.
-- Build commands:
-  - `./gradlew assembleDebug` – primary build gate
-  - `./gradlew test` – JVM/unit tests (runs fast, offline)
-  - `./gradlew connectedAndroidTest` – instrumented/Compose UI (optional, needs device)
-- Lint/security: CycloneDX SBOM + OWASP Dependency Check wired in `androidApp`.
-- Sandbox check: `checkPortableModules` keeps shared modules free of Android imports.
-
----
-
-## Module Map & Boundaries
-
-**Platform UI (Android)**
-- `androidApp/` – Compose UI, navigation (`navigation/NavGraph.kt`), view models, feature glue.
-
-**Platform Scanning Layer (Android)**
-- `android-camera-camerax/` – Camera lifecycle, frame acquisition.
-- `android-ml-mlkit/` – ML Kit object/barcode/text wrappers.
-- `android-platform-adapters/` – Bitmap/Rect ↔ `ImageRef`/`NormalizedRect` conversions.
-
-**Shared Brain (portable, KMP-ready)**
-- `shared/core-models/` – Portable models (`ImageRef`, `NormalizedRect`, `RawDetection`, `DetectionResult`, `ItemCategory`) and new classification/domain contracts (see `classification/` and `config/` packages).
-- `shared/core-tracking/` – Platform-neutral tracking (`ObjectTracker`, `ObjectCandidate`, `AggregationPresets` math).
-
-**Domain Pack & Mapping**
-- `core-domainpack/` – Domain taxonomy, mapping, and repository (`DomainPackRepository`, `BasicCategoryEngine`, JSON config in `res/raw/home_resale_domain_pack.json`).
-
-**Shell Namespaces (kept lightweight)**
-- `core-contracts/`, `core-scan/` – Reserved for future shared contracts; kept Android-plugin but without platform dependencies to avoid build churn.
-
-**Dependency Rules**
-- Shared modules (`shared/*`) must not import Android types.
-- Platform modules (`android-*`) must not depend on `androidApp`.
-- UI layer depends on contracts/use cases, not on platform ML/Camera directly.
-- Cross-module flow: `androidApp` → platform adapters/detectors → shared tracking/aggregation → classification contracts.
-
----
-
-## Scanning & Classification Pipeline
-1. **Frame capture (Android only):** CameraX (`android-camera-camerax`) feeds frames to ML Kit analyzers (`android-ml-mlkit`).
-2. **Detection:** ML Kit detections are converted to `RawDetection` (`NormalizedRect` + coarse labels + optional thumbnail) via adapters in `androidApp/ml`.
-3. **Tracking & aggregation:** `shared/core-tracking`’s `ObjectTracker` and `ItemAggregator` merge detections over time, producing stable `AggregatedItem` instances. Only stable items (confirmed + thumbnail present) are eligible for cloud classification.
-4. **Classification orchestration:** `ClassificationOrchestrator` (androidApp) enforces a bounded queue (max concurrency 2), retry with backoff, caching, and status tracking.
-5. **Primary path – cloud:** `CloudClassifier` posts cropped thumbnails to the backend proxy for Google Vision. Configured via BuildConfig (`SCANIUM_API_BASE_URL`, `SCANIUM_API_KEY`), now also exposed through `CloudClassifierConfig`/`CloudConfigProvider` (see `shared/core-models/classification` and `androidApp/config`).
-6. **Fallback – on-device:** When cloud is unavailable or not configured, the orchestrator can use on-device labels (ML Kit coarse categories) to keep UI responsive; results are marked as fallback.
-7. **Domain mapping:** `DomainPackRepository` + `BasicCategoryEngine` translate classifier outputs to domain categories/attributes for UI and selling flows.
-8. **UI update:** View models push `StateFlow` updates to Compose screens (camera overlay, item list, selling flow).
-
----
-
-## Cloud Classification (Google Vision via Backend)
-- **Contract:** Portable interfaces in `shared/core-models/classification/ClassifierContracts.kt` define `Classifier`, `ClassificationResult`, `ClassificationMode`, and `CloudClassifierConfig`.
-- **Android implementation:** `CloudClassifier` (androidApp) uses OkHttp with 10s connect/read timeouts, multipart upload of JPEG thumbnails, and retries for 408/429/5xx. `CloudConfigProvider` reads BuildConfig to populate `CloudClassifierConfig` without exposing secrets in code.
-- **Security:** No Google Vision keys in the app. Backend proxy handles auth, rate limiting, logging, and Vision API calls.
-- **Performance:** Only stable aggregated items are uploaded; thumbnails are re-encoded to strip EXIF. Async pipeline keeps camera thread hot.
-- **Testing:** Provide a mock classifier implementing the shared `Classifier` interface for JVM tests; cloud calls can be faked without network.
+- Java 17 toolchain (root + androidApp).
+- Commands: `./gradlew assembleDebug` (must stay green), `./gradlew test` (fast, offline), `./gradlew connectedAndroidTest` (device-only), `./gradlew lint` (optional/CI).
+- Security/lint: CycloneDX + OWASP Dependency Check active in `androidApp`.
 
 ---
 
 ## Cross-Platform Readiness (iOS Prep)
-- Shared contracts/models already live in `shared/core-models` and `shared/core-tracking`. New classification/config contracts extend the same shared space to avoid Android coupling.
-- Platform scanning layers remain separate:
-  - Android: ML Kit + CameraX (current)
-  - iOS (future): AVFoundation + Apple Vision → adapters that emit `RawDetection`/`ImageRef` into the same tracking + classification use cases.
-- Networking parity: iOS client will call the same backend proxy using the shared `CloudClassifierConfig` contract; Swift implementation can be added without touching Android.
-- No iOS build blockers: All new interfaces are platform-agnostic and reside in existing shared modules; Android continues to compile unaffected.
-
----
-
-## Testing Strategy
-- **Unit (JVM):** Tracking, aggregation, domain pack mapping, classification orchestrator logic; use mock classifier implementations.
-- **Instrumented (optional):** Compose UI flows (`ModeSwitcherTest`, `DetectionOverlayTest`) remain minimal to avoid CI flakiness.
-- **Commands:** `./gradlew test` for fast coverage; `./gradlew connectedAndroidTest` when a device is available.
-- **Stability:** Tests must not require cloud credentials; mocks default to offline mode.
-
----
-
-## Configuration & Secrets
-- `local.properties` (ignored by git) or environment variables provide:
-  - `scanium.api.base.url`
-  - `scanium.api.key`
-- `androidApp/build.gradle.kts` injects values into `BuildConfig`. `CloudConfigProvider` surfaces them as a typed `CloudClassifierConfig` for app code. Empty values skip cloud calls gracefully.
-- Never commit API keys. CI should supply env vars; local dev uses `local.properties.example` as a template.
+- Contracts and models live in shared modules; no Android imports.
+- Future iOS will implement:
+  - Platform scanning adapter (Vision/AVFoundation → `RawDetection`/`ImageRef`).
+  - Cloud classifier client using the same `CloudClassifierConfig`.
+- Android remains unblocked; shared code already compiles for Android; iOS targets can be added later without touching Android.
 
 ---
 
 ## Roadmap (high level)
-- Solidify shared contracts (done in this pass).
-- Move classification orchestration to shared (KMP) once Android path is stable.
-- Add iOS implementations for scanning + classifier config using the same contracts.
-- Incrementally migrate business logic (aggregation, pricing) into shared modules to maximize parity.
+- Harden shared contracts and config (done).
+- Adapt orchestrator to shared contracts; add mocks/tests.
+- Route classifier outputs through domain pack mapping and surface status in UI.
+- Add iOS clients against the same contracts once Android path is stable.
