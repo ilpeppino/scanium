@@ -24,6 +24,7 @@ android {
 
 dependencies {
     implementation(project(":core-models"))
+    implementation("androidx.annotation:annotation:1.7.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 }

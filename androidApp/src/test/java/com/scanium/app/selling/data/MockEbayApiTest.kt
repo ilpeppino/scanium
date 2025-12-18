@@ -8,9 +8,14 @@ import com.scanium.app.selling.domain.ListingId
 import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.core.models.geometry.NormalizedRect
+import com.scanium.core.models.image.ImageRef
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class MockEbayApiTest {
 
     private val api = MockEbayApi()
@@ -22,7 +27,9 @@ class MockEbayApiTest {
             originalItem = ScannedItem(
                 id = "1",
                 category = ItemCategory.FASHION,
-                priceRange = 10.0 to 20.0
+                priceRange = 10.0 to 20.0,
+                boundingBox = NormalizedRect(0f, 0f, 1f, 1f),
+                thumbnail = ImageRef.Bytes(ByteArray(4) { 1 }, "image/jpeg", 2, 2)
             ),
             title = "Used item",
             description = "desc",
@@ -44,7 +51,9 @@ class MockEbayApiTest {
             originalItem = ScannedItem(
                 id = "1",
                 category = ItemCategory.FASHION,
-                priceRange = 10.0 to 20.0
+                priceRange = 10.0 to 20.0,
+                boundingBox = NormalizedRect(0f, 0f, 1f, 1f),
+                thumbnail = ImageRef.Bytes(ByteArray(4) { 1 }, "image/jpeg", 2, 2)
             ),
             title = "Used item",
             description = "desc",

@@ -5,6 +5,7 @@ import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
+import com.scanium.core.models.image.Bytes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -649,11 +650,11 @@ class ItemsViewModelTest {
         return NormalizedRect(left, top, left + clampedSize, top + clampedSize)
     }
 
-    private fun testImageRef(width: Int, height: Int): ImageRef.Bytes {
+    private fun testImageRef(width: Int, height: Int): Bytes {
         val safeWidth = width.coerceAtLeast(1)
         val safeHeight = height.coerceAtLeast(1)
         val bytes = ByteArray((safeWidth * safeHeight).coerceAtLeast(1)) { 1 }
-        return ImageRef.Bytes(
+        return Bytes(
             bytes = bytes,
             mimeType = "image/jpeg",
             width = safeWidth,
