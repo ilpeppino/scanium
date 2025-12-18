@@ -2,97 +2,67 @@
 
 **Status:** Proposed  
 **Last Updated:** 2025-01-12  
-**Related ADRs:** ADR-001, ADR-002, ADR-003  
+**Related ADRs:** ADR-0001, ADR-0002, ADR-0003  
 **Goal:** Deliver Android-first builds while standing up the shared brain and cloud-first classification.
 
 ---
 
 ***REMOVED******REMOVED*** Phase 0 – Guardrails (fast, parallel)
-- **Tasks**
-  - Verify Java 17 toolchain + AGP/Kotlin versions checked in (`./gradlew help`).
-  - Keep `checkPortableModules` green (no Android imports in shared modules).
-  - Ensure BuildConfig values for cloud classifier pull from `local.properties`/env (no secrets committed).
-- **Commands**
-  - `./gradlew assembleDebug` (sanity)
-  - `./gradlew :shared:core-models:compileKotlinMetadata` (shared contracts sanity)
+- Tasks: Verify Java 17 toolchain; keep `checkPortableModules` green; ensure BuildConfig reads `scanium.api.*` from `local.properties`/env (no secrets committed).
+- Checkpoint commands: `./gradlew assembleDebug`, `./gradlew :shared:core-models:compileKotlinMetadata`
 
 ---
 
 ***REMOVED******REMOVED*** Phase 1 – Shared Contracts & Config (parallelizable)
-- **Tasks**
-  - Add/extend portable contracts for classification + cloud config (shared/core-models).
-  - Provide Android config provider that surfaces BuildConfig to the shared contract.
-  - Add mock classifier implementation for tests (stays offline-friendly).
-- **Exit Criteria**
-  - Contracts compile on JVM/iOS source sets.
-  - Android app still assembles with no behavior change.
-- **Commands**
-  - `./gradlew :shared:core-models:compileKotlinMetadata`
-  - `./gradlew assembleDebug`
+- Tasks: Extend portable contracts for classification/config (`shared/core-models`); add Android `CloudConfigProvider`; add mock classifier (offline-friendly).
+- Exit: Contracts compile; Android assembles unchanged in behavior.
+- Checkpoint commands: `./gradlew :shared:core-models:compileKotlinMetadata`, `./gradlew assembleDebug`, `./gradlew test` (where applicable)
 
 ---
 
-***REMOVED******REMOVED*** Phase 2 – Pipeline Hardening (can be split)
-- **Tasks**
-  - Wire `ClassificationOrchestrator` to the shared contracts (adapter layer) while keeping current cloud/on-device implementations.
-  - Enforce “stable items only” before cloud upload; add metrics hooks for retry counts/latency.
-  - Introduce fake/mock classifier in unit tests covering retry/backoff/cache.
-- **Exit Criteria**
-  - JVM tests cover cloud path and fallbacks with mocks.
-  - Camera pipeline remains responsive (no blocking calls on analyzer threads).
-- **Commands**
-  - `./gradlew test --tests \"*Classification*\"`
-  - `./gradlew assembleDebug`
+***REMOVED******REMOVED*** Phase 2 – Pipeline Hardening (can split)
+- Tasks: Adapt `ClassificationOrchestrator` to shared contracts via an adapter; enforce “stable items only” uploads; add retry/latency metrics hooks; unit tests with mock classifier.
+- Exit: JVM tests cover cloud + fallback; analyzer threads remain non-blocking.
+- Checkpoint commands: `./gradlew test --tests "*Classification*"`, `./gradlew assembleDebug`, `./gradlew lint` (optional)
 
 ---
 
 ***REMOVED******REMOVED*** Phase 3 – Domain Pack Integration (safe increments)
-- **Tasks**
-  - Route classifier outputs through `DomainPackRepository` + `BasicCategoryEngine` for fine-grained mapping.
-  - Persist active domain pack id in config (defaults to `home_resale`) and expose via shared config.
-  - Add thin UI badge for “cloud vs fallback” classification status (optional, behind feature flag).
-- **Exit Criteria**
-  - Domain mapping exercised in JVM tests with fixture JSON.
-  - No regression to ML Kit coarse labels when cloud is offline.
-- **Commands**
-  - `./gradlew test --tests \"*DomainPack*\" \"*Classification*\"`
-  - `./gradlew assembleDebug`
+- Tasks: Route classifier outputs through `DomainPackRepository` + `BasicCategoryEngine`; store active domain pack id (default `home_resale`) in shared config; optional UI badge for cloud vs fallback (feature-flagged).
+- Exit: Domain mapping covered by JVM tests with fixture JSON; no regression when cloud is offline.
+- Checkpoint commands: `./gradlew test --tests "*DomainPack*" --tests "*Classification*"`, `./gradlew assembleDebug`, `./gradlew lint` (optional)
 
 ---
 
-***REMOVED******REMOVED*** Phase 4 – iOS Prep (non-blocking)
-- **Tasks**
-  - Publish shared contracts/tracking to be consumable by iOS (Swift client stubs for classifier config + HTTP calls).
-  - Document iOS platform scanning adapter (Vision/AVFoundation → RawDetection/ImageRef) mirroring Android.
-  - Keep Android build green; no iOS build is required yet.
-- **Exit Criteria**
-  - Shared modules stay Android-free; iOS placeholders compile in common/iosMain.
-  - Docs updated with injection points for Swift clients.
-- **Commands**
-  - `./gradlew :shared:core-models:compileKotlinMetadata`
-  - (Optional) iOS compilation via KMP targets when available.
+***REMOVED******REMOVED*** Phase 4 – Backend Integration (parallel with Phase 3)
+- Tasks: Backend proxy endpoint hardened for Vision (auth, rate limit, logging); client config contract stays unchanged; add mock/stub server for local tests if needed.
+- Exit: Mobile can call backend when configured; defaults remain offline-friendly.
+- Checkpoint commands: `./gradlew test` (with mocks), `./gradlew assembleDebug`
 
 ---
 
-***REMOVED******REMOVED*** Phase 5 – Observability & Validation
-- **Tasks**
-  - Add lightweight logging around classifier mode selection, retries, and latency (no PII).
-  - Expose counters for cloud usage to prepare for backend rate-limit tuning.
-  - Keep offline mode working with mock classifier.
-- **Commands**
-  - `./gradlew test`
-  - `./gradlew assembleDebug`
+***REMOVED******REMOVED*** Phase 5 – iOS Prep (non-blocking)
+- Tasks: Publish shared contracts/tracking for iOS consumption; document Vision/AVFoundation adapter to emit `RawDetection`/`ImageRef`; document Swift client using `CloudClassifierConfig`.
+- Exit: Shared modules remain Android-free; iOS stubs documented; Android build unaffected.
+- Checkpoint commands: `./gradlew :shared:core-models:compileKotlinMetadata`, `./gradlew assembleDebug`
+
+---
+
+***REMOVED******REMOVED*** Phase 6 – Observability & Validation
+- Tasks: Add logging around classifier mode selection/retries/latency (no PII); expose counters for cloud usage; keep offline mode working with mocks.
+- Exit: Metrics available; offline remains functional.
+- Checkpoint commands: `./gradlew test`, `./gradlew assembleDebug`, `./gradlew lint` (optional)
 
 ---
 
 ***REMOVED******REMOVED*** Parallelization Notes
-- Contracts/config (Phase 1) can proceed while pipeline hardening begins, as long as adapters shield current code.
-- Domain pack wiring (Phase 3) can run in parallel once shared contracts are stable.
-- iOS prep is documentation + contract publishing only; schedule independently of Android features.
+- Contracts/config (Phase 1) can proceed while pipeline hardening starts, as long as adapters shield current code.
+- Domain pack integration (Phase 3) and backend integration (Phase 4) can run in parallel once contracts are stable.
+- iOS prep is documentation/contract publishing only; schedule independently of Android feature work.
 
 ---
 
 ***REMOVED******REMOVED*** Risk Mitigations
-- Keep all new behavior behind adapters; do not rewrite features until tests exist.
+- Keep new behavior behind adapters; avoid rewrites until tests exist.
 - Use mock classifiers in unit tests to avoid network dependency.
-- Maintain BuildConfig-driven config to prevent secret leakage and to allow CI overrides.
+- Maintain BuildConfig-driven config to prevent secret leakage and allow CI overrides.

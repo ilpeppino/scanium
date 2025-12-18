@@ -1,6 +1,9 @@
 package com.scanium.app.ml
 
-import com.scanium.app.model.NormalizedRect
+import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.ml.LabelWithConfidence
+import com.scanium.shared.core.models.ml.RawDetection
+import com.scanium.shared.core.models.model.NormalizedRect
 
 /**
  * Fake ObjectDetector for testing purposes.
