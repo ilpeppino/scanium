@@ -35,8 +35,10 @@ include(
     ":android-platform-adapters",
     ":shared:core-models",
     ":shared:core-tracking",
+    ":shared:test-utils",
 )
 
 // Map shared modules to their directories under /shared
 project(":shared:core-models").projectDir = file("shared/core-models")
 project(":shared:core-tracking").projectDir = file("shared/core-tracking")
+project(":shared:test-utils").projectDir = file("shared/test-utils")
