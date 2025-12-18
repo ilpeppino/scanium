@@ -2,12 +2,12 @@ package com.scanium.app.selling.data
 
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.items.ScannedItem
-import com.scanium.app.ml.ItemCategory
 import com.scanium.app.selling.domain.ListingCondition
 import com.scanium.app.selling.domain.ListingDraft
 import com.scanium.app.selling.domain.ListingId
 import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
+import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
