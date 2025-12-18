@@ -6,7 +6,7 @@ import com.scanium.app.domain.category.CategoryMapper.hasValidItemCategory
 import com.scanium.app.domain.category.CategoryMapper.toItemCategory
 import com.scanium.app.domain.category.CategoryMapper.toItemCategoryOrDefault
 import com.scanium.app.domain.config.DomainCategory
-import com.scanium.app.ml.ItemCategory
+import com.scanium.core.models.ml.ItemCategory
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
