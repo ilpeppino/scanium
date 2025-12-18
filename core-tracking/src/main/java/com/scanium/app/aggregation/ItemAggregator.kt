@@ -302,7 +302,8 @@ class ItemAggregator(
      * Create a new AggregatedItem from a detection.
      */
     private fun createAggregatedItem(detection: ScannedItem): AggregatedItem {
-        val aggregatedId = "agg_${UUID.randomUUID()}"
+        // Preserve provided detection IDs so downstream consumers (e.g., listing updates) can reference them.
+        val aggregatedId = detection.id.ifBlank { "agg_${UUID.randomUUID()}" }
 
         return AggregatedItem(
             aggregatedId = aggregatedId,
