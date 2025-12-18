@@ -1,6 +1,6 @@
 package com.scanium.app.aggregation
 
-import com.scanium.shared.core.models.items.ScannedItem
+import com.scanium.app.items.ScannedItem
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect

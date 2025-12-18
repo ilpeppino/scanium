@@ -26,5 +26,7 @@ dependencies {
     api(project(":shared:core-tracking"))
 
     implementation(project(":shared:core-models"))
+    // Android wrapper for shared models provides platform typealiases (e.g., ScannedItem with Uri)
+    implementation(project(":core-models"))
     testImplementation("junit:junit:4.13.2")
 }

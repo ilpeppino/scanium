@@ -1,6 +1,6 @@
 package com.scanium.app.aggregation
 
-import com.scanium.shared.core.models.items.ScannedItem
+import com.scanium.app.items.ScannedItem
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.core.tracking.Logger
@@ -228,7 +228,7 @@ class ItemAggregator(
             }
 
             // Convert distance to similarity (0 distance = 1.0 similarity)
-            distanceScore = 1f - (normalizedDistance / config.maxCenterDistanceRatio).coerceIn(0.0, 1.0).toFloat()
+            distanceScore = 1f - (normalizedDistance / config.maxCenterDistanceRatio).coerceIn(0f, 1f)
         }
 
         // Weighted combination
@@ -450,7 +450,7 @@ class ItemAggregator(
             val distance = sqrt(dx * dx + dy * dy)
             val frameDiagonal = sqrt(2f)
             val normalizedDistance = distance / frameDiagonal
-            distanceSim = 1f - (normalizedDistance / config.maxCenterDistanceRatio).coerceIn(0.0, 1.0).toFloat()
+            distanceSim = 1f - (normalizedDistance / config.maxCenterDistanceRatio).coerceIn(0f, 1f)
         }
 
         logger.d(TAG, "    Similarity breakdown:")
