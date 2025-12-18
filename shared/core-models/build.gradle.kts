@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     id("com.android.library")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 kotlin {
@@ -65,5 +66,15 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+koverReport {
+    defaults {
+        verify {
+            rule {
+                bound { minValue = 85 }
+            }
+        }
     }
 }

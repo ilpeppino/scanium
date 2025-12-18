@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization") version "1.9.20"
     id("com.android.library")
+    id("org.jetbrains.kotlinx.kover")
 }
 
 kotlin {
@@ -84,5 +85,15 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+koverReport {
+    defaults {
+        verify {
+            rule {
+                bound { minValue = 85 }
+            }
+        }
     }
 }

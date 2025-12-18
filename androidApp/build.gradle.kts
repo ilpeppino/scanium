@@ -10,6 +10,7 @@ plugins {
     id("org.cyclonedx.bom") version "1.8.2"
     // SEC-003: Automated CVE scanning
     id("org.owasp.dependencycheck") version "10.0.4"
+    id("org.jetbrains.kotlinx.kover")
 }
 
 // Load local.properties for API configuration (not committed to git)
@@ -223,4 +224,16 @@ dependencies {
     // Debug implementations
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+koverReport {
+    defaults {
+        verify {
+            rule {
+                bound {
+                    minValue = 75
+                }
+            }
+        }
+    }
 }

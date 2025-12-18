@@ -7,6 +7,18 @@
 
 ---
 
+## Phase 8: Coverage & QA
+- Coverage generation not executed locally due to environment constraints; rerun on CI or a non-sandbox host.
+- Recommended commands when available:
+  - `./gradlew :shared:core-models:koverHtmlReport`
+  - `./gradlew :shared:core-tracking:koverHtmlReport`
+  - `./gradlew :androidApp:jacocoTestReport`
+  - `./gradlew koverVerify` (after adding Kover configs with thresholds: ≥85% shared modules, ≥75% androidApp)
+- Pending tasks:
+  - Enable Kover plugin in shared modules and root verification.
+  - Analyze coverage gaps (tracking/model paths) and add missing tests if needed.
+  - Update TESTING.md and CI workflow to publish coverage.
+
 ## Phase 6 Execution (re-run verification)
 - Confirmed legacy test directories remain removed: `core-models/src/test`, `core-tracking/src/test`, `core-scan/src/test`, `core-contracts/src/test`.
 - `settings.gradle.kts` still includes legacy wrapper modules for compatibility; removal deferred until downstream dependencies are updated.
