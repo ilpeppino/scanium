@@ -54,6 +54,10 @@ private fun generateRandomId(): String {
  * @param listingStatus Current eBay listing status
  * @param listingId eBay listing ID (if posted)
  * @param listingUrl External URL to view the listing (if posted)
+ * @param classificationStatus Cloud classification status (NOT_STARTED, PENDING, SUCCESS, FAILED)
+ * @param domainCategoryId Fine-grained domain category ID from cloud classifier
+ * @param classificationErrorMessage Error message if classification failed
+ * @param classificationRequestId Backend request ID for debugging
  */
 data class ScannedItem<FullImageUri>(
     val id: String = generateRandomId(),
@@ -71,7 +75,11 @@ data class ScannedItem<FullImageUri>(
     val fullImagePath: String? = null,
     val listingStatus: ItemListingStatus = ItemListingStatus.NOT_LISTED,
     val listingId: String? = null,
-    val listingUrl: String? = null
+    val listingUrl: String? = null,
+    val classificationStatus: String = "NOT_STARTED",
+    val domainCategoryId: String? = null,
+    val classificationErrorMessage: String? = null,
+    val classificationRequestId: String? = null
 ) {
     /**
      * Formatted price range string for display.

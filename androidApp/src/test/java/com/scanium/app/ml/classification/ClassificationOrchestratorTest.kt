@@ -78,6 +78,109 @@ class ClassificationOrchestratorTest {
         assertThat(classifier.callCount).isEqualTo(1)
     }
 
+    @Test
+    fun whenRetryableError_classificationIsRetried() = runTest {
+        val modeFlow = MutableStateFlow(ClassificationMode.CLOUD)
+        val classifier = RetryableErrorClassifier()
+        val orchestrator = ClassificationOrchestrator(
+            modeFlow = modeFlow,
+            onDeviceClassifier = classifier,
+            cloudClassifier = classifier,
+            scope = this,
+            maxRetries = 3
+        )
+
+        val item = createAggregatedItem("agg-3")
+        var resultReceived: ClassificationResult? = null
+
+        orchestrator.classify(listOf(item)) { _, result ->
+            resultReceived = result
+        }
+        runCurrent()
+
+        // Should have retried 3 times (initial + 3 retries = 4 total)
+        assertThat(classifier.callCount).isAtLeast(2)
+        assertThat(resultReceived?.status).isEqualTo(ClassificationStatus.FAILED)
+        assertThat(resultReceived?.errorMessage).contains("timeout")
+    }
+
+    @Test
+    fun whenRetrySucceeds_resultIsReturned() = runTest {
+        val modeFlow = MutableStateFlow(ClassificationMode.CLOUD)
+        val classifier = RetryThenSucceedClassifier()
+        val orchestrator = ClassificationOrchestrator(
+            modeFlow = modeFlow,
+            onDeviceClassifier = classifier,
+            cloudClassifier = classifier,
+            scope = this,
+            maxRetries = 3
+        )
+
+        val item = createAggregatedItem("agg-4")
+        var resultReceived: ClassificationResult? = null
+
+        orchestrator.classify(listOf(item)) { _, result ->
+            resultReceived = result
+        }
+        runCurrent()
+
+        // Should have retried and then succeeded
+        assertThat(classifier.callCount).isAtLeast(2)
+        assertThat(resultReceived?.status).isEqualTo(ClassificationStatus.SUCCESS)
+        assertThat(resultReceived?.label).isEqualTo("Sofa")
+    }
+
+    @Test
+    fun whenManualRetry_itemIsReclassified() = runTest {
+        val modeFlow = MutableStateFlow(ClassificationMode.CLOUD)
+        val classifier = CountingClassifier()
+        val orchestrator = ClassificationOrchestrator(
+            modeFlow = modeFlow,
+            onDeviceClassifier = classifier,
+            cloudClassifier = classifier,
+            scope = this
+        )
+
+        val item = createAggregatedItem("agg-5")
+
+        // Initial classification
+        orchestrator.classify(listOf(item)) { _, _ -> }
+        runCurrent()
+        assertThat(classifier.callCount).isEqualTo(1)
+
+        // Manual retry clears cache and reclassifies
+        orchestrator.retry("agg-5", item) { _, _ -> }
+        runCurrent()
+        assertThat(classifier.callCount).isEqualTo(2)
+    }
+
+    @Test
+    fun whenResetCalled_cacheIsCleared() = runTest {
+        val modeFlow = MutableStateFlow(ClassificationMode.ON_DEVICE)
+        val classifier = CountingClassifier()
+        val orchestrator = ClassificationOrchestrator(
+            modeFlow = modeFlow,
+            onDeviceClassifier = classifier,
+            cloudClassifier = classifier,
+            scope = this
+        )
+
+        val item = createAggregatedItem("agg-6")
+
+        orchestrator.classify(listOf(item)) { _, _ -> }
+        runCurrent()
+        assertThat(classifier.callCount).isEqualTo(1)
+        assertThat(orchestrator.hasResult("agg-6")).isTrue()
+
+        orchestrator.reset()
+        assertThat(orchestrator.hasResult("agg-6")).isFalse()
+
+        // After reset, can classify again
+        orchestrator.classify(listOf(item)) { _, _ -> }
+        runCurrent()
+        assertThat(classifier.callCount).isEqualTo(2)
+    }
+
     private fun createAggregatedItem(id: String): AggregatedItem {
         return AggregatedItem(
             aggregatedId = id,
@@ -115,6 +218,67 @@ class ClassificationOrchestratorTest {
         override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult? {
             callCount++
             return null
+        }
+    }
+
+    private class RetryableErrorClassifier : ItemClassifier {
+        var callCount: Int = 0
+            private set
+
+        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult {
+            callCount++
+            return ClassificationResult(
+                label = null,
+                confidence = 0f,
+                category = ItemCategory.UNKNOWN,
+                mode = ClassificationMode.CLOUD,
+                status = ClassificationStatus.FAILED,
+                errorMessage = "Request timeout"
+            )
+        }
+    }
+
+    private class RetryThenSucceedClassifier : ItemClassifier {
+        var callCount: Int = 0
+            private set
+
+        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult {
+            callCount++
+            return if (callCount < 2) {
+                ClassificationResult(
+                    label = null,
+                    confidence = 0f,
+                    category = ItemCategory.UNKNOWN,
+                    mode = ClassificationMode.CLOUD,
+                    status = ClassificationStatus.FAILED,
+                    errorMessage = "Server error (HTTP 503)"
+                )
+            } else {
+                ClassificationResult(
+                    label = "Sofa",
+                    confidence = 0.87f,
+                    category = ItemCategory.HOME_GOOD,
+                    mode = ClassificationMode.CLOUD,
+                    domainCategoryId = "furniture_sofa",
+                    status = ClassificationStatus.SUCCESS
+                )
+            }
+        }
+    }
+
+    private class CountingClassifier : ItemClassifier {
+        var callCount: Int = 0
+            private set
+
+        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult {
+            callCount++
+            return ClassificationResult(
+                label = "Test Item",
+                confidence = 0.8f,
+                category = ItemCategory.HOME_GOOD,
+                mode = ClassificationMode.CLOUD,
+                status = ClassificationStatus.SUCCESS
+            )
         }
     }
 }
