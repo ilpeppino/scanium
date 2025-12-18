@@ -1,7 +1,7 @@
 # Test Refactoring Progress Summary
 ## Scanium KMP Migration - Test Infrastructure Complete
 
-**Status**: ✅ **Phase 1, 2, 4 & 5 COMPLETE**
+**Status**: ✅ **Phase 1, 2, 4, 5 & 6 COMPLETE**
 **Date**: 2025-12-18
 **Branch**: `claude/plan-kmp-test-refactor-EugFw`
 
@@ -40,6 +40,14 @@ Android unit tests now target the shared KMP models and tracking APIs:
 - Updated tests to use portable `ImageRef` and `NormalizedRect` instead of `Bitmap`/`RectF` where business models expect shared types.
 - Added `shared:test-utils` dependency to androidApp tests to unblock further KMP-aligned testing.
 - Fixed classification and deduplication flows to build against shared tracker/aggregator data classes.
+
+### ✅ Phase 6: Legacy Module Cleanup (COMPLETE)
+
+Retired obsolete test scaffolding and added guardrails to prevent regressions:
+
+- Deleted empty legacy test directories under `core-models/src/test`, `core-tracking/src/test`, `core-scan/src/test`, and `core-contracts/src/test` to avoid accidental reuse.
+- Added a root Gradle task `checkNoLegacyImports` that fails builds if `androidApp` sources import deprecated `com.scanium.app.*` tracking/model packages.
+- Annotated `settings.gradle.kts` to flag the remaining legacy wrapper modules (`:core-models`, `:core-tracking`) as temporary while dependencies are migrated to shared modules.
 
 ### ✅ Phase 2: Test-Utils Infrastructure (COMPLETE)
 
