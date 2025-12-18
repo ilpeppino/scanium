@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Configuration schema with strict validation
  * Server will not start if validation fails
  */
-const configSchema = z.object({
+export const configSchema = z.object({
   // Application
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   port: z.coerce.number().int().min(1).max(65535).default(8080),
@@ -12,6 +12,39 @@ const configSchema = z.object({
 
   // Database
   databaseUrl: z.string().min(1),
+
+  // Cloud classification proxy
+  classifier: z.object({
+    provider: z.enum(['mock', 'google']).default('mock'),
+    visionFeature: z
+      .enum(['LABEL_DETECTION', 'OBJECT_LOCALIZATION'])
+      .default('LABEL_DETECTION'),
+    maxUploadBytes: z
+      .coerce.number()
+      .int()
+      .min(1024)
+      .max(10 * 1024 * 1024)
+      .default(5 * 1024 * 1024),
+    rateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+    concurrentLimit: z.coerce.number().int().min(1).default(2),
+    apiKeys: z
+      .string()
+      .default('')
+      .transform((val) =>
+        val
+          .split(',')
+          .map((v) => v.trim())
+          .filter(Boolean)
+      ),
+    domainPackId: z.string().default('home_resale'),
+    domainPackPath: z.string().default('src/modules/classifier/domain/home-resale.json'),
+    retainUploads: z.coerce.boolean().default(false),
+    mockSeed: z.string().default('scanium-mock'),
+    visionTimeoutMs: z.coerce.number().int().min(1000).max(20000).default(10000),
+    visionMaxRetries: z.coerce.number().int().min(0).max(5).default(2),
+  }),
+
+  googleCredentialsPath: z.string().optional(),
 
   // eBay OAuth
   ebay: z.object({
@@ -44,6 +77,21 @@ export function loadConfig(): Config {
     port: process.env.PORT,
     publicBaseUrl: process.env.PUBLIC_BASE_URL,
     databaseUrl: process.env.DATABASE_URL,
+    classifier: {
+      provider: process.env.SCANIUM_CLASSIFIER_PROVIDER,
+      visionFeature: process.env.VISION_FEATURE,
+      maxUploadBytes: process.env.MAX_UPLOAD_BYTES,
+      rateLimitPerMinute: process.env.CLASSIFIER_RATE_LIMIT_PER_MINUTE,
+      concurrentLimit: process.env.CLASSIFIER_CONCURRENCY_LIMIT,
+      apiKeys: process.env.SCANIUM_API_KEYS,
+      domainPackId: process.env.DOMAIN_PACK_ID,
+      domainPackPath: process.env.DOMAIN_PACK_PATH,
+      retainUploads: process.env.CLASSIFIER_RETAIN_UPLOADS,
+      mockSeed: process.env.CLASSIFIER_MOCK_SEED,
+      visionTimeoutMs: process.env.VISION_TIMEOUT_MS,
+      visionMaxRetries: process.env.VISION_MAX_RETRIES,
+    },
+    googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     ebay: {
       env: process.env.EBAY_ENV,
       clientId: process.env.EBAY_CLIENT_ID,
