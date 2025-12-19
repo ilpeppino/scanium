@@ -8,8 +8,10 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.DismissDirection
@@ -179,37 +181,6 @@ fun ItemsListScreen(
                         }) {
                             Text("Cancel")
                         }
-
-                        // Action dropdown button
-                        IconButton(onClick = { showActionMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Select action"
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = showActionMenu,
-                            onDismissRequest = { showActionMenu = false }
-                        ) {
-                            SelectedItemsAction.values().forEach { action ->
-                                DropdownMenuItem(
-                                    text = { Text(action.displayName) },
-                                    onClick = {
-                                        selectedAction = action
-                                        showActionMenu = false
-                                    },
-                                    leadingIcon = if (selectedAction == action) {
-                                        {
-                                            Icon(
-                                                imageVector = Icons.Default.Check,
-                                                contentDescription = "Selected"
-                                            )
-                                        }
-                                    } else null
-                                )
-                            }
-                        }
                     } else if (items.isNotEmpty()) {
                         IconButton(onClick = { itemsViewModel.clearAllItems() }) {
                             Icon(
@@ -223,21 +194,99 @@ fun ItemsListScreen(
         },
         floatingActionButton = {
             if (selectionMode && selectedIds.isNotEmpty()) {
-                ExtendedFloatingActionButton(
-                    onClick = { executeAction() },
-                    icon = {
-                        Icon(
-                            imageVector = when (selectedAction) {
-                                SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
-                            },
-                            contentDescription = null
-                        )
-                    },
-                    text = { Text(selectedAction.displayName) },
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                Box {
+                    // Custom split FAB with integrated dropdown
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        shadowElevation = 6.dp,
+                        tonalElevation = 3.dp
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(0.dp)
+                        ) {
+                            // Main action button (icon + text)
+                            Row(
+                                modifier = Modifier
+                                    .clickable { executeAction() }
+                                    .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = when (selectedAction) {
+                                        SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
+                                        SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                                    },
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+
+                                Text(
+                                    text = selectedAction.displayName,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+
+                            // Divider
+                            Box(
+                                modifier = Modifier
+                                    .width(1.dp)
+                                    .height(24.dp)
+                                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
+                            )
+
+                            // Dropdown button
+                            Box(
+                                modifier = Modifier
+                                    .clickable { showActionMenu = true }
+                                    .padding(horizontal = 12.dp, vertical = 16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Select action",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+
+                    // Dropdown menu
+                    DropdownMenu(
+                        expanded = showActionMenu,
+                        onDismissRequest = { showActionMenu = false }
+                    ) {
+                        SelectedItemsAction.values().forEach { action ->
+                            DropdownMenuItem(
+                                text = { Text(action.displayName) },
+                                onClick = {
+                                    selectedAction = action
+                                    showActionMenu = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = when (action) {
+                                            SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
+                                            SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                                        },
+                                        contentDescription = null
+                                    )
+                                },
+                                trailingIcon = if (selectedAction == action) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Selected"
+                                        )
+                                    }
+                                } else null
+                            )
+                        }
+                    }
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
