@@ -20,7 +20,8 @@ class OnDeviceClassifier : ItemClassifier {
         private const val SAMPLE_SIZE = 96
     }
 
-    override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult? = withContext(Dispatchers.Default) {
+    override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.Default) {
+        val bitmap = input.bitmap
         runCatching {
             val resized = Bitmap.createScaledBitmap(bitmap, SAMPLE_SIZE, SAMPLE_SIZE, true)
             try {

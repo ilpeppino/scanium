@@ -1,52 +1,115 @@
 {
   "id": "home_resale",
-  "name": "Home Resale (MVP)",
+  "name": "Home Resale",
   "threshold": 0.28,
   "categories": [
+
     {
-      "id": "chair",
-      "label": "Chair",
+      "id": "drinkware",
+      "label": "Drinkware",
       "itemCategoryName": "HOME_GOOD",
-      "tokens": ["chair", "armchair", "stool", "seat"],
-      "attributes": {
-        "segment": "seating"
-      }
+      "priority": 10,
+      "tokens": ["mug", "cup", "glass", "bottle", "tumbler", "thermos"],
+      "attributes": { "segment": "container" }
     },
+
     {
-      "id": "table",
-      "label": "Table / Desk",
+      "id": "tableware",
+      "label": "Tableware",
       "itemCategoryName": "HOME_GOOD",
-      "tokens": ["table", "desk", "dining", "work table"],
-      "attributes": {
-        "segment": "surface"
-      }
+      "priority": 9,
+      "tokens": ["plate", "bowl", "dish", "saucer"],
+      "attributes": { "segment": "utensil" }
     },
+
     {
-      "id": "sofa",
-      "label": "Sofa / Couch",
+      "id": "cutlery",
+      "label": "Cutlery",
       "itemCategoryName": "HOME_GOOD",
-      "tokens": ["sofa", "couch", "loveseat", "sectional"],
-      "attributes": {
-        "segment": "seating"
-      }
+      "priority": 9,
+      "tokens": ["fork", "knife", "spoon", "cutlery"],
+      "attributes": { "segment": "utensil" }
     },
+
     {
-      "id": "lighting",
-      "label": "Lighting",
+      "id": "kitchen_appliance",
+      "label": "Kitchen Appliance",
       "itemCategoryName": "HOME_GOOD",
-      "tokens": ["lamp", "lighting", "lantern", "light"],
-      "attributes": {
-        "segment": "lighting"
-      }
+      "priority": 8,
+      "tokens": ["kettle", "coffee maker", "toaster", "blender", "microwave"],
+      "attributes": { "segment": "appliance" }
     },
+
+    {
+      "id": "food_container",
+      "label": "Food Container",
+      "itemCategoryName": "HOME_GOOD",
+      "priority": 8,
+      "tokens": ["container", "lunchbox", "storage box", "jar"],
+      "attributes": { "segment": "container" }
+    },
+
+    {
+      "id": "cleaning_item",
+      "label": "Cleaning Item",
+      "itemCategoryName": "HOME_GOOD",
+      "priority": 7,
+      "tokens": ["sponge", "brush", "broom", "mop", "detergent"],
+      "attributes": { "segment": "cleaning" }
+    },
+
+    {
+      "id": "textile",
+      "label": "Household Textile",
+      "itemCategoryName": "HOME_GOOD",
+      "priority": 7,
+      "tokens": ["towel", "napkin", "cloth", "blanket", "sheet", "pillow"],
+      "attributes": { "segment": "textile" }
+    },
+
+    {
+      "id": "electronics_small",
+      "label": "Small Electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "priority": 8,
+      "tokens": ["remote", "charger", "cable", "adapter", "speaker"],
+      "attributes": { "segment": "electronics" }
+    },
+
     {
       "id": "decor",
-      "label": "Decor / Wall Art",
+      "label": "Decor",
       "itemCategoryName": "HOME_GOOD",
-      "tokens": ["art", "painting", "poster", "frame", "decor"],
-      "attributes": {
-        "segment": "decor"
-      }
+      "priority": 5,
+      "tokens": ["vase", "frame", "candle", "ornament", "decor"],
+      "attributes": { "segment": "decor" }
+    },
+
+    {
+      "id": "plant",
+      "label": "Plant",
+      "itemCategoryName": "HOME_GOOD",
+      "priority": 6,
+      "tokens": ["plant", "flower", "potted plant", "houseplant"],
+      "attributes": { "segment": "plant" }
+    },
+
+    {
+      "id": "storage",
+      "label": "Storage & Organization",
+      "itemCategoryName": "HOME_GOOD",
+      "priority": 6,
+      "tokens": ["box", "basket", "drawer", "organizer"],
+      "attributes": { "segment": "storage" }
+    },
+
+    {
+      "id": "furniture",
+      "label": "Furniture",
+      "itemCategoryName": "HOME_GOOD",
+      "priority": 2,
+      "tokens": ["chair", "table", "desk", "sofa", "couch", "bed"],
+      "attributes": { "segment": "furniture" }
     }
   ]
 }

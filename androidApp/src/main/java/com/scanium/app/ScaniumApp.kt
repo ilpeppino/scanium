@@ -45,7 +45,7 @@ fun ScaniumApp() {
                 return ItemsViewModel(
                     classificationMode = classificationModeViewModel.classificationMode,
                     onDeviceClassifier = OnDeviceClassifier(),
-                    cloudClassifier = CloudClassifier()
+                    cloudClassifier = CloudClassifier(context = context)
                 ) as T
             }
         }

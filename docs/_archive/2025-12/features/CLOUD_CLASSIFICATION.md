@@ -296,8 +296,16 @@ If backend returns an unknown `domainCategoryId`:
 
 1. Log warning
 2. Fall back to label-based category detection
-3. Display label as-is
+3. Display the matched token (the `label` field returned by the backend) so UI still shows a specific noun
 4. Do **not** crash
+
+***REMOVED******REMOVED******REMOVED*** Matched Tokens
+
+- The backend now returns a `label` string alongside `domainCategoryId`
+- `label` is the exact domain-pack token that matched (e.g., `"mug"`, `"remote"`)
+- Android prefers this `label` when showing titles/list rows (`ScannedItem.displayLabel`)
+- Generic categories (e.g., `"Drinkware"`) are only used when no specific token exists
+- Matched tokens are capitalized on-device before rendering or building listing titles
 
 ***REMOVED******REMOVED*** Troubleshooting
 

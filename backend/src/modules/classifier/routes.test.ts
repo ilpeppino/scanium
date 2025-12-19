@@ -73,5 +73,11 @@ describe('POST /v1/classify', () => {
     expect(body.requestId).toBeTruthy();
     expect(body.domainPackId).toBe('home_resale');
     expect(body.provider).toBe('mock');
+    if (body.domainCategoryId) {
+      expect(typeof body.label).toBe('string');
+      expect(body.label.length).toBeGreaterThan(0);
+    } else {
+      expect(body.label === null || body.label === undefined).toBe(true);
+    }
   });
 });

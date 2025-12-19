@@ -306,6 +306,8 @@ data class ScannedItem(
     val labelText: String? = null,
     val fullImagePath: String? = null      // High-res capture path
 )
+val ScannedItem.displayLabel: String
+    get() = labelText?.trim().takeUnless { it.isNullOrEmpty() }?.replaceFirstChar(Char::titlecase) ?: category.displayName
 
 data class ObjectCandidate(
     val internalId: String,

@@ -1,5 +1,6 @@
 package com.scanium.app.ml.classification
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.scanium.app.BuildConfig
@@ -15,9 +16,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
@@ -59,13 +65,15 @@ import java.util.concurrent.TimeUnit
  * @property domainPackId Domain pack to use for classification (default: "home_resale")
  */
 class CloudClassifier(
-    private val domainPackId: String = "home_resale"
+    private val domainPackId: String = "home_resale",
+    private val context: Context? = null
 ) : ItemClassifier {
     companion object {
         private const val TAG = "CloudClassifier"
         private const val CONNECT_TIMEOUT_SECONDS = 10L
         private const val READ_TIMEOUT_SECONDS = 10L
         private const val JPEG_QUALITY = 85
+        private val TIMESTAMP_FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
     }
 
     private val client = OkHttpClient.Builder()
@@ -78,17 +86,22 @@ class CloudClassifier(
         isLenient = true
     }
 
-    override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult? = withContext(Dispatchers.IO) {
+    private val saveDebugCrops = BuildConfig.DEBUG && BuildConfig.CLASSIFIER_SAVE_CROPS
+
+    override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.IO) {
         val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
         if (baseUrl.isBlank()) {
             Log.d(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
             return@withContext null
         }
 
+        val bitmap = input.bitmap
         val endpoint = "${baseUrl.trimEnd('/')}/v1/classify"
         Log.d(TAG, "Classifying with endpoint: $endpoint, domainPack: $domainPackId")
 
         try {
+            maybeSaveDebugCrop(input)
+
             // Convert bitmap to JPEG bytes (strips EXIF metadata)
             val imageBytes = bitmap.toJpegBytes()
 
@@ -273,6 +286,28 @@ class CloudClassifier(
         val stream = ByteArrayOutputStream()
         compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, stream)
         return stream.toByteArray()
+    }
+
+    private fun maybeSaveDebugCrop(input: ClassificationInput) {
+        if (!saveDebugCrops) return
+        val ctx = context ?: return
+        runCatching {
+            val dir = File(ctx.cacheDir, "classifier_crops").apply {
+                if (!exists() && !mkdirs()) {
+                    Log.w(TAG, "Failed to create classifier crop directory: $absolutePath")
+                }
+            }
+
+            val timestamp = TIMESTAMP_FORMAT.format(Date())
+            val safeId = input.aggregatedId.replace(Regex("[^A-Za-z0-9_-]"), "_")
+            val file = File(dir, "${safeId}_$timestamp.jpg")
+            FileOutputStream(file).use { output ->
+                input.bitmap.compress(Bitmap.CompressFormat.JPEG, 92, output)
+            }
+            Log.d(TAG, "Saved classifier crop for ${input.aggregatedId} to ${file.absolutePath}")
+        }.onFailure { error ->
+            Log.w(TAG, "Failed to save classifier crop for ${input.aggregatedId}", error)
+        }
     }
 }
 
