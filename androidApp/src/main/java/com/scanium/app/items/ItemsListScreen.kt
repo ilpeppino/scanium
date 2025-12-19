@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.rememberDismissState
 import androidx.compose.material.icons.Icons
@@ -45,7 +46,7 @@ import java.util.*
  * - Tap to select, long-press for details
  * - Empty state when no items
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
@@ -253,7 +254,7 @@ fun ItemsListScreen(
                     ) {
                         items(items = items, key = { it.id }) { item ->
                             val dismissState = rememberDismissState(
-                                confirmValueChange = { value ->
+                                confirmStateChange = { value ->
                                     if (value == DismissValue.DismissedToEnd) {
                                         deleteItem(item)
                                     }
