@@ -13,10 +13,13 @@ import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -45,8 +48,13 @@ class ItemsViewModel(
         private const val TAG = "ItemsViewModel"
         // Gate heavy logging to prevent UI jank during burst detections
         private const val DEBUG_LOGGING = false
-        private const val MEMORY_PROFILING = false
+        // Async telemetry collection interval (ms) - only runs when enabled
+        private const val TELEMETRY_INTERVAL_MS = 5000L
     }
+
+    // Async telemetry collection job (off the hot path)
+    private var telemetryJob: Job? = null
+    private val _telemetryEnabled = MutableStateFlow(false)
 
     // Private mutable state
     private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
@@ -124,55 +132,23 @@ class ItemsViewModel(
      * handles merging and deduplication. This is more efficient than calling
      * addItem() multiple times.
      *
-     * Offloads heavy aggregation to background thread to prevent UI jank during
-     * burst detections from camera. All expensive operations (logging, memory
-     * profiling, aggregation) run on background thread; only UI updates on main.
+     * Offloads aggregation to background thread to prevent UI jank during
+     * burst detections from camera. All stats/telemetry collection removed
+     * from hot path - use enableTelemetry() for async monitoring instead.
      */
     fun addItems(newItems: List<ScannedItem>) {
-        if (newItems.isEmpty()) {
-            if (DEBUG_LOGGING) {
-                Log.i(TAG, ">>> addItems: empty list, returning")
-            }
-            return
-        }
+        if (newItems.isEmpty()) return
 
         // Launch directly on background thread to avoid any main-thread overhead
         viewModelScope.launch(Dispatchers.Default) {
+            // Minimal logging on hot path - only batch size when debugging
             if (DEBUG_LOGGING) {
-                Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
-                // Log detailed item info only when debugging
-                newItems.forEachIndexed { index, item ->
-                    Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
-                }
+                Log.i(TAG, ">>> Processing batch: ${newItems.size} items")
             }
-
-            // Memory profiling only when explicitly enabled
-            val usedMemoryBefore = if (MEMORY_PROFILING) {
-                val runtime = Runtime.getRuntime()
-                val used = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-                Log.w(TAG, ">>> MEMORY BEFORE AGGREGATION: ${used}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
-                used
-            } else 0L
 
             // Process aggregation on background thread (already on Dispatchers.Default)
+            // NO stats collection, NO memory profiling - keep the hot path fast
             itemAggregator.processDetections(newItems)
-
-            // Log statistics only when debugging
-            if (DEBUG_LOGGING) {
-                val stats = itemAggregator.getStats()
-                Log.i(TAG, ">>> AGGREGATION COMPLETE:")
-                Log.i(TAG, "    - Input detections: ${newItems.size}")
-                Log.i(TAG, "    - Aggregated items: ${stats.totalItems}")
-                Log.i(TAG, "    - Total merges: ${stats.totalMerges}")
-                Log.i(TAG, "    - Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
-            }
-
-            // Memory profiling only when explicitly enabled
-            if (MEMORY_PROFILING) {
-                val runtime = Runtime.getRuntime()
-                val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-                Log.w(TAG, ">>> MEMORY AFTER AGGREGATION: ${usedMemoryAfter}MB used, delta=${usedMemoryAfter - usedMemoryBefore}MB")
-            }
 
             // Update UI state on main thread
             withContext(Dispatchers.Main) {
@@ -228,8 +204,67 @@ class ItemsViewModel(
 
     /**
      * Get aggregation statistics for monitoring/debugging.
+     * Note: This is synchronous - for async telemetry, use enableTelemetry().
      */
     fun getAggregationStats() = itemAggregator.getStats()
+
+    /**
+     * Enable async telemetry collection for monitoring stats and memory usage.
+     * Runs independently on background thread, completely off the hot path.
+     *
+     * Stats are logged periodically (every 5s by default) without blocking
+     * the main processing flow. Useful for debugging and performance monitoring.
+     */
+    fun enableTelemetry() {
+        if (_telemetryEnabled.value) {
+            Log.w(TAG, "Telemetry already enabled")
+            return
+        }
+
+        _telemetryEnabled.value = true
+        telemetryJob = viewModelScope.launch(Dispatchers.Default) {
+            Log.i(TAG, "╔═══════════════════════════════════════════════════════════════")
+            Log.i(TAG, "║ ASYNC TELEMETRY ENABLED")
+            Log.i(TAG, "║ Collection interval: ${TELEMETRY_INTERVAL_MS}ms")
+            Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")
+
+            while (isActive && _telemetryEnabled.value) {
+                delay(TELEMETRY_INTERVAL_MS)
+
+                // Collect stats asynchronously
+                val stats = itemAggregator.getStats()
+                val runtime = Runtime.getRuntime()
+                val usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                val maxMemoryMB = runtime.maxMemory() / 1024 / 1024
+
+                Log.i(TAG, "┌─────────────────────────────────────────────────────────────")
+                Log.i(TAG, "│ TELEMETRY SNAPSHOT")
+                Log.i(TAG, "├─────────────────────────────────────────────────────────────")
+                Log.i(TAG, "│ Aggregated items: ${stats.totalItems}")
+                Log.i(TAG, "│ Total merges: ${stats.totalMerges}")
+                Log.i(TAG, "│ Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
+                Log.i(TAG, "│ Memory: ${usedMemoryMB}MB / ${maxMemoryMB}MB")
+                Log.i(TAG, "└─────────────────────────────────────────────────────────────")
+            }
+
+            Log.i(TAG, "Async telemetry stopped")
+        }
+    }
+
+    /**
+     * Disable async telemetry collection.
+     */
+    fun disableTelemetry() {
+        _telemetryEnabled.value = false
+        telemetryJob?.cancel()
+        telemetryJob = null
+        Log.i(TAG, "Async telemetry disabled")
+    }
+
+    /**
+     * Check if async telemetry is currently enabled.
+     */
+    fun isTelemetryEnabled(): Boolean = _telemetryEnabled.value
 
     /**
      * Remove stale items that haven't been seen recently.
@@ -438,5 +473,11 @@ class ItemsViewModel(
                 Log.d(TAG, "Retry classification result for ${aggregatedItem.aggregatedId}: status=${result.status}")
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up async telemetry job
+        disableTelemetry()
     }
 }
