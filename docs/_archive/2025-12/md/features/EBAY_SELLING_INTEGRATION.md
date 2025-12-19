@@ -11,7 +11,7 @@ Complete end-to-end marketplace integration that connects real on-device ML Kit 
 ## Features
 
 ### User-Facing Features
-- ✅ **Multi-selection UI**: Long-press to enter selection mode, tap to toggle items
+- ✅ **Multi-selection UI**: Long-press to enter selection mode, tap to toggle items (defaults to **Sell on eBay** action for quicker listing flows)
 - ✅ **Draft review screen**: Edit listing details before posting
 - ✅ **Real-time status tracking**: Watch items transition through states (Posting → Listed/Failed)
 - ✅ **Status badges**: Color-coded indicators on items list
@@ -299,11 +299,11 @@ enum class ItemListingStatus {
    - Selection count shown in top bar
 
 3. **Review Drafts**
-   - Tap "Sell on eBay" button
+   - Tap the default "Sell on eBay" action or pick another bulk action from the dropdown
    - Navigate to Sell screen
    - See draft cards for each selected item:
      - Image preview
-     - Editable title (prefilled)
+     - Editable title (prefilled from the specific classification label, e.g., "Vintage mug" instead of generic categories)
      - Editable price (prefilled)
      - Condition picker (NEW/USED/REFURBISHED)
 

@@ -10,12 +10,16 @@ export type DomainCategory = {
   label: string;
   tokens: string[];
   attributes?: Record<string, string>;
+  priority?: number;
+  priorityTier?: number;
 };
 
 export type DomainPack = {
   id: string;
   name: string;
   threshold?: number;
+  contextPenalty?: number;
+  contextStoplist?: string[];
   categories: DomainCategory[];
 };
 

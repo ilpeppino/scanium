@@ -18,6 +18,10 @@ scanium.api.base.url=
 # Format: alphanumeric string, typically 32-64 characters
 scanium.api.key=
 
+# Optional: enable DEBUG-only crop capture for troubleshooting classification
+# Set to true to save each outgoing crop under app cache (/data/data/.../cache/classifier_crops)
+scanium.classifier.save_crops.debug=false
+
 # =============================================================================
 # SDK Location (standard Android property)
 # =============================================================================

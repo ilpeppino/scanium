@@ -1,6 +1,5 @@
 package com.scanium.app.ml.classification
 
-import android.graphics.Bitmap
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.core.models.geometry.NormalizedRect
@@ -197,7 +196,7 @@ class ClassificationOrchestratorTest {
         var callCount: Int = 0
             private set
 
-        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult? {
+        override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? {
             callCount++
             return deferred.await()
         }
@@ -213,7 +212,7 @@ class ClassificationOrchestratorTest {
         var callCount: Int = 0
             private set
 
-        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult? {
+        override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? {
             callCount++
             return null
         }
@@ -223,7 +222,7 @@ class ClassificationOrchestratorTest {
         var callCount: Int = 0
             private set
 
-        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult {
+        override suspend fun classifySingle(input: ClassificationInput): ClassificationResult {
             callCount++
             return ClassificationResult(
                 label = null,
@@ -240,7 +239,7 @@ class ClassificationOrchestratorTest {
         var callCount: Int = 0
             private set
 
-        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult {
+        override suspend fun classifySingle(input: ClassificationInput): ClassificationResult {
             callCount++
             return if (callCount < 2) {
                 ClassificationResult(
@@ -268,7 +267,7 @@ class ClassificationOrchestratorTest {
         var callCount: Int = 0
             private set
 
-        override suspend fun classifySingle(bitmap: Bitmap): ClassificationResult {
+        override suspend fun classifySingle(input: ClassificationInput): ClassificationResult {
             callCount++
             return ClassificationResult(
                 label = "Test Item",

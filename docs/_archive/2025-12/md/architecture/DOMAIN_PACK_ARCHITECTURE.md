@@ -185,6 +185,14 @@ data class DomainCategory(
     val priority: Int?,                // Tie-breaking (higher = preferred)
     val enabled: Boolean               // Enable/disable without code changes
 )
+
+// Optional pack-level knobs (used in latest backend build)
+data class DomainPack(
+    val contextPenalty: Double = 0.5,   // Down-rank stoplisted context tokens (table, surface, etc.)
+    val contextStoplist: List<String> = emptyList() // Strings that should not dominate classification
+)
+
+// Mapper always emits the *matched token* as the display label so UIs can show "Mug" instead of "Drinkware".
 ```
 
 ### DomainAttribute
