@@ -392,6 +392,9 @@ class CameraXManager(
     /**
      * Processes an ImageProxy: converts to Bitmap and runs ML Kit detection based on scan mode.
      * Used for single-frame captures (bypasses candidate tracking).
+     *
+     * OPTIMIZATION: Bitmap creation is deferred until we know detections exist (lazy generation).
+     * This reduces memory allocations and GC pressure on frames with no detections.
      */
     private suspend fun processImageProxy(
         imageProxy: ImageProxy,
@@ -401,7 +404,7 @@ class CameraXManager(
         return try {
             Log.i(TAG, ">>> processImageProxy: START - scanMode=$scanMode, useStreamMode=$useStreamMode, isScanning=$isScanning")
 
-            // Convert ImageProxy to Bitmap
+            // Get MediaImage from ImageProxy
             val mediaImage = imageProxy.image ?: run {
                 Log.e(TAG, "processImageProxy: mediaImage is null")
                 return Pair(emptyList(), emptyList())
@@ -413,17 +416,23 @@ class CameraXManager(
             // Build ML Kit image directly from camera buffer
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
-            // Optional bitmap for thumbnails
-            // IMPORTANT: Do NOT rotate the bitmap here! ML Kit's InputImage already has rotation
+            // OPTIMIZATION: Lazy bitmap provider - only creates bitmap when invoked
+            // IMPORTANT: Do NOT rotate the bitmap! ML Kit's InputImage already has rotation
             // metadata, so bounding boxes will be in the original (unrotated) coordinate space.
             // Rotating the bitmap would cause a coordinate mismatch when cropping thumbnails.
-            val bitmapForThumb = runCatching {
-                val bitmap = imageProxy.toBitmap()
-                Log.i(TAG, ">>> processImageProxy: Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees")
-                bitmap // Keep original orientation to match ML Kit's coordinate space
-            }.getOrElse { e ->
-                Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
-                null
+            var cachedBitmap: Bitmap? = null
+            val lazyBitmapProvider: () -> Bitmap? = {
+                if (cachedBitmap == null) {
+                    cachedBitmap = runCatching {
+                        val bitmap = imageProxy.toBitmap()
+                        Log.i(TAG, ">>> processImageProxy: [LAZY] Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees")
+                        bitmap // Keep original orientation to match ML Kit's coordinate space
+                    }.getOrElse { e ->
+                        Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
+                        null
+                    }
+                }
+                cachedBitmap
             }
 
             // Route to the appropriate scanner based on mode
@@ -432,7 +441,7 @@ class CameraXManager(
                     // Use tracking pipeline when in STREAM_MODE and scanning
                     if (useStreamMode && isScanning) {
                         Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
-                        val items = processObjectDetectionWithTracking(inputImage, bitmapForThumb)
+                        val items = processObjectDetectionWithTracking(inputImage, lazyBitmapProvider)
                         // For now, return empty detection results when using tracking
                         // (overlay visualization can be added later if needed)
                         Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items")
@@ -442,7 +451,7 @@ class CameraXManager(
                         Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
                         val response = objectDetector.detectObjects(
                             image = inputImage,
-                            sourceBitmap = bitmapForThumb,
+                            sourceBitmap = lazyBitmapProvider,
                             useStreamMode = useStreamMode
                         )
                         Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
@@ -453,14 +462,14 @@ class CameraXManager(
                     // Barcode and text scanners don't return DetectionResults yet
                     val items = barcodeScanner.scanBarcodes(
                         image = inputImage,
-                        sourceBitmap = bitmapForThumb
+                        sourceBitmap = lazyBitmapProvider
                     )
                     Pair(items, emptyList())
                 }
                 ScanMode.DOCUMENT_TEXT -> {
                     val items = textRecognizer.recognizeText(
                         image = inputImage,
-                        sourceBitmap = bitmapForThumb
+                        sourceBitmap = lazyBitmapProvider
                     )
                     Pair(items, emptyList())
                 }
@@ -478,14 +487,14 @@ class CameraXManager(
      */
     private suspend fun processObjectDetectionWithTracking(
         inputImage: InputImage,
-        sourceBitmap: Bitmap?
+        lazyBitmapProvider: () -> Bitmap?
     ): List<ScannedItem> {
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
-        // Get raw detections with tracking metadata
+        // Get raw detections with tracking metadata (lazy bitmap will be created only if needed)
         val detections = objectDetector.detectObjectsWithTracking(
             image = inputImage,
-            sourceBitmap = sourceBitmap,
+            sourceBitmap = lazyBitmapProvider,
             useStreamMode = true
         )
 
@@ -493,9 +502,10 @@ class CameraXManager(
 
         val detectionResponse = objectDetector.detectObjects(
             image = inputImage,
-            sourceBitmap = sourceBitmap,
+            sourceBitmap = lazyBitmapProvider,
             useStreamMode = true
         )
+        val sourceBitmap = lazyBitmapProvider() // Get bitmap if needed for dimensions
         val frameWidth = sourceBitmap?.width ?: inputImage.width
         val frameHeight = sourceBitmap?.height ?: inputImage.height
         val normalizedBoxesById = detectionResponse.detectionResults
