@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.view.WindowManager
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -22,6 +24,8 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -46,7 +50,7 @@ import java.util.*
  * - Tap to select, long-press for details
  * - Empty state when no items
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
@@ -177,50 +181,34 @@ fun ItemsListScreen(
                         }
 
                         // Action dropdown button
-                        Box {
-                            FilledTonalButton(onClick = { showActionMenu = true }) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(selectedAction.displayName)
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = "Select action",
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .padding(start = 4.dp)
-                                    )
-                                }
-                            }
-
-                            DropdownMenu(
-                                expanded = showActionMenu,
-                                onDismissRequest = { showActionMenu = false }
-                            ) {
-                                SelectedItemsAction.values().forEach { action ->
-                                    DropdownMenuItem(
-                                        text = { Text(action.displayName) },
-                                        onClick = {
-                                            selectedAction = action
-                                            showActionMenu = false
-                                        },
-                                        leadingIcon = if (selectedAction == action) {
-                                            {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = "Selected"
-                                                )
-                                            }
-                                        } else null
-                                    )
-                                }
-                            }
+                        IconButton(onClick = { showActionMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Select action"
+                            )
                         }
 
-                        // Execute button
-                        TextButton(
-                            onClick = { executeAction() },
-                            enabled = selectedIds.isNotEmpty()
+                        DropdownMenu(
+                            expanded = showActionMenu,
+                            onDismissRequest = { showActionMenu = false }
                         ) {
-                            Text("Go")
+                            SelectedItemsAction.values().forEach { action ->
+                                DropdownMenuItem(
+                                    text = { Text(action.displayName) },
+                                    onClick = {
+                                        selectedAction = action
+                                        showActionMenu = false
+                                    },
+                                    leadingIcon = if (selectedAction == action) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Selected"
+                                            )
+                                        }
+                                    } else null
+                                )
+                            }
                         }
                     } else if (items.isNotEmpty()) {
                         IconButton(onClick = { itemsViewModel.clearAllItems() }) {
@@ -232,6 +220,25 @@ fun ItemsListScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (selectionMode && selectedIds.isNotEmpty()) {
+                ExtendedFloatingActionButton(
+                    onClick = { executeAction() },
+                    icon = {
+                        Icon(
+                            imageVector = when (selectedAction) {
+                                SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
+                                SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                            },
+                            contentDescription = null
+                        )
+                    },
+                    text = { Text(selectedAction.displayName) },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
@@ -249,10 +256,18 @@ fun ItemsListScreen(
                     // Items list
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 16.dp,
+                            bottom = if (selectionMode && selectedIds.isNotEmpty()) 96.dp else 16.dp
+                        ),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(items = items, key = { it.id }) { item ->
+                        items(
+                            items = items,
+                            key = { it.id }
+                        ) { item ->
                             val dismissState = rememberDismissState(
                                 confirmStateChange = { value ->
                                     if (value == DismissValue.DismissedToEnd) {
@@ -265,6 +280,12 @@ fun ItemsListScreen(
                             SwipeToDismiss(
                                 state = dismissState,
                                 directions = setOf(DismissDirection.StartToEnd),
+                                modifier = Modifier.animateItemPlacement(
+                                    animationSpec = spring(
+                                        stiffness = 300f,
+                                        dampingRatio = 0.8f
+                                    )
+                                ),
                                 background = {
                                     val color = if (dismissState.targetValue == DismissValue.Default) {
                                         MaterialTheme.colorScheme.surfaceVariant
