@@ -94,20 +94,26 @@ class ItemsViewModel(
      * - Creates a new aggregated item
      *
      * Then updates the UI state with all current aggregated items.
+     * Offloads aggregation to background thread to prevent UI jank.
      */
     fun addItem(item: ScannedItem) {
-        if (DEBUG_LOGGING) {
-            Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
-        }
+        // Offload all processing to background thread
+        viewModelScope.launch(Dispatchers.Default) {
+            if (DEBUG_LOGGING) {
+                Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
+            }
 
-        // Process through aggregator
-        val aggregatedItem = itemAggregator.processDetection(item)
+            // Process through aggregator on background thread
+            val aggregatedItem = itemAggregator.processDetection(item)
 
-        // Update UI state with all aggregated items
-        updateItemsState()
+            if (DEBUG_LOGGING) {
+                Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
+            }
 
-        if (DEBUG_LOGGING) {
-            Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
+            // Update UI state on main thread
+            withContext(Dispatchers.Main) {
+                updateItemsState()
+            }
         }
     }
 
@@ -119,13 +125,10 @@ class ItemsViewModel(
      * addItem() multiple times.
      *
      * Offloads heavy aggregation to background thread to prevent UI jank during
-     * burst detections from camera.
+     * burst detections from camera. All expensive operations (logging, memory
+     * profiling, aggregation) run on background thread; only UI updates on main.
      */
     fun addItems(newItems: List<ScannedItem>) {
-        if (DEBUG_LOGGING) {
-            Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
-        }
-
         if (newItems.isEmpty()) {
             if (DEBUG_LOGGING) {
                 Log.i(TAG, ">>> addItems: empty list, returning")
@@ -133,10 +136,11 @@ class ItemsViewModel(
             return
         }
 
-        // Offload processing to background thread to avoid UI jank
-        viewModelScope.launch {
-            // Log detailed item info only when debugging
+        // Launch directly on background thread to avoid any main-thread overhead
+        viewModelScope.launch(Dispatchers.Default) {
             if (DEBUG_LOGGING) {
+                Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
+                // Log detailed item info only when debugging
                 newItems.forEachIndexed { index, item ->
                     Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
                 }
@@ -150,13 +154,8 @@ class ItemsViewModel(
                 used
             } else 0L
 
-            // Process aggregation on background thread
-            withContext(Dispatchers.Default) {
-                itemAggregator.processDetections(newItems)
-            }
-
-            // Update UI state on main thread
-            updateItemsState()
+            // Process aggregation on background thread (already on Dispatchers.Default)
+            itemAggregator.processDetections(newItems)
 
             // Log statistics only when debugging
             if (DEBUG_LOGGING) {
@@ -173,6 +172,11 @@ class ItemsViewModel(
                 val runtime = Runtime.getRuntime()
                 val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
                 Log.w(TAG, ">>> MEMORY AFTER AGGREGATION: ${usedMemoryAfter}MB used, delta=${usedMemoryAfter - usedMemoryBefore}MB")
+            }
+
+            // Update UI state on main thread
+            withContext(Dispatchers.Main) {
+                updateItemsState()
             }
         }
     }
