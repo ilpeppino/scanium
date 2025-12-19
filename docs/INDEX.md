@@ -16,6 +16,7 @@ Start here for up-to-date context. Keep reads under 3 minutes; follow links for 
 - [SECURITY](./SECURITY.md) – security posture and follow-ups.
 - [DECISIONS](./DECISIONS.md) – ADR-lite list of notable choices.
 - [TESTING](./TESTING.md) – test commands, coverage thresholds, and guidance.
+- [REVIEW_REPORT](./REVIEW_REPORT.md) – architecture/code review findings and backlog.
 
 ***REMOVED******REMOVED*** Docs maintenance checklist
 - Feature change: update PRODUCT; adjust ARCHITECTURE if flows/modules shift.
