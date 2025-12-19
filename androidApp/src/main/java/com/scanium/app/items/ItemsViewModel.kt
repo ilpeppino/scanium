@@ -12,10 +12,13 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for managing detected items across the app.
@@ -40,6 +43,9 @@ class ItemsViewModel(
 ) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
+        // Gate heavy logging to prevent UI jank during burst detections
+        private const val DEBUG_LOGGING = false
+        private const val MEMORY_PROFILING = false
     }
 
     // Private mutable state
@@ -90,7 +96,9 @@ class ItemsViewModel(
      * Then updates the UI state with all current aggregated items.
      */
     fun addItem(item: ScannedItem) {
-        Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
+        if (DEBUG_LOGGING) {
+            Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
+        }
 
         // Process through aggregator
         val aggregatedItem = itemAggregator.processDetection(item)
@@ -98,7 +106,9 @@ class ItemsViewModel(
         // Update UI state with all aggregated items
         updateItemsState()
 
-        Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
+        if (DEBUG_LOGGING) {
+            Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
+        }
     }
 
     /**
@@ -107,40 +117,64 @@ class ItemsViewModel(
      * Processes each item through the aggregator in batch, which automatically
      * handles merging and deduplication. This is more efficient than calling
      * addItem() multiple times.
+     *
+     * Offloads heavy aggregation to background thread to prevent UI jank during
+     * burst detections from camera.
      */
     fun addItems(newItems: List<ScannedItem>) {
-        Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
+        if (DEBUG_LOGGING) {
+            Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
+        }
+
         if (newItems.isEmpty()) {
-            Log.i(TAG, ">>> addItems: empty list, returning")
+            if (DEBUG_LOGGING) {
+                Log.i(TAG, ">>> addItems: empty list, returning")
+            }
             return
         }
 
-        newItems.forEachIndexed { index, item ->
-            Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
+        // Offload processing to background thread to avoid UI jank
+        viewModelScope.launch {
+            // Log detailed item info only when debugging
+            if (DEBUG_LOGGING) {
+                newItems.forEachIndexed { index, item ->
+                    Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
+                }
+            }
+
+            // Memory profiling only when explicitly enabled
+            val usedMemoryBefore = if (MEMORY_PROFILING) {
+                val runtime = Runtime.getRuntime()
+                val used = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                Log.w(TAG, ">>> MEMORY BEFORE AGGREGATION: ${used}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
+                used
+            } else 0L
+
+            // Process aggregation on background thread
+            withContext(Dispatchers.Default) {
+                itemAggregator.processDetections(newItems)
+            }
+
+            // Update UI state on main thread
+            updateItemsState()
+
+            // Log statistics only when debugging
+            if (DEBUG_LOGGING) {
+                val stats = itemAggregator.getStats()
+                Log.i(TAG, ">>> AGGREGATION COMPLETE:")
+                Log.i(TAG, "    - Input detections: ${newItems.size}")
+                Log.i(TAG, "    - Aggregated items: ${stats.totalItems}")
+                Log.i(TAG, "    - Total merges: ${stats.totalMerges}")
+                Log.i(TAG, "    - Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
+            }
+
+            // Memory profiling only when explicitly enabled
+            if (MEMORY_PROFILING) {
+                val runtime = Runtime.getRuntime()
+                val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                Log.w(TAG, ">>> MEMORY AFTER AGGREGATION: ${usedMemoryAfter}MB used, delta=${usedMemoryAfter - usedMemoryBefore}MB")
+            }
         }
-
-        // Log memory before processing
-        val runtime = Runtime.getRuntime()
-        val usedMemoryBefore = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-        Log.w(TAG, ">>> MEMORY BEFORE AGGREGATION: ${usedMemoryBefore}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
-
-        // Process all items through aggregator
-        val aggregatedItems = itemAggregator.processDetections(newItems)
-
-        // Update UI state with all aggregated items
-        updateItemsState()
-
-        // Log statistics
-        val stats = itemAggregator.getStats()
-        Log.i(TAG, ">>> AGGREGATION COMPLETE:")
-        Log.i(TAG, "    - Input detections: ${newItems.size}")
-        Log.i(TAG, "    - Aggregated items: ${stats.totalItems}")
-        Log.i(TAG, "    - Total merges: ${stats.totalMerges}")
-        Log.i(TAG, "    - Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
-
-        // Log memory after processing
-        val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-        Log.w(TAG, ">>> MEMORY AFTER AGGREGATION: ${usedMemoryAfter}MB used, delta=${usedMemoryAfter - usedMemoryBefore}MB")
     }
 
     /**
@@ -224,10 +258,12 @@ class ItemsViewModel(
         _similarityThreshold.value = clampedThreshold
         itemAggregator.updateSimilarityThreshold(clampedThreshold)
 
-        Log.w(TAG, "╔═══════════════════════════════════════════════════════════════")
-        Log.w(TAG, "║ THRESHOLD UPDATED: $previousThreshold → $clampedThreshold")
-        Log.w(TAG, "║ Aggregator confirms: ${itemAggregator.getCurrentSimilarityThreshold()}")
-        Log.w(TAG, "╚═══════════════════════════════════════════════════════════════")
+        if (DEBUG_LOGGING) {
+            Log.w(TAG, "╔═══════════════════════════════════════════════════════════════")
+            Log.w(TAG, "║ THRESHOLD UPDATED: $previousThreshold → $clampedThreshold")
+            Log.w(TAG, "║ Aggregator confirms: ${itemAggregator.getCurrentSimilarityThreshold()}")
+            Log.w(TAG, "╚═══════════════════════════════════════════════════════════════")
+        }
     }
 
     /**
@@ -251,45 +287,50 @@ class ItemsViewModel(
     }
 
     private fun triggerEnhancedClassification() {
-        val pendingItems = itemAggregator.getAggregatedItems()
-            .filter { it.thumbnail != null && classificationOrchestrator.shouldClassify(it.aggregatedId) }
-
-        if (pendingItems.isEmpty()) return
-
-        // Mark items as PENDING before classification
-        pendingItems.forEach { item ->
-            item.classificationStatus = "PENDING"
-        }
-        _items.value = itemAggregator.getScannedItems()
-
-        classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
-            val boxArea = aggregatedItem.boundingBox.area
-            val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
-            val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
-                result.category
-            } else {
-                aggregatedItem.enhancedCategory ?: aggregatedItem.category
+        // Offload filtering to background to avoid blocking UI during burst detections
+        viewModelScope.launch {
+            val pendingItems = withContext(Dispatchers.Default) {
+                itemAggregator.getAggregatedItems()
+                    .filter { it.thumbnail != null && classificationOrchestrator.shouldClassify(it.aggregatedId) }
             }
 
-            itemAggregator.applyEnhancedClassification(
-                aggregatedId = aggregatedItem.aggregatedId,
-                category = categoryOverride,
-                label = result.label ?: aggregatedItem.labelText,
-                priceRange = priceRange
-            )
+            if (pendingItems.isEmpty()) return@launch
 
-            // Update classification status based on result
-            aggregatedItem.classificationStatus = result.status.name
-            aggregatedItem.domainCategoryId = result.domainCategoryId
-            aggregatedItem.classificationErrorMessage = result.errorMessage
-            aggregatedItem.classificationRequestId = result.requestId
+            // Mark items as PENDING before classification (on main thread)
+            pendingItems.forEach { item ->
+                item.classificationStatus = "PENDING"
+            }
+            _items.value = itemAggregator.getScannedItems()
 
-            // Propagate updates to the UI layer
-            val updatedItems = itemAggregator.getScannedItems()
-            _items.value = updatedItems
+            classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
+                val boxArea = aggregatedItem.boundingBox.area
+                val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
+                val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
+                    result.category
+                } else {
+                    aggregatedItem.enhancedCategory ?: aggregatedItem.category
+                }
 
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
+                itemAggregator.applyEnhancedClassification(
+                    aggregatedId = aggregatedItem.aggregatedId,
+                    category = categoryOverride,
+                    label = result.label ?: aggregatedItem.labelText,
+                    priceRange = priceRange
+                )
+
+                // Update classification status based on result
+                aggregatedItem.classificationStatus = result.status.name
+                aggregatedItem.domainCategoryId = result.domainCategoryId
+                aggregatedItem.classificationErrorMessage = result.errorMessage
+                aggregatedItem.classificationRequestId = result.requestId
+
+                // Propagate updates to the UI layer
+                val updatedItems = itemAggregator.getScannedItems()
+                _items.value = updatedItems
+
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
+                }
             }
         }
     }
