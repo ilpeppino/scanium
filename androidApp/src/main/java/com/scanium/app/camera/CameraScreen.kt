@@ -1,6 +1,9 @@
 package com.scanium.app.camera
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.view.OrientationEventListener
 import android.view.Surface
 import android.util.Log
@@ -13,9 +16,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -44,6 +49,7 @@ import com.scanium.app.ml.DetectionResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.shouldShowRationale
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.android.platform.adapters.toImageRefJpeg
@@ -464,10 +470,17 @@ fun CameraScreen(
                 )
             }
             else -> {
-                // Permission denied UI
+                // Permission denied UI with educative content
                 PermissionDeniedContent(
+                    permissionState = cameraPermissionState,
                     onRequestPermission = {
                         cameraPermissionState.launchPermissionRequest()
+                    },
+                    onOpenSettings = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
                     }
                 )
             }
@@ -747,9 +760,22 @@ private fun CameraErrorContent(
 
 /**
  * UI shown when camera permission is denied.
+ *
+ * Provides educative content and context-aware actions based on permission state:
+ * - First request: Shows rationale and grant permission button
+ * - Denied with rationale: Explains importance and offers to try again
+ * - Permanently denied: Guides user to open system settings
  */
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-private fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
+private fun PermissionDeniedContent(
+    permissionState: com.google.accompanist.permissions.PermissionState,
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
+    val isPermanentlyDenied = !permissionState.status.shouldShowRationale &&
+                              !permissionState.status.isGranted
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -757,20 +783,133 @@ private fun PermissionDeniedContent(onRequestPermission: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Camera Permission Required",
-            style = MaterialTheme.typography.headlineSmall
+        // Camera icon
+        Icon(
+            imageVector = Icons.Default.Camera,
+            contentDescription = null,
+            modifier = Modifier.size(72.dp),
+            tint = MaterialTheme.colorScheme.primary
         )
-        Spacer(modifier = Modifier.height(16.dp))
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Title
         Text(
-            text = "Scanium needs camera access to detect objects in your environment.",
+            text = "Camera Access Required",
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Description - varies based on permission state
+        Text(
+            text = if (isPermanentlyDenied) {
+                "Camera access has been disabled for Scanium. To use object detection, barcode scanning, and document text recognition, please enable camera access in your device settings."
+            } else {
+                "Scanium uses your camera to detect and catalog objects, scan barcodes, and recognize text in your environment."
+            },
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Feature list - what camera enables
+        androidx.compose.material3.Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = androidx.compose.material3.CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Camera enables:",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                FeatureItem("📦", "Object detection and cataloging")
+                FeatureItem("📱", "Barcode and QR code scanning")
+                FeatureItem("📄", "Document and text recognition")
+                FeatureItem("📸", "High-quality image capture")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Privacy note
+        Text(
+            text = "🔒 All processing happens locally on your device. Images are never uploaded without your permission.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Action buttons - different based on permission state
+        if (isPermanentlyDenied) {
+            // Permission permanently denied - guide to settings
+            Button(
+                onClick = onOpenSettings,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Open Settings")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Tap 'Permissions' → 'Camera' → 'Allow'",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        } else {
+            // Permission can still be requested
+            Button(
+                onClick = onRequestPermission,
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                Text("Grant Camera Access")
+            }
+        }
+    }
+}
+
+/**
+ * Helper composable for feature list items
+ */
+@Composable
+private fun FeatureItem(icon: String, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.width(32.dp)
+        )
+        Text(
+            text = text,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onRequestPermission) {
-            Text("Grant Permission")
-        }
     }
 }
 
