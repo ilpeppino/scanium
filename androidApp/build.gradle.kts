@@ -22,6 +22,8 @@ val localProperties = Properties().apply {
     }
 }
 
+val saveClassifierCropsDebug = (localProperties.getProperty("scanium.classifier.save_crops.debug") ?: "false").toBoolean()
+
 android {
     namespace = "com.scanium.app"
     compileSdk = 34
@@ -59,6 +61,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", saveClassifierCropsDebug.toString())
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -67,6 +72,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
         }
     }
 

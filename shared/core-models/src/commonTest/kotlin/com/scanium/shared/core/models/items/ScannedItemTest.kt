@@ -1,6 +1,7 @@
 package com.scanium.shared.core.models.items
 
 import com.scanium.shared.core.models.ml.ItemCategory
+import kotlinx.datetime.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -206,7 +207,7 @@ class ScannedItemTest {
     @Test
     fun whenItemHasTimestamp_thenTimestampStored() {
         // Arrange
-        val now = System.currentTimeMillis()
+        val now = Clock.System.now().toEpochMilliseconds()
         val item = createTestItem(timestamp = now)
 
         // Assert
@@ -243,6 +244,27 @@ class ScannedItemTest {
         assertTrue(ConfidenceLevel.LOW.description.isNotEmpty())
         assertTrue(ConfidenceLevel.MEDIUM.description.isNotEmpty())
         assertTrue(ConfidenceLevel.HIGH.description.isNotEmpty())
+    }
+
+    @Test
+    fun displayLabelPrefersSpecificLabelText() {
+        val item = createTestItem(label = " vintage mug ")
+
+        assertEquals("Vintage mug", item.displayLabel)
+    }
+
+    @Test
+    fun displayLabelFallsBackToCategoryWhenLabelMissing() {
+        val item = createTestItem(label = null, category = ItemCategory.ELECTRONICS)
+
+        assertEquals("Electronics", item.displayLabel)
+    }
+
+    @Test
+    fun displayLabelIgnoresBlankLabels() {
+        val item = createTestItem(label = "   ", category = ItemCategory.HOME_GOOD)
+
+        assertEquals("Home Good", item.displayLabel)
     }
 
     @Test
@@ -285,7 +307,8 @@ class ScannedItemTest {
         category: ItemCategory = ItemCategory.FASHION,
         priceRange: Pair<Double, Double> = 10.0 to 20.0,
         confidence: Float = 0.5f,
-        timestamp: Long = System.currentTimeMillis()
+        timestamp: Long = Clock.System.now().toEpochMilliseconds(),
+        label: String? = null
     ): ScannedItem<Any> {
         return ScannedItem(
             id = id,
@@ -293,7 +316,8 @@ class ScannedItemTest {
             category = category,
             priceRange = priceRange,
             confidence = confidence,
-            timestamp = timestamp
+            timestamp = timestamp,
+            labelText = label
         )
     }
 }

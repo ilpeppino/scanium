@@ -31,6 +31,7 @@ export type ClassificationResult = {
   domainPackId: string;
   domainCategoryId: string | null;
   confidence: number | null;
+  label?: string | null;
   attributes: Record<string, string>;
   provider: ProviderResponse['provider'];
   timingsMs: {

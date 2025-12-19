@@ -104,6 +104,25 @@ data class ScannedItem<FullImageUri>(
             confidence >= ConfidenceLevel.MEDIUM.threshold -> ConfidenceLevel.MEDIUM
             else -> ConfidenceLevel.LOW
         }
+
+    /**
+     * Preferred human-readable label prioritizing specific classification output.
+     */
+    val displayLabel: String
+        get() {
+            val preferred = labelText?.trim().takeUnless { it.isNullOrEmpty() } ?: category.displayName
+            return capitalizeDisplayLabel(preferred.trim())
+        }
+}
+
+private fun capitalizeDisplayLabel(value: String): String {
+    if (value.isEmpty()) return value
+    val first = value[0].uppercaseChar()
+    return if (value.length == 1) {
+        first.toString()
+    } else {
+        first.toString() + value.substring(1)
+    }
 }
 
 /**

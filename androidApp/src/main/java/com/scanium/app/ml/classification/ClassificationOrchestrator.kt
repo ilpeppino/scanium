@@ -224,7 +224,15 @@ class ClassificationOrchestrator(
             }
 
             val result = when (val thumbnail = item.thumbnail) {
-                is ImageRef.Bytes -> classifier.classifySingle(thumbnail.toBitmap())
+                is ImageRef.Bytes -> {
+                    val bitmap = thumbnail.toBitmap()
+                    val input = ClassificationInput(
+                        aggregatedId = aggregatedId,
+                        bitmap = bitmap,
+                        boundingBox = item.boundingBox
+                    )
+                    classifier.classifySingle(input)
+                }
                 else -> null
             }
 

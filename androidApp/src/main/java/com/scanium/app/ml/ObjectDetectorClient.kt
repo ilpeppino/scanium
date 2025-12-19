@@ -14,6 +14,7 @@ import com.google.mlkit.vision.objects.ObjectDetection
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import kotlinx.coroutines.tasks.await
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import java.util.UUID
 
 /**
@@ -35,6 +36,8 @@ class ObjectDetectorClient {
     companion object {
         private const val TAG = "ObjectDetectorClient"
         private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
+        private const val MAX_THUMBNAIL_DIMENSION_PX = 512
+        private const val BOUNDING_BOX_TIGHTEN_RATIO = 0.08f
 
         // Flag to track if model download has been checked
         @Volatile
@@ -598,15 +601,20 @@ class ObjectDetectorClient {
      */
     private fun cropThumbnail(source: Bitmap, boundingBox: Rect, rotationDegrees: Int = 0): Bitmap? {
         return try {
+            val adjustedBox = boundingBox.tighten(
+                insetRatio = BOUNDING_BOX_TIGHTEN_RATIO,
+                frameWidth = source.width,
+                frameHeight = source.height
+            )
             // Ensure bounding box is within bitmap bounds
-            val left = boundingBox.left.coerceIn(0, source.width - 1)
-            val top = boundingBox.top.coerceIn(0, source.height - 1)
-            val width = (boundingBox.width()).coerceIn(1, source.width - left)
-            val height = (boundingBox.height()).coerceIn(1, source.height - top)
+            val left = adjustedBox.left.coerceIn(0, source.width - 1)
+            val top = adjustedBox.top.coerceIn(0, source.height - 1)
+            val width = (adjustedBox.width()).coerceIn(1, source.width - left)
+            val height = (adjustedBox.height()).coerceIn(1, source.height - top)
 
             // CRITICAL: Limit thumbnail size to save memory
-            // Max 200x200 pixels is plenty for display
-            val maxDimension = 200
+            // Higher resolution crops (up to 512px) preserve detail for cloud classification
+            val maxDimension = MAX_THUMBNAIL_DIMENSION_PX
             val scale = minOf(1.0f, maxDimension.toFloat() / maxOf(width, height))
             val thumbnailWidth = (width * scale).toInt().coerceAtLeast(1)
             val thumbnailHeight = (height * scale).toInt().coerceAtLeast(1)
@@ -695,4 +703,30 @@ class ObjectDetectorClient {
             Log.e(TAG, "Error closing detectors", e)
         }
     }
+}
+
+private fun Rect.tighten(insetRatio: Float, frameWidth: Int, frameHeight: Int): Rect {
+    if (insetRatio <= 0f) return Rect(this)
+    if (frameWidth <= 0 || frameHeight <= 0) return Rect(this)
+    val currentWidth = width().coerceAtLeast(1)
+    val currentHeight = height().coerceAtLeast(1)
+
+    if (currentWidth < 4 || currentHeight < 4) {
+        return Rect(
+            left.coerceIn(0, frameWidth - 1),
+            top.coerceIn(0, frameHeight - 1),
+            right.coerceIn(1, frameWidth),
+            bottom.coerceIn(1, frameHeight)
+        )
+    }
+
+    val insetX = (currentWidth * insetRatio / 2f).roundToInt().coerceAtMost(currentWidth / 2 - 1)
+    val insetY = (currentHeight * insetRatio / 2f).roundToInt().coerceAtMost(currentHeight / 2 - 1)
+
+    val newLeft = (left + insetX).coerceIn(0, frameWidth - 1)
+    val newTop = (top + insetY).coerceIn(0, frameHeight - 1)
+    val newRight = (right - insetX).coerceIn(newLeft + 1, frameWidth)
+    val newBottom = (bottom - insetY).coerceIn(newTop + 1, frameHeight)
+
+    return Rect(newLeft, newTop, newRight, newBottom)
 }

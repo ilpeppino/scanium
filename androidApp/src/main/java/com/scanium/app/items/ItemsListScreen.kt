@@ -53,7 +53,7 @@ fun ItemsListScreen(
     var selectedItem by remember { mutableStateOf<ScannedItem?>(null) }
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectionMode by remember { mutableStateOf(false) }
-    var selectedAction by remember { mutableStateOf(SelectedItemsAction.SAVE_TO_DEVICE) }
+    var selectedAction by remember { mutableStateOf(SelectedItemsAction.SELL_ON_EBAY) }
     var showActionMenu by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -321,7 +321,7 @@ private fun ItemRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = item.category.displayName,
+                        text = item.displayLabel,
                         style = MaterialTheme.typography.titleMedium
                     )
                     ConfidenceBadge(confidenceLevel = item.confidenceLevel)
