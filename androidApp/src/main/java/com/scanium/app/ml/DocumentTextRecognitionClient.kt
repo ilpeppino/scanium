@@ -36,12 +36,12 @@ class DocumentTextRecognitionClient {
      * Processes an image and recognizes text.
      *
      * @param image InputImage to process (from CameraX)
-     * @param sourceBitmap Original bitmap for creating thumbnails
+     * @param sourceBitmap Lazy provider for bitmap (only invoked if text is detected)
      * @return List of ScannedItems with recognized text (typically one item per document)
      */
     suspend fun recognizeText(
         image: InputImage,
-        sourceBitmap: Bitmap?
+        sourceBitmap: () -> Bitmap?
     ): List<ScannedItem> {
         return try {
             Log.d(TAG, "Starting text recognition on image ${image.width}x${image.height}, rotation=${image.rotationDegrees}")
@@ -53,9 +53,12 @@ class DocumentTextRecognitionClient {
             Log.d(TAG, "Recognized text length: ${rawText.length} characters")
 
             if (rawText.isBlank() || rawText.length < MIN_TEXT_LENGTH) {
-                Log.d(TAG, "No meaningful text detected")
+                Log.d(TAG, "No meaningful text detected - skipping bitmap generation")
                 return emptyList()
             }
+
+            // OPTIMIZATION: Only generate bitmap if we have text to process
+            val bitmap = sourceBitmap()
 
             // SEC-006: Limit text length to 10KB for memory/UI performance
             val fullText = if (rawText.length > MAX_TEXT_LENGTH) {
@@ -73,7 +76,7 @@ class DocumentTextRecognitionClient {
                 ?: Rect(0, 0, image.width, image.height)
 
             // Create thumbnail from source bitmap
-            val thumbnail = sourceBitmap?.let {
+            val thumbnail = bitmap?.let {
                 if (boundingBox.width() > 0 && boundingBox.height() > 0) {
                     cropThumbnail(it, boundingBox)
                 } else {
@@ -89,16 +92,16 @@ class DocumentTextRecognitionClient {
             // Calculate normalized area for pricing
             val boxArea = calculateNormalizedArea(
                 box = boundingBox,
-                imageWidth = sourceBitmap?.width ?: image.width,
-                imageHeight = sourceBitmap?.height ?: image.height
+                imageWidth = bitmap?.width ?: image.width,
+                imageHeight = bitmap?.height ?: image.height
             )
 
             // Generate price range (documents have symbolic pricing)
             val priceRange = PricingEngine.generatePriceRange(ItemCategory.DOCUMENT, boxArea)
 
             val bboxNorm = boundingBox?.toNormalizedRect(
-                frameWidth = sourceBitmap?.width ?: image.width,
-                frameHeight = sourceBitmap?.height ?: image.height
+                frameWidth = bitmap?.width ?: image.width,
+                frameHeight = bitmap?.height ?: image.height
             )
 
             if (thumbnail != null) {
