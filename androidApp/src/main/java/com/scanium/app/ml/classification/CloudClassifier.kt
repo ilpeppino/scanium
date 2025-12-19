@@ -85,7 +85,7 @@ class CloudClassifier(
             return@withContext null
         }
 
-        val endpoint = "${baseUrl.trimEnd('/')}/classify"
+        val endpoint = "${baseUrl.trimEnd('/')}/v1/classify"
         Log.d(TAG, "Classifying with endpoint: $endpoint, domainPack: $domainPackId")
 
         try {

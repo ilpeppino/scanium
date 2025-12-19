@@ -10,7 +10,7 @@ import org.junit.Test
 class ListingDraftMapperTest {
 
     @Test
-    fun `fromScannedItem maps core fields`() {
+    fun `fromScannedItem maps core fields with labelText`() {
         val item = ScannedItem(
             id = "item-1",
             thumbnail = testImageRef(),
@@ -26,6 +26,68 @@ class ListingDraftMapperTest {
         assertThat(draft.category).isEqualTo(ItemCategory.ELECTRONICS)
         assertThat(draft.price).isWithin(0.1).of(20.0)
         assertThat(draft.currency).isEqualTo("EUR")
+    }
+
+    @Test
+    fun `fromScannedItem uses ListingTitleBuilder for title generation`() {
+        val item = ScannedItem(
+            id = "item-2",
+            thumbnail = testImageRef(),
+            category = ItemCategory.HOME_GOOD,
+            priceRange = 15.0 to 45.0,
+            labelText = "Decor / Wall Art"
+        )
+
+        val draft = ListingDraftMapper.fromScannedItem(item)
+
+        // Verify title is generated correctly from domain pack label
+        assertThat(draft.title).isEqualTo("Used Decor / Wall Art")
+    }
+
+    @Test
+    fun `fromScannedItem falls back to category when labelText is null`() {
+        val item = ScannedItem(
+            id = "item-3",
+            thumbnail = testImageRef(),
+            category = ItemCategory.FASHION,
+            priceRange = 20.0 to 60.0,
+            labelText = null
+        )
+
+        val draft = ListingDraftMapper.fromScannedItem(item)
+
+        // Should use category display name as fallback
+        assertThat(draft.title).isEqualTo("Used Fashion")
+    }
+
+    @Test
+    fun `fromScannedItem calculates average price`() {
+        val item = ScannedItem(
+            id = "item-4",
+            thumbnail = testImageRef(),
+            category = ItemCategory.HOME_GOOD,
+            priceRange = 100.0 to 200.0,
+            labelText = "Chair"
+        )
+
+        val draft = ListingDraftMapper.fromScannedItem(item)
+
+        assertThat(draft.price).isWithin(0.1).of(150.0)
+    }
+
+    @Test
+    fun `fromScannedItem preserves original item reference`() {
+        val item = ScannedItem(
+            id = "item-5",
+            thumbnail = testImageRef(),
+            category = ItemCategory.ELECTRONICS,
+            priceRange = 50.0 to 150.0,
+            labelText = "Monitor"
+        )
+
+        val draft = ListingDraftMapper.fromScannedItem(item)
+
+        assertThat(draft.originalItem).isSameInstanceAs(item)
     }
 
     private fun testImageRef(width: Int = 10, height: Int = 10): Bytes {
