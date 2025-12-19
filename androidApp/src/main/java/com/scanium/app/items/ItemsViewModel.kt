@@ -159,6 +159,15 @@ class ItemsViewModel(
     }
 
     /**
+     * Restores a previously removed item (used for undo flows).
+     */
+    fun restoreItem(item: ScannedItem) {
+        Log.i(TAG, "Restoring item: ${item.id}")
+        itemAggregator.processDetection(item)
+        updateItemsState()
+    }
+
+    /**
      * Clears all detected items.
      */
     fun clearAllItems() {
