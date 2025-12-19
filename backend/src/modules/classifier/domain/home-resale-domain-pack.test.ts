@@ -92,6 +92,9 @@ describe('home-resale.json Domain Pack', () => {
         'food_container',
         'cleaning_item',
         'textile',
+        'consumer_electronics_portable',
+        'consumer_electronics_stationary',
+        'home_electronics',
         'electronics_small',
         'decor',
         'plant',
@@ -220,6 +223,55 @@ describe('home-resale.json Domain Pack', () => {
         { label: 'cloth', expected: 'textile' },
         { label: 'blanket', expected: 'textile' },
         { label: 'pillow', expected: 'textile' },
+      ];
+
+      testCases.forEach(({ label, expected }) => {
+        const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+          labels: [{ description: label, score: 0.8 }],
+        });
+        expect(result.domainCategoryId).toBe(expected);
+      });
+    });
+
+    it('matches portable electronics tokens correctly', () => {
+      const testCases = [
+        { label: 'phone', expected: 'consumer_electronics_portable' },
+        { label: 'smartphone', expected: 'consumer_electronics_portable' },
+        { label: 'laptop', expected: 'consumer_electronics_portable' },
+        { label: 'tablet', expected: 'consumer_electronics_portable' },
+        { label: 'earbuds', expected: 'consumer_electronics_portable' },
+      ];
+
+      testCases.forEach(({ label, expected }) => {
+        const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+          labels: [{ description: label, score: 0.8 }],
+        });
+        expect(result.domainCategoryId).toBe(expected);
+      });
+    });
+
+    it('matches stationary electronics tokens correctly', () => {
+      const testCases = [
+        { label: 'tv', expected: 'consumer_electronics_stationary' },
+        { label: 'monitor', expected: 'consumer_electronics_stationary' },
+        { label: 'printer', expected: 'consumer_electronics_stationary' },
+        { label: 'desktop computer', expected: 'consumer_electronics_stationary' },
+      ];
+
+      testCases.forEach(({ label, expected }) => {
+        const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+          labels: [{ description: label, score: 0.8 }],
+        });
+        expect(result.domainCategoryId).toBe(expected);
+      });
+    });
+
+    it('matches home electronics tokens correctly', () => {
+      const testCases = [
+        { label: 'router', expected: 'home_electronics' },
+        { label: 'modem', expected: 'home_electronics' },
+        { label: 'game console', expected: 'home_electronics' },
+        { label: 'controller', expected: 'home_electronics' },
       ];
 
       testCases.forEach(({ label, expected }) => {
@@ -427,6 +479,74 @@ describe('home-resale.json Domain Pack', () => {
 
       expect(result.domainCategoryId).toBe('furniture');
     });
+
+    it('prefers electronics over furniture when both appear', () => {
+      const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+        labels: [
+          { description: 'table', score: 0.9 },
+          { description: 'laptop', score: 0.4 },
+        ],
+      });
+
+      expect(result.domainCategoryId).toBe('consumer_electronics_portable');
+    });
+
+    it('prefers electronics over desks when monitors appear', () => {
+      const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+        labels: [
+          { description: 'desk', score: 0.85 },
+          { description: 'monitor', score: 0.5 },
+        ],
+      });
+
+      expect(result.domainCategoryId).toBe('consumer_electronics_stationary');
+    });
+
+    it('prefers electronics over decor when speaker is present', () => {
+      const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+        labels: [
+          { description: 'decor', score: 0.9 },
+          { description: 'speaker', score: 0.35 },
+        ],
+      });
+
+      expect([
+        'home_electronics',
+        'electronics_small',
+      ]).toContain(result.domainCategoryId);
+    });
+
+    it('prefers electronics over storage labels', () => {
+      const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+        labels: [
+          { description: 'box', score: 0.9 },
+          { description: 'router', score: 0.4 },
+        ],
+      });
+
+      expect(result.domainCategoryId).toBe('home_electronics');
+    });
+  });
+
+  // STEP 3b — REGRESSION GUARDRAILS
+  describe('Regression - household items remain correct', () => {
+    const regressionCases = [
+      { label: 'mug', expected: 'drinkware' },
+      { label: 'napkin', expected: 'textile' },
+      { label: 'bottle', expected: 'drinkware' },
+      { label: 'plant', expected: 'plant' },
+      { label: 'chair', expected: 'furniture' },
+    ];
+
+    regressionCases.forEach(({ label, expected }) => {
+      it(`keeps ${label} classified as ${expected}`, () => {
+        const result = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+          labels: [{ description: label, score: 0.9 }],
+        });
+
+        expect(result.domainCategoryId).toBe(expected);
+      });
+    });
   });
 
   // STEP 4 — THRESHOLD TESTS
@@ -483,6 +603,20 @@ describe('home-resale.json Domain Pack', () => {
       // Should return the highest confidence that meets priority rules
       expect(result.domainCategoryId).not.toBeNull();
       expect(result.confidence).toBeGreaterThanOrEqual(0.5);
+    });
+
+    it('requires electronics tokens to meet threshold', () => {
+      const belowThreshold = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+        labels: [{ description: 'phone', score: 0.1 }],
+      });
+
+      expect(belowThreshold.domainCategoryId).toBeNull();
+
+      const aboveThreshold = mapSignalsToDomainCategory(homeResalePack as DomainPack, {
+        labels: [{ description: 'smartphone', score: 0.35 }],
+      });
+
+      expect(aboveThreshold.domainCategoryId).toBe('consumer_electronics_portable');
     });
   });
 
