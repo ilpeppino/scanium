@@ -6,6 +6,7 @@
     {
       "id": "chair",
       "label": "Chair",
+      "itemCategoryName": "HOME_GOOD",
       "tokens": ["chair", "armchair", "stool", "seat"],
       "attributes": {
         "segment": "seating"
@@ -14,6 +15,7 @@
     {
       "id": "table",
       "label": "Table / Desk",
+      "itemCategoryName": "HOME_GOOD",
       "tokens": ["table", "desk", "dining", "work table"],
       "attributes": {
         "segment": "surface"
@@ -22,6 +24,7 @@
     {
       "id": "sofa",
       "label": "Sofa / Couch",
+      "itemCategoryName": "HOME_GOOD",
       "tokens": ["sofa", "couch", "loveseat", "sectional"],
       "attributes": {
         "segment": "seating"
@@ -30,6 +33,7 @@
     {
       "id": "lighting",
       "label": "Lighting",
+      "itemCategoryName": "HOME_GOOD",
       "tokens": ["lamp", "lighting", "lantern", "light"],
       "attributes": {
         "segment": "lighting"
@@ -38,6 +42,7 @@
     {
       "id": "decor",
       "label": "Decor / Wall Art",
+      "itemCategoryName": "HOME_GOOD",
       "tokens": ["art", "painting", "poster", "frame", "decor"],
       "attributes": {
         "segment": "decor"
