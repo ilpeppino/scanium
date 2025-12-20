@@ -3,6 +3,7 @@ package com.scanium.core.tracking
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.ml.ItemCategory
+import kotlin.math.floor
 import kotlin.math.sqrt
 import kotlin.random.Random
 
@@ -32,6 +33,7 @@ class ObjectTracker(
 
     // Active candidates being tracked, keyed by internalId
     private val candidates = mutableMapOf<String, ObjectCandidate>()
+    private val spatialIndex = SpatialGridIndex(config.gridCellSize)
 
     // Frame counter for tracking temporal information
     private var currentFrame: Long = 0
@@ -82,6 +84,7 @@ class ObjectTracker(
                     boxArea = detection.normalizedBoxArea
                 )
                 matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
+                spatialIndex.upsert(matchedCandidate.internalId, matchedCandidate.indexBoundingBox())
 
                 matchedCandidates.add(matchedCandidate.internalId)
 
@@ -97,8 +100,11 @@ class ObjectTracker(
                 }
             } else {
                 // Create new candidate
+                enforceCandidateLimit()
+
                 val newCandidate = createCandidate(detection)
                 candidates[newCandidate.internalId] = newCandidate
+                spatialIndex.upsert(newCandidate.internalId, newCandidate.indexBoundingBox())
                 matchedCandidates.add(newCandidate.internalId)
 
                 logger.i(TAG, "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})")
@@ -141,7 +147,15 @@ class ObjectTracker(
         var bestMatch: ObjectCandidate? = null
         var bestScore = 0f
 
-        for (candidate in candidates.values) {
+        val searchBox = (detection.boundingBoxNorm ?: detection.boundingBox).toIndexRect()
+        val candidateIds = if (candidates.size <= config.linearScanThreshold) {
+            candidates.keys
+        } else {
+            spatialIndex.query(searchBox).ifEmpty { candidates.keys }
+        }
+
+        for (candidateId in candidateIds) {
+            val candidate = candidates[candidateId] ?: continue
             // Skip if last seen too long ago
             if (currentFrame - candidate.lastSeenFrame > config.maxFrameGap) {
                 continue
@@ -245,6 +259,24 @@ class ObjectTracker(
         )
     }
 
+    private fun enforceCandidateLimit() {
+        if (candidates.size < config.maxTrackedCandidates) {
+            return
+        }
+
+        val toRemove = candidates.values.minWithOrNull(
+            compareBy<ObjectCandidate> { it.lastSeenFrame }.thenBy { it.maxConfidence }
+        ) ?: return
+
+        candidates.remove(toRemove.internalId)
+        confirmedIds.remove(toRemove.internalId)
+        spatialIndex.remove(toRemove.internalId)
+        logger.d(
+            TAG,
+            "Evicting candidate ${toRemove.internalId} to maintain maxTrackedCandidates=${config.maxTrackedCandidates}"
+        )
+    }
+
     /**
      * Generate a stable ID for a detection without a trackingId.
      *
@@ -306,6 +338,7 @@ class ObjectTracker(
         for (id in toRemove) {
             candidates.remove(id)
             confirmedIds.remove(id)
+            spatialIndex.remove(id)
         }
     }
 
@@ -319,6 +352,7 @@ class ObjectTracker(
         candidates.clear()
         confirmedIds.clear()
         currentFrame = 0
+        spatialIndex.clear()
     }
 
     /**
@@ -371,7 +405,16 @@ data class TrackerConfig(
     val minMatchScore: Float = 0.3f,
 
     /** Frames without detection before candidate expires */
-    val expiryFrames: Int = 10
+    val expiryFrames: Int = 10,
+
+    /** Maximum number of candidates to track concurrently */
+    val maxTrackedCandidates: Int = 64,
+
+    /** Grid cell size (in normalized units) for spatial indexing */
+    val gridCellSize: Float = 0.25f,
+
+    /** Fall back to linear scan under this candidate count */
+    val linearScanThreshold: Int = 8,
 )
 
 /**
@@ -382,3 +425,71 @@ data class TrackerStats(
     val confirmedCandidates: Int,
     val currentFrame: Long
 )
+
+private fun ObjectCandidate.indexBoundingBox(): NormalizedRect {
+    return (boundingBoxNorm ?: boundingBox).toIndexRect()
+}
+
+private fun NormalizedRect.toIndexRect(): NormalizedRect {
+    return if (isNormalized()) this else clampToUnit()
+}
+
+private class SpatialGridIndex(private val cellSize: Float) {
+    private val cells = mutableMapOf<GridCell, MutableSet<String>>()
+    private val candidateCells = mutableMapOf<String, Set<GridCell>>()
+
+    fun upsert(id: String, rect: NormalizedRect) {
+        remove(id)
+        val newCells = computeCells(rect)
+        for (cell in newCells) {
+            val ids = cells.getOrPut(cell) { mutableSetOf() }
+            ids.add(id)
+        }
+        candidateCells[id] = newCells
+    }
+
+    fun query(rect: NormalizedRect): Set<String> {
+        val result = mutableSetOf<String>()
+        val targetCells = computeCells(rect)
+        for (cell in targetCells) {
+            cells[cell]?.let { result.addAll(it) }
+        }
+        return result
+    }
+
+    fun remove(id: String) {
+        val existingCells = candidateCells.remove(id) ?: return
+        for (cell in existingCells) {
+            cells[cell]?.let {
+                it.remove(id)
+                if (it.isEmpty()) {
+                    cells.remove(cell)
+                }
+            }
+        }
+    }
+
+    fun clear() {
+        cells.clear()
+        candidateCells.clear()
+    }
+
+    private fun computeCells(rect: NormalizedRect): Set<GridCell> {
+        val safeCellSize = cellSize.coerceAtLeast(0.05f)
+        val clamped = rect.toIndexRect()
+        val startX = floor(clamped.left / safeCellSize).toInt()
+        val endX = floor(clamped.right / safeCellSize).toInt()
+        val startY = floor(clamped.top / safeCellSize).toInt()
+        val endY = floor(clamped.bottom / safeCellSize).toInt()
+
+        val result = mutableSetOf<GridCell>()
+        for (x in startX..endX) {
+            for (y in startY..endY) {
+                result.add(GridCell(x, y))
+            }
+        }
+        return result
+    }
+
+    private data class GridCell(val x: Int, val y: Int)
+}
