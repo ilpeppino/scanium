@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -58,6 +59,14 @@ import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+/**
+ * Custom saver for ScanMode enum to persist across configuration changes.
+ */
+private val ScanModeSaver = Saver<ScanMode, String>(
+    save = { it.name },
+    restore = { savedValue -> ScanMode.valueOf(savedValue) }
+)
 
 /**
  * Camera screen with full-screen preview and Android-style shutter button.
@@ -105,8 +114,10 @@ fun CameraScreen(
     var isCameraBinding by remember { mutableStateOf(false) }
     var rebindAttempts by remember { mutableStateOf(0) }
 
-    // Current scan mode
-    var currentScanMode by remember { mutableStateOf(ScanMode.OBJECT_DETECTION) }
+    // Current scan mode (persisted across configuration changes)
+    var currentScanMode by rememberSaveable(stateSaver = ScanModeSaver) {
+        mutableStateOf(ScanMode.OBJECT_DETECTION)
+    }
 
     // Flash animation state for mode transitions
     var showFlash by remember { mutableStateOf(false) }
@@ -613,6 +624,23 @@ private fun BoxScope.CameraOverlay(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
+        // Current mode indicator for clarity
+        Text(
+            text = when (scanMode) {
+                ScanMode.OBJECT_DETECTION -> "Object Detection"
+                ScanMode.BARCODE -> "Barcode Scanner"
+                ScanMode.DOCUMENT_TEXT -> "Text Recognition"
+            },
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.9f),
+            modifier = Modifier
+                .background(
+                    Color.Black.copy(alpha = 0.4f),
+                    shape = MaterialTheme.shapes.small
+                )
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+        )
+
         // Mode switcher (always visible)
         ModeSwitcher(
             currentMode = scanMode,
