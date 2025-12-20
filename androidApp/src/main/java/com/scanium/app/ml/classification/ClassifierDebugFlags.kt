@@ -1,0 +1,6 @@
+package com.scanium.app.ml.classification
+
+object ClassifierDebugFlags {
+    @Volatile
+    var saveCloudCropsEnabled: Boolean = false
+}
