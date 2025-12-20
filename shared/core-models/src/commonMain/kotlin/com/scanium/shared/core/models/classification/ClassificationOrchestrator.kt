@@ -45,7 +45,8 @@ class ClassificationOrchestrator(
     private val scope: CoroutineScope,
     private val logger: Logger = ConsoleLogger(),
     private val maxConcurrency: Int = 2,
-    private val maxRetries: Int = 3
+    private val maxRetries: Int = 3,
+    private val delayProvider: suspend (Long) -> Unit = { delay(it) }
 ) {
     companion object {
         private const val TAG = "ClassificationOrchestrator"
@@ -235,7 +236,7 @@ class ClassificationOrchestrator(
             if (attempt > 0) {
                 val delayMs = calculateBackoffDelay(attempt)
                 logger.d(TAG, "Retry attempt $attempt for $itemId after ${delayMs}ms")
-                delay(delayMs)
+                delayProvider(delayMs)
             }
 
             val result = classifier.classify(

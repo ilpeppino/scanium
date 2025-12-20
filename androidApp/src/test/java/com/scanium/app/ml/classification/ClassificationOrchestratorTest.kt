@@ -27,7 +27,8 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this
+            scope = this,
+            delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-1")
@@ -64,7 +65,8 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this
+            scope = this,
+            delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-2")
@@ -88,7 +90,8 @@ class ClassificationOrchestratorTest {
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
             scope = this,
-            maxRetries = 3
+            maxRetries = 3,
+            delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-3")
@@ -112,7 +115,8 @@ class ClassificationOrchestratorTest {
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
             scope = this,
-            maxRetries = 3
+            maxRetries = 3,
+            delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-4")
@@ -135,7 +139,8 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this
+            scope = this,
+            delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-5")
@@ -159,7 +164,8 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this
+            scope = this,
+            delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-6")

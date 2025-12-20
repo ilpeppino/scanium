@@ -9,6 +9,7 @@ import com.scanium.shared.core.models.classification.Classifier
 import com.scanium.shared.core.models.classification.ClassificationOrchestrator as SharedOrchestrator
 import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -39,7 +40,8 @@ class ClassificationOrchestrator(
     cloudClassifier: ItemClassifier,
     private val scope: CoroutineScope,
     maxConcurrency: Int = 2,
-    maxRetries: Int = 3
+    maxRetries: Int = 3,
+    delayProvider: suspend (Long) -> Unit = { delay(it) }
 ) {
     // Adapt Android classifiers to portable Classifier interface
     private val portableOnDeviceClassifier: Classifier = ClassifierAdapter(
@@ -73,7 +75,8 @@ class ClassificationOrchestrator(
         scope = scope,
         logger = AndroidLogger(),
         maxConcurrency = maxConcurrency,
-        maxRetries = maxRetries
+        maxRetries = maxRetries,
+        delayProvider = delayProvider
     )
 
     /**
@@ -173,21 +176,12 @@ class ClassificationOrchestrator(
 
     /**
      * Convert shared ItemCategory to Android ItemCategory.
+     * Since com.scanium.app.ml.ItemCategory is a typealias for SharedItemCategory, they're the same type.
      */
     private fun convertToAndroidCategory(
         sharedCategory: com.scanium.shared.core.models.ml.ItemCategory
     ): com.scanium.app.ml.ItemCategory {
-        return when (sharedCategory) {
-            com.scanium.shared.core.models.ml.ItemCategory.BOOK -> com.scanium.app.ml.ItemCategory.BOOK
-            com.scanium.shared.core.models.ml.ItemCategory.ELECTRONIC -> com.scanium.app.ml.ItemCategory.ELECTRONIC
-            com.scanium.shared.core.models.ml.ItemCategory.BOTTLE -> com.scanium.app.ml.ItemCategory.BOTTLE
-            com.scanium.shared.core.models.ml.ItemCategory.CLOTHING -> com.scanium.app.ml.ItemCategory.CLOTHING
-            com.scanium.shared.core.models.ml.ItemCategory.TOY -> com.scanium.app.ml.ItemCategory.TOY
-            com.scanium.shared.core.models.ml.ItemCategory.FURNITURE -> com.scanium.app.ml.ItemCategory.FURNITURE
-            com.scanium.shared.core.models.ml.ItemCategory.SPORTS -> com.scanium.app.ml.ItemCategory.SPORTS
-            com.scanium.shared.core.models.ml.ItemCategory.HOME_GOOD -> com.scanium.app.ml.ItemCategory.HOME_GOOD
-            com.scanium.shared.core.models.ml.ItemCategory.UNKNOWN -> com.scanium.app.ml.ItemCategory.UNKNOWN
-        }
+        return sharedCategory
     }
 
     /**
