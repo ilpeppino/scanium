@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
@@ -28,6 +29,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -43,6 +45,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.BuildConfig
 import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
@@ -317,6 +320,12 @@ fun CameraScreen(
                         previewSize = previewSize
                     )
                 }
+
+                // Cloud configuration status banner
+                ConfigurationStatusBanner(
+                    classificationMode = classificationMode,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
 
                 // Overlay UI
                 CameraOverlay(
@@ -997,4 +1006,54 @@ private fun ModelErrorDialog(
             }
         }
     )
+}
+
+/**
+ * Configuration status banner shown when cloud mode is enabled but not configured.
+ *
+ * Surfaces the configuration requirement from DEV_GUIDE.md to avoid accidental
+ * network use once API keys are provided.
+ */
+@Composable
+private fun ConfigurationStatusBanner(
+    classificationMode: ClassificationMode,
+    modifier: Modifier = Modifier
+) {
+    val isCloudConfigured = BuildConfig.SCANIUM_API_BASE_URL.isNotBlank()
+    val showBanner = classificationMode == ClassificationMode.CLOUD && !isCloudConfigured
+
+    if (showBanner) {
+        Surface(
+            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.95f),
+            tonalElevation = 4.dp,
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(top = 72.dp, start = 16.dp, end = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        text = "Cloud mode not configured",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Text(
+                        text = "Classification will use on-device processing until SCANIUM_API_BASE_URL is configured.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+    }
 }
