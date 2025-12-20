@@ -8,6 +8,8 @@ import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.YuvImage
 import android.net.Uri
+import android.os.SystemClock
+import android.os.Trace
 import android.util.Log
 import android.util.Size
 import androidx.camera.core.*
@@ -97,6 +99,12 @@ class CameraXManager(
 
     // Model initialization flag
     private var modelInitialized = false
+
+    // Performance metrics tracking
+    private var sessionStartTime = 0L
+    private var totalFramesProcessed = 0
+    private var lastFpsReportTime = 0L
+    private var framesInWindow = 0
 
     /**
      * Ensures ML Kit models are downloaded and ready.
@@ -293,6 +301,12 @@ class CameraXManager(
         isScanning = true
         frameCounter = 0
 
+        // Initialize performance metrics
+        sessionStartTime = SystemClock.elapsedRealtime()
+        totalFramesProcessed = 0
+        lastFpsReportTime = sessionStartTime
+        framesInWindow = 0
+
         var lastAnalysisTime = 0L
         val analysisIntervalMs = 800L // Analyze every 800ms for better tracking
         var isProcessing = false // Prevent overlapping processing
@@ -304,6 +318,8 @@ class CameraXManager(
             candidateTimeoutMs = 3000L,
             analysisIntervalMs = analysisIntervalMs
         )
+
+        Log.i(TAG, "[METRICS] Camera session started, tracking analyzer latency and frame rate")
 
         // Clear any previous analyzer to avoid stale callbacks
         imageAnalysis?.clearAnalyzer()
@@ -322,6 +338,11 @@ class CameraXManager(
                 lastAnalysisTime = currentTime
                 isProcessing = true
                 frameCounter++
+
+                // [METRICS] Start analyzer latency measurement
+                val frameReceiveTime = SystemClock.elapsedRealtime()
+                Trace.beginSection("CameraXManager.analyzeFrame")
+
                 Log.d(TAG, "startScanning: Processing frame ***REMOVED***$frameCounter ${imageProxy.width}x${imageProxy.height}")
 
                 detectionScope.launch {
@@ -348,12 +369,32 @@ class CameraXManager(
                             onDetectionResult(detections)
                         }
 
+                        // [METRICS] Calculate analyzer latency
+                        val analyzerLatencyMs = SystemClock.elapsedRealtime() - frameReceiveTime
+                        totalFramesProcessed++
+                        framesInWindow++
+
+                        Log.i(TAG, "[METRICS] Frame ***REMOVED***$frameCounter analyzer latency: ${analyzerLatencyMs}ms")
+
+                        // [METRICS] Calculate and log frame rate every 5 seconds
+                        val now = SystemClock.elapsedRealtime()
+                        val timeSinceLastReport = now - lastFpsReportTime
+                        if (timeSinceLastReport >= 5000L) {
+                            val fps = (framesInWindow * 1000.0) / timeSinceLastReport
+                            val avgFps = (totalFramesProcessed * 1000.0) / (now - sessionStartTime)
+                            Log.i(TAG, "[METRICS] Frame rate: current=${String.format("%.2f", fps)} fps, " +
+                                "session_avg=${String.format("%.2f", avgFps)} fps, total_frames=$totalFramesProcessed")
+                            lastFpsReportTime = now
+                            framesInWindow = 0
+                        }
+
                         // Periodic stats logging (every 10 frames)
                         if (frameCounter % 10 == 0) {
                             val stats = objectTracker.getStats()
                             Log.i(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
                         }
                     } finally {
+                        Trace.endSection()
                         isProcessing = false
                     }
                 }
