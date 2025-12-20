@@ -11,9 +11,9 @@
 # Core Android & Kotlin
 # =============================================================================
 
-# Keep Android framework classes
--keep class android.** { *; }
--keep class androidx.** { *; }
+# Avoid broad keep rules that block obfuscation
+# Framework/AndroidX classes are handled by the default Android rules; only app-specific
+# entry points are kept below.
 
 # Keep Kotlin coroutines
 -keep class kotlinx.coroutines.** { *; }
