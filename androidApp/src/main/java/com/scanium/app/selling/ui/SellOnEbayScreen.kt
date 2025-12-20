@@ -138,7 +138,7 @@ private fun ListingDraftCard(
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
-                        value = draftState.draft.price.toString(),
+                        value = String.format("%.2f", draftState.draft.price),
                         onValueChange = onPriceChanged,
                         label = { Text("Price (${draftState.draft.currency})") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

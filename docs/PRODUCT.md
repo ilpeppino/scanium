@@ -14,5 +14,5 @@
 
 ***REMOVED******REMOVED*** Feature flags / modes
 - Scan modes: object, barcode/QR, document (switchable in camera UI).
-- Cloud classification pipeline exists in `ml/classification/CloudClassifier.kt` but requires backend credentials; TODO/VERIFY before enabling in builds.
+- Cloud classification pipeline lives in `ml/classification/CloudClassifier.kt` and activates only when `SCANIUM_API_BASE_URL`/`SCANIUM_API_KEY` BuildConfig values are provided; otherwise on-device labels are used.
 - No other runtime feature-flag system is present; changes are code-driven.

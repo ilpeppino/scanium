@@ -11,9 +11,9 @@
 ***REMOVED*** Core Android & Kotlin
 ***REMOVED*** =============================================================================
 
-***REMOVED*** Keep Android framework classes
--keep class android.** { *; }
--keep class androidx.** { *; }
+***REMOVED*** Avoid broad keep rules that block obfuscation
+***REMOVED*** Framework/AndroidX classes are handled by the default Android rules; only app-specific
+***REMOVED*** entry points are kept below.
 
 ***REMOVED*** Keep Kotlin coroutines
 -keep class kotlinx.coroutines.** { *; }

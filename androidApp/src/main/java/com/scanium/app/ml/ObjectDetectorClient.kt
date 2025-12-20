@@ -46,7 +46,7 @@ class ObjectDetectorClient {
         private const val TAG = "ObjectDetectorClient"
         private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
         private const val MAX_THUMBNAIL_DIMENSION_PX = 512
-        private const val BOUNDING_BOX_TIGHTEN_RATIO = 0.08f
+        private const val BOUNDING_BOX_TIGHTEN_RATIO = 0.12f
 
         // Flag to track if model download has been checked
         @Volatile
@@ -689,8 +689,20 @@ private fun Rect.tighten(insetRatio: Float, frameWidth: Int, frameHeight: Int): 
         )
     }
 
-    val insetX = (currentWidth * insetRatio / 2f).roundToInt().coerceAtMost(currentWidth / 2 - 1)
-    val insetY = (currentHeight * insetRatio / 2f).roundToInt().coerceAtMost(currentHeight / 2 - 1)
+    val widthRatio = currentWidth.toFloat() / frameWidth.toFloat()
+    val heightRatio = currentHeight.toFloat() / frameHeight.toFloat()
+    val dominantRatio = maxOf(widthRatio, heightRatio)
+    val adaptiveBoost = when {
+        dominantRatio > 0.65f -> 0.08f
+        dominantRatio > 0.45f -> 0.05f
+        dominantRatio > 0.30f -> 0.03f
+        dominantRatio < 0.12f -> -0.04f
+        else -> 0f
+    }
+    val effectiveRatio = (insetRatio + adaptiveBoost).coerceIn(0f, 0.35f)
+
+    val insetX = (currentWidth * effectiveRatio / 2f).roundToInt().coerceAtMost(currentWidth / 2 - 1)
+    val insetY = (currentHeight * effectiveRatio / 2f).roundToInt().coerceAtMost(currentHeight / 2 - 1)
 
     val newLeft = (left + insetX).coerceIn(0, frameWidth - 1)
     val newTop = (top + insetY).coerceIn(0, frameHeight - 1)

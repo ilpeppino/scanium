@@ -103,7 +103,7 @@ export class ClassifierService {
     console.debug(
       `[ClassifierService] requestId=${requestId} domainCategory=${
         mapping.domainCategoryId ?? 'none'
-      } confidence=${mapping.confidence ?? 'n/a'} reason=${mapping.debug.reason}`
+      } label=${mapping.label ?? 'n/a'} confidence=${mapping.confidence ?? 'n/a'} reason=${mapping.debug.reason}`
     );
   }
 }

@@ -63,7 +63,7 @@ class ClassificationOrchestrator(
             }
         }.stateIn(
             scope = scope,
-            started = SharingStarted.Eagerly,
+            started = SharingStarted.Lazily,
             initialValue = com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
         )
 

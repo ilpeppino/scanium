@@ -133,6 +133,7 @@ fun CameraScreen(
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
     val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
     val captureResolution by cameraViewModel.captureResolution.collectAsState()
+    val saveCloudCrops by classificationModeViewModel.saveCloudCrops.collectAsState()
     var previousClassificationMode by remember { mutableStateOf<ClassificationMode?>(null) }
 
     // Detection overlay state
@@ -486,7 +487,9 @@ fun CameraScreen(
                     classificationMode = classificationMode,
                     onProcessingModeChange = classificationModeViewModel::updateMode,
                     captureResolution = captureResolution,
-                    onResolutionChange = cameraViewModel::updateCaptureResolution
+                    onResolutionChange = cameraViewModel::updateCaptureResolution,
+                    saveCloudCropsEnabled = saveCloudCrops,
+                    onSaveCloudCropsChange = classificationModeViewModel::updateSaveCloudCrops
                 )
             }
             else -> {

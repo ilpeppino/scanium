@@ -5,6 +5,7 @@ import fastifyMultipart from '@fastify/multipart';
 import { Config } from './config/index.js';
 import { errorHandlerPlugin } from './infra/http/plugins/error-handler.js';
 import { corsPlugin } from './infra/http/plugins/cors.js';
+import { csrfProtectionPlugin } from './infra/http/plugins/csrf.js';
 import { securityPlugin } from './infra/http/plugins/security.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { ebayAuthRoutes } from './modules/auth/ebay/routes.js';
@@ -55,6 +56,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   await app.register(fastifyCookie, {
     secret: config.sessionSigningSecret,
   });
+
+  // Register CSRF protection
+  await app.register(csrfProtectionPlugin, { config });
 
   // Register health routes
   await app.register(healthRoutes);
