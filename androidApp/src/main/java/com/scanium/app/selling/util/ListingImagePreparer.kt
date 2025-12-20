@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import android.util.LruCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -35,6 +36,13 @@ class ListingImagePreparer(private val context: Context) {
 
         // File paths
         private const val LISTING_IMAGES_DIR = "listing_images"
+        private const val MEMORY_CACHE_ENTRIES = 8
+    }
+
+    private val outputDir = File(context.cacheDir, LISTING_IMAGES_DIR)
+
+    private val memoryCache = object : LruCache<String, PrepareResult.Success>(MEMORY_CACHE_ENTRIES) {
+        override fun sizeOf(key: String, value: PrepareResult.Success): Int = 1
     }
 
     /**
@@ -76,6 +84,18 @@ class ListingImagePreparer(private val context: Context) {
         Log.i(TAG, "║ PREPARING LISTING IMAGE: $itemId")
         Log.i(TAG, "║ fullImageUri: $fullImageUri")
         Log.i(TAG, "║ thumbnail: ${thumbnail?.width}x${thumbnail?.height}")
+
+        getCachedResult(itemId)?.let { cached ->
+            val memoryResult = cached.copy(source = "memory_cache:${cached.source}")
+            logResult(memoryResult)
+            return@withContext memoryResult
+        }
+
+        loadFromDiskCache(itemId)?.let { cached ->
+            cacheResult(itemId, cached)
+            logResult(cached)
+            return@withContext cached
+        }
 
         // Try full image URI first
         if (fullImageUri != null) {
@@ -153,7 +173,6 @@ class ListingImagePreparer(private val context: Context) {
         bitmap: Bitmap,
         source: String
     ): PrepareResult {
-        val outputDir = File(context.cacheDir, LISTING_IMAGES_DIR)
         if (!outputDir.exists()) {
             outputDir.mkdirs()
         }
@@ -168,7 +187,7 @@ class ListingImagePreparer(private val context: Context) {
             val uri = Uri.fromFile(outputFile)
             val fileSize = outputFile.length()
 
-            PrepareResult.Success(
+            val success = PrepareResult.Success(
                 uri = uri,
                 width = bitmap.width,
                 height = bitmap.height,
@@ -176,9 +195,42 @@ class ListingImagePreparer(private val context: Context) {
                 quality = JPEG_QUALITY,
                 source = source
             )
+            cacheResult(itemId, success)
+            success
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save bitmap: ${e.message}")
             PrepareResult.Failure("Failed to save image: ${e.message}")
+        }
+    }
+
+    private fun loadFromDiskCache(itemId: String): PrepareResult.Success? {
+        if (!outputDir.exists()) return null
+        val outputFile = File(outputDir, "${itemId}_listing.jpg")
+        if (!outputFile.exists()) return null
+
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(outputFile.absolutePath, options)
+        if (options.outWidth <= 0 || options.outHeight <= 0) return null
+
+        return PrepareResult.Success(
+            uri = Uri.fromFile(outputFile),
+            width = options.outWidth,
+            height = options.outHeight,
+            fileSizeBytes = outputFile.length(),
+            quality = JPEG_QUALITY,
+            source = "disk_cache"
+        )
+    }
+
+    private fun cacheResult(itemId: String, result: PrepareResult.Success) {
+        synchronized(memoryCache) {
+            memoryCache.put(itemId, result)
+        }
+    }
+
+    private fun getCachedResult(itemId: String): PrepareResult.Success? {
+        return synchronized(memoryCache) {
+            memoryCache.get(itemId)
         }
     }
 
@@ -209,7 +261,6 @@ class ListingImagePreparer(private val context: Context) {
      * Call this periodically or after posting completes.
      */
     fun cleanupOldImages(maxAgeMs: Long = 24 * 60 * 60 * 1000L) {
-        val outputDir = File(context.cacheDir, LISTING_IMAGES_DIR)
         if (!outputDir.exists()) return
 
         val now = System.currentTimeMillis()
