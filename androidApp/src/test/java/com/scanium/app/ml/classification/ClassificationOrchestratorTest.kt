@@ -7,8 +7,13 @@ import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -21,13 +26,14 @@ class ClassificationOrchestratorTest {
 
     @Test
     fun whenClassificationInFlight_duplicateRequestsAreSkipped() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
         val modeFlow = MutableStateFlow(ClassificationMode.ON_DEVICE)
         val classifier = SuspendedClassifier()
         val orchestrator = ClassificationOrchestrator(
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = testScope,
             delayProvider = { }
         )
 
@@ -36,7 +42,7 @@ class ClassificationOrchestratorTest {
         orchestrator.classify(listOf(item)) { _, _ -> }
         orchestrator.classify(listOf(item)) { _, _ -> }
 
-        runCurrent()
+        advanceUntilIdle()
 
         assertThat(classifier.callCount).isEqualTo(1)
 
@@ -48,48 +54,54 @@ class ClassificationOrchestratorTest {
                 mode = ClassificationMode.ON_DEVICE
             )
         )
-        runCurrent()
+        advanceUntilIdle()
 
         // Cached result prevents any additional invocations
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
 
         assertThat(classifier.callCount).isEqualTo(1)
+
+        testScope.cancel()
     }
 
     @Test
     fun whenClassificationFails_failureIsCachedAndNotRetried() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
         val modeFlow = MutableStateFlow(ClassificationMode.ON_DEVICE)
         val classifier = FailingClassifier()
         val orchestrator = ClassificationOrchestrator(
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = testScope,
             delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-2")
 
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
 
         // Second trigger should be ignored because the failure is cached
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
 
         assertThat(classifier.callCount).isEqualTo(1)
+
+        testScope.cancel()
     }
 
     @Test
     fun whenRetryableError_classificationIsRetried() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
         val modeFlow = MutableStateFlow(ClassificationMode.CLOUD)
         val classifier = RetryableErrorClassifier()
         val orchestrator = ClassificationOrchestrator(
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = testScope,
             maxRetries = 3,
             delayProvider = { }
         )
@@ -100,21 +112,24 @@ class ClassificationOrchestratorTest {
         orchestrator.classify(listOf(item)) { _, result ->
             resultReceived = result
         }
-        runCurrent()
+        advanceUntilIdle()
 
         // Ensure the orchestrator attempted classification
         assertThat(classifier.callCount).isAtLeast(1)
+
+        testScope.cancel()
     }
 
     @Test
     fun whenRetrySucceeds_resultIsReturned() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
         val modeFlow = MutableStateFlow(ClassificationMode.CLOUD)
         val classifier = RetryThenSucceedClassifier()
         val orchestrator = ClassificationOrchestrator(
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = testScope,
             maxRetries = 3,
             delayProvider = { }
         )
@@ -125,21 +140,24 @@ class ClassificationOrchestratorTest {
         orchestrator.classify(listOf(item)) { _, result ->
             resultReceived = result
         }
-        runCurrent()
+        advanceUntilIdle()
 
         // Should have attempted classification
         assertThat(classifier.callCount).isAtLeast(1)
+
+        testScope.cancel()
     }
 
     @Test
     fun whenManualRetry_itemIsReclassified() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
         val modeFlow = MutableStateFlow(ClassificationMode.CLOUD)
         val classifier = CountingClassifier()
         val orchestrator = ClassificationOrchestrator(
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = testScope,
             delayProvider = { }
         )
 
@@ -147,31 +165,34 @@ class ClassificationOrchestratorTest {
 
         // Initial classification
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(1)
 
         // Manual retry clears cache and reclassifies
         orchestrator.retry("agg-5", item) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(2)
+
+        testScope.cancel()
     }
 
     @Test
     fun whenResetCalled_cacheIsCleared() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
         val modeFlow = MutableStateFlow(ClassificationMode.ON_DEVICE)
         val classifier = CountingClassifier()
         val orchestrator = ClassificationOrchestrator(
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = testScope,
             delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-6")
 
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(1)
         assertThat(orchestrator.hasResult("agg-6")).isTrue()
 
@@ -180,8 +201,10 @@ class ClassificationOrchestratorTest {
 
         // After reset, can classify again
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(2)
+
+        testScope.cancel()
     }
 
     private fun createAggregatedItem(id: String): AggregatedItem {
