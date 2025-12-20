@@ -124,6 +124,38 @@ class ItemAggregator(
     }
 
     /**
+     * Seed the aggregator from persisted ScannedItems without re-aggregating.
+     *
+     * This preserves stable IDs across app restarts while avoiding unintended merges.
+     */
+    @Synchronized
+    fun seedFromScannedItems(items: List<ScannedItem>) {
+        if (items.isEmpty()) return
+
+        for (item in items) {
+            val aggregatedItem = AggregatedItem(
+                aggregatedId = item.id,
+                category = item.category,
+                labelText = item.labelText ?: "",
+                boundingBox = item.boundingBox ?: NormalizedRect(0f, 0f, 0f, 0f),
+                thumbnail = item.thumbnailRef ?: item.thumbnail,
+                maxConfidence = item.confidence,
+                averageConfidence = item.confidence,
+                priceRange = item.priceRange,
+                mergeCount = 1,
+                firstSeenTimestamp = item.timestamp,
+                lastSeenTimestamp = item.timestamp,
+                sourceDetectionIds = mutableSetOf(item.id),
+                classificationStatus = item.classificationStatus,
+                domainCategoryId = item.domainCategoryId,
+                classificationErrorMessage = item.classificationErrorMessage,
+                classificationRequestId = item.classificationRequestId
+            )
+            aggregatedItems[item.id] = aggregatedItem
+        }
+    }
+
+    /**
      * Find the best matching aggregated item for a detection.
      *
      * @return Pair of (best matching item or null, similarity score)

@@ -1,0 +1,87 @@
+package com.scanium.app.items.persistence
+
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
+
+@Entity(
+    tableName = "scanned_item_history",
+    indices = [
+        Index(value = ["itemId", "changedAt"])
+    ]
+)
+data class ScannedItemHistoryEntity(
+    @PrimaryKey(autoGenerate = true) val changeId: Long = 0L,
+    val itemId: String,
+    val changedAt: Long,
+    val snapshotHash: String,
+    val category: String,
+    val priceLow: Double,
+    val priceHigh: Double,
+    val confidence: Float,
+    val timestamp: Long,
+    val labelText: String?,
+    val recognizedText: String?,
+    val barcodeValue: String?,
+    val boundingBoxLeft: Float?,
+    val boundingBoxTop: Float?,
+    val boundingBoxRight: Float?,
+    val boundingBoxBottom: Float?,
+    val thumbnailBytes: ByteArray?,
+    val thumbnailMimeType: String?,
+    val thumbnailWidth: Int?,
+    val thumbnailHeight: Int?,
+    val thumbnailRefBytes: ByteArray?,
+    val thumbnailRefMimeType: String?,
+    val thumbnailRefWidth: Int?,
+    val thumbnailRefHeight: Int?,
+    val fullImageUri: String?,
+    val fullImagePath: String?,
+    val listingStatus: String,
+    val listingId: String?,
+    val listingUrl: String?,
+    val classificationStatus: String,
+    val domainCategoryId: String?,
+    val classificationErrorMessage: String?,
+    val classificationRequestId: String?
+)
+
+fun ScannedItemEntity.toHistoryEntity(
+    changedAt: Long,
+    snapshotHash: String
+): ScannedItemHistoryEntity {
+    return ScannedItemHistoryEntity(
+        itemId = id,
+        changedAt = changedAt,
+        snapshotHash = snapshotHash,
+        category = category,
+        priceLow = priceLow,
+        priceHigh = priceHigh,
+        confidence = confidence,
+        timestamp = timestamp,
+        labelText = labelText,
+        recognizedText = recognizedText,
+        barcodeValue = barcodeValue,
+        boundingBoxLeft = boundingBoxLeft,
+        boundingBoxTop = boundingBoxTop,
+        boundingBoxRight = boundingBoxRight,
+        boundingBoxBottom = boundingBoxBottom,
+        thumbnailBytes = thumbnailBytes,
+        thumbnailMimeType = thumbnailMimeType,
+        thumbnailWidth = thumbnailWidth,
+        thumbnailHeight = thumbnailHeight,
+        thumbnailRefBytes = thumbnailRefBytes,
+        thumbnailRefMimeType = thumbnailRefMimeType,
+        thumbnailRefWidth = thumbnailRefWidth,
+        thumbnailRefHeight = thumbnailRefHeight,
+        fullImageUri = fullImageUri,
+        fullImagePath = fullImagePath,
+        listingStatus = listingStatus,
+        listingId = listingId,
+        listingUrl = listingUrl,
+        classificationStatus = classificationStatus,
+        domainCategoryId = domainCategoryId,
+        classificationErrorMessage = classificationErrorMessage,
+        classificationRequestId = classificationRequestId
+    )
+}
