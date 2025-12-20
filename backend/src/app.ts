@@ -1,7 +1,6 @@
 import Fastify, { FastifyInstance } from 'fastify';
 import formbody from '@fastify/formbody';
 import fastifyCookie from '@fastify/cookie';
-import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyMultipart from '@fastify/multipart';
 import { Config } from './config/index.js';
 import { errorHandlerPlugin } from './infra/http/plugins/error-handler.js';
@@ -38,18 +37,6 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Register security plugin (HTTPS enforcement, security headers)
   await app.register(securityPlugin, { config });
-
-  await app.register(fastifyRateLimit, {
-    max: config.classifier.rateLimitPerMinute,
-    timeWindow: '1 minute',
-    keyGenerator: (req) => {
-      const header = req.headers['x-api-key'];
-      if (Array.isArray(header)) return header[0] ?? 'anon';
-      return header ?? req.ip;
-    },
-    allowList: ['/health', '/healthz', '/readyz'],
-    ban: 0,
-  });
 
   await app.register(fastifyMultipart, {
     limits: {
