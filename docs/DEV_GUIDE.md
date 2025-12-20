@@ -5,7 +5,7 @@
 - Android Studio with Android SDK + emulator or physical device.
 - `local.properties` with `sdk.dir=...` (copy from `local.properties.example`).
 
-## Cloud Classification Setup (Required for Phase 9+)
+## Cloud Classification Setup (config-driven)
 
 Scanium uses cloud classification by default to identify items. To enable this feature:
 
@@ -19,7 +19,7 @@ Scanium uses cloud classification by default to identify items. To enable this f
    ```
 
 2. **Backend requirements**:
-   - The backend must implement `POST /v1/classify` endpoint (see `backend/` for reference implementation)
+   - The backend must implement `POST /v1/classify` endpoint (see archived backend docs under `docs/_archive/2025-12/backend/` for reference)
    - Accepts multipart/form-data with `image` (JPEG) and `domainPackId` fields
    - Returns JSON with `domainCategoryId`, `confidence`, `label`, `attributes`, `requestId`
 
@@ -40,7 +40,7 @@ Scanium uses cloud classification by default to identify items. To enable this f
 ## Local build & test
 
 ### With Android SDK (Workstation / Android Studio)
-- `./build.sh assembleDebug` or `./gradlew assembleDebug` – build APK.
+- `./scripts/build.sh assembleDebug` or `./gradlew assembleDebug` – build APK.
 - `./gradlew installDebug` – install on a connected device/emulator.
 - `./gradlew test` – JVM unit tests (fast path).
 - `./gradlew connectedAndroidTest` – instrumented/Compose UI tests (device required).
@@ -57,7 +57,7 @@ Scanium uses cloud classification by default to identify items. To enable this f
 ./gradlew prePushJvmCheck
 
 # Install git pre-push hook for automatic validation
-./hooks/install-hooks.sh
+./scripts/dev/install-hooks.sh
 ```
 
 **What works in containers:**
@@ -78,7 +78,12 @@ Scanium uses cloud classification by default to identify items. To enable this f
 3. Download `scanium-app-debug-apk` artifact from workflow run
 4. Install APK on device for testing
 
-See also `docs/BUILD_STABILITY.md` for detailed verification commands and `hooks/README.md` for pre-push validation setup.
+See also `hooks/README.md` for pre-push validation setup.
+
+### Codex container limitations (factual)
+- Android SDK/emulator are not available; JVM-only Gradle tasks are the safe path.
+- Networked device access (ADB) is unavailable; use CI artifacts for APKs.
+- Avoid installing system packages; rely on provided Gradle wrapper and scripts.
 
 ## Debugging tips
 - Use Logcat filters for tags like `CameraXManager`, `ObjectDetectorClient`, `CloudClassifier`, `ItemsViewModel`.

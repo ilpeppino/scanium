@@ -1,8 +1,9 @@
 # Gradle
-.gradle/
-build/
-app/build/
-androidApp/
+/.gradle/
+**/build/
+
+# Android app module (keep sources tracked; ignore outputs only)
+/androidApp/build/
 
 # IDE & tooling
 .idea/
@@ -10,7 +11,7 @@ androidApp/
 .DS_Store
 
 # Android/NDK intermediates
-.cxx/
+/.cxx/
 local.properties
 captures/
 
@@ -18,9 +19,16 @@ captures/
 *.keystore
 *.jks
 
-# log files
+# Logs and temp files
+*.log
 crash.log
-tombstone_23
-/androidApp/
+tombstone_*
+
+# Local-only Gradle overrides
 /.gradle-local/
+
+# Node
 node_modules
+
+# Temporary working directory
+/tmp/

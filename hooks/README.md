@@ -26,7 +26,7 @@ The pre-push hook runs lightweight JVM-only validation before pushing to remote.
 Run the installation script once after cloning:
 
 ```bash
-./hooks/install-hooks.sh
+./scripts/dev/install-hooks.sh
 ```
 
 ### Manual Testing
