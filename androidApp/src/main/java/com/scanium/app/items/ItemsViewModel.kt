@@ -335,11 +335,14 @@ class ItemsViewModel(
 
             if (pendingItems.isEmpty()) return@launch
 
-            // Mark items as PENDING before classification (on main thread)
-            pendingItems.forEach { item ->
-                item.classificationStatus = "PENDING"
+            // Mark items as PENDING using thread-safe method
+            val pendingIds = pendingItems.map { it.aggregatedId }
+            itemAggregator.markClassificationPending(pendingIds)
+
+            // Update UI on main dispatcher
+            withContext(Dispatchers.Main) {
+                _items.value = itemAggregator.getScannedItems()
             }
-            _items.value = itemAggregator.getScannedItems()
 
             classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
                 val boxArea = aggregatedItem.boundingBox.area
@@ -350,6 +353,7 @@ class ItemsViewModel(
                     aggregatedItem.enhancedCategory ?: aggregatedItem.category
                 }
 
+                // Apply classification using thread-safe methods
                 itemAggregator.applyEnhancedClassification(
                     aggregatedId = aggregatedItem.aggregatedId,
                     category = categoryOverride,
@@ -357,18 +361,21 @@ class ItemsViewModel(
                     priceRange = priceRange
                 )
 
-                // Update classification status based on result
-                aggregatedItem.classificationStatus = result.status.name
-                aggregatedItem.domainCategoryId = result.domainCategoryId
-                aggregatedItem.classificationErrorMessage = result.errorMessage
-                aggregatedItem.classificationRequestId = result.requestId
+                itemAggregator.updateClassificationStatus(
+                    aggregatedId = aggregatedItem.aggregatedId,
+                    status = result.status.name,
+                    domainCategoryId = result.domainCategoryId,
+                    errorMessage = result.errorMessage,
+                    requestId = result.requestId
+                )
 
-                // Propagate updates to the UI layer
-                val updatedItems = itemAggregator.getScannedItems()
-                _items.value = updatedItems
+                // Propagate updates to UI on main dispatcher
+                viewModelScope.launch(Dispatchers.Main) {
+                    _items.value = itemAggregator.getScannedItems()
 
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
+                    if (BuildConfig.DEBUG) {
+                        Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
+                    }
                 }
             }
         }
@@ -437,10 +444,13 @@ class ItemsViewModel(
 
         Log.i(TAG, "Retrying classification for item $itemId")
 
-        // Mark as pending
-        item.classificationStatus = "PENDING"
-        item.classificationErrorMessage = null
-        _items.value = itemAggregator.getScannedItems()
+        // Mark as pending using thread-safe method
+        itemAggregator.markClassificationPending(listOf(itemId))
+
+        // Update UI on main dispatcher
+        viewModelScope.launch(Dispatchers.Main) {
+            _items.value = itemAggregator.getScannedItems()
+        }
 
         // Trigger retry via orchestrator
         classificationOrchestrator.retry(itemId, item) { aggregatedItem, result ->
@@ -452,6 +462,7 @@ class ItemsViewModel(
                 aggregatedItem.enhancedCategory ?: aggregatedItem.category
             }
 
+            // Apply classification using thread-safe methods
             itemAggregator.applyEnhancedClassification(
                 aggregatedId = aggregatedItem.aggregatedId,
                 category = categoryOverride,
@@ -459,18 +470,21 @@ class ItemsViewModel(
                 priceRange = priceRange
             )
 
-            // Update classification status
-            aggregatedItem.classificationStatus = result.status.name
-            aggregatedItem.domainCategoryId = result.domainCategoryId
-            aggregatedItem.classificationErrorMessage = result.errorMessage
-            aggregatedItem.classificationRequestId = result.requestId
+            itemAggregator.updateClassificationStatus(
+                aggregatedId = aggregatedItem.aggregatedId,
+                status = result.status.name,
+                domainCategoryId = result.domainCategoryId,
+                errorMessage = result.errorMessage,
+                requestId = result.requestId
+            )
 
-            // Propagate updates to the UI layer
-            val updatedItems = itemAggregator.getScannedItems()
-            _items.value = updatedItems
+            // Propagate updates to UI on main dispatcher
+            viewModelScope.launch(Dispatchers.Main) {
+                _items.value = itemAggregator.getScannedItems()
 
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "Retry classification result for ${aggregatedItem.aggregatedId}: status=${result.status}")
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Retry classification result for ${aggregatedItem.aggregatedId}: status=${result.status}")
+                }
             }
         }
     }
