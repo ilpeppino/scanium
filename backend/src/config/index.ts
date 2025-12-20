@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+const weakSessionSecrets = [
+  'change_me_to_a_random_secret_min_32_chars',
+  'change_me_generate_random_32_chars',
+  'replace_with_random_base64_64_bytes',
+];
+
 /**
  * Configuration schema with strict validation
  * Server will not start if validation fails
@@ -57,7 +63,13 @@ export const configSchema = z.object({
   }),
 
   // Security
-  sessionSigningSecret: z.string().min(32),
+  sessionSigningSecret: z
+    .string()
+    .min(64)
+    .refine(
+      (secret) => !weakSessionSecrets.includes(secret.trim().toLowerCase()),
+      'SESSION_SIGNING_SECRET must be a strong, unique value'
+    ),
   security: z
     .object({
       enforceHttps: z.coerce.boolean().default(true),
