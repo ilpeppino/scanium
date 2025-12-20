@@ -6,6 +6,7 @@ import fastifyMultipart from '@fastify/multipart';
 import { Config } from './config/index.js';
 import { errorHandlerPlugin } from './infra/http/plugins/error-handler.js';
 import { corsPlugin } from './infra/http/plugins/cors.js';
+import { securityPlugin } from './infra/http/plugins/security.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { ebayAuthRoutes } from './modules/auth/ebay/routes.js';
 import { classifierRoutes } from './modules/classifier/routes.js';
@@ -34,6 +35,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Register error handler
   app.setErrorHandler(errorHandlerPlugin);
+
+  // Register security plugin (HTTPS enforcement, security headers)
+  await app.register(securityPlugin, { config });
 
   await app.register(fastifyRateLimit, {
     max: config.classifier.rateLimitPerMinute,

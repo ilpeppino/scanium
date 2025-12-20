@@ -57,6 +57,15 @@ export const configSchema = z.object({
 
   // Security
   sessionSigningSecret: z.string().min(32),
+  security: z
+    .object({
+      enforceHttps: z.coerce.boolean().default(true),
+      enableHsts: z.coerce.boolean().default(true),
+      apiKeyRotationEnabled: z.coerce.boolean().default(true),
+      apiKeyExpirationDays: z.coerce.number().int().min(0).default(90),
+      logApiKeyUsage: z.coerce.boolean().default(true),
+    })
+    .default({}),
 
   // CORS
   corsOrigins: z
@@ -100,6 +109,13 @@ export function loadConfig(): Config {
       scopes: process.env.EBAY_SCOPES,
     },
     sessionSigningSecret: process.env.SESSION_SIGNING_SECRET,
+    security: {
+      enforceHttps: process.env.SECURITY_ENFORCE_HTTPS,
+      enableHsts: process.env.SECURITY_ENABLE_HSTS,
+      apiKeyRotationEnabled: process.env.SECURITY_API_KEY_ROTATION_ENABLED,
+      apiKeyExpirationDays: process.env.SECURITY_API_KEY_EXPIRATION_DAYS,
+      logApiKeyUsage: process.env.SECURITY_LOG_API_KEY_USAGE,
+    },
     corsOrigins: process.env.CORS_ORIGINS,
   };
 
