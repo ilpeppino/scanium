@@ -150,6 +150,9 @@ class ClassificationOrchestrator(
         pendingRequests.add(itemId)
 
         scope.launch {
+            // [METRICS] Start classification turnaround measurement
+            val classificationStartTime = System.currentTimeMillis()
+
             try {
                 // Acquire semaphore (wait if 2 requests already in flight)
                 concurrencySemaphore.acquire()
@@ -171,6 +174,10 @@ class ClassificationOrchestrator(
 
                 // Execute classification with retry
                 val result = classifyWithExponentialBackoff(itemId, thumbnail, classifier)
+
+                // [METRICS] Calculate classification turnaround
+                val turnaroundMs = System.currentTimeMillis() - classificationStartTime
+                logger.i(TAG, "[METRICS] Classification turnaround for $itemId: ${turnaroundMs}ms (mode=$mode, status=${result.status})")
 
                 when (result.status) {
                     ClassificationStatus.SUCCESS -> {
@@ -201,6 +208,10 @@ class ClassificationOrchestrator(
             } catch (t: Throwable) {
                 logger.e(TAG, "Unexpected error classifying $itemId", t)
                 permanentlyFailedRequests.add(itemId)
+
+                // [METRICS] Log error turnaround
+                val turnaroundMs = System.currentTimeMillis() - classificationStartTime
+                logger.i(TAG, "[METRICS] Classification error turnaround for $itemId: ${turnaroundMs}ms (error)")
             } finally {
                 pendingRequests.remove(itemId)
                 concurrencySemaphore.release()
