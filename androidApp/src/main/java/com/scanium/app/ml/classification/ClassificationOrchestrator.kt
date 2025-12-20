@@ -1,5 +1,6 @@
 package com.scanium.app.ml.classification
 
+import android.os.Trace
 import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.android.platform.adapters.AndroidLogger
 import com.scanium.android.platform.adapters.ClassifierAdapter
@@ -104,6 +105,9 @@ class ClassificationOrchestrator(
             .forEach { item ->
                 val thumbnail = item.thumbnail ?: return@forEach
 
+                // Add trace marker for profiling
+                Trace.beginSection("ClassificationOrchestrator.classify")
+
                 // Classify using shared orchestrator
                 sharedOrchestrator.classify(
                     itemId = item.aggregatedId,
@@ -113,6 +117,7 @@ class ClassificationOrchestrator(
                     // Convert shared ClassificationResult to Android ClassificationResult
                     val androidResult = convertToAndroidResult(sharedResult)
                     onResult(item, androidResult)
+                    Trace.endSection()
                 }
             }
     }
@@ -133,6 +138,9 @@ class ClassificationOrchestrator(
     ) {
         val thumbnail = item.thumbnail ?: return
 
+        // Add trace marker for profiling
+        Trace.beginSection("ClassificationOrchestrator.retry")
+
         sharedOrchestrator.retry(
             itemId = aggregatedId,
             thumbnail = thumbnail,
@@ -140,6 +148,7 @@ class ClassificationOrchestrator(
         ) { itemId, sharedResult ->
             val androidResult = convertToAndroidResult(sharedResult)
             onResult(item, androidResult)
+            Trace.endSection()
         }
     }
 
