@@ -5,9 +5,10 @@
   - Triggers: push to `main`, manual dispatch.
   - Steps: checkout, JDK 17 + Gradle setup, `./gradlew clean assembleDebug`, upload `scanium-app-debug-apk` artifact from `*/build/outputs/apk/**`.
   - Use this for device testing when local SDKs are unavailable.
-- **Security - CVE Scanning** (`.github/workflows/security-cve-scan.yml`)
-  - Triggers: PRs touching Gradle files, pushes to `main/master`, weekly cron, manual dispatch.
+- **Security - CVE Scanning** (`.github/workflows/security-cve-scan.yml`) **[CRITICAL - DO NOT DISABLE]**
+  - Triggers: PRs touching `androidApp/build.gradle.kts`, `build.gradle.kts` (AGP versions), `gradle/libs.versions.toml`, pushes to `main/master`, weekly cron, manual dispatch.
   - Runs OWASP Dependency-Check with SARIF upload and HTML artifact; continues on error.
+  - **Maintenance**: When updating AGP (in `build.gradle.kts`), verify OWASP Dependency-Check plugin compatibility in `androidApp/build.gradle.kts`. Test with `./gradlew dependencyCheckAnalyze` before merging.
 - **Code Coverage** (`.github/workflows/coverage.yml`)
   - Triggers: PRs to `main`, pushes to `main`, manual dispatch.
   - Steps: checkout, JDK 17 + Gradle setup, `./gradlew clean test koverVerify`, `./gradlew jacocoTestReport`.
