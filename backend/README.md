@@ -222,6 +222,7 @@ See `.env.example` for all environment variables.
 - `EBAY_CLIENT_ID`
 - `EBAY_CLIENT_SECRET`
 - `EBAY_SCOPES`
+- `EBAY_TOKEN_ENCRYPTION_KEY`
 - `SESSION_SIGNING_SECRET`
 - `CORS_ORIGINS`
 

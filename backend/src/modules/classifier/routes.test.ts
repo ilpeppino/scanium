@@ -23,6 +23,7 @@ const config = configSchema.parse({
     clientId: 'client',
     clientSecret: 'client-secret-minimum-length-please',
     scopes: 'scope',
+    tokenEncryptionKey: 'x'.repeat(32),
   },
   sessionSigningSecret: 'x'.repeat(32),
   security: {
