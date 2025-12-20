@@ -229,7 +229,7 @@ The app requires the following permission:
 ***REMOVED******REMOVED*** Current Limitations
 
 - **Mocked pricing data** - Prices are generated locally based on category
- - **Local-only persistence** - Items are stored on-device (no cloud sync/export yet)
+ - **Local-only persistence** - Items are stored on-device; history is captured but not surfaced in UI (no cloud sync/export yet)
 - **ML Kit categories** - Object detection limited to 5 coarse categories (Fashion, Food, Home goods, Places, Plants)
 - **No backend** - All processing is local
 
@@ -264,7 +264,6 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 
 ***REMOVED******REMOVED******REMOVED*** Planned Features
 - Real pricing API integration
-- Local database persistence (Room)
 - Historical price tracking and analytics
 - Multi-currency support
 - Share detected items
@@ -298,6 +297,7 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 - ✅ **Visual Detection Overlay**: Real-time bounding boxes and labels on camera preview
 - ✅ **Object Tracking & De-duplication**: Multi-frame tracking with ML Kit integration
 - ✅ **Barcode/QR Code Scanning**: Real-time barcode detection
+- ✅ **Local Persistence & History**: Room-backed storage with full item change-log (not yet exposed in UI)
 - ✅ **Document Text Recognition**: OCR for document scanning
 - ✅ **Comprehensive Test Suite**: 175+ tests covering tracking, detection, domain pack, and selling systems
 - ✅ **SINGLE_IMAGE_MODE Detection**: More accurate object detection for both tap and long-press
