@@ -4,6 +4,7 @@ import { ClassifierService } from './service.js';
 import { sanitizeImageBuffer, isSupportedImage } from './utils/image.js';
 import { ClassificationHints, ClassificationRequest } from './types.js';
 import { Config } from '../../config/index.js';
+import { ApiKeyManager } from './api-key-manager.js';
 
 type RouteOpts = { config: Config };
 
@@ -14,12 +15,37 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
   opts
 ) => {
   const { config } = opts;
-  const apiKeys = new Set(config.classifier.apiKeys);
+  const apiKeyManager = new ApiKeyManager(config.classifier.apiKeys);
   const service = new ClassifierService({ config });
 
   fastify.post('/classify', async (request, reply) => {
     const apiKey = extractApiKey(request);
-    if (!apiKey || !apiKeys.has(apiKey)) {
+
+    // Validate API key with rotation and expiration support
+    if (!apiKey || !apiKeyManager.validateKey(apiKey)) {
+      // Log failed authentication attempt
+      if (config.security.logApiKeyUsage && apiKey) {
+        apiKeyManager.logUsage({
+          apiKey: apiKey.substring(0, 8) + '***', // Partial key for logging
+          timestamp: new Date(),
+          endpoint: request.url,
+          method: request.method,
+          success: false,
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+          errorCode: 'UNAUTHORIZED',
+        });
+
+        request.log.warn(
+          {
+            apiKeyPrefix: apiKey.substring(0, 8),
+            ip: request.ip,
+            endpoint: request.url,
+          },
+          'Invalid or expired API key attempt'
+        );
+      }
+
       return reply.status(401).send({
         error: { code: 'UNAUTHORIZED', message: 'Missing or invalid API key' },
       });
@@ -92,7 +118,45 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
 
       const result = await service.classify(classificationRequest);
 
+      // Log successful API key usage
+      if (config.security.logApiKeyUsage) {
+        apiKeyManager.logUsage({
+          apiKey: apiKey.substring(0, 8) + '***', // Partial key for logging
+          timestamp: new Date(),
+          endpoint: request.url,
+          method: request.method,
+          success: true,
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+        });
+
+        request.log.info(
+          {
+            apiKeyPrefix: apiKey.substring(0, 8),
+            ip: request.ip,
+            endpoint: request.url,
+            requestId,
+          },
+          'API key usage: classification request successful'
+        );
+      }
+
       return reply.status(200).send(result);
+    } catch (error) {
+      // Log failed request
+      if (config.security.logApiKeyUsage && apiKey) {
+        apiKeyManager.logUsage({
+          apiKey: apiKey.substring(0, 8) + '***',
+          timestamp: new Date(),
+          endpoint: request.url,
+          method: request.method,
+          success: false,
+          ip: request.ip,
+          userAgent: request.headers['user-agent'],
+          errorCode: 'CLASSIFICATION_ERROR',
+        });
+      }
+      throw error;
     } finally {
       decrementConcurrent(apiKey);
     }
