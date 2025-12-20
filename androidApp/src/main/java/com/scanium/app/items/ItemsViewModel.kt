@@ -345,6 +345,7 @@ class ItemsViewModel(
             }
 
             classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
+                // Calculate classification parameters
                 val boxArea = aggregatedItem.boundingBox.area
                 val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
                 val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
@@ -353,7 +354,8 @@ class ItemsViewModel(
                     aggregatedItem.enhancedCategory ?: aggregatedItem.category
                 }
 
-                // Apply classification using thread-safe methods
+                // Apply classification using thread-safe synchronized methods
+                // These methods use @Synchronized to prevent concurrent modification
                 itemAggregator.applyEnhancedClassification(
                     aggregatedId = aggregatedItem.aggregatedId,
                     category = categoryOverride,
@@ -369,7 +371,9 @@ class ItemsViewModel(
                     requestId = result.requestId
                 )
 
-                // Propagate updates to UI on main dispatcher
+                // Dispatch UI state update to main thread explicitly
+                // This callback may be invoked from background coroutines, so we must
+                // ensure the StateFlow update happens on Main dispatcher
                 viewModelScope.launch(Dispatchers.Main) {
                     _items.value = itemAggregator.getScannedItems()
 
@@ -454,6 +458,7 @@ class ItemsViewModel(
 
         // Trigger retry via orchestrator
         classificationOrchestrator.retry(itemId, item) { aggregatedItem, result ->
+            // Calculate classification parameters
             val boxArea = aggregatedItem.boundingBox.area
             val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
             val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
@@ -462,7 +467,8 @@ class ItemsViewModel(
                 aggregatedItem.enhancedCategory ?: aggregatedItem.category
             }
 
-            // Apply classification using thread-safe methods
+            // Apply classification using thread-safe synchronized methods
+            // These methods use @Synchronized to prevent concurrent modification
             itemAggregator.applyEnhancedClassification(
                 aggregatedId = aggregatedItem.aggregatedId,
                 category = categoryOverride,
@@ -478,7 +484,9 @@ class ItemsViewModel(
                 requestId = result.requestId
             )
 
-            // Propagate updates to UI on main dispatcher
+            // Dispatch UI state update to main thread explicitly
+            // This callback may be invoked from background coroutines, so we must
+            // ensure the StateFlow update happens on Main dispatcher
             viewModelScope.launch(Dispatchers.Main) {
                 _items.value = itemAggregator.getScannedItems()
 
