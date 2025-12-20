@@ -14,18 +14,21 @@ const tieredPack = {
       label: 'Table',
       tokens: ['table'],
       priority: 2,
+      priorityTier: 3,
     },
     {
       id: 'mug',
       label: 'Mug',
       tokens: ['mug'],
       priority: 5,
+      priorityTier: 1,
     },
     {
       id: 'decor',
       label: 'Decor',
       tokens: ['decor'],
       priority: 3,
+      priorityTier: 2,
     },
   ],
 };
@@ -99,5 +102,29 @@ describe('mapSignalsToDomainCategory', () => {
     expect(result.domainCategoryId).toBe('table');
     expect(result.confidence).toBeCloseTo(0.45, 2);
     expect(result.debug.contextPenaltyApplied).toBe(true);
+  });
+
+  it('falls back to context when only generic labels exist', () => {
+    const result = mapSignalsToDomainCategory(pack, {
+      labels: [
+        { description: 'wood table', score: 0.75 },
+        { description: 'hardwood surface', score: 0.6 },
+      ],
+    });
+
+    expect(result.domainCategoryId).toBe('furniture');
+    expect(result.debug.reason).toContain('tier 3');
+  });
+
+  it('prefers specific tier when both specific and generic labels exceed threshold', () => {
+    const result = mapSignalsToDomainCategory(pack, {
+      labels: [
+        { description: 'table', score: 0.9 },
+        { description: 'coffee mug', score: 0.32 },
+      ],
+    });
+
+    expect(result.domainCategoryId).toBe('drinkware');
+    expect(result.confidence).toBeCloseTo(0.32, 2);
   });
 });
