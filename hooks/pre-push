@@ -1,0 +1,21 @@
+***REMOVED***!/bin/bash
+***REMOVED*** Pre-push hook for Scanium
+***REMOVED*** Runs lightweight JVM-only checks before pushing
+***REMOVED*** This hook validates shared modules without requiring Android SDK
+
+set -e
+
+echo "🔍 Running pre-push JVM checks..."
+echo ""
+
+***REMOVED*** Run the JVM-only pre-push validation task
+if ./gradlew prePushJvmCheck --console=plain --quiet; then
+    echo ""
+    echo "✅ Pre-push checks passed. Proceeding with push..."
+    exit 0
+else
+    echo ""
+    echo "❌ Pre-push checks failed."
+    echo "   Fix the issues above before pushing, or use --no-verify to bypass."
+    exit 1
+fi
