@@ -1,103 +1,94 @@
 package com.scanium.app.ml.classification
 
-import android.util.Log
 import com.scanium.app.aggregation.AggregatedItem
+import com.scanium.android.platform.adapters.AndroidLogger
+import com.scanium.android.platform.adapters.ClassifierAdapter
+import com.scanium.shared.core.models.classification.ClassificationSource
+import com.scanium.shared.core.models.classification.Classifier
+import com.scanium.shared.core.models.classification.ClassificationOrchestrator as SharedOrchestrator
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.android.platform.adapters.toBitmap
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Semaphore
-import kotlin.math.min
-import kotlin.math.pow
-import kotlin.random.Random
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 /**
- * Dispatches classification requests to the active classifier with concurrency control and retry.
+ * Android wrapper for platform-agnostic ClassificationOrchestrator.
  *
- * ***REMOVED******REMOVED*** Features
- * - **Bounded queue**: Max 2 concurrent classification requests
- * - **Retry logic**: Exponential backoff with jitter for retryable errors
- * - **Caching**: Avoid duplicate uploads for the same item
- * - **Status tracking**: PENDING, SUCCESS, FAILED per item
+ * This class adapts the shared ClassificationOrchestrator to work with Android-specific
+ * types (AggregatedItem, ItemClassifier) while delegating all logic to the shared module.
  *
- * ***REMOVED******REMOVED*** Retry Policy
- * - Max retries: 3 (total 4 attempts)
- * - Base delay: 2 seconds
- * - Max delay: 16 seconds
- * - Jitter: ±25%
- * - Retryable errors: Network I/O errors, HTTP 408/429/5xx
- * - Non-retryable errors: HTTP 400/401/403/404
+ * ***REMOVED******REMOVED*** Architecture
+ * - Delegates to shared/core-models ClassificationOrchestrator
+ * - Adapts Android ItemClassifier to portable Classifier interface
+ * - Converts between Android and shared ClassificationResult types
+ * - Maintains Android-facing API for backward compatibility
  *
- * ***REMOVED******REMOVED*** Future Enhancement: ON-DEVICE Classifier
- * When implementing on-device CLIP:
- * 1. Check mode: if ON_DEVICE, call onDeviceClassifier instead of cloudClassifier
- * 2. On-device should be synchronous (no retry needed, no network)
- * 3. Cache results same way as cloud
- *
- * Example:
- * ```kotlin
- * val classifier = if (mode == ClassificationMode.CLOUD) {
- *     cloudClassifier
- * } else {
- *     onDeviceClassifier // Future: real CLIP model
- * }
- * ```
+ * @param modeFlow StateFlow of current classification mode
+ * @param onDeviceClassifier Android on-device classifier implementation
+ * @param cloudClassifier Android cloud classifier implementation
+ * @param scope Coroutine scope for async operations
+ * @param maxConcurrency Maximum concurrent classification requests (default: 2)
+ * @param maxRetries Maximum retry attempts (default: 3)
  */
 class ClassificationOrchestrator(
-    private val modeFlow: StateFlow<ClassificationMode>,
-    private val onDeviceClassifier: ItemClassifier,
-    private val cloudClassifier: ItemClassifier,
+    modeFlow: StateFlow<ClassificationMode>,
+    onDeviceClassifier: ItemClassifier,
+    cloudClassifier: ItemClassifier,
     private val scope: CoroutineScope,
-    private val maxConcurrency: Int = 2,
-    private val maxRetries: Int = 3
+    maxConcurrency: Int = 2,
+    maxRetries: Int = 3
 ) {
-    companion object {
-        private const val TAG = "ClassificationOrchestrator"
-        private const val BASE_DELAY_MS = 2000L
-        private const val MAX_DELAY_MS = 16000L
-        private const val JITTER_FACTOR = 0.25 // ±25%
-    }
+    // Adapt Android classifiers to portable Classifier interface
+    private val portableOnDeviceClassifier: Classifier = ClassifierAdapter(
+        androidClassifier = onDeviceClassifier,
+        source = ClassificationSource.ON_DEVICE
+    )
 
-    // Concurrency control: max 2 classification requests at a time
-    private val concurrencySemaphore = Semaphore(maxConcurrency)
+    private val portableCloudClassifier: Classifier = ClassifierAdapter(
+        androidClassifier = cloudClassifier,
+        source = ClassificationSource.CLOUD
+    )
 
-    // Cache successful results
-    private val cache = mutableMapOf<String, ClassificationResult>()
+    // Map Android ClassificationMode to shared ClassificationMode
+    private val portableModeFlow: StateFlow<com.scanium.shared.core.models.classification.ClassificationMode> =
+        modeFlow.map { androidMode ->
+            when (androidMode) {
+                ClassificationMode.CLOUD -> com.scanium.shared.core.models.classification.ClassificationMode.CLOUD
+                ClassificationMode.ON_DEVICE -> com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
+            }
+        }.stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
+        )
 
-    // Track pending requests
-    private val pendingRequests = mutableSetOf<String>()
-
-    // Track failed requests (non-retryable errors)
-    private val permanentlyFailedRequests = mutableSetOf<String>()
-
-    // Track retry attempts per item
-    private val retryAttempts = mutableMapOf<String, Int>()
+    // Delegate to shared orchestrator
+    private val sharedOrchestrator = SharedOrchestrator(
+        modeFlow = portableModeFlow,
+        onDeviceClassifier = portableOnDeviceClassifier,
+        cloudClassifier = portableCloudClassifier,
+        scope = scope,
+        logger = AndroidLogger(),
+        maxConcurrency = maxConcurrency,
+        maxRetries = maxRetries
+    )
 
     /**
      * Check if classification result exists for this item.
      */
-    fun hasResult(aggregatedId: String): Boolean = cache.containsKey(aggregatedId)
+    fun hasResult(aggregatedId: String): Boolean = sharedOrchestrator.hasResult(aggregatedId)
 
     /**
      * Check if item should be classified (not cached, not pending, not permanently failed).
      */
-    fun shouldClassify(aggregatedId: String): Boolean {
-        return !cache.containsKey(aggregatedId) &&
-            !pendingRequests.contains(aggregatedId) &&
-            !permanentlyFailedRequests.contains(aggregatedId)
-    }
+    fun shouldClassify(aggregatedId: String): Boolean = sharedOrchestrator.shouldClassify(aggregatedId)
 
     /**
      * Reset all state (call when starting new scan session).
      */
-    fun reset() {
-        cache.clear()
-        pendingRequests.clear()
-        permanentlyFailedRequests.clear()
-        retryAttempts.clear()
-    }
+    fun reset() = sharedOrchestrator.reset()
 
     /**
      * Classify a list of items asynchronously.
@@ -111,7 +102,18 @@ class ClassificationOrchestrator(
     ) {
         items.filter { it.thumbnail != null && shouldClassify(it.aggregatedId) }
             .forEach { item ->
-                classifyWithRetry(item, onResult)
+                val thumbnail = item.thumbnail ?: return@forEach
+
+                // Classify using shared orchestrator
+                sharedOrchestrator.classify(
+                    itemId = item.aggregatedId,
+                    thumbnail = thumbnail,
+                    boundingBox = item.boundingBox
+                ) { itemId, sharedResult ->
+                    // Convert shared ClassificationResult to Android ClassificationResult
+                    val androidResult = convertToAndroidResult(sharedResult)
+                    onResult(item, androidResult)
+                }
             }
     }
 
@@ -129,190 +131,78 @@ class ClassificationOrchestrator(
         item: AggregatedItem,
         onResult: (AggregatedItem, ClassificationResult) -> Unit
     ) {
-        Log.i(TAG, "Manual retry requested for $aggregatedId")
-        permanentlyFailedRequests.remove(aggregatedId)
-        retryAttempts.remove(aggregatedId)
-        cache.remove(aggregatedId)
-        classifyWithRetry(item, onResult)
-    }
+        val thumbnail = item.thumbnail ?: return
 
-    /**
-     * Classify an item with automatic retry on transient failures.
-     */
-    private fun classifyWithRetry(
-        item: AggregatedItem,
-        onResult: (AggregatedItem, ClassificationResult) -> Unit
-    ) {
-        val aggregatedId = item.aggregatedId
-        pendingRequests.add(aggregatedId)
-
-        scope.launch {
-            try {
-                // Acquire semaphore (wait if 2 requests already in flight)
-                concurrencySemaphore.acquire()
-
-                val mode = modeFlow.value
-                val classifier = if (mode == ClassificationMode.CLOUD) {
-                    cloudClassifier
-                } else {
-                    // Future: When implementing on-device CLIP, use real classifier here
-                    // For now, on-device mode uses placeholder
-                    onDeviceClassifier
-                }
-
-                Log.d(TAG, "Classifying $aggregatedId with mode=$mode")
-
-                // Execute classification with retry
-                val result = classifyWithExponentialBackoff(item, classifier)
-
-                when {
-                    result == null -> {
-                        // Classifier returned null (not configured or skipped)
-                        Log.w(TAG, "Classification returned null for $aggregatedId")
-                        permanentlyFailedRequests.add(aggregatedId)
-                    }
-
-                    result.status == ClassificationStatus.SUCCESS -> {
-                        // Success - cache and notify
-                        cache[aggregatedId] = result
-                        onResult(item, result)
-                        Log.i(TAG, "Classification succeeded for $aggregatedId")
-                    }
-
-                    result.status == ClassificationStatus.FAILED && isRetryableError(result) -> {
-                        // Retryable error but max retries exceeded
-                        Log.w(TAG, "Classification failed after retries for $aggregatedId: ${result.errorMessage}")
-                        cache[aggregatedId] = result
-                        onResult(item, result)
-                    }
-
-                    else -> {
-                        // Non-retryable error
-                        Log.e(TAG, "Classification permanently failed for $aggregatedId: ${result.errorMessage}")
-                        permanentlyFailedRequests.add(aggregatedId)
-                        cache[aggregatedId] = result
-                        onResult(item, result)
-                    }
-                }
-            } catch (t: Throwable) {
-                Log.e(TAG, "Unexpected error classifying $aggregatedId", t)
-                permanentlyFailedRequests.add(aggregatedId)
-            } finally {
-                pendingRequests.remove(aggregatedId)
-                concurrencySemaphore.release()
-            }
+        sharedOrchestrator.retry(
+            itemId = aggregatedId,
+            thumbnail = thumbnail,
+            boundingBox = item.boundingBox
+        ) { itemId, sharedResult ->
+            val androidResult = convertToAndroidResult(sharedResult)
+            onResult(item, androidResult)
         }
     }
 
     /**
-     * Execute classification with exponential backoff retry.
-     *
-     * @return ClassificationResult (success or final failure), or null if skipped
+     * Convert shared ClassificationResult to Android ClassificationResult.
      */
-    private suspend fun classifyWithExponentialBackoff(
-        item: AggregatedItem,
-        classifier: ItemClassifier
-    ): ClassificationResult? {
-        val aggregatedId = item.aggregatedId
-        var attempt = retryAttempts.getOrDefault(aggregatedId, 0)
-
-        while (attempt <= maxRetries) {
-            if (attempt > 0) {
-                val delayMs = calculateBackoffDelay(attempt)
-                Log.d(TAG, "Retry attempt $attempt for $aggregatedId after ${delayMs}ms")
-                delay(delayMs)
-            }
-
-            val result = when (val thumbnail = item.thumbnail) {
-                is ImageRef.Bytes -> {
-                    val bitmap = thumbnail.toBitmap()
-                    val input = ClassificationInput(
-                        aggregatedId = aggregatedId,
-                        bitmap = bitmap,
-                        boundingBox = item.boundingBox
-                    )
-                    classifier.classifySingle(input)
-                }
-                else -> null
-            }
-
-            when {
-                result == null -> {
-                    // Classifier skipped (not configured)
-                    return null
-                }
-
-                result.status == ClassificationStatus.SUCCESS -> {
-                    // Success
-                    retryAttempts.remove(aggregatedId)
-                    return result
-                }
-
-                result.status == ClassificationStatus.FAILED && !isRetryableError(result) -> {
-                    // Non-retryable error - don't retry
-                    retryAttempts.remove(aggregatedId)
-                    return result
-                }
-
-                result.status == ClassificationStatus.FAILED && attempt < maxRetries -> {
-                    // Retryable error and retries remaining - retry
-                    attempt++
-                    retryAttempts[aggregatedId] = attempt
-                    Log.w(TAG, "Retryable error for $aggregatedId, will retry (attempt $attempt/$maxRetries)")
-                }
-
-                else -> {
-                    // Retryable error but max retries exceeded
-                    retryAttempts.remove(aggregatedId)
-                    return result
-                }
-            }
-        }
-
-        // Should not reach here, but return last failure
+    private fun convertToAndroidResult(
+        sharedResult: com.scanium.shared.core.models.classification.ClassificationResult
+    ): ClassificationResult {
         return ClassificationResult(
-            label = null,
-            confidence = 0f,
-            category = com.scanium.app.ml.ItemCategory.UNKNOWN,
-            mode = modeFlow.value,
-            status = ClassificationStatus.FAILED,
-            errorMessage = "Max retries exceeded"
+            label = sharedResult.label,
+            confidence = sharedResult.confidence,
+            category = convertToAndroidCategory(sharedResult.itemCategory),
+            mode = convertToAndroidMode(sharedResult.source),
+            domainCategoryId = sharedResult.domainCategoryId,
+            attributes = sharedResult.attributes.takeIf { it.isNotEmpty() },
+            status = convertToAndroidStatus(sharedResult.status),
+            errorMessage = sharedResult.errorMessage,
+            requestId = sharedResult.requestId
         )
     }
 
     /**
-     * Calculate exponential backoff delay with jitter.
-     *
-     * Formula: min(BASE_DELAY * 2^(attempt-1) * (1 ± JITTER), MAX_DELAY)
-     *
-     * Example delays (with jitter range):
-     * - Attempt 1: 1.5-2.5s
-     * - Attempt 2: 3.0-5.0s
-     * - Attempt 3: 6.0-10.0s
+     * Convert shared ItemCategory to Android ItemCategory.
      */
-    private fun calculateBackoffDelay(attempt: Int): Long {
-        val exponentialDelay = (BASE_DELAY_MS * 2.0.pow(attempt - 1)).toLong()
-        val jitter = 1.0 + (Random.nextDouble() * 2 - 1) * JITTER_FACTOR
-        val delayWithJitter = (exponentialDelay * jitter).toLong()
-        return min(delayWithJitter, MAX_DELAY_MS)
+    private fun convertToAndroidCategory(
+        sharedCategory: com.scanium.shared.core.models.ml.ItemCategory
+    ): com.scanium.app.ml.ItemCategory {
+        return when (sharedCategory) {
+            com.scanium.shared.core.models.ml.ItemCategory.BOOK -> com.scanium.app.ml.ItemCategory.BOOK
+            com.scanium.shared.core.models.ml.ItemCategory.ELECTRONIC -> com.scanium.app.ml.ItemCategory.ELECTRONIC
+            com.scanium.shared.core.models.ml.ItemCategory.BOTTLE -> com.scanium.app.ml.ItemCategory.BOTTLE
+            com.scanium.shared.core.models.ml.ItemCategory.CLOTHING -> com.scanium.app.ml.ItemCategory.CLOTHING
+            com.scanium.shared.core.models.ml.ItemCategory.TOY -> com.scanium.app.ml.ItemCategory.TOY
+            com.scanium.shared.core.models.ml.ItemCategory.FURNITURE -> com.scanium.app.ml.ItemCategory.FURNITURE
+            com.scanium.shared.core.models.ml.ItemCategory.SPORTS -> com.scanium.app.ml.ItemCategory.SPORTS
+            com.scanium.shared.core.models.ml.ItemCategory.HOME_GOOD -> com.scanium.app.ml.ItemCategory.HOME_GOOD
+            com.scanium.shared.core.models.ml.ItemCategory.UNKNOWN -> com.scanium.app.ml.ItemCategory.UNKNOWN
+        }
     }
 
     /**
-     * Check if error is retryable.
-     *
-     * Retryable errors (from CloudClassifier):
-     * - "Server error (HTTP 408/429/5xx)"
-     * - "Request timeout"
-     * - "No network connection"
-     * - "Network error: ..."
-     *
-     * Non-retryable errors:
-     * - "Classification failed (HTTP 400/401/403/404)"
+     * Convert shared ClassificationSource to Android ClassificationMode.
      */
-    private fun isRetryableError(result: ClassificationResult): Boolean {
-        val errorMessage = result.errorMessage ?: return false
-        return errorMessage.contains("Server error") ||
-               errorMessage.contains("timeout", ignoreCase = true) ||
-               errorMessage.contains("network", ignoreCase = true)
+    private fun convertToAndroidMode(
+        source: ClassificationSource
+    ): ClassificationMode {
+        return when (source) {
+            ClassificationSource.CLOUD -> ClassificationMode.CLOUD
+            ClassificationSource.ON_DEVICE, ClassificationSource.FALLBACK -> ClassificationMode.ON_DEVICE
+        }
+    }
+
+    /**
+     * Convert shared ClassificationStatus to Android ClassificationStatus.
+     */
+    private fun convertToAndroidStatus(
+        sharedStatus: com.scanium.shared.core.models.classification.ClassificationStatus
+    ): ClassificationStatus {
+        return when (sharedStatus) {
+            com.scanium.shared.core.models.classification.ClassificationStatus.SUCCESS -> ClassificationStatus.SUCCESS
+            com.scanium.shared.core.models.classification.ClassificationStatus.FAILED -> ClassificationStatus.FAILED
+            com.scanium.shared.core.models.classification.ClassificationStatus.SKIPPED -> ClassificationStatus.FAILED
+        }
     }
 }
