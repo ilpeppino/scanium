@@ -2,6 +2,18 @@
   "id": "home_resale",
   "name": "Home Resale",
   "threshold": 0.28,
+  "contextPenalty": 0.4,
+  "contextStoplist": [
+    "table",
+    "surface",
+    "furniture",
+    "room",
+    "floor",
+    "counter",
+    "countertop",
+    "desk",
+    "indoor"
+  ],
   "categories": [
 
     {
@@ -9,6 +21,7 @@
       "label": "Drinkware",
       "itemCategoryName": "HOME_GOOD",
       "priority": 10,
+      "priorityTier": 1,
       "tokens": ["mug", "cup", "glass", "bottle", "tumbler", "thermos"],
       "attributes": { "segment": "container" }
     },
@@ -18,6 +31,7 @@
       "label": "Tableware",
       "itemCategoryName": "HOME_GOOD",
       "priority": 9,
+      "priorityTier": 1,
       "tokens": ["plate", "bowl", "dish", "saucer"],
       "attributes": { "segment": "utensil" }
     },
@@ -27,6 +41,7 @@
       "label": "Cutlery",
       "itemCategoryName": "HOME_GOOD",
       "priority": 9,
+      "priorityTier": 1,
       "tokens": ["fork", "knife", "spoon", "cutlery"],
       "attributes": { "segment": "utensil" }
     },
@@ -36,6 +51,7 @@
       "label": "Kitchen Appliance",
       "itemCategoryName": "HOME_GOOD",
       "priority": 8,
+      "priorityTier": 1,
       "tokens": ["kettle", "coffee maker", "toaster", "blender", "microwave"],
       "attributes": { "segment": "appliance" }
     },
@@ -45,6 +61,7 @@
       "label": "Food Container",
       "itemCategoryName": "HOME_GOOD",
       "priority": 8,
+      "priorityTier": 1,
       "tokens": ["container", "lunchbox", "storage box", "jar"],
       "attributes": { "segment": "container" }
     },
@@ -54,6 +71,7 @@
       "label": "Cleaning Item",
       "itemCategoryName": "HOME_GOOD",
       "priority": 7,
+      "priorityTier": 1,
       "tokens": ["sponge", "brush", "broom", "mop", "detergent"],
       "attributes": { "segment": "cleaning" }
     },
@@ -63,6 +81,7 @@
       "label": "Household Textile",
       "itemCategoryName": "HOME_GOOD",
       "priority": 7,
+      "priorityTier": 1,
       "tokens": ["towel", "napkin", "cloth", "blanket", "sheet", "pillow"],
       "attributes": { "segment": "textile" }
     },
@@ -72,6 +91,7 @@
       "label": "Small Electronics",
       "itemCategoryName": "ELECTRONICS",
       "priority": 8,
+      "priorityTier": 1,
       "tokens": ["remote", "charger", "cable", "adapter", "speaker"],
       "attributes": { "segment": "electronics" }
     },
@@ -81,6 +101,7 @@
       "label": "Decor",
       "itemCategoryName": "HOME_GOOD",
       "priority": 5,
+      "priorityTier": 2,
       "tokens": ["vase", "frame", "candle", "ornament", "decor"],
       "attributes": { "segment": "decor" }
     },
@@ -90,6 +111,7 @@
       "label": "Plant",
       "itemCategoryName": "HOME_GOOD",
       "priority": 6,
+      "priorityTier": 2,
       "tokens": ["plant", "flower", "potted plant", "houseplant"],
       "attributes": { "segment": "plant" }
     },
@@ -99,6 +121,7 @@
       "label": "Storage & Organization",
       "itemCategoryName": "HOME_GOOD",
       "priority": 6,
+      "priorityTier": 2,
       "tokens": ["box", "basket", "drawer", "organizer"],
       "attributes": { "segment": "storage" }
     },
@@ -108,6 +131,7 @@
       "label": "Furniture",
       "itemCategoryName": "HOME_GOOD",
       "priority": 2,
+      "priorityTier": 3,
       "tokens": ["chair", "table", "desk", "sofa", "couch", "bed"],
       "attributes": { "segment": "furniture" }
     }

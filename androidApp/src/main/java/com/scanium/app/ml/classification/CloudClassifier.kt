@@ -86,8 +86,6 @@ class CloudClassifier(
         isLenient = true
     }
 
-    private val saveDebugCrops = BuildConfig.DEBUG && BuildConfig.CLASSIFIER_SAVE_CROPS
-
     override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.IO) {
         val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
         if (baseUrl.isBlank()) {
@@ -289,7 +287,7 @@ class CloudClassifier(
     }
 
     private fun maybeSaveDebugCrop(input: ClassificationInput) {
-        if (!saveDebugCrops) return
+        if (!BuildConfig.DEBUG || !ClassifierDebugFlags.saveCloudCropsEnabled) return
         val ctx = context ?: return
         runCatching {
             val dir = File(ctx.cacheDir, "classifier_crops").apply {
