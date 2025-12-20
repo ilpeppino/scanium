@@ -1,19 +1,19 @@
 # Architecture
 
-Single source of truth for how Scanium is structured and how we evolve it. Goal: ship Android first, keep builds green, make cloud classification primary, and grow a shared “brain” that iOS can consume without blocking Android.
+Single source of truth for how Scanium is structured and how we evolve it. Goal: ship Android first, keep builds green, keep cloud classification optional/configurable, and grow a shared “brain” that iOS can consume without blocking Android.
 
 ---
 
 ## Current State (from repo inspection)
-- **Build/tooling:** Java 17 toolchain; AGP 8.5.0; Kotlin 2.0.x; Compose BOM 2023.10. `./gradlew assembleDebug` is the main gate; SBOM + OWASP checks in `androidApp`.
-- **Modules:**  
-  - Platform UI: `androidApp/` (Compose, navigation, view models).  
-  - Platform scanning: `android-camera-camerax` (CameraX), `android-ml-mlkit` (ML Kit analyzers), `android-platform-adapters` (Bitmap/Rect adapters).  
-  - Shared brain: `shared/core-models` (ImageRef, NormalizedRect, RawDetection, DetectionResult, ItemCategory + classification/config contracts), `shared/core-tracking` (ObjectTracker, math).  
-  - Domain taxonomy: `core-domainpack` (DomainPackRepository, BasicCategoryEngine, JSON config).  
-  - Shell namespaces: `core-contracts`, `core-scan` (empty/placeholder).  
+- **Build/tooling:** Java 17 toolchain; AGP 8.5.0; Kotlin 2.0.0 + Compose compiler 2.0.0; Compose BOM 2024.05.00 in `androidApp`; KSP 2.0.0-1.0.24. `./gradlew assembleDebug` is the main gate; SBOM + OWASP checks in `androidApp`.
+- **Modules:**
+  - Platform UI: `androidApp/` (Compose, navigation, view models).
+  - Platform scanning: `android-camera-camerax` (CameraX), `android-ml-mlkit` (ML Kit analyzers), `android-platform-adapters` (Bitmap/Rect adapters).
+  - Shared brain: `shared/core-models` (ImageRef, NormalizedRect, RawDetection, DetectionResult, ItemCategory + classification/config contracts), `shared/core-tracking` (ObjectTracker, math).
+  - Domain taxonomy: `core-domainpack` (DomainPackRepository, BasicCategoryEngine, JSON config).
+  - Shell namespaces: `core-contracts`, `core-scan`, `shared:test-utils` (test helpers for shared modules).
   - Android wrappers: `core-models`, `core-tracking` (typealiases to shared KMP).
-- **Pipeline today:** CameraX → ML Kit detection → adapters to `RawDetection` → `ObjectTracker` + `ItemAggregator` → `ClassificationOrchestrator` (cloud/offline paths) → UI state in view models. Cloud classifier is available but gated by config; on-device labels act as fallback.
+- **Pipeline today:** CameraX → ML Kit detection → adapters to `RawDetection` → `ObjectTracker` + `ItemAggregator` → `ClassificationOrchestrator` (cloud/offline paths) → UI state in view models. Cloud classifier is config-driven via `BuildConfig`/`local.properties`; on-device labels act as fallback when unset.
 
 ---
 
@@ -72,6 +72,11 @@ flowchart LR
 - `androidApp` is the only integration point (wires UI + platform + shared).
 - `core-domainpack` depends on shared models but not on platform code.
 - Shell modules (`core-contracts`, `core-scan`) stay lightweight; no Android types.
+
+## Security posture (concise)
+- Network + classification defaults keep processing on-device; cloud classification only activates when `SCANIUM_API_BASE_URL`/`SCANIUM_API_KEY` are set (via `local.properties` or environment). See `androidApp/build.gradle.kts` BuildConfig entries.
+- OWASP Dependency-Check and CycloneDX SBOM run from `androidApp` (see Gradle plugins) and are exercised via `security-cve-scan.yml`.
+- Android network security config lives at `androidApp/src/main/res/xml/network_security_config.xml`; release builds enable R8/ProGuard per `proguard-rules.pro`.
 
 ---
 

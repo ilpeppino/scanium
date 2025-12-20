@@ -19,9 +19,9 @@ See [docs/INDEX.md](docs/INDEX.md) for the canonical doc set and entry point.
 **⚠️ Note:** Full test suite requires Android SDK. Use JVM-only validation:
 - JVM tests (shared modules): `./gradlew :shared:core-models:jvmTest :shared:core-tracking:jvmTest`
 - Pre-push validation: `./gradlew prePushJvmCheck`
-- Install pre-push hook: `./hooks/install-hooks.sh`
+- Install pre-push hook: `./scripts/dev/install-hooks.sh`
 
-See `docs/DEV_GUIDE.md` and `docs/BUILD_STABILITY.md` for details.
+See `docs/DEV_GUIDE.md` for details.
 
 ## Overview
 
@@ -140,7 +140,7 @@ For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SET
 
 3. Open the project in Android Studio, or build from command line:
    ```bash
-   ./build.sh assembleDebug  # Auto-detects Java 17
+   ./scripts/build.sh assembleDebug  # Auto-detects Java 17
    ```
 
 4. Run the app on an emulator or physical device
@@ -149,10 +149,10 @@ For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SET
 
 ### Using Portable Build Script (Recommended)
 ```bash
-./build.sh assembleDebug          # Build debug APK (auto-detects Java 17)
-./build.sh assembleRelease        # Build release APK
-./build.sh test                   # Run unit tests
-./build.sh clean                  # Clean build artifacts
+./scripts/build.sh assembleDebug          # Build debug APK (auto-detects Java 17)
+./scripts/build.sh assembleRelease        # Build release APK
+./scripts/build.sh test                   # Run unit tests
+./scripts/build.sh clean                  # Clean build artifacts
 ```
 
 The `build.sh` script automatically finds Java 17 on your system across macOS, Linux, and Windows.

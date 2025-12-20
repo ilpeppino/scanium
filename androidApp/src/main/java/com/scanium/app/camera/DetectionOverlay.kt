@@ -26,7 +26,7 @@ import kotlin.math.max
 /**
  * Overlay that renders center point markers for detected objects.
  *
- * Uses small circular markers instead of full bounding boxes to reduce visual clutter
+ * Uses small square markers instead of full bounding boxes to reduce visual clutter
  * while still providing location feedback for each detected item.
  *
  * @param detections List of detection results to render
@@ -55,9 +55,9 @@ fun DetectionOverlay(
             previewHeight = canvasHeight
         )
 
-        // Circle appearance constants
-        val circleRadius = 8.dp.toPx() // Small but visible marker
-        val glowRadius = 12.dp.toPx() // Subtle glow effect
+        // Square marker appearance constants (changed from circles to squares)
+        val squareSize = 10.dp.toPx() // Slightly bigger than previous circle (was 8dp radius)
+        val glowSize = 14.dp.toPx() // Subtle glow effect (was 12dp radius)
         val strokeWidth = 2.dp.toPx()
         val labelHorizontalPadding = 8.dp.toPx()
         val labelVerticalPadding = 4.dp.toPx()
@@ -76,35 +76,38 @@ fun DetectionOverlay(
             val centerY = transformedBox.top + transformedBox.height() / 2f
             val center = Offset(centerX, centerY)
 
-            // Draw subtle glow effect (outer circle with transparency)
-            drawCircle(
+            // Draw subtle glow effect (outer square with transparency)
+            drawRect(
                 color = CyanGlow.copy(alpha = 0.2f),
-                radius = glowRadius,
-                center = center
+                topLeft = Offset(centerX - glowSize / 2, centerY - glowSize / 2),
+                size = ComposeSize(glowSize, glowSize)
             )
 
-            // Draw main filled circle marker
-            drawCircle(
+            // Draw main filled square marker
+            drawRect(
                 color = ScaniumBlue,
-                radius = circleRadius,
-                center = center
+                topLeft = Offset(centerX - squareSize / 2, centerY - squareSize / 2),
+                size = ComposeSize(squareSize, squareSize)
             )
 
             // Draw white border for better visibility against all backgrounds
-            drawCircle(
+            drawRect(
                 color = Color.White,
-                radius = circleRadius,
-                center = center,
+                topLeft = Offset(centerX - squareSize / 2, centerY - squareSize / 2),
+                size = ComposeSize(squareSize, squareSize),
                 style = Stroke(width = strokeWidth)
             )
 
-            // Draw small inner dot for precise center indication
-            drawCircle(
+            // Draw small inner square for precise center indication
+            val innerSquareSize = 3.dp.toPx()
+            drawRect(
                 color = Color.White,
-                radius = 2.dp.toPx(),
-                center = center
+                topLeft = Offset(centerX - innerSquareSize / 2, centerY - innerSquareSize / 2),
+                size = ComposeSize(innerSquareSize, innerSquareSize)
             )
 
+            // Price label overlay - Disabled to reduce visual clutter
+            /*
             val priceLabel = detection.formattedPriceRange.ifBlank { "N/A" }
             val textLayoutResult = textMeasurer.measure(
                 text = AnnotatedString(priceLabel),
@@ -119,9 +122,9 @@ fun DetectionOverlay(
             val maxLabelLeft = max(0f, canvasWidth - labelWidth)
             var labelLeft = (centerX - labelWidth / 2f).coerceIn(0f, maxLabelLeft)
 
-            val preferredTop = centerY - circleRadius - labelMargin - labelHeight
+            val preferredTop = centerY - squareSize - labelMargin - labelHeight
             var labelTop = if (preferredTop < 0f) {
-                centerY + circleRadius + labelMargin
+                centerY + squareSize + labelMargin
             } else {
                 preferredTop
             }
@@ -142,6 +145,7 @@ fun DetectionOverlay(
                     y = labelTop + labelVerticalPadding
                 )
             )
+            */
         }
     }
 }

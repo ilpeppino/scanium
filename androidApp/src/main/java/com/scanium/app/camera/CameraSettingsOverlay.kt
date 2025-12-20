@@ -54,6 +54,8 @@ fun CameraSettingsOverlay(
     onProcessingModeChange: (ClassificationMode) -> Unit,
     captureResolution: CaptureResolution,
     onResolutionChange: (CaptureResolution) -> Unit,
+    saveCloudCropsEnabled: Boolean,
+    onSaveCloudCropsChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -104,7 +106,9 @@ fun CameraSettingsOverlay(
                     )
                     ProcessingSettingsCard(
                         classificationMode = classificationMode,
-                        onProcessingModeChange = onProcessingModeChange
+                        onProcessingModeChange = onProcessingModeChange,
+                        saveCloudCropsEnabled = saveCloudCropsEnabled,
+                        onSaveCloudCropsChange = onSaveCloudCropsChange
                     )
                 }
             }
@@ -166,7 +170,9 @@ private fun ResolutionSettingsCard(
 @Composable
 private fun ProcessingSettingsCard(
     classificationMode: ClassificationMode,
-    onProcessingModeChange: (ClassificationMode) -> Unit
+    onProcessingModeChange: (ClassificationMode) -> Unit,
+    saveCloudCropsEnabled: Boolean,
+    onSaveCloudCropsChange: (Boolean) -> Unit
 ) {
     val isCloudConfigured = BuildConfig.SCANIUM_API_BASE_URL.isNotBlank()
     val showConfigWarning = classificationMode == ClassificationMode.CLOUD && !isCloudConfigured
@@ -263,6 +269,44 @@ private fun ProcessingSettingsCard(
                             )
                         }
                     }
+                }
+            }
+
+            // Debug: Save cloud crops to cache
+            if (BuildConfig.DEBUG) {
+                Divider()
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f, fill = true),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("Save cloud crops", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = "Writes outgoing classifier crops to app cache for debugging.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = saveCloudCropsEnabled,
+                            onCheckedChange = onSaveCloudCropsChange
+                        )
+                    }
+                    Text(
+                        text = "Files stored under cache/classifier_crops (cleared on uninstall).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

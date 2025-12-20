@@ -14,6 +14,7 @@ export type MappingResult = {
     matchedToken?: string;
     reason: string;
     priority?: number;
+    priorityTier?: number;
     contextPenaltyApplied?: boolean;
   };
 };
@@ -21,10 +22,12 @@ export type MappingResult = {
 const DEFAULT_THRESHOLD = 0.28;
 const DEFAULT_CONTEXT_PENALTY = 0.5;
 const DEFAULT_PRIORITY = 5;
+const DEFAULT_PRIORITY_TIER = 3;
 
 type Candidate = {
   categoryId: string;
   priority: number;
+  priorityTier: number;
   score: number;
   roundedScore: number;
   attributes: Record<string, string>;
@@ -46,6 +49,7 @@ export function mapSignalsToDomainCategory(
 
   const candidates: Candidate[] = [];
   let fallbackCandidate: Candidate | null = null;
+  const tierBuckets = new Map<number, Candidate[]>();
 
   for (const category of pack.categories) {
     let categoryScore = 0;
@@ -78,10 +82,12 @@ export function mapSignalsToDomainCategory(
       continue;
     }
 
-    const priority = category.priority ?? category.priorityTier ?? DEFAULT_PRIORITY;
+    const priority = category.priority ?? DEFAULT_PRIORITY;
+    const priorityTier = category.priorityTier ?? DEFAULT_PRIORITY_TIER;
     const candidate: Candidate = {
       categoryId: category.id,
       priority,
+      priorityTier,
       score: categoryScore,
       roundedScore: Number(categoryScore.toFixed(3)),
       attributes: category.attributes ?? {},
@@ -92,20 +98,29 @@ export function mapSignalsToDomainCategory(
 
     candidates.push(candidate);
 
+    if (candidate.score >= threshold) {
+      const existing = tierBuckets.get(priorityTier) ?? [];
+      existing.push(candidate);
+      tierBuckets.set(priorityTier, existing);
+    }
+
     if (!fallbackCandidate || candidate.score > fallbackCandidate.score) {
       fallbackCandidate = candidate;
     }
   }
 
+  const selectedTier = [...tierBuckets.keys()].sort((a, b) => a - b)[0];
   const selected =
-    candidates
-      .filter((candidate) => candidate.score >= threshold)
-      .sort((a, b) => {
-        if (b.priority !== a.priority) {
-          return b.priority - a.priority;
-        }
-        return b.score - a.score;
-      })[0] ?? null;
+    selectedTier !== undefined
+      ? tierBuckets
+          .get(selectedTier)!
+          .sort((a, b) => {
+            if (b.priority !== a.priority) {
+              return b.priority - a.priority;
+            }
+            return b.score - a.score;
+          })[0]
+      : null;
 
   const reason = buildReason(selected, fallbackCandidate, threshold);
 
@@ -122,6 +137,7 @@ export function mapSignalsToDomainCategory(
       matchedToken: selected?.matchedToken ?? fallbackCandidate?.matchedToken,
       reason,
       priority: selected?.priority,
+      priorityTier: selected?.priorityTier,
       contextPenaltyApplied: selected?.contextPenaltyApplied,
     },
   };
@@ -148,7 +164,7 @@ function buildReason(
   threshold: number
 ): string {
   if (selected) {
-    const priorityText = `priority ${selected.priority}`;
+    const priorityText = `priority ${selected.priority} (tier ${selected.priorityTier})`;
     const labelText = selected.matchedLabel
       ? `label "${selected.matchedLabel}"`
       : 'matching signal';
@@ -160,7 +176,7 @@ function buildReason(
     const labelText = fallback.matchedLabel
       ? `label "${fallback.matchedLabel}"`
       : 'available signals';
-    return `No category met threshold ${threshold}; best candidate was priority ${fallback.priority} "${fallback.categoryId}" from ${labelText} (score=${fallback.roundedScore})`;
+    return `No category met threshold ${threshold}; best candidate was priority ${fallback.priority} (tier ${fallback.priorityTier}) "${fallback.categoryId}" from ${labelText} (score=${fallback.roundedScore})`;
   }
 
   return 'No signals matched any domain category tokens';

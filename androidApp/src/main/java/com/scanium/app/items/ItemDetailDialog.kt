@@ -77,6 +77,7 @@ fun ItemDetailDialog(
                 }
 
                 // Details
+                DetailRow(label = "Classification", value = item.displayLabel)
                 DetailRow(label = "Category", value = item.category.displayName)
                 DetailRow(label = "Price Range", value = item.formattedPriceRange)
                 DetailRow(label = "Confidence", value = item.formattedConfidence)
@@ -84,6 +85,9 @@ fun ItemDetailDialog(
                     label = "Detected At",
                     value = formatDetailTimestamp(item.timestamp)
                 )
+                item.domainCategoryId?.let { id ->
+                    DetailRow(label = "Domain Category", value = formatDomainCategory(id))
+                }
                 DetailRow(label = "Item ID", value = item.id.take(8))
 
                 // Show recognized text for documents
@@ -160,4 +164,12 @@ private fun DetailRow(label: String, value: String) {
 private fun formatDetailTimestamp(timestamp: Long): String {
     val format = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
     return format.format(Date(timestamp))
+}
+
+private fun formatDomainCategory(raw: String): String {
+    if (raw.isBlank()) return "Unknown"
+    val words = raw.split('_').filter { it.isNotBlank() }
+    return words.joinToString(" ") { word ->
+        word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+    }
 }
