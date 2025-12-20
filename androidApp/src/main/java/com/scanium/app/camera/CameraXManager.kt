@@ -454,6 +454,7 @@ class CameraXManager(
         scanMode: ScanMode,
         useStreamMode: Boolean = false
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        var cachedBitmap: Bitmap? = null
         return try {
             Log.i(TAG, ">>> processImageProxy: START - scanMode=$scanMode, useStreamMode=$useStreamMode, isScanning=$isScanning")
 
@@ -473,7 +474,6 @@ class CameraXManager(
             // IMPORTANT: Do NOT rotate the bitmap! ML Kit's InputImage already has rotation
             // metadata, so bounding boxes will be in the original (unrotated) coordinate space.
             // Rotating the bitmap would cause a coordinate mismatch when cropping thumbnails.
-            var cachedBitmap: Bitmap? = null
             val lazyBitmapProvider: () -> Bitmap? = {
                 if (cachedBitmap == null) {
                     cachedBitmap = runCatching {
@@ -529,6 +529,12 @@ class CameraXManager(
             Log.e(TAG, ">>> processImageProxy: ERROR", e)
             Pair(emptyList(), emptyList())
         } finally {
+            cachedBitmap?.let { bitmap ->
+                if (!bitmap.isRecycled) {
+                    bitmap.recycle()
+                }
+                cachedBitmap = null
+            }
             imageProxy.close()
         }
     }
