@@ -12,12 +12,12 @@
 
 ## Build, Test, and Development Commands
 ```bash
-./build.sh assembleDebug      # Builds with auto-detected Java 17
-./gradlew assembleDebug       # Build debug APK
-./gradlew installDebug        # Deploy to connected device/emulator
-./gradlew test                # JVM unit tests
-./gradlew connectedAndroidTest # Instrumented + Compose UI tests (needs device)
-./gradlew lint                # Android Lint across modules
+./scripts/build.sh assembleDebug      # Builds with auto-detected Java 17
+./gradlew assembleDebug               # Build debug APK
+./gradlew installDebug                # Deploy to connected device/emulator
+./gradlew test                        # JVM unit tests
+./gradlew connectedAndroidTest        # Instrumented + Compose UI tests (needs device)
+./gradlew lint                        # Android Lint across modules
 ```
 - Use Android Studio’s “Apply Changes” for quick UI tweaks; prefer `./gradlew clean` before reproducing build issues.
 
