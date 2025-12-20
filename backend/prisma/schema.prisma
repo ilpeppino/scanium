@@ -36,7 +36,7 @@ model EbayConnection {
   environment String // "sandbox" | "production"
 
   // OAuth tokens
-  // NOTE: In production, consider encrypting these at rest
+  // Stored encrypted via application-level AES-256-GCM
   accessToken  String
   refreshToken String
   expiresAt    DateTime

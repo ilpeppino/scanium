@@ -23,8 +23,16 @@ const config = configSchema.parse({
     clientId: 'client',
     clientSecret: 'client-secret-minimum-length-please',
     scopes: 'scope',
+    tokenEncryptionKey: 'x'.repeat(32),
   },
-  sessionSigningSecret: 'x'.repeat(32),
+  sessionSigningSecret: 'x'.repeat(64),
+  security: {
+    enforceHttps: false,
+    enableHsts: false,
+    apiKeyRotationEnabled: false,
+    apiKeyExpirationDays: 90,
+    logApiKeyUsage: false,
+  },
   corsOrigins: 'http://localhost',
 });
 

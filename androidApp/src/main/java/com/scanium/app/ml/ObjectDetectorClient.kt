@@ -26,6 +26,15 @@ data class DetectionResponse(
 )
 
 /**
+ * Wrapper class containing both DetectionInfo (for tracking) and DetectionResults (for overlay).
+ * This eliminates the need for double detection when tracking is enabled.
+ */
+data class TrackingDetectionResponse(
+    val detectionInfos: List<DetectionInfo>,
+    val detectionResults: List<DetectionResult>
+)
+
+/**
  * Client for ML Kit Object Detection and Tracking.
  *
  * Configures ML Kit to detect multiple objects with classification enabled.
@@ -80,13 +89,13 @@ class ObjectDetectorClient {
      * Processes an image and detects objects.
      *
      * @param image InputImage to process (from CameraX)
-     * @param sourceBitmap Original bitmap for cropping thumbnails
+     * @param sourceBitmap Lazy provider for bitmap (only invoked if detections require thumbnails)
      * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
      * @return DetectionResponse containing both ScannedItems and DetectionResults
      */
     suspend fun detectObjects(
         image: InputImage,
-        sourceBitmap: Bitmap?,
+        sourceBitmap: () -> Bitmap?,
         useStreamMode: Boolean = false
     ): DetectionResponse {
         return try {
@@ -105,6 +114,15 @@ class ObjectDetectorClient {
                 Log.d(TAG, "Object $index: labels=[$labels], box=${obj.boundingBox}")
             }
 
+            // OPTIMIZATION: Only generate bitmap if we have detections
+            // This avoids expensive bitmap allocation when no objects are detected
+            val bitmap = if (detectedObjects.isNotEmpty()) {
+                sourceBitmap()
+            } else {
+                Log.d(TAG, "No detections - skipping bitmap generation")
+                null
+            }
+
             // Convert to both ScannedItems and DetectionResults
             val scannedItems = mutableListOf<ScannedItem>()
             val detectionResults = mutableListOf<DetectionResult>()
@@ -112,15 +130,15 @@ class ObjectDetectorClient {
             detectedObjects.forEach { obj ->
                 val scannedItem = convertToScannedItem(
                     detectedObject = obj,
-                    sourceBitmap = sourceBitmap,
+                    sourceBitmap = bitmap,
                     imageRotationDegrees = image.rotationDegrees,
                     fallbackWidth = image.width,
                     fallbackHeight = image.height
                 )
                 val detectionResult = convertToDetectionResult(
                     detectedObject = obj,
-                    imageWidth = sourceBitmap?.width ?: image.width,
-                    imageHeight = sourceBitmap?.height ?: image.height
+                    imageWidth = bitmap?.width ?: image.width,
+                    imageHeight = bitmap?.height ?: image.height
                 )
 
                 if (scannedItem != null) scannedItems.add(scannedItem)
@@ -228,19 +246,20 @@ class ObjectDetectorClient {
     /**
      * Processes an image and extracts raw detection information for tracking.
      *
-     * This method returns DetectionInfo objects that can be fed into ObjectTracker
-     * for de-duplication and confirmation logic.
+     * This method returns both DetectionInfo objects (for ObjectTracker) and DetectionResult
+     * objects (for overlay visualization) from a SINGLE detection pass, eliminating duplicate
+     * ML workload.
      *
      * @param image InputImage to process (from CameraX)
-     * @param sourceBitmap Original bitmap for cropping thumbnails
+     * @param sourceBitmap Lazy provider for bitmap (only invoked if detections require thumbnails)
      * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
-     * @return List of DetectionInfo with tracking metadata
+     * @return TrackingDetectionResponse with both tracking metadata and overlay data
      */
     suspend fun detectObjectsWithTracking(
         image: InputImage,
-        sourceBitmap: Bitmap?,
+        sourceBitmap: () -> Bitmap?,
         useStreamMode: Boolean = true // Default to STREAM_MODE for tracking
-    ): List<DetectionInfo> {
+    ): TrackingDetectionResponse {
         return try {
             val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
             Log.i(TAG, "========================================")
@@ -248,32 +267,9 @@ class ObjectDetectorClient {
             Log.i(TAG, ">>> Mode: $mode")
             Log.i(TAG, ">>> Image: ${image.width}x${image.height}, rotation=${image.rotationDegrees}, format=${image.format}")
 
-            // Analyze bitmap if available
-            if (sourceBitmap != null) {
-                val bitmapAnalysis = analyzeBitmap(sourceBitmap)
-                Log.i(TAG, ">>> $bitmapAnalysis")
-            } else {
-                Log.w(TAG, ">>> WARNING: sourceBitmap is NULL - thumbnails won't be available")
-            }
-
             // Choose the appropriate detector
             val detector = if (useStreamMode) streamDetector else singleImageDetector
             Log.i(TAG, ">>> Detector: $detector")
-
-            // CRITICAL FIX: Try creating InputImage from bitmap instead of MediaImage
-            // This can sometimes work better when MediaImage detection fails
-            val alternativeImage = if (sourceBitmap != null) {
-                try {
-                    val altImage = InputImage.fromBitmap(sourceBitmap, image.rotationDegrees)
-                    Log.i(TAG, ">>> Created alternative InputImage from bitmap: ${altImage.width}x${altImage.height}")
-                    altImage
-                } catch (e: Exception) {
-                    Log.w(TAG, ">>> Failed to create alternative InputImage from bitmap", e)
-                    null
-                }
-            } else {
-                null
-            }
 
             // Try detection with original image first
             Log.i(TAG, ">>> Attempting detection with original InputImage...")
@@ -284,7 +280,6 @@ class ObjectDetectorClient {
                 Log.e(TAG, ">>> ML Kit process() FAILED", exception)
                 Log.e(TAG, ">>> Exception type: ${exception.javaClass.simpleName}")
                 Log.e(TAG, ">>> Exception message: ${exception.message}")
-                Log.e(TAG, ">>> Will try alternative InputImage if available")
             }
 
             task.addOnSuccessListener { objects ->
@@ -292,64 +287,23 @@ class ObjectDetectorClient {
             }
 
             // Await the result
-            var detectedObjects = task.await()
+            val detectedObjects = task.await()
 
             Log.i(TAG, ">>> ML Kit returned ${detectedObjects.size} raw objects from original image")
 
-            // If zero objects and we have alternative image, try with that
-            if (detectedObjects.isEmpty() && alternativeImage != null) {
-                Log.w(TAG, ">>> Zero objects detected, trying with bitmap-based InputImage...")
-                try {
-                    val altTask = detector.process(alternativeImage)
-                    val altObjects = altTask.await()
-                    Log.i(TAG, ">>> Alternative detection returned ${altObjects.size} objects")
-                    if (altObjects.isNotEmpty()) {
-                        Log.i(TAG, ">>> SUCCESS: Alternative InputImage detected objects!")
-                        detectedObjects = altObjects
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, ">>> Alternative detection also failed", e)
-                }
-            }
-
-            // DISABLED: Don't mix STREAM and SINGLE_IMAGE modes - causes ML Kit crashes
-            // If still zero objects, try SINGLE_IMAGE_MODE as a fallback
-            if (false && detectedObjects.isEmpty() && useStreamMode) {
-                Log.w(TAG, ">>> Zero objects in STREAM mode, trying SINGLE_IMAGE_MODE...")
-                try {
-                    val singleModeTask = singleImageDetector.process(image)
-                    val singleModeObjects = singleModeTask.await()
-                    Log.i(TAG, ">>> SINGLE_IMAGE_MODE returned ${singleModeObjects.size} objects")
-                    if (singleModeObjects.isNotEmpty()) {
-                        Log.i(TAG, ">>> SUCCESS: SINGLE_IMAGE_MODE detected objects!")
-                        detectedObjects = singleModeObjects
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, ">>> SINGLE_IMAGE_MODE detection also failed", e)
-                }
-            }
-
-            // If zero objects, log comprehensive diagnostic info
+            // If zero objects, log diagnostic info and return early (no need to create bitmap)
             if (detectedObjects.isEmpty()) {
-                Log.e(TAG, "========================================")
-                Log.e(TAG, ">>> CRITICAL: ZERO OBJECTS DETECTED AFTER ALL ATTEMPTS")
-                Log.e(TAG, ">>> Image details: ${image.width}x${image.height}, rotation=${image.rotationDegrees}, format=${image.format}")
-                Log.e(TAG, ">>> Bitmap details: ${sourceBitmap?.width}x${sourceBitmap?.height}")
-                Log.e(TAG, ">>> Tried: original InputImage, alternative bitmap-based InputImage, SINGLE_IMAGE_MODE")
-                Log.e(TAG, ">>> ")
-                Log.e(TAG, ">>> Possible causes:")
-                Log.e(TAG, ">>>   1. ML Kit model not downloaded (first run requires network)")
-                Log.e(TAG, ">>>   2. Scene doesn't contain detectable objects")
-                Log.e(TAG, ">>>   3. Image too dark, blurry, or low contrast")
-                Log.e(TAG, ">>>   4. Objects too small or too large in frame")
-                Log.e(TAG, ">>>   5. ML Kit's detection thresholds too strict")
-                Log.e(TAG, ">>> ")
-                Log.e(TAG, ">>> Recommendations:")
-                Log.e(TAG, ">>>   - Ensure device has internet connection for model download")
-                Log.e(TAG, ">>>   - Point camera at clear, well-lit objects")
-                Log.e(TAG, ">>>   - Try objects with distinct shapes (bottles, books, boxes)")
-                Log.e(TAG, ">>>   - Ensure objects fill 10-50% of frame")
-                Log.e(TAG, "========================================")
+                Log.d(TAG, "No detections - skipping bitmap generation for tracking")
+                return TrackingDetectionResponse(emptyList(), emptyList())
+            }
+
+            // OPTIMIZATION: Only generate bitmap if we have detections that need thumbnails
+            val bitmap = sourceBitmap()
+            if (bitmap != null) {
+                val bitmapAnalysis = analyzeBitmap(bitmap)
+                Log.i(TAG, ">>> $bitmapAnalysis")
+            } else {
+                Log.w(TAG, ">>> WARNING: sourceBitmap provider returned NULL - thumbnails won't be available")
             }
 
             // Log each detected object
@@ -358,27 +312,42 @@ class ObjectDetectorClient {
                 Log.i(TAG, "    Object $index: trackingId=${obj.trackingId}, labels=[$labels], box=${obj.boundingBox}")
             }
 
-            // Convert each detected object to DetectionInfo
-            val detectionInfos = detectedObjects.mapNotNull { obj ->
-                extractDetectionInfo(
+            // Convert each detected object to both DetectionInfo and DetectionResult
+            // This single pass provides data for both tracker and overlay
+            val detectionInfos = mutableListOf<DetectionInfo>()
+            val detectionResults = mutableListOf<DetectionResult>()
+
+            detectedObjects.forEach { obj ->
+                // Extract DetectionInfo for tracking
+                val detectionInfo = extractDetectionInfo(
                     detectedObject = obj,
-                    sourceBitmap = sourceBitmap,
+                    sourceBitmap = bitmap,
                     imageRotationDegrees = image.rotationDegrees,
                     fallbackWidth = image.width,
                     fallbackHeight = image.height
                 )
+
+                // Convert to DetectionResult for overlay
+                val detectionResult = convertToDetectionResult(
+                    detectedObject = obj,
+                    imageWidth = bitmap?.width ?: image.width,
+                    imageHeight = bitmap?.height ?: image.height
+                )
+
+                if (detectionInfo != null) detectionInfos.add(detectionInfo)
+                if (detectionResult != null) detectionResults.add(detectionResult)
             }
 
-            Log.i(TAG, ">>> Extracted ${detectionInfos.size} DetectionInfo objects")
+            Log.i(TAG, ">>> Extracted ${detectionInfos.size} DetectionInfo objects and ${detectionResults.size} DetectionResult objects")
             detectionInfos.forEachIndexed { index, info ->
                 Log.i(TAG, "    DetectionInfo $index: trackingId=${info.trackingId}, category=${info.category}, confidence=${info.confidence}, area=${info.normalizedBoxArea}")
             }
 
-            detectionInfos
+            TrackingDetectionResponse(detectionInfos, detectionResults)
         } catch (e: Exception) {
             // Log.e() with exception parameter automatically includes full stack trace
             Log.e(TAG, ">>> ERROR in detectObjectsWithTracking", e)
-            emptyList()
+            TrackingDetectionResponse(emptyList(), emptyList())
         }
     }
 

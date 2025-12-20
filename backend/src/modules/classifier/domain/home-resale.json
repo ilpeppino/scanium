@@ -87,6 +87,67 @@
     },
 
     {
+      "id": "consumer_electronics_portable",
+      "label": "Portable Electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "priority": 9,
+      "tokens": [
+        "phone",
+        "smartphone",
+        "mobile phone",
+        "cell phone",
+        "tablet",
+        "laptop",
+        "notebook",
+        "e-reader",
+        "ereader",
+        "smartwatch",
+        "smart watch",
+        "headphones",
+        "headset",
+        "earbuds"
+      ],
+      "attributes": { "segment": "electronics" }
+    },
+
+    {
+      "id": "consumer_electronics_stationary",
+      "label": "Stationary Electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "priority": 9,
+      "tokens": [
+        "tv",
+        "television",
+        "monitor",
+        "screen",
+        "display",
+        "desktop computer",
+        "desktop",
+        "printer"
+      ],
+      "attributes": { "segment": "electronics" }
+    },
+
+    {
+      "id": "home_electronics",
+      "label": "Home Electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "priority": 8,
+      "tokens": [
+        "router",
+        "modem",
+        "wifi router",
+        "speaker",
+        "streaming device",
+        "game console",
+        "console",
+        "controller",
+        "gaming controller"
+      ],
+      "attributes": { "segment": "electronics" }
+    },
+
+    {
       "id": "electronics_small",
       "label": "Small Electronics",
       "itemCategoryName": "ELECTRONICS",

@@ -1,0 +1,138 @@
+# iOS-Android Parity Gap Matrix
+
+**Last Updated:** 2025-12-19
+**Purpose:** Detailed capability-by-capability gap analysis with root cause, risk, and solution approaches
+
+---
+
+## How to Read This Matrix
+
+- **Android Status:** Evidence paths showing Android implementation
+- **iOS Status:** Evidence paths showing iOS implementation (or absence)
+- **Gap Description:** What's missing or incomplete
+- **Root Cause Type:** Technical reason for the gap
+- **Risk:** Impact assessment if gap remains
+- **Dependencies:** What must be done first
+- **Proposed Solution:** High-level approach
+- **Estimation Bucket:** S (Small: <3 days), M (Medium: 3-7 days), L (Large: >7 days)
+
+---
+
+## Gap Matrix
+
+| # | Capability | Android Status | iOS Status | Gap Description | Root Cause Type | Risk | Dependencies | Proposed Solution | Est |
+|---|------------|---------------|------------|-----------------|-----------------|------|--------------|-------------------|-----|
+| **1. CAMERA CAPTURE** |
+| 1.1 | Camera Preview UI | ✅ `CameraScreen.kt:45`<br>`CameraXManager.kt:78` | ❌ None<br>Frame source exists: `AVFoundationFrameSource.swift:6` but no UI | No SwiftUI camera view with live preview | Missing UI | **HIGH** - App cannot scan items | None | Create `CameraView.swift` with `AVCaptureVideoPreviewLayer` wrapped in UIViewRepresentable | M |
+| 1.2 | Capture Button | ✅ `ShutterButton.kt` | ❌ None | No shutter button or capture controls | Missing UI | **HIGH** - Cannot capture images | 1.1 Camera Preview UI | Add capture button to CameraView, wire to frame capture callback | S |
+| 1.3 | Detection Overlay | ✅ `DetectionOverlay.kt` | ❌ None | No bounding box visualization on camera preview | Missing UI | **MED** - Poor UX, hard to see what's detected | 1.1 Camera Preview UI, 2.1 ML Integration | Create SwiftUI overlay with Canvas for drawing bounding boxes | M |
+| 1.4 | Settings Overlay | ✅ `CameraSettingsOverlay.kt`<br>`CaptureResolution.kt` | ❌ None | No resolution picker, mode switcher, threshold slider | Missing UI | **LOW** - Basic scanning works without settings | 1.1 Camera Preview UI | Create settings sheet with Picker views for resolution, mode, threshold | S |
+| 1.5 | Shutter Sound/Haptics | ✅ `CameraSoundManager.kt` | ❌ None | No audio/haptic feedback on capture | Missing UX | **LOW** - Cosmetic only | 1.2 Capture Button | Use `AudioServicesPlaySystemSound` and `UIImpactFeedbackGenerator` | S |
+| 1.6 | Error Handling UI | ✅ `CameraErrorState.kt` | ❌ None | No permission denied/camera unavailable UI | Missing UI | **MED** - Poor error UX | 1.1 Camera Preview UI, 14.1 Permissions | Create alert views for camera errors | S |
+| 1.7 | Orientation Handling | ✅ `CameraXManager.kt:150`<br>`ImageUtils.kt` | 🟡 Partial: `AVFoundationFrameSource.swift:50,89`<br>Portrait only | No landscape support, limited orientation handling | Missing wiring | **LOW** - Portrait mode sufficient for v1 | None | Extend orientation mapping in AVFoundationFrameSource | S |
+| **2. ML / OBJECT DETECTION** |
+| 2.1 | ML Pipeline Integration | ✅ `CameraXManager.kt:180`<br>`ObjectDetectorClient.kt:42` | ❌ Services exist but not called:<br>`CoreMLObjectDetectionService.swift:14`<br>`VisionBarcodeService.swift:8`<br>`VisionTextService.swift:8` | ML services exist but not wired to camera frame source | Missing wiring | **HIGH** - No object detection at all | 1.1 Camera Preview UI | Create detection coordinator to call ML services on each frame | M |
+| 2.2 | Real-time Frame Processing | ✅ `CameraXManager.kt:150-200` | ❌ None | No frame-by-frame analysis loop | Missing orchestration | **HIGH** - No live detection | 2.1 ML Integration | Add frame throttling (e.g., 5 fps) and async ML calls | M |
+| 2.3 | Multi-Mode Switching | ✅ `ModeSwitcher.kt`<br>Object/Barcode/Text modes | ❌ None | No UI to toggle between detection modes | Missing UI | **MED** - UX limitation | 1.1 Camera Preview UI, 2.1 ML Integration | Add segmented control for mode selection in camera UI | S |
+| 2.4 | Model Management | ✅ `AndroidManifest.xml:21-24`<br>ML Kit auto-download | ❌ None | No dynamic model loading or download UI | Missing build integration | **MED** - Must bundle models in app | None | Bundle CoreML models in Xcode project, add download flow later | M |
+| 2.5 | Detection Logging | ✅ `DetectionLogger.kt` | ❌ None | No debug logging or crop saving | Missing adapter | **LOW** - Debug feature only | None | Create Swift logger with FileManager for crop saving | S |
+| **3. CLASSIFICATION** |
+| 3.1 | On-Device Classifier | ✅ `OnDeviceClassifier.kt:15`<br>Label→category mapping | ❌ None | No Swift implementation of label-to-category logic | Missing adapter | **MED** - Limits offline use | None | Port label mapping logic to Swift, use Vision labels | M |
+| 3.2 | Cloud Classifier | ✅ `CloudClassifier.kt:50`<br>HTTP POST to backend | ❌ None | No URLSession HTTP client for cloud API | Missing adapter | **MED** - Limits classification quality | None | Create URLSession client with API key auth | M |
+| 3.3 | Classification Orchestrator | ✅ `ClassificationOrchestrator.kt:45`<br>Mode-based routing + fallback | ❌ None | No mode selection or fallback logic | Missing orchestration | **MED** - No classification at all | 3.1, 3.2 | Create Swift orchestrator with async/await | M |
+| 3.4 | Settings/Persistence | ✅ `ClassificationPreferences.kt`<br>`ClassificationModeViewModel.kt` | ❌ None | No UserDefaults for mode preference | Missing persistence | **LOW** - Defaults to on-device | None | Add UserDefaults wrapper for classification mode | S |
+| **4. TRACKING & AGGREGATION** |
+| 4.1 | Tracker Integration | ✅ `ItemsViewModel.kt:54`<br>Uses `ObjectTracker` from shared | ❌ Shared available but not used:<br>`SharedBridge.swift:96` | ObjectTracker compiled to XCFramework but not instantiated in iOS | Missing wiring | **HIGH** - Duplicate items, no deduplication | 2.1 ML Integration | Instantiate `ObjectTracker` in Swift, call `processFrame()` on each detection | M |
+| 4.2 | Aggregator Integration | ✅ `ItemsViewModel.kt:92`<br>`addItem()` uses `ItemAggregator` | ❌ Not used | ItemAggregator compiled to XCFramework but not called | Missing wiring | **HIGH** - No similarity-based deduplication | 4.1 Tracker | Instantiate `ItemAggregator`, call `processDetection()` | M |
+| 4.3 | Threshold Control UI | ✅ `VerticalThresholdSlider.kt` | ❌ None | No UI to adjust similarity threshold | Missing UI | **LOW** - Can use default threshold | 4.2 Aggregator | Add Slider in camera settings | S |
+| 4.4 | State Management | ✅ `ItemsViewModel.kt:46`<br>StateFlow with real-time updates | ❌ Static data only:<br>`ContentView.swift:4-6` | No @ObservableObject or @Published for live item updates | Missing state mgmt | **HIGH** - Items don't update live | 4.2 Aggregator | Create ItemsViewModel as ObservableObject with @Published items | M |
+| **5. ITEMS LIST & DETAILS UI** |
+| 5.1 | Thumbnail Display | ✅ `ItemsListScreen.kt:80-100`<br>Loads from URI or ImageRef | 🟡 Partial: `ContentView.swift:12`<br>SF Symbol placeholder only | No image loading from ImageRef or file path | Missing adapter | **MED** - Poor UX | None | Add AsyncImage or custom ImageRef→UIImage converter | M |
+| 5.2 | Detail View | ✅ `ItemDetailDialog.kt:30` | ❌ None | No tap-to-expand detail modal | Missing UI | **MED** - Cannot view item details | None | Create ItemDetailView sheet with NavigationLink | M |
+| 5.3 | Swipe-to-Delete | ✅ `ItemsListScreen.kt:120` | ❌ None | No gesture handling for deletion | Missing UI | **MED** - Cannot delete items | 5.4 State Mgmt | Add `.swipeActions` modifier to List | S |
+| 5.4 | State Management | ✅ `ItemsViewModel.kt:150`<br>`deleteItems()` batch deletion | ❌ None | No ObservableObject for items list state | Missing state mgmt | **HIGH** - Items cannot be added/removed | None | Create ItemsViewModel as ObservableObject | M |
+| 5.5 | Multi-Select & Batch Actions | ✅ `ItemsListScreen.kt:200`<br>Checkboxes + FAB dropdown | ❌ None | No multi-select mode or batch operations | Missing UI | **MED** - Cannot bulk save/sell | 5.4 State Mgmt | Add EditButton and selection state | M |
+| 5.6 | Floating Action Button | ✅ `ItemsListScreen.kt:250`<br>Save/Sell dropdown | ❌ None | No FAB or action menu | Missing UI | **MED** - No save/sell shortcuts | None | Add custom FAB with Menu or SwiftUI toolbar | S |
+| **6. STORAGE & EXPORT** |
+| 6.1 | Photo Library Save | ✅ `MediaStoreSaver.kt:58`<br>`saveImagesToGallery()` | ❌ None | No PHPhotoLibrary integration | Missing adapter | **HIGH** - Cannot save items | None | Use PHPhotoLibrary to save to album | M |
+| 6.2 | Album Management | ✅ `MediaStoreSaver.kt:48`<br>"Scanium" album | ❌ None | No custom album creation | Missing adapter | **LOW** - Can save to camera roll | 6.1 Photo Save | Use PHAssetCollectionChangeRequest to create album | S |
+| 6.3 | Batch Save | ✅ `MediaStoreSaver.kt:58`<br>List of images | ❌ None | No batch save operation | Missing adapter | **MED** - Poor UX for multi-save | 6.1 Photo Save | Wrap in async Task.detached for batch | M |
+| 6.4 | Error Handling | ✅ `SaveResult` data class | ❌ None | No success/failure tracking | Missing adapter | **MED** - Poor error UX | 6.1 Photo Save | Return Result enum with success/error counts | S |
+| **7. EBAY SELLING** |
+| 7.1 | Selling Screen UI | ✅ `SellOnEbayScreen.kt:39` | ❌ None | No listing creation view | Missing UI | **MED** - Cannot sell items | None | Create SellView with Form for title/price/condition | L |
+| 7.2 | Marketplace Service | ✅ `EbayMarketplaceService.kt:25`<br>`MockEbayApi.kt` | ❌ None | No Swift service or mock API | Missing adapter | **MED** - No selling backend | None | Port marketplace service to Swift with URLSession | M |
+| 7.3 | Listing Models | ✅ `Listing.kt`, `ListingCondition.kt`, etc. | ❌ None | No Swift domain models for listings | Missing models | **MED** - No data structures | None | Create Swift structs mirroring Kotlin models | S |
+| 7.4 | Image Preparation | ✅ `ListingImagePreparer.kt` | ❌ None | No image preprocessing for upload | Missing adapter | **LOW** - Can upload raw images | 7.2 Service | Add image compression/resizing in Swift | S |
+| 7.5 | OAuth/Auth Flow | ⚠️ Planned but not implemented in Android | ❌ None | No OAuth 2.0 flow for real eBay API | Missing integration | **LOW** - Mock API sufficient for v1 | None | Defer to post-parity (both platforms) | L |
+| **8. NAVIGATION** |
+| 8.1 | Navigation Architecture | ✅ `NavGraph.kt:41`<br>Jetpack Compose Navigation | ❌ Single view only:<br>`ContentView.swift:9` | No NavigationPath or routing | Missing architecture | **HIGH** - Cannot navigate between screens | None | Add NavigationPath and Router pattern | M |
+| 8.2 | Camera→List Navigation | ✅ `Routes.CAMERA`→`Routes.ITEMS_LIST` | ❌ None | No navigation from camera to items list | Missing navigation | **HIGH** - Cannot access scanned items | 8.1 Architecture | Add NavigationLink from camera to list | S |
+| 8.3 | List→Sell Navigation | ✅ `Routes.ITEMS_LIST`→`Routes.SELL_ON_EBAY` | ❌ None | No navigation from list to selling screen | Missing navigation | **MED** - Cannot sell items | 7.1 Selling Screen, 8.1 Architecture | Add NavigationLink with item IDs | S |
+| 8.4 | Back Stack Management | ✅ `navController.popBackStack()` | ❌ None | No back button or dismiss logic | Missing navigation | **MED** - Poor UX | 8.1 Architecture | Use NavigationStack .navigationDestination | S |
+| **9. THEMING & DESIGN** |
+| 9.1 | Custom Theme | ✅ `Theme.kt`<br>Material 3 with dynamic colors | ❌ System defaults only | No brand colors or custom palette | Missing design system | **LOW** - System theme acceptable | None | Create Colors.swift and apply to views | S |
+| 9.2 | Typography | ✅ `Type.kt`<br>Material type scale | ❌ System fonts only | No custom fonts or type scale | Missing design system | **LOW** - System fonts acceptable | None | Define custom Font modifiers | S |
+| 9.3 | Components | ✅ Reusable Composables | ❌ None | No shared UI components | Missing design system | **LOW** - Can use inline views | None | Extract reusable Views | S |
+| **10. PLATFORM ADAPTERS** |
+| 10.1 | Image Conversion | ✅ `ImageAdapters.kt`<br>`toBitmap()`, `toImageRefJpeg()` | ❌ None | No UIImage ↔ ImageRef utilities | Missing adapter | **MED** - Blocks image display/save | None | Create extension: `ImageRef.toUIImage()`, `UIImage.toImageRef()` | M |
+| 10.2 | Rect Conversion | ✅ `RectAdapters.kt`<br>`toNormalizedRect()`, etc. | ❌ None | No CGRect ↔ NormalizedRect utilities | Missing adapter | **LOW** - Can map inline | None | Create extension: `CGRect.normalized()`, `NormalizedRect.toCGRect()` | S |
+| 10.3 | Async Bridging | ⚠️ Kotlin coroutines in shared | ❌ None | No Swift async/await bridges to KMP coroutines | Missing bridge | **MED** - Blocks shared API usage | None | Use KMP's native async/await bindings (iOS 13+) | M |
+| **11. BUILD & CONFIG** |
+| 11.1 | XCFramework Linking | ⚠️ Frameworks/ exists but may not be linked | ❌ Not confirmed linked | Shared XCFramework not embedded in app target | Missing build integration | **HIGH** - Cannot use shared code | None | Add Shared.xcframework to "Frameworks, Libraries, and Embedded Content" | S |
+| 11.2 | API Configuration | ✅ `build.gradle.kts:43-55`<br>BuildConfig for API URL/key | ❌ None | No Info.plist or .xcconfig for cloud classifier API | Missing build config | **MED** - Cannot call cloud API | None | Add keys to Info.plist or use .xcconfig | S |
+| 11.3 | Build Schemes | ✅ Debug/Release with ProGuard | ❌ Basic schemes only | No feature flag toggles or optimization profiles | Missing build config | **LOW** - Can use single scheme | None | Create Debug/Release schemes with custom flags | S |
+| 11.4 | Security Config | ✅ `network_security_config.xml`<br>SBOM, OWASP scan | ❌ None | No ATS config, no SBOM, no dependency scanning | Missing security | **MED** - Security risk | None | Configure ATS in Info.plist, add SwiftLint, SBOM | M |
+| **12. TESTING** |
+| 12.1 | Unit Tests | ✅ 24 test files | ❌ None | No XCTest files | Missing tests | **MED** - No quality assurance | None | Create XCTest targets for ViewModels and services | L |
+| 12.2 | UI Tests | ⚠️ Android has instrumentation tests | ❌ None | No XCUI tests | Missing tests | **LOW** - Manual testing sufficient for v1 | None | Create XCUI test target | L |
+| 12.3 | Shared Test Integration | ✅ 6 KMP test files in core-tracking | ❌ Not confirmed iOS runs them | iOS may not execute shared tests | Missing build integration | **LOW** - Shared logic tested on JVM | None | Configure Xcode to run KMP tests | M |
+| **13. OBSERVABILITY** |
+| 13.1 | Crash Reporting | ⚠️ Sentry planned but not implemented | ❌ None | No crash reporting SDK | Not started (both platforms) | **MED** - Cannot debug production crashes | None | Defer to post-parity (add Sentry to both) | M |
+| 13.2 | Analytics | ⚠️ Grafana planned but not implemented | ❌ None | No usage metrics or analytics | Not started (both platforms) | **LOW** - Can add later | None | Defer to post-parity | M |
+| 13.3 | Logging Framework | ✅ Android Log | ❌ print() only | No OSLog or structured logging | Missing adapter | **LOW** - print() works | None | Add OSLog wrapper for consistent logging | S |
+| **14. PERMISSIONS** |
+| 14.1 | Camera Permission | ✅ `AndroidManifest.xml:5` | ❌ Missing `NSCameraUsageDescription` | Info.plist lacks camera usage description | Missing config | **HIGH** - App will crash on camera access | None | Add `NSCameraUsageDescription` to Info.plist | S |
+| 14.2 | Photo Library Permission | ✅ Not required on Android 10+ | ❌ Missing `NSPhotoLibraryAddUsageDescription` | Info.plist lacks photo save description | Missing config | **MED** - Cannot save to photos | 6.1 Photo Save | Add `NSPhotoLibraryAddUsageDescription` to Info.plist | S |
+| **15. FEATURE FLAGS** |
+| 15.1 | Feature Flags | ✅ Debug build configs | 🟡 Partial: `FeatureFlags.swift`<br>`useMocks` only | Only mock toggle, no advanced flags | Minimal implementation | **LOW** - Sufficient for testing | None | Extend with remote config (Firebase) later | M |
+
+---
+
+## Summary Statistics
+
+**Total Gaps:** 57
+**Critical (HIGH risk):** 12
+**Important (MED risk):** 27
+**Nice-to-have (LOW risk):** 18
+
+**Estimation Breakdown:**
+- **Small (S):** 25 gaps (~50 days total)
+- **Medium (M):** 28 gaps (~140 days total)
+- **Large (L):** 4 gaps (~40 days total)
+- **Total Estimated Effort:** ~230 developer-days (assuming serial execution)
+
+**Parallelization Potential:** High (5 concurrent tracks possible, reducing to ~50-60 calendar days with proper staffing)
+
+---
+
+## Critical Path (Must Fix for MVP)
+
+1. **Camera UI** (1.1-1.2) - 2 weeks
+2. **ML Integration** (2.1-2.2) - 2 weeks
+3. **Tracking Integration** (4.1-4.2, 4.4) - 2 weeks
+4. **Items List State Mgmt** (5.4) - 1 week
+5. **Navigation** (8.1-8.2) - 1 week
+6. **Photo Save** (6.1, 14.2) - 1 week
+7. **Permissions** (14.1) - 1 day
+8. **XCFramework Linking** (11.1) - 1 day
+
+**Critical Path Duration:** ~8-9 weeks (with dependencies)
+
+---
+
+## Next Steps
+
+1. Review this matrix with stakeholders
+2. Prioritize gaps based on risk and business value
+3. Create phased implementation plan (see PARITY_PLAN.md)
+4. Generate PR roadmap with parallelization tracks (see PR_ROADMAP.md)

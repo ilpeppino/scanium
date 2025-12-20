@@ -72,7 +72,10 @@ class DeduplicationPipelineIntegrationTest {
             )
         )
 
-        viewModel = ItemsViewModel()
+        viewModel = ItemsViewModel(
+            workerDispatcher = testDispatcher,
+            mainDispatcher = testDispatcher
+        )
     }
 
     @After
