@@ -168,6 +168,7 @@ See `backend/.env.example` for required configuration:
 - `EBAY_ENV`: "sandbox" or "production"
 - `EBAY_CLIENT_ID`: eBay application client ID
 - `EBAY_CLIENT_SECRET`: eBay application client secret
+- `EBAY_TOKEN_ENCRYPTION_KEY`: 32+ character secret used to encrypt stored OAuth tokens
 - `EBAY_REDIRECT_PATH`: OAuth callback path (default: /auth/ebay/callback)
 - `EBAY_SCOPES`: Space-delimited API scopes
 - `PUBLIC_BASE_URL`: Public URL of backend (used to build redirect URI)
@@ -179,6 +180,6 @@ See `backend/.env.example` for required configuration:
 
 - [ ] Token refresh logic (automatic renewal before expiry)
 - [ ] Multi-user support (replace default user with real authentication)
-- [ ] Token encryption at rest
+- [x] Token encryption at rest (AES-256-GCM via application key)
 - [ ] Revoke token endpoint
 - [ ] Webhook for token revocation events

@@ -1,0 +1,127 @@
+{
+  "id": "ebay_ebay_nl_electronics",
+  "name": "EBAY_NL - Electronics",
+  "threshold": 0.5,
+  "categories": [
+    {
+      "id": "computers_laptops_177_123456",
+      "label": "Laptops & Netbooks",
+      "itemCategoryName": "ELECTRONICS",
+      "priority": 55,
+      "tokens": [
+        "computers",
+        "computers laptops",
+        "laptop",
+        "laptops",
+        "netbook",
+        "netbooks",
+        "notebook"
+      ],
+      "attributes": {
+        "ebayCategoryId": "123456",
+        "ebayTreeId": "0",
+        "marketplaceId": "EBAY_NL",
+        "categoryPath": [
+          "Computers/Tablets & Networking",
+          "Laptops & Netbooks"
+        ],
+        "depth": 2,
+        "isLeaf": true,
+        "aspects": [
+          {
+            "name": "Brand",
+            "required": true,
+            "recommended": false,
+            "dataType": "STRING"
+          },
+          {
+            "name": "Processor",
+            "required": false,
+            "recommended": true,
+            "dataType": "STRING"
+          },
+          {
+            "name": "Screen Size",
+            "required": false,
+            "recommended": true,
+            "dataType": "STRING"
+          }
+        ]
+      }
+    },
+    {
+      "id": "monitors_computer_171_789012",
+      "label": "Monitors",
+      "itemCategoryName": "ELECTRONICS",
+      "priority": 52,
+      "tokens": [
+        "computer",
+        "computer monitors",
+        "display",
+        "displays",
+        "monitor",
+        "monitors",
+        "screen"
+      ],
+      "attributes": {
+        "ebayCategoryId": "789012",
+        "ebayTreeId": "0",
+        "marketplaceId": "EBAY_NL",
+        "categoryPath": [
+          "Computers/Tablets & Networking",
+          "Monitors, Projectors & Accs",
+          "Monitors"
+        ],
+        "depth": 3,
+        "isLeaf": true
+      }
+    },
+    {
+      "id": "smartphones_mobile_9355_345678",
+      "label": "Smartphones",
+      "itemCategoryName": "ELECTRONICS",
+      "priority": 58,
+      "tokens": [
+        "cell",
+        "cellular",
+        "mobile",
+        "mobile phone",
+        "phone",
+        "smartphone",
+        "smartphones"
+      ],
+      "attributes": {
+        "ebayCategoryId": "345678",
+        "ebayTreeId": "0",
+        "marketplaceId": "EBAY_NL",
+        "categoryPath": [
+          "Mobile Phones & Communication",
+          "Mobile & Smart Phones",
+          "Smartphones"
+        ],
+        "depth": 3,
+        "isLeaf": true,
+        "aspects": [
+          {
+            "name": "Brand",
+            "required": true,
+            "recommended": false,
+            "dataType": "STRING"
+          },
+          {
+            "name": "Model",
+            "required": true,
+            "recommended": false,
+            "dataType": "STRING"
+          },
+          {
+            "name": "Storage Capacity",
+            "required": false,
+            "recommended": true,
+            "dataType": "STRING"
+          }
+        ]
+      }
+    }
+  ]
+}

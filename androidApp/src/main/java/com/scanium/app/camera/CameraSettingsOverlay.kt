@@ -17,12 +17,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -172,6 +174,9 @@ private fun ProcessingSettingsCard(
     saveCloudCropsEnabled: Boolean,
     onSaveCloudCropsChange: (Boolean) -> Unit
 ) {
+    val isCloudConfigured = BuildConfig.SCANIUM_API_BASE_URL.isNotBlank()
+    val showConfigWarning = classificationMode == ClassificationMode.CLOUD && !isCloudConfigured
+
     Surface(tonalElevation = 2.dp) {
         Column(
             modifier = Modifier
@@ -232,6 +237,42 @@ private fun ProcessingSettingsCard(
                 }
             )
 
+            // Configuration warning when cloud mode is enabled but not configured
+            if (showConfigWarning) {
+                Surface(
+                    tonalElevation = 1.dp,
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Cloud classifier not configured",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Text(
+                                text = "Set SCANIUM_API_BASE_URL in local.properties to enable cloud classification. See docs/DEV_GUIDE.md for setup instructions.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Debug: Save cloud crops to cache
             if (BuildConfig.DEBUG) {
                 Divider()
                 Column(

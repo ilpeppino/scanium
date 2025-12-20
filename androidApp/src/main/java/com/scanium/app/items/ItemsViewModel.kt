@@ -12,10 +12,17 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * ViewModel for managing detected items across the app.
@@ -36,11 +43,21 @@ import kotlinx.coroutines.flow.update
 class ItemsViewModel(
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
     onDeviceClassifier: ItemClassifier = NoopClassifier,
-    cloudClassifier: ItemClassifier = NoopClassifier
+    cloudClassifier: ItemClassifier = NoopClassifier,
+    private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
 ) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
+        // Gate heavy logging to prevent UI jank during burst detections
+        private const val DEBUG_LOGGING = false
+        // Async telemetry collection interval (ms) - only runs when enabled
+        private const val TELEMETRY_INTERVAL_MS = 5000L
     }
+
+    // Async telemetry collection job (off the hot path)
+    private var telemetryJob: Job? = null
+    private val _telemetryEnabled = MutableStateFlow(false)
 
     // Private mutable state
     private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
@@ -88,17 +105,27 @@ class ItemsViewModel(
      * - Creates a new aggregated item
      *
      * Then updates the UI state with all current aggregated items.
+     * Offloads aggregation to background thread to prevent UI jank.
      */
     fun addItem(item: ScannedItem) {
-        Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
+        // Offload all processing to background thread
+        viewModelScope.launch(workerDispatcher) {
+            if (DEBUG_LOGGING) {
+                Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
+            }
 
-        // Process through aggregator
-        val aggregatedItem = itemAggregator.processDetection(item)
+            // Process through aggregator on background thread
+            val aggregatedItem = itemAggregator.processDetection(item)
 
-        // Update UI state with all aggregated items
-        updateItemsState()
+            if (DEBUG_LOGGING) {
+                Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
+            }
 
-        Log.i(TAG, "    Processed item ${item.id} → aggregated ${aggregatedItem.aggregatedId} (mergeCount=${aggregatedItem.mergeCount})")
+            // Update UI state on main thread
+            withContext(mainDispatcher) {
+                updateItemsState()
+            }
+        }
     }
 
     /**
@@ -107,40 +134,30 @@ class ItemsViewModel(
      * Processes each item through the aggregator in batch, which automatically
      * handles merging and deduplication. This is more efficient than calling
      * addItem() multiple times.
+     *
+     * Offloads aggregation to background thread to prevent UI jank during
+     * burst detections from camera. All stats/telemetry collection removed
+     * from hot path - use enableTelemetry() for async monitoring instead.
      */
     fun addItems(newItems: List<ScannedItem>) {
-        Log.i(TAG, ">>> addItems BATCH: received ${newItems.size} items")
-        if (newItems.isEmpty()) {
-            Log.i(TAG, ">>> addItems: empty list, returning")
-            return
+        if (newItems.isEmpty()) return
+
+        // Launch directly on background thread to avoid any main-thread overhead
+        viewModelScope.launch(workerDispatcher) {
+            // Minimal logging on hot path - only batch size when debugging
+            if (DEBUG_LOGGING) {
+                Log.i(TAG, ">>> Processing batch: ${newItems.size} items")
+            }
+
+            // Process aggregation on background thread (already on Dispatchers.Default)
+            // NO stats collection, NO memory profiling - keep the hot path fast
+            itemAggregator.processDetections(newItems)
+
+            // Update UI state on main thread
+            withContext(mainDispatcher) {
+                updateItemsState()
+            }
         }
-
-        newItems.forEachIndexed { index, item ->
-            Log.i(TAG, "    Input item $index: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
-        }
-
-        // Log memory before processing
-        val runtime = Runtime.getRuntime()
-        val usedMemoryBefore = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-        Log.w(TAG, ">>> MEMORY BEFORE AGGREGATION: ${usedMemoryBefore}MB used, ${runtime.maxMemory() / 1024 / 1024}MB max")
-
-        // Process all items through aggregator
-        val aggregatedItems = itemAggregator.processDetections(newItems)
-
-        // Update UI state with all aggregated items
-        updateItemsState()
-
-        // Log statistics
-        val stats = itemAggregator.getStats()
-        Log.i(TAG, ">>> AGGREGATION COMPLETE:")
-        Log.i(TAG, "    - Input detections: ${newItems.size}")
-        Log.i(TAG, "    - Aggregated items: ${stats.totalItems}")
-        Log.i(TAG, "    - Total merges: ${stats.totalMerges}")
-        Log.i(TAG, "    - Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
-
-        // Log memory after processing
-        val usedMemoryAfter = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-        Log.w(TAG, ">>> MEMORY AFTER AGGREGATION: ${usedMemoryAfter}MB used, delta=${usedMemoryAfter - usedMemoryBefore}MB")
     }
 
     /**
@@ -190,8 +207,67 @@ class ItemsViewModel(
 
     /**
      * Get aggregation statistics for monitoring/debugging.
+     * Note: This is synchronous - for async telemetry, use enableTelemetry().
      */
     fun getAggregationStats() = itemAggregator.getStats()
+
+    /**
+     * Enable async telemetry collection for monitoring stats and memory usage.
+     * Runs independently on background thread, completely off the hot path.
+     *
+     * Stats are logged periodically (every 5s by default) without blocking
+     * the main processing flow. Useful for debugging and performance monitoring.
+     */
+    fun enableTelemetry() {
+        if (_telemetryEnabled.value) {
+            Log.w(TAG, "Telemetry already enabled")
+            return
+        }
+
+        _telemetryEnabled.value = true
+        telemetryJob = viewModelScope.launch(workerDispatcher) {
+            Log.i(TAG, "╔═══════════════════════════════════════════════════════════════")
+            Log.i(TAG, "║ ASYNC TELEMETRY ENABLED")
+            Log.i(TAG, "║ Collection interval: ${TELEMETRY_INTERVAL_MS}ms")
+            Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")
+
+            while (isActive && _telemetryEnabled.value) {
+                delay(TELEMETRY_INTERVAL_MS)
+
+                // Collect stats asynchronously
+                val stats = itemAggregator.getStats()
+                val runtime = Runtime.getRuntime()
+                val usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                val maxMemoryMB = runtime.maxMemory() / 1024 / 1024
+
+                Log.i(TAG, "┌─────────────────────────────────────────────────────────────")
+                Log.i(TAG, "│ TELEMETRY SNAPSHOT")
+                Log.i(TAG, "├─────────────────────────────────────────────────────────────")
+                Log.i(TAG, "│ Aggregated items: ${stats.totalItems}")
+                Log.i(TAG, "│ Total merges: ${stats.totalMerges}")
+                Log.i(TAG, "│ Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
+                Log.i(TAG, "│ Memory: ${usedMemoryMB}MB / ${maxMemoryMB}MB")
+                Log.i(TAG, "└─────────────────────────────────────────────────────────────")
+            }
+
+            Log.i(TAG, "Async telemetry stopped")
+        }
+    }
+
+    /**
+     * Disable async telemetry collection.
+     */
+    fun disableTelemetry() {
+        _telemetryEnabled.value = false
+        telemetryJob?.cancel()
+        telemetryJob = null
+        Log.i(TAG, "Async telemetry disabled")
+    }
+
+    /**
+     * Check if async telemetry is currently enabled.
+     */
+    fun isTelemetryEnabled(): Boolean = _telemetryEnabled.value
 
     /**
      * Remove stale items that haven't been seen recently.
@@ -224,10 +300,12 @@ class ItemsViewModel(
         _similarityThreshold.value = clampedThreshold
         itemAggregator.updateSimilarityThreshold(clampedThreshold)
 
-        Log.w(TAG, "╔═══════════════════════════════════════════════════════════════")
-        Log.w(TAG, "║ THRESHOLD UPDATED: $previousThreshold → $clampedThreshold")
-        Log.w(TAG, "║ Aggregator confirms: ${itemAggregator.getCurrentSimilarityThreshold()}")
-        Log.w(TAG, "╚═══════════════════════════════════════════════════════════════")
+        if (DEBUG_LOGGING) {
+            Log.w(TAG, "╔═══════════════════════════════════════════════════════════════")
+            Log.w(TAG, "║ THRESHOLD UPDATED: $previousThreshold → $clampedThreshold")
+            Log.w(TAG, "║ Aggregator confirms: ${itemAggregator.getCurrentSimilarityThreshold()}")
+            Log.w(TAG, "╚═══════════════════════════════════════════════════════════════")
+        }
     }
 
     /**
@@ -251,45 +329,61 @@ class ItemsViewModel(
     }
 
     private fun triggerEnhancedClassification() {
-        val pendingItems = itemAggregator.getAggregatedItems()
-            .filter { it.thumbnail != null && classificationOrchestrator.shouldClassify(it.aggregatedId) }
-
-        if (pendingItems.isEmpty()) return
-
-        // Mark items as PENDING before classification
-        pendingItems.forEach { item ->
-            item.classificationStatus = "PENDING"
-        }
-        _items.value = itemAggregator.getScannedItems()
-
-        classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
-            val boxArea = aggregatedItem.boundingBox.area
-            val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
-            val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
-                result.category
-            } else {
-                aggregatedItem.enhancedCategory ?: aggregatedItem.category
+        // Offload filtering to background to avoid blocking UI during burst detections
+        viewModelScope.launch(mainDispatcher) {
+            val pendingItems = withContext(workerDispatcher) {
+                itemAggregator.getAggregatedItems()
+                    .filter { it.thumbnail != null && classificationOrchestrator.shouldClassify(it.aggregatedId) }
             }
 
-            itemAggregator.applyEnhancedClassification(
-                aggregatedId = aggregatedItem.aggregatedId,
-                category = categoryOverride,
-                label = result.label ?: aggregatedItem.labelText,
-                priceRange = priceRange
-            )
+            if (pendingItems.isEmpty()) return@launch
 
-            // Update classification status based on result
-            aggregatedItem.classificationStatus = result.status.name
-            aggregatedItem.domainCategoryId = result.domainCategoryId
-            aggregatedItem.classificationErrorMessage = result.errorMessage
-            aggregatedItem.classificationRequestId = result.requestId
+            // Mark items as PENDING using thread-safe method
+            val pendingIds = pendingItems.map { it.aggregatedId }
+            itemAggregator.markClassificationPending(pendingIds)
 
-            // Propagate updates to the UI layer
-            val updatedItems = itemAggregator.getScannedItems()
-            _items.value = updatedItems
+            // Update UI on main dispatcher
+            withContext(mainDispatcher) {
+                _items.value = itemAggregator.getScannedItems()
+            }
 
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
+            classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
+                // Calculate classification parameters
+                val boxArea = aggregatedItem.boundingBox.area
+                val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
+                val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
+                    result.category
+                } else {
+                    aggregatedItem.enhancedCategory ?: aggregatedItem.category
+                }
+
+                // Apply classification using thread-safe synchronized methods
+                // These methods use @Synchronized to prevent concurrent modification
+                itemAggregator.applyEnhancedClassification(
+                    aggregatedId = aggregatedItem.aggregatedId,
+                    category = categoryOverride,
+                    label = result.label ?: aggregatedItem.labelText,
+                    priceRange = priceRange
+                )
+
+                itemAggregator.updateClassificationStatus(
+                    aggregatedId = aggregatedItem.aggregatedId,
+                    status = result.status.name,
+                    domainCategoryId = result.domainCategoryId,
+                    errorMessage = result.errorMessage,
+                    requestId = result.requestId
+                )
+
+                // Dispatch UI state update to main thread explicitly
+                // This callback may be invoked from background coroutines, so we must
+                // ensure the StateFlow update happens on Main dispatcher
+                viewModelScope.launch(mainDispatcher) {
+                    _items.value = itemAggregator.getScannedItems()
+
+                    if (BuildConfig.DEBUG) {
+                        Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
+                    }
+                }
             }
         }
     }
@@ -357,13 +451,17 @@ class ItemsViewModel(
 
         Log.i(TAG, "Retrying classification for item $itemId")
 
-        // Mark as pending
-        item.classificationStatus = "PENDING"
-        item.classificationErrorMessage = null
-        _items.value = itemAggregator.getScannedItems()
+        // Mark as pending using thread-safe method
+        itemAggregator.markClassificationPending(listOf(itemId))
+
+        // Update UI on main dispatcher
+        viewModelScope.launch(mainDispatcher) {
+            _items.value = itemAggregator.getScannedItems()
+        }
 
         // Trigger retry via orchestrator
         classificationOrchestrator.retry(itemId, item) { aggregatedItem, result ->
+            // Calculate classification parameters
             val boxArea = aggregatedItem.boundingBox.area
             val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
             val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
@@ -372,6 +470,8 @@ class ItemsViewModel(
                 aggregatedItem.enhancedCategory ?: aggregatedItem.category
             }
 
+            // Apply classification using thread-safe synchronized methods
+            // These methods use @Synchronized to prevent concurrent modification
             itemAggregator.applyEnhancedClassification(
                 aggregatedId = aggregatedItem.aggregatedId,
                 category = categoryOverride,
@@ -379,19 +479,30 @@ class ItemsViewModel(
                 priceRange = priceRange
             )
 
-            // Update classification status
-            aggregatedItem.classificationStatus = result.status.name
-            aggregatedItem.domainCategoryId = result.domainCategoryId
-            aggregatedItem.classificationErrorMessage = result.errorMessage
-            aggregatedItem.classificationRequestId = result.requestId
+            itemAggregator.updateClassificationStatus(
+                aggregatedId = aggregatedItem.aggregatedId,
+                status = result.status.name,
+                domainCategoryId = result.domainCategoryId,
+                errorMessage = result.errorMessage,
+                requestId = result.requestId
+            )
 
-            // Propagate updates to the UI layer
-            val updatedItems = itemAggregator.getScannedItems()
-            _items.value = updatedItems
+            // Dispatch UI state update to main thread explicitly
+            // This callback may be invoked from background coroutines, so we must
+            // ensure the StateFlow update happens on Main dispatcher
+            viewModelScope.launch(mainDispatcher) {
+                _items.value = itemAggregator.getScannedItems()
 
-            if (BuildConfig.DEBUG) {
-                Log.d(TAG, "Retry classification result for ${aggregatedItem.aggregatedId}: status=${result.status}")
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Retry classification result for ${aggregatedItem.aggregatedId}: status=${result.status}")
+                }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up async telemetry job
+        disableTelemetry()
     }
 }

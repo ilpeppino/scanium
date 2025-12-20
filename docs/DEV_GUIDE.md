@@ -38,21 +38,50 @@ Scanium uses cloud classification by default to identify items. To enable this f
 - Release builds require API base URL; fail-fast if missing
 
 ## Local build & test
+
+### With Android SDK (Workstation / Android Studio)
 - `./build.sh assembleDebug` or `./gradlew assembleDebug` – build APK.
 - `./gradlew installDebug` – install on a connected device/emulator.
 - `./gradlew test` – JVM unit tests (fast path).
 - `./gradlew connectedAndroidTest` – instrumented/Compose UI tests (device required).
 - `./gradlew lint` – static checks.
 - Coverage: `./gradlew koverVerify` (thresholds: shared modules ≥85%, androidApp ≥75%; HTML under `*/build/reports/kover/html` and `androidApp/build/reports/jacoco/testDebugUnitTest/html`).
-- See also `docs/TESTING.md` for more commands and tips.
+
+### Container environments (Claude Code, Docker without Android SDK)
+
+**⚠️ Limitation:** `./gradlew test` and `./gradlew lint` **fail without Android SDK**.
+
+**Container-friendly validation:**
+```bash
+# JVM-only pre-push checks (shared modules only)
+./gradlew prePushJvmCheck
+
+# Install git pre-push hook for automatic validation
+./hooks/install-hooks.sh
+```
+
+**What works in containers:**
+- ✅ JVM tests for shared modules: `./gradlew :shared:core-models:jvmTest :shared:core-tracking:jvmTest`
+- ✅ Portability checks: `./gradlew checkPortableModules checkNoLegacyImports`
+- ✅ Code editing, static analysis with `rg`/`grep`
+- ✅ Git operations, documentation updates
+
+**What requires Android SDK (use CI/workstation):**
+- ❌ Building APKs: `./gradlew assembleDebug`
+- ❌ Android unit tests: `./gradlew :androidApp:testDebugUnitTest`
+- ❌ Lint checks: `./gradlew lint`
+- ❌ Instrumented tests: `./gradlew connectedAndroidTest`
+
+**Mobile testing workflow (container-friendly):**
+1. Push changes to your branch
+2. GitHub Actions builds APK automatically (see `.github/workflows/android-debug-apk.yml`)
+3. Download `scanium-app-debug-apk` artifact from workflow run
+4. Install APK on device for testing
+
+See also `docs/BUILD_STABILITY.md` for detailed verification commands and `hooks/README.md` for pre-push validation setup.
 
 ## Debugging tips
 - Use Logcat filters for tags like `CameraXManager`, `ObjectDetectorClient`, `CloudClassifier`, `ItemsViewModel`.
 - Detection overlays live in `androidApp/src/main/java/com/scanium/app/camera/DetectionOverlay.kt`; tweak drawing there.
 - Aggregation/tracking behavior is covered by tests in `androidApp/src/test/...` and `core-tracking/src/test/...`; add golden tests when changing heuristics.
 - For ML Kit analyzer crashes, enable verbose logs in the respective client classes under `androidApp/src/main/java/com/scanium/app/ml/`.
-
-## Do/Don't in the Codex container
-- Do rely on GitHub Actions artifacts for APKs; local Android SDK is not installed here.
-- Do run `rg`/static analysis, edit code, and keep changes small.
-- Don't attempt to install Android Studio/SDK in the container; builds requiring them should run on your workstation or CI.

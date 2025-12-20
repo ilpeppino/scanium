@@ -323,14 +323,18 @@ class ItemAggregator(
 
     /**
      * Get all current aggregated items.
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getAllItems(): List<AggregatedItem> {
         return aggregatedItems.values.toList()
     }
 
     /**
      * Get aggregated items as ScannedItems for UI compatibility.
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getScannedItems(): List<ScannedItem> {
         return aggregatedItems.values.map { it.toScannedItem() }
     }
@@ -363,12 +367,16 @@ class ItemAggregator(
 
     /**
      * Returns a snapshot of aggregated items for downstream components (e.g., classification).
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getAggregatedItems(): List<AggregatedItem> = aggregatedItems.values.toList()
 
     /**
      * Applies enhanced classification results without altering tracking behavior.
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun applyEnhancedClassification(
         aggregatedId: String,
         category: ItemCategory?,
@@ -379,6 +387,48 @@ class ItemAggregator(
             category?.let { item.enhancedCategory = it }
             label?.let { item.enhancedLabelText = it }
             priceRange?.let { item.enhancedPriceRange = it }
+        }
+    }
+
+    /**
+     * Updates classification status for an aggregated item.
+     * Thread-safe via synchronized block to prevent concurrent modification.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param status Classification status (e.g., "PENDING", "SUCCESS", "FAILED")
+     * @param domainCategoryId Optional domain category ID from classification
+     * @param errorMessage Optional error message if classification failed
+     * @param requestId Optional request ID for tracking
+     */
+    @Synchronized
+    fun updateClassificationStatus(
+        aggregatedId: String,
+        status: String,
+        domainCategoryId: String? = null,
+        errorMessage: String? = null,
+        requestId: String? = null
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.classificationStatus = status
+            item.domainCategoryId = domainCategoryId
+            item.classificationErrorMessage = errorMessage
+            item.classificationRequestId = requestId
+        }
+    }
+
+    /**
+     * Marks multiple items as pending classification.
+     * Thread-safe via synchronized block to prevent concurrent modification.
+     *
+     * @param aggregatedIds List of aggregated item IDs to mark as pending
+     */
+    @Synchronized
+    fun markClassificationPending(aggregatedIds: List<String>) {
+        aggregatedIds.forEach { id ->
+            aggregatedItems[id]?.let { item ->
+                item.classificationStatus = "PENDING"
+                item.classificationErrorMessage = null
+            }
         }
     }
 
@@ -397,7 +447,9 @@ class ItemAggregator(
 
     /**
      * Get aggregation statistics for monitoring.
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getStats(): AggregationStats {
         val totalMerges = aggregatedItems.values.sumOf { it.mergeCount - 1 }
         val avgMergesPerItem = if (aggregatedItems.isNotEmpty()) {

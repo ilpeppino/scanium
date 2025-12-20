@@ -9,6 +9,10 @@ plugins {
     // SEC-002: SBOM generation for supply chain security
     id("org.cyclonedx.bom") version "1.8.2"
     // SEC-003: Automated CVE scanning
+    // IMPORTANT: When updating AGP (build.gradle.kts), ensure this plugin version
+    // remains compatible. Check compatibility matrix at:
+    // https://github.com/dependency-check/dependency-check-gradle
+    // Current: AGP 8.5.0 → Dependency-Check 10.0.4
     id("org.owasp.dependencycheck") version "10.0.4"
     id("org.jetbrains.kotlinx.kover")
     jacoco

@@ -1,5 +1,37 @@
 import { z } from 'zod';
 
+const weakSessionSecrets = [
+  'change_me_to_a_random_secret_min_32_chars',
+  'change_me_generate_random_32_chars',
+  'replace_with_random_base64_64_bytes',
+];
+
+const allowedCorsProtocols = new Set(['http:', 'https:', 'scanium:']);
+
+export function isValidCorsOrigin(origin: string): boolean {
+  if (!origin || origin.includes('*')) {
+    return false;
+  }
+
+  try {
+    const url = new URL(origin);
+    const hasAllowedProtocol = allowedCorsProtocols.has(url.protocol);
+    const hasHostForWebProtocols = ['http:', 'https:'].includes(url.protocol)
+      ? Boolean(url.hostname)
+      : true;
+    const hasNoPathOrQuery =
+      (url.pathname === '/' || url.pathname === '') && !url.search && !url.hash;
+
+    if (url.protocol === 'scanium:') {
+      return hasAllowedProtocol && hasNoPathOrQuery && origin.startsWith('scanium://');
+    }
+
+    return hasAllowedProtocol && hasHostForWebProtocols && origin === url.origin && hasNoPathOrQuery;
+  } catch (error) {
+    return false;
+  }
+}
+
 /**
  * Configuration schema with strict validation
  * Server will not start if validation fails
@@ -26,6 +58,11 @@ export const configSchema = z.object({
       .max(10 * 1024 * 1024)
       .default(5 * 1024 * 1024),
     rateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+    ipRateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+    rateLimitWindowSeconds: z.coerce.number().int().min(1).default(60),
+    rateLimitBackoffSeconds: z.coerce.number().int().min(1).default(30),
+    rateLimitBackoffMaxSeconds: z.coerce.number().int().min(1).default(900),
+    rateLimitRedisUrl: z.string().optional(),
     concurrentLimit: z.coerce.number().int().min(1).default(2),
     apiKeys: z
       .string()
@@ -53,16 +90,40 @@ export const configSchema = z.object({
     clientSecret: z.string().min(1),
     redirectPath: z.string().default('/auth/ebay/callback'),
     scopes: z.string().min(1),
+    tokenEncryptionKey: z.string().min(32),
   }),
 
   // Security
-  sessionSigningSecret: z.string().min(32),
+  sessionSigningSecret: z
+    .string()
+    .min(64)
+    .refine(
+      (secret) => !weakSessionSecrets.includes(secret.trim().toLowerCase()),
+      'SESSION_SIGNING_SECRET must be a strong, unique value'
+    ),
+  security: z
+    .object({
+      enforceHttps: z.coerce.boolean().default(true),
+      enableHsts: z.coerce.boolean().default(true),
+      apiKeyRotationEnabled: z.coerce.boolean().default(true),
+      apiKeyExpirationDays: z.coerce.number().int().min(0).default(90),
+      logApiKeyUsage: z.coerce.boolean().default(true),
+    })
+    .default({}),
 
-  // CORS
+// CORS
   corsOrigins: z
     .string()
     .transform((val) => val.split(',').map((o) => o.trim()))
-    .pipe(z.array(z.string().min(1))),
+    .pipe(
+      z
+        .array(z.string().min(1))
+        .nonempty('CORS_ORIGINS must include at least one origin')
+        .refine(
+          (origins) => origins.every(isValidCorsOrigin),
+          'CORS origins must be fully-qualified URLs with http/https/custom schemes and no wildcards'
+        )
+    ),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -82,6 +143,11 @@ export function loadConfig(): Config {
       visionFeature: process.env.VISION_FEATURE,
       maxUploadBytes: process.env.MAX_UPLOAD_BYTES,
       rateLimitPerMinute: process.env.CLASSIFIER_RATE_LIMIT_PER_MINUTE,
+      ipRateLimitPerMinute: process.env.CLASSIFIER_IP_RATE_LIMIT_PER_MINUTE,
+      rateLimitWindowSeconds: process.env.CLASSIFIER_RATE_LIMIT_WINDOW_SECONDS,
+      rateLimitBackoffSeconds: process.env.CLASSIFIER_RATE_LIMIT_BACKOFF_SECONDS,
+      rateLimitBackoffMaxSeconds: process.env.CLASSIFIER_RATE_LIMIT_BACKOFF_MAX_SECONDS,
+      rateLimitRedisUrl: process.env.RATE_LIMIT_REDIS_URL,
       concurrentLimit: process.env.CLASSIFIER_CONCURRENCY_LIMIT,
       apiKeys: process.env.SCANIUM_API_KEYS,
       domainPackId: process.env.DOMAIN_PACK_ID,
@@ -98,8 +164,16 @@ export function loadConfig(): Config {
       clientSecret: process.env.EBAY_CLIENT_SECRET,
       redirectPath: process.env.EBAY_REDIRECT_PATH,
       scopes: process.env.EBAY_SCOPES,
+      tokenEncryptionKey: process.env.EBAY_TOKEN_ENCRYPTION_KEY,
     },
     sessionSigningSecret: process.env.SESSION_SIGNING_SECRET,
+    security: {
+      enforceHttps: process.env.SECURITY_ENFORCE_HTTPS,
+      enableHsts: process.env.SECURITY_ENABLE_HSTS,
+      apiKeyRotationEnabled: process.env.SECURITY_API_KEY_ROTATION_ENABLED,
+      apiKeyExpirationDays: process.env.SECURITY_API_KEY_EXPIRATION_DAYS,
+      logApiKeyUsage: process.env.SECURITY_LOG_API_KEY_USAGE,
+    },
     corsOrigins: process.env.CORS_ORIGINS,
   };
 

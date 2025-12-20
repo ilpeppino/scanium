@@ -1,6 +1,6 @@
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization") version "1.9.20"
+    kotlin("plugin.serialization") version "2.0.0"
     id("com.android.library")
     id("org.jetbrains.kotlinx.kover")
 }
@@ -8,6 +8,9 @@ plugins {
 kotlin {
     // Android target
     androidTarget()
+
+    // JVM target for running tests without Android SDK (CI/container-friendly)
+    jvm()
 
     // iOS targets
     iosX64()

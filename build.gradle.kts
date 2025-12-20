@@ -1,5 +1,8 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
+    // IMPORTANT: When updating AGP, ensure OWASP Dependency-Check plugin in androidApp/build.gradle.kts
+    // remains compatible. CI workflow (.github/workflows/security-cve-scan.yml) validates this.
+    // See: https://github.com/dependency-check/dependency-check-gradle
     id("com.android.application") version "8.5.0" apply false
     id("com.android.library") version "8.5.0" apply false
     id("org.jetbrains.kotlin.android") version "2.0.0" apply false
@@ -98,5 +101,27 @@ tasks.register("checkNoLegacyImports") {
         }
 
         println("✓ No legacy com.scanium.app.* imports found in androidApp sources")
+    }
+}
+
+tasks.register("prePushJvmCheck") {
+    description = "Lightweight JVM-only validation for shared modules (no Android SDK required)"
+    group = "verification"
+
+    dependsOn(
+        ":shared:core-models:jvmTest",
+        ":shared:core-tracking:jvmTest",
+        ":shared:test-utils:jvmTest",
+        "checkPortableModules",
+        "checkNoLegacyImports"
+    )
+
+    doLast {
+        println("""
+            ✓ Pre-push JVM checks passed:
+              - JVM tests for shared modules
+              - Portability checks
+              - Legacy import checks
+        """.trimIndent())
     }
 }

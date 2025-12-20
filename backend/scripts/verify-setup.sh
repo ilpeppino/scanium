@@ -57,9 +57,9 @@ echo ""
 # Check session secret length
 echo "🔐 Checking SESSION_SIGNING_SECRET length..."
 SECRET_LENGTH=${#SESSION_SIGNING_SECRET}
-if [ "$SECRET_LENGTH" -lt 32 ]; then
+if [ "$SECRET_LENGTH" -lt 64 ]; then
     echo "⚠️  SESSION_SIGNING_SECRET is too short ($SECRET_LENGTH chars)"
-    echo "   Generate a strong secret with: openssl rand -base64 32"
+    echo "   Generate a strong secret with: openssl rand -base64 64"
 fi
 echo "✅ Session secret length: $SECRET_LENGTH chars"
 echo ""

@@ -1,6 +1,7 @@
 import { prisma } from '../../../infra/db/prisma.js';
 import { Config } from '../../../config/index.js';
 import { DatabaseError } from '../../../shared/errors/index.js';
+import { encryptSecret } from '../../../shared/security/secret-crypto.js';
 
 /**
  * Get or create default user
@@ -49,6 +50,14 @@ export async function storeEbayTokens(
   try {
     const userId = await getOrCreateDefaultUser();
     const expiresAt = new Date(Date.now() + tokens.expiresIn * 1000);
+    const encryptedAccessToken = encryptSecret(
+      tokens.accessToken,
+      config.ebay.tokenEncryptionKey
+    );
+    const encryptedRefreshToken = encryptSecret(
+      tokens.refreshToken,
+      config.ebay.tokenEncryptionKey
+    );
 
     await prisma.ebayConnection.upsert({
       where: {
@@ -60,15 +69,15 @@ export async function storeEbayTokens(
       create: {
         userId,
         environment: config.ebay.env,
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
         expiresAt,
         tokenType: tokens.tokenType,
         scopes: tokens.scope,
       },
       update: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
         expiresAt,
         tokenType: tokens.tokenType,
         scopes: tokens.scope,
