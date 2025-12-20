@@ -100,3 +100,25 @@ tasks.register("checkNoLegacyImports") {
         println("✓ No legacy com.scanium.app.* imports found in androidApp sources")
     }
 }
+
+tasks.register("prePushJvmCheck") {
+    description = "Lightweight JVM-only validation for shared modules (no Android SDK required)"
+    group = "verification"
+
+    dependsOn(
+        ":shared:core-models:jvmTest",
+        ":shared:core-tracking:jvmTest",
+        ":shared:test-utils:jvmTest",
+        "checkPortableModules",
+        "checkNoLegacyImports"
+    )
+
+    doLast {
+        println("""
+            ✓ Pre-push JVM checks passed:
+              - JVM tests for shared modules
+              - Portability checks
+              - Legacy import checks
+        """.trimIndent())
+    }
+}
