@@ -20,9 +20,10 @@ describe('Config Schema Validation', () => {
         clientSecret: 'test-client-secret-minimum-length',
         redirectPath: '/auth/ebay/callback',
         scopes: 'https://api.ebay.com/oauth/api_scope',
-        tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
+      tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
       },
-      sessionSigningSecret: 'test-secret-minimum-32-chars-long',
+      sessionSigningSecret:
+        'loremipsumdolorsitametconsecteturadipiscingelit0123456789ABCDEFghiJKL',
       corsOrigins: 'scanium://,http://localhost:3000',
     };
 
@@ -62,7 +63,7 @@ describe('Config Schema Validation', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject session secret shorter than 32 chars', () => {
+  it('should reject session secret shorter than 64 chars', () => {
     const invalidConfig = {
       publicBaseUrl: 'http://localhost:8080',
       databaseUrl: 'postgresql://user:pass@localhost:5432/db',
@@ -74,7 +75,7 @@ describe('Config Schema Validation', () => {
         clientId: 'test',
         clientSecret: 'test-secret',
         scopes: 'scope',
-        tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
+      tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
       },
       sessionSigningSecret: 'too-short',
       corsOrigins: 'http://localhost',
@@ -128,9 +129,10 @@ describe('Config Schema Validation', () => {
         clientId: 'test',
         clientSecret: 'test-secret',
         scopes: 'scope',
-        tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
+      tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
       },
-      sessionSigningSecret: 'test-secret-minimum-32-chars-long',
+      sessionSigningSecret:
+        'loremipsumdolorsitametconsecteturadipiscingelit0123456789ABCDEFghiJKL',
       corsOrigins: 'scanium://, http://localhost:3000 , https://app.com',
     };
 
@@ -158,9 +160,10 @@ describe('Config Schema Validation', () => {
         clientId: 'test',
         clientSecret: 'test-secret',
         scopes: 'scope',
-        tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
+      tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
       },
-      sessionSigningSecret: 'test-secret-minimum-32-chars-long',
+      sessionSigningSecret:
+        'loremipsumdolorsitametconsecteturadipiscingelit0123456789ABCDEFghiJKL',
       corsOrigins: 'http://localhost',
     };
 
