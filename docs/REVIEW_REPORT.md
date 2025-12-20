@@ -35,8 +35,8 @@
 
 ## G) CI/CD & Developer Experience
 - **Container limitations:** Unit tests and lint fail locally without an Android SDK; rely on CI/workstation for full validation. 【dd6fab†L1-L12】【1ec8cd†L14-L25】 Consider a lightweight JVM-only task (shared modules) as a pre-push guard.
-- **KMP warnings:** Kotlin multiplatform emits compatibility warnings with AGP 8.5.0 in shared modules; track upstream compatibility or pin AGP/Kotlin versions to tested pairs in CI. 【bd0b52†L1-L36】
-- **Coverage expectations:** DEV_GUIDE lists kover thresholds; ensure CI adds coverage workflows per plan. 【F:docs/DEV_GUIDE.md†L40-L47】【F:docs/CI_CD.md†L3-L12】
+- **KMP warnings (RESOLVED):** Kotlin version mismatch between root (2.0.0) and shared/core-tracking (1.9.20) caused compatibility warnings. Fixed by aligning all Kotlin plugin declarations to 2.0.0. Version compatibility matrix documented in `docs/VERSION_COMPATIBILITY.md`. 【F:docs/VERSION_COMPATIBILITY.md】
+- **Coverage expectations (IMPLEMENTED):** Coverage workflow added at `.github/workflows/coverage.yml`. Runs `koverVerify` on PRs and publishes HTML reports. Enforces thresholds: shared modules ≥85%, androidApp ≥75%. 【F:docs/DEV_GUIDE.md†L40-L47】【F:docs/CI_CD.md†L11-L15】【F:.github/workflows/coverage.yml】
 
 ## H) Actionable Backlog (Prioritized)
 
