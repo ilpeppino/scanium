@@ -482,11 +482,9 @@ class CameraXManager(
                     // Use tracking pipeline when in STREAM_MODE and scanning
                     if (useStreamMode && isScanning) {
                         Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
-                        val items = processObjectDetectionWithTracking(inputImage, lazyBitmapProvider)
-                        // For now, return empty detection results when using tracking
-                        // (overlay visualization can be added later if needed)
-                        Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items")
-                        Pair(items, emptyList())
+                        val (items, detections) = processObjectDetectionWithTracking(inputImage, lazyBitmapProvider)
+                        Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results")
+                        Pair(items, detections)
                     } else {
                         // Single-shot detection without tracking
                         Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
@@ -525,51 +523,25 @@ class CameraXManager(
 
     /**
      * Process object detection with tracking to reduce duplicates.
+     * Uses a SINGLE detection pass to generate both tracking data and overlay data.
      */
     private suspend fun processObjectDetectionWithTracking(
         inputImage: InputImage,
         lazyBitmapProvider: () -> Bitmap?
-    ): List<ScannedItem> {
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
-        // Get raw detections with tracking metadata (lazy bitmap will be created only if needed)
-        val detections = objectDetector.detectObjectsWithTracking(
+        // SINGLE DETECTION PASS: Get both tracking metadata and overlay data together
+        val trackingResponse = objectDetector.detectObjectsWithTracking(
             image = inputImage,
             sourceBitmap = lazyBitmapProvider,
             useStreamMode = true
         )
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${detections.size} raw DetectionInfo objects from ObjectDetectorClient")
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass")
 
-        val detectionResponse = objectDetector.detectObjects(
-            image = inputImage,
-            sourceBitmap = lazyBitmapProvider,
-            useStreamMode = true
-        )
-        val sourceBitmap = lazyBitmapProvider() // Get bitmap if needed for dimensions
-        val frameWidth = sourceBitmap?.width ?: inputImage.width
-        val frameHeight = sourceBitmap?.height ?: inputImage.height
-        val normalizedBoxesById = detectionResponse.detectionResults
-            .mapNotNull { result ->
-                result.trackingId?.toString()?.let { it to result.bboxNorm }
-            }
-            .toMap()
-
-        val trackerDetections = detections.mapIndexed { index, detectionInfo ->
-            val normalizedBox = normalizedBoxesById[detectionInfo.trackingId]
-                ?: detectionResponse.detectionResults.getOrNull(index)?.let { result ->
-                    result.bboxNorm
-                }
-                ?: detectionInfo.boundingBox
-
-            detectionInfo.copy(
-                boundingBox = normalizedBox,
-                normalizedBoxArea = normalizedBox.area
-            )
-        }
-
-        // Process through tracker
-        val confirmedCandidates = objectTracker.processFrame(trackerDetections)
+        // Process detections through tracker
+        val confirmedCandidates = objectTracker.processFrame(trackingResponse.detectionInfos)
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: ObjectTracker returned ${confirmedCandidates.size} newly confirmed candidates")
 
@@ -587,8 +559,8 @@ class CameraXManager(
             Log.i(TAG, "    ScannedItem $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
         }
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: RETURNING ${items.size} items")
-        return items
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: RETURNING ${items.size} items and ${trackingResponse.detectionResults.size} detection results")
+        return Pair(items, trackingResponse.detectionResults)
     }
 
     /**
