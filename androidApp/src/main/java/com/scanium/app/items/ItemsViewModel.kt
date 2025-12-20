@@ -12,6 +12,7 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -42,7 +43,9 @@ import kotlinx.coroutines.withContext
 class ItemsViewModel(
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
     onDeviceClassifier: ItemClassifier = NoopClassifier,
-    cloudClassifier: ItemClassifier = NoopClassifier
+    cloudClassifier: ItemClassifier = NoopClassifier,
+    private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
 ) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
@@ -106,7 +109,7 @@ class ItemsViewModel(
      */
     fun addItem(item: ScannedItem) {
         // Offload all processing to background thread
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(workerDispatcher) {
             if (DEBUG_LOGGING) {
                 Log.i(TAG, ">>> addItem: id=${item.id}, category=${item.category}, confidence=${item.confidence}")
             }
@@ -119,7 +122,7 @@ class ItemsViewModel(
             }
 
             // Update UI state on main thread
-            withContext(Dispatchers.Main) {
+            withContext(mainDispatcher) {
                 updateItemsState()
             }
         }
@@ -140,7 +143,7 @@ class ItemsViewModel(
         if (newItems.isEmpty()) return
 
         // Launch directly on background thread to avoid any main-thread overhead
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(workerDispatcher) {
             // Minimal logging on hot path - only batch size when debugging
             if (DEBUG_LOGGING) {
                 Log.i(TAG, ">>> Processing batch: ${newItems.size} items")
@@ -151,7 +154,7 @@ class ItemsViewModel(
             itemAggregator.processDetections(newItems)
 
             // Update UI state on main thread
-            withContext(Dispatchers.Main) {
+            withContext(mainDispatcher) {
                 updateItemsState()
             }
         }
@@ -222,7 +225,7 @@ class ItemsViewModel(
         }
 
         _telemetryEnabled.value = true
-        telemetryJob = viewModelScope.launch(Dispatchers.Default) {
+        telemetryJob = viewModelScope.launch(workerDispatcher) {
             Log.i(TAG, "╔═══════════════════════════════════════════════════════════════")
             Log.i(TAG, "║ ASYNC TELEMETRY ENABLED")
             Log.i(TAG, "║ Collection interval: ${TELEMETRY_INTERVAL_MS}ms")
@@ -327,8 +330,8 @@ class ItemsViewModel(
 
     private fun triggerEnhancedClassification() {
         // Offload filtering to background to avoid blocking UI during burst detections
-        viewModelScope.launch {
-            val pendingItems = withContext(Dispatchers.Default) {
+        viewModelScope.launch(mainDispatcher) {
+            val pendingItems = withContext(workerDispatcher) {
                 itemAggregator.getAggregatedItems()
                     .filter { it.thumbnail != null && classificationOrchestrator.shouldClassify(it.aggregatedId) }
             }
@@ -340,7 +343,7 @@ class ItemsViewModel(
             itemAggregator.markClassificationPending(pendingIds)
 
             // Update UI on main dispatcher
-            withContext(Dispatchers.Main) {
+            withContext(mainDispatcher) {
                 _items.value = itemAggregator.getScannedItems()
             }
 
@@ -374,7 +377,7 @@ class ItemsViewModel(
                 // Dispatch UI state update to main thread explicitly
                 // This callback may be invoked from background coroutines, so we must
                 // ensure the StateFlow update happens on Main dispatcher
-                viewModelScope.launch(Dispatchers.Main) {
+                viewModelScope.launch(mainDispatcher) {
                     _items.value = itemAggregator.getScannedItems()
 
                     if (BuildConfig.DEBUG) {
@@ -452,7 +455,7 @@ class ItemsViewModel(
         itemAggregator.markClassificationPending(listOf(itemId))
 
         // Update UI on main dispatcher
-        viewModelScope.launch(Dispatchers.Main) {
+        viewModelScope.launch(mainDispatcher) {
             _items.value = itemAggregator.getScannedItems()
         }
 
@@ -487,7 +490,7 @@ class ItemsViewModel(
             // Dispatch UI state update to main thread explicitly
             // This callback may be invoked from background coroutines, so we must
             // ensure the StateFlow update happens on Main dispatcher
-            viewModelScope.launch(Dispatchers.Main) {
+            viewModelScope.launch(mainDispatcher) {
                 _items.value = itemAggregator.getScannedItems()
 
                 if (BuildConfig.DEBUG) {

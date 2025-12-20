@@ -1,0 +1,36 @@
+{
+  "name": "@scanium/ebay-domainpack-gen",
+  "version": "1.0.0",
+  "description": "Generate Scanium Domain Packs from eBay category trees",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "ebay-domainpack-gen": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "gen": "tsx src/cli/index.ts"
+  },
+  "keywords": [
+    "ebay",
+    "taxonomy",
+    "domain-pack",
+    "scanium"
+  ],
+  "author": "Scanium",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "node-fetch": "^3.3.2",
+    "yaml": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.2",
+    "vitest": "^1.4.0"
+  }
+}

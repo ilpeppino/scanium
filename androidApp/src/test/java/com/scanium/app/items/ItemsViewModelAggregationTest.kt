@@ -4,6 +4,7 @@ import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -26,10 +27,14 @@ import org.robolectric.annotation.Config
 class ItemsViewModelAggregationTest {
 
     private lateinit var viewModel: ItemsViewModel
+    private val dispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setup() {
-        viewModel = ItemsViewModel()
+        viewModel = ItemsViewModel(
+            workerDispatcher = dispatcher,
+            mainDispatcher = dispatcher
+        )
     }
 
     @Test
