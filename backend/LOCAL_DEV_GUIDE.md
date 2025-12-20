@@ -153,6 +153,7 @@ DATABASE_URL=postgresql://scanium:scanium@localhost:5432/scanium
 EBAY_ENV=sandbox
 EBAY_CLIENT_ID=REDACTED_EBAY_CLIENT_ID
 EBAY_CLIENT_SECRET=REDACTED_EBAY_CLIENT_SECRET
+EBAY_TOKEN_ENCRYPTION_KEY=change_me_to_32+_char_secret_for_tokens
 EBAY_REDIRECT_PATH=/auth/ebay/callback
 EBAY_SCOPES=https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.account
 
