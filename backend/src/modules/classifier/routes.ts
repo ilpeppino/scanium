@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
+import { MultipartFile } from '@fastify/multipart';
 import { ClassifierService } from './service.js';
 import { sanitizeImageBuffer, isSupportedImage } from './utils/image.js';
 import { ClassificationHints, ClassificationRequest } from './types.js';
@@ -102,7 +103,11 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         }
       }
 
-      const buffer = await payload.file.toBuffer();
+      // SEC-004: Validate file size BEFORE reading into buffer to prevent memory exhaustion
+      const buffer = await readFileWithSizeValidation(
+        payload.file,
+        config.classifier.maxUploadBytes
+      );
       const sanitized = await sanitizeImageBuffer(buffer, payload.file.mimetype);
 
       // Images stay in-memory only. Future retention requires explicit opt-in via config.
@@ -143,7 +148,39 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
 
       return reply.status(200).send(result);
     } catch (error) {
-      // Log failed request
+      // SEC-004: Handle file size validation errors with appropriate response
+      if (error instanceof Error && error.message.includes('File size exceeds')) {
+        request.log.warn(
+          {
+            ip: request.ip,
+            apiKeyPrefix: apiKey?.substring(0, 8),
+            error: error.message,
+          },
+          'File upload rejected: size limit exceeded'
+        );
+
+        if (config.security.logApiKeyUsage && apiKey) {
+          apiKeyManager.logUsage({
+            apiKey: apiKey.substring(0, 8) + '***',
+            timestamp: new Date(),
+            endpoint: request.url,
+            method: request.method,
+            success: false,
+            ip: request.ip,
+            userAgent: request.headers['user-agent'],
+            errorCode: 'FILE_TOO_LARGE',
+          });
+        }
+
+        return reply.status(413).send({
+          error: {
+            code: 'FILE_TOO_LARGE',
+            message: `File size exceeds maximum allowed size of ${config.classifier.maxUploadBytes} bytes`,
+          },
+        });
+      }
+
+      // Log failed request for other errors
       if (config.security.logApiKeyUsage && apiKey) {
         apiKeyManager.logUsage({
           apiKey: apiKey.substring(0, 8) + '***',
@@ -206,5 +243,50 @@ function decrementConcurrent(apiKey?: string) {
     inFlightByKey.delete(apiKey);
   } else {
     inFlightByKey.set(apiKey, next);
+  }
+}
+
+/**
+ * SEC-004: Read file with progressive size validation to prevent memory exhaustion
+ *
+ * This function reads the file stream incrementally, validating size as bytes
+ * are received rather than buffering the entire file first. This prevents
+ * memory exhaustion attacks from large file uploads.
+ *
+ * @param file - Multipart file from request
+ * @param maxBytes - Maximum allowed file size in bytes
+ * @returns Buffer containing the file data
+ * @throws Error if file exceeds size limit
+ */
+async function readFileWithSizeValidation(
+  file: MultipartFile,
+  maxBytes: number
+): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+
+  try {
+    // Read file stream with progressive size checking
+    for await (const chunk of file.file) {
+      totalBytes += chunk.length;
+
+      // Check size BEFORE adding to memory
+      if (totalBytes > maxBytes) {
+        // Clean up any buffered chunks immediately
+        chunks.length = 0;
+        throw new Error(
+          `File size exceeds maximum allowed size of ${maxBytes} bytes (received ${totalBytes} bytes)`
+        );
+      }
+
+      chunks.push(chunk);
+    }
+
+    // Concatenate chunks only after validating total size
+    return Buffer.concat(chunks);
+  } catch (error) {
+    // Clean up memory on any error
+    chunks.length = 0;
+    throw error;
   }
 }
