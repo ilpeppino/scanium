@@ -5,7 +5,9 @@ import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.ml.ItemCategory
+import com.scanium.shared.core.models.config.CloudClassifierConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -19,6 +21,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
+import kotlin.math.min
 
 /**
  * Cloud-based classifier that uploads cropped item images to a backend API.
@@ -59,7 +62,10 @@ import java.util.concurrent.TimeUnit
  * @property domainPackId Domain pack to use for classification (default: "home_resale")
  */
 class CloudClassifier(
-    private val domainPackId: String = "home_resale"
+    private val domainPackId: String = "home_resale",
+    private val maxAttempts: Int = 3,
+    private val baseDelayMs: Long = 1_000L,
+    private val maxDelayMs: Long = 8_000L
 ) : ItemClassifier {
     companion object {
         private const val TAG = "CloudClassifier"
@@ -73,136 +79,143 @@ class CloudClassifier(
         .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 
+    private val config = CloudClassifierConfig(
+        baseUrl = BuildConfig.SCANIUM_API_BASE_URL,
+        apiKey = BuildConfig.SCANIUM_API_KEY.takeIf { it.isNotBlank() },
+        domainPackId = domainPackId
+    )
+
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
     }
 
     override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.IO) {
-        val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
-        if (baseUrl.isBlank()) {
+        if (!config.isConfigured) {
             Log.d(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
-            return@withContext null
+            return@withContext failureResult(
+                message = "Cloud classification disabled",
+                offline = true
+            )
         }
 
         val bitmap = input.bitmap
-        val endpoint = "${baseUrl.trimEnd('/')}/v1/classify"
+        val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify"
         Log.d(TAG, "Classifying with endpoint: $endpoint, domainPack: $domainPackId")
 
-        try {
-            // Convert bitmap to JPEG bytes (strips EXIF metadata)
-            val imageBytes = bitmap.toJpegBytes()
+        val imageBytes = bitmap.toJpegBytes()
+        val requestBody = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart(
+                name = "image",
+                filename = "item.jpg",
+                body = imageBytes.toRequestBody("image/jpeg".toMediaType())
+            )
+            .addFormDataPart("domainPackId", domainPackId)
+            .build()
 
-            // Build multipart request
-            val requestBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart(
-                    name = "image",
-                    filename = "item.jpg",
-                    body = imageBytes.toRequestBody("image/jpeg".toMediaType())
-                )
-                .addFormDataPart("domainPackId", domainPackId)
-                .build()
-
+        var attempt = 1
+        var lastError: String? = null
+        while (attempt <= maxAttempts) {
             val request = Request.Builder()
                 .url(endpoint)
                 .post(requestBody)
                 .apply {
-                    // Add API key if configured
-                    val apiKey = BuildConfig.SCANIUM_API_KEY
-                    if (apiKey.isNotBlank()) {
-                        header("X-API-Key", apiKey)
-                    }
-
-                    // Add client metadata for server-side logging
+                    config.apiKey?.let { header("X-API-Key", it) }
                     header("X-Client", "Scanium-Android")
                     header("X-App-Version", BuildConfig.VERSION_NAME)
                 }
                 .build()
 
-            // Execute request
-            val response = client.newCall(request).execute()
-            val responseCode = response.code
-            val responseBody = response.body?.string()
+            try {
+                var retry = false
+                var offlineError = false
+                var errorMessage: String? = null
 
-            Log.d(TAG, "Response: code=$responseCode")
+                client.newCall(request).execute().use { response ->
+                    val responseCode = response.code
+                    val responseBody = response.body?.string()
+                    Log.d(TAG, "Response: code=$responseCode")
 
-            when {
-                responseCode == 200 && responseBody != null -> {
-                    // Parse successful response
-                    val apiResponse = json.decodeFromString<CloudClassificationResponse>(responseBody)
-                    val result = parseSuccessResponse(apiResponse)
-                    Log.i(TAG, "Classification success")
-                    result
+                    if (responseCode == 200 && responseBody != null) {
+                        val apiResponse = json.decodeFromString<CloudClassificationResponse>(responseBody)
+                        val result = parseSuccessResponse(apiResponse)
+                        Log.i(TAG, "Classification success")
+                        return@withContext result
+                    }
+
+                    errorMessage = if (responseBody.isNullOrBlank()) {
+                        "Classification failed (HTTP $responseCode)"
+                    } else {
+                        "Classification failed (HTTP $responseCode): $responseBody"
+                    }
+
+                    if (isRetryableError(responseCode) && attempt < maxAttempts) {
+                        Log.w(TAG, "Retryable error: HTTP $responseCode (attempt $attempt)")
+                        retry = true
+                        return@use
+                    }
+
+                    offlineError = responseCode == 503 || responseCode == 504
                 }
 
-                isRetryableError(responseCode) -> {
-                    // Retryable error (will be handled by orchestrator)
-                    Log.w(TAG, "Retryable error: HTTP $responseCode")
-                    ClassificationResult(
-                        label = null,
-                        confidence = 0f,
-                        category = ItemCategory.UNKNOWN,
-                        mode = ClassificationMode.CLOUD,
-                        status = ClassificationStatus.FAILED,
-                        errorMessage = "Server error (HTTP $responseCode)"
-                    )
+                if (retry) {
+                    lastError = errorMessage
+                    delay(calculateBackoffDelay(attempt))
+                    attempt++
+                    continue
                 }
 
-                else -> {
-                    // Non-retryable error
-                    Log.e(TAG, "Non-retryable error: HTTP $responseCode")
-                    ClassificationResult(
-                        label = null,
-                        confidence = 0f,
-                        category = ItemCategory.UNKNOWN,
-                        mode = ClassificationMode.CLOUD,
-                        status = ClassificationStatus.FAILED,
-                        errorMessage = "Classification failed (HTTP $responseCode)"
-                    )
+                if (errorMessage != null) {
+                    return@withContext failureResult(errorMessage, offlineError)
                 }
+            } catch (e: SocketTimeoutException) {
+                lastError = "Request timeout"
+                Log.w(TAG, "Timeout classifying image (attempt $attempt)", e)
+            } catch (e: UnknownHostException) {
+                lastError = "Offline - check your connection"
+                Log.w(TAG, "Network unavailable (attempt $attempt)", e)
+            } catch (e: IOException) {
+                lastError = "Network error: ${e.message}"
+                Log.w(TAG, "I/O error classifying image (attempt $attempt)", e)
+            } catch (e: Exception) {
+                lastError = "Unexpected error: ${e.message}"
+                Log.e(TAG, "Unexpected error classifying image", e)
+                return@withContext failureResult(lastError ?: "Unexpected error")
             }
-        } catch (e: SocketTimeoutException) {
-            Log.w(TAG, "Timeout classifying image", e)
-            ClassificationResult(
-                label = null,
-                confidence = 0f,
-                category = ItemCategory.UNKNOWN,
-                mode = ClassificationMode.CLOUD,
-                status = ClassificationStatus.FAILED,
-                errorMessage = "Request timeout"
-            )
-        } catch (e: UnknownHostException) {
-            Log.w(TAG, "Network unavailable", e)
-            ClassificationResult(
-                label = null,
-                confidence = 0f,
-                category = ItemCategory.UNKNOWN,
-                mode = ClassificationMode.CLOUD,
-                status = ClassificationStatus.FAILED,
-                errorMessage = "No network connection"
-            )
-        } catch (e: IOException) {
-            Log.w(TAG, "I/O error classifying image", e)
-            ClassificationResult(
-                label = null,
-                confidence = 0f,
-                category = ItemCategory.UNKNOWN,
-                mode = ClassificationMode.CLOUD,
-                status = ClassificationStatus.FAILED,
-                errorMessage = "Network error: ${e.message}"
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error classifying image", e)
-            ClassificationResult(
-                label = null,
-                confidence = 0f,
-                category = ItemCategory.UNKNOWN,
-                mode = ClassificationMode.CLOUD,
-                status = ClassificationStatus.FAILED,
-                errorMessage = "Unexpected error: ${e.message}"
-            )
+
+            if (attempt >= maxAttempts) {
+                break
+            }
+
+            Log.d(TAG, "Retrying after failure (attempt $attempt)")
+            delay(calculateBackoffDelay(attempt))
+            attempt++
         }
+
+        return@withContext failureResult(lastError ?: "Unable to classify", offline = lastError?.contains("Offline", true) == true)
+    }
+
+    private fun failureResult(message: String, offline: Boolean = false): ClassificationResult {
+        val errorMessage = if (offline) {
+            "$message – using on-device labels"
+        } else {
+            message
+        }
+
+        return ClassificationResult(
+            label = null,
+            confidence = 0f,
+            category = ItemCategory.UNKNOWN,
+            mode = ClassificationMode.CLOUD,
+            status = ClassificationStatus.FAILED,
+            errorMessage = errorMessage
+        )
+    }
+
+    private fun calculateBackoffDelay(attempt: Int): Long {
+        val exponentialDelay = baseDelayMs * (1 shl (attempt - 1))
+        return min(exponentialDelay, maxDelayMs)
     }
 
     /**
