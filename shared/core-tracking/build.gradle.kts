@@ -9,6 +9,9 @@ kotlin {
     // Android target
     androidTarget()
 
+    // JVM target for running tests without Android SDK (CI/container-friendly)
+    jvm()
+
     // iOS targets
     iosX64()
     iosArm64()

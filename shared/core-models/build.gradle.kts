@@ -7,6 +7,9 @@ plugins {
 kotlin {
     androidTarget()
 
+    // JVM target for running tests without Android SDK (CI/container-friendly)
+    jvm()
+
     val iosArm64Target = iosArm64() {
         binaries.framework {
             baseName = "ScaniumCoreModels"
