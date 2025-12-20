@@ -119,15 +119,6 @@ private fun AndroidClassificationStatus.toSharedStatus(): ClassificationStatus =
 
 /**
  * Convert Android ItemCategory to shared ItemCategory.
+ * Since AndroidItemCategory is a typealias for SharedItemCategory, they're the same type.
  */
-private fun AndroidItemCategory.toSharedItemCategory(): SharedItemCategory = when (this) {
-    AndroidItemCategory.BOOK -> SharedItemCategory.BOOK
-    AndroidItemCategory.ELECTRONIC -> SharedItemCategory.ELECTRONIC
-    AndroidItemCategory.BOTTLE -> SharedItemCategory.BOTTLE
-    AndroidItemCategory.CLOTHING -> SharedItemCategory.CLOTHING
-    AndroidItemCategory.TOY -> SharedItemCategory.TOY
-    AndroidItemCategory.FURNITURE -> SharedItemCategory.FURNITURE
-    AndroidItemCategory.SPORTS -> SharedItemCategory.SPORTS
-    AndroidItemCategory.HOME_GOOD -> SharedItemCategory.HOME_GOOD
-    AndroidItemCategory.UNKNOWN -> SharedItemCategory.UNKNOWN
-}
+private fun AndroidItemCategory.toSharedItemCategory(): SharedItemCategory = this
