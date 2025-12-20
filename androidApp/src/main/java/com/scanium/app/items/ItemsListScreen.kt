@@ -14,11 +14,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.DismissDirection
-import androidx.compose.material.DismissValue
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.SwipeToDismiss
-import androidx.compose.material.rememberDismissState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -29,6 +24,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,7 +48,7 @@ import java.util.*
  * - Tap to select, long-press for details
  * - Empty state when no items
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
@@ -317,39 +313,43 @@ fun ItemsListScreen(
                             items = items,
                             key = { it.id }
                         ) { item ->
-                            val dismissState = rememberDismissState(
-                                confirmStateChange = { value ->
-                                    if (value == DismissValue.DismissedToEnd) {
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = { value ->
+                                    if (value == SwipeToDismissBoxValue.StartToEnd) {
                                         deleteItem(item)
+                                        true
+                                    } else {
+                                        false
                                     }
-                                    value == DismissValue.DismissedToEnd
                                 }
                             )
 
-                            SwipeToDismiss(
+                            SwipeToDismissBox(
                                 state = dismissState,
-                                directions = setOf(DismissDirection.StartToEnd),
+                                enableDismissFromStartToEnd = true,
+                                enableDismissFromEndToStart = false,
                                 modifier = Modifier.animateItemPlacement(
                                     animationSpec = spring(
                                         stiffness = 300f,
                                         dampingRatio = 0.8f
                                     )
                                 ),
-                                background = {
-                                    val color = if (dismissState.targetValue == DismissValue.Default) {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    } else {
+                                backgroundContent = {
+                                    val isDismissing = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
+                                    val containerColor = if (isDismissing) {
                                         MaterialTheme.colorScheme.errorContainer
-                                    }
-                                    val iconTint = if (dismissState.targetValue == DismissValue.Default) {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
                                     } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                    val iconTint = if (isDismissing) {
                                         MaterialTheme.colorScheme.onErrorContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                     }
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .background(color)
+                                            .background(containerColor)
                                             .padding(horizontal = 16.dp),
                                         contentAlignment = Alignment.CenterStart
                                     ) {
@@ -359,23 +359,22 @@ fun ItemsListScreen(
                                             tint = iconTint
                                         )
                                     }
-                                },
-                                dismissContent = {
-                                    ItemRow(
-                                        item = item,
-                                        isSelected = selectedIds.contains(item.id),
-                                        onClick = {
-                                            toggleSelection(item)
-                                        },
-                                        onLongClick = {
-                                            selectedItem = item
-                                        },
-                                        onRetryClassification = {
-                                            itemsViewModel.retryClassification(item.id)
-                                        }
-                                    )
                                 }
-                            )
+                            ) {
+                                ItemRow(
+                                    item = item,
+                                    isSelected = selectedIds.contains(item.id),
+                                    onClick = {
+                                        toggleSelection(item)
+                                    },
+                                    onLongClick = {
+                                        selectedItem = item
+                                    },
+                                    onRetryClassification = {
+                                        itemsViewModel.retryClassification(item.id)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
