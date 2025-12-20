@@ -8,7 +8,11 @@
 - **Security - CVE Scanning** (`.github/workflows/security-cve-scan.yml`)
   - Triggers: PRs touching Gradle files, pushes to `main/master`, weekly cron, manual dispatch.
   - Runs OWASP Dependency-Check with SARIF upload and HTML artifact; continues on error.
-- **(Planned) Coverage**: add `./gradlew koverVerify` and publish `*/build/reports/kover/html` + `androidApp/build/reports/jacoco/testDebugUnitTest/html` artifacts once coverage execution is enabled on CI runners.
+- **Code Coverage** (`.github/workflows/coverage.yml`)
+  - Triggers: PRs to `main`, pushes to `main`, manual dispatch.
+  - Steps: checkout, JDK 17 + Gradle setup, `./gradlew clean test koverVerify`, `./gradlew jacocoTestReport`.
+  - Publishes coverage artifacts: `*/build/reports/kover/html` (shared modules) + `androidApp/build/reports/jacoco/testDebugUnitTest/html`.
+  - Enforces thresholds: shared modules ≥85%, androidApp ≥75% (configured in respective `build.gradle.kts`).
 
 ## Mobile testing via artifact
 1. Push your branch or use workflow_dispatch on **Android Debug APK**.
