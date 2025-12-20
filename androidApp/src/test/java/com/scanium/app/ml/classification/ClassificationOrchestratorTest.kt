@@ -9,7 +9,7 @@ import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,7 +27,7 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = backgroundScope,
             delayProvider = { }
         )
 
@@ -36,7 +36,7 @@ class ClassificationOrchestratorTest {
         orchestrator.classify(listOf(item)) { _, _ -> }
         orchestrator.classify(listOf(item)) { _, _ -> }
 
-        runCurrent()
+        advanceUntilIdle()
 
         assertThat(classifier.callCount).isEqualTo(1)
 
@@ -48,11 +48,11 @@ class ClassificationOrchestratorTest {
                 mode = ClassificationMode.ON_DEVICE
             )
         )
-        runCurrent()
+        advanceUntilIdle()
 
         // Cached result prevents any additional invocations
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
 
         assertThat(classifier.callCount).isEqualTo(1)
     }
@@ -65,18 +65,18 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = backgroundScope,
             delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-2")
 
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
 
         // Second trigger should be ignored because the failure is cached
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
 
         assertThat(classifier.callCount).isEqualTo(1)
     }
@@ -89,7 +89,7 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = backgroundScope,
             maxRetries = 3,
             delayProvider = { }
         )
@@ -100,7 +100,7 @@ class ClassificationOrchestratorTest {
         orchestrator.classify(listOf(item)) { _, result ->
             resultReceived = result
         }
-        runCurrent()
+        advanceUntilIdle()
 
         // Ensure the orchestrator attempted classification
         assertThat(classifier.callCount).isAtLeast(1)
@@ -114,7 +114,7 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = backgroundScope,
             maxRetries = 3,
             delayProvider = { }
         )
@@ -125,7 +125,7 @@ class ClassificationOrchestratorTest {
         orchestrator.classify(listOf(item)) { _, result ->
             resultReceived = result
         }
-        runCurrent()
+        advanceUntilIdle()
 
         // Should have attempted classification
         assertThat(classifier.callCount).isAtLeast(1)
@@ -139,7 +139,7 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = backgroundScope,
             delayProvider = { }
         )
 
@@ -147,12 +147,12 @@ class ClassificationOrchestratorTest {
 
         // Initial classification
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(1)
 
         // Manual retry clears cache and reclassifies
         orchestrator.retry("agg-5", item) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(2)
     }
 
@@ -164,14 +164,14 @@ class ClassificationOrchestratorTest {
             modeFlow = modeFlow,
             onDeviceClassifier = classifier,
             cloudClassifier = classifier,
-            scope = this,
+            scope = backgroundScope,
             delayProvider = { }
         )
 
         val item = createAggregatedItem("agg-6")
 
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(1)
         assertThat(orchestrator.hasResult("agg-6")).isTrue()
 
@@ -180,7 +180,7 @@ class ClassificationOrchestratorTest {
 
         // After reset, can classify again
         orchestrator.classify(listOf(item)) { _, _ -> }
-        runCurrent()
+        advanceUntilIdle()
         assertThat(classifier.callCount).isEqualTo(2)
     }
 
