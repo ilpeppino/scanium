@@ -323,14 +323,18 @@ class ItemAggregator(
 
     /**
      * Get all current aggregated items.
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getAllItems(): List<AggregatedItem> {
         return aggregatedItems.values.toList()
     }
 
     /**
      * Get aggregated items as ScannedItems for UI compatibility.
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getScannedItems(): List<ScannedItem> {
         return aggregatedItems.values.map { it.toScannedItem() }
     }
@@ -363,7 +367,9 @@ class ItemAggregator(
 
     /**
      * Returns a snapshot of aggregated items for downstream components (e.g., classification).
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getAggregatedItems(): List<AggregatedItem> = aggregatedItems.values.toList()
 
     /**
@@ -441,7 +447,9 @@ class ItemAggregator(
 
     /**
      * Get aggregation statistics for monitoring.
+     * Thread-safe via synchronized block to prevent concurrent modification.
      */
+    @Synchronized
     fun getStats(): AggregationStats {
         val totalMerges = aggregatedItems.values.sumOf { it.mergeCount - 1 }
         val avgMergesPerItem = if (aggregatedItems.isNotEmpty()) {
