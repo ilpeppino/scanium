@@ -17,6 +17,7 @@ Start here for up-to-date context. Keep reads under 3 minutes; follow links for 
 - [DECISIONS](./DECISIONS.md) – ADR-lite list of notable choices.
 - [TESTING](./TESTING.md) – test commands, coverage thresholds, and guidance.
 - [REVIEW_REPORT](./REVIEW_REPORT.md) – architecture/code review findings and backlog.
+- [COMPREHENSIVE_AUDIT_REPORT](./COMPREHENSIVE_AUDIT_REPORT.md) – complete repository audit with 66 prioritized findings (2025-12-20).
 
 ***REMOVED******REMOVED*** Docs maintenance checklist
 - Feature change: update PRODUCT; adjust ARCHITECTURE if flows/modules shift.
