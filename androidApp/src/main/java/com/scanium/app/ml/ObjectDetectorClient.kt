@@ -26,6 +26,15 @@ data class DetectionResponse(
 )
 
 /**
+ * Wrapper class containing both DetectionInfo (for tracking) and DetectionResults (for overlay).
+ * This eliminates the need for double detection when tracking is enabled.
+ */
+data class TrackingDetectionResponse(
+    val detectionInfos: List<DetectionInfo>,
+    val detectionResults: List<DetectionResult>
+)
+
+/**
  * Client for ML Kit Object Detection and Tracking.
  *
  * Configures ML Kit to detect multiple objects with classification enabled.
@@ -237,19 +246,20 @@ class ObjectDetectorClient {
     /**
      * Processes an image and extracts raw detection information for tracking.
      *
-     * This method returns DetectionInfo objects that can be fed into ObjectTracker
-     * for de-duplication and confirmation logic.
+     * This method returns both DetectionInfo objects (for ObjectTracker) and DetectionResult
+     * objects (for overlay visualization) from a SINGLE detection pass, eliminating duplicate
+     * ML workload.
      *
      * @param image InputImage to process (from CameraX)
      * @param sourceBitmap Lazy provider for bitmap (only invoked if detections require thumbnails)
      * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
-     * @return List of DetectionInfo with tracking metadata
+     * @return TrackingDetectionResponse with both tracking metadata and overlay data
      */
     suspend fun detectObjectsWithTracking(
         image: InputImage,
         sourceBitmap: () -> Bitmap?,
         useStreamMode: Boolean = true // Default to STREAM_MODE for tracking
-    ): List<DetectionInfo> {
+    ): TrackingDetectionResponse {
         return try {
             val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
             Log.i(TAG, "========================================")
@@ -284,7 +294,7 @@ class ObjectDetectorClient {
             // If zero objects, log diagnostic info and return early (no need to create bitmap)
             if (detectedObjects.isEmpty()) {
                 Log.d(TAG, "No detections - skipping bitmap generation for tracking")
-                return emptyList()
+                return TrackingDetectionResponse(emptyList(), emptyList())
             }
 
             // OPTIMIZATION: Only generate bitmap if we have detections that need thumbnails
@@ -302,27 +312,42 @@ class ObjectDetectorClient {
                 Log.i(TAG, "    Object $index: trackingId=${obj.trackingId}, labels=[$labels], box=${obj.boundingBox}")
             }
 
-            // Convert each detected object to DetectionInfo
-            val detectionInfos = detectedObjects.mapNotNull { obj ->
-                extractDetectionInfo(
+            // Convert each detected object to both DetectionInfo and DetectionResult
+            // This single pass provides data for both tracker and overlay
+            val detectionInfos = mutableListOf<DetectionInfo>()
+            val detectionResults = mutableListOf<DetectionResult>()
+
+            detectedObjects.forEach { obj ->
+                // Extract DetectionInfo for tracking
+                val detectionInfo = extractDetectionInfo(
                     detectedObject = obj,
                     sourceBitmap = bitmap,
                     imageRotationDegrees = image.rotationDegrees,
                     fallbackWidth = image.width,
                     fallbackHeight = image.height
                 )
+
+                // Convert to DetectionResult for overlay
+                val detectionResult = convertToDetectionResult(
+                    detectedObject = obj,
+                    imageWidth = bitmap?.width ?: image.width,
+                    imageHeight = bitmap?.height ?: image.height
+                )
+
+                if (detectionInfo != null) detectionInfos.add(detectionInfo)
+                if (detectionResult != null) detectionResults.add(detectionResult)
             }
 
-            Log.i(TAG, ">>> Extracted ${detectionInfos.size} DetectionInfo objects")
+            Log.i(TAG, ">>> Extracted ${detectionInfos.size} DetectionInfo objects and ${detectionResults.size} DetectionResult objects")
             detectionInfos.forEachIndexed { index, info ->
                 Log.i(TAG, "    DetectionInfo $index: trackingId=${info.trackingId}, category=${info.category}, confidence=${info.confidence}, area=${info.normalizedBoxArea}")
             }
 
-            detectionInfos
+            TrackingDetectionResponse(detectionInfos, detectionResults)
         } catch (e: Exception) {
             // Log.e() with exception parameter automatically includes full stack trace
             Log.e(TAG, ">>> ERROR in detectObjectsWithTracking", e)
-            emptyList()
+            TrackingDetectionResponse(emptyList(), emptyList())
         }
     }
 
