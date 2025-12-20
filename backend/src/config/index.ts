@@ -53,6 +53,7 @@ export const configSchema = z.object({
     clientSecret: z.string().min(1),
     redirectPath: z.string().default('/auth/ebay/callback'),
     scopes: z.string().min(1),
+    tokenEncryptionKey: z.string().min(32),
   }),
 
   // Security
@@ -107,6 +108,7 @@ export function loadConfig(): Config {
       clientSecret: process.env.EBAY_CLIENT_SECRET,
       redirectPath: process.env.EBAY_REDIRECT_PATH,
       scopes: process.env.EBAY_SCOPES,
+      tokenEncryptionKey: process.env.EBAY_TOKEN_ENCRYPTION_KEY,
     },
     sessionSigningSecret: process.env.SESSION_SIGNING_SECRET,
     security: {

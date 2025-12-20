@@ -29,6 +29,7 @@ describe('Security Plugin', () => {
       clientSecret: 'test-client-secret',
       redirectPath: '/auth/ebay/callback',
       scopes: 'https://api.ebay.com/oauth/api_scope',
+      tokenEncryptionKey: 'test-secret-must-be-at-least-32-chars-long-for-security',
     },
     sessionSigningSecret: 'test-secret-must-be-at-least-32-chars-long-for-security',
     security: {
