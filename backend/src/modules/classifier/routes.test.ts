@@ -25,6 +25,13 @@ const config = configSchema.parse({
     scopes: 'scope',
   },
   sessionSigningSecret: 'x'.repeat(32),
+  security: {
+    enforceHttps: false,
+    enableHsts: false,
+    apiKeyRotationEnabled: false,
+    apiKeyExpirationDays: 90,
+    logApiKeyUsage: false,
+  },
   corsOrigins: 'http://localhost',
 });
 
