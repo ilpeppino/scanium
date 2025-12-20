@@ -166,7 +166,7 @@ curl https://api.yourdomain.com/auth/ebay/status
 
 ***REMOVED******REMOVED*** 🔐 Security Checklist
 
-- [ ] Strong `SESSION_SIGNING_SECRET` (min 32 chars)
+- [ ] Strong `SESSION_SIGNING_SECRET` (min 64 chars, random)
 - [ ] Strong `POSTGRES_PASSWORD`
 - [ ] `CLOUDFLARED_TOKEN` kept secret (not in git)
 - [ ] eBay credentials kept secret (not in git)

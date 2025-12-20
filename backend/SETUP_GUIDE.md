@@ -157,8 +157,8 @@ EBAY_TOKEN_ENCRYPTION_KEY=change_me_to_32+_char_secret_for_tokens
 EBAY_REDIRECT_PATH=/auth/ebay/callback
 EBAY_SCOPES=https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.account
 
-***REMOVED*** Session Security - Generate with: openssl rand -base64 32
-SESSION_SIGNING_SECRET=CHANGE_ME_GENERATE_RANDOM_32_CHARS
+***REMOVED*** Session Security - Generate with: openssl rand -base64 64
+SESSION_SIGNING_SECRET=CHANGE_ME_GENERATE_RANDOM_64_CHARS
 
 ***REMOVED*** CORS Origins - Include your app scheme
 CORS_ORIGINS=scanium://,http://localhost:3000
@@ -176,7 +176,7 @@ CLOUDFLARED_TOKEN=your_tunnel_token_here
 
 ```bash
 ***REMOVED*** Generate session secret
-openssl rand -base64 32
+openssl rand -base64 64
 
 ***REMOVED*** Generate PostgreSQL password
 openssl rand -base64 24
