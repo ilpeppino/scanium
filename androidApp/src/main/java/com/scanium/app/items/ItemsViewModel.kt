@@ -12,6 +12,8 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
+import com.scanium.app.items.persistence.NoopScannedItemStore
+import com.scanium.app.items.persistence.ScannedItemStore
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -44,6 +46,7 @@ class ItemsViewModel(
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
     onDeviceClassifier: ItemClassifier = NoopClassifier,
     cloudClassifier: ItemClassifier = NoopClassifier,
+    private val itemsStore: ScannedItemStore = NoopScannedItemStore,
     private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
 ) : ViewModel() {
@@ -95,6 +98,8 @@ class ItemsViewModel(
         val initialThreshold = AggregationPresets.REALTIME.similarityThreshold
         itemAggregator.updateSimilarityThreshold(initialThreshold)
         Log.i(TAG, "ItemsViewModel initialized with threshold: $initialThreshold")
+
+        loadPersistedItems()
     }
 
     /**
@@ -198,6 +203,9 @@ class ItemsViewModel(
 
         // Update UI state
         _items.value = emptyList()
+        viewModelScope.launch(workerDispatcher) {
+            itemsStore.deleteAll()
+        }
     }
 
     /**
@@ -320,12 +328,16 @@ class ItemsViewModel(
      *
      * Converts AggregatedItems to ScannedItems for UI compatibility.
      */
-    private fun updateItemsState() {
+    private fun updateItemsState(triggerClassification: Boolean = true) {
         val scannedItems = itemAggregator.getScannedItems()
         _items.value = scannedItems
         Log.d(TAG, "Updated UI state: ${scannedItems.size} items")
 
-        triggerEnhancedClassification()
+        persistItems(scannedItems)
+
+        if (triggerClassification) {
+            triggerEnhancedClassification()
+        }
     }
 
     private fun triggerEnhancedClassification() {
@@ -419,6 +431,8 @@ class ItemsViewModel(
                 }
             }
         }
+
+        persistItems(_items.value)
     }
 
     /**
@@ -504,5 +518,23 @@ class ItemsViewModel(
         super.onCleared()
         // Clean up async telemetry job
         disableTelemetry()
+    }
+
+    private fun loadPersistedItems() {
+        viewModelScope.launch(workerDispatcher) {
+            val persistedItems = itemsStore.loadAll()
+            if (persistedItems.isEmpty()) return@launch
+
+            itemAggregator.seedFromScannedItems(persistedItems)
+            withContext(mainDispatcher) {
+                updateItemsState(triggerClassification = false)
+            }
+        }
+    }
+
+    private fun persistItems(items: List<ScannedItem>) {
+        viewModelScope.launch(workerDispatcher) {
+            itemsStore.upsertAll(items)
+        }
     }
 }

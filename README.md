@@ -229,7 +229,7 @@ The app requires the following permission:
 ***REMOVED******REMOVED*** Current Limitations
 
 - **Mocked pricing data** - Prices are generated locally based on category
-- **No persistence** - Items are stored in memory only (cleared on app close)
+ - **Local-only persistence** - Items are stored on-device (no cloud sync/export yet)
 - **ML Kit categories** - Object detection limited to 5 coarse categories (Fashion, Food, Home goods, Places, Plants)
 - **No backend** - All processing is local
 

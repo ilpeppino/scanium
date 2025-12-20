@@ -686,7 +686,7 @@ All ML models are loaded eagerly at startup.
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** PERF-009: Missing APK Size Optimization
+``***REMOVED******REMOVED******REMOVED*** PERF-009: Missing APK Size Optimization
 **Priority:** MEDIUM
 **Category:** Performance
 **Files:**
@@ -704,13 +704,13 @@ No APK splitting or language/density-specific resource configuration.
 1. Enable APK splits by ABI
 2. Configure resource shrinking
 3. Use Android App Bundle
-4. Remove unused resources
+4. Remove unused resources``
 
 **Effort:** Medium (2 days)
 
 ---
 
-***REMOVED******REMOVED******REMOVED*** FUNC-003: No Data Persistence for Scanned Items
+``***REMOVED******REMOVED******REMOVED*** FUNC-003: No Data Persistence for Scanned Items
 **Priority:** MEDIUM
 **Category:** Functional
 **Files:**
@@ -728,7 +728,7 @@ Scanned items are stored in memory only and lost on app close.
 1. Implement Room database for persistence
 2. Add data migration strategy
 3. Implement sync if cloud backend exists
-4. Add export functionality
+4. Add export functionality``
 
 **Effort:** High (1 week)
 
