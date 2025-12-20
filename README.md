@@ -8,10 +8,20 @@ See [docs/INDEX.md](docs/INDEX.md) for the canonical doc set and entry point.
 
 ***REMOVED******REMOVED*** Testing
 
+***REMOVED******REMOVED******REMOVED*** With Android SDK (Workstation / CI)
 - Run KMP unit tests: `./gradlew :shared:core-models:test :shared:core-tracking:test`
 - Run Android unit tests: `./gradlew :androidApp:testDebugUnitTest`
-- Run coverage (when environment permits): `./gradlew koverVerify`
+- Run all tests: `./gradlew test`
+- Run coverage: `./gradlew koverVerify`
 - Instrumented tests (emulator/device required): `./gradlew :androidApp:connectedDebugAndroidTest`
+
+***REMOVED******REMOVED******REMOVED*** Container environments (Claude Code, Docker without Android SDK)
+**⚠️ Note:** Full test suite requires Android SDK. Use JVM-only validation:
+- JVM tests (shared modules): `./gradlew :shared:core-models:jvmTest :shared:core-tracking:jvmTest`
+- Pre-push validation: `./gradlew prePushJvmCheck`
+- Install pre-push hook: `./hooks/install-hooks.sh`
+
+See `docs/DEV_GUIDE.md` and `docs/BUILD_STABILITY.md` for details.
 
 ***REMOVED******REMOVED*** Overview
 

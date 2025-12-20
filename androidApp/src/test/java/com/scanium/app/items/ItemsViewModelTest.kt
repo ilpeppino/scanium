@@ -42,7 +42,10 @@ class ItemsViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = ItemsViewModel()
+        viewModel = ItemsViewModel(
+            workerDispatcher = testDispatcher,
+            mainDispatcher = testDispatcher
+        )
     }
 
     @After

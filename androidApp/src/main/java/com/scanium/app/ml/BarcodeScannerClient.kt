@@ -38,12 +38,12 @@ class BarcodeScannerClient {
      * Processes an image and scans for barcodes.
      *
      * @param image InputImage to process (from CameraX)
-     * @param sourceBitmap Original bitmap for cropping thumbnails
+     * @param sourceBitmap Lazy provider for bitmap (only invoked if barcodes are detected)
      * @return List of ScannedItems with detected barcodes
      */
     suspend fun scanBarcodes(
         image: InputImage,
-        sourceBitmap: Bitmap?
+        sourceBitmap: () -> Bitmap?
     ): List<ScannedItem> {
         return try {
             Log.d(TAG, "Starting barcode scan on image ${image.width}x${image.height}, rotation=${image.rotationDegrees}")
@@ -56,11 +56,19 @@ class BarcodeScannerClient {
                 Log.d(TAG, "Barcode $index: format=${barcode.format}, value=${barcode.rawValue}")
             }
 
+            // OPTIMIZATION: Only generate bitmap if we have barcodes to process
+            val bitmap = if (barcodes.isNotEmpty()) {
+                sourceBitmap()
+            } else {
+                Log.d(TAG, "No barcodes detected - skipping bitmap generation")
+                null
+            }
+
             // Convert each detected barcode to ScannedItem
             val items = barcodes.mapNotNull { barcode ->
                 convertToScannedItem(
                     barcode = barcode,
-                    sourceBitmap = sourceBitmap,
+                    sourceBitmap = bitmap,
                     fallbackWidth = image.width,
                     fallbackHeight = image.height
                 )

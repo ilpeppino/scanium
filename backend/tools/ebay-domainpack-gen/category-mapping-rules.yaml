@@ -1,0 +1,79 @@
+***REMOVED*** eBay to Scanium Category Mapping Rules
+***REMOVED*** Maps eBay category patterns to Scanium ItemCategory enums
+***REMOVED*** Rules are evaluated in order; first match wins
+
+rules:
+  ***REMOVED*** Electronics
+  - pattern: ^(Computers|Computer\s+Tablets|Cameras|Cell\s+Phones|Consumer\s+Electronics|Video\s+Games|Sound\s+&\s+Vision|TV|Audio|Photo|Tablets|Computers\/Tablets)
+    itemCategoryName: ELECTRONICS
+    description: Electronic devices and accessories
+
+  ***REMOVED*** Fashion & Clothing
+  - pattern: ^(Clothes|Clothing|Fashion|Shoes|Bags|Jewellery|Watches|Kleidung|Vêtements|Abbigliamento|Ropa|Mode|Accessoires|Jewelry\s+&\s+Watches)
+    itemCategoryName: FASHION
+    description: Clothing, shoes, and fashion accessories
+
+  ***REMOVED*** Home & Garden
+  - pattern: ^(Home|Garden|Furniture|Möbel|Maison|Casa|Hogar|Haus|Garten|Jardin|Giardino|Jardín|Home\s+&\s+Garden|Haushaltsgeräte|Appliances)
+    itemCategoryName: HOME_GOOD
+    description: Home goods, furniture, and garden items
+
+  ***REMOVED*** Tools & DIY
+  - pattern: ^(Tools|DIY|Heimwerker|Bricolage|Fai\s+da\s+te|Herramientas|Business\s+&\s+Industrial|Home\s+Improvement)
+    itemCategoryName: TOOLS
+    description: Tools and DIY equipment
+
+  ***REMOVED*** Toys & Hobbies
+  - pattern: ^(Toys|Spielzeug|Jouets|Giocattoli|Juguetes|Hobbies|Modellbau|Modélisme|Modellismo|Modelismo|Baby)
+    itemCategoryName: TOYS
+    description: Toys, games, and hobby items
+
+  ***REMOVED*** Books & Media
+  - pattern: ^(Books|Bücher|Livres|Libri|Libros|Music|Film|Movies|CDs|DVDs|Magazines|Comics)
+    itemCategoryName: BOOKS
+    description: Books, music, and media
+
+  ***REMOVED*** Sports & Outdoors
+  - pattern: ^(Sport|Sports|Sporting\s+Goods|Outdoor|Fitness|Fahrräder|Vélos|Bicicletas|Biciclette|Camping|Cycling)
+    itemCategoryName: SPORTS
+    description: Sports equipment and outdoor gear
+
+  ***REMOVED*** Collectibles & Art
+  - pattern: ^(Collectibles|Sammeln|Collections|Collezionismo|Coleccionismo|Art|Kunst|Antiquitäten|Antiques|Antiquités|Vintage)
+    itemCategoryName: COLLECTIBLES
+    description: Collectibles, art, and antiques
+
+  ***REMOVED*** Automotive
+  - pattern: ^(Auto|Car|Vehicle|Motors|Fahrzeuge|Véhicules|Veicoli|Vehículos|Motorrad|Moto|Parts\s+&\s+Accessories|eBay\s+Motors)
+    itemCategoryName: AUTOMOTIVE
+    description: Automotive and vehicle-related items
+
+  ***REMOVED*** Pet Supplies
+  - pattern: ^(Pet|Tier|Animal|Animaux|Animali|Mascotas|Haustierbedarf)
+    itemCategoryName: PET_SUPPLIES
+    description: Pet supplies and accessories
+
+  ***REMOVED*** Health & Beauty
+  - pattern: ^(Health|Beauty|Gesundheit|Beauté|Salute|Salud|Cosmetics|Parfum|Perfume|Wellness)
+    itemCategoryName: HEALTH_BEAUTY
+    description: Health and beauty products
+
+  ***REMOVED*** Jewelry (if not caught by Fashion)
+  - pattern: ^(Jewelry|Jewellery|Schmuck|Bijoux|Gioielli|Joyería)
+    itemCategoryName: JEWELRY
+    description: Jewelry and precious items
+
+  ***REMOVED*** Music Instruments
+  - pattern: ^(Musical\s+Instruments|Musikinstrumente|Instruments\s+de\s+musique|Strumenti\s+musicali|Instrumentos\s+musicales)
+    itemCategoryName: MUSIC
+    description: Musical instruments
+
+  ***REMOVED*** Art (if not caught by Collectibles)
+  - pattern: ^(Art|Kunst|Beaux-Arts|Arte)
+    itemCategoryName: ART
+    description: Art and artistic items
+
+  ***REMOVED*** Default fallback
+  - pattern: .*
+    itemCategoryName: OTHER
+    description: Other items

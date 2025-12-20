@@ -31,7 +31,10 @@ class ItemsViewModelListingStatusTest {
     @Before
     fun setup() {
         Dispatchers.setMain(dispatcher)
-        viewModel = ItemsViewModel()
+        viewModel = ItemsViewModel(
+            workerDispatcher = dispatcher,
+            mainDispatcher = dispatcher
+        )
     }
 
     @After

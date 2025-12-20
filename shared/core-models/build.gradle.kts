@@ -7,6 +7,9 @@ plugins {
 kotlin {
     androidTarget()
 
+    // JVM target for running tests without Android SDK (CI/container-friendly)
+    jvm()
+
     val iosArm64Target = iosArm64() {
         binaries.framework {
             baseName = "ScaniumCoreModels"
@@ -24,6 +27,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             }
         }
         val commonTest by getting {

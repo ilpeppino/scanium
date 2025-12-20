@@ -226,31 +226,49 @@ diff <(unzip -p build1.apk classes.dex | md5) \
 
 ***REMOVED******REMOVED*** Build Verification Commands
 
+***REMOVED******REMOVED******REMOVED*** Environment Requirements
+
+**⚠️ Container/Docker Limitation:**
+Commands marked with 🏗️ require the **Android SDK** and will **fail in container environments** (e.g., Claude Code, Docker without Android SDK). Use these alternatives:
+
+- **Container-friendly:** `./gradlew prePushJvmCheck` (runs JVM-only tests for shared modules)
+- **Full validation:** Run on **workstation** with Android Studio or **CI runners** (GitHub Actions)
+
+See `hooks/README.md` for JVM-only pre-push validation setup.
+
+---
+
 ***REMOVED******REMOVED******REMOVED*** Essential Checks (Must Pass)
 
 ```bash
-***REMOVED*** 1. Clean build
+***REMOVED*** 1. Clean build 🏗️ (requires Android SDK)
 ./gradlew clean assembleDebug
 ***REMOVED*** ✅ Must complete without errors
+***REMOVED*** ⚠️ Container: Use GitHub Actions artifact instead (see docs/DEV_GUIDE.md)
 
-***REMOVED*** 2. Unit tests
+***REMOVED*** 2. Unit tests 🏗️ (requires Android SDK for androidApp module)
 ./gradlew test
 ***REMOVED*** ✅ All tests must pass (no ignored tests on main branch)
+***REMOVED*** ✅ Container-friendly alternative: ./gradlew prePushJvmCheck (shared modules only)
 
-***REMOVED*** 3. Portability checks
+***REMOVED*** 3. Portability checks ✅ (container-friendly)
 ./gradlew checkPortableModules checkDomainPackage
 ***REMOVED*** ✅ No Android imports in portable code
+***REMOVED*** ✅ Works in containers (no Android SDK required)
 
-***REMOVED*** 4. Lint checks
+***REMOVED*** 4. Lint checks 🏗️ (requires Android SDK)
 ./gradlew lint
 ***REMOVED*** ⚠️ Warnings allowed, but no critical/fatal errors
+***REMOVED*** ⚠️ Container: Skip or run in CI
 
-***REMOVED*** 5. Security scans (slow, run in CI)
+***REMOVED*** 5. Security scans (slow, run in CI) ✅ (container-friendly)
 ./gradlew dependencyCheckAnalyze
 ***REMOVED*** ⚠️ May report vulnerabilities, review and accept/fix
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Full Verification Suite
+
+**🏗️ Requires Android SDK** (run on workstation or CI, not in containers):
 
 ```bash
 ***REMOVED***!/bin/bash
@@ -283,9 +301,14 @@ echo "✅ All checks passed!"
 chmod +x scripts/verify-build.sh
 ```
 
-**Run before every PR:**
+**Run before every PR (workstation only):**
 ```bash
 ./scripts/verify-build.sh
+```
+
+**Container alternative (JVM-only):**
+```bash
+./gradlew prePushJvmCheck
 ```
 
 ---
@@ -664,6 +687,7 @@ dependencies {
 **On every PR (fast checks):**
 ```yaml
 ***REMOVED*** .github/workflows/pr-check.yml
+***REMOVED*** Note: CI runners have Android SDK, so full test suite works
 - name: Run unit tests
   run: ./gradlew test --no-daemon
 
@@ -679,6 +703,15 @@ dependencies {
     path: |
       **/build/test-results/
       **/build/reports/tests/
+```
+
+**Container environments (JVM-only validation):**
+```bash
+***REMOVED*** For developers in Claude Code or Docker without Android SDK
+./gradlew prePushJvmCheck
+
+***REMOVED*** Or install git pre-push hook (see hooks/README.md)
+./hooks/install-hooks.sh
 ```
 
 **Nightly (comprehensive checks):**

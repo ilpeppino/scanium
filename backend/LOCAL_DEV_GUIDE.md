@@ -133,7 +133,7 @@ Look for: `database system is ready to accept connections`
 cp .env.example .env
 
 ***REMOVED*** Generate a secure session secret
-openssl rand -base64 32
+openssl rand -base64 64
 ```
 
 **Edit `.env` file:**
@@ -153,11 +153,12 @@ DATABASE_URL=postgresql://scanium:scanium@localhost:5432/scanium
 EBAY_ENV=sandbox
 EBAY_CLIENT_ID=REDACTED_EBAY_CLIENT_ID
 EBAY_CLIENT_SECRET=REDACTED_EBAY_CLIENT_SECRET
+EBAY_TOKEN_ENCRYPTION_KEY=change_me_to_32+_char_secret_for_tokens
 EBAY_REDIRECT_PATH=/auth/ebay/callback
 EBAY_SCOPES=https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.inventory https://api.ebay.com/oauth/api_scope/sell.fulfillment https://api.ebay.com/oauth/api_scope/sell.account
 
 ***REMOVED*** Session Security (paste output from openssl command above)
-SESSION_SIGNING_SECRET=REDACTED_NAS_SESSION_SECRET
+SESSION_SIGNING_SECRET=REPLACE_WITH_BASE64_64B_SECRET
 
 ***REMOVED*** CORS Origins
 CORS_ORIGINS=scanium://,http://localhost:3000
@@ -174,7 +175,7 @@ CLOUDFLARED_TOKEN=
 **Critical Notes:**
 - `DATABASE_URL` uses **`localhost`** (not `postgres`) because we're running migrations from host machine
 - eBay credentials come from [eBay Developer Portal - Sandbox Keys](https://developer.ebay.com/my/keys)
-- `SESSION_SIGNING_SECRET` must be at least 32 characters
+- `SESSION_SIGNING_SECRET` must be at least 64 characters
 
 ***REMOVED******REMOVED******REMOVED*** Step 6: Generate Prisma Client
 
