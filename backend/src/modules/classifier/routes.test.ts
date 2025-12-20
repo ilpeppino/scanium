@@ -25,7 +25,7 @@ const config = configSchema.parse({
     scopes: 'scope',
     tokenEncryptionKey: 'x'.repeat(32),
   },
-  sessionSigningSecret: 'x'.repeat(32),
+  sessionSigningSecret: 'x'.repeat(64),
   security: {
     enforceHttps: false,
     enableHsts: false,
