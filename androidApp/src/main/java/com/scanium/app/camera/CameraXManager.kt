@@ -422,6 +422,7 @@ class CameraXManager(
     fun stopScanning() {
         Log.d(TAG, "stopScanning: Stopping continuous scanning mode")
         isScanning = false
+        detectionScope.coroutineContext.cancelChildren()
         imageAnalysis?.clearAnalyzer()
         scanJob?.cancel()
         scanJob = null
