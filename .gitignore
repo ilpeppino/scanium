@@ -1,8 +1,9 @@
 ***REMOVED*** Gradle
-.gradle/
-build/
-app/build/
-androidApp/
+/.gradle/
+**/build/
+
+***REMOVED*** Android app module (keep sources tracked; ignore outputs only)
+/androidApp/build/
 
 ***REMOVED*** IDE & tooling
 .idea/
@@ -10,7 +11,7 @@ androidApp/
 .DS_Store
 
 ***REMOVED*** Android/NDK intermediates
-.cxx/
+/.cxx/
 local.properties
 captures/
 
@@ -18,9 +19,16 @@ captures/
 *.keystore
 *.jks
 
-***REMOVED*** log files
+***REMOVED*** Logs and temp files
+*.log
 crash.log
-tombstone_23
-/androidApp/
+tombstone_*
+
+***REMOVED*** Local-only Gradle overrides
 /.gradle-local/
+
+***REMOVED*** Node
 node_modules
+
+***REMOVED*** Temporary working directory
+/tmp/

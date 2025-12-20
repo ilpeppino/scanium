@@ -79,8 +79,8 @@
 - `androidApp/src/test/java/com/scanium/app/domain/category/BasicCategoryEngineTest.kt` – Domain pack category selection.
 
 ***REMOVED******REMOVED*** 6) Build/Test Commands (short)
-- `./build.sh assembleDebug` or `./gradlew assembleDebug` – build APK.
-- `./build.sh test` or `./gradlew test` – JVM unit tests (fast path).
+- `./scripts/build.sh assembleDebug` or `./gradlew assembleDebug` – build APK.
+- `./scripts/build.sh test` or `./gradlew test` – JVM unit tests (fast path).
 - `./gradlew connectedAndroidTest` – instrumented/UI tests (device/emulator required).
 - `./gradlew lint` – lint checks.
 
