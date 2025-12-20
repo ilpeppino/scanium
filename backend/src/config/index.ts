@@ -32,6 +32,11 @@ export const configSchema = z.object({
       .max(10 * 1024 * 1024)
       .default(5 * 1024 * 1024),
     rateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+    ipRateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+    rateLimitWindowSeconds: z.coerce.number().int().min(1).default(60),
+    rateLimitBackoffSeconds: z.coerce.number().int().min(1).default(30),
+    rateLimitBackoffMaxSeconds: z.coerce.number().int().min(1).default(900),
+    rateLimitRedisUrl: z.string().optional(),
     concurrentLimit: z.coerce.number().int().min(1).default(2),
     apiKeys: z
       .string()
@@ -104,6 +109,11 @@ export function loadConfig(): Config {
       visionFeature: process.env.VISION_FEATURE,
       maxUploadBytes: process.env.MAX_UPLOAD_BYTES,
       rateLimitPerMinute: process.env.CLASSIFIER_RATE_LIMIT_PER_MINUTE,
+      ipRateLimitPerMinute: process.env.CLASSIFIER_IP_RATE_LIMIT_PER_MINUTE,
+      rateLimitWindowSeconds: process.env.CLASSIFIER_RATE_LIMIT_WINDOW_SECONDS,
+      rateLimitBackoffSeconds: process.env.CLASSIFIER_RATE_LIMIT_BACKOFF_SECONDS,
+      rateLimitBackoffMaxSeconds: process.env.CLASSIFIER_RATE_LIMIT_BACKOFF_MAX_SECONDS,
+      rateLimitRedisUrl: process.env.RATE_LIMIT_REDIS_URL,
       concurrentLimit: process.env.CLASSIFIER_CONCURRENCY_LIMIT,
       apiKeys: process.env.SCANIUM_API_KEYS,
       domainPackId: process.env.DOMAIN_PACK_ID,
