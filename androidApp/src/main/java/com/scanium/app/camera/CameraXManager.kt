@@ -17,6 +17,7 @@ import androidx.camera.core.CameraUnavailableException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.BarcodeScannerClient
@@ -87,6 +88,16 @@ class CameraXManager(
 
     // Coroutine scope for async detection
     private val detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    private val lifecycleObserver = object : DefaultLifecycleObserver {
+        override fun onDestroy(owner: LifecycleOwner) {
+            shutdown()
+        }
+    }
+
+    init {
+        lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+    }
 
     // State for scanning mode
     private var isScanning = false
@@ -680,6 +691,7 @@ class CameraXManager(
      */
     fun shutdown() {
         stopScanning()
+        lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
         objectTracker.reset() // Ensure tracker is cleaned up
         objectDetector.close()
         barcodeScanner.close()
