@@ -6,6 +6,32 @@ const weakSessionSecrets = [
   'replace_with_random_base64_64_bytes',
 ];
 
+const allowedCorsProtocols = new Set(['http:', 'https:', 'scanium:']);
+
+export function isValidCorsOrigin(origin: string): boolean {
+  if (!origin || origin.includes('*')) {
+    return false;
+  }
+
+  try {
+    const url = new URL(origin);
+    const hasAllowedProtocol = allowedCorsProtocols.has(url.protocol);
+    const hasHostForWebProtocols = ['http:', 'https:'].includes(url.protocol)
+      ? Boolean(url.hostname)
+      : true;
+    const hasNoPathOrQuery =
+      (url.pathname === '/' || url.pathname === '') && !url.search && !url.hash;
+
+    if (url.protocol === 'scanium:') {
+      return hasAllowedProtocol && hasNoPathOrQuery && origin.startsWith('scanium://');
+    }
+
+    return hasAllowedProtocol && hasHostForWebProtocols && origin === url.origin && hasNoPathOrQuery;
+  } catch (error) {
+    return false;
+  }
+}
+
 /**
  * Configuration schema with strict validation
  * Server will not start if validation fails
@@ -85,11 +111,19 @@ export const configSchema = z.object({
     })
     .default({}),
 
-  // CORS
+// CORS
   corsOrigins: z
     .string()
     .transform((val) => val.split(',').map((o) => o.trim()))
-    .pipe(z.array(z.string().min(1))),
+    .pipe(
+      z
+        .array(z.string().min(1))
+        .nonempty('CORS_ORIGINS must include at least one origin')
+        .refine(
+          (origins) => origins.every(isValidCorsOrigin),
+          'CORS origins must be fully-qualified URLs with http/https/custom schemes and no wildcards'
+        )
+    ),
 });
 
 export type Config = z.infer<typeof configSchema>;

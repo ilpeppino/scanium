@@ -148,6 +148,34 @@ describe('Config Schema Validation', () => {
     }
   });
 
+  it('should reject wildcard CORS origins', () => {
+    const config = {
+      publicBaseUrl: 'http://localhost:8080',
+      databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+      },
+      ebay: {
+        env: 'sandbox',
+        clientId: 'test',
+        clientSecret: 'test-secret',
+        scopes: 'scope',
+      tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
+      },
+      sessionSigningSecret:
+        'loremipsumdolorsitametconsecteturadipiscingelit0123456789ABCDEFghiJKL',
+      corsOrigins: 'https://*.example.com, http://localhost:3000',
+    };
+
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(false);
+
+    if (!result.success) {
+      const errors = result.error.errors.map((e) => e.path.join('.'));
+      expect(errors).toContain('corsOrigins');
+    }
+  });
+
   it('should apply defaults for optional fields', () => {
     const minimalConfig = {
       publicBaseUrl: 'http://localhost:8080',
