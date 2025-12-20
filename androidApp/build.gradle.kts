@@ -19,14 +19,19 @@ plugins {
 }
 
 // Load local.properties for API configuration (not committed to git)
-val localProperties = Properties().apply {
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localPropertiesFile.inputStream().use { load(it) }
+private val localProperties by lazy(LazyThreadSafetyMode.NONE) {
+    Properties().apply {
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { load(it) }
+        }
     }
 }
 
-val saveClassifierCropsDebug = (localProperties.getProperty("scanium.classifier.save_crops.debug") ?: "false").toBoolean()
+private fun localPropertyOrEnv(key: String, envKey: String, defaultValue: String = ""): String =
+    localProperties.getProperty(key) ?: System.getenv(envKey) ?: defaultValue
+
+val saveClassifierCropsDebug = localPropertyOrEnv("scanium.classifier.save_crops.debug", envKey = "", defaultValue = "false").toBoolean()
 
 android {
     namespace = "com.scanium.app"
@@ -44,12 +49,8 @@ android {
         // Required keys in local.properties:
         //   scanium.api.base.url=https://your-backend.com/api/v1
         //   scanium.api.key=your-dev-api-key
-        val apiBaseUrl = localProperties.getProperty("scanium.api.base.url")
-            ?: System.getenv("SCANIUM_API_BASE_URL")
-            ?: ""
-        val apiKey = localProperties.getProperty("scanium.api.key")
-            ?: System.getenv("SCANIUM_API_KEY")
-            ?: ""
+        val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
 
         buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
