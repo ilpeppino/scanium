@@ -1,11 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { FastifyPluginAsync, FastifyRequest } from 'fastify';
+import { FastifyBaseLogger, FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { MultipartFile } from '@fastify/multipart';
 import { ClassifierService } from './service.js';
 import { sanitizeImageBuffer, isSupportedImage } from './utils/image.js';
 import { ClassificationHints, ClassificationRequest } from './types.js';
 import { Config } from '../../config/index.js';
 import { ApiKeyManager } from './api-key-manager.js';
+import {
+  RedisClient,
+  SlidingWindowRateLimiter,
+} from '../../infra/rate-limit/sliding-window-limiter.js';
 
 type RouteOpts = { config: Config };
 
@@ -18,6 +22,36 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
   const { config } = opts;
   const apiKeyManager = new ApiKeyManager(config.classifier.apiKeys);
   const service = new ClassifierService({ config });
+  const redisClient = await createRedisClient(
+    config.classifier.rateLimitRedisUrl,
+    fastify.log
+  );
+
+  const windowMs = config.classifier.rateLimitWindowSeconds * 1000;
+  const baseBackoffMs = config.classifier.rateLimitBackoffSeconds * 1000;
+  const maxBackoffMs = config.classifier.rateLimitBackoffMaxSeconds * 1000;
+
+  const ipRateLimiter = new SlidingWindowRateLimiter({
+    windowMs,
+    max: config.classifier.ipRateLimitPerMinute,
+    baseBackoffMs,
+    maxBackoffMs,
+    prefix: 'rl:ip',
+    redis: redisClient,
+  });
+
+  const apiKeyRateLimiter = new SlidingWindowRateLimiter({
+    windowMs,
+    max: config.classifier.rateLimitPerMinute,
+    baseBackoffMs,
+    maxBackoffMs,
+    prefix: 'rl:api',
+    redis: redisClient,
+  });
+
+  fastify.addHook('onClose', async () => {
+    await redisClient?.quit?.();
+  });
 
   fastify.post('/classify', async (request, reply) => {
     const apiKey = extractApiKey(request);
@@ -56,6 +90,32 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
       return reply.status(400).send({
         error: { code: 'VALIDATION_ERROR', message: 'multipart/form-data required' },
       });
+    }
+
+    const ipLimit = await ipRateLimiter.consume(request.ip);
+    if (!ipLimit.allowed) {
+      return reply
+        .status(429)
+        .header('Retry-After', String(ipLimit.retryAfterSeconds))
+        .send({
+          error: {
+            code: 'RATE_LIMIT',
+            message: 'Too many requests from this IP. Please retry after the cooldown.',
+          },
+        });
+    }
+
+    const apiKeyLimit = await apiKeyRateLimiter.consume(apiKey);
+    if (!apiKeyLimit.allowed) {
+      return reply
+        .status(429)
+        .header('Retry-After', String(apiKeyLimit.retryAfterSeconds))
+        .send({
+          error: {
+            code: 'RATE_LIMIT',
+            message: 'Too many requests for this API key. Please retry after the cooldown.',
+          },
+        });
     }
 
     if (isOverConcurrentLimit(apiKey, config.classifier.concurrentLimit)) {
@@ -224,6 +284,38 @@ function extractApiKey(request: FastifyRequest): string | undefined {
   const header = request.headers['x-api-key'];
   if (!header) return undefined;
   return Array.isArray(header) ? header[0] : header;
+}
+
+type RedisClientWithLifecycle = RedisClient & {
+  connect?: () => Promise<void>;
+  quit?: () => Promise<void>;
+  on?: (event: string, listener: (error: unknown) => void) => void;
+};
+
+async function createRedisClient(
+  url: string | undefined,
+  logger: FastifyBaseLogger
+): Promise<RedisClientWithLifecycle | undefined> {
+  if (!url) return undefined;
+
+  try {
+    const redisModule = (await import('ioredis')) as {
+      default: new (connectionString: string, opts?: unknown) => RedisClientWithLifecycle;
+    };
+
+    const client = new redisModule.default(url, { lazyConnect: true });
+
+    client.on?.('error', (error) => {
+      logger.error({ error }, 'Rate limit Redis connection error');
+    });
+
+    await client.connect?.();
+    logger.info('Rate limit Redis connection established');
+    return client;
+  } catch (error) {
+    logger.warn({ error }, 'Falling back to in-memory rate limiting');
+    return undefined;
+  }
 }
 
 function isOverConcurrentLimit(apiKey: string, limit: number): boolean {
