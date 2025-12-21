@@ -16,7 +16,8 @@ import kotlin.random.Random
  */
 class ItemAggregator(
     private val config: AggregationConfig = AggregationConfig(),
-    private val logger: Logger = Logger.NONE
+    private val logger: Logger = Logger.NONE,
+    private val mergePolicy: SpatialTemporalMergePolicy = SpatialTemporalMergePolicy()
 ) {
     companion object {
         private const val TAG = "ItemAggregator"
@@ -25,6 +26,10 @@ class ItemAggregator(
 
     private val aggregatedItems = mutableMapOf<String, AggregatedItem>()
     private var dynamicThreshold: Float? = null
+
+    // PHASE 4: Lightweight candidate metadata cache for spatial-temporal deduplication
+    // Maps aggregatedId -> CandidateMetadata for fast merge decisions
+    private val candidateMetadataCache = mutableMapOf<String, SpatialTemporalMergePolicy.CandidateMetadata>()
 
     fun updateSimilarityThreshold(threshold: Float?) {
         val oldThreshold = getCurrentSimilarityThreshold()
@@ -44,11 +49,33 @@ class ItemAggregator(
         if (bestMatch != null && bestSimilarity >= currentThreshold) {
             logger.w(TAG, "✓ MERGE detection ${detection.aggregatedId} → ${bestMatch.aggregatedId} (similarity=$bestSimilarity)")
             bestMatch.merge(detection)
+            // Update candidate metadata cache
+            updateCandidateMetadata(bestMatch)
             return bestMatch
+        }
+
+        // PHASE 4: Fallback to spatial-temporal merge policy when regular similarity fails
+        // This handles tracker ID churn and cases where the full similarity calculation is too strict
+        val timestampMs = nowMillis()
+        val categoryId = detection.category.ordinal
+        val spatialMatch = findSpatialTemporalMatch(
+            detection.boundingBox,
+            timestampMs,
+            categoryId
+        )
+
+        if (spatialMatch != null) {
+            logger.w(TAG, "✓ SPATIAL-TEMPORAL MERGE detection ${detection.aggregatedId} → ${spatialMatch.aggregatedId} (tracker ID churn)")
+            spatialMatch.merge(detection)
+            // Update candidate metadata cache
+            updateCandidateMetadata(spatialMatch)
+            return spatialMatch
         }
 
         val newItem = createAggregatedItem(detection)
         aggregatedItems[newItem.aggregatedId] = newItem
+        // Add to candidate metadata cache
+        updateCandidateMetadata(newItem)
 
         if (bestMatch != null) {
             logger.w(TAG, "✗ CREATE NEW (similarity $bestSimilarity < threshold $currentThreshold)")
@@ -76,6 +103,7 @@ class ItemAggregator(
         stale.forEach { item ->
             logger.d(TAG, "Removing stale item ${item.aggregatedId}")
             aggregatedItems.remove(item.aggregatedId)
+            candidateMetadataCache.remove(item.aggregatedId)
         }
 
         return stale.size
@@ -83,11 +111,55 @@ class ItemAggregator(
 
     fun removeItem(aggregatedId: String) {
         aggregatedItems.remove(aggregatedId)
+        candidateMetadataCache.remove(aggregatedId)
     }
 
     fun reset() {
         logger.i(TAG, "Resetting aggregator (clearing ${aggregatedItems.size} items)")
         aggregatedItems.clear()
+        candidateMetadataCache.clear()
+    }
+
+    /**
+     * PHASE 4: Finds a spatial-temporal match using the merge policy.
+     * This is a lightweight fallback for when tracker IDs churn.
+     */
+    private fun findSpatialTemporalMatch(
+        bbox: NormalizedRect,
+        timestampMs: Long,
+        categoryId: Int
+    ): AggregatedItem? {
+        // Quick path: if no cached metadata, no matches possible
+        if (candidateMetadataCache.isEmpty()) return null
+
+        // Build list of candidate metadata for matching
+        val candidates = candidateMetadataCache.values.toList()
+
+        // Find best match using the merge policy
+        val matchResult = mergePolicy.findBestMatch(bbox, timestampMs, categoryId, candidates)
+            ?: return null
+
+        val (bestIndex, score) = matchResult
+
+        // Get the corresponding aggregated item ID from the cache
+        val matchedMetadata = candidates[bestIndex]
+        return aggregatedItems.values.firstOrNull { item ->
+            val cachedMetadata = candidateMetadataCache[item.aggregatedId]
+            cachedMetadata == matchedMetadata
+        }
+    }
+
+    /**
+     * PHASE 4: Updates the candidate metadata cache for an aggregated item.
+     * Stores lightweight metadata for fast spatial-temporal matching.
+     */
+    private fun updateCandidateMetadata(item: AggregatedItem) {
+        val metadata = mergePolicy.createCandidateMetadata(
+            bbox = item.boundingBox,
+            timestampMs = item.lastSeenTimestamp,
+            categoryId = item.category.ordinal
+        )
+        candidateMetadataCache[item.aggregatedId] = metadata
     }
 
     fun getStats(): AggregationStats {
