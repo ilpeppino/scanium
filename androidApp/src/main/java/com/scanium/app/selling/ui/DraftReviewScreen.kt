@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,7 +13,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -21,6 +25,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -29,7 +34,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Button
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -51,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,6 +64,7 @@ import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
 import kotlinx.coroutines.launch
 import android.content.Intent
+import androidx.compose.foundation.layout.Box
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.selling.export.AssetExportProfileRepository
 
@@ -87,6 +93,7 @@ fun DraftReviewScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val items by itemsViewModel.items.collectAsState()
+    var moreExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -104,10 +111,73 @@ fun DraftReviewScreen(
                     IconButton(onClick = { viewModel.saveDraft() }, enabled = state.draft != null) {
                         Icon(imageVector = Icons.Default.Save, contentDescription = "Save draft")
                     }
+                    IconButton(onClick = { moreExpanded = true }) {
+                        Icon(imageVector = Icons.Default.MoreVert, contentDescription = "More actions")
+                    }
+                    DropdownMenu(
+                        expanded = moreExpanded,
+                        onDismissRequest = { moreExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Copy all") },
+                            onClick = {
+                                moreExpanded = false
+                                val draft = state.draft
+                                if (draft != null) {
+                                    val selectedProfile = state.profiles.firstOrNull { it.id == state.selectedProfileId }
+                                        ?: ExportProfiles.generic()
+                                    val export = ListingDraftFormatter.format(draft, selectedProfile)
+                                    ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
+                                    scope.launch { snackbarHostState.showSnackbar("Listing copied") }
+                                } else {
+                                    scope.launch { snackbarHostState.showSnackbar("No draft to copy") }
+                                }
+                            }
+                        )
+                    }
                 }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            val draft = state.draft
+            FloatingActionButton(
+                onClick = {
+                    if (draft == null) {
+                        scope.launch { snackbarHostState.showSnackbar("No draft to share") }
+                        return@FloatingActionButton
+                    }
+                    scope.launch {
+                        val currentItem = items.firstOrNull { it.id == draft.itemId }
+                        val selectedProfile = state.profiles.firstOrNull { it.id == state.selectedProfileId }
+                            ?: ExportProfiles.generic()
+                        val export = ListingDraftFormatter.format(draft, selectedProfile)
+                        val shareImages = draft.photos.map { it.image }.ifEmpty {
+                            listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
+                        }
+                        val imageUris = ListingShareHelper.writeShareImages(
+                            context = context,
+                            itemId = draft.itemId,
+                            images = shareImages
+                        )
+                        if (shareImages.isNotEmpty() && imageUris.isEmpty()) {
+                            snackbarHostState.showSnackbar("Unable to attach images; sharing text only")
+                        } else if (shareImages.isEmpty()) {
+                            snackbarHostState.showSnackbar("No photos available; sharing text only")
+                        }
+                        val intent = ListingShareHelper.buildShareIntent(
+                            contentResolver = context.contentResolver,
+                            text = export.shareText,
+                            imageUris = imageUris
+                        )
+                        val chooser = Intent.createChooser(intent, "Share listing")
+                        context.startActivity(chooser)
+                    }
+                }
+            ) {
+                Icon(imageVector = Icons.Default.Share, contentDescription = "Share listing")
+            }
+        }
     ) { padding ->
         val draft = state.draft
         if (draft == null) {
@@ -127,22 +197,11 @@ fun DraftReviewScreen(
         val selectedProfile = remember(state.selectedProfileId, state.profiles) {
             state.profiles.firstOrNull { it.id == state.selectedProfileId } ?: ExportProfiles.generic()
         }
-        val export = remember(draft, selectedProfile) { ListingDraftFormatter.format(draft, selectedProfile) }
-        val currentItem = remember(draft.itemId, items) { items.firstOrNull { it.id == draft.itemId } }
-        val shareImages = remember(draft, currentItem) {
-            val draftImages = draft.photos.map { it.image }
-            if (draftImages.isNotEmpty()) {
-                draftImages
-            } else {
-                listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
-            }
-        }
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
+                .padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -183,12 +242,24 @@ fun DraftReviewScreen(
             }
 
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(
+                        Text(
+                            text = draft.title.value.orEmpty().ifBlank { "Untitled" },
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        IconButton(
                             onClick = {
                                 val text = draft.title.value.orEmpty()
                                 if (text.isBlank()) {
@@ -197,64 +268,9 @@ fun DraftReviewScreen(
                                     ListingClipboardHelper.copy(context, "Listing title", text)
                                     scope.launch { snackbarHostState.showSnackbar("Title copied") }
                                 }
-                            },
-                            modifier = Modifier.weight(1f)
+                            }
                         ) {
-                            Text("Copy title")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                val text = draft.description.value.orEmpty()
-                                if (text.isBlank()) {
-                                    scope.launch { snackbarHostState.showSnackbar("No description to copy") }
-                                } else {
-                                    ListingClipboardHelper.copy(context, "Listing description", text)
-                                    scope.launch { snackbarHostState.showSnackbar("Description copied") }
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Copy description")
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = {
-                                ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
-                                scope.launch { snackbarHostState.showSnackbar("Listing copied") }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Copy all")
-                        }
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    val imageUris = ListingShareHelper.writeShareImages(
-                                        context = context,
-                                        itemId = draft.itemId,
-                                        images = shareImages
-                                    )
-                                    if (shareImages.isNotEmpty() && imageUris.isEmpty()) {
-                                        snackbarHostState.showSnackbar("Unable to attach images; sharing text only")
-                                    } else if (shareImages.isEmpty()) {
-                                        snackbarHostState.showSnackbar("No photos available; sharing text only")
-                                    }
-                                    val intent = ListingShareHelper.buildShareIntent(
-                                        contentResolver = context.contentResolver,
-                                        text = export.shareText,
-                                        imageUris = imageUris
-                                    )
-                                    val chooser = Intent.createChooser(intent, "Share listing")
-                                    context.startActivity(chooser)
-                                }
-                            },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("Share")
+                            Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy title")
                         }
                     }
                 }
@@ -274,12 +290,40 @@ fun DraftReviewScreen(
             }
 
             item {
-                OutlinedTextField(
-                    value = draft.description.value.orEmpty(),
-                    onValueChange = viewModel::updateDescription,
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Description", style = MaterialTheme.typography.titleMedium)
+                            IconButton(
+                                onClick = {
+                                    val text = draft.description.value.orEmpty()
+                                    if (text.isBlank()) {
+                                        scope.launch { snackbarHostState.showSnackbar("No description to copy") }
+                                    } else {
+                                        ListingClipboardHelper.copy(context, "Listing description", text)
+                                        scope.launch { snackbarHostState.showSnackbar("Description copied") }
+                                    }
+                                }
+                            ) {
+                                Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy description")
+                            }
+                        }
+                        OutlinedTextField(
+                            value = draft.description.value.orEmpty(),
+                            onValueChange = viewModel::updateDescription,
+                            label = { Text("Edit description") },
+                            modifier = Modifier.fillMaxWidth(),
+                            minLines = 4
+                        )
+                    }
+                }
             }
 
             item {
