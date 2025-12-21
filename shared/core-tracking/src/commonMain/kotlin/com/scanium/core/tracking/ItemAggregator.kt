@@ -97,7 +97,7 @@ class ItemAggregator(
     fun removeStaleItems(maxAgeMs: Long): Int {
         val now = nowMillis()
         val stale = aggregatedItems.values.filter { item ->
-            now - item.lastSeenTimestamp > maxAgeMs
+            now - item.lastSeenTimestamp >= maxAgeMs
         }
 
         stale.forEach { item ->
