@@ -51,6 +51,57 @@ class ObjectDetectorClient {
         // Flag to track if model download has been checked
         @Volatile
         private var modelDownloadChecked = false
+
+        // Rate-limited logging for dropped detections
+        private var lastEdgeDropLogTime = 0L
+        private const val EDGE_DROP_LOG_INTERVAL_MS = 5000L
+
+        /**
+         * PHASE 3: Geometry-based filtering (ZERO image cropping)
+         * Checks if a detection's center falls within the visible cropRect with inset margin.
+         * This eliminates detections at screen edges that are likely partial/cut-off objects.
+         *
+         * @param bbox Detection bounding box in absolute pixel coordinates
+         * @param cropRect Visible viewport rect (from ImageProxy.cropRect)
+         * @param edgeInsetRatio Margin ratio for edge gating (0.0 to 0.5)
+         * @return true if detection should be kept, false if it should be dropped
+         */
+        private fun isDetectionInsideSafeZone(
+            bbox: Rect,
+            cropRect: Rect?,
+            edgeInsetRatio: Float
+        ): Boolean {
+            // If no cropRect provided, accept all detections (no filtering)
+            if (cropRect == null || edgeInsetRatio <= 0f) return true
+
+            // Calculate detection center (no allocations - use primitives)
+            val centerX = (bbox.left + bbox.right) / 2
+            val centerY = (bbox.top + bbox.bottom) / 2
+
+            // Calculate inset safe zone (inset from each edge)
+            val insetX = (cropRect.width() * edgeInsetRatio).toInt()
+            val insetY = (cropRect.height() * edgeInsetRatio).toInt()
+
+            val safeLeft = cropRect.left + insetX
+            val safeRight = cropRect.right - insetX
+            val safeTop = cropRect.top + insetY
+            val safeBottom = cropRect.bottom - insetY
+
+            // Check if center is inside safe zone
+            val isInside = centerX >= safeLeft && centerX <= safeRight &&
+                    centerY >= safeTop && centerY <= safeBottom
+
+            // Rate-limited logging for edge drops
+            if (!isInside) {
+                val now = System.currentTimeMillis()
+                if (now - lastEdgeDropLogTime >= EDGE_DROP_LOG_INTERVAL_MS) {
+                    Log.d(TAG, "[EDGE_FILTER] Dropped detection at edge: center=($centerX,$centerY), safeZone=($safeLeft,$safeTop)-($safeRight,$safeBottom)")
+                    lastEdgeDropLogTime = now
+                }
+            }
+
+            return isInside
+        }
     }
 
     // ML Kit object detector configured for single image mode (more accurate)
@@ -91,12 +142,16 @@ class ObjectDetectorClient {
      * @param image InputImage to process (from CameraX)
      * @param sourceBitmap Lazy provider for bitmap (only invoked if detections require thumbnails)
      * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
+     * @param cropRect Visible viewport rect (from ImageProxy.cropRect set by ViewPort)
+     * @param edgeInsetRatio Margin ratio for edge gating (0.0 to 0.5)
      * @return DetectionResponse containing both ScannedItems and DetectionResults
      */
     suspend fun detectObjects(
         image: InputImage,
         sourceBitmap: () -> Bitmap?,
-        useStreamMode: Boolean = false
+        useStreamMode: Boolean = false,
+        cropRect: Rect? = null,
+        edgeInsetRatio: Float = 0.0f
     ): DetectionResponse {
         return try {
             val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
@@ -128,6 +183,12 @@ class ObjectDetectorClient {
             val detectionResults = mutableListOf<DetectionResult>()
 
             detectedObjects.forEach { obj ->
+                // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
+                if (!isDetectionInsideSafeZone(obj.boundingBox, cropRect, edgeInsetRatio)) {
+                    // Detection is outside visible area or too close to edge - skip it
+                    return@forEach
+                }
+
                 val scannedItem = convertToScannedItem(
                     detectedObject = obj,
                     sourceBitmap = bitmap,
@@ -253,12 +314,16 @@ class ObjectDetectorClient {
      * @param image InputImage to process (from CameraX)
      * @param sourceBitmap Lazy provider for bitmap (only invoked if detections require thumbnails)
      * @param useStreamMode If true, uses STREAM_MODE detector; if false, uses SINGLE_IMAGE_MODE
+     * @param cropRect Visible viewport rect (from ImageProxy.cropRect set by ViewPort)
+     * @param edgeInsetRatio Margin ratio for edge gating (0.0 to 0.5)
      * @return TrackingDetectionResponse with both tracking metadata and overlay data
      */
     suspend fun detectObjectsWithTracking(
         image: InputImage,
         sourceBitmap: () -> Bitmap?,
-        useStreamMode: Boolean = true // Default to STREAM_MODE for tracking
+        useStreamMode: Boolean = true, // Default to STREAM_MODE for tracking
+        cropRect: Rect? = null,
+        edgeInsetRatio: Float = 0.0f
     ): TrackingDetectionResponse {
         return try {
             val mode = if (useStreamMode) "STREAM" else "SINGLE_IMAGE"
@@ -318,6 +383,12 @@ class ObjectDetectorClient {
             val detectionResults = mutableListOf<DetectionResult>()
 
             detectedObjects.forEach { obj ->
+                // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
+                if (!isDetectionInsideSafeZone(obj.boundingBox, cropRect, edgeInsetRatio)) {
+                    // Detection is outside visible area or too close to edge - skip it
+                    return@forEach
+                }
+
                 // Extract DetectionInfo for tracking
                 val detectionInfo = extractDetectionInfo(
                     detectedObject = obj,
