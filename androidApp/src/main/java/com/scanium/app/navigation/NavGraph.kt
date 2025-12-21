@@ -13,6 +13,8 @@ import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.app.selling.data.EbayMarketplaceService
+import com.scanium.app.selling.persistence.ListingDraftStore
+import com.scanium.app.selling.ui.DraftReviewScreen
 import com.scanium.app.selling.ui.SellOnEbayScreen
 
 /**
@@ -22,6 +24,7 @@ object Routes {
     const val CAMERA = "camera"
     const val ITEMS_LIST = "items_list"
     const val SELL_ON_EBAY = "sell_on_ebay"
+    const val DRAFT_REVIEW = "draft_review"
 }
 
 /**
@@ -36,7 +39,8 @@ fun ScaniumNavGraph(
     navController: NavHostController,
     itemsViewModel: ItemsViewModel,
     classificationModeViewModel: ClassificationModeViewModel,
-    marketplaceService: EbayMarketplaceService
+    marketplaceService: EbayMarketplaceService,
+    draftStore: ListingDraftStore
 ) {
     NavHost(
         navController = navController,
@@ -62,6 +66,9 @@ fun ScaniumNavGraph(
                         navController.navigate("${Routes.SELL_ON_EBAY}/${ids.joinToString(",")}")
                     }
                 },
+                onNavigateToDraft = { id ->
+                    navController.navigate("${Routes.DRAFT_REVIEW}/$id")
+                },
                 itemsViewModel = itemsViewModel
             )
         }
@@ -85,6 +92,19 @@ fun ScaniumNavGraph(
                 itemsViewModel = itemsViewModel
             )
         }
+
+        composable(
+            route = "${Routes.DRAFT_REVIEW}/{itemId}",
+            arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
+            DraftReviewScreen(
+                itemId = itemId,
+                onBack = { navController.popBackStack() },
+                itemsViewModel = itemsViewModel,
+                draftStore = draftStore
+            )
+        }
     }
 }
 
@@ -105,6 +125,7 @@ fun ObjectaNavGraph(
         navController = navController,
         itemsViewModel = itemsViewModel,
         classificationModeViewModel = classificationModeViewModel,
-        marketplaceService = marketplaceService
+        marketplaceService = marketplaceService,
+        draftStore = com.scanium.app.selling.persistence.NoopListingDraftStore
     )
 }

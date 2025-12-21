@@ -16,6 +16,7 @@ import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.persistence.NoopScannedItemSyncer
 import com.scanium.app.items.persistence.ScannedItemDatabase
 import com.scanium.app.items.persistence.ScannedItemRepository
+import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.navigation.ScaniumNavGraph
 import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.ml.classification.CloudClassifier
@@ -36,6 +37,7 @@ fun ScaniumApp() {
 
     val context = LocalContext.current.applicationContext
     val classificationPreferences = remember { ClassificationPreferences(context) }
+    val database = remember { ScannedItemDatabase.getInstance(context) }
     val classificationModeViewModel: ClassificationModeViewModel = viewModel(
         factory = ClassificationModeViewModel.factory(classificationPreferences)
     )
@@ -45,7 +47,6 @@ fun ScaniumApp() {
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val database = ScannedItemDatabase.getInstance(context)
                 val itemsRepository = ScannedItemRepository(
                     dao = database.scannedItemDao(),
                     syncer = NoopScannedItemSyncer
@@ -61,6 +62,8 @@ fun ScaniumApp() {
         }
     )
 
+    val draftStore = remember { ListingDraftRepository(database.listingDraftDao()) }
+
     // Use the config manager's current config for MockEbayApi
     val mockEbayConfig by MockEbayConfigManager.config.collectAsState()
     val marketplaceService = remember(mockEbayConfig) {
@@ -71,7 +74,8 @@ fun ScaniumApp() {
         navController = navController,
         itemsViewModel = itemsViewModel,
         classificationModeViewModel = classificationModeViewModel,
-        marketplaceService = marketplaceService
+        marketplaceService = marketplaceService,
+        draftStore = draftStore
     )
 }
 
