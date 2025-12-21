@@ -73,6 +73,7 @@ fun ScaniumNavGraph(
                         navController.navigate("${Routes.DRAFT_REVIEW}?itemIds=$encoded")
                     }
                 },
+                draftStore = draftStore,
                 itemsViewModel = itemsViewModel
             )
         }
