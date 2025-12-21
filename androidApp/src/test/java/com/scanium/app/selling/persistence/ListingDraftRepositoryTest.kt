@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.scanium.app.items.ScannedItem
+import com.google.common.truth.Truth.assertThat
 import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.DraftStatus
 import com.scanium.app.listing.ListingDraft
@@ -16,8 +17,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class ListingDraftRepositoryTest {
@@ -49,12 +48,13 @@ class ListingDraftRepositoryTest {
         repository.upsert(draft)
 
         val loaded = repository.getByItemId(draft.itemId)
-        assertNotNull(loaded)
-        assertEquals(draft.itemId, loaded.itemId)
-        assertEquals(draft.title.value, loaded.title.value)
+        assertThat(loaded).isNotNull()
+        val loadedDraft = requireNotNull(loaded)
+        assertThat(loadedDraft.itemId).isEqualTo(draft.itemId)
+        assertThat(loadedDraft.title.value).isEqualTo(draft.title.value)
 
         val all = repository.getAll()
-        assertEquals(1, all.size)
+        assertThat(all).hasSize(1)
     }
 
     private fun sampleDraft(): ListingDraft {
