@@ -15,12 +15,12 @@ import kotlin.math.abs
  * Tests verify:
  * - Aspect ratio handling for different image/preview combinations
  * - Bounding box transformation accuracy
- * - Center point calculation for circle marker positioning
+ * - Center point calculation for any annotations that use box centers
  * - Edge cases (small boxes, full-screen boxes, portrait/landscape)
  * - Scaling and offset calculations
  *
- * Note: The DetectionOverlay now renders circle markers at detection centers
- * instead of bounding boxes, making accurate center calculation critical.
+ * Note: The DetectionOverlay now renders bounding boxes around detections,
+ * so transform math must keep the boxes aligned with the underlying camera buffer.
  */
 @RunWith(RobolectricTestRunner::class)
 @Ignore("Requires updated overlay transform contract; skip for now.")
