@@ -453,7 +453,7 @@ fun CameraScreen(
                         // Tap while scanning: stop
                         if (cameraState == CameraState.SCANNING) {
                             cameraState = CameraState.IDLE
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.ClockTick)
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             cameraManager.stopScanning()
                             currentDetections = emptyList()
                         }
