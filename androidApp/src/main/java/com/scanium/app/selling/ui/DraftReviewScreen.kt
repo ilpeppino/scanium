@@ -50,14 +50,14 @@ import androidx.compose.foundation.Image
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DraftReviewScreen(
-    itemId: String,
+    itemIds: List<String>,
     onBack: () -> Unit,
     itemsViewModel: ItemsViewModel,
     draftStore: ListingDraftStore
 ) {
     val viewModel: DraftReviewViewModel = viewModel(
         factory = DraftReviewViewModel.factory(
-            itemId = itemId,
+            itemIds = itemIds,
             itemsViewModel = itemsViewModel,
             draftStore = draftStore
         )
@@ -70,7 +70,10 @@ fun DraftReviewScreen(
             TopAppBar(
                 title = { Text("Draft review") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        viewModel.saveDraft()
+                        onBack()
+                    }) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -104,6 +107,35 @@ fun DraftReviewScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item {
+                if (state.totalCount > 1) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${state.currentIndex + 1}/${state.totalCount}",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(
+                                onClick = viewModel::goToPrevious,
+                                enabled = state.currentIndex > 0
+                            ) {
+                                Text("Prev")
+                            }
+                            TextButton(
+                                onClick = viewModel::goToNext,
+                                enabled = state.currentIndex < state.totalCount - 1
+                            ) {
+                                Text("Next")
+                            }
+                        }
+                    }
+                }
+            }
+
             item {
                 DraftPhotoRow(draft)
             }

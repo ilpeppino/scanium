@@ -3,6 +3,7 @@ package com.scanium.app.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.net.Uri
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -66,8 +67,11 @@ fun ScaniumNavGraph(
                         navController.navigate("${Routes.SELL_ON_EBAY}/${ids.joinToString(",")}")
                     }
                 },
-                onNavigateToDraft = { id ->
-                    navController.navigate("${Routes.DRAFT_REVIEW}/$id")
+                onNavigateToDraft = { ids ->
+                    if (ids.isNotEmpty()) {
+                        val encoded = Uri.encode(ids.joinToString(","))
+                        navController.navigate("${Routes.DRAFT_REVIEW}?itemIds=$encoded")
+                    }
                 },
                 itemsViewModel = itemsViewModel
             )
@@ -94,12 +98,31 @@ fun ScaniumNavGraph(
         }
 
         composable(
+            route = "${Routes.DRAFT_REVIEW}?itemIds={itemIds}",
+            arguments = listOf(navArgument("itemIds") {
+                type = NavType.StringType
+                defaultValue = ""
+            })
+        ) { backStackEntry ->
+            val ids = backStackEntry.arguments?.getString("itemIds")
+                ?.split(",")
+                ?.filter { it.isNotBlank() }
+                ?: emptyList()
+            DraftReviewScreen(
+                itemIds = ids,
+                onBack = { navController.popBackStack() },
+                itemsViewModel = itemsViewModel,
+                draftStore = draftStore
+            )
+        }
+
+        composable(
             route = "${Routes.DRAFT_REVIEW}/{itemId}",
             arguments = listOf(navArgument("itemId") { type = NavType.StringType })
         ) { backStackEntry ->
             val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
             DraftReviewScreen(
-                itemId = itemId,
+                itemIds = listOf(itemId),
                 onBack = { navController.popBackStack() },
                 itemsViewModel = itemsViewModel,
                 draftStore = draftStore
