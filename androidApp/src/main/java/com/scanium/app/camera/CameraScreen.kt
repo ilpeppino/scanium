@@ -40,9 +40,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -89,6 +91,7 @@ fun CameraScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val view = LocalView.current
+    val hapticFeedback = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
     // Camera permission state
@@ -99,10 +102,6 @@ fun CameraScreen(
         CameraXManager(context, lifecycleOwner)
     }
 
-    // Sound manager for camera feedback
-    val soundManager = remember {
-        CameraSoundManager()
-    }
 
     // Camera state machine
     var cameraState by remember { mutableStateOf(CameraState.IDLE) }
@@ -230,7 +229,6 @@ fun CameraScreen(
     DisposableEffect(Unit) {
         onDispose {
             cameraManager.shutdown()
-            soundManager.release()
         }
     }
 
@@ -381,7 +379,7 @@ fun CameraScreen(
                         // Single tap: capture one frame
                         if (cameraState == CameraState.IDLE) {
                             cameraState = CameraState.CAPTURING
-                            soundManager.playShutterClick()
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             cameraManager.captureSingleFrame(
                                 scanMode = currentScanMode,
                                 onResult = { items ->
@@ -434,29 +432,12 @@ fun CameraScreen(
                         // Long press: start scanning
                         if (cameraState == CameraState.IDLE) {
                             cameraState = CameraState.SCANNING
-                            soundManager.playScanStartMelody()
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                             cameraManager.startScanning(
                                 scanMode = currentScanMode,
                                 onResult = { items ->
                                     if (items.isNotEmpty()) {
-                                        // Capture high-res image for continuous scan items
-                                        scope.launch {
-                                            val highResUri = cameraManager.captureHighResImage()
-                                            val itemsWithHighRes = if (highResUri != null) {
-                                                items.map { item ->
-                                                    val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
-                                                    val newThumbnailRef = newThumbnail?.toImageRefJpeg(quality = 85)
-                                                    item.copy(
-                                                        fullImageUri = highResUri,
-                                                        thumbnail = newThumbnailRef ?: item.thumbnail,
-                                                        thumbnailRef = newThumbnailRef ?: item.thumbnailRef
-                                                    )
-                                                }
-                                            } else {
-                                                items
-                                            }
-                                            itemsViewModel.addItems(itemsWithHighRes)
-                                        }
+                                        itemsViewModel.addItems(items)
                                     }
                                 },
                                 onDetectionResult = { detections ->
@@ -472,7 +453,7 @@ fun CameraScreen(
                         // Tap while scanning: stop
                         if (cameraState == CameraState.SCANNING) {
                             cameraState = CameraState.IDLE
-                            soundManager.playScanStopMelody()
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.ClockTick)
                             cameraManager.stopScanning()
                             currentDetections = emptyList()
                         }
