@@ -4,10 +4,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.scanium.app.domain.DomainPackProvider
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.data.ThemeMode
 import com.scanium.app.ui.theme.ScaniumTheme
 
 /**
@@ -26,7 +32,15 @@ class MainActivity : ComponentActivity() {
         DomainPackProvider.initialize(this)
 
         setContent {
-            ScaniumTheme {
+            val settingsRepository = remember { SettingsRepository(this@MainActivity) }
+            val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
+            val useDarkTheme = when (themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+
+            ScaniumTheme(darkTheme = useDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

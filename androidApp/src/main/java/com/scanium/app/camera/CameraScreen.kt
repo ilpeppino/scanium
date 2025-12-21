@@ -50,6 +50,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.BuildConfig
 import com.scanium.app.R
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.data.ThemeMode
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -93,6 +95,8 @@ fun CameraScreen(
     val view = LocalView.current
     val hapticFeedback = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
+    val settingsRepository = remember { SettingsRepository(context) }
+    val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
 
     // Camera permission state
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
@@ -474,6 +478,10 @@ fun CameraScreen(
                 CameraSettingsOverlay(
                     visible = isSettingsOpen,
                     onDismiss = { isSettingsOpen = false },
+                    themeMode = themeMode,
+                    onThemeModeChange = { mode ->
+                        scope.launch { settingsRepository.setThemeMode(mode) }
+                    },
                     similarityThreshold = similarityThreshold,
                     onThresholdChange = itemsViewModel::updateSimilarityThreshold,
                     classificationMode = classificationMode,
