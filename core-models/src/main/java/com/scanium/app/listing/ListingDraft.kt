@@ -10,6 +10,8 @@ import com.scanium.shared.core.models.listing.DraftStatus
 import com.scanium.shared.core.models.listing.ExportProfile
 import com.scanium.shared.core.models.listing.ListingDraft as SharedListingDraft
 import com.scanium.shared.core.models.listing.ListingDraftBuilder as SharedListingDraftBuilder
+import com.scanium.shared.core.models.listing.ListingDraftFormatter as SharedListingDraftFormatter
+import com.scanium.shared.core.models.listing.ListingDraftExport as SharedListingDraftExport
 import com.scanium.shared.core.models.listing.DraftFieldsSerializer as SharedDraftFieldsSerializer
 
 typealias ListingDraft = SharedListingDraft
@@ -22,4 +24,6 @@ typealias DraftCompleteness = com.scanium.shared.core.models.listing.DraftComple
 typealias DraftStatus = com.scanium.shared.core.models.listing.DraftStatus
 typealias ExportProfile = com.scanium.shared.core.models.listing.ExportProfile
 typealias ListingDraftBuilder = SharedListingDraftBuilder
+typealias ListingDraftFormatter = SharedListingDraftFormatter
+typealias ListingDraftExport = SharedListingDraftExport
 typealias DraftFieldsSerializer = SharedDraftFieldsSerializer
