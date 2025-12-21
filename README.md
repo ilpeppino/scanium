@@ -110,7 +110,7 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/featu
 
 ### Key Architectural Decisions
 
-- **Single-module structure** - Appropriate for PoC scope
+- **Multi-module structure** - Android app plus shared core libraries for models, tracking, and domain packs
 - **No DI framework** - Manual constructor injection for simplicity
 - **Camera-first UX** - App opens directly to camera screen
 - **On-device ML** - Privacy-focused with no network calls

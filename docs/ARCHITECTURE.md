@@ -13,7 +13,10 @@ Single source of truth for how Scanium is structured and how we evolve it. Goal:
   - Domain taxonomy: `core-domainpack` (DomainPackRepository, BasicCategoryEngine, JSON config).
   - Shell namespaces: `core-contracts`, `core-scan`, `shared:test-utils` (test helpers for shared modules).
   - Android wrappers: `core-models`, `core-tracking` (typealiases to shared KMP).
-- **Pipeline today:** CameraX → ML Kit detection → adapters to `RawDetection` → `ObjectTracker` + `ItemAggregator` → `ClassificationOrchestrator` (cloud/offline paths) → UI state in view models. Cloud classifier is config-driven via `BuildConfig`/`local.properties`; on-device labels act as fallback when unset.
+- **Pipeline today:** CameraX (with WYSIWYG ViewPort alignment) → ML Kit detection → geometry-based filtering (edge gating) → adapters to `RawDetection` → `ObjectTracker` + `ItemAggregator` (with spatial-temporal merge fallback) → `ClassificationOrchestrator` (cloud/offline paths) → UI state in view models. Cloud classifier is config-driven via `BuildConfig`/`local.properties`; on-device labels act as fallback when unset.
+  - **WYSIWYG Viewport (2024-12):** Preview + ImageAnalysis bound via `UseCaseGroup` with shared `ViewPort` ensures ML analysis sees only what user sees in Preview; eliminates off-screen phantom detections.
+  - **Edge Gating (2024-12):** Geometry-based filtering using `ImageProxy.cropRect` + configurable inset margin (default 10%) drops partial/cut-off objects at screen edges; zero per-frame bitmap cropping.
+  - **Spatial-Temporal Dedupe (2024-12):** Lightweight fallback merge policy in `shared/core-tracking` handles tracker ID churn via IoU/distance matching within time window (default 800ms); minimal memory footprint.
 
 ---
 
@@ -40,21 +43,27 @@ flowchart TD
 ---
 
 ## Data Flow (stable items only for cloud)
-1. Camera frame → ML Kit detector → `RawDetection` (normalized bbox, coarse label, thumbnail).
-2. `ObjectTracker` + `ItemAggregator` merge detections; only **stable items** (confirmed + thumbnail) are eligible for cloud upload.
+1. Camera frame (with ViewPort-aligned cropRect) → ML Kit detector → **geometry filtering** (drop detections outside visible viewport + edge inset) → `RawDetection` (normalized bbox, coarse label, thumbnail).
+2. `ObjectTracker` processes frame-level detections (spatial matching + ID tracking); `ItemAggregator` merges via similarity scoring + **spatial-temporal fallback** (handles ID churn); only **stable items** (confirmed + thumbnail) are eligible for cloud upload.
 3. `ClassificationOrchestrator` (bounded concurrency=2, retries) decides mode:
    - `CLOUD`: send thumbnail to backend proxy (Google Vision), async.
    - `ON_DEVICE`/`FALLBACK`: use coarse labels when cloud unavailable/unconfigured.
 4. `DomainPackRepository` + `BasicCategoryEngine` map classifier output to domain categories/attributes.
 5. View models push updated UI state (overlays, item list, selling flow).
 
+**Performance characteristics:**
+- Edge filtering: zero allocations (primitives only), no bitmap operations.
+- Spatial-temporal merge: O(1) per candidate, stores only bbox center + timestamp + category.
+- Rate-limited logging prevents log spam (viewport: once, cropRect: 5s, edge drops: 5s).
+
 Mermaid (pipeline):
 ```mermaid
 flowchart LR
-    Frames[Camera Frames] --> Detect[On-device Detection (ML Kit)]
-    Detect --> Raw[RawDetection]
-    Raw --> Track[ObjectTracker]
-    Track --> Agg[ItemAggregator]
+    Frames[Camera Frames<br/>ViewPort-aligned] --> Detect[ML Kit Detection]
+    Detect --> Filter[Geometry Filter<br/>cropRect + edge inset]
+    Filter --> Raw[RawDetection]
+    Raw --> Track[ObjectTracker<br/>spatial matching]
+    Track --> Agg[ItemAggregator<br/>similarity + spatial-temporal fallback]
     Agg -- stable items only --> Queue[ClassificationOrchestrator]
     Queue -->|cloud| Cloud[Backend Proxy -> Google Vision]
     Queue -->|fallback| OnDevice[Coarse labels]
@@ -63,6 +72,58 @@ flowchart LR
     Map --> VM[ViewModels/StateFlow]
     VM --> UI[Compose UI]
 ```
+
+---
+
+## Deduplication & Detection Quality Configuration
+
+**WYSIWYG Viewport Alignment:**
+- **Location:** `CameraXManager.kt` (androidApp)
+- **Mechanism:** `ViewPort` + `UseCaseGroup` ensures Preview and ImageAnalysis share the same field of view.
+- **Result:** ML analysis only processes pixels visible to the user; eliminates off-screen "phantom" detections.
+
+**Edge Gating (Geometry-Based Filtering):**
+- **Location:** `ObjectDetectorClient.kt` (android-ml-mlkit)
+- **Configuration:** `CameraXManager.EDGE_INSET_MARGIN_RATIO` (default: 0.10 = 10% inset from each edge)
+- **Mechanism:** Filter detections whose center falls outside `ImageProxy.cropRect` minus inset margin.
+- **Performance:** Zero allocations; uses primitive int/float arithmetic only; no bitmap operations.
+- **Tuning:** Increase ratio (e.g., 0.15) for stricter filtering; decrease (e.g., 0.05) to allow more edge objects.
+
+**Spatial-Temporal Merge Policy:**
+- **Location:** `SpatialTemporalMergePolicy.kt` (shared/core-tracking - Android-free)
+- **Purpose:** Fallback deduplication when tracker IDs churn or regular similarity scoring fails.
+- **Configuration:** `MergeConfig` with presets:
+  ```kotlin
+  // Default: balanced merge decisions
+  val DEFAULT = MergeConfig(
+      timeWindowMs = 800L,           // Merge within 800ms
+      minIoU = 0.3f,                 // Minimum overlap 30%
+      requireCategoryMatch = true,    // Categories must match
+      useIoU = true                   // Use IoU vs center distance
+  )
+
+  // Strict: fewer merges, more conservative
+  val STRICT = MergeConfig(
+      timeWindowMs = 500L,
+      minIoU = 0.5f,
+      requireCategoryMatch = true
+  )
+
+  // Lenient: more merges, less conservative
+  val LENIENT = MergeConfig(
+      timeWindowMs = 1200L,
+      minIoU = 0.2f,
+      requireCategoryMatch = false
+  )
+  ```
+- **Metrics:** IoU (Intersection over Union) or normalized center distance.
+- **Memory:** Stores only bbox center (2 floats), timestamp (1 long), category (1 int) per candidate.
+- **Integration:** `ItemAggregator` consults merge policy when similarity scoring fails.
+
+**Performance Impact:**
+- CPU: Negligible (geometry checks use primitives; no image processing).
+- Memory: Minimal (~24 bytes per active candidate in merge cache).
+- Latency: No measurable impact (filtering happens before expensive operations).
 
 ---
 
