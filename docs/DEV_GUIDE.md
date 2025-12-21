@@ -85,8 +85,48 @@ See also `hooks/README.md` for pre-push validation setup.
 - Networked device access (ADB) is unavailable; use CI artifacts for APKs.
 - Avoid installing system packages; rely on provided Gradle wrapper and scripts.
 
+***REMOVED******REMOVED*** Deduplication & Detection Quality Tuning
+
+**Viewport Alignment (WYSIWYG):**
+- Ensures ML analysis sees only what user sees in Preview
+- Configuration: Automatic via `ViewPort` + `UseCaseGroup` in `CameraXManager.kt`
+- Logging: One-time log on startup showing viewport dimensions and edge inset
+
+**Edge Gating (Drop Partial Objects):**
+- Filters detections too close to screen edges (likely cut-off objects)
+- Configuration: `CameraXManager.EDGE_INSET_MARGIN_RATIO` (default: 0.10 = 10%)
+- Increase for stricter filtering, decrease to allow more edge objects
+- Logging: Rate-limited (every 5 seconds) when detections are dropped
+
+**Spatial-Temporal Deduplication:**
+- Fallback merge policy for tracker ID churn
+- Configuration: `SpatialTemporalMergePolicy.MergeConfig` in `shared/core-tracking`
+- Presets: `DEFAULT` (balanced), `STRICT` (conservative), `LENIENT` (aggressive)
+- Logging: Merge events logged via `ItemAggregator` with "SPATIAL-TEMPORAL MERGE" prefix
+
+**Testing deduplication changes:**
+```bash
+***REMOVED*** Run unit tests for merge policy (Android-free)
+./gradlew :shared:core-tracking:test --tests "SpatialTemporalMergePolicyTest"
+
+***REMOVED*** Run all tracking tests
+./gradlew :shared:core-tracking:test
+
+***REMOVED*** Build and install for on-device testing
+./gradlew installDebug
+```
+
+**On-device validation checklist:**
+- [ ] Point camera at edge objects: verify off-screen objects don't create items
+- [ ] Slowly pan camera: verify fewer duplicates appear
+- [ ] Check overlay remains smooth and stable (no lag)
+- [ ] Verify categories still match correctly
+- [ ] Test with different lighting conditions
+
 ***REMOVED******REMOVED*** Debugging tips
 - Use Logcat filters for tags like `CameraXManager`, `ObjectDetectorClient`, `CloudClassifier`, `ItemsViewModel`.
+- **New viewport/filtering logs:** Search for `[VIEWPORT]`, `[CROP_RECT]`, `[EDGE_FILTER]` tags.
+- **Deduplication logs:** Search for "SPATIAL-TEMPORAL MERGE" in `ItemAggregator` output.
 - Detection overlays live in `androidApp/src/main/java/com/scanium/app/camera/DetectionOverlay.kt`; tweak drawing there.
 - Aggregation/tracking behavior is covered by tests in `androidApp/src/test/...` and `core-tracking/src/test/...`; add golden tests when changing heuristics.
 - For ML Kit analyzer crashes, enable verbose logs in the respective client classes under `androidApp/src/main/java/com/scanium/app/ml/`.
