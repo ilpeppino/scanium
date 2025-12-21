@@ -2,18 +2,21 @@ package com.scanium.app.items.persistence
 
 import android.content.Context
 import androidx.room.Database
-import androidx.room.migration.Migration
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.scanium.app.selling.persistence.ListingDraftDao
+import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
-    entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class],
-    version = 2,
+    entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
+    version = 3,
     exportSchema = false
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
     abstract fun scannedItemDao(): ScannedItemDao
+    abstract fun listingDraftDao(): ListingDraftDao
 
     companion object {
         @Volatile
@@ -31,7 +34,7 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                 ScannedItemDatabase::class.java,
                 "scanned_items.db"
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
                 .build()
@@ -80,6 +83,37 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS index_scanned_item_history_itemId_changedAt ON scanned_item_history(itemId, changedAt)"
+                )
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS listing_drafts (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        itemId TEXT NOT NULL,
+                        profileId TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        titleConfidence REAL NOT NULL,
+                        titleSource TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        descriptionConfidence REAL NOT NULL,
+                        descriptionSource TEXT NOT NULL,
+                        fieldsJson TEXT NOT NULL,
+                        price REAL NOT NULL,
+                        priceConfidence REAL NOT NULL,
+                        priceSource TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        photoBytes BLOB,
+                        photoMimeType TEXT,
+                        photoWidth INTEGER,
+                        photoHeight INTEGER
+                    )
+                    """.trimIndent()
                 )
             }
         }
