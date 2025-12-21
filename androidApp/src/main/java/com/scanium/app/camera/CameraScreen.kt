@@ -143,6 +143,17 @@ fun CameraScreen(
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
 
+    DisposableEffect(view, cameraState) {
+        val keepScreenOn = cameraState == CameraState.SCANNING
+        view.keepScreenOn = keepScreenOn
+
+        onDispose {
+            if (keepScreenOn) {
+                view.keepScreenOn = false
+            }
+        }
+    }
+
     DisposableEffect(view) {
         val orientationListener = object : OrientationEventListener(context) {
             override fun onOrientationChanged(orientation: Int) {
