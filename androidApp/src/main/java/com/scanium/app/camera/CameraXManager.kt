@@ -12,6 +12,7 @@ import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
 import android.util.Size
+import android.util.Rational
 import androidx.camera.core.*
 import androidx.camera.core.CameraUnavailableException
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -52,6 +53,13 @@ class CameraXManager(
 ) {
     companion object {
         private const val TAG = "CameraXManager"
+
+        // PHASE 3: Edge gating margin
+        // Detections whose center falls within this margin from the cropRect edge are dropped
+        // This prevents partial/cut-off objects at screen edges from being promoted
+        // Range: 0.0 (no margin) to 0.5 (very aggressive filtering)
+        // Default: 0.10 (10% inset from each edge)
+        private const val EDGE_INSET_MARGIN_RATIO = 0.10f
     }
 
     data class CameraBindResult(
@@ -116,6 +124,11 @@ class CameraXManager(
     private var totalFramesProcessed = 0
     private var lastFpsReportTime = 0L
     private var framesInWindow = 0
+
+    // PHASE 5: Rate-limited logging
+    private var viewportLoggedOnce = false
+    private var lastCropRectLogTime = 0L
+    private val cropRectLogIntervalMs = 5000L // Log cropRect info every 5 seconds
 
     /**
      * Ensures ML Kit models are downloaded and ready.
@@ -232,14 +245,34 @@ class CameraXManager(
             provider.unbindAll()
             stopScanning()
 
-            // Bind use cases to lifecycle (Preview, ImageAnalysis, ImageCapture)
+            // PHASE 2: WYSIWYG Viewport Alignment
+            // Create a ViewPort based on the PreviewView's aspect ratio and rotation
+            // This ensures ImageAnalysis sees ONLY what the user sees in the Preview
+            val viewPort = ViewPort.Builder(
+                Rational(previewView.width, previewView.height),
+                displayRotation
+            ).build()
+
+            // Create UseCaseGroup with the ViewPort to bind all use cases with consistent cropping
+            val useCaseGroup = UseCaseGroup.Builder()
+                .addUseCase(preview!!)
+                .addUseCase(imageAnalysis!!)
+                .addUseCase(imageCapture!!)
+                .setViewPort(viewPort)
+                .build()
+
+            // Bind the UseCaseGroup to lifecycle (ensures all use cases share the same FOV)
             camera = provider.bindToLifecycle(
                 lifecycleOwner,
                 selectorToUse,
-                preview,
-                imageAnalysis,
-                imageCapture
+                useCaseGroup
             )
+
+            // PHASE 5: One-time viewport configuration log
+            if (!viewportLoggedOnce) {
+                Log.i(TAG, "[VIEWPORT] WYSIWYG alignment enabled: PreviewView=${previewView.width}x${previewView.height}, rotation=$displayRotation, edgeInset=${EDGE_INSET_MARGIN_RATIO}")
+                viewportLoggedOnce = true
+            }
             CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
         } catch (e: CameraUnavailableException) {
             Log.e(TAG, "Camera unavailable during binding", e)
@@ -465,7 +498,16 @@ class CameraXManager(
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            Log.i(TAG, ">>> processImageProxy: image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees")
+            // PHASE 3: Extract cropRect from ImageProxy (set by ViewPort)
+            // This defines the visible region that matches the PreviewView
+            val cropRect = imageProxy.cropRect
+
+            // PHASE 5: Rate-limited cropRect logging
+            val now = System.currentTimeMillis()
+            if (now - lastCropRectLogTime >= cropRectLogIntervalMs) {
+                Log.i(TAG, "[CROP_RECT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, cropRect=$cropRect")
+                lastCropRectLogTime = now
+            }
 
             // Build ML Kit image directly from camera buffer
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
@@ -494,7 +536,12 @@ class CameraXManager(
                     // Use tracking pipeline when in STREAM_MODE and scanning
                     if (useStreamMode && isScanning) {
                         Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
-                        val (items, detections) = processObjectDetectionWithTracking(inputImage, lazyBitmapProvider)
+                        val (items, detections) = processObjectDetectionWithTracking(
+                            inputImage = inputImage,
+                            lazyBitmapProvider = lazyBitmapProvider,
+                            cropRect = cropRect,
+                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
+                        )
                         Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results")
                         Pair(items, detections)
                     } else {
@@ -503,7 +550,9 @@ class CameraXManager(
                         val response = objectDetector.detectObjects(
                             image = inputImage,
                             sourceBitmap = lazyBitmapProvider,
-                            useStreamMode = useStreamMode
+                            useStreamMode = useStreamMode,
+                            cropRect = cropRect,
+                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
                         )
                         Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
                         Pair(response.scannedItems, response.detectionResults)
@@ -545,7 +594,9 @@ class CameraXManager(
      */
     private suspend fun processObjectDetectionWithTracking(
         inputImage: InputImage,
-        lazyBitmapProvider: () -> Bitmap?
+        lazyBitmapProvider: () -> Bitmap?,
+        cropRect: android.graphics.Rect,
+        edgeInsetRatio: Float
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
@@ -553,7 +604,9 @@ class CameraXManager(
         val trackingResponse = objectDetector.detectObjectsWithTracking(
             image = inputImage,
             sourceBitmap = lazyBitmapProvider,
-            useStreamMode = true
+            useStreamMode = true,
+            cropRect = cropRect,
+            edgeInsetRatio = edgeInsetRatio
         )
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass")
