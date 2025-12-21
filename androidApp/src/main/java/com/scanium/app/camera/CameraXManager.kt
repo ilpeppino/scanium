@@ -12,6 +12,7 @@ import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
 import android.util.Size
+import android.util.Rational
 import androidx.camera.core.*
 import androidx.camera.core.CameraUnavailableException
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -52,6 +53,13 @@ class CameraXManager(
 ) {
     companion object {
         private const val TAG = "CameraXManager"
+
+        // PHASE 3: Edge gating margin
+        // Detections whose center falls within this margin from the cropRect edge are dropped
+        // This prevents partial/cut-off objects at screen edges from being promoted
+        // Range: 0.0 (no margin) to 0.5 (very aggressive filtering)
+        // Default: 0.10 (10% inset from each edge)
+        private const val EDGE_INSET_MARGIN_RATIO = 0.10f
     }
 
     data class CameraBindResult(
@@ -117,6 +125,15 @@ class CameraXManager(
     private var lastFpsReportTime = 0L
     private var framesInWindow = 0
 
+    // PHASE 5: Rate-limited logging
+    private var viewportLoggedOnce = false
+    private var lastCropRectLogTime = 0L
+    private val cropRectLogIntervalMs = 5000L // Log cropRect info every 5 seconds
+
+    // PHASE 2: Store PreviewView dimensions for calculating visible viewport
+    private var previewViewWidth = 0
+    private var previewViewHeight = 0
+
     /**
      * Ensures ML Kit models are downloaded and ready.
      * Should be called before starting detection.
@@ -159,6 +176,10 @@ class CameraXManager(
 
         // Ensure models are downloaded before starting camera
         ensureModelsReady()
+
+        // Store PreviewView dimensions for viewport calculation
+        previewViewWidth = previewView.width
+        previewViewHeight = previewView.height
 
         val provider = awaitCameraProvider(context)
         cameraProvider = provider
@@ -232,7 +253,10 @@ class CameraXManager(
             provider.unbindAll()
             stopScanning()
 
-            // Bind use cases to lifecycle (Preview, ImageAnalysis, ImageCapture)
+            // PHASE 2: Bind use cases to lifecycle
+            // NOTE: We do NOT apply ViewPort to ImageAnalysis - ML Kit needs full frame context
+            // for accurate classification. Instead, we filter detections geometrically AFTER
+            // ML Kit analysis using cropRect from Preview's ViewPort.
             camera = provider.bindToLifecycle(
                 lifecycleOwner,
                 selectorToUse,
@@ -240,6 +264,13 @@ class CameraXManager(
                 imageAnalysis,
                 imageCapture
             )
+
+            // PHASE 5: Configuration log
+            if (!viewportLoggedOnce) {
+                Log.i(TAG, "[CONFIG] Camera bound: Preview=${previewView.width}x${previewView.height}, rotation=$displayRotation, edgeInset=${EDGE_INSET_MARGIN_RATIO}")
+                Log.i(TAG, "[CONFIG] ML Kit sees full frame for classification; geometry filtering applied after detection")
+                viewportLoggedOnce = true
+            }
             CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
         } catch (e: CameraUnavailableException) {
             Log.e(TAG, "Camera unavailable during binding", e)
@@ -465,9 +496,27 @@ class CameraXManager(
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            Log.i(TAG, ">>> processImageProxy: image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees")
+            // PHASE 3: Calculate visible viewport based on PreviewView aspect ratio
+            // Apply cropRect to ImageProxy so ML Kit ONLY analyzes the visible region
+            val cropRect = calculateVisibleViewport(
+                imageWidth = imageProxy.width,
+                imageHeight = imageProxy.height,
+                previewWidth = previewViewWidth,
+                previewHeight = previewViewHeight
+            )
 
-            // Build ML Kit image directly from camera buffer
+            // CRITICAL: Set cropRect on ImageProxy BEFORE creating InputImage
+            // This is metadata-only (zero-copy) and ensures ML Kit only sees the visible viewport
+            imageProxy.setCropRect(cropRect)
+
+            // PHASE 5: Rate-limited viewport logging
+            val now = System.currentTimeMillis()
+            if (now - lastCropRectLogTime >= cropRectLogIntervalMs) {
+                Log.i(TAG, "[VIEWPORT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, appliedCrop=$cropRect")
+                lastCropRectLogTime = now
+            }
+
+            // Build ML Kit image from camera buffer with applied cropRect
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
             // OPTIMIZATION: Lazy bitmap provider - only creates bitmap when invoked
@@ -488,13 +537,22 @@ class CameraXManager(
                 cachedBitmap
             }
 
+            // Since ImageProxy is already cropped to visible viewport via setCropRect(),
+            // pass full image bounds for edge inset filtering (filters detections too close to edges)
+            val imageBoundsForFiltering = android.graphics.Rect(0, 0, cropRect.width(), cropRect.height())
+
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
                     // Use tracking pipeline when in STREAM_MODE and scanning
                     if (useStreamMode && isScanning) {
                         Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
-                        val (items, detections) = processObjectDetectionWithTracking(inputImage, lazyBitmapProvider)
+                        val (items, detections) = processObjectDetectionWithTracking(
+                            inputImage = inputImage,
+                            lazyBitmapProvider = lazyBitmapProvider,
+                            cropRect = imageBoundsForFiltering,
+                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
+                        )
                         Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results")
                         Pair(items, detections)
                     } else {
@@ -503,7 +561,9 @@ class CameraXManager(
                         val response = objectDetector.detectObjects(
                             image = inputImage,
                             sourceBitmap = lazyBitmapProvider,
-                            useStreamMode = useStreamMode
+                            useStreamMode = useStreamMode,
+                            cropRect = imageBoundsForFiltering,
+                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
                         )
                         Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
                         Pair(response.scannedItems, response.detectionResults)
@@ -545,7 +605,9 @@ class CameraXManager(
      */
     private suspend fun processObjectDetectionWithTracking(
         inputImage: InputImage,
-        lazyBitmapProvider: () -> Bitmap?
+        lazyBitmapProvider: () -> Bitmap?,
+        cropRect: android.graphics.Rect,
+        edgeInsetRatio: Float
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
@@ -553,7 +615,9 @@ class CameraXManager(
         val trackingResponse = objectDetector.detectObjectsWithTracking(
             image = inputImage,
             sourceBitmap = lazyBitmapProvider,
-            useStreamMode = true
+            useStreamMode = true,
+            cropRect = cropRect,
+            edgeInsetRatio = edgeInsetRatio
         )
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass")
@@ -714,6 +778,43 @@ class CameraXManager(
     fun resetTracker() {
         Log.i(TAG, "resetTracker: Manually resetting object tracker")
         objectTracker.reset()
+    }
+
+    /**
+     * PHASE 3: Calculate the visible viewport rect based on PreviewView aspect ratio.
+     * This determines which portion of the full camera frame is actually visible to the user,
+     * allowing us to filter detections while letting ML Kit see the full frame for classification.
+     *
+     * Uses center-crop logic to match CameraX's default scaling.
+     */
+    private fun calculateVisibleViewport(
+        imageWidth: Int,
+        imageHeight: Int,
+        previewWidth: Int,
+        previewHeight: Int
+    ): android.graphics.Rect {
+        if (previewWidth == 0 || previewHeight == 0) {
+            // Fallback: return full frame if preview dimensions not available
+            return android.graphics.Rect(0, 0, imageWidth, imageHeight)
+        }
+
+        // Calculate aspect ratios
+        val imageAspect = imageWidth.toFloat() / imageHeight.toFloat()
+        val previewAspect = previewWidth.toFloat() / previewHeight.toFloat()
+
+        val cropRect = if (imageAspect > previewAspect) {
+            // Image is wider than preview - crop sides (center crop horizontally)
+            val visibleWidth = (imageHeight * previewAspect).toInt()
+            val cropX = (imageWidth - visibleWidth) / 2
+            android.graphics.Rect(cropX, 0, cropX + visibleWidth, imageHeight)
+        } else {
+            // Image is taller than preview - crop top/bottom (center crop vertically)
+            val visibleHeight = (imageWidth / previewAspect).toInt()
+            val cropY = (imageHeight - visibleHeight) / 2
+            android.graphics.Rect(0, cropY, imageWidth, cropY + visibleHeight)
+        }
+
+        return cropRect
     }
 }
 
