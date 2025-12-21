@@ -3,11 +3,16 @@ package com.scanium.app.selling.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.DraftStatus
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftBuilder
+import com.scanium.app.listing.ExportProfileDefinition
+import com.scanium.app.listing.ExportProfileId
+import com.scanium.app.listing.ExportProfileRepository
+import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.selling.persistence.ListingDraftStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +24,8 @@ data class DraftReviewUiState(
     val itemIds: List<String> = emptyList(),
     val currentIndex: Int = 0,
     val draft: ListingDraft? = null,
+    val profiles: List<ExportProfileDefinition> = emptyList(),
+    val selectedProfileId: ExportProfileId = ExportProfileId.GENERIC,
     val isSaving: Boolean = false,
     val isDirty: Boolean = false,
     val errorMessage: String? = null
@@ -38,7 +45,9 @@ data class DraftReviewItemState(
 class DraftReviewViewModel(
     private val itemIds: List<String>,
     private val itemsViewModel: ItemsViewModel,
-    private val draftStore: ListingDraftStore
+    private val draftStore: ListingDraftStore,
+    private val exportProfileRepository: ExportProfileRepository,
+    private val exportProfilePreferences: ExportProfilePreferences
 ) : ViewModel() {
 
     private val draftCache = mutableMapOf<String, DraftReviewItemState>()
@@ -52,6 +61,7 @@ class DraftReviewViewModel(
 
     init {
         loadDraftForCurrent()
+        loadProfiles()
     }
 
     fun updateTitle(value: String) {
@@ -86,6 +96,14 @@ class DraftReviewViewModel(
     fun saveDraft() {
         viewModelScope.launch {
             saveCurrentDraft()
+        }
+    }
+
+    fun selectProfile(profileId: ExportProfileId) {
+        _uiState.update { it.copy(selectedProfileId = profileId) }
+        updateDraft { draft -> draft.copy(profile = profileId) }
+        viewModelScope.launch {
+            exportProfilePreferences.setLastProfileId(profileId)
         }
     }
 
@@ -163,6 +181,22 @@ class DraftReviewViewModel(
         }
     }
 
+    private fun loadProfiles() {
+        viewModelScope.launch {
+            val profiles = exportProfileRepository.getProfiles().ifEmpty {
+                listOf(ExportProfiles.generic())
+            }
+            val defaultId = exportProfileRepository.getDefaultProfileId()
+            val persistedId = exportProfilePreferences.getLastProfileId(defaultId)
+            val selectedId = profiles.firstOrNull { it.id == persistedId }?.id
+                ?: profiles.firstOrNull { it.id == defaultId }?.id
+                ?: ExportProfiles.generic().id
+            _uiState.update {
+                it.copy(profiles = profiles, selectedProfileId = selectedId)
+            }
+        }
+    }
+
     private fun updateDraft(transformer: (ListingDraft) -> ListingDraft) {
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
@@ -179,14 +213,18 @@ class DraftReviewViewModel(
         fun factory(
             itemIds: List<String>,
             itemsViewModel: ItemsViewModel,
-            draftStore: ListingDraftStore
+            draftStore: ListingDraftStore,
+            exportProfileRepository: ExportProfileRepository,
+            exportProfilePreferences: ExportProfilePreferences
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 return DraftReviewViewModel(
                     itemIds = itemIds,
                     itemsViewModel = itemsViewModel,
-                    draftStore = draftStore
+                    draftStore = draftStore,
+                    exportProfileRepository = exportProfileRepository,
+                    exportProfilePreferences = exportProfilePreferences
                 ) as T
             }
         }
