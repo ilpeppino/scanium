@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.scanium.app.data.ItemsActionPreferences
 import com.scanium.app.media.MediaStoreSaver
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
@@ -53,7 +54,7 @@ import java.util.*
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToSell: (List<String>) -> Unit,
-    onNavigateToDraft: (String) -> Unit,
+    onNavigateToDraft: (List<String>) -> Unit,
     itemsViewModel: ItemsViewModel = viewModel()
 ) {
     val items by itemsViewModel.items.collectAsState()
@@ -66,6 +67,8 @@ fun ItemsListScreen(
     var lastDeletedWasSelected by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val actionPreferences = remember { ItemsActionPreferences(context) }
+    val lastAction by actionPreferences.lastAction.collectAsState(initial = SelectedItemsAction.SELL_ON_EBAY)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -120,8 +123,14 @@ fun ItemsListScreen(
         }
     }
 
-    fun executeAction() {
-        when (selectedAction) {
+    LaunchedEffect(lastAction) {
+        if (selectedAction != lastAction) {
+            selectedAction = lastAction
+        }
+    }
+
+    fun executeAction(action: SelectedItemsAction = selectedAction) {
+        when (action) {
             SelectedItemsAction.SAVE_TO_DEVICE -> {
                 scope.launch {
                     // Get selected items with their images (prefer high-res URI, fallback to thumbnail)
@@ -156,9 +165,9 @@ fun ItemsListScreen(
                 onNavigateToSell(selectedIds.toList())
             }
             SelectedItemsAction.REVIEW_DRAFT -> {
-                val firstId = selectedIds.firstOrNull()
-                if (firstId != null) {
-                    onNavigateToDraft(firstId)
+                val selected = selectedIds.toList()
+                if (selected.isNotEmpty()) {
+                    onNavigateToDraft(selected)
                 } else {
                     scope.launch { snackbarHostState.showSnackbar("Select an item to review") }
                 }
@@ -271,6 +280,10 @@ fun ItemsListScreen(
                                 onClick = {
                                     selectedAction = action
                                     showActionMenu = false
+                                    scope.launch {
+                                        actionPreferences.setLastAction(action)
+                                    }
+                                    executeAction(action)
                                 },
                                 leadingIcon = {
                                     Icon(
