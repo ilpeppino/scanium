@@ -11,6 +11,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -121,6 +123,10 @@ class DraftReviewViewModelTest {
 
         override suspend fun upsert(draft: com.scanium.app.listing.ListingDraft) {
             drafts[draft.itemId] = draft
+        }
+
+        override suspend fun deleteById(id: String) {
+            drafts.remove(id)
         }
     }
 }
