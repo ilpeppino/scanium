@@ -16,22 +16,42 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class DraftReviewUiState(
+    val itemIds: List<String> = emptyList(),
+    val currentIndex: Int = 0,
     val draft: ListingDraft? = null,
     val isSaving: Boolean = false,
+    val isDirty: Boolean = false,
     val errorMessage: String? = null
+) {
+    val totalCount: Int
+        get() = itemIds.size
+
+    val currentItemId: String?
+        get() = itemIds.getOrNull(currentIndex)
+}
+
+data class DraftReviewItemState(
+    val draft: ListingDraft,
+    val isDirty: Boolean
 )
 
 class DraftReviewViewModel(
-    private val itemId: String,
+    private val itemIds: List<String>,
     private val itemsViewModel: ItemsViewModel,
     private val draftStore: ListingDraftStore
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(DraftReviewUiState())
+    private val draftCache = mutableMapOf<String, DraftReviewItemState>()
+    private val _uiState = MutableStateFlow(
+        DraftReviewUiState(
+            itemIds = itemIds,
+            currentIndex = 0
+        )
+    )
     val uiState: StateFlow<DraftReviewUiState> = _uiState.asStateFlow()
 
     init {
-        loadDraft()
+        loadDraftForCurrent()
     }
 
     fun updateTitle(value: String) {
@@ -64,26 +84,82 @@ class DraftReviewViewModel(
     }
 
     fun saveDraft() {
-        val current = _uiState.value.draft ?: return
         viewModelScope.launch {
-            _uiState.update { it.copy(isSaving = true, errorMessage = null) }
-            val updated = current.copy(status = DraftStatus.SAVED, updatedAt = System.currentTimeMillis()).recomputeCompleteness()
-            draftStore.upsert(updated)
-            _uiState.value = DraftReviewUiState(draft = updated, isSaving = false)
+            saveCurrentDraft()
         }
     }
 
-    private fun loadDraft() {
+    fun goToPrevious() {
+        val state = _uiState.value
+        if (state.currentIndex <= 0) return
+        navigateToIndex(state.currentIndex - 1)
+    }
+
+    fun goToNext() {
+        val state = _uiState.value
+        if (state.currentIndex >= state.totalCount - 1) return
+        navigateToIndex(state.currentIndex + 1)
+    }
+
+    private fun navigateToIndex(targetIndex: Int) {
         viewModelScope.launch {
-            val savedDraft = draftStore.getByItemId(itemId)
+            saveCurrentDraft()
+            _uiState.update { it.copy(currentIndex = targetIndex, errorMessage = null) }
+            loadDraftForCurrent()
+        }
+    }
+
+    private suspend fun saveCurrentDraft() {
+        val state = _uiState.value
+        val currentId = state.currentItemId ?: return
+        val currentDraft = state.draft ?: return
+
+        if (!state.isDirty) return
+
+        _uiState.update { it.copy(isSaving = true, errorMessage = null) }
+        val updated = currentDraft
+            .copy(status = DraftStatus.SAVED, updatedAt = System.currentTimeMillis())
+            .recomputeCompleteness()
+        draftStore.upsert(updated)
+        draftCache[currentId] = DraftReviewItemState(updated, isDirty = false)
+        _uiState.update {
+            it.copy(draft = updated, isSaving = false, isDirty = false)
+        }
+    }
+
+    private fun loadDraftForCurrent() {
+        val state = _uiState.value
+        val currentId = state.currentItemId ?: return
+        draftCache[currentId]?.let { cached ->
+            _uiState.update {
+                it.copy(
+                    draft = cached.draft,
+                    isDirty = cached.isDirty,
+                    isSaving = false,
+                    errorMessage = null
+                )
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            val savedDraft = draftStore.getByItemId(currentId)
             if (savedDraft != null) {
-                _uiState.value = DraftReviewUiState(draft = savedDraft)
+                draftCache[currentId] = DraftReviewItemState(savedDraft, isDirty = false)
+                _uiState.update {
+                    it.copy(draft = savedDraft, isDirty = false, isSaving = false, errorMessage = null)
+                }
                 return@launch
             }
 
-            val item = itemsViewModel.items.value.firstOrNull { it.id == itemId }
+            val item = itemsViewModel.items.value.firstOrNull { it.id == currentId }
             val newDraft = item?.let { ListingDraftBuilder.build(it) }
-            _uiState.value = DraftReviewUiState(draft = newDraft)
+            if (newDraft != null) {
+                draftCache[currentId] = DraftReviewItemState(newDraft, isDirty = false)
+            }
+            _uiState.update {
+                it.copy(draft = newDraft, isDirty = false, isSaving = false, errorMessage = null)
+            }
         }
     }
 
@@ -91,20 +167,24 @@ class DraftReviewViewModel(
         _uiState.update { state ->
             val draft = state.draft ?: return@update state
             val updated = transformer(draft).copy(updatedAt = System.currentTimeMillis()).recomputeCompleteness()
-            DraftReviewUiState(draft = updated, isSaving = state.isSaving, errorMessage = state.errorMessage)
+            val currentId = state.currentItemId
+            if (currentId != null) {
+                draftCache[currentId] = DraftReviewItemState(updated, isDirty = true)
+            }
+            state.copy(draft = updated, isDirty = true)
         }
     }
 
     companion object {
         fun factory(
-            itemId: String,
+            itemIds: List<String>,
             itemsViewModel: ItemsViewModel,
             draftStore: ListingDraftStore
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 return DraftReviewViewModel(
-                    itemId = itemId,
+                    itemIds = itemIds,
                     itemsViewModel = itemsViewModel,
                     draftStore = draftStore
                 ) as T
