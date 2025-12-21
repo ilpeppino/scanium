@@ -2,6 +2,13 @@ package com.scanium.shared.core.models.listing
 
 import com.scanium.shared.core.models.items.ScannedItem
 import com.scanium.shared.core.models.model.ImageRef
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 /**
  * Portable listing draft model used by Phase A listing creation.
@@ -12,7 +19,7 @@ import com.scanium.shared.core.models.model.ImageRef
 data class ListingDraft(
     val id: String,
     val itemId: String,
-    val profile: ExportProfile = ExportProfile.GENERIC,
+    val profile: ExportProfileId = ExportProfileId.GENERIC,
     val title: DraftField<String>,
     val description: DraftField<String>,
     val fields: Map<DraftFieldKey, DraftField<String>> = emptyMap(),
@@ -73,8 +80,27 @@ enum class DraftFieldKey(val wireValue: String) {
     }
 }
 
-enum class ExportProfile {
-    GENERIC
+/**
+ * Stable export profile identifier for formatting output.
+ */
+@Serializable(with = ExportProfileIdSerializer::class)
+data class ExportProfileId(val value: String) {
+    companion object {
+        val GENERIC = ExportProfileId("GENERIC")
+    }
+}
+
+object ExportProfileIdSerializer : KSerializer<ExportProfileId> {
+    override val descriptor: SerialDescriptor =
+        PrimitiveSerialDescriptor("ExportProfileId", PrimitiveKind.STRING)
+
+    override fun serialize(encoder: Encoder, value: ExportProfileId) {
+        encoder.encodeString(value.value)
+    }
+
+    override fun deserialize(decoder: Decoder): ExportProfileId {
+        return ExportProfileId(decoder.decodeString())
+    }
 }
 
 enum class DraftStatus {
@@ -162,7 +188,7 @@ object ListingDraftBuilder {
         return ListingDraft(
             id = draftId,
             itemId = item.id,
-            profile = ExportProfile.GENERIC,
+            profile = ExportProfileId.GENERIC,
             title = titleField,
             description = descriptionField,
             fields = fields,

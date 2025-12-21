@@ -7,7 +7,7 @@ import com.scanium.app.listing.DraftPhotoRef
 import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.DraftStatus
 import com.scanium.app.listing.ListingDraft
-import com.scanium.app.listing.ExportProfile
+import com.scanium.app.listing.ExportProfileId
 import com.scanium.app.listing.DraftFieldsSerializer
 import com.scanium.shared.core.models.model.ImageRef
 
@@ -42,7 +42,7 @@ fun ListingDraft.toEntity(): ListingDraftEntity {
     return ListingDraftEntity(
         id = id,
         itemId = itemId,
-        profileId = profile.name,
+        profileId = profile.value,
         title = title.value.orEmpty(),
         titleConfidence = title.confidence,
         titleSource = title.source.name,
@@ -75,7 +75,7 @@ fun ListingDraftEntity.toModel(): ListingDraft {
     val draft = ListingDraft(
         id = id,
         itemId = itemId,
-        profile = runCatching { ExportProfile.valueOf(profileId) }.getOrElse { ExportProfile.GENERIC },
+        profile = profileId.takeIf { it.isNotBlank() }?.let { ExportProfileId(it) } ?: ExportProfileId.GENERIC,
         title = DraftField(
             value = title,
             confidence = titleConfidence,

@@ -1,0 +1,30 @@
+{
+  "id": "FB_MARKETPLACE_STYLE",
+  "displayName": "Facebook Marketplace style",
+  "localeHint": "en_US",
+  "currencyHint": "EUR",
+  "titleRules": {
+    "maxLen": 65,
+    "includeBrandInTitle": true,
+    "includeModelInTitle": true,
+    "capitalization": "SENTENCE_CASE"
+  },
+  "descriptionRules": {
+    "format": "PARAGRAPH",
+    "includeMeasurements": false,
+    "includeConditionLine": false,
+    "includeDisclaimerLine": false
+  },
+  "fieldOrdering": ["price", "category", "condition", "brand", "model", "color", "photos"],
+  "requiredFields": ["title", "price", "condition", "category", "photos"],
+  "optionalFieldLabels": {
+    "price": "Price",
+    "category": "Category",
+    "condition": "Condition",
+    "brand": "Brand",
+    "model": "Model",
+    "color": "Color",
+    "photos": "Photos"
+  },
+  "missingFieldPolicy": "SHOW_UNKNOWN"
+}

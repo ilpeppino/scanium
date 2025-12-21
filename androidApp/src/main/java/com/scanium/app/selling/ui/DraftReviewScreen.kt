@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.listing.DraftFieldKey
 import com.scanium.app.listing.DraftStatus
+import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftFormatter
 import com.scanium.app.model.toImageBitmap
@@ -58,6 +59,8 @@ import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
 import kotlinx.coroutines.launch
 import android.content.Intent
+import com.scanium.app.data.ExportProfilePreferences
+import com.scanium.app.selling.export.AssetExportProfileRepository
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,16 +70,20 @@ fun DraftReviewScreen(
     itemsViewModel: ItemsViewModel,
     draftStore: ListingDraftStore
 ) {
+    val context = LocalContext.current
+    val profileRepository = remember { AssetExportProfileRepository(context) }
+    val profilePreferences = remember { ExportProfilePreferences(context) }
     val viewModel: DraftReviewViewModel = viewModel(
         factory = DraftReviewViewModel.factory(
             itemIds = itemIds,
             itemsViewModel = itemsViewModel,
-            draftStore = draftStore
+            draftStore = draftStore,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences
         )
     )
 
     val state by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val items by itemsViewModel.items.collectAsState()
@@ -117,7 +124,10 @@ fun DraftReviewScreen(
             return@Scaffold
         }
 
-        val export = remember(draft) { ListingDraftFormatter.format(draft) }
+        val selectedProfile = remember(state.selectedProfileId, state.profiles) {
+            state.profiles.firstOrNull { it.id == state.selectedProfileId } ?: ExportProfiles.generic()
+        }
+        val export = remember(draft, selectedProfile) { ListingDraftFormatter.format(draft, selectedProfile) }
         val currentItem = remember(draft.itemId, items) { items.firstOrNull { it.id == draft.itemId } }
         val shareImages = remember(draft, currentItem) {
             val draftImages = draft.photos.map { it.image }
@@ -162,6 +172,14 @@ fun DraftReviewScreen(
                         }
                     }
                 }
+            }
+
+            item {
+                ExportProfileSelector(
+                    profiles = state.profiles,
+                    selectedProfileId = state.selectedProfileId,
+                    onProfileSelected = viewModel::selectProfile
+                )
             }
 
             item {
@@ -305,6 +323,48 @@ private fun DraftPhotoRow(draft: ListingDraft) {
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentScale = ContentScale.Crop
         )
+    }
+}
+
+@Composable
+private fun ExportProfileSelector(
+    profiles: List<com.scanium.app.listing.ExportProfileDefinition>,
+    selectedProfileId: com.scanium.app.listing.ExportProfileId,
+    onProfileSelected: (com.scanium.app.listing.ExportProfileId) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val options = profiles.ifEmpty { listOf(ExportProfiles.generic()) }
+    val selected = options.firstOrNull { it.id == selectedProfileId } ?: ExportProfiles.generic()
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(text = "Export profile", style = MaterialTheme.typography.labelLarge)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { expanded = true },
+            colors = CardDefaults.cardColors()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(selected.displayName)
+            }
+        }
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { profile ->
+                DropdownMenuItem(
+                    text = { Text(profile.displayName) },
+                    onClick = {
+                        expanded = false
+                        onProfileSelected(profile.id)
+                    }
+                )
+            }
+        }
     }
 }
 

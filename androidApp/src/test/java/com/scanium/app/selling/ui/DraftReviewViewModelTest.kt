@@ -1,9 +1,15 @@
 package com.scanium.app.selling.ui
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.listing.ExportProfileDefinition
+import com.scanium.app.listing.ExportProfileId
+import com.scanium.app.listing.ExportProfileRepository
+import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.selling.persistence.ListingDraftStore
 import kotlinx.coroutines.Dispatchers
@@ -54,10 +60,14 @@ class DraftReviewViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
         val viewModel = DraftReviewViewModel(
             itemIds = items.map { it.id },
             itemsViewModel = itemsViewModel,
-            draftStore = store
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences
         )
 
         advanceUntilIdle()
@@ -82,10 +92,14 @@ class DraftReviewViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
         val viewModel = DraftReviewViewModel(
             itemIds = items.map { it.id },
             itemsViewModel = itemsViewModel,
-            draftStore = store
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences
         )
 
         advanceUntilIdle()
@@ -127,6 +141,20 @@ class DraftReviewViewModelTest {
 
         override suspend fun deleteById(id: String) {
             drafts.remove(id)
+        }
+    }
+
+    private class FakeExportProfileRepository : ExportProfileRepository {
+        private val profiles = listOf(ExportProfiles.generic())
+
+        override suspend fun getProfiles(): List<ExportProfileDefinition> = profiles
+
+        override suspend fun getProfile(id: ExportProfileId): ExportProfileDefinition? {
+            return profiles.firstOrNull { it.id == id }
+        }
+
+        override suspend fun getDefaultProfileId(): ExportProfileId {
+            return ExportProfiles.generic().id
         }
     }
 }
