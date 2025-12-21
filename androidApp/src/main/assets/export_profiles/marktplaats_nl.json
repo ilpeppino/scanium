@@ -1,0 +1,30 @@
+{
+  "id": "MARKTPLAATS_NL",
+  "displayName": "Marktplaats (NL)",
+  "localeHint": "nl_NL",
+  "currencyHint": "EUR",
+  "titleRules": {
+    "maxLen": 60,
+    "includeBrandInTitle": true,
+    "includeModelInTitle": true,
+    "capitalization": "SENTENCE_CASE"
+  },
+  "descriptionRules": {
+    "format": "BULLETS",
+    "includeMeasurements": false,
+    "includeConditionLine": true,
+    "includeDisclaimerLine": true
+  },
+  "fieldOrdering": ["price", "condition", "category", "brand", "model", "color", "photos"],
+  "requiredFields": ["title", "price", "condition", "category", "photos"],
+  "optionalFieldLabels": {
+    "price": "Prijs",
+    "condition": "Conditie",
+    "category": "Categorie",
+    "brand": "Merk",
+    "model": "Model",
+    "color": "Kleur",
+    "photos": "Foto's"
+  },
+  "missingFieldPolicy": "SHOW_UNKNOWN"
+}
