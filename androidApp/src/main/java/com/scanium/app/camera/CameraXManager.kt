@@ -497,8 +497,7 @@ class CameraXManager(
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
             // PHASE 3: Calculate visible viewport based on PreviewView aspect ratio
-            // ML Kit sees the full frame for classification, but we filter detections to match
-            // what's visible in the Preview UI
+            // Apply cropRect to ImageProxy so ML Kit ONLY analyzes the visible region
             val cropRect = calculateVisibleViewport(
                 imageWidth = imageProxy.width,
                 imageHeight = imageProxy.height,
@@ -506,14 +505,18 @@ class CameraXManager(
                 previewHeight = previewViewHeight
             )
 
+            // CRITICAL: Set cropRect on ImageProxy BEFORE creating InputImage
+            // This is metadata-only (zero-copy) and ensures ML Kit only sees the visible viewport
+            imageProxy.setCropRect(cropRect)
+
             // PHASE 5: Rate-limited viewport logging
             val now = System.currentTimeMillis()
             if (now - lastCropRectLogTime >= cropRectLogIntervalMs) {
-                Log.i(TAG, "[VIEWPORT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, visibleRect=$cropRect")
+                Log.i(TAG, "[VIEWPORT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, appliedCrop=$cropRect")
                 lastCropRectLogTime = now
             }
 
-            // Build ML Kit image directly from camera buffer
+            // Build ML Kit image from camera buffer with applied cropRect
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
             // OPTIMIZATION: Lazy bitmap provider - only creates bitmap when invoked
@@ -534,6 +537,10 @@ class CameraXManager(
                 cachedBitmap
             }
 
+            // Since ImageProxy is already cropped to visible viewport via setCropRect(),
+            // pass full image bounds for edge inset filtering (filters detections too close to edges)
+            val imageBoundsForFiltering = android.graphics.Rect(0, 0, cropRect.width(), cropRect.height())
+
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
@@ -543,7 +550,7 @@ class CameraXManager(
                         val (items, detections) = processObjectDetectionWithTracking(
                             inputImage = inputImage,
                             lazyBitmapProvider = lazyBitmapProvider,
-                            cropRect = cropRect,
+                            cropRect = imageBoundsForFiltering,
                             edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
                         )
                         Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results")
@@ -555,7 +562,7 @@ class CameraXManager(
                             image = inputImage,
                             sourceBitmap = lazyBitmapProvider,
                             useStreamMode = useStreamMode,
-                            cropRect = cropRect,
+                            cropRect = imageBoundsForFiltering,
                             edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
                         )
                         Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
