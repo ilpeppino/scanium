@@ -24,10 +24,8 @@ import com.scanium.app.ui.theme.ScaniumBlue
 import kotlin.math.max
 
 /**
- * Overlay that renders center point markers for detected objects.
- *
- * Uses small square markers instead of full bounding boxes to reduce visual clutter
- * while still providing location feedback for each detected item.
+ * Overlay that renders bounding boxes for detected objects so users can see what the
+ * camera believes is being scanned.
  *
  * @param detections List of detection results to render
  * @param imageSize Size of the analyzed image (from ML Kit)
@@ -55,10 +53,10 @@ fun DetectionOverlay(
             previewHeight = canvasHeight
         )
 
-        // Square marker appearance constants (changed from circles to squares)
-        val squareSize = 10.dp.toPx() // Slightly bigger than previous circle (was 8dp radius)
-        val glowSize = 14.dp.toPx() // Subtle glow effect (was 12dp radius)
-        val strokeWidth = 2.dp.toPx()
+        // Bounding box appearance constants
+        val boxStrokeWidth = 3.dp.toPx()
+        val boxCornerRadius = 12.dp.toPx()
+        val glowStrokeWidth = 6.dp.toPx()
         val labelHorizontalPadding = 8.dp.toPx()
         val labelVerticalPadding = 4.dp.toPx()
         val labelCornerRadius = 10.dp.toPx()
@@ -71,81 +69,84 @@ fun DetectionOverlay(
             // Transform bounding box from image coordinates to preview coordinates
             val transformedBox = transformBoundingBox(imageSpaceRect, transform)
 
-            // Calculate center point of the bounding box
-            val centerX = transformedBox.left + transformedBox.width() / 2f
-            val centerY = transformedBox.top + transformedBox.height() / 2f
-            val center = Offset(centerX, centerY)
+            val topLeft = Offset(transformedBox.left, transformedBox.top)
+            val boxSize = ComposeSize(transformedBox.width(), transformedBox.height())
 
-            // Draw subtle glow effect (outer square with transparency)
-            drawRect(
-                color = CyanGlow.copy(alpha = 0.2f),
-                topLeft = Offset(centerX - glowSize / 2, centerY - glowSize / 2),
-                size = ComposeSize(glowSize, glowSize)
-            )
-
-            // Draw main filled square marker
-            drawRect(
-                color = ScaniumBlue,
-                topLeft = Offset(centerX - squareSize / 2, centerY - squareSize / 2),
-                size = ComposeSize(squareSize, squareSize)
-            )
-
-            // Draw white border for better visibility against all backgrounds
-            drawRect(
-                color = Color.White,
-                topLeft = Offset(centerX - squareSize / 2, centerY - squareSize / 2),
-                size = ComposeSize(squareSize, squareSize),
-                style = Stroke(width = strokeWidth)
-            )
-
-            // Draw small inner square for precise center indication
-            val innerSquareSize = 3.dp.toPx()
-            drawRect(
-                color = Color.White,
-                topLeft = Offset(centerX - innerSquareSize / 2, centerY - innerSquareSize / 2),
-                size = ComposeSize(innerSquareSize, innerSquareSize)
-            )
-
-            // Price label overlay - Disabled to reduce visual clutter
-            /*
-            val priceLabel = detection.formattedPriceRange.ifBlank { "N/A" }
-            val textLayoutResult = textMeasurer.measure(
-                text = AnnotatedString(priceLabel),
-                style = labelTextStyle
-            )
-
-            val textWidth = textLayoutResult.size.width.toFloat()
-            val textHeight = textLayoutResult.size.height.toFloat()
-            val labelWidth = textWidth + labelHorizontalPadding * 2
-            val labelHeight = textHeight + labelVerticalPadding * 2
-
-            val maxLabelLeft = max(0f, canvasWidth - labelWidth)
-            var labelLeft = (centerX - labelWidth / 2f).coerceIn(0f, maxLabelLeft)
-
-            val preferredTop = centerY - squareSize - labelMargin - labelHeight
-            var labelTop = if (preferredTop < 0f) {
-                centerY + squareSize + labelMargin
-            } else {
-                preferredTop
-            }
-            val maxLabelTop = max(0f, canvasHeight - labelHeight)
-            labelTop = labelTop.coerceIn(0f, maxLabelTop)
-
+            // Draw glow stroke for better visibility on bright scenes
             drawRoundRect(
-                color = labelBackgroundColor,
-                topLeft = Offset(labelLeft, labelTop),
-                size = ComposeSize(labelWidth, labelHeight),
-                cornerRadius = CornerRadius(labelCornerRadius, labelCornerRadius)
+                color = CyanGlow.copy(alpha = 0.35f),
+                topLeft = topLeft,
+                size = boxSize,
+                cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
+                style = Stroke(width = glowStrokeWidth)
             )
 
-            drawText(
-                textLayoutResult = textLayoutResult,
-                topLeft = Offset(
-                    x = labelLeft + labelHorizontalPadding,
-                    y = labelTop + labelVerticalPadding
-                )
+            // Draw main bounding box stroke
+            drawRoundRect(
+                color = ScaniumBlue,
+                topLeft = topLeft,
+                size = boxSize,
+                cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
+                style = Stroke(width = boxStrokeWidth)
             )
-            */
+
+            // Draw crisp white border inside for contrast
+            drawRoundRect(
+                color = Color.White,
+                topLeft = topLeft,
+                size = boxSize,
+                cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
+                style = Stroke(width = boxStrokeWidth / 2f)
+            )
+
+            // Category + price label near the bounding box
+            val labelText = buildString {
+                append(detection.category.displayName)
+                val price = detection.formattedPriceRange
+                if (price.isNotBlank()) {
+                    append(" • ")
+                    append(price)
+                }
+            }
+
+            if (labelText.isNotBlank()) {
+                val textLayoutResult = textMeasurer.measure(
+                    text = AnnotatedString(labelText),
+                    style = labelTextStyle
+                )
+
+                val textWidth = textLayoutResult.size.width.toFloat()
+                val textHeight = textLayoutResult.size.height.toFloat()
+                val labelWidth = textWidth + labelHorizontalPadding * 2
+                val labelHeight = textHeight + labelVerticalPadding * 2
+
+                val maxLabelLeft = max(0f, canvasWidth - labelWidth)
+                var labelLeft = transformedBox.left.coerceIn(0f, maxLabelLeft)
+
+                val preferredTop = transformedBox.top - labelMargin - labelHeight
+                var labelTop = if (preferredTop < 0f) {
+                    transformedBox.bottom + labelMargin
+                } else {
+                    preferredTop
+                }
+                val maxLabelTop = max(0f, canvasHeight - labelHeight)
+                labelTop = labelTop.coerceIn(0f, maxLabelTop)
+
+                drawRoundRect(
+                    color = labelBackgroundColor,
+                    topLeft = Offset(labelLeft, labelTop),
+                    size = ComposeSize(labelWidth, labelHeight),
+                    cornerRadius = CornerRadius(labelCornerRadius, labelCornerRadius)
+                )
+
+                drawText(
+                    textLayoutResult = textLayoutResult,
+                    topLeft = Offset(
+                        x = labelLeft + labelHorizontalPadding,
+                        y = labelTop + labelVerticalPadding
+                    )
+                )
+            }
         }
     }
 }
