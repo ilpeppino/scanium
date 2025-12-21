@@ -53,6 +53,7 @@ import java.util.*
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToSell: (List<String>) -> Unit,
+    onNavigateToDraft: (String) -> Unit,
     itemsViewModel: ItemsViewModel = viewModel()
 ) {
     val items by itemsViewModel.items.collectAsState()
@@ -154,6 +155,14 @@ fun ItemsListScreen(
             SelectedItemsAction.SELL_ON_EBAY -> {
                 onNavigateToSell(selectedIds.toList())
             }
+            SelectedItemsAction.REVIEW_DRAFT -> {
+                val firstId = selectedIds.firstOrNull()
+                if (firstId != null) {
+                    onNavigateToDraft(firstId)
+                } else {
+                    scope.launch { snackbarHostState.showSnackbar("Select an item to review") }
+                }
+            }
         }
     }
 
@@ -214,6 +223,7 @@ fun ItemsListScreen(
                                     imageVector = when (selectedAction) {
                                         SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
                                         SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                                        SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
                                     },
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -267,6 +277,7 @@ fun ItemsListScreen(
                                         imageVector = when (action) {
                                             SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
                                             SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                                            SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
                                         },
                                         contentDescription = null
                                     )
