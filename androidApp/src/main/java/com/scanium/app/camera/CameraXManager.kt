@@ -130,6 +130,10 @@ class CameraXManager(
     private var lastCropRectLogTime = 0L
     private val cropRectLogIntervalMs = 5000L // Log cropRect info every 5 seconds
 
+    // PHASE 2: Store PreviewView dimensions for calculating visible viewport
+    private var previewViewWidth = 0
+    private var previewViewHeight = 0
+
     /**
      * Ensures ML Kit models are downloaded and ready.
      * Should be called before starting detection.
@@ -172,6 +176,10 @@ class CameraXManager(
 
         // Ensure models are downloaded before starting camera
         ensureModelsReady()
+
+        // Store PreviewView dimensions for viewport calculation
+        previewViewWidth = previewView.width
+        previewViewHeight = previewView.height
 
         val provider = awaitCameraProvider(context)
         cameraProvider = provider
@@ -245,32 +253,22 @@ class CameraXManager(
             provider.unbindAll()
             stopScanning()
 
-            // PHASE 2: WYSIWYG Viewport Alignment
-            // Create a ViewPort based on the PreviewView's aspect ratio and rotation
-            // This ensures ImageAnalysis sees ONLY what the user sees in the Preview
-            val viewPort = ViewPort.Builder(
-                Rational(previewView.width, previewView.height),
-                displayRotation
-            ).build()
-
-            // Create UseCaseGroup with the ViewPort to bind all use cases with consistent cropping
-            val useCaseGroup = UseCaseGroup.Builder()
-                .addUseCase(preview!!)
-                .addUseCase(imageAnalysis!!)
-                .addUseCase(imageCapture!!)
-                .setViewPort(viewPort)
-                .build()
-
-            // Bind the UseCaseGroup to lifecycle (ensures all use cases share the same FOV)
+            // PHASE 2: Bind use cases to lifecycle
+            // NOTE: We do NOT apply ViewPort to ImageAnalysis - ML Kit needs full frame context
+            // for accurate classification. Instead, we filter detections geometrically AFTER
+            // ML Kit analysis using cropRect from Preview's ViewPort.
             camera = provider.bindToLifecycle(
                 lifecycleOwner,
                 selectorToUse,
-                useCaseGroup
+                preview,
+                imageAnalysis,
+                imageCapture
             )
 
-            // PHASE 5: One-time viewport configuration log
+            // PHASE 5: Configuration log
             if (!viewportLoggedOnce) {
-                Log.i(TAG, "[VIEWPORT] WYSIWYG alignment enabled: PreviewView=${previewView.width}x${previewView.height}, rotation=$displayRotation, edgeInset=${EDGE_INSET_MARGIN_RATIO}")
+                Log.i(TAG, "[CONFIG] Camera bound: Preview=${previewView.width}x${previewView.height}, rotation=$displayRotation, edgeInset=${EDGE_INSET_MARGIN_RATIO}")
+                Log.i(TAG, "[CONFIG] ML Kit sees full frame for classification; geometry filtering applied after detection")
                 viewportLoggedOnce = true
             }
             CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
@@ -498,14 +496,20 @@ class CameraXManager(
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            // PHASE 3: Extract cropRect from ImageProxy (set by ViewPort)
-            // This defines the visible region that matches the PreviewView
-            val cropRect = imageProxy.cropRect
+            // PHASE 3: Calculate visible viewport based on PreviewView aspect ratio
+            // ML Kit sees the full frame for classification, but we filter detections to match
+            // what's visible in the Preview UI
+            val cropRect = calculateVisibleViewport(
+                imageWidth = imageProxy.width,
+                imageHeight = imageProxy.height,
+                previewWidth = previewViewWidth,
+                previewHeight = previewViewHeight
+            )
 
-            // PHASE 5: Rate-limited cropRect logging
+            // PHASE 5: Rate-limited viewport logging
             val now = System.currentTimeMillis()
             if (now - lastCropRectLogTime >= cropRectLogIntervalMs) {
-                Log.i(TAG, "[CROP_RECT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, cropRect=$cropRect")
+                Log.i(TAG, "[VIEWPORT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, visibleRect=$cropRect")
                 lastCropRectLogTime = now
             }
 
@@ -767,6 +771,43 @@ class CameraXManager(
     fun resetTracker() {
         Log.i(TAG, "resetTracker: Manually resetting object tracker")
         objectTracker.reset()
+    }
+
+    /**
+     * PHASE 3: Calculate the visible viewport rect based on PreviewView aspect ratio.
+     * This determines which portion of the full camera frame is actually visible to the user,
+     * allowing us to filter detections while letting ML Kit see the full frame for classification.
+     *
+     * Uses center-crop logic to match CameraX's default scaling.
+     */
+    private fun calculateVisibleViewport(
+        imageWidth: Int,
+        imageHeight: Int,
+        previewWidth: Int,
+        previewHeight: Int
+    ): android.graphics.Rect {
+        if (previewWidth == 0 || previewHeight == 0) {
+            // Fallback: return full frame if preview dimensions not available
+            return android.graphics.Rect(0, 0, imageWidth, imageHeight)
+        }
+
+        // Calculate aspect ratios
+        val imageAspect = imageWidth.toFloat() / imageHeight.toFloat()
+        val previewAspect = previewWidth.toFloat() / previewHeight.toFloat()
+
+        val cropRect = if (imageAspect > previewAspect) {
+            // Image is wider than preview - crop sides (center crop horizontally)
+            val visibleWidth = (imageHeight * previewAspect).toInt()
+            val cropX = (imageWidth - visibleWidth) / 2
+            android.graphics.Rect(cropX, 0, cropX + visibleWidth, imageHeight)
+        } else {
+            // Image is taller than preview - crop top/bottom (center crop vertically)
+            val visibleHeight = (imageWidth / previewAspect).toInt()
+            val cropY = (imageHeight - visibleHeight) / 2
+            android.graphics.Rect(0, cropY, imageWidth, cropY + visibleHeight)
+        }
+
+        return cropRect
     }
 }
 
