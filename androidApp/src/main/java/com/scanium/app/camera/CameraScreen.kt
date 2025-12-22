@@ -59,6 +59,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.shouldShowRationale
 import com.scanium.app.ml.classification.ClassificationMode
+import com.scanium.app.ml.classification.ClassificationMetrics
 import com.scanium.app.settings.ClassificationModeViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -140,6 +141,14 @@ fun CameraScreen(
     val lowDataMode by classificationModeViewModel.lowDataMode.collectAsState()
     val verboseLogging by classificationModeViewModel.verboseLogging.collectAsState()
     val analysisFps by cameraManager.analysisFps.collectAsState()
+    
+    // Performance metrics
+    val callsStarted by ClassificationMetrics.callsStarted.collectAsState()
+    val callsCompleted by ClassificationMetrics.callsCompleted.collectAsState()
+    val callsFailed by ClassificationMetrics.callsFailed.collectAsState()
+    val lastLatency by ClassificationMetrics.lastLatencyMs.collectAsState()
+    val queueDepth by ClassificationMetrics.queueDepth.collectAsState()
+
     var previousClassificationMode by remember { mutableStateOf<ClassificationMode?>(null) }
 
     // Detection overlay state
@@ -377,6 +386,11 @@ fun CameraScreen(
                     PerfOverlay(
                         analysisFps = analysisFps,
                         classificationMode = classificationMode,
+                        callsStarted = callsStarted,
+                        callsCompleted = callsCompleted,
+                        callsFailed = callsFailed,
+                        lastLatency = lastLatency,
+                        queueDepth = queueDepth,
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(top = 90.dp, start = 16.dp)
