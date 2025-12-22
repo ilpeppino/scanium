@@ -63,12 +63,13 @@ private class FallbackAssistantRepository(
         items: List<ItemContextSnapshot>,
         history: List<AssistantMessage>,
         userMessage: String,
-        exportProfile: ExportProfileDefinition
+        exportProfile: ExportProfileDefinition,
+        correlationId: String
     ): AssistantResponse {
         return try {
-            primary.send(items, history, userMessage, exportProfile)
+            primary.send(items, history, userMessage, exportProfile, correlationId)
         } catch (error: Exception) {
-            fallback.send(items, history, userMessage, exportProfile)
+            fallback.send(items, history, userMessage, exportProfile, correlationId)
         }
     }
 }

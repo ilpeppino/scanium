@@ -36,6 +36,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import com.scanium.app.data.EntitlementManager
+import com.scanium.app.model.user.FreeEntitlements
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
+
 /**
  * ViewModel for managing detected items across the app.
  *
@@ -54,6 +60,7 @@ import kotlinx.coroutines.withContext
  */
 class ItemsViewModel(
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
+    private val entitlementManager: EntitlementManager? = null,
     onDeviceClassifier: ItemClassifier = NoopClassifier,
     cloudClassifier: ItemClassifier = NoopClassifier,
     private val itemsStore: ScannedItemStore = NoopScannedItemStore,
@@ -88,8 +95,19 @@ class ItemsViewModel(
 
     private val classificationModeFlow = classificationMode
 
+    private val effectiveClassificationMode = if (entitlementManager != null) {
+        combine(
+            classificationModeFlow,
+            entitlementManager.entitlementPolicyFlow
+        ) { mode, entitlements ->
+            if (entitlements.canUseCloudClassification) mode else ClassificationMode.ON_DEVICE
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, ClassificationMode.ON_DEVICE)
+    } else {
+        classificationModeFlow
+    }
+
     private val classificationOrchestrator = ClassificationOrchestrator(
-        modeFlow = classificationModeFlow,
+        modeFlow = effectiveClassificationMode,
         onDeviceClassifier = onDeviceClassifier,
         cloudClassifier = cloudClassifier,
         scope = viewModelScope

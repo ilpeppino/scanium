@@ -63,6 +63,7 @@ fun CameraSettingsOverlay(
     onLowDataModeChange: (Boolean) -> Unit,
     verboseLoggingEnabled: Boolean,
     onVerboseLoggingChange: (Boolean) -> Unit,
+    onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -125,6 +126,15 @@ fun CameraSettingsOverlay(
                         verboseLoggingEnabled = verboseLoggingEnabled,
                         onVerboseLoggingChange = onVerboseLoggingChange
                     )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onNavigateToSettings,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                         Text("More Settings")
+                    }
                 }
             }
         }
