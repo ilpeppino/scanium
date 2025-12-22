@@ -16,6 +16,9 @@ import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
+import com.scanium.app.ml.classification.ClassifierDebugFlags
+import com.scanium.app.logging.CorrelationIds
+import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.pricing.PriceEstimationRepository
@@ -83,8 +86,10 @@ class ItemsViewModel(
         config = AggregationPresets.REALTIME
     )
 
+    private val classificationModeFlow = classificationMode
+
     private val classificationOrchestrator = ClassificationOrchestrator(
-        modeFlow = classificationMode,
+        modeFlow = classificationModeFlow,
         onDeviceClassifier = onDeviceClassifier,
         cloudClassifier = cloudClassifier,
         scope = viewModelScope
@@ -96,6 +101,8 @@ class ItemsViewModel(
     )
 
     private val priceStatusJobs = mutableMapOf<String, Job>()
+    private val lastCloudCallByItem = mutableMapOf<String, Long>()
+    private val cloudCallCooldownMs = 8_000L
 
     // Dynamic similarity threshold control (0.0 - 1.0)
     // Default is REALTIME preset value (0.55)
@@ -109,6 +116,8 @@ class ItemsViewModel(
     val similarityThreshold: StateFlow<Float> = _similarityThreshold.asStateFlow()
 
     init {
+        val sessionId = CorrelationIds.startNewClassificationSession()
+        ScaniumLog.i(TAG, "Classification session started correlationId=$sessionId")
         // Explicitly initialize the aggregator's dynamic threshold to ensure
         // it's synchronized with the ViewModel's state from the start
         val initialThreshold = AggregationPresets.REALTIME.similarityThreshold
@@ -222,6 +231,9 @@ class ItemsViewModel(
 
         // Reset classifier cache to avoid stale matches
         classificationOrchestrator.reset()
+        lastCloudCallByItem.clear()
+        val sessionId = CorrelationIds.startNewClassificationSession()
+        ScaniumLog.i(TAG, "Classification session reset correlationId=$sessionId")
 
         // Update UI state
         _items.value = emptyList()
@@ -402,7 +414,8 @@ class ItemsViewModel(
                 itemAggregator.getAggregatedItems()
                     .filter {
                         (it.thumbnail != null || it.fullImageUri != null) &&
-                            classificationOrchestrator.shouldClassify(it.aggregatedId)
+                            classificationOrchestrator.shouldClassify(it.aggregatedId) &&
+                            !shouldThrottleCloud(it.aggregatedId)
                     }
             }
 
@@ -424,6 +437,19 @@ class ItemsViewModel(
                 handleClassificationResult(aggregatedItem, result)
             }
         }
+    }
+
+    private fun shouldThrottleCloud(itemId: String): Boolean {
+        if (!ClassifierDebugFlags.lowDataModeEnabled) return false
+        if (classificationModeFlow.value != ClassificationMode.CLOUD) return false
+        val now = System.currentTimeMillis()
+        val last = lastCloudCallByItem[itemId] ?: 0L
+        if (now - last < cloudCallCooldownMs) {
+            ScaniumLog.d(TAG, "Low data mode throttling item=$itemId")
+            return true
+        }
+        lastCloudCallByItem[itemId] = now
+        return false
     }
 
     private suspend fun prepareThumbnailsForClassification(
@@ -454,6 +480,7 @@ class ItemsViewModel(
         aggregatedItem: AggregatedItem,
         result: ClassificationResult
     ) {
+        val sessionId = CorrelationIds.currentClassificationSessionId()
         val shouldOverrideCategory = result.category != ItemCategory.UNKNOWN &&
             (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN)
 
@@ -487,7 +514,10 @@ class ItemsViewModel(
             _items.value = itemAggregator.getScannedItems()
 
             if (BuildConfig.DEBUG) {
-                Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
+                ScaniumLog.d(
+                    TAG,
+                    "Classification result item=${aggregatedItem.aggregatedId} session=$sessionId mode=${result.mode} status=${result.status} requestId=${result.requestId}"
+                )
             }
         }
     }

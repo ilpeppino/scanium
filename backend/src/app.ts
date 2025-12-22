@@ -7,10 +7,12 @@ import { errorHandlerPlugin } from './infra/http/plugins/error-handler.js';
 import { corsPlugin } from './infra/http/plugins/cors.js';
 import { csrfProtectionPlugin } from './infra/http/plugins/csrf.js';
 import { securityPlugin } from './infra/http/plugins/security.js';
+import { correlationPlugin } from './infra/http/plugins/correlation.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { ebayAuthRoutes } from './modules/auth/ebay/routes.js';
 import { classifierRoutes } from './modules/classifier/routes.js';
 import { assistantRoutes } from './modules/assistant/routes.js';
+import { adminRoutes } from './modules/admin/routes.js';
 
 /**
  * Build Fastify application instance
@@ -20,6 +22,16 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   const app = Fastify({
     logger: {
       level: config.nodeEnv === 'development' ? 'debug' : 'info',
+      redact: {
+        paths: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'req.headers["x-api-key"]',
+          'req.headers["x-admin-key"]',
+          'req.headers["x-scanium-device-id"]',
+        ],
+        censor: '[REDACTED]',
+      },
       transport:
         config.nodeEnv === 'development'
           ? {
@@ -36,6 +48,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Register error handler
   app.setErrorHandler(errorHandlerPlugin);
+
+  // Correlation IDs
+  await app.register(correlationPlugin);
 
   // Register security plugin (HTTPS enforcement, security headers)
   await app.register(securityPlugin, { config });
@@ -72,6 +87,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Assistant chat proxy
   await app.register(assistantRoutes, { prefix: '/v1', config });
+
+  // Admin usage endpoints (disabled by default)
+  await app.register(adminRoutes, { prefix: '/v1/admin', config });
 
   // Root endpoint
   app.get('/', async (_request, reply) => {

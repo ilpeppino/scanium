@@ -18,6 +18,8 @@ class ClassificationPreferences(private val context: Context) {
     companion object {
         private val CLASSIFICATION_MODE_KEY = stringPreferencesKey("classification_mode")
         private val SAVE_CLOUD_CROPS_KEY = booleanPreferencesKey("save_cloud_crops")
+        private val LOW_DATA_MODE_KEY = booleanPreferencesKey("low_data_mode")
+        private val VERBOSE_LOGGING_KEY = booleanPreferencesKey("verbose_logging")
     }
 
     val mode: Flow<ClassificationMode> = context.classificationDataStore.data
@@ -33,6 +35,16 @@ class ClassificationPreferences(private val context: Context) {
                 ?: (BuildConfig.DEBUG && BuildConfig.CLASSIFIER_SAVE_CROPS)
         }
 
+    val lowDataMode: Flow<Boolean> = context.classificationDataStore.data
+        .map { preferences ->
+            preferences[LOW_DATA_MODE_KEY] ?: false
+        }
+
+    val verboseLogging: Flow<Boolean> = context.classificationDataStore.data
+        .map { preferences ->
+            preferences[VERBOSE_LOGGING_KEY] ?: BuildConfig.DEBUG
+        }
+
     suspend fun setMode(mode: ClassificationMode) {
         context.classificationDataStore.edit { preferences ->
             preferences[CLASSIFICATION_MODE_KEY] = mode.name
@@ -45,6 +57,21 @@ class ClassificationPreferences(private val context: Context) {
         }
         context.classificationDataStore.edit { preferences ->
             preferences[SAVE_CLOUD_CROPS_KEY] = enabled
+        }
+    }
+
+    suspend fun setLowDataMode(enabled: Boolean) {
+        context.classificationDataStore.edit { preferences ->
+            preferences[LOW_DATA_MODE_KEY] = enabled
+        }
+    }
+
+    suspend fun setVerboseLogging(enabled: Boolean) {
+        if (!BuildConfig.DEBUG) {
+            return
+        }
+        context.classificationDataStore.edit { preferences ->
+            preferences[VERBOSE_LOGGING_KEY] = enabled
         }
     }
 }

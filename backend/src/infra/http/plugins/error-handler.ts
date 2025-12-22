@@ -1,6 +1,7 @@
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import { AppError } from '../../../shared/errors/index.js';
 import { ZodError } from 'zod';
+import { errorReporter } from '../../observability/error-reporter.js';
 
 /**
  * Global error handler plugin
@@ -21,6 +22,15 @@ export async function errorHandlerPlugin(
     'Request error'
   );
 
+  errorReporter.report({
+    message: error.message,
+    correlationId: request.correlationId,
+    url: request.url,
+    method: request.method,
+    statusCode: 'statusCode' in error ? error.statusCode ?? 500 : 500,
+    stack: error.stack,
+  });
+
   // Handle AppError (custom application errors)
   if (error instanceof AppError) {
     return reply.status(error.httpStatus).send(error.toJSON());
@@ -33,6 +43,7 @@ export async function errorHandlerPlugin(
         code: 'VALIDATION_ERROR',
         message: 'Validation failed',
         details: error.errors,
+        correlationId: request.correlationId,
       },
     });
   }
@@ -44,6 +55,7 @@ export async function errorHandlerPlugin(
         code: 'VALIDATION_ERROR',
         message: error.message,
         details: error.validation,
+        correlationId: request.correlationId,
       },
     });
   }
@@ -58,6 +70,7 @@ export async function errorHandlerPlugin(
         process.env.NODE_ENV === 'development'
           ? error.message
           : 'An internal error occurred',
+      correlationId: request.correlationId,
     },
   });
 }

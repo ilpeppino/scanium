@@ -14,6 +14,8 @@ import com.scanium.app.listing.ExportProfileId
 import com.scanium.app.listing.ExportProfileRepository
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.selling.persistence.ListingDraftStore
+import com.scanium.app.logging.CorrelationIds
+import com.scanium.app.logging.ScaniumLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -139,6 +141,11 @@ class DraftReviewViewModel(
             .copy(status = DraftStatus.SAVED, updatedAt = System.currentTimeMillis())
             .recomputeCompleteness()
         draftStore.upsert(updated)
+        val correlationId = CorrelationIds.newDraftRequestId()
+        ScaniumLog.i(
+            "DraftReview",
+            "Draft saved correlationId=$correlationId itemId=$currentId fields=${updated.fields.size}"
+        )
         draftCache[currentId] = DraftReviewItemState(updated, isDirty = false)
         _uiState.update {
             it.copy(draft = updated, isSaving = false, isDirty = false)

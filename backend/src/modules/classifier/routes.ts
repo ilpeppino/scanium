@@ -10,6 +10,9 @@ import {
   RedisClient,
   SlidingWindowRateLimiter,
 } from '../../infra/rate-limit/sliding-window-limiter.js';
+import { sha256Hex } from '../../infra/observability/hash.js';
+import { ClassifierCache } from './cache.js';
+import { usageStore } from '../usage/usage-store.js';
 
 type RouteOpts = { config: Config };
 
@@ -21,10 +24,17 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
 ) => {
   const { config } = opts;
   const apiKeyManager = new ApiKeyManager(config.classifier.apiKeys);
-  const service = new ClassifierService({ config });
+  const service = new ClassifierService({
+    config,
+    logger: fastify.log,
+  });
   const redisClient = await createRedisClient(
     config.classifier.rateLimitRedisUrl,
     fastify.log
+  );
+  const cache = new ClassifierCache(
+    config.classifier.cacheTtlSeconds * 1000,
+    config.classifier.cacheMaxEntries
   );
 
   const windowMs = config.classifier.rateLimitWindowSeconds * 1000;
@@ -49,12 +59,22 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
     redis: redisClient,
   });
 
+  const deviceRateLimiter = new SlidingWindowRateLimiter({
+    windowMs,
+    max: config.classifier.rateLimitPerMinute,
+    baseBackoffMs,
+    maxBackoffMs,
+    prefix: 'rl:device',
+    redis: redisClient,
+  });
+
   fastify.addHook('onClose', async () => {
     await redisClient?.quit?.();
   });
 
   fastify.post('/classify', async (request, reply) => {
     const apiKey = extractApiKey(request);
+    const correlationId = request.correlationId ?? randomUUID();
 
     // Validate API key with rotation and expiration support
     if (!apiKey || !apiKeyManager.validateKey(apiKey)) {
@@ -82,13 +102,21 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
       }
 
       return reply.status(401).send({
-        error: { code: 'UNAUTHORIZED', message: 'Missing or invalid API key' },
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Missing or invalid API key',
+          correlationId,
+        },
       });
     }
 
     if (!request.isMultipart()) {
       return reply.status(400).send({
-        error: { code: 'VALIDATION_ERROR', message: 'multipart/form-data required' },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'multipart/form-data required',
+          correlationId,
+        },
       });
     }
 
@@ -101,6 +129,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
           error: {
             code: 'RATE_LIMIT',
             message: 'Too many requests from this IP. Please retry after the cooldown.',
+            correlationId,
           },
         });
     }
@@ -114,28 +143,60 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
           error: {
             code: 'RATE_LIMIT',
             message: 'Too many requests for this API key. Please retry after the cooldown.',
+            correlationId,
           },
         });
+    }
+
+    const deviceId = extractDeviceId(request);
+    if (deviceId) {
+      const deviceLimit = await deviceRateLimiter.consume(deviceId);
+      if (!deviceLimit.allowed) {
+        return reply
+          .status(429)
+          .header('Retry-After', String(deviceLimit.retryAfterSeconds))
+          .send({
+            error: {
+              code: 'RATE_LIMIT',
+              message: 'Too many requests for this device. Please retry after the cooldown.',
+              correlationId,
+            },
+          });
+      }
     }
 
     if (isOverConcurrentLimit(apiKey, config.classifier.concurrentLimit)) {
       return reply
         .status(429)
         .header('Retry-After', '1')
-        .send({ error: { code: 'RATE_LIMIT', message: 'Too many concurrent requests' } });
+        .send({
+          error: {
+            code: 'RATE_LIMIT',
+            message: 'Too many concurrent requests',
+            correlationId,
+          },
+        });
     }
 
     try {
       const payload = await parseMultipartPayload(request);
       if (!payload.file) {
         return reply.status(400).send({
-          error: { code: 'VALIDATION_ERROR', message: 'image file is required' },
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'image file is required',
+            correlationId,
+          },
         });
       }
 
       if (!isSupportedImage(payload.file.mimetype)) {
         return reply.status(400).send({
-          error: { code: 'VALIDATION_ERROR', message: 'Unsupported content type' },
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Unsupported content type',
+            correlationId,
+          },
         });
       }
 
@@ -143,7 +204,11 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         payload.fields.domainPackId?.toString().trim() || config.classifier.domainPackId;
       if (domainPackId !== config.classifier.domainPackId) {
         return reply.status(400).send({
-          error: { code: 'VALIDATION_ERROR', message: 'Unknown domainPackId' },
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Unknown domainPackId',
+            correlationId,
+          },
         });
       }
 
@@ -158,7 +223,11 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
           }
         } catch (error) {
           return reply.status(400).send({
-            error: { code: 'VALIDATION_ERROR', message: 'Invalid hints JSON' },
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Invalid hints JSON',
+              correlationId,
+            },
           });
         }
       }
@@ -169,11 +238,29 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         config.classifier.maxUploadBytes
       );
       const sanitized = await sanitizeImageBuffer(buffer, payload.file.mimetype);
+      const imageHash = sha256Hex(sanitized.buffer);
+      const cacheKey = `${config.classifier.provider}:${domainPackId}:${imageHash}`;
+      const cached = cache.get(cacheKey);
+      if (cached) {
+        request.log.info(
+          {
+            requestId: cached.requestId,
+            correlationId,
+            cacheHit: true,
+            provider: cached.provider,
+          },
+          'Classifier cache hit'
+        );
+        usageStore.recordClassification(apiKey, config.classifier.visionFeature, false);
+        return reply.status(200).send({ ...cached, cacheHit: true, correlationId });
+      }
 
       // Images stay in-memory only. Future retention requires explicit opt-in via config.
       const requestId = randomUUID();
       const classificationRequest: ClassificationRequest = {
         requestId,
+        correlationId,
+        imageHash,
         buffer: sanitized.buffer,
         contentType: sanitized.normalizedType,
         fileName: payload.file.filename ?? 'upload',
@@ -182,6 +269,8 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
       };
 
       const result = await service.classify(classificationRequest);
+      cache.set(cacheKey, result);
+      usageStore.recordClassification(apiKey, config.classifier.visionFeature, false);
 
       // Log successful API key usage
       if (config.security.logApiKeyUsage) {
@@ -206,7 +295,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         );
       }
 
-      return reply.status(200).send(result);
+      return reply.status(200).send({ ...result, cacheHit: false, correlationId });
     } catch (error) {
       // SEC-004: Handle file size validation errors with appropriate response
       if (error instanceof Error && error.message.includes('File size exceeds')) {
@@ -231,11 +320,15 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
             errorCode: 'FILE_TOO_LARGE',
           });
         }
+        if (apiKey) {
+          usageStore.recordClassification(apiKey, config.classifier.visionFeature, true);
+        }
 
         return reply.status(413).send({
           error: {
             code: 'FILE_TOO_LARGE',
             message: `File size exceeds maximum allowed size of ${config.classifier.maxUploadBytes} bytes`,
+            correlationId,
           },
         });
       }
@@ -252,6 +345,9 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
           userAgent: request.headers['user-agent'],
           errorCode: 'CLASSIFICATION_ERROR',
         });
+      }
+      if (apiKey) {
+        usageStore.recordClassification(apiKey, config.classifier.visionFeature, true);
       }
       throw error;
     } finally {
@@ -284,6 +380,15 @@ function extractApiKey(request: FastifyRequest): string | undefined {
   const header = request.headers['x-api-key'];
   if (!header) return undefined;
   return Array.isArray(header) ? header[0] : header;
+}
+
+function extractDeviceId(request: FastifyRequest): string | null {
+  const header = request.headers['x-scanium-device-id'];
+  if (!header) return null;
+  const raw = Array.isArray(header) ? header[0] : header;
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  return trimmed ? sha256Hex(trimmed) : null;
 }
 
 type RedisClientWithLifecycle = RedisClient & {

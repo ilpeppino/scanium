@@ -136,6 +136,8 @@ fun CameraScreen(
     val classificationMode by classificationModeViewModel.classificationMode.collectAsState()
     val captureResolution by cameraViewModel.captureResolution.collectAsState()
     val saveCloudCrops by classificationModeViewModel.saveCloudCrops.collectAsState()
+    val lowDataMode by classificationModeViewModel.lowDataMode.collectAsState()
+    val verboseLogging by classificationModeViewModel.verboseLogging.collectAsState()
     var previousClassificationMode by remember { mutableStateOf<ClassificationMode?>(null) }
 
     // Detection overlay state
@@ -511,7 +513,11 @@ fun CameraScreen(
                     captureResolution = captureResolution,
                     onResolutionChange = cameraViewModel::updateCaptureResolution,
                     saveCloudCropsEnabled = saveCloudCrops,
-                    onSaveCloudCropsChange = classificationModeViewModel::updateSaveCloudCrops
+                    onSaveCloudCropsChange = classificationModeViewModel::updateSaveCloudCrops,
+                    lowDataModeEnabled = lowDataMode,
+                    onLowDataModeChange = classificationModeViewModel::updateLowDataMode,
+                    verboseLoggingEnabled = verboseLogging,
+                    onVerboseLoggingChange = classificationModeViewModel::updateVerboseLogging
                 )
             }
             else -> {

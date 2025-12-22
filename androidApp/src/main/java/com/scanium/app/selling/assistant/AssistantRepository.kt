@@ -29,7 +29,8 @@ interface AssistantRepository {
         items: List<ItemContextSnapshot>,
         history: List<AssistantMessage>,
         userMessage: String,
-        exportProfile: ExportProfileDefinition
+        exportProfile: ExportProfileDefinition,
+        correlationId: String
     ): AssistantResponse
 }
 
@@ -87,7 +88,8 @@ private class CloudAssistantRepository(
         items: List<ItemContextSnapshot>,
         history: List<AssistantMessage>,
         userMessage: String,
-        exportProfile: ExportProfileDefinition
+        exportProfile: ExportProfileDefinition,
+        correlationId: String
     ): AssistantResponse = withContext(Dispatchers.IO) {
         if (baseUrl.isBlank()) {
             throw IllegalStateException("Assistant backend not configured")
@@ -109,6 +111,7 @@ private class CloudAssistantRepository(
             .post(body.toRequestBody("application/json".toMediaType()))
             .apply {
                 apiKey?.let { header("X-API-Key", it) }
+                header("X-Scanium-Correlation-Id", correlationId)
                 header("X-Client", "Scanium-Android")
                 header("X-App-Version", BuildConfig.VERSION_NAME)
             }
@@ -131,7 +134,8 @@ private class LocalAssistantRepository : AssistantRepository {
         items: List<ItemContextSnapshot>,
         history: List<AssistantMessage>,
         userMessage: String,
-        exportProfile: ExportProfileDefinition
+        exportProfile: ExportProfileDefinition,
+        correlationId: String
     ): AssistantResponse {
         AssistantPromptBuilder.buildRequest(
             items = items,

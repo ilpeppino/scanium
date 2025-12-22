@@ -19,6 +19,8 @@ import com.scanium.app.listing.PostingStepId
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.posting.PostingTarget
 import com.scanium.app.selling.posting.PostingTargetDefaults
+import com.scanium.app.logging.CorrelationIds
+import com.scanium.app.logging.ScaniumLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -113,7 +115,11 @@ class PostingAssistViewModel(
         val profile = state.profiles.firstOrNull { it.id == state.selectedProfileId }
             ?: ExportProfiles.generic()
         val plan = PostingAssistPlanBuilder.build(draft, profile)
-        Log.d(TAG, "plan built: profile=${profile.id.value}, draft=${draft.id}, missing=${plan.missingRequired.size}")
+        val correlationId = CorrelationIds.newDraftRequestId()
+        ScaniumLog.i(
+            TAG,
+            "Posting assist plan built correlationId=$correlationId itemId=${draft.itemId} profile=${profile.id.value} missing=${plan.missingRequired.size}"
+        )
         _uiState.update { it.copy(plan = plan) }
     }
 
@@ -131,6 +137,10 @@ class PostingAssistViewModel(
             val draft = savedDraft ?: itemsViewModel.items.value.firstOrNull { it.id == currentId }
                 ?.let { ListingDraftBuilder.build(it) }
             draft?.let { draftCache[currentId] = it }
+            draft?.let {
+                val correlationId = CorrelationIds.newDraftRequestId()
+                ScaniumLog.i(TAG, "Posting assist loaded draft correlationId=$correlationId itemId=${it.itemId}")
+            }
             _uiState.update { it.copy(draft = draft, errorMessage = null) }
             rebuildPlan()
         }

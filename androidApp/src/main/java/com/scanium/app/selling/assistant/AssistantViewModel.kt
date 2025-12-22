@@ -19,6 +19,8 @@ import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.ItemContextSnapshotBuilder
 import com.scanium.app.selling.persistence.ListingDraftStore
+import com.scanium.app.logging.CorrelationIds
+import com.scanium.app.logging.ScaniumLog
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -65,6 +67,7 @@ class AssistantViewModel(
     fun sendMessage(text: String) {
         val trimmed = text.trim()
         if (trimmed.isBlank()) return
+        val correlationId = CorrelationIds.newAssistRequestId()
 
         val userMessage = AssistantMessage(
             role = AssistantRole.USER,
@@ -79,11 +82,16 @@ class AssistantViewModel(
 
         viewModelScope.launch {
             val state = _uiState.value
+            ScaniumLog.i(
+                TAG,
+                "Assist request correlationId=$correlationId items=${state.snapshots.size} messageLength=${trimmed.length}"
+            )
             val response = assistantRepository.send(
                 items = state.snapshots,
                 history = state.entries.map { it.message },
                 userMessage = trimmed,
-                exportProfile = state.profile
+                exportProfile = state.profile,
+                correlationId = correlationId
             )
             val assistantMessage = AssistantMessage(
                 role = AssistantRole.ASSISTANT,
@@ -97,6 +105,10 @@ class AssistantViewModel(
                     isLoading = false
                 )
             }
+            ScaniumLog.i(
+                TAG,
+                "Assist response correlationId=$correlationId actions=${response.actions.size}"
+            )
         }
     }
 
@@ -104,6 +116,7 @@ class AssistantViewModel(
         if (action.type != AssistantActionType.APPLY_DRAFT_UPDATE) return
         val payload = action.payload
         val itemId = payload["itemId"] ?: itemIds.firstOrNull() ?: return
+        val correlationId = CorrelationIds.newDraftRequestId()
 
         viewModelScope.launch {
             val draft = draftStore.getByItemId(itemId)
@@ -116,6 +129,10 @@ class AssistantViewModel(
 
             val updated = updateDraftFromPayload(draft, payload)
             draftStore.upsert(updated)
+            ScaniumLog.i(
+                TAG,
+                "Draft update applied correlationId=$correlationId itemId=$itemId"
+            )
             _events.emit(AssistantUiEvent.ShowSnackbar("Draft updated"))
             refreshSnapshots()
         }
@@ -182,6 +199,8 @@ class AssistantViewModel(
     }
 
     companion object {
+        private const val TAG = "Assistant"
+
         fun factory(
             itemIds: List<String>,
             itemsViewModel: ItemsViewModel,

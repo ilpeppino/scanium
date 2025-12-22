@@ -59,6 +59,10 @@ fun CameraSettingsOverlay(
     onResolutionChange: (CaptureResolution) -> Unit,
     saveCloudCropsEnabled: Boolean,
     onSaveCloudCropsChange: (Boolean) -> Unit,
+    lowDataModeEnabled: Boolean,
+    onLowDataModeChange: (Boolean) -> Unit,
+    verboseLoggingEnabled: Boolean,
+    onVerboseLoggingChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -115,7 +119,11 @@ fun CameraSettingsOverlay(
                         classificationMode = classificationMode,
                         onProcessingModeChange = onProcessingModeChange,
                         saveCloudCropsEnabled = saveCloudCropsEnabled,
-                        onSaveCloudCropsChange = onSaveCloudCropsChange
+                        onSaveCloudCropsChange = onSaveCloudCropsChange,
+                        lowDataModeEnabled = lowDataModeEnabled,
+                        onLowDataModeChange = onLowDataModeChange,
+                        verboseLoggingEnabled = verboseLoggingEnabled,
+                        onVerboseLoggingChange = onVerboseLoggingChange
                     )
                 }
             }
@@ -227,7 +235,11 @@ private fun ProcessingSettingsCard(
     classificationMode: ClassificationMode,
     onProcessingModeChange: (ClassificationMode) -> Unit,
     saveCloudCropsEnabled: Boolean,
-    onSaveCloudCropsChange: (Boolean) -> Unit
+    onSaveCloudCropsChange: (Boolean) -> Unit,
+    lowDataModeEnabled: Boolean,
+    onLowDataModeChange: (Boolean) -> Unit,
+    verboseLoggingEnabled: Boolean,
+    onVerboseLoggingChange: (Boolean) -> Unit
 ) {
     val isCloudConfigured = BuildConfig.SCANIUM_API_BASE_URL.isNotBlank()
     val showConfigWarning = classificationMode == ClassificationMode.CLOUD && !isCloudConfigured
@@ -362,6 +374,50 @@ private fun ProcessingSettingsCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f, fill = true),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("Low data mode", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = "Reduces cloud classification frequency to cap usage.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = lowDataModeEnabled,
+                            onCheckedChange = onLowDataModeChange
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f, fill = true),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("Verbose logging", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = "Extra debug logs for diagnostics (debug builds only).",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = verboseLoggingEnabled,
+                            onCheckedChange = onVerboseLoggingChange
+                        )
+                    }
                 }
             }
         }

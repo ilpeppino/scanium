@@ -74,7 +74,8 @@ export class GoogleVisionClassifier {
           throw error;
         }
         const backoff = 200 * Math.pow(2, attempt);
-        await new Promise((resolve) => setTimeout(resolve, backoff));
+        const jitter = 1 + Math.random() * 0.3;
+        await new Promise((resolve) => setTimeout(resolve, backoff * jitter));
       } finally {
         if (timeoutRef) {
           clearTimeout(timeoutRef);
