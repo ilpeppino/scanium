@@ -22,6 +22,10 @@ import com.scanium.shared.core.models.listing.ListingDraftBuilder as SharedListi
 import com.scanium.shared.core.models.listing.ListingDraftFormatter as SharedListingDraftFormatter
 import com.scanium.shared.core.models.listing.ListingDraftExport as SharedListingDraftExport
 import com.scanium.shared.core.models.listing.DraftFieldsSerializer as SharedDraftFieldsSerializer
+import com.scanium.shared.core.models.listing.PostingAssistPlan as SharedPostingAssistPlan
+import com.scanium.shared.core.models.listing.PostingAssistPlanBuilder as SharedPostingAssistPlanBuilder
+import com.scanium.shared.core.models.listing.PostingStep as SharedPostingStep
+import com.scanium.shared.core.models.listing.PostingStepId as SharedPostingStepId
 
 typealias ListingDraft = SharedListingDraft
 typealias DraftField<T> = com.scanium.shared.core.models.listing.DraftField<T>
@@ -45,3 +49,7 @@ typealias ListingDraftBuilder = SharedListingDraftBuilder
 typealias ListingDraftFormatter = SharedListingDraftFormatter
 typealias ListingDraftExport = SharedListingDraftExport
 typealias DraftFieldsSerializer = SharedDraftFieldsSerializer
+typealias PostingAssistPlan = SharedPostingAssistPlan
+typealias PostingAssistPlanBuilder = SharedPostingAssistPlanBuilder
+typealias PostingStep = SharedPostingStep
+typealias PostingStepId = SharedPostingStepId
