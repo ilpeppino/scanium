@@ -65,6 +65,18 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            val keystorePath = localPropertyOrEnv("scanium.keystore.file", "SCANIUM_KEYSTORE_FILE")
+            if (keystorePath.isNotEmpty() && file(keystorePath).exists()) {
+                storeFile = file(keystorePath)
+                storePassword = localPropertyOrEnv("scanium.keystore.password", "SCANIUM_KEYSTORE_PASSWORD")
+                keyAlias = localPropertyOrEnv("scanium.key.alias", "SCANIUM_KEY_ALIAS")
+                keyPassword = localPropertyOrEnv("scanium.key.password", "SCANIUM_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", saveClassifierCropsDebug.toString())
@@ -78,6 +90,11 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
+            
+            // Only sign if we have a valid configuration
+            if (signingConfigs.getByName("release").storeFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -229,6 +246,10 @@ dependencies {
 
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
+
+    // Google Play Billing
+    implementation("com.android.billingclient:billing:6.1.0")
+    implementation("com.android.billingclient:billing-ktx:6.1.0")
 
     // Kotlinx Serialization (for Domain Pack JSON)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")

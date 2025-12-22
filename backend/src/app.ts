@@ -13,6 +13,7 @@ import { ebayAuthRoutes } from './modules/auth/ebay/routes.js';
 import { classifierRoutes } from './modules/classifier/routes.js';
 import { assistantRoutes } from './modules/assistant/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
+import { billingRoutes } from './modules/billing/billing.routes.js';
 
 /**
  * Build Fastify application instance
@@ -87,6 +88,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Assistant chat proxy
   await app.register(assistantRoutes, { prefix: '/v1', config });
+
+  // Billing verification stub
+  await app.register(billingRoutes, { prefix: '/v1' });
 
   // Admin usage endpoints (disabled by default)
   await app.register(adminRoutes, { prefix: '/v1/admin', config });

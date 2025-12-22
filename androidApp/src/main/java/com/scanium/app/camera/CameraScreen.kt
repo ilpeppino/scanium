@@ -85,6 +85,7 @@ private val ScanModeSaver = Saver<ScanMode, String>(
 @Composable
 fun CameraScreen(
     onNavigateToItems: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     itemsViewModel: ItemsViewModel = viewModel(),
     classificationModeViewModel: ClassificationModeViewModel,
     cameraViewModel: CameraViewModel = viewModel()
@@ -517,7 +518,11 @@ fun CameraScreen(
                     lowDataModeEnabled = lowDataMode,
                     onLowDataModeChange = classificationModeViewModel::updateLowDataMode,
                     verboseLoggingEnabled = verboseLogging,
-                    onVerboseLoggingChange = classificationModeViewModel::updateVerboseLogging
+                    onVerboseLoggingChange = classificationModeViewModel::updateVerboseLogging,
+                    onNavigateToSettings = {
+                        isSettingsOpen = false
+                        onNavigateToSettings()
+                    }
                 )
             }
             else -> {

@@ -20,6 +20,14 @@ import com.scanium.app.selling.ui.PostingAssistScreen
 import com.scanium.app.selling.ui.SellOnEbayScreen
 import com.scanium.app.selling.assistant.AssistantScreen
 
+import com.scanium.app.ui.settings.SettingsScreen
+import com.scanium.app.ui.settings.SettingsViewModel
+import com.scanium.app.ui.settings.DataUsageScreen
+import com.scanium.app.ui.settings.PrivacyPolicyScreen
+import com.scanium.app.ui.settings.TermsScreen
+import com.scanium.app.billing.ui.PaywallScreen
+import com.scanium.app.billing.ui.PaywallViewModel
+
 /**
  * Navigation routes for the app.
  */
@@ -30,6 +38,11 @@ object Routes {
     const val DRAFT_REVIEW = "draft_review"
     const val POSTING_ASSIST = "posting_assist"
     const val ASSISTANT = "assistant"
+    const val SETTINGS = "settings"
+    const val DATA_USAGE = "data_usage"
+    const val PRIVACY = "privacy"
+    const val TERMS = "terms"
+    const val PAYWALL = "paywall"
 }
 
 /**
@@ -44,6 +57,8 @@ fun ScaniumNavGraph(
     navController: NavHostController,
     itemsViewModel: ItemsViewModel,
     classificationModeViewModel: ClassificationModeViewModel,
+    settingsViewModel: SettingsViewModel,
+    paywallViewModel: PaywallViewModel,
     marketplaceService: EbayMarketplaceService,
     draftStore: ListingDraftStore
 ) {
@@ -56,9 +71,42 @@ fun ScaniumNavGraph(
                 onNavigateToItems = {
                     navController.navigate(Routes.ITEMS_LIST)
                 },
+                onNavigateToSettings = {
+                    navController.navigate(Routes.SETTINGS)
+                },
                 itemsViewModel = itemsViewModel,
                 classificationModeViewModel = classificationModeViewModel
             )
+        }
+
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                viewModel = settingsViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDataUsage = { navController.navigate(Routes.DATA_USAGE) },
+                onNavigateToPrivacy = { navController.navigate(Routes.PRIVACY) },
+                onNavigateToTerms = { navController.navigate(Routes.TERMS) },
+                onNavigateToUpgrade = { navController.navigate(Routes.PAYWALL) }
+            )
+        }
+        
+        composable(Routes.PAYWALL) {
+            PaywallScreen(
+                viewModel = paywallViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.DATA_USAGE) {
+            DataUsageScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.PRIVACY) {
+            PrivacyPolicyScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.TERMS) {
+            TermsScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Routes.ITEMS_LIST) {
@@ -232,11 +280,25 @@ fun ObjectaNavGraph(
     val marketplaceService = androidx.compose.ui.platform.LocalContext.current.let { context ->
         androidx.compose.runtime.remember { EbayMarketplaceService(context, com.scanium.app.selling.data.MockEbayApi()) }
     }
+    
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val settingsRepository = androidx.compose.runtime.remember { com.scanium.app.data.SettingsRepository(context) }
+    val billingRepository = androidx.compose.runtime.remember { com.scanium.app.billing.BillingRepository(context) }
+    val billingProvider = androidx.compose.runtime.remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
+    val entitlementManager = androidx.compose.runtime.remember { com.scanium.app.data.EntitlementManager(settingsRepository, billingProvider) }
+    val settingsViewModel: SettingsViewModel = viewModel(
+        factory = SettingsViewModel.Factory(settingsRepository, entitlementManager)
+    )
+    val paywallViewModel: PaywallViewModel = viewModel(
+        factory = PaywallViewModel.Factory(billingProvider)
+    )
 
     ScaniumNavGraph(
         navController = navController,
         itemsViewModel = itemsViewModel,
         classificationModeViewModel = classificationModeViewModel,
+        settingsViewModel = settingsViewModel,
+        paywallViewModel = paywallViewModel,
         marketplaceService = marketplaceService,
         draftStore = com.scanium.app.selling.persistence.NoopListingDraftStore
     )
