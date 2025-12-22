@@ -5,6 +5,8 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 
 /**
  * Represents a unique physical object aggregated from multiple detections.
@@ -43,6 +45,8 @@ data class AggregatedItem(
     var maxConfidence: Float,
     var averageConfidence: Float,
     var priceRange: Pair<Double, Double>,
+    var estimatedPriceRange: PriceRange? = null,
+    var priceEstimationStatus: PriceEstimationStatus = PriceEstimationStatus.Idle,
     var mergeCount: Int = 1,
     val firstSeenTimestamp: Long = System.currentTimeMillis(),
     var lastSeenTimestamp: Long = System.currentTimeMillis(),
@@ -71,6 +75,8 @@ data class AggregatedItem(
             thumbnail = thumbnail,
             category = enhancedCategory ?: category,
             priceRange = enhancedPriceRange ?: priceRange,
+            estimatedPriceRange = estimatedPriceRange,
+            priceEstimationStatus = priceEstimationStatus,
             confidence = maxConfidence,
             timestamp = lastSeenTimestamp,
             boundingBox = boundingBox,
@@ -122,6 +128,11 @@ data class AggregatedItem(
         val newMax = maxOf(priceRange.second, detection.priceRange.second)
         priceRange = Pair(newMin, newMax)
 
+        if (detection.estimatedPriceRange != null) {
+            estimatedPriceRange = detection.estimatedPriceRange
+            priceEstimationStatus = detection.priceEstimationStatus
+        }
+
         detection.fullImageUri?.let { fullImageUri = it }
         detection.fullImagePath?.let { path ->
             if (path.isNotBlank()) {
@@ -167,5 +178,13 @@ data class AggregatedItem(
     fun cleanup() {
         thumbnail = null
         fullImageUri = null
+    }
+
+    fun updatePriceEstimation(status: PriceEstimationStatus, priceRange: PriceRange?) {
+        priceEstimationStatus = status
+        priceRange?.let { range ->
+            estimatedPriceRange = range
+            this.priceRange = range.toPair()
+        }
     }
 }

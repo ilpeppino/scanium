@@ -89,16 +89,6 @@ class DocumentTextRecognitionClient {
             // Generate unique ID from text hash
             val id = "document_${fullText.hashCode()}_${System.currentTimeMillis()}"
 
-            // Calculate normalized area for pricing
-            val boxArea = calculateNormalizedArea(
-                box = boundingBox,
-                imageWidth = bitmap?.width ?: image.width,
-                imageHeight = bitmap?.height ?: image.height
-            )
-
-            // Generate price range (documents have symbolic pricing)
-            val priceRange = PricingEngine.generatePriceRange(ItemCategory.DOCUMENT, boxArea)
-
             val bboxNorm = boundingBox?.toNormalizedRect(
                 frameWidth = bitmap?.width ?: image.width,
                 frameHeight = bitmap?.height ?: image.height
@@ -118,7 +108,7 @@ class DocumentTextRecognitionClient {
                 thumbnail = thumbnailRef,
                 thumbnailRef = thumbnailRef,
                 category = ItemCategory.DOCUMENT,
-                priceRange = priceRange,
+                priceRange = 0.0 to 0.0,
                 recognizedText = fullText,
                 boundingBox = bboxNorm
             )

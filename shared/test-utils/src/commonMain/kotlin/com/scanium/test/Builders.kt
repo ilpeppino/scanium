@@ -7,6 +7,9 @@ import com.scanium.core.models.items.ScannedItem
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.models.ml.RawDetection
 import com.scanium.core.models.ml.LabelWithConfidence
+import com.scanium.core.models.pricing.Money
+import com.scanium.core.models.pricing.PriceEstimationStatus
+import com.scanium.core.models.pricing.PriceRange
 import com.scanium.core.tracking.DetectionInfo
 
 /**
@@ -112,14 +115,24 @@ fun testScannedItem(
     thumbnail: ImageRef? = null,
     timestampMs: Long = System.currentTimeMillis(),
     mergeCount: Int = 1,
-    sourceDetectionIds: Set<String> = setOf(id)
+    sourceDetectionIds: Set<String> = setOf(id),
+    estimatedPriceRange: PriceRange? = null,
+    priceEstimationStatus: PriceEstimationStatus? = null
 ): ScannedItem {
+    val resolvedRange = estimatedPriceRange ?: PriceRange(
+        low = Money(priceRange.first),
+        high = Money(priceRange.second)
+    )
+    val resolvedStatus = priceEstimationStatus ?: PriceEstimationStatus.Ready(resolvedRange)
+
     return ScannedItem(
         aggregatedId = id,
         category = category,
         labelText = labelText,
         boundingBox = boundingBox,
         priceRange = priceRange,
+        estimatedPriceRange = resolvedRange,
+        priceEstimationStatus = resolvedStatus,
         confidence = confidence,
         thumbnail = thumbnail,
         timestampMs = timestampMs,

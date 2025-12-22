@@ -3,6 +3,9 @@ package com.scanium.app.ml
 import com.google.common.truth.Truth.assertThat
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.pricing.Money
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -61,10 +64,13 @@ class DetectionResultTest {
     @Test
     fun whenFormattedPriceRange_thenReturnsCorrectFormat() {
         // Arrange
+        val range = PriceRange(Money(20.0), Money(50.0))
         val result = DetectionResult(
             bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.HOME_GOOD,
             priceRange = Pair(20.0, 50.0),
+            estimatedPriceRange = range,
+            priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = 0.75f
         )
 
@@ -72,16 +78,19 @@ class DetectionResultTest {
         val formatted = result.formattedPriceRange
 
         // Assert
-        assertThat(formatted).isEqualTo("€20 - €50")
+        assertThat(formatted).isEqualTo("€20–50")
     }
 
     @Test
     fun whenPriceRangeHasDecimals_thenRoundsToWholeNumbers() {
         // Arrange
+        val range = PriceRange(Money(10.99), Money(25.49))
         val result = DetectionResult(
             bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.PLACE,
             priceRange = Pair(10.99, 25.49),
+            estimatedPriceRange = range,
+            priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = 0.6f
         )
 
@@ -89,16 +98,19 @@ class DetectionResultTest {
         val formatted = result.formattedPriceRange
 
         // Assert
-        assertThat(formatted).isEqualTo("€11 - €25")
+        assertThat(formatted).isEqualTo("€11–25")
     }
 
     @Test
     fun whenPriceRangeIsZero_thenFormatsCorrectly() {
         // Arrange
+        val range = PriceRange(Money(0.0), Money(0.0))
         val result = DetectionResult(
             bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.PLANT,
             priceRange = Pair(0.0, 0.0),
+            estimatedPriceRange = range,
+            priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = 0.5f
         )
 
@@ -106,16 +118,19 @@ class DetectionResultTest {
         val formatted = result.formattedPriceRange
 
         // Assert
-        assertThat(formatted).isEqualTo("€0 - €0")
+        assertThat(formatted).isEqualTo("€0–0")
     }
 
     @Test
     fun whenPriceRangeIsLarge_thenFormatsWithoutDecimals() {
         // Arrange
+        val range = PriceRange(Money(500.0), Money(1000.0))
         val result = DetectionResult(
             bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
             category = ItemCategory.UNKNOWN,
             priceRange = Pair(500.0, 1000.0),
+            estimatedPriceRange = range,
+            priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = 0.95f
         )
 
@@ -123,7 +138,7 @@ class DetectionResultTest {
         val formatted = result.formattedPriceRange
 
         // Assert
-        assertThat(formatted).isEqualTo("€500 - €1000")
+        assertThat(formatted).isEqualTo("€500–1000")
     }
 
     @Test
