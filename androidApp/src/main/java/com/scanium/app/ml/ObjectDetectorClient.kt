@@ -474,6 +474,11 @@ class ObjectDetectorClient {
 
             // Crop thumbnail with rotation for correct display orientation
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
+            val thumbnailQuality = if (thumbnail != null) {
+                com.scanium.app.camera.ImageUtils.calculateSharpness(thumbnail).toFloat()
+            } else {
+                0f
+            }
             val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
             val frameWidth = sourceBitmap?.width ?: fallbackWidth
@@ -483,7 +488,7 @@ class ObjectDetectorClient {
             // Calculate normalized area
             val normalizedBoxArea = bboxNorm.area
 
-            Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=$labelConfidence), category=$category, area=$normalizedBoxArea")
+            Log.d(TAG, "extractDetectionInfo: trackingId=$trackingId, confidence=$confidence (label=$labelConfidence), category=$category, area=$normalizedBoxArea, quality=$thumbnailQuality")
 
             onRawDetection(
                 RawDetection(
@@ -501,7 +506,8 @@ class ObjectDetectorClient {
                 category = category,
                 labelText = labelText,
                 thumbnail = thumbnailRef,
-                normalizedBoxArea = normalizedBoxArea
+                normalizedBoxArea = normalizedBoxArea,
+                qualityScore = thumbnailQuality
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error extracting detection info", e)
@@ -531,6 +537,11 @@ class ObjectDetectorClient {
 
             // Crop thumbnail from source bitmap with rotation for correct display
             val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
+            val thumbnailQuality = if (thumbnail != null) {
+                com.scanium.app.camera.ImageUtils.calculateSharpness(thumbnail).toFloat()
+            } else {
+                0f
+            }
             val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
             // Determine category from labels and get confidence
@@ -562,7 +573,8 @@ class ObjectDetectorClient {
                 priceRange = 0.0 to 0.0,
                 confidence = confidence,
                 boundingBox = normalizedBox,
-                labelText = bestLabel?.text
+                labelText = bestLabel?.text,
+                qualityScore = thumbnailQuality
             )
         } catch (e: Exception) {
             // If cropping or processing fails, skip this object

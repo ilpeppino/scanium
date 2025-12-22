@@ -30,6 +30,9 @@ import com.scanium.app.tracking.TrackerConfig
 import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.text.SimpleDateFormat
@@ -77,6 +80,10 @@ class CameraXManager(
     private val objectDetector = ObjectDetectorClient()
     private val barcodeScanner = BarcodeScannerClient()
     private val textRecognizer = DocumentTextRecognitionClient()
+
+    private val _analysisFps = MutableStateFlow(0.0)
+    /** Real-time analysis FPS for performance monitoring */
+    val analysisFps: StateFlow<Double> = _analysisFps.asStateFlow()
 
     // Object tracker for de-duplication
     // Using very permissive thresholds to ensure items are actually promoted
@@ -350,15 +357,15 @@ class CameraXManager(
         framesInWindow = 0
 
         var lastAnalysisTime = 0L
-        val analysisIntervalMs = 800L // Analyze every 800ms for better tracking
         var isProcessing = false // Prevent overlapping processing
 
-        // Log detection configuration (debug builds only)
+        // Log initial configuration
+        val initialIntervalMs = 1000L / com.scanium.app.ml.classification.ClassifierDebugFlags.analysisFps
         com.scanium.app.ml.DetectionLogger.logConfiguration(
             minSeenCount = 1,
             minConfidence = 0.0f,
             candidateTimeoutMs = 3000L,
-            analysisIntervalMs = analysisIntervalMs
+            analysisIntervalMs = initialIntervalMs
         )
 
         Log.i(TAG, "[METRICS] Camera session started, tracking analyzer latency and frame rate")
@@ -373,6 +380,8 @@ class CameraXManager(
                 return@setAnalyzer
             }
 
+            // Dynamic throttling based on debug flags
+            val analysisIntervalMs = 1000L / com.scanium.app.ml.classification.ClassifierDebugFlags.analysisFps
             val currentTime = System.currentTimeMillis()
 
             // Only process if enough time has passed AND we're not already processing
@@ -418,14 +427,21 @@ class CameraXManager(
 
                         Log.i(TAG, "[METRICS] Frame #$frameCounter analyzer latency: ${analyzerLatencyMs}ms")
 
-                        // [METRICS] Calculate and log frame rate every 5 seconds
+                        // [METRICS] Calculate and log frame rate every 1 second
                         val now = SystemClock.elapsedRealtime()
                         val timeSinceLastReport = now - lastFpsReportTime
-                        if (timeSinceLastReport >= 5000L) {
+                        if (timeSinceLastReport >= 1000L) {
                             val fps = (framesInWindow * 1000.0) / timeSinceLastReport
                             val avgFps = (totalFramesProcessed * 1000.0) / (now - sessionStartTime)
-                            Log.i(TAG, "[METRICS] Frame rate: current=${String.format("%.2f", fps)} fps, " +
-                                "session_avg=${String.format("%.2f", avgFps)} fps, total_frames=$totalFramesProcessed")
+                            
+                            _analysisFps.value = fps
+                            
+                            // Log only every 5 seconds to reduce spam
+                            if (totalFramesProcessed % 50 == 0) {
+                                Log.i(TAG, "[METRICS] Frame rate: current=${String.format("%.2f", fps)} fps, " +
+                                    "session_avg=${String.format("%.2f", avgFps)} fps, total_frames=$totalFramesProcessed")
+                            }
+                            
                             lastFpsReportTime = now
                             framesInWindow = 0
                         }

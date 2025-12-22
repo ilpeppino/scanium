@@ -81,7 +81,8 @@ class ObjectTracker(
                     newCategory = detection.category,
                     newLabelText = detection.labelText,
                     newThumbnail = detection.thumbnail,
-                    boxArea = detection.normalizedBoxArea
+                    boxArea = detection.normalizedBoxArea,
+                    newQualityScore = detection.qualityScore
                 )
                 matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
                 spatialIndex.upsert(matchedCandidate.internalId, matchedCandidate.indexBoundingBox())
@@ -255,7 +256,8 @@ class ObjectTracker(
             labelText = detection.labelText,
             thumbnail = detection.thumbnail,
             firstSeenFrame = currentFrame,
-            averageBoxArea = detection.normalizedBoxArea
+            averageBoxArea = detection.normalizedBoxArea,
+            qualityScore = detection.qualityScore
         )
     }
 
@@ -382,7 +384,8 @@ data class DetectionInfo(
     val labelText: String,
     val thumbnail: ImageRef?,
     val normalizedBoxArea: Float,
-    val boundingBoxNorm: NormalizedRect? = null
+    val boundingBoxNorm: NormalizedRect? = null,
+    val qualityScore: Float = 0f
 )
 
 /**

@@ -14,6 +14,7 @@ import { classifierRoutes } from './modules/classifier/routes.js';
 import { assistantRoutes } from './modules/assistant/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { billingRoutes } from './modules/billing/billing.routes.js';
+import { configRoutes } from './modules/config/config.routes.js';
 
 /**
  * Build Fastify application instance
@@ -94,6 +95,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Admin usage endpoints (disabled by default)
   await app.register(adminRoutes, { prefix: '/v1/admin', config });
+
+  // Remote Config
+  await app.register(configRoutes, { prefix: '/v1', config });
 
   // Root endpoint
   app.get('/', async (_request, reply) => {

@@ -6,4 +6,7 @@ object ClassifierDebugFlags {
 
     @Volatile
     var lowDataModeEnabled: Boolean = false
+
+    @Volatile
+    var analysisFps: Int = 10
 }
