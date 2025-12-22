@@ -424,7 +424,7 @@ data class AggregatedItem(
 
     fun getBoxArea(): Float = boundingBox.area
 
-    fun isStale(maxAgeMs: Long): Boolean = nowMillis() - lastSeenTimestamp > maxAgeMs
+    fun isStale(maxAgeMs: Long): Boolean = nowMillis() - lastSeenTimestamp >= maxAgeMs
 
     fun toScannedItem(): ScannedItem {
         return ScannedItem(
