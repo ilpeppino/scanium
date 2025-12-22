@@ -3,8 +3,8 @@ package com.scanium.core.models.items
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.ml.ItemCategory
-import com.scanium.core.models.pricing.PriceEstimationStatus
 import com.scanium.core.models.pricing.PriceRange
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import kotlinx.datetime.Clock
 import kotlin.random.Random
 

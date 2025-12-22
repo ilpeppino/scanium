@@ -8,8 +8,8 @@ import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.models.ml.RawDetection
 import com.scanium.core.models.ml.LabelWithConfidence
 import com.scanium.core.models.pricing.Money
-import com.scanium.core.models.pricing.PriceEstimationStatus
 import com.scanium.core.models.pricing.PriceRange
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.core.tracking.DetectionInfo
 
 /**
