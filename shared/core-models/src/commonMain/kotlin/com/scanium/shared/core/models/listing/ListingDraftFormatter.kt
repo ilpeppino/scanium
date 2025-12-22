@@ -26,6 +26,23 @@ object ListingDraftFormatter {
         return format(draft, ExportProfiles.generic())
     }
 
+    fun formattedValues(
+        draft: ListingDraft,
+        profile: ExportProfileDefinition
+    ): Map<ExportFieldKey, String> {
+        val title = formatTitle(draft, profile.titleRules)
+        val description = formatDescription(draft, profile)
+        return buildFieldValues(draft, title, description)
+    }
+
+    fun formatFieldLine(
+        key: ExportFieldKey,
+        values: Map<ExportFieldKey, String>,
+        profile: ExportProfileDefinition
+    ): String {
+        return buildFieldLine(key, values, profile)
+    }
+
     fun missingRequiredFields(
         draft: ListingDraft,
         profile: ExportProfileDefinition

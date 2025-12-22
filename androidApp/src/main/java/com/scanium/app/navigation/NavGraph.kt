@@ -16,6 +16,7 @@ import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.ui.DraftReviewScreen
+import com.scanium.app.selling.ui.PostingAssistScreen
 import com.scanium.app.selling.ui.SellOnEbayScreen
 
 /**
@@ -26,6 +27,7 @@ object Routes {
     const val ITEMS_LIST = "items_list"
     const val SELL_ON_EBAY = "sell_on_ebay"
     const val DRAFT_REVIEW = "draft_review"
+    const val POSTING_ASSIST = "posting_assist"
 }
 
 /**
@@ -113,7 +115,11 @@ fun ScaniumNavGraph(
                 itemIds = ids,
                 onBack = { navController.popBackStack() },
                 itemsViewModel = itemsViewModel,
-                draftStore = draftStore
+                draftStore = draftStore,
+                onOpenPostingAssist = { targets, index ->
+                    val encoded = Uri.encode(targets.joinToString(","))
+                    navController.navigate("${Routes.POSTING_ASSIST}?itemIds=$encoded&index=$index")
+                }
             )
         }
 
@@ -124,6 +130,37 @@ fun ScaniumNavGraph(
             val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
             DraftReviewScreen(
                 itemIds = listOf(itemId),
+                onBack = { navController.popBackStack() },
+                itemsViewModel = itemsViewModel,
+                draftStore = draftStore,
+                onOpenPostingAssist = { ids, index ->
+                    val encoded = Uri.encode(ids.joinToString(","))
+                    navController.navigate("${Routes.POSTING_ASSIST}?itemIds=$encoded&index=$index")
+                }
+            )
+        }
+
+        composable(
+            route = "${Routes.POSTING_ASSIST}?itemIds={itemIds}&index={index}",
+            arguments = listOf(
+                navArgument("itemIds") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("index") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                }
+            )
+        ) { backStackEntry ->
+            val ids = backStackEntry.arguments?.getString("itemIds")
+                ?.split(",")
+                ?.filter { it.isNotBlank() }
+                ?: emptyList()
+            val index = backStackEntry.arguments?.getInt("index") ?: 0
+            PostingAssistScreen(
+                itemIds = ids,
+                startIndex = index,
                 onBack = { navController.popBackStack() },
                 itemsViewModel = itemsViewModel,
                 draftStore = draftStore
