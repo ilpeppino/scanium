@@ -18,5 +18,9 @@ enum class SelectedItemsAction(
     REVIEW_DRAFT(
         displayName = "Review draft",
         description = "Open a listing draft for the selected item"
+    ),
+    ASK_ASSISTANT(
+        displayName = "Ask assistant",
+        description = "Open Seller Assistant for the selected items"
     )
 }

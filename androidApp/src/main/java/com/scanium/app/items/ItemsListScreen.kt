@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
@@ -58,6 +59,7 @@ fun ItemsListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToSell: (List<String>) -> Unit,
     onNavigateToDraft: (List<String>) -> Unit,
+    onNavigateToAssistant: (List<String>) -> Unit,
     draftStore: ListingDraftStore,
     itemsViewModel: ItemsViewModel = viewModel()
 ) {
@@ -173,6 +175,14 @@ fun ItemsListScreen(
                     scope.launch { snackbarHostState.showSnackbar("Select an item to review") }
                 }
             }
+            SelectedItemsAction.ASK_ASSISTANT -> {
+                val selected = selectedIds.toList()
+                if (selected.isNotEmpty()) {
+                    onNavigateToAssistant(selected)
+                } else {
+                    scope.launch { snackbarHostState.showSnackbar("Select items to ask about") }
+                }
+            }
         }
     }
 
@@ -234,6 +244,7 @@ fun ItemsListScreen(
                                         SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
                                         SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
                                         SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
+                                        SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
                                     },
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -292,6 +303,7 @@ fun ItemsListScreen(
                                             SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
                                             SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
                                             SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
+                                            SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
                                         },
                                         contentDescription = null
                                     )

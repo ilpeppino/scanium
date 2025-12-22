@@ -81,6 +81,21 @@ export const configSchema = z.object({
     visionMaxRetries: z.coerce.number().int().min(0).max(5).default(2),
   }),
 
+  assistant: z
+    .object({
+      provider: z.enum(['mock', 'disabled']).default('mock'),
+      apiKeys: z
+        .string()
+        .default('')
+        .transform((val) =>
+          val
+            .split(',')
+            .map((v) => v.trim())
+            .filter(Boolean)
+        ),
+    })
+    .default({}),
+
   googleCredentialsPath: z.string().optional(),
 
   // eBay OAuth
@@ -156,6 +171,10 @@ export function loadConfig(): Config {
       mockSeed: process.env.CLASSIFIER_MOCK_SEED,
       visionTimeoutMs: process.env.VISION_TIMEOUT_MS,
       visionMaxRetries: process.env.VISION_MAX_RETRIES,
+    },
+    assistant: {
+      provider: process.env.SCANIUM_ASSISTANT_PROVIDER,
+      apiKeys: process.env.SCANIUM_ASSISTANT_API_KEYS,
     },
     googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     ebay: {
