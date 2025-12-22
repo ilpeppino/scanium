@@ -42,6 +42,7 @@ object Routes {
     const val DATA_USAGE = "data_usage"
     const val PRIVACY = "privacy"
     const val TERMS = "terms"
+    const val ABOUT = "about"
     const val PAYWALL = "paywall"
 }
 
@@ -86,6 +87,7 @@ fun ScaniumNavGraph(
                 onNavigateToDataUsage = { navController.navigate(Routes.DATA_USAGE) },
                 onNavigateToPrivacy = { navController.navigate(Routes.PRIVACY) },
                 onNavigateToTerms = { navController.navigate(Routes.TERMS) },
+                onNavigateToAbout = { navController.navigate(Routes.ABOUT) },
                 onNavigateToUpgrade = { navController.navigate(Routes.PAYWALL) }
             )
         }
@@ -107,6 +109,10 @@ fun ScaniumNavGraph(
 
         composable(Routes.TERMS) {
             TermsScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.ABOUT) {
+            com.scanium.app.ui.settings.AboutScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Routes.ITEMS_LIST) {

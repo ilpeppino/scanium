@@ -31,6 +31,7 @@ fun SettingsScreen(
     onNavigateToDataUsage: () -> Unit,
     onNavigateToPrivacy: () -> Unit,
     onNavigateToTerms: () -> Unit,
+    onNavigateToAbout: () -> Unit,
     onNavigateToUpgrade: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -141,6 +142,12 @@ fun SettingsScreen(
                 title = "Terms of Service",
                 icon = Icons.Default.Info,
                 onClick = onNavigateToTerms
+            )
+            
+            SettingsItem(
+                title = "About Scanium",
+                icon = Icons.Default.Info,
+                onClick = onNavigateToAbout
             )
 
             if (BuildConfig.DEBUG) {

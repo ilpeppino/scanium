@@ -380,6 +380,20 @@ fun CameraScreen(
                     classificationMode = classificationMode,
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
+                
+                // DEV BUILD Indicator
+                if (com.scanium.app.BuildConfig.DEBUG) {
+                    Text(
+                        text = "DEV BUILD",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 16.dp, end = 16.dp)
+                            .background(Color.Red.copy(alpha = 0.7f), shape = MaterialTheme.shapes.extraSmall)
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    )
+                }
 
                 // Performance Overlay (Debug)
                 if (verboseLogging) {
