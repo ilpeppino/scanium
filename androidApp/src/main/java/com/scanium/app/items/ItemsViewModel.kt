@@ -7,13 +7,15 @@ import com.scanium.app.BuildConfig
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.ItemAggregator
 import com.scanium.app.ml.ItemCategory
-import com.scanium.app.ml.PricingEngine
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
+import com.scanium.app.pricing.PriceEstimationRepository
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceEstimatorProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,7 +50,8 @@ class ItemsViewModel(
     cloudClassifier: ItemClassifier = NoopClassifier,
     private val itemsStore: ScannedItemStore = NoopScannedItemStore,
     private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    priceEstimatorProvider: PriceEstimatorProvider? = null
 ) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
@@ -80,6 +83,13 @@ class ItemsViewModel(
         cloudClassifier = cloudClassifier,
         scope = viewModelScope
     )
+
+    private val priceEstimationRepository = PriceEstimationRepository(
+        provider = priceEstimatorProvider ?: com.scanium.shared.core.models.pricing.providers.MockPriceEstimatorProvider(),
+        scope = viewModelScope
+    )
+
+    private val priceStatusJobs = mutableMapOf<String, Job>()
 
     // Dynamic similarity threshold control (0.0 - 1.0)
     // Default is REALTIME preset value (0.55)
@@ -173,6 +183,9 @@ class ItemsViewModel(
     fun removeItem(itemId: String) {
         Log.i(TAG, "Removing item: $itemId")
 
+        priceStatusJobs.remove(itemId)?.cancel()
+        priceEstimationRepository.cancel(itemId)
+
         // Remove from aggregator
         itemAggregator.removeItem(itemId)
 
@@ -194,6 +207,9 @@ class ItemsViewModel(
      */
     fun clearAllItems() {
         Log.i(TAG, "Clearing all items")
+
+        priceStatusJobs.values.forEach { it.cancel() }
+        priceStatusJobs.clear()
 
         // Reset aggregator
         itemAggregator.reset()
@@ -333,10 +349,43 @@ class ItemsViewModel(
         _items.value = scannedItems
         Log.d(TAG, "Updated UI state: ${scannedItems.size} items")
 
+        syncPriceEstimations(scannedItems)
+
         persistItems(scannedItems)
 
         if (triggerClassification) {
             triggerEnhancedClassification()
+        }
+    }
+
+    private fun syncPriceEstimations(scannedItems: List<ScannedItem>) {
+        val activeIds = scannedItems.map { it.id }.toSet()
+        priceStatusJobs.keys.filterNot { activeIds.contains(it) }.forEach { id ->
+            priceStatusJobs.remove(id)?.cancel()
+            priceEstimationRepository.cancel(id)
+        }
+
+        scannedItems.forEach { item ->
+            if (item.category != ItemCategory.UNKNOWN) {
+                observePriceStatus(item.id)
+                priceEstimationRepository.ensureEstimation(item)
+            }
+        }
+    }
+
+    private fun observePriceStatus(itemId: String) {
+        if (priceStatusJobs.containsKey(itemId)) return
+
+        val statusFlow = priceEstimationRepository.observeStatus(itemId)
+        priceStatusJobs[itemId] = viewModelScope.launch {
+            statusFlow.collect { status ->
+                itemAggregator.updatePriceEstimation(
+                    aggregatedId = itemId,
+                    status = status,
+                    priceRange = (status as? PriceEstimationStatus.Ready)?.priceRange
+                )
+                _items.value = itemAggregator.getScannedItems()
+            }
         }
     }
 
@@ -361,8 +410,6 @@ class ItemsViewModel(
 
             classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
                 // Calculate classification parameters
-                val boxArea = aggregatedItem.boundingBox.area
-                val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
                 val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
                     result.category
                 } else {
@@ -375,7 +422,7 @@ class ItemsViewModel(
                     aggregatedId = aggregatedItem.aggregatedId,
                     category = categoryOverride,
                     label = result.label ?: aggregatedItem.labelText,
-                    priceRange = priceRange
+                    priceRange = null
                 )
 
                 itemAggregator.updateClassificationStatus(
@@ -476,8 +523,6 @@ class ItemsViewModel(
         // Trigger retry via orchestrator
         classificationOrchestrator.retry(itemId, item) { aggregatedItem, result ->
             // Calculate classification parameters
-            val boxArea = aggregatedItem.boundingBox.area
-            val priceRange = PricingEngine.generatePriceRange(result.category, boxArea)
             val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
                 result.category
             } else {
@@ -490,7 +535,7 @@ class ItemsViewModel(
                 aggregatedId = aggregatedItem.aggregatedId,
                 category = categoryOverride,
                 label = result.label ?: aggregatedItem.labelText,
-                priceRange = priceRange
+                priceRange = null
             )
 
             itemAggregator.updateClassificationStatus(

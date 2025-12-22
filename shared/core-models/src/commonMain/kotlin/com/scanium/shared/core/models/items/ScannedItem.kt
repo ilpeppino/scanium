@@ -1,10 +1,11 @@
 package com.scanium.shared.core.models.items
 
 import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
 import kotlinx.datetime.Clock
-import kotlin.math.roundToInt
 import kotlin.random.Random
 
 private const val HEX_DIGITS = "0123456789abcdef"
@@ -65,6 +66,8 @@ data class ScannedItem<FullImageUri>(
     val thumbnailRef: ImageRef? = null,
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
+    val estimatedPriceRange: PriceRange? = null,
+    val priceEstimationStatus: PriceEstimationStatus = PriceEstimationStatus.Idle,
     val confidence: Float = 0.0f,
     val timestamp: Long = Clock.System.now().toEpochMilliseconds(),
     val recognizedText: String? = null,
@@ -86,7 +89,10 @@ data class ScannedItem<FullImageUri>(
      * Example: "€20 - €50"
      */
     val formattedPriceRange: String
-        get() = "€${priceRange.first.roundToInt()} - €${priceRange.second.roundToInt()}"
+        get() = when (val status = priceEstimationStatus) {
+            is PriceEstimationStatus.Ready -> status.priceRange.formatted()
+            else -> ""
+        }
 
     /**
      * Formatted confidence percentage for display.

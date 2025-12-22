@@ -549,27 +549,17 @@ class ObjectDetectorClient {
                 }
             }
 
-            // Calculate normalized bounding box area for pricing
-            val boxArea = calculateNormalizedArea(
-                box = boundingBox,
-                imageWidth = frameWidth,
-                imageHeight = frameHeight
-            )
-
             // Normalize bounding box to 0-1 coordinates for session deduplication
             val imageWidth = (sourceBitmap?.width ?: fallbackWidth).toFloat()
             val imageHeight = (sourceBitmap?.height ?: fallbackHeight).toFloat()
             val normalizedBox = boundingBox.toNormalizedRect(imageWidth.toInt(), imageHeight.toInt())
-
-            // Generate price range
-            val priceRange = PricingEngine.generatePriceRange(category, boxArea)
 
             ScannedItem(
                 id = trackingId,
                 thumbnail = thumbnailRef,
                 thumbnailRef = thumbnailRef,
                 category = category,
-                priceRange = priceRange,
+                priceRange = 0.0 to 0.0,
                 confidence = confidence,
                 boundingBox = normalizedBox,
                 labelText = bestLabel?.text
@@ -592,19 +582,13 @@ class ObjectDetectorClient {
             val boundingBox = detectedObject.boundingBox
             val category = extractCategory(detectedObject)
 
-            // Calculate normalized bounding box area for pricing
-            val boxArea = calculateNormalizedArea(boundingBox, imageWidth, imageHeight)
-
-            // Generate price range
-            val priceRange = PricingEngine.generatePriceRange(category, boxArea)
-
             // Get best confidence score
             val confidence = detectedObject.labels.maxByOrNull { it.confidence }?.confidence ?: 0f
 
             DetectionResult(
                 bboxNorm = boundingBox.toNormalizedRect(imageWidth, imageHeight),
                 category = category,
-                priceRange = priceRange,
+                priceRange = 0.0 to 0.0,
                 confidence = confidence,
                 trackingId = detectedObject.trackingId
             )
@@ -714,15 +698,12 @@ class ObjectDetectorClient {
         // Calculate normalized area from average box area
         val boxArea = candidate.averageBoxArea
 
-        // Generate price range based on category and size
-        val priceRange = PricingEngine.generatePriceRange(candidate.category, boxArea)
-
         return ScannedItem(
             id = candidate.internalId,
             thumbnail = candidate.thumbnail,
             thumbnailRef = candidate.thumbnail,
             category = candidate.category,
-            priceRange = priceRange,
+            priceRange = 0.0 to 0.0,
             confidence = candidate.maxConfidence,
             timestamp = System.currentTimeMillis(),
             recognizedText = null,

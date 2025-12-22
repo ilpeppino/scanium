@@ -8,6 +8,9 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.shared.core.models.pricing.Money
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 
 @Entity(tableName = "scanned_items")
 data class ScannedItemEntity(
@@ -103,6 +106,8 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         null
     }
 
+    val estimatedRange = PriceRange(Money(priceLow), Money(priceHigh))
+
     return ScannedItem(
         id = id,
         thumbnail = imageRefFrom(
@@ -119,6 +124,8 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         ),
         category = categoryValue,
         priceRange = priceLow to priceHigh,
+        estimatedPriceRange = estimatedRange,
+        priceEstimationStatus = PriceEstimationStatus.Ready(estimatedRange),
         confidence = confidence,
         timestamp = timestamp,
         recognizedText = recognizedText,
