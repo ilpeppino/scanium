@@ -33,8 +33,8 @@ data class PriceRange(
 }
 
 sealed interface PriceEstimationStatus {
-    data object Idle : PriceEstimationStatus
-    data object Estimating : PriceEstimationStatus
+    object Idle : PriceEstimationStatus
+    object Estimating : PriceEstimationStatus
     data class Ready(val priceRange: PriceRange) : PriceEstimationStatus
     data class Failed(val reason: String? = null) : PriceEstimationStatus
 }
