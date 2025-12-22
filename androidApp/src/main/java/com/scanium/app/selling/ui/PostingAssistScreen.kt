@@ -31,6 +31,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -71,6 +72,7 @@ import com.scanium.app.selling.util.ListingShareHelper
 import kotlinx.coroutines.launch
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun PostingAssistScreen(
     itemIds: List<String>,
     startIndex: Int,
@@ -159,10 +161,15 @@ fun PostingAssistScreen(
         bottomBar = {
             ActionRow(
                 onCopyNext = {
+                    val activePlan = plan
+                    if (activePlan == null) {
+                        scope.launch { snackbarHostState.showSnackbar("No plan available") }
+                        return@ActionRow
+                    }
                     val nextId = viewModel.copyNextStepId()
-                    val step = plan?.steps?.firstOrNull { it.id == nextId } ?: plan?.steps?.firstOrNull()
+                    val step = activePlan.steps.firstOrNull { it.id == nextId } ?: activePlan.steps.firstOrNull()
                     if (step != null) {
-                        copyStep(step, listState, context, snackbarHostState, scope, plan) { highlightedStep = it }
+                        copyStep(step, listState, context, snackbarHostState, scope, activePlan) { highlightedStep = it }
                         Log.d("PostingAssist", "copy next: ${step.id}")
                     }
                 },
