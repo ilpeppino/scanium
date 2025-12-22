@@ -124,7 +124,8 @@ class AssistantViewModelTest {
             items: List<com.scanium.app.model.ItemContextSnapshot>,
             history: List<com.scanium.app.model.AssistantMessage>,
             userMessage: String,
-            exportProfile: ExportProfileDefinition
+            exportProfile: ExportProfileDefinition,
+            correlationId: String
         ): com.scanium.app.model.AssistantResponse {
             return com.scanium.app.model.AssistantResponse("ok")
         }

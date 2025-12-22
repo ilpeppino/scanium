@@ -8,9 +8,15 @@ import { MockClassifier, MockClassifierOptions } from './providers/mock-classifi
 import { DomainPack, loadDomainPack } from './domain/domain-pack.js';
 import { mapSignalsToDomainCategory } from './domain/mapper.js';
 import { Config } from '../../config/index.js';
+import { CircuitBreaker } from '../../infra/resilience/circuit-breaker.js';
 
 type ClassifierDeps = {
   config: Config;
+  logger?: {
+    info: (payload: Record<string, unknown>, message: string) => void;
+    warn: (payload: Record<string, unknown>, message: string) => void;
+    debug: (payload: Record<string, unknown>, message: string) => void;
+  };
 };
 
 const SIGNAL_LOG_LIMIT = 5;
@@ -19,6 +25,8 @@ export class ClassifierService {
   private readonly mock: MockClassifier;
   private readonly vision: GoogleVisionClassifier | null;
   private readonly domainPack: DomainPack;
+  private readonly visionBreaker: CircuitBreaker;
+  private readonly logger?: ClassifierDeps['logger'];
 
   constructor(deps: ClassifierDeps) {
     this.mock = new MockClassifier({
@@ -35,6 +43,12 @@ export class ClassifierService {
         : null;
 
     this.domainPack = loadDomainPack(deps.config.classifier.domainPackPath);
+    this.logger = deps.logger;
+    this.visionBreaker = new CircuitBreaker({
+      failureThreshold: deps.config.classifier.circuitBreakerFailureThreshold,
+      cooldownMs: deps.config.classifier.circuitBreakerCooldownSeconds * 1000,
+      minimumRequests: deps.config.classifier.circuitBreakerMinimumRequests,
+    });
 
     if (this.domainPack.id !== deps.config.classifier.domainPackId) {
       console.warn(
@@ -45,18 +59,20 @@ export class ClassifierService {
 
   async classify(request: ClassificationRequest): Promise<ClassificationResult> {
     const started = performance.now();
-    const providerResponse = await this.runProvider(request);
+    const { providerResponse, providerUnavailable } = await this.runProvider(request);
     const mapping = mapSignalsToDomainCategory(this.domainPack, providerResponse.signals);
-    this.logSignals(request.requestId, providerResponse, mapping);
+    this.logSignals(request.requestId, request.correlationId, providerResponse, mapping);
 
     return {
       requestId: request.requestId,
+      correlationId: request.correlationId,
       domainPackId: request.domainPackId,
       domainCategoryId: mapping.domainCategoryId,
       confidence: mapping.confidence,
       label: mapping.label,
       attributes: mapping.attributes,
       provider: providerResponse.provider,
+      providerUnavailable,
       timingsMs: {
         total: Math.round(performance.now() - started),
         vision: providerResponse.visionMs,
@@ -65,24 +81,39 @@ export class ClassifierService {
     };
   }
 
-  private async runProvider(request: ClassificationRequest): Promise<ProviderResponse> {
+  private async runProvider(
+    request: ClassificationRequest
+  ): Promise<{ providerResponse: ProviderResponse; providerUnavailable: boolean }> {
+    const breakerState = this.visionBreaker.getState();
+    if (this.vision && !this.visionBreaker.canRequest()) {
+      this.logger?.warn(
+        { requestId: request.requestId, correlationId: request.correlationId, breakerState },
+        'Vision provider circuit open; using mock'
+      );
+      return { providerResponse: await this.mock.classify(request), providerUnavailable: true };
+    }
+
     if (this.vision) {
       try {
-        return await this.vision.classify(request);
+        const response = await this.vision.classify(request);
+        this.visionBreaker.recordSuccess();
+        return { providerResponse: response, providerUnavailable: false };
       } catch (error) {
+        this.visionBreaker.recordFailure();
         // Fallback to mock if Vision is unavailable to keep mobile builds/tests unblocked
-        console.warn(
-          `[ClassifierService] Vision provider failed, falling back to mock:`,
-          error
+        this.logger?.warn(
+          { requestId: request.requestId, correlationId: request.correlationId, error },
+          'Vision provider failed; falling back to mock'
         );
       }
     }
 
-    return this.mock.classify(request);
+    return { providerResponse: await this.mock.classify(request), providerUnavailable: true };
   }
 
   private logSignals(
     requestId: string,
+    correlationId: string,
     providerResponse: ProviderResponse,
     mapping: ReturnType<typeof mapSignalsToDomainCategory>
   ) {
@@ -94,16 +125,26 @@ export class ClassifierService {
         score: Number((signal.score ?? 0).toFixed(3)),
       }));
 
-    console.debug(
-      `[ClassifierService] requestId=${requestId} provider=${providerResponse.provider} topSignals=${JSON.stringify(
-        topSignals
-      )}`
+    this.logger?.debug(
+      {
+        requestId,
+        correlationId,
+        provider: providerResponse.provider,
+        topSignals,
+      },
+      'Classifier signals'
     );
 
-    console.debug(
-      `[ClassifierService] requestId=${requestId} domainCategory=${
-        mapping.domainCategoryId ?? 'none'
-      } label=${mapping.label ?? 'n/a'} confidence=${mapping.confidence ?? 'n/a'} reason=${mapping.debug.reason}`
+    this.logger?.debug(
+      {
+        requestId,
+        correlationId,
+        domainCategoryId: mapping.domainCategoryId ?? null,
+        label: mapping.label ?? null,
+        confidence: mapping.confidence ?? null,
+        reason: mapping.debug.reason,
+      },
+      'Classifier mapping'
     );
   }
 }

@@ -79,6 +79,11 @@ export const configSchema = z.object({
     mockSeed: z.string().default('scanium-mock'),
     visionTimeoutMs: z.coerce.number().int().min(1000).max(20000).default(10000),
     visionMaxRetries: z.coerce.number().int().min(0).max(5).default(2),
+    cacheTtlSeconds: z.coerce.number().int().min(1).default(300),
+    cacheMaxEntries: z.coerce.number().int().min(1).default(1000),
+    circuitBreakerFailureThreshold: z.coerce.number().int().min(1).default(5),
+    circuitBreakerCooldownSeconds: z.coerce.number().int().min(1).default(60),
+    circuitBreakerMinimumRequests: z.coerce.number().int().min(1).default(3),
   }),
 
   assistant: z
@@ -93,6 +98,15 @@ export const configSchema = z.object({
             .map((v) => v.trim())
             .filter(Boolean)
         ),
+      rateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+      ipRateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+      rateLimitWindowSeconds: z.coerce.number().int().min(1).default(60),
+      rateLimitBackoffSeconds: z.coerce.number().int().min(1).default(30),
+      rateLimitBackoffMaxSeconds: z.coerce.number().int().min(1).default(900),
+      rateLimitRedisUrl: z.string().optional(),
+      circuitBreakerFailureThreshold: z.coerce.number().int().min(1).default(5),
+      circuitBreakerCooldownSeconds: z.coerce.number().int().min(1).default(60),
+      circuitBreakerMinimumRequests: z.coerce.number().int().min(1).default(3),
     })
     .default({}),
 
@@ -123,6 +137,13 @@ export const configSchema = z.object({
       apiKeyRotationEnabled: z.coerce.boolean().default(true),
       apiKeyExpirationDays: z.coerce.number().int().min(0).default(90),
       logApiKeyUsage: z.coerce.boolean().default(true),
+    })
+    .default({}),
+
+  admin: z
+    .object({
+      enabled: z.coerce.boolean().default(false),
+      adminKey: z.string().optional(),
     })
     .default({}),
 
@@ -171,10 +192,24 @@ export function loadConfig(): Config {
       mockSeed: process.env.CLASSIFIER_MOCK_SEED,
       visionTimeoutMs: process.env.VISION_TIMEOUT_MS,
       visionMaxRetries: process.env.VISION_MAX_RETRIES,
+      cacheTtlSeconds: process.env.CLASSIFIER_CACHE_TTL_SECONDS,
+      cacheMaxEntries: process.env.CLASSIFIER_CACHE_MAX_ENTRIES,
+      circuitBreakerFailureThreshold: process.env.CLASSIFIER_CIRCUIT_FAILURE_THRESHOLD,
+      circuitBreakerCooldownSeconds: process.env.CLASSIFIER_CIRCUIT_COOLDOWN_SECONDS,
+      circuitBreakerMinimumRequests: process.env.CLASSIFIER_CIRCUIT_MIN_REQUESTS,
     },
     assistant: {
       provider: process.env.SCANIUM_ASSISTANT_PROVIDER,
       apiKeys: process.env.SCANIUM_ASSISTANT_API_KEYS,
+      rateLimitPerMinute: process.env.ASSIST_RATE_LIMIT_PER_MINUTE,
+      ipRateLimitPerMinute: process.env.ASSIST_IP_RATE_LIMIT_PER_MINUTE,
+      rateLimitWindowSeconds: process.env.ASSIST_RATE_LIMIT_WINDOW_SECONDS,
+      rateLimitBackoffSeconds: process.env.ASSIST_RATE_LIMIT_BACKOFF_SECONDS,
+      rateLimitBackoffMaxSeconds: process.env.ASSIST_RATE_LIMIT_BACKOFF_MAX_SECONDS,
+      rateLimitRedisUrl: process.env.ASSIST_RATE_LIMIT_REDIS_URL,
+      circuitBreakerFailureThreshold: process.env.ASSIST_CIRCUIT_FAILURE_THRESHOLD,
+      circuitBreakerCooldownSeconds: process.env.ASSIST_CIRCUIT_COOLDOWN_SECONDS,
+      circuitBreakerMinimumRequests: process.env.ASSIST_CIRCUIT_MIN_REQUESTS,
     },
     googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     ebay: {
@@ -192,6 +227,10 @@ export function loadConfig(): Config {
       apiKeyRotationEnabled: process.env.SECURITY_API_KEY_ROTATION_ENABLED,
       apiKeyExpirationDays: process.env.SECURITY_API_KEY_EXPIRATION_DAYS,
       logApiKeyUsage: process.env.SECURITY_LOG_API_KEY_USAGE,
+    },
+    admin: {
+      enabled: process.env.ADMIN_USAGE_ENABLED,
+      adminKey: process.env.ADMIN_USAGE_KEY,
     },
     corsOrigins: process.env.CORS_ORIGINS,
   };

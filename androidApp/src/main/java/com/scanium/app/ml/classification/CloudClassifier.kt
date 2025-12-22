@@ -7,6 +7,8 @@ import com.scanium.app.BuildConfig
 import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.ml.ItemCategory
 import com.scanium.shared.core.models.config.CloudClassifierConfig
+import com.scanium.app.logging.CorrelationIds
+import com.scanium.app.logging.ScaniumLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -101,7 +103,7 @@ class CloudClassifier(
 
     override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.IO) {
         if (!config.isConfigured) {
-            Log.d(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
+            ScaniumLog.w(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
             return@withContext failureResult(
                 message = "Cloud classification disabled",
                 offline = true
@@ -110,7 +112,8 @@ class CloudClassifier(
 
         val bitmap = input.bitmap
         val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify"
-        Log.d(TAG, "Classifying with endpoint: $endpoint, domainPack: $domainPackId")
+        val correlationId = CorrelationIds.currentClassificationSessionId()
+        ScaniumLog.d(TAG, "Classifying endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
 
         maybeSaveDebugCrop(input)
 
@@ -133,6 +136,7 @@ class CloudClassifier(
                 .post(requestBody)
                 .apply {
                     config.apiKey?.let { header("X-API-Key", it) }
+                    header("X-Scanium-Correlation-Id", correlationId)
                     header("X-Client", "Scanium-Android")
                     header("X-App-Version", BuildConfig.VERSION_NAME)
                 }
@@ -151,7 +155,10 @@ class CloudClassifier(
                     if (responseCode == 200 && responseBody != null) {
                         val apiResponse = json.decodeFromString<CloudClassificationResponse>(responseBody)
                         val result = parseSuccessResponse(apiResponse)
-                        Log.i(TAG, "Classification success")
+                        ScaniumLog.i(
+                            TAG,
+                            "Classification success correlationId=$correlationId requestId=${apiResponse.requestId}"
+                        )
                         return@withContext result
                     }
 
@@ -162,7 +169,7 @@ class CloudClassifier(
                     }
 
                     if (isRetryableError(responseCode) && attempt < maxAttempts) {
-                        Log.w(TAG, "Retryable error: HTTP $responseCode (attempt $attempt)")
+                        ScaniumLog.w(TAG, "Retryable error HTTP $responseCode attempt=$attempt correlationId=$correlationId")
                         retry = true
                         return@use
                     }
