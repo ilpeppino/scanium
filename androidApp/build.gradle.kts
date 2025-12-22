@@ -221,6 +221,9 @@ dependencies {
     // ML Kit Text Recognition
     implementation("com.google.mlkit:text-recognition:16.0.0")
 
+    // ML Kit Image Labeling for on-device classification
+    implementation("com.google.mlkit:image-labeling:17.0.8")
+
     // Coroutines for Play Services (needed for ML Kit await)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 

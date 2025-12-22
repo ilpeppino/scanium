@@ -2,6 +2,7 @@ package com.scanium.app.aggregation
 
 import com.scanium.app.items.ScannedItem
 import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.core.tracking.Logger
 import java.util.UUID
@@ -349,7 +350,9 @@ class ItemAggregator(
             mergeCount = 1,
             firstSeenTimestamp = detection.timestamp,
             lastSeenTimestamp = detection.timestamp,
-            sourceDetectionIds = mutableSetOf(detection.id)
+            sourceDetectionIds = mutableSetOf(detection.id),
+            fullImageUri = detection.fullImageUri,
+            fullImagePath = detection.fullImagePath
         )
     }
 
@@ -419,6 +422,16 @@ class ItemAggregator(
             category?.let { item.enhancedCategory = it }
             label?.let { item.enhancedLabelText = it }
             priceRange?.let { item.enhancedPriceRange = it }
+        }
+    }
+
+    /**
+     * Updates the thumbnail reference for an aggregated item.
+     */
+    @Synchronized
+    fun updateThumbnail(aggregatedId: String, thumbnail: ImageRef?) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.thumbnail = thumbnail
         }
     }
 
