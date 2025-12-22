@@ -1,0 +1,30 @@
+{
+  "id": "VINTED_STYLE",
+  "displayName": "Vinted style",
+  "localeHint": "en_US",
+  "currencyHint": "EUR",
+  "titleRules": {
+    "maxLen": 50,
+    "includeBrandInTitle": true,
+    "includeModelInTitle": false,
+    "capitalization": "TITLE_CASE"
+  },
+  "descriptionRules": {
+    "format": "BULLETS",
+    "includeMeasurements": false,
+    "includeConditionLine": true,
+    "includeDisclaimerLine": false
+  },
+  "fieldOrdering": ["brand", "model", "color", "condition", "price", "category", "photos"],
+  "requiredFields": ["title", "price", "condition", "category", "photos"],
+  "optionalFieldLabels": {
+    "brand": "Brand",
+    "model": "Model",
+    "color": "Color",
+    "condition": "Condition",
+    "price": "Price",
+    "category": "Category",
+    "photos": "Photos"
+  },
+  "missingFieldPolicy": "SHOW_UNKNOWN"
+}

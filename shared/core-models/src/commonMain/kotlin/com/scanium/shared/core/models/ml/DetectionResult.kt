@@ -1,7 +1,8 @@
 package com.scanium.shared.core.models.ml
 
 import com.scanium.shared.core.models.model.NormalizedRect
-import kotlin.math.roundToInt
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 
 /**
  * Represents a real-time object detection result with bounding box and metadata.
@@ -18,12 +19,17 @@ data class DetectionResult(
     val category: ItemCategory,
     val priceRange: Pair<Double, Double>,
     val confidence: Float,
-    val trackingId: Int? = null
+    val trackingId: Int? = null,
+    val estimatedPriceRange: PriceRange? = null,
+    val priceEstimationStatus: PriceEstimationStatus = PriceEstimationStatus.Idle
 ) {
     /**
      * Formatted price range string for display on overlay.
      * Example: "€20 - €50"
      */
     val formattedPriceRange: String
-        get() = "€${priceRange.first.roundToInt()} - €${priceRange.second.roundToInt()}"
+        get() = when (val status = priceEstimationStatus) {
+            is PriceEstimationStatus.Ready -> status.priceRange.formatted()
+            else -> ""
+        }
 }

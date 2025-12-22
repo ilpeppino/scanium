@@ -1,6 +1,9 @@
 package com.scanium.shared.core.models.items
 
 import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.pricing.Money
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 import kotlinx.datetime.Clock
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -146,7 +149,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 20.0 to 50.0)
 
         // Assert
-        assertEquals("€20 - €50", item.formattedPriceRange)
+        assertEquals("€20–50", item.formattedPriceRange)
     }
 
     @Test
@@ -155,7 +158,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 19.99 to 49.99)
 
         // Assert
-        assertEquals("€20 - €50", item.formattedPriceRange)
+        assertEquals("€20–50", item.formattedPriceRange)
     }
 
     @Test
@@ -164,7 +167,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 100.0 to 500.0)
 
         // Assert
-        assertEquals("€100 - €500", item.formattedPriceRange)
+        assertEquals("€100–500", item.formattedPriceRange)
     }
 
     @Test
@@ -173,7 +176,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 1.0 to 5.0)
 
         // Assert
-        assertEquals("€1 - €5", item.formattedPriceRange)
+        assertEquals("€1–5", item.formattedPriceRange)
     }
 
     @Test
@@ -182,7 +185,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 0.0 to 0.0)
 
         // Assert
-        assertEquals("€0 - €0", item.formattedPriceRange)
+        assertEquals("€0–0", item.formattedPriceRange)
     }
 
     @Test
@@ -310,11 +313,14 @@ class ScannedItemTest {
         timestamp: Long = Clock.System.now().toEpochMilliseconds(),
         label: String? = null
     ): ScannedItem<Any> {
+        val range = PriceRange(Money(priceRange.first), Money(priceRange.second))
         return ScannedItem(
             id = id,
             thumbnail = null,
             category = category,
             priceRange = priceRange,
+            estimatedPriceRange = range,
+            priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = confidence,
             timestamp = timestamp,
             labelText = label

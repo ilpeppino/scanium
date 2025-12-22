@@ -32,9 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import com.scanium.app.data.ItemsActionPreferences
 import com.scanium.app.media.MediaStoreSaver
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
+import com.scanium.app.selling.persistence.ListingDraftStore
+import com.scanium.app.listing.ListingDraft
+import com.scanium.app.listing.ListingDraftBuilder
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,10 +57,12 @@ import java.util.*
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToSell: (List<String>) -> Unit,
+    onNavigateToDraft: (List<String>) -> Unit,
+    draftStore: ListingDraftStore,
     itemsViewModel: ItemsViewModel = viewModel()
 ) {
     val items by itemsViewModel.items.collectAsState()
-    var selectedItem by remember { mutableStateOf<ScannedItem?>(null) }
+    var previewDraft by remember { mutableStateOf<ListingDraft?>(null) }
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectionMode by remember { mutableStateOf(false) }
     var selectedAction by remember { mutableStateOf(SelectedItemsAction.SELL_ON_EBAY) }
@@ -65,6 +71,8 @@ fun ItemsListScreen(
     var lastDeletedWasSelected by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+    val actionPreferences = remember { ItemsActionPreferences(context) }
+    val lastAction by actionPreferences.lastAction.collectAsState(initial = SelectedItemsAction.SELL_ON_EBAY)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -92,9 +100,6 @@ fun ItemsListScreen(
     fun deleteItem(item: ScannedItem) {
         val wasSelected = selectedIds.remove(item.id)
         selectionMode = selectedIds.isNotEmpty()
-        if (selectedItem?.id == item.id) {
-            selectedItem = null
-        }
 
         itemsViewModel.removeItem(item.id)
         lastDeletedItem = item
@@ -119,8 +124,14 @@ fun ItemsListScreen(
         }
     }
 
-    fun executeAction() {
-        when (selectedAction) {
+    LaunchedEffect(lastAction) {
+        if (selectedAction != lastAction) {
+            selectedAction = lastAction
+        }
+    }
+
+    fun executeAction(action: SelectedItemsAction = selectedAction) {
+        when (action) {
             SelectedItemsAction.SAVE_TO_DEVICE -> {
                 scope.launch {
                     // Get selected items with their images (prefer high-res URI, fallback to thumbnail)
@@ -153,6 +164,14 @@ fun ItemsListScreen(
             }
             SelectedItemsAction.SELL_ON_EBAY -> {
                 onNavigateToSell(selectedIds.toList())
+            }
+            SelectedItemsAction.REVIEW_DRAFT -> {
+                val selected = selectedIds.toList()
+                if (selected.isNotEmpty()) {
+                    onNavigateToDraft(selected)
+                } else {
+                    scope.launch { snackbarHostState.showSnackbar("Select an item to review") }
+                }
             }
         }
     }
@@ -214,6 +233,7 @@ fun ItemsListScreen(
                                     imageVector = when (selectedAction) {
                                         SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
                                         SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                                        SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
                                     },
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
@@ -261,12 +281,17 @@ fun ItemsListScreen(
                                 onClick = {
                                     selectedAction = action
                                     showActionMenu = false
+                                    scope.launch {
+                                        actionPreferences.setLastAction(action)
+                                    }
+                                    executeAction(action)
                                 },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = when (action) {
                                             SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
                                             SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                                            SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
                                         },
                                         contentDescription = null
                                     )
@@ -368,7 +393,11 @@ fun ItemsListScreen(
                                         toggleSelection(item)
                                     },
                                     onLongClick = {
-                                        selectedItem = item
+                                        scope.launch {
+                                            val draft = draftStore.getByItemId(item.id)
+                                                ?: ListingDraftBuilder.build(item)
+                                            previewDraft = draft
+                                        }
                                     },
                                     onRetryClassification = {
                                         itemsViewModel.retryClassification(item.id)
@@ -382,11 +411,11 @@ fun ItemsListScreen(
         }
     }
 
-    // Detail dialog
-    selectedItem?.let { item ->
-        ItemDetailDialog(
-            item = item,
-            onDismiss = { selectedItem = null }
+    // Draft preview dialog
+    previewDraft?.let { draft ->
+        DraftPreviewDialog(
+            draft = draft,
+            onDismiss = { previewDraft = null }
         )
     }
 }
@@ -699,4 +728,37 @@ private fun ClassificationStatusBadge(status: String) {
 private fun formatTimestamp(timestamp: Long): String {
     val format = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
     return format.format(Date(timestamp))
+}
+
+@Composable
+private fun DraftPreviewDialog(
+    draft: ListingDraft,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close")
+            }
+        },
+        title = { Text("Draft preview") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Title: ${draft.title.value.orEmpty()}")
+                Text("Description: ${draft.description.value.orEmpty()}")
+                Text("Price: ${formatPrice(draft.price.value)}")
+                Text("Condition: ${draft.fields[com.scanium.app.listing.DraftFieldKey.CONDITION]?.value.orEmpty()}")
+                Text("Status: ${draft.status.name.lowercase().replaceFirstChar { it.uppercase() }}")
+            }
+        }
+    )
+}
+
+private fun formatPrice(value: Double?): String {
+    if (value == null) return ""
+    val formatter = java.text.DecimalFormat("0.***REMOVED******REMOVED***")
+    formatter.maximumFractionDigits = 2
+    formatter.minimumFractionDigits = 0
+    return formatter.format(value)
 }

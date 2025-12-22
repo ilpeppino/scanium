@@ -2,6 +2,9 @@ package com.scanium.shared.core.models.items
 
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.shared.core.models.pricing.Money
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 
 /**
  * Lightweight, deterministic sample data for iOS to validate the Shared.xcframework wiring.
@@ -12,6 +15,8 @@ class SampleItemsProvider {
             id = "shared-fashion-1",
             category = ItemCategory.FASHION,
             priceRange = 40.0 to 85.0,
+            estimatedPriceRange = PriceRange(Money(40.0), Money(85.0)),
+            priceEstimationStatus = PriceEstimationStatus.Ready(PriceRange(Money(40.0), Money(85.0))),
             confidence = 0.86f,
             boundingBox = NormalizedRect(
                 left = 0.1f,
@@ -25,6 +30,8 @@ class SampleItemsProvider {
             id = "shared-electronics-2",
             category = ItemCategory.ELECTRONICS,
             priceRange = 120.0 to 250.0,
+            estimatedPriceRange = PriceRange(Money(120.0), Money(250.0)),
+            priceEstimationStatus = PriceEstimationStatus.Ready(PriceRange(Money(120.0), Money(250.0))),
             confidence = 0.73f,
             barcodeValue = "01234567890",
             boundingBox = NormalizedRect(
