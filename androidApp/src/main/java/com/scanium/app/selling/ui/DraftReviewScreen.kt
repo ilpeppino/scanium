@@ -75,7 +75,8 @@ fun DraftReviewScreen(
     onBack: () -> Unit,
     itemsViewModel: ItemsViewModel,
     draftStore: ListingDraftStore,
-    onOpenPostingAssist: (List<String>, Int) -> Unit
+    onOpenPostingAssist: (List<String>, Int) -> Unit,
+    onOpenAssistant: (List<String>) -> Unit
 ) {
     val context = LocalContext.current
     val profileRepository = remember { AssetExportProfileRepository(context) }
@@ -117,6 +118,16 @@ fun DraftReviewScreen(
                         enabled = state.draft != null
                     ) {
                         Text("Posting Assist")
+                    }
+                    TextButton(
+                        onClick = {
+                            viewModel.saveDraft()
+                            val itemId = state.itemIds.getOrNull(state.currentIndex)?.let { listOf(it) } ?: state.itemIds
+                            onOpenAssistant(itemId)
+                        },
+                        enabled = state.draft != null
+                    ) {
+                        Text("Ask Assistant")
                     }
                     IconButton(onClick = { viewModel.saveDraft() }, enabled = state.draft != null) {
                         Icon(imageVector = Icons.Default.Save, contentDescription = "Save draft")

@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Launch
 import androidx.compose.material.icons.filled.MoreVert
@@ -78,7 +79,8 @@ fun PostingAssistScreen(
     startIndex: Int,
     onBack: () -> Unit,
     itemsViewModel: ItemsViewModel,
-    draftStore: ListingDraftStore
+    draftStore: ListingDraftStore,
+    onOpenAssistant: (List<String>, Int) -> Unit
 ) {
     val context = LocalContext.current
     val profileRepository = remember { AssetExportProfileRepository(context) }
@@ -127,6 +129,13 @@ fun PostingAssistScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = {
+                            onOpenAssistant(state.itemIds, state.currentIndex)
+                        }
+                    ) {
+                        Icon(imageVector = Icons.Default.Chat, contentDescription = "Ask assistant")
+                    }
                     IconButton(onClick = { targetDialogVisible = true }) {
                         Icon(imageVector = Icons.Default.Launch, contentDescription = "Open target")
                     }
