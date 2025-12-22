@@ -1,5 +1,6 @@
 package com.scanium.app.aggregation
 
+import android.net.Uri
 import com.scanium.app.items.ScannedItem
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
@@ -50,6 +51,8 @@ data class AggregatedItem(
     var enhancedCategory: ItemCategory? = null,
     var enhancedLabelText: String? = null,
     var enhancedPriceRange: Pair<Double, Double>? = null,
+    var fullImageUri: Uri? = null,
+    var fullImagePath: String? = null,
     // Classification status tracking (Phase 9)
     var classificationStatus: String = "NOT_STARTED", // NOT_STARTED, PENDING, SUCCESS, FAILED
     var domainCategoryId: String? = null,
@@ -72,6 +75,8 @@ data class AggregatedItem(
             timestamp = lastSeenTimestamp,
             boundingBox = boundingBox,
             labelText = enhancedLabelText ?: labelText,
+            fullImageUri = fullImageUri,
+            fullImagePath = fullImagePath,
             classificationStatus = classificationStatus,
             domainCategoryId = domainCategoryId,
             classificationErrorMessage = classificationErrorMessage,
@@ -117,6 +122,13 @@ data class AggregatedItem(
         val newMax = maxOf(priceRange.second, detection.priceRange.second)
         priceRange = Pair(newMin, newMax)
 
+        detection.fullImageUri?.let { fullImageUri = it }
+        detection.fullImagePath?.let { path ->
+            if (path.isNotBlank()) {
+                fullImagePath = path
+            }
+        }
+
         // Update last seen timestamp
         lastSeenTimestamp = System.currentTimeMillis()
     }
@@ -145,7 +157,7 @@ data class AggregatedItem(
      * @return true if item is older than maxAgeMs
      */
     fun isStale(maxAgeMs: Long): Boolean {
-        return (System.currentTimeMillis() - lastSeenTimestamp) > maxAgeMs
+        return (System.currentTimeMillis() - lastSeenTimestamp) >= maxAgeMs
     }
 
     /**
@@ -154,5 +166,6 @@ data class AggregatedItem(
      */
     fun cleanup() {
         thumbnail = null
+        fullImageUri = null
     }
 }

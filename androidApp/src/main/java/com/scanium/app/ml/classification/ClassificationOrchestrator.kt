@@ -64,7 +64,10 @@ class ClassificationOrchestrator(
         }.stateIn(
             scope = scope,
             started = SharingStarted.Lazily,
-            initialValue = com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
+            initialValue = when (modeFlow.value) {
+                ClassificationMode.CLOUD -> com.scanium.shared.core.models.classification.ClassificationMode.CLOUD
+                ClassificationMode.ON_DEVICE -> com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
+            }
         )
 
     // Delegate to shared orchestrator

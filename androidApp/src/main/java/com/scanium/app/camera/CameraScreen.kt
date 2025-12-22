@@ -56,7 +56,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.shouldShowRationale
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
-import com.scanium.android.platform.adapters.toImageRefJpeg
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -398,14 +397,9 @@ fun CameraScreen(
                                         scope.launch {
                                             val highResUri = cameraManager.captureHighResImage()
                                             val itemsWithHighRes = if (highResUri != null) {
-                                                // Generate high-quality thumbnails from the high-res image
                                                 items.map { item ->
-                                                    val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
-                                                    val newThumbnailRef = newThumbnail?.toImageRefJpeg(quality = 85)
                                                     item.copy(
-                                                        fullImageUri = highResUri,
-                                                        thumbnail = newThumbnailRef ?: item.thumbnail,
-                                                        thumbnailRef = newThumbnailRef ?: item.thumbnailRef
+                                                        fullImageUri = highResUri
                                                     )
                                                 }
                                             } else {
@@ -444,13 +438,7 @@ fun CameraScreen(
                                             val highResUri = cameraManager.captureHighResImage()
                                             val itemsWithHighRes = if (highResUri != null) {
                                                 items.map { item ->
-                                                    val newThumbnail = ImageUtils.createThumbnailFromUri(context, highResUri)
-                                                    val newThumbnailRef = newThumbnail?.toImageRefJpeg(quality = 85)
-                                                    item.copy(
-                                                        fullImageUri = highResUri,
-                                                        thumbnail = newThumbnailRef ?: item.thumbnail,
-                                                        thumbnailRef = newThumbnailRef ?: item.thumbnailRef
-                                                    )
+                                                    item.copy(fullImageUri = highResUri)
                                                 }
                                             } else {
                                                 items

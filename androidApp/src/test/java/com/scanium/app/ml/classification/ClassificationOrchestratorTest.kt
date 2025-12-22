@@ -175,6 +175,54 @@ class ClassificationOrchestratorTest {
     }
 
     @Test
+    fun whenModeOnDevice_onlyOnDeviceClassifierInvoked() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+        val modeFlow = MutableStateFlow(ClassificationMode.ON_DEVICE)
+        val onDeviceClassifier = NamedClassifier(ClassificationMode.ON_DEVICE)
+        val cloudClassifier = NamedClassifier(ClassificationMode.CLOUD)
+        val orchestrator = ClassificationOrchestrator(
+            modeFlow = modeFlow,
+            onDeviceClassifier = onDeviceClassifier,
+            cloudClassifier = cloudClassifier,
+            scope = testScope,
+            delayProvider = { }
+        )
+
+        val item = createAggregatedItem("agg-on-device")
+        orchestrator.classify(listOf(item)) { _, _ -> }
+        advanceUntilIdle()
+
+        assertThat(onDeviceClassifier.callCount).isEqualTo(1)
+        assertThat(cloudClassifier.callCount).isEqualTo(0)
+
+        testScope.cancel()
+    }
+
+    @Test
+    fun whenModeCloud_onlyCloudClassifierInvoked() = runTest {
+        val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+        val modeFlow = MutableStateFlow(ClassificationMode.CLOUD)
+        val onDeviceClassifier = NamedClassifier(ClassificationMode.ON_DEVICE)
+        val cloudClassifier = NamedClassifier(ClassificationMode.CLOUD)
+        val orchestrator = ClassificationOrchestrator(
+            modeFlow = modeFlow,
+            onDeviceClassifier = onDeviceClassifier,
+            cloudClassifier = cloudClassifier,
+            scope = testScope,
+            delayProvider = { }
+        )
+
+        val item = createAggregatedItem("agg-cloud")
+        orchestrator.classify(listOf(item)) { _, _ -> }
+        advanceUntilIdle()
+
+        assertThat(onDeviceClassifier.callCount).isEqualTo(0)
+        assertThat(cloudClassifier.callCount).isEqualTo(1)
+
+        testScope.cancel()
+    }
+
+    @Test
     fun whenResetCalled_cacheIsCleared() = runTest {
         val testScope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
         val modeFlow = MutableStateFlow(ClassificationMode.ON_DEVICE)
@@ -301,6 +349,24 @@ class ClassificationOrchestratorTest {
                 confidence = 0.8f,
                 category = ItemCategory.HOME_GOOD,
                 mode = ClassificationMode.CLOUD,
+                status = ClassificationStatus.SUCCESS
+            )
+        }
+    }
+
+    private class NamedClassifier(
+        private val resultMode: ClassificationMode
+    ) : ItemClassifier {
+        var callCount: Int = 0
+            private set
+
+        override suspend fun classifySingle(input: ClassificationInput): ClassificationResult {
+            callCount++
+            return ClassificationResult(
+                label = "Test",
+                confidence = 0.7f,
+                category = ItemCategory.HOME_GOOD,
+                mode = resultMode,
                 status = ClassificationStatus.SUCCESS
             )
         }
