@@ -113,6 +113,10 @@ class ClassificationOrchestrator(
 
                 // Add trace marker for profiling
                 Trace.beginSection("ClassificationOrchestrator.classify")
+                
+                // Track metrics
+                val startTime = System.currentTimeMillis()
+                ClassificationMetrics.recordStart()
 
                 // Classify using shared orchestrator
                 sharedOrchestrator.classify(
@@ -122,6 +126,12 @@ class ClassificationOrchestrator(
                 ) { itemId, sharedResult ->
                     // Convert shared ClassificationResult to Android ClassificationResult
                     val androidResult = convertToAndroidResult(sharedResult)
+                    
+                    // Update metrics
+                    val latency = System.currentTimeMillis() - startTime
+                    val isSuccess = sharedResult.status == com.scanium.shared.core.models.classification.ClassificationStatus.SUCCESS
+                    ClassificationMetrics.recordComplete(latency, isSuccess)
+                    
                     onResult(item, androidResult)
                     Trace.endSection()
                 }
@@ -146,6 +156,10 @@ class ClassificationOrchestrator(
 
         // Add trace marker for profiling
         Trace.beginSection("ClassificationOrchestrator.retry")
+        
+        // Track metrics
+        val startTime = System.currentTimeMillis()
+        ClassificationMetrics.recordStart()
 
         sharedOrchestrator.retry(
             itemId = aggregatedId,
@@ -153,6 +167,12 @@ class ClassificationOrchestrator(
             boundingBox = item.boundingBox
         ) { itemId, sharedResult ->
             val androidResult = convertToAndroidResult(sharedResult)
+            
+            // Update metrics
+            val latency = System.currentTimeMillis() - startTime
+            val isSuccess = sharedResult.status == com.scanium.shared.core.models.classification.ClassificationStatus.SUCCESS
+            ClassificationMetrics.recordComplete(latency, isSuccess)
+            
             onResult(item, androidResult)
             Trace.endSection()
         }
