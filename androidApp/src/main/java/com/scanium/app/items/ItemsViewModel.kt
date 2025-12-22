@@ -8,6 +8,7 @@ import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.ItemAggregator
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ml.PricingEngine
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ClassificationResult
