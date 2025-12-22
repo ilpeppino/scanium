@@ -97,7 +97,7 @@ class ItemAggregator(
     fun removeStaleItems(maxAgeMs: Long): Int {
         val now = nowMillis()
         val stale = aggregatedItems.values.filter { item ->
-            now - item.lastSeenTimestamp > maxAgeMs
+            now - item.lastSeenTimestamp >= maxAgeMs
         }
 
         stale.forEach { item ->
@@ -408,7 +408,7 @@ data class AggregatedItem(
 
     fun getBoxArea(): Float = boundingBox.area
 
-    fun isStale(maxAgeMs: Long): Boolean = nowMillis() - lastSeenTimestamp > maxAgeMs
+    fun isStale(maxAgeMs: Long): Boolean = nowMillis() - lastSeenTimestamp >= maxAgeMs
 
     fun toScannedItem(): ScannedItem {
         return ScannedItem(
