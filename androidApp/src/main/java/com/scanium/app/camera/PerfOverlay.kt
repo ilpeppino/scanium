@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -17,6 +16,11 @@ import com.scanium.app.ml.classification.ClassificationMode
 fun PerfOverlay(
     analysisFps: Double,
     classificationMode: ClassificationMode,
+    callsStarted: Int,
+    callsCompleted: Int,
+    callsFailed: Int,
+    lastLatency: Long,
+    queueDepth: Int,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -36,6 +40,26 @@ fun PerfOverlay(
             fontSize = 10.sp,
             lineHeight = 12.sp
         )
-        // Add more metrics here as they become available via StateFlows
+        
+        if (classificationMode == ClassificationMode.CLOUD) {
+            Text(
+                text = "Cloud: $callsCompleted/$callsStarted (Fail: $callsFailed)",
+                color = if (callsFailed > 0) Color(0xFFFF6B6B) else Color.White,
+                fontSize = 10.sp,
+                lineHeight = 12.sp
+            )
+            Text(
+                text = "Queue: $queueDepth",
+                color = if (queueDepth > 2) Color.Yellow else Color.White,
+                fontSize = 10.sp,
+                lineHeight = 12.sp
+            )
+            Text(
+                text = "Last Latency: ${lastLatency}ms",
+                color = Color.White,
+                fontSize = 10.sp,
+                lineHeight = 12.sp
+            )
+        }
     }
 }
