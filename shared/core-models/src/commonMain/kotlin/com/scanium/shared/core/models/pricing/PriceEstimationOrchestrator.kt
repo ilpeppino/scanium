@@ -87,7 +87,7 @@ class PriceEstimationOrchestrator(
     }
 
     private fun buildDedupKey(request: PriceEstimationRequest): String {
-        val attributesKey = request.attributes.toSortedMap().entries.joinToString(separator = "|") { "${it.key}:${it.value}" }
+        val attributesKey = request.attributes.entries.sortedBy { it.key }.joinToString(separator = "|") { "${it.key}:${it.value}" }
         return listOfNotNull(
             request.itemId,
             request.categoryId,

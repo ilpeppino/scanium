@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "ttlSeconds": 3600,
+  "featureFlags": {
+    "enableCloud": true,
+    "enableAssistant": false,
+    "enableProfiles": false,
+    "enablePostingAssist": false
+  },
+  "limits": {
+    "cloudDailyCap": 50,
+    "assistDailyCap": 10,
+    "maxPhotosShare": 10,
+    "scanCloudCooldownMs": 1000
+  },
+  "experiments": {},
+  "rollouts": {
+    "enableAssistant": 0
+  }
+}

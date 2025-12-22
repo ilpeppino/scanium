@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.datetime.Clock
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.random.Random
@@ -152,7 +153,7 @@ class ClassificationOrchestrator(
 
         scope.launch {
             // [METRICS] Start classification turnaround measurement
-            val classificationStartTime = System.currentTimeMillis()
+            val classificationStartTime = Clock.System.now().toEpochMilliseconds()
 
             try {
                 // Acquire semaphore (wait if 2 requests already in flight)
@@ -177,7 +178,7 @@ class ClassificationOrchestrator(
                 val result = classifyWithExponentialBackoff(itemId, thumbnail, classifier)
 
                 // [METRICS] Calculate classification turnaround
-                val turnaroundMs = System.currentTimeMillis() - classificationStartTime
+                val turnaroundMs = Clock.System.now().toEpochMilliseconds() - classificationStartTime
                 logger.i(TAG, "[METRICS] Classification turnaround for $itemId: ${turnaroundMs}ms (mode=$mode, status=${result.status})")
 
                 when (result.status) {
@@ -211,7 +212,7 @@ class ClassificationOrchestrator(
                 permanentlyFailedRequests.add(itemId)
 
                 // [METRICS] Log error turnaround
-                val turnaroundMs = System.currentTimeMillis() - classificationStartTime
+                val turnaroundMs = Clock.System.now().toEpochMilliseconds() - classificationStartTime
                 logger.i(TAG, "[METRICS] Classification error turnaround for $itemId: ${turnaroundMs}ms (error)")
             } finally {
                 pendingRequests.remove(itemId)
@@ -230,7 +231,7 @@ class ClassificationOrchestrator(
         thumbnail: ImageRef,
         classifier: Classifier
     ): ClassificationResult {
-        var attempt = retryAttempts.getOrDefault(itemId, 0)
+        var attempt = retryAttempts[itemId] ?: 0
 
         while (attempt <= maxRetries) {
             if (attempt > 0) {

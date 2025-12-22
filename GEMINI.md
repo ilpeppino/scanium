@@ -95,5 +95,6 @@ The project is a multi-module Gradle project with a distinct separation between 
 *   `settings.gradle.kts`: Module definition.
 *   `androidApp/build.gradle.kts`: Main app dependencies and config.
 *   `docs/ARCHITECTURE.md`: Detailed architectural decisions.
+*   `docs/CODEX_CONTEXT.md`: Context about AI agent working on the project
 *   `AGENTS.md`: Context about AI agents working on the project.
 *   `backend/package.json`: Backend dependencies and scripts.

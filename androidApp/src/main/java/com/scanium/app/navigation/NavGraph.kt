@@ -282,12 +282,14 @@ fun ObjectaNavGraph(
     }
     
     val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     val settingsRepository = androidx.compose.runtime.remember { com.scanium.app.data.SettingsRepository(context) }
     val billingRepository = androidx.compose.runtime.remember { com.scanium.app.billing.BillingRepository(context) }
     val billingProvider = androidx.compose.runtime.remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
     val entitlementManager = androidx.compose.runtime.remember { com.scanium.app.data.EntitlementManager(settingsRepository, billingProvider) }
+    val configProvider = androidx.compose.runtime.remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(settingsRepository, entitlementManager)
+        factory = SettingsViewModel.Factory(settingsRepository, entitlementManager, configProvider)
     )
     val paywallViewModel: PaywallViewModel = viewModel(
         factory = PaywallViewModel.Factory(billingProvider)

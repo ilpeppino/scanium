@@ -119,8 +119,11 @@ class ItemsViewModel(
     )
 
     private val priceStatusJobs = mutableMapOf<String, Job>()
-    private val lastCloudCallByItem = mutableMapOf<String, Long>()
-    private val cloudCallCooldownMs = 8_000L
+    
+    // Cloud call gatekeeper (replaces ad-hoc throttling)
+    private val cloudCallGate = com.scanium.app.ml.classification.CloudCallGate(
+        isCloudMode = { classificationModeFlow.value == ClassificationMode.CLOUD }
+    )
 
     // Dynamic similarity threshold control (0.0 - 1.0)
     // Default is REALTIME preset value (0.55)
@@ -249,7 +252,7 @@ class ItemsViewModel(
 
         // Reset classifier cache to avoid stale matches
         classificationOrchestrator.reset()
-        lastCloudCallByItem.clear()
+        cloudCallGate.reset()
         val sessionId = CorrelationIds.startNewClassificationSession()
         ScaniumLog.i(TAG, "Classification session reset correlationId=$sessionId")
 
@@ -428,46 +431,47 @@ class ItemsViewModel(
     private fun triggerEnhancedClassification() {
         // Offload filtering to background to avoid blocking UI during burst detections
         viewModelScope.launch(mainDispatcher) {
-            val pendingItems = withContext(workerDispatcher) {
+            // Stage 1: Preliminary filter (check orchestrator + gate cooldown/stability)
+            val candidates = withContext(workerDispatcher) {
                 itemAggregator.getAggregatedItems()
                     .filter {
                         (it.thumbnail != null || it.fullImageUri != null) &&
                             classificationOrchestrator.shouldClassify(it.aggregatedId) &&
-                            !shouldThrottleCloud(it.aggregatedId)
+                            cloudCallGate.canClassify(it, null) // Check stability & cooldown only
                     }
             }
 
-            if (pendingItems.isEmpty()) return@launch
+            if (candidates.isEmpty()) return@launch
 
-            val preparedItems = prepareThumbnailsForClassification(pendingItems)
+            // Stage 2: Prepare thumbnails (I/O)
+            val preparedItems = prepareThumbnailsForClassification(candidates)
             if (preparedItems.isEmpty()) return@launch
 
+            // Stage 3: Duplicate content filter (Hash check)
+            val itemsToClassify = preparedItems.filter { item ->
+                cloudCallGate.canClassify(item, item.thumbnail)
+            }
+
+            if (itemsToClassify.isEmpty()) return@launch
+
             // Mark items as PENDING using thread-safe method
-            val pendingIds = preparedItems.map { it.aggregatedId }
+            val pendingIds = itemsToClassify.map { it.aggregatedId }
             itemAggregator.markClassificationPending(pendingIds)
+
+            // Notify gate of successful trigger
+            itemsToClassify.forEach { 
+                cloudCallGate.onClassificationTriggered(it, it.thumbnail) 
+            }
 
             // Update UI on main dispatcher
             withContext(mainDispatcher) {
                 _items.value = itemAggregator.getScannedItems()
             }
 
-            classificationOrchestrator.classify(preparedItems) { aggregatedItem, result ->
+            classificationOrchestrator.classify(itemsToClassify) { aggregatedItem, result ->
                 handleClassificationResult(aggregatedItem, result)
             }
         }
-    }
-
-    private fun shouldThrottleCloud(itemId: String): Boolean {
-        if (!ClassifierDebugFlags.lowDataModeEnabled) return false
-        if (classificationModeFlow.value != ClassificationMode.CLOUD) return false
-        val now = System.currentTimeMillis()
-        val last = lastCloudCallByItem[itemId] ?: 0L
-        if (now - last < cloudCallCooldownMs) {
-            ScaniumLog.d(TAG, "Low data mode throttling item=$itemId")
-            return true
-        }
-        lastCloudCallByItem[itemId] = now
-        return false
     }
 
     private suspend fun prepareThumbnailsForClassification(

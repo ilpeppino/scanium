@@ -147,4 +147,87 @@ object ImageUtils {
             0
         }
     }
+
+    /**
+     * Calculates a sharpness score for the given bitmap using Laplacian variance.
+     * Higher score = sharper image.
+     *
+     * Uses a simplified 3x3 Laplacian kernel on grayscale pixels.
+     * To ensure performance, this operates on a downscaled version if the input is large.
+     */
+    fun calculateSharpness(bitmap: Bitmap): Double {
+        val width = bitmap.width
+        val height = bitmap.height
+        
+        // Operate on a smaller bitmap for performance if needed
+        val targetSize = 256
+        val (processBitmap, w, h) = if (width > targetSize || height > targetSize) {
+            val scale = min(targetSize.toFloat() / width, targetSize.toFloat() / height)
+            val sw = (width * scale).toInt()
+            val sh = (height * scale).toInt()
+            Triple(Bitmap.createScaledBitmap(bitmap, sw, sh, true), sw, sh)
+        } else {
+            Triple(bitmap, width, height)
+        }
+
+        val pixels = IntArray(w * h)
+        processBitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+        
+        if (processBitmap != bitmap) {
+            processBitmap.recycle()
+        }
+
+        // Convert to grayscale
+        val grayPixels = IntArray(w * h)
+        for (i in pixels.indices) {
+            val p = pixels[i]
+            val r = (p shr 16) and 0xFF
+            val g = (p shr 8) and 0xFF
+            val b = p and 0xFF
+            // Luminance formula: 0.299R + 0.587G + 0.114B
+            grayPixels[i] = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
+        }
+
+        // Apply Laplacian kernel
+        // Kernel:
+        // 0  1  0
+        // 1 -4  1
+        // 0  1  0
+        
+        val laplacian = IntArray(w * h)
+        var sum = 0L
+        var count = 0
+        
+        // Skip borders
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                val idx = y * w + x
+                val valTop = grayPixels[idx - w]
+                val valBottom = grayPixels[idx + w]
+                val valLeft = grayPixels[idx - 1]
+                val valRight = grayPixels[idx + 1]
+                val valCenter = grayPixels[idx]
+                
+                val lap = valTop + valBottom + valLeft + valRight - (4 * valCenter)
+                laplacian[idx] = lap
+                sum += lap
+                count++
+            }
+        }
+        
+        if (count == 0) return 0.0
+        
+        val mean = sum.toDouble() / count
+        var sqDiffSum = 0.0
+        
+        for (y in 1 until h - 1) {
+            for (x in 1 until w - 1) {
+                val idx = y * w + x
+                val diff = laplacian[idx] - mean
+                sqDiffSum += diff * diff
+            }
+        }
+        
+        return sqDiffSum / count
+    }
 }

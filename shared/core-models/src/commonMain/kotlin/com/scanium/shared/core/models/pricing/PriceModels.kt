@@ -22,11 +22,7 @@ data class PriceRange(
             "USD" -> "$"
             else -> "$currencyCode "
         }
-        return "%s%d–%d".format(
-            symbol,
-            low.amount.roundToInt(),
-            high.amount.roundToInt()
-        )
+        return "$symbol${low.amount.roundToInt()}–${high.amount.roundToInt()}"
     }
 
     fun toPair(): Pair<Double, Double> = low.amount to high.amount

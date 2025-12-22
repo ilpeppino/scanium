@@ -34,7 +34,8 @@ data class ObjectCandidate(
     var labelText: String = "",
     var thumbnail: ImageRef? = null,
     val firstSeenFrame: Long = lastSeenFrame,
-    var averageBoxArea: Float = 0f
+    var averageBoxArea: Float = 0f,
+    var qualityScore: Float = 0f
 ) {
     /**
      * Update this candidate with new detection information from the current frame.
@@ -46,7 +47,8 @@ data class ObjectCandidate(
         newCategory: ItemCategory,
         newLabelText: String,
         newThumbnail: ImageRef?,
-        boxArea: Float
+        boxArea: Float,
+        newQualityScore: Float = 0f
     ) {
         boundingBox = newBoundingBox
         lastSeenFrame = frameNumber
@@ -57,10 +59,16 @@ data class ObjectCandidate(
             maxConfidence = confidence
             category = newCategory
             labelText = newLabelText
+        }
 
-            // Update thumbnail when we get better confidence
-            if (newThumbnail != null) {
+        // Update thumbnail logic: Prefer higher quality scores
+        if (newThumbnail != null) {
+            val isBetterQuality = newQualityScore > qualityScore
+            val isFirstThumbnail = thumbnail == null
+            
+            if (isFirstThumbnail || isBetterQuality) {
                 thumbnail = newThumbnail
+                qualityScore = newQualityScore
             }
         }
 

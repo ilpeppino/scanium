@@ -82,7 +82,8 @@ data class ScannedItem<FullImageUri>(
     val classificationStatus: String = "NOT_STARTED",
     val domainCategoryId: String? = null,
     val classificationErrorMessage: String? = null,
-    val classificationRequestId: String? = null
+    val classificationRequestId: String? = null,
+    val qualityScore: Float = 0.0f
 ) {
     /**
      * Formatted price range string for display.
