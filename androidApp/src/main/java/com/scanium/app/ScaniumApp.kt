@@ -21,6 +21,7 @@ import com.scanium.app.navigation.ScaniumNavGraph
 import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.ml.classification.CloudClassifier
 import com.scanium.app.ml.classification.OnDeviceClassifier
+import com.scanium.app.ml.classification.StableItemCropper
 import com.scanium.app.settings.ClassificationModeViewModel
 
 /**
@@ -56,7 +57,8 @@ fun ScaniumApp() {
                     classificationMode = classificationModeViewModel.classificationMode,
                     onDeviceClassifier = OnDeviceClassifier(),
                     cloudClassifier = CloudClassifier(context = context),
-                    itemsStore = itemsRepository
+                    itemsStore = itemsRepository,
+                    stableItemCropper = StableItemCropper(context)
                 ) as T
             }
         }

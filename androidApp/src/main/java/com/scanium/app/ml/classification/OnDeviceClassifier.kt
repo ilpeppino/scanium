@@ -2,80 +2,77 @@ package com.scanium.app.ml.classification
 
 import android.graphics.Bitmap
 import android.util.Log
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.label.ImageLabeling
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import com.scanium.app.ml.ItemCategory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
-import kotlin.math.roundToInt
 
 /**
- * Lightweight on-device classifier placeholder.
- *
- * In a production app this would wrap a TFLite/CLIP model. For now we derive
- * simple features (dominant brightness and aspect ratio) to produce stable
- * labels without blocking the main thread.
+ * On-device classifier backed by ML Kit Image Labeling.
  */
-class OnDeviceClassifier : ItemClassifier {
+class OnDeviceClassifier(
+    confidenceThreshold: Float = 0.5f,
+    private val labelerClient: ImageLabelerClient = MlKitImageLabeler(confidenceThreshold)
+) : ItemClassifier {
     companion object {
         private const val TAG = "OnDeviceClassifier"
-        private const val SAMPLE_SIZE = 96
     }
 
     override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.Default) {
-        val bitmap = input.bitmap
         runCatching {
-            val resized = Bitmap.createScaledBitmap(bitmap, SAMPLE_SIZE, SAMPLE_SIZE, true)
-            try {
-                var sum = 0L
-                var brightest = 0
-                var darkest = 255
+            val labels = labelerClient.label(input.bitmap)
 
-                for (y in 0 until resized.height step 4) {
-                    for (x in 0 until resized.width step 4) {
-                        val pixel = resized.getPixel(x, y)
-                        val r = android.graphics.Color.red(pixel)
-                        val g = android.graphics.Color.green(pixel)
-                        val b = android.graphics.Color.blue(pixel)
-                        val luma = (0.299 * r + 0.587 * g + 0.114 * b).roundToInt()
-                        sum += luma
-                        brightest = maxOf(brightest, luma)
-                        darkest = minOf(darkest, luma)
-                    }
-                }
+            val bestLabel = labels.maxByOrNull { it.confidence }
 
-                val sampleCount = (resized.height / 4) * (resized.width / 4)
-                val avg = sum / sampleCount
-                val contrast = brightest - darkest
-                val aspectRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
-
-                val label = when {
-                    contrast < 15 -> "flat surface"
-                    avg > 170 -> "bright device"
-                    aspectRatio > 1.3f -> "wide object"
-                    else -> "generic item"
-                }
-
-                val category = ItemCategory.fromClassifierLabel(label)
-                val confidence = when (label) {
-                    "bright device" -> 0.78f
-                    "wide object" -> 0.65f
-                    "flat surface" -> 0.55f
-                    else -> 0.6f
-                }
-
-                Log.d(TAG, "On-device classification label=$label avg=$avg contrast=$contrast aspect=$aspectRatio")
-                ClassificationResult(
-                    label = label,
-                    confidence = confidence,
-                    category = category,
+            if (bestLabel == null) {
+                Log.d(TAG, "Image labeling returned no labels for ${input.aggregatedId}")
+                return@withContext ClassificationResult(
+                    label = null,
+                    confidence = 0f,
+                    category = ItemCategory.UNKNOWN,
                     mode = ClassificationMode.ON_DEVICE
                 )
-            } finally {
-                // Recycle temporary scaled bitmap to avoid memory leak
-                // (Only safe for API 24-25; API 26+ uses heap allocation anyway)
-                if (resized != bitmap) {
-                    resized.recycle()
-                }
             }
+
+            val category = ItemCategory.fromClassifierLabel(bestLabel.text)
+            Log.d(TAG, "On-device classification label=${bestLabel.text}, confidence=${bestLabel.confidence}")
+
+            ClassificationResult(
+                label = bestLabel.text,
+                confidence = bestLabel.confidence,
+                category = category,
+                mode = ClassificationMode.ON_DEVICE
+            )
+        }.onFailure { error ->
+            Log.w(TAG, "On-device classification failed", error)
         }.getOrNull()
+    }
+
+    interface ImageLabelerClient {
+        suspend fun label(bitmap: Bitmap): List<LabelResult>
+    }
+
+    data class LabelResult(
+        val text: String,
+        val confidence: Float
+    )
+
+    private class MlKitImageLabeler(
+        confidenceThreshold: Float
+    ) : ImageLabelerClient {
+        private val labeler = ImageLabeling.getClient(
+            ImageLabelerOptions.Builder()
+                .setConfidenceThreshold(confidenceThreshold)
+                .build()
+        )
+
+        override suspend fun label(bitmap: Bitmap): List<LabelResult> {
+            val image = InputImage.fromBitmap(bitmap, 0)
+            val labels = labeler.process(image).await()
+            return labels.map { LabelResult(it.text, it.confidence) }
+        }
     }
 }

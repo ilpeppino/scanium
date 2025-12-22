@@ -4,13 +4,17 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.BuildConfig
+import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.ItemAggregator
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
+import com.scanium.app.ml.classification.ClassificationResult
+import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
+import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.pricing.PriceEstimationRepository
@@ -49,6 +53,7 @@ class ItemsViewModel(
     onDeviceClassifier: ItemClassifier = NoopClassifier,
     cloudClassifier: ItemClassifier = NoopClassifier,
     private val itemsStore: ScannedItemStore = NoopScannedItemStore,
+    private val stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     priceEstimatorProvider: PriceEstimatorProvider? = null
@@ -394,13 +399,19 @@ class ItemsViewModel(
         viewModelScope.launch(mainDispatcher) {
             val pendingItems = withContext(workerDispatcher) {
                 itemAggregator.getAggregatedItems()
-                    .filter { it.thumbnail != null && classificationOrchestrator.shouldClassify(it.aggregatedId) }
+                    .filter {
+                        (it.thumbnail != null || it.fullImageUri != null) &&
+                            classificationOrchestrator.shouldClassify(it.aggregatedId)
+                    }
             }
 
             if (pendingItems.isEmpty()) return@launch
 
+            val preparedItems = prepareThumbnailsForClassification(pendingItems)
+            if (preparedItems.isEmpty()) return@launch
+
             // Mark items as PENDING using thread-safe method
-            val pendingIds = pendingItems.map { it.aggregatedId }
+            val pendingIds = preparedItems.map { it.aggregatedId }
             itemAggregator.markClassificationPending(pendingIds)
 
             // Update UI on main dispatcher
@@ -408,41 +419,74 @@ class ItemsViewModel(
                 _items.value = itemAggregator.getScannedItems()
             }
 
-            classificationOrchestrator.classify(pendingItems) { aggregatedItem, result ->
-                // Calculate classification parameters
-                val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
-                    result.category
+            classificationOrchestrator.classify(preparedItems) { aggregatedItem, result ->
+                handleClassificationResult(aggregatedItem, result)
+            }
+        }
+    }
+
+    private suspend fun prepareThumbnailsForClassification(
+        items: List<AggregatedItem>
+    ): List<AggregatedItem> {
+        if (items.isEmpty()) return emptyList()
+
+        return withContext(workerDispatcher) {
+            items.mapNotNull { aggregatedItem ->
+                val preparedThumbnail = runCatching {
+                    stableItemCropper.prepare(aggregatedItem)
+                }.onFailure { error ->
+                    Log.w(TAG, "Failed to prepare stable thumbnail for ${aggregatedItem.aggregatedId}", error)
+                }.getOrNull()
+
+                val thumbnailToUse = preparedThumbnail ?: aggregatedItem.thumbnail
+                if (thumbnailToUse == null) {
+                    null
                 } else {
-                    aggregatedItem.enhancedCategory ?: aggregatedItem.category
+                    itemAggregator.updateThumbnail(aggregatedItem.aggregatedId, thumbnailToUse)
+                    aggregatedItem
                 }
+            }
+        }
+    }
 
-                // Apply classification using thread-safe synchronized methods
-                // These methods use @Synchronized to prevent concurrent modification
-                itemAggregator.applyEnhancedClassification(
-                    aggregatedId = aggregatedItem.aggregatedId,
-                    category = categoryOverride,
-                    label = result.label ?: aggregatedItem.labelText,
-                    priceRange = null
-                )
+    private fun handleClassificationResult(
+        aggregatedItem: AggregatedItem,
+        result: ClassificationResult
+    ) {
+        val shouldOverrideCategory = result.category != ItemCategory.UNKNOWN &&
+            (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN)
 
-                itemAggregator.updateClassificationStatus(
-                    aggregatedId = aggregatedItem.aggregatedId,
-                    status = result.status.name,
-                    domainCategoryId = result.domainCategoryId,
-                    errorMessage = result.errorMessage,
-                    requestId = result.requestId
-                )
+        val categoryOverride = if (shouldOverrideCategory) {
+            result.category
+        } else {
+            aggregatedItem.enhancedCategory ?: aggregatedItem.category
+        }
 
-                // Dispatch UI state update to main thread explicitly
-                // This callback may be invoked from background coroutines, so we must
-                // ensure the StateFlow update happens on Main dispatcher
-                viewModelScope.launch(mainDispatcher) {
-                    _items.value = itemAggregator.getScannedItems()
+        val labelOverride = result.label?.takeUnless { it.isBlank() } ?: aggregatedItem.labelText
+        val priceCategory = if (result.category != ItemCategory.UNKNOWN) result.category else aggregatedItem.category
+        val boxArea = aggregatedItem.boundingBox.area
+        val priceRange = PricingEngine.generatePriceRange(priceCategory, boxArea)
 
-                    if (BuildConfig.DEBUG) {
-                        Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
-                    }
-                }
+        itemAggregator.applyEnhancedClassification(
+            aggregatedId = aggregatedItem.aggregatedId,
+            category = categoryOverride,
+            label = labelOverride,
+            priceRange = priceRange
+        )
+
+        itemAggregator.updateClassificationStatus(
+            aggregatedId = aggregatedItem.aggregatedId,
+            status = result.status.name,
+            domainCategoryId = result.domainCategoryId,
+            errorMessage = result.errorMessage,
+            requestId = result.requestId
+        )
+
+        viewModelScope.launch(mainDispatcher) {
+            _items.value = itemAggregator.getScannedItems()
+
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Enhanced classification applied to ${aggregatedItem.aggregatedId} using ${result.mode}, status=${result.status}")
             }
         }
     }
@@ -521,40 +565,16 @@ class ItemsViewModel(
         }
 
         // Trigger retry via orchestrator
-        classificationOrchestrator.retry(itemId, item) { aggregatedItem, result ->
-            // Calculate classification parameters
-            val categoryOverride = if (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN) {
-                result.category
-            } else {
-                aggregatedItem.enhancedCategory ?: aggregatedItem.category
+        viewModelScope.launch(workerDispatcher) {
+            val preparedItems = prepareThumbnailsForClassification(listOf(item))
+            if (preparedItems.isEmpty()) {
+                Log.w(TAG, "Retry classification aborted: no thumbnail available")
+                return@launch
             }
 
-            // Apply classification using thread-safe synchronized methods
-            // These methods use @Synchronized to prevent concurrent modification
-            itemAggregator.applyEnhancedClassification(
-                aggregatedId = aggregatedItem.aggregatedId,
-                category = categoryOverride,
-                label = result.label ?: aggregatedItem.labelText,
-                priceRange = null
-            )
-
-            itemAggregator.updateClassificationStatus(
-                aggregatedId = aggregatedItem.aggregatedId,
-                status = result.status.name,
-                domainCategoryId = result.domainCategoryId,
-                errorMessage = result.errorMessage,
-                requestId = result.requestId
-            )
-
-            // Dispatch UI state update to main thread explicitly
-            // This callback may be invoked from background coroutines, so we must
-            // ensure the StateFlow update happens on Main dispatcher
-            viewModelScope.launch(mainDispatcher) {
-                _items.value = itemAggregator.getScannedItems()
-
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "Retry classification result for ${aggregatedItem.aggregatedId}: status=${result.status}")
-                }
+            val preparedItem = preparedItems.first()
+            classificationOrchestrator.retry(itemId, preparedItem) { aggregatedItem, result ->
+                handleClassificationResult(aggregatedItem, result)
             }
         }
     }

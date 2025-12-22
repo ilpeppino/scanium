@@ -1,13 +1,27 @@
 package com.scanium.app.selling.util
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.items.ScannedItem
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
+import org.junit.After
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class ListingDraftMapperTest {
+
+    @After
+    fun tearDown() {
+        if (DomainPackProvider.isInitialized) {
+            DomainPackProvider.reset()
+        }
+    }
 
     @Test
     fun `fromScannedItem maps core fields with labelText`() {
@@ -88,6 +102,26 @@ class ListingDraftMapperTest {
         val draft = ListingDraftMapper.fromScannedItem(item)
 
         assertThat(draft.originalItem).isSameInstanceAs(item)
+    }
+
+    @Test
+    fun `listing title prefers domain category display name when available`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        DomainPackProvider.reset()
+        DomainPackProvider.initialize(context)
+
+        val item = ScannedItem(
+            id = "item-6",
+            thumbnail = testImageRef(),
+            category = ItemCategory.HOME_GOOD,
+            priceRange = 40.0 to 60.0,
+            labelText = "Generic Label",
+            domainCategoryId = "furniture_sofa"
+        )
+
+        val draft = ListingDraftMapper.fromScannedItem(item)
+
+        assertThat(draft.title).isEqualTo("Used Sofa")
     }
 
     private fun testImageRef(width: Int = 10, height: Int = 10): Bytes {
