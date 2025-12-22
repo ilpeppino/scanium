@@ -41,8 +41,12 @@ android {
         applicationId = "com.scanium.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        
+        val versionCodeEnv = localPropertyOrEnv("scanium.version.code", "SCANIUM_VERSION_CODE", "1").toInt()
+        val versionNameEnv = localPropertyOrEnv("scanium.version.name", "SCANIUM_VERSION_NAME", "1.0")
+        
+        versionCode = versionCodeEnv
+        versionName = versionNameEnv
 
         // Cloud classification API configuration
         // Read from local.properties (dev) or environment variables (CI/production)
@@ -51,9 +55,11 @@ android {
         //   scanium.api.key=your-dev-api-key
         val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
         val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
+        val sentryDsn = localPropertyOrEnv("scanium.sentry.dsn", "SCANIUM_SENTRY_DSN")
 
         buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
+        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
 
         // Legacy fields for backward compatibility (deprecated)
         buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")
@@ -286,6 +292,9 @@ dependencies {
     // Debug implementations
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // Crash Reporting
+    implementation("io.sentry:sentry-android:7.14.0")
 }
 
 koverReport {
