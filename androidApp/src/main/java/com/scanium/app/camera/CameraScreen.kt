@@ -40,14 +40,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.BuildConfig
 import com.scanium.app.R
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.data.ThemeMode
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -88,7 +92,10 @@ fun CameraScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val view = LocalView.current
+    val hapticFeedback = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
+    val settingsRepository = remember { SettingsRepository(context) }
+    val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
 
     // Camera permission state
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
@@ -98,10 +105,6 @@ fun CameraScreen(
         CameraXManager(context, lifecycleOwner)
     }
 
-    // Sound manager for camera feedback
-    val soundManager = remember {
-        CameraSoundManager()
-    }
 
     // Camera state machine
     var cameraState by remember { mutableStateOf(CameraState.IDLE) }
@@ -141,6 +144,23 @@ fun CameraScreen(
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
+
+    val overlayDetections = remember(currentDetections, itemsCount) {
+        currentDetections.map { detection ->
+            val match = detection.trackingId?.let { id ->
+                itemsCount.firstOrNull { it.id == id.toString() }
+            }
+
+            if (match != null) {
+                detection.copy(
+                    priceEstimationStatus = match.priceEstimationStatus,
+                    estimatedPriceRange = match.estimatedPriceRange
+                )
+            } else {
+                detection
+            }
+        }
+    }
 
     DisposableEffect(view, cameraState) {
         val keepScreenOn = cameraState == CameraState.SCANNING
@@ -229,7 +249,6 @@ fun CameraScreen(
     DisposableEffect(Unit) {
         onDispose {
             cameraManager.shutdown()
-            soundManager.release()
         }
     }
 
@@ -335,9 +354,9 @@ fun CameraScreen(
                 }
 
                 // Detection overlay - bounding boxes and labels
-                if (currentDetections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
+                if (overlayDetections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
                     DetectionOverlay(
-                        detections = currentDetections,
+                        detections = overlayDetections,
                         imageSize = imageSize,
                         previewSize = previewSize
                     )
@@ -380,7 +399,7 @@ fun CameraScreen(
                         // Single tap: capture one frame
                         if (cameraState == CameraState.IDLE) {
                             cameraState = CameraState.CAPTURING
-                            soundManager.playShutterClick()
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             cameraManager.captureSingleFrame(
                                 scanMode = currentScanMode,
                                 onResult = { items ->
@@ -428,7 +447,7 @@ fun CameraScreen(
                         // Long press: start scanning
                         if (cameraState == CameraState.IDLE) {
                             cameraState = CameraState.SCANNING
-                            soundManager.playScanStartMelody()
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                             cameraManager.startScanning(
                                 scanMode = currentScanMode,
                                 onResult = { items ->
@@ -460,7 +479,7 @@ fun CameraScreen(
                         // Tap while scanning: stop
                         if (cameraState == CameraState.SCANNING) {
                             cameraState = CameraState.IDLE
-                            soundManager.playScanStopMelody()
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             cameraManager.stopScanning()
                             currentDetections = emptyList()
                         }
@@ -481,6 +500,10 @@ fun CameraScreen(
                 CameraSettingsOverlay(
                     visible = isSettingsOpen,
                     onDismiss = { isSettingsOpen = false },
+                    themeMode = themeMode,
+                    onThemeModeChange = { mode ->
+                        scope.launch { settingsRepository.setThemeMode(mode) }
+                    },
                     similarityThreshold = similarityThreshold,
                     onThresholdChange = itemsViewModel::updateSimilarityThreshold,
                     classificationMode = classificationMode,

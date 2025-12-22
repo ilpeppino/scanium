@@ -1,0 +1,9 @@
+{
+  "defaultProfileId": "GENERIC",
+  "profiles": [
+    "generic.json",
+    "marktplaats_nl.json",
+    "vinted_style.json",
+    "fb_marketplace_style.json"
+  ]
+}

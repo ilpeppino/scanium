@@ -1,0 +1,17 @@
+package com.scanium.app.selling.util
+
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+
+object ListingClipboardHelper {
+    fun copy(context: Context, label: String, text: String) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
+    }
+
+    fun getPrimaryText(context: Context): CharSequence? {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        return clipboard.primaryClip?.getItemAt(0)?.coerceToText(context)
+    }
+}

@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
+import com.scanium.app.data.ThemeMode
 import com.scanium.app.ml.classification.ClassificationMode
 import kotlin.math.abs
 
@@ -48,6 +49,8 @@ import kotlin.math.abs
 fun CameraSettingsOverlay(
     visible: Boolean,
     onDismiss: () -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     similarityThreshold: Float,
     onThresholdChange: (Float) -> Unit,
     classificationMode: ClassificationMode,
@@ -96,6 +99,10 @@ fun CameraSettingsOverlay(
                         style = MaterialTheme.typography.headlineSmall
                     )
 
+                    ThemeSettingsCard(
+                        themeMode = themeMode,
+                        onThemeModeChange = onThemeModeChange
+                    )
                     ResolutionSettingsCard(
                         captureResolution = captureResolution,
                         onResolutionChange = onResolutionChange
@@ -110,6 +117,54 @@ fun CameraSettingsOverlay(
                         saveCloudCropsEnabled = saveCloudCropsEnabled,
                         onSaveCloudCropsChange = onSaveCloudCropsChange
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeSettingsCard(
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit
+) {
+    Surface(tonalElevation = 2.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Theme",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Divider()
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Appearance",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    text = "Choose how the app looks on this device.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ThemeMode.values().forEach { mode ->
+                        ListItem(
+                            headlineContent = { Text(mode.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                            leadingContent = {
+                                RadioButton(
+                                    selected = mode == themeMode,
+                                    onClick = { onThemeModeChange(mode) }
+                                )
+                            },
+                            modifier = Modifier.clickable { onThemeModeChange(mode) }
+                        )
+                    }
                 }
             }
         }

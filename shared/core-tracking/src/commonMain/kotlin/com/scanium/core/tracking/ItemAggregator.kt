@@ -4,6 +4,8 @@ import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.items.ScannedItem
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.core.models.pricing.PriceEstimationStatus
+import com.scanium.core.models.pricing.PriceRange
 import kotlinx.datetime.Clock
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -93,6 +95,14 @@ class ItemAggregator(
     fun getAggregatedItems(): List<AggregatedItem> = aggregatedItems.values.toList()
 
     fun getScannedItems(): List<ScannedItem> = aggregatedItems.values.map { it.toScannedItem() }
+
+    fun updatePriceEstimation(
+        aggregatedId: String,
+        status: PriceEstimationStatus,
+        priceRange: PriceRange? = null
+    ) {
+        aggregatedItems[aggregatedId]?.updatePriceEstimation(status, priceRange)
+    }
 
     fun removeStaleItems(maxAgeMs: Long): Int {
         val now = nowMillis()
@@ -372,6 +382,8 @@ data class AggregatedItem(
     var maxConfidence: Float,
     var averageConfidence: Float,
     var priceRange: Pair<Double, Double>,
+    var estimatedPriceRange: PriceRange? = null,
+    var priceEstimationStatus: PriceEstimationStatus = PriceEstimationStatus.Idle,
     var mergeCount: Int = 1,
     val firstSeenTimestamp: Long = nowMillis(),
     var lastSeenTimestamp: Long = nowMillis(),
@@ -401,6 +413,10 @@ data class AggregatedItem(
         val newMin = minOf(priceRange.first, detection.priceRange.first)
         val newMax = maxOf(priceRange.second, detection.priceRange.second)
         priceRange = newMin to newMax
+        if (detection.estimatedPriceRange != null) {
+            estimatedPriceRange = detection.estimatedPriceRange
+            priceEstimationStatus = detection.priceEstimationStatus
+        }
         lastSeenTimestamp = detection.timestampMs
     }
 
@@ -417,6 +433,8 @@ data class AggregatedItem(
             labelText = enhancedLabelText ?: labelText,
             boundingBox = boundingBox,
             priceRange = enhancedPriceRange ?: priceRange,
+            estimatedPriceRange = estimatedPriceRange,
+            priceEstimationStatus = priceEstimationStatus,
             confidence = maxConfidence,
             thumbnail = thumbnail,
             timestampMs = lastSeenTimestamp,
@@ -431,6 +449,14 @@ data class AggregatedItem(
             classificationErrorMessage = classificationErrorMessage,
             classificationRequestId = classificationRequestId
         )
+    }
+
+    fun updatePriceEstimation(status: PriceEstimationStatus, priceRange: PriceRange?) {
+        priceEstimationStatus = status
+        priceRange?.let { range ->
+            estimatedPriceRange = range
+            this.priceRange = range.toPair()
+        }
     }
 }
 

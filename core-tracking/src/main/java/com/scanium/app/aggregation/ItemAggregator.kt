@@ -4,6 +4,8 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 import com.scanium.core.tracking.Logger
 import java.util.UUID
 import kotlin.math.abs
@@ -459,6 +461,15 @@ class ItemAggregator(
             item.classificationErrorMessage = errorMessage
             item.classificationRequestId = requestId
         }
+    }
+
+    @Synchronized
+    fun updatePriceEstimation(
+        aggregatedId: String,
+        status: PriceEstimationStatus,
+        priceRange: PriceRange? = null
+    ) {
+        aggregatedItems[aggregatedId]?.updatePriceEstimation(status, priceRange)
     }
 
     /**

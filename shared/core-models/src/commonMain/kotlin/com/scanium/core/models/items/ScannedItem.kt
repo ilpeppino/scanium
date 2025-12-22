@@ -3,6 +3,8 @@ package com.scanium.core.models.items
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.core.models.pricing.PriceEstimationStatus
+import com.scanium.core.models.pricing.PriceRange
 import kotlinx.datetime.Clock
 import kotlin.random.Random
 
@@ -18,6 +20,8 @@ data class ScannedItem(
     var labelText: String = "",
     var boundingBox: NormalizedRect,
     var priceRange: Pair<Double, Double> = 0.0 to 0.0,
+    var estimatedPriceRange: PriceRange? = null,
+    var priceEstimationStatus: PriceEstimationStatus = PriceEstimationStatus.Idle,
     var confidence: Float = 0f,
     var thumbnail: ImageRef? = null,
     var timestampMs: Long = Clock.System.now().toEpochMilliseconds(),
