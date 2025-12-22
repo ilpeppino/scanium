@@ -31,6 +31,7 @@ import com.scanium.app.billing.BillingRepository
 import com.scanium.app.billing.AndroidBillingProvider
 import com.scanium.app.billing.FakeBillingProvider
 import com.scanium.app.billing.ui.PaywallViewModel
+import com.scanium.app.data.AndroidRemoteConfigProvider
 
 /**
  * Root Composable for the Scanium app.
@@ -51,6 +52,7 @@ fun ScaniumApp() {
     
     val settingsRepository = remember { SettingsRepository(context) }
     val billingRepository = remember { BillingRepository(context) }
+    val configProvider = remember { AndroidRemoteConfigProvider(context, scope) }
     
     // Choose billing provider based on build type
     val billingProvider = remember {
@@ -68,7 +70,7 @@ fun ScaniumApp() {
     )
     
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(settingsRepository, entitlementManager)
+        factory = SettingsViewModel.Factory(settingsRepository, entitlementManager, configProvider)
     )
     
     val paywallViewModel: PaywallViewModel = viewModel(

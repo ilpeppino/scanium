@@ -61,7 +61,8 @@ data class AggregatedItem(
     var classificationStatus: String = "NOT_STARTED", // NOT_STARTED, PENDING, SUCCESS, FAILED
     var domainCategoryId: String? = null,
     var classificationErrorMessage: String? = null,
-    var classificationRequestId: String? = null
+    var classificationRequestId: String? = null,
+    var thumbnailQuality: Float = 0f
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -86,7 +87,8 @@ data class AggregatedItem(
             classificationStatus = classificationStatus,
             domainCategoryId = domainCategoryId,
             classificationErrorMessage = classificationErrorMessage,
-            classificationRequestId = classificationRequestId
+            classificationRequestId = classificationRequestId,
+            qualityScore = thumbnailQuality
         )
     }
 
@@ -115,9 +117,25 @@ data class AggregatedItem(
         if (detection.confidence > maxConfidence) {
             maxConfidence = detection.confidence
             labelText = detection.labelText ?: labelText
+        }
 
-            // Update thumbnail if new one is better quality
-            detection.thumbnail?.let { thumbnail = it }
+        // Update thumbnail logic: Prefer higher quality scores
+        // If current thumbnail is missing, take the new one
+        // If new one has significantly better quality score, take it
+        // If quality is similar, default to high confidence check (already handled implicitly if we track maxConfidence separately? No)
+        
+        val newThumbnail = detection.thumbnail
+        if (newThumbnail != null) {
+            val isBetterQuality = detection.qualityScore > thumbnailQuality
+            val isFirstThumbnail = thumbnail == null
+            
+            // Allow update if better quality OR it's the first one
+            // Also consider confidence: don't replace a high-confidence sharp image with a low-confidence sharp image?
+            // Actually, quality score (sharpness) is usually king for visual search.
+            if (isFirstThumbnail || isBetterQuality) {
+                thumbnail = newThumbnail
+                thumbnailQuality = detection.qualityScore
+            }
         }
 
         // Always update bounding box to latest position (object may have moved)

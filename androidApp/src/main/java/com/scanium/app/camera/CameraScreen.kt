@@ -139,6 +139,7 @@ fun CameraScreen(
     val saveCloudCrops by classificationModeViewModel.saveCloudCrops.collectAsState()
     val lowDataMode by classificationModeViewModel.lowDataMode.collectAsState()
     val verboseLogging by classificationModeViewModel.verboseLogging.collectAsState()
+    val analysisFps by cameraManager.analysisFps.collectAsState()
     var previousClassificationMode by remember { mutableStateOf<ClassificationMode?>(null) }
 
     // Detection overlay state
@@ -370,6 +371,17 @@ fun CameraScreen(
                     classificationMode = classificationMode,
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
+
+                // Performance Overlay (Debug)
+                if (verboseLogging) {
+                    PerfOverlay(
+                        analysisFps = analysisFps,
+                        classificationMode = classificationMode,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(top = 90.dp, start = 16.dp)
+                    )
+                }
 
                 // Overlay UI
                 CameraOverlay(
