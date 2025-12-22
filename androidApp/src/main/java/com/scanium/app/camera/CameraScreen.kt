@@ -146,6 +146,23 @@ fun CameraScreen(
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
 
+    val overlayDetections = remember(currentDetections, itemsCount) {
+        currentDetections.map { detection ->
+            val match = detection.trackingId?.let { id ->
+                itemsCount.firstOrNull { it.id == id.toString() }
+            }
+
+            if (match != null) {
+                detection.copy(
+                    priceEstimationStatus = match.priceEstimationStatus,
+                    estimatedPriceRange = match.estimatedPriceRange
+                )
+            } else {
+                detection
+            }
+        }
+    }
+
     DisposableEffect(view, cameraState) {
         val keepScreenOn = cameraState == CameraState.SCANNING
         view.keepScreenOn = keepScreenOn
@@ -338,9 +355,9 @@ fun CameraScreen(
                 }
 
                 // Detection overlay - bounding boxes and labels
-                if (currentDetections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
+                if (overlayDetections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
                     DetectionOverlay(
-                        detections = currentDetections,
+                        detections = overlayDetections,
                         imageSize = imageSize,
                         previewSize = previewSize
                     )

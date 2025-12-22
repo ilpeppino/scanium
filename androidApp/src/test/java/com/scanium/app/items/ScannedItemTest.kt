@@ -2,6 +2,9 @@ package com.scanium.app.items
 
 import com.google.common.truth.Truth.assertThat
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.pricing.Money
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 import org.junit.Test
 
 /**
@@ -141,7 +144,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 20.0 to 50.0)
 
         // Assert
-        assertThat(item.formattedPriceRange).isEqualTo("€20 - €50")
+        assertThat(item.formattedPriceRange).isEqualTo("€20–50")
     }
 
     @Test
@@ -150,7 +153,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 19.99 to 49.99)
 
         // Assert
-        assertThat(item.formattedPriceRange).isEqualTo("€20 - €50")
+        assertThat(item.formattedPriceRange).isEqualTo("€20–50")
     }
 
     @Test
@@ -159,7 +162,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 100.0 to 500.0)
 
         // Assert
-        assertThat(item.formattedPriceRange).isEqualTo("€100 - €500")
+        assertThat(item.formattedPriceRange).isEqualTo("€100–500")
     }
 
     @Test
@@ -168,7 +171,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 1.0 to 5.0)
 
         // Assert
-        assertThat(item.formattedPriceRange).isEqualTo("€1 - €5")
+        assertThat(item.formattedPriceRange).isEqualTo("€1–5")
     }
 
     @Test
@@ -177,7 +180,7 @@ class ScannedItemTest {
         val item = createTestItem(priceRange = 0.0 to 0.0)
 
         // Assert
-        assertThat(item.formattedPriceRange).isEqualTo("€0 - €0")
+        assertThat(item.formattedPriceRange).isEqualTo("€0–0")
     }
 
     @Test
@@ -280,11 +283,14 @@ class ScannedItemTest {
         confidence: Float = 0.5f,
         timestamp: Long = System.currentTimeMillis()
     ): ScannedItem {
+        val range = PriceRange(Money(priceRange.first), Money(priceRange.second))
         return ScannedItem(
             id = id,
             thumbnail = null,
             category = category,
             priceRange = priceRange,
+            estimatedPriceRange = range,
+            priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = confidence,
             timestamp = timestamp
         )

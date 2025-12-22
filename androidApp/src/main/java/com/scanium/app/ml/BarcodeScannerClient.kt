@@ -122,18 +122,12 @@ class BarcodeScannerClient {
             // Use a high confidence value for barcodes since they're binary (detected or not)
             val confidence = 0.95f
 
-            // Calculate normalized area from portable type
-            val boxArea = bboxNorm.area
-
-            // Generate price range
-            val priceRange = PricingEngine.generatePriceRange(category, boxArea)
-
             ScannedItem(
                 id = id,
                 thumbnail = thumbnailRef,
                 thumbnailRef = thumbnailRef,
                 category = category,
-                priceRange = priceRange,
+                priceRange = 0.0 to 0.0,
                 confidence = confidence,
                 boundingBox = bboxNorm
             )

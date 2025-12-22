@@ -2,10 +2,19 @@ package com.scanium.app.camera
 
 import android.graphics.RectF
 import android.util.Size
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -21,6 +30,7 @@ import com.scanium.app.platform.toRectF
 import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.CyanGlow
 import com.scanium.app.ui.theme.ScaniumBlue
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import kotlin.math.max
 
 /**
@@ -40,6 +50,21 @@ fun DetectionOverlay(
 ) {
     val textMeasurer = rememberTextMeasurer()
     val labelTextStyle = MaterialTheme.typography.labelMedium.copy(color = Color.White)
+    val readyColor = Color(0xFF1DB954)
+    val hasEstimating = detections.any { it.priceEstimationStatus is PriceEstimationStatus.Estimating }
+    val pulseAlpha by if (hasEstimating) {
+        rememberInfiniteTransition(label = "pricePulse").animateFloat(
+            initialValue = 0.4f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "pricePulseValue"
+        )
+    } else {
+        remember { mutableStateOf(1f) }
+    }
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val canvasWidth = size.width
@@ -64,6 +89,13 @@ fun DetectionOverlay(
         val labelBackgroundColor = DeepNavy.copy(alpha = 0.85f)
 
         detections.forEach { detection ->
+            val status = detection.priceEstimationStatus
+            val isReady = status is PriceEstimationStatus.Ready
+            val isEstimating = status is PriceEstimationStatus.Estimating
+            val overlayAlpha = if (isEstimating) pulseAlpha else 1f
+            val outlineColor = if (isReady) readyColor else ScaniumBlue
+            val glowColor = if (isReady) readyColor.copy(alpha = 0.45f) else CyanGlow.copy(alpha = 0.35f)
+
             // Convert normalized bbox to image space coordinates
             val imageSpaceRect = detection.bboxNorm.toRectF(imageSize.width, imageSize.height)
             // Transform bounding box from image coordinates to preview coordinates
@@ -74,7 +106,7 @@ fun DetectionOverlay(
 
             // Draw glow stroke for better visibility on bright scenes
             drawRoundRect(
-                color = CyanGlow.copy(alpha = 0.35f),
+                color = glowColor.copy(alpha = glowColor.alpha * overlayAlpha),
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
@@ -83,7 +115,7 @@ fun DetectionOverlay(
 
             // Draw main bounding box stroke
             drawRoundRect(
-                color = ScaniumBlue,
+                color = outlineColor.copy(alpha = overlayAlpha),
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
@@ -92,7 +124,7 @@ fun DetectionOverlay(
 
             // Draw crisp white border inside for contrast
             drawRoundRect(
-                color = Color.White,
+                color = Color.White.copy(alpha = overlayAlpha),
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
