@@ -3,6 +3,7 @@
 
     <!-- Camera permission -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Camera hardware feature (optional, not required) -->
     <uses-feature

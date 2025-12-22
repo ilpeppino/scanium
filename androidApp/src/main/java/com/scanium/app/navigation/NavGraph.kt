@@ -18,6 +18,7 @@ import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.ui.DraftReviewScreen
 import com.scanium.app.selling.ui.PostingAssistScreen
 import com.scanium.app.selling.ui.SellOnEbayScreen
+import com.scanium.app.selling.assistant.AssistantScreen
 
 /**
  * Navigation routes for the app.
@@ -28,6 +29,7 @@ object Routes {
     const val SELL_ON_EBAY = "sell_on_ebay"
     const val DRAFT_REVIEW = "draft_review"
     const val POSTING_ASSIST = "posting_assist"
+    const val ASSISTANT = "assistant"
 }
 
 /**
@@ -75,6 +77,12 @@ fun ScaniumNavGraph(
                         navController.navigate("${Routes.DRAFT_REVIEW}?itemIds=$encoded")
                     }
                 },
+                onNavigateToAssistant = { ids ->
+                    if (ids.isNotEmpty()) {
+                        val encoded = Uri.encode(ids.joinToString(","))
+                        navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
+                    }
+                },
                 draftStore = draftStore,
                 itemsViewModel = itemsViewModel
             )
@@ -119,6 +127,10 @@ fun ScaniumNavGraph(
                 onOpenPostingAssist = { targets, index ->
                     val encoded = Uri.encode(targets.joinToString(","))
                     navController.navigate("${Routes.POSTING_ASSIST}?itemIds=$encoded&index=$index")
+                },
+                onOpenAssistant = { targets ->
+                    val encoded = Uri.encode(targets.joinToString(","))
+                    navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
                 }
             )
         }
@@ -136,6 +148,10 @@ fun ScaniumNavGraph(
                 onOpenPostingAssist = { ids, index ->
                     val encoded = Uri.encode(ids.joinToString(","))
                     navController.navigate("${Routes.POSTING_ASSIST}?itemIds=$encoded&index=$index")
+                },
+                onOpenAssistant = { ids ->
+                    val encoded = Uri.encode(ids.joinToString(","))
+                    navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
                 }
             )
         }
@@ -162,6 +178,41 @@ fun ScaniumNavGraph(
                 itemIds = ids,
                 startIndex = index,
                 onBack = { navController.popBackStack() },
+                itemsViewModel = itemsViewModel,
+                draftStore = draftStore,
+                onOpenAssistant = { ids, indexToUse ->
+                    val encoded = Uri.encode(ids.joinToString(","))
+                    navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded&index=$indexToUse")
+                }
+            )
+        }
+
+        composable(
+            route = "${Routes.ASSISTANT}?itemIds={itemIds}&index={index}",
+            arguments = listOf(
+                navArgument("itemIds") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+                navArgument("index") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                }
+            )
+        ) { backStackEntry ->
+            val ids = backStackEntry.arguments?.getString("itemIds")
+                ?.split(",")
+                ?.filter { it.isNotBlank() }
+                ?: emptyList()
+            val index = backStackEntry.arguments?.getInt("index") ?: 0
+            val selectedIds = if (ids.isEmpty()) emptyList() else listOf(ids.getOrNull(index) ?: ids.first())
+            AssistantScreen(
+                itemIds = selectedIds,
+                onBack = { navController.popBackStack() },
+                onOpenPostingAssist = { targets, targetIndex ->
+                    val encoded = Uri.encode(targets.joinToString(","))
+                    navController.navigate("${Routes.POSTING_ASSIST}?itemIds=$encoded&index=$targetIndex")
+                },
                 itemsViewModel = itemsViewModel,
                 draftStore = draftStore
             )

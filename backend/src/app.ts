@@ -10,6 +10,7 @@ import { securityPlugin } from './infra/http/plugins/security.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { ebayAuthRoutes } from './modules/auth/ebay/routes.js';
 import { classifierRoutes } from './modules/classifier/routes.js';
+import { assistantRoutes } from './modules/assistant/routes.js';
 
 /**
  * Build Fastify application instance
@@ -69,6 +70,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   // Cloud classification proxy
   await app.register(classifierRoutes, { prefix: '/v1', config });
 
+  // Assistant chat proxy
+  await app.register(assistantRoutes, { prefix: '/v1', config });
+
   // Root endpoint
   app.get('/', async (_request, reply) => {
     return reply.status(200).send({
@@ -82,6 +86,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
           start: 'POST /auth/ebay/start',
           callback: 'GET /auth/ebay/callback',
           status: 'GET /auth/ebay/status',
+        },
+        assistant: {
+          chat: 'POST /v1/assist/chat',
         },
       },
     });
