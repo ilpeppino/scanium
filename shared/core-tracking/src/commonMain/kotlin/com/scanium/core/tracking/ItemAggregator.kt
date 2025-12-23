@@ -191,12 +191,14 @@ class ItemAggregator(
         aggregatedId: String,
         category: ItemCategory?,
         label: String?,
-        priceRange: Pair<Double, Double>?
+        priceRange: Pair<Double, Double>?,
+        classificationConfidence: Float? = null
     ) {
         aggregatedItems[aggregatedId]?.let { item ->
             category?.let { item.enhancedCategory = it }
             label?.let { item.enhancedLabelText = it }
             priceRange?.let { item.enhancedPriceRange = it }
+            classificationConfidence?.let { item.classificationConfidence = it }
         }
     }
 
@@ -392,6 +394,7 @@ data class AggregatedItem(
     var enhancedCategory: ItemCategory? = null,
     var enhancedLabelText: String? = null,
     var enhancedPriceRange: Pair<Double, Double>? = null,
+    var classificationConfidence: Float? = null,
     var classificationStatus: String = "NOT_STARTED",
     var domainCategoryId: String? = null,
     var classificationErrorMessage: String? = null,

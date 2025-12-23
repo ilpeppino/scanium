@@ -55,6 +55,7 @@ data class AggregatedItem(
     var enhancedCategory: ItemCategory? = null,
     var enhancedLabelText: String? = null,
     var enhancedPriceRange: Pair<Double, Double>? = null,
+    var classificationConfidence: Float? = null,
     var fullImageUri: Uri? = null,
     var fullImagePath: String? = null,
     // Classification status tracking (Phase 9)
