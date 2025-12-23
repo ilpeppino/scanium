@@ -25,7 +25,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import com.scanium.app.ml.DetectionResult
+import com.scanium.app.camera.OverlayTrack
 import com.scanium.app.platform.toRectF
 import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.CyanGlow
@@ -43,7 +43,7 @@ import kotlin.math.max
  */
 @Composable
 fun DetectionOverlay(
-    detections: List<DetectionResult>,
+    detections: List<OverlayTrack>,
     imageSize: Size,
     previewSize: Size,
     modifier: Modifier = Modifier
@@ -90,7 +90,7 @@ fun DetectionOverlay(
 
         detections.forEach { detection ->
             val status = detection.priceEstimationStatus
-            val isReady = status is PriceEstimationStatus.Ready
+            val isReady = detection.isReady
             val isEstimating = status is PriceEstimationStatus.Estimating
             val overlayAlpha = if (isEstimating) pulseAlpha else 1f
             val outlineColor = if (isReady) readyColor else ScaniumBlue
@@ -133,8 +133,8 @@ fun DetectionOverlay(
 
             // Category + price label near the bounding box
             val labelText = buildString {
-                append(detection.category.displayName)
-                val price = detection.formattedPriceRange
+                append(detection.label)
+                val price = detection.priceText
                 if (price.isNotBlank()) {
                     append(" • ")
                     append(price)
