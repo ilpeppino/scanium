@@ -1,5 +1,6 @@
 package com.scanium.app.items
 
+import com.scanium.app.camera.ImageUtils
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -191,13 +192,19 @@ private fun rememberFullImageBitmap(item: ScannedItem, context: Context): State<
                 val uri = item.fullImageUri
                 if (uri != null) {
                      context.contentResolver.openInputStream(uri)?.use { stream ->
-                        BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                        BitmapFactory.decodeStream(stream)?.let { bitmap ->
+                            val rotation = ImageUtils.readExifRotation(context, uri)
+                            ImageUtils.rotateBitmap(bitmap, rotation).asImageBitmap()
+                        }
                     }
                 } else {
                     // Try path
                     val path = item.fullImagePath
                     if (path != null) {
-                        BitmapFactory.decodeFile(path)?.asImageBitmap()
+                        BitmapFactory.decodeFile(path)?.let { bitmap ->
+                            val rotation = ImageUtils.readExifRotation(path)
+                            ImageUtils.rotateBitmap(bitmap, rotation).asImageBitmap()
+                        }
                     } else {
                         null
                     }

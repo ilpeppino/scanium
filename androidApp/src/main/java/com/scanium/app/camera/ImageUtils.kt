@@ -101,24 +101,7 @@ object ImageUtils {
             }
 
             val rotationDegrees = readExifRotation(context, uri)
-            val finalBitmap = if (rotationDegrees != 0) {
-                val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
-                Bitmap.createBitmap(
-                    scaledBitmap,
-                    0,
-                    0,
-                    scaledBitmap.width,
-                    scaledBitmap.height,
-                    matrix,
-                    true
-                ).also {
-                    if (it != scaledBitmap) {
-                        scaledBitmap.recycle()
-                    }
-                }
-            } else {
-                scaledBitmap
-            }
+            val finalBitmap = rotateBitmap(scaledBitmap, rotationDegrees)
 
             Log.d(
                 TAG,
@@ -131,20 +114,55 @@ object ImageUtils {
         }
     }
 
-    private fun readExifRotation(context: Context, uri: Uri): Int {
+    fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
+        return if (rotationDegrees != 0) {
+            val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
+            Bitmap.createBitmap(
+                bitmap,
+                0,
+                0,
+                bitmap.width,
+                bitmap.height,
+                matrix,
+                true
+            ).also {
+                if (it != bitmap) {
+                    bitmap.recycle()
+                }
+            }
+        } else {
+            bitmap
+        }
+    }
+
+    fun readExifRotation(context: Context, uri: Uri): Int {
         return runCatching {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 val exif = ExifInterface(inputStream)
-                when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
-                    ExifInterface.ORIENTATION_ROTATE_90, ExifInterface.ORIENTATION_TRANSPOSE -> 90
-                    ExifInterface.ORIENTATION_ROTATE_180 -> 180
-                    ExifInterface.ORIENTATION_ROTATE_270, ExifInterface.ORIENTATION_TRANSVERSE -> 270
-                    else -> 0
-                }
+                getRotationFromExif(exif)
             } ?: 0
         }.getOrElse { exception ->
             Log.w(TAG, "Unable to read EXIF rotation for $uri", exception)
             0
+        }
+    }
+
+    fun readExifRotation(path: String): Int {
+        return runCatching {
+            val exif = ExifInterface(path)
+            getRotationFromExif(exif)
+        }.getOrElse { exception ->
+            Log.w(TAG, "Unable to read EXIF rotation for $path", exception)
+            0
+        }
+    }
+
+    private fun getRotationFromExif(exif: ExifInterface): Int {
+        return when (exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+            ExifInterface.ORIENTATION_ROTATE_90, ExifInterface.ORIENTATION_TRANSPOSE -> 90
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180
+            ExifInterface.ORIENTATION_ROTATE_270, ExifInterface.ORIENTATION_TRANSVERSE -> 270
+            else -> 0
         }
     }
 

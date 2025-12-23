@@ -27,7 +27,7 @@ class OverlayTrackMapperTest {
             averageConfidence = 0.2f,
             priceRange = 0.0 to 0.0,
         ).apply {
-            enhancedCategory = ItemCategory.FURNITURE_AND_DECOR
+            enhancedCategory = ItemCategory.HOME_GOOD
             enhancedLabelText = "Sofa"
             classificationConfidence = 0.8f
             sourceDetectionIds.add("42")
@@ -77,7 +77,7 @@ class OverlayTrackMapperTest {
     fun whenTrackingIdNotMappedStaysPending() {
         val aggregated = AggregatedItem(
             aggregatedId = "agg-other",
-            category = ItemCategory.BOOKS_AND_MEDIA,
+            category = ItemCategory.HOME_GOOD,
             labelText = "Book",
             boundingBox = NormalizedRect(0f, 0f, 0.2f, 0.2f),
             thumbnail = null,
