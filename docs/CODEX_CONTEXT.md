@@ -1,91 +1,67 @@
-***REMOVED*** Scanium – Codex Context
+***REMOVED*** Scanium – Codex Context (agent quickmap)
+- Update rule: when adding a module, append a row to the module table + dependency graph; when adding a feature area, add one bullet to TL;DR + Feature-routing.
 
-***REMOVED******REMOVED*** 1) Project Snapshot (10–15 lines)
-- Camera-first Android app (Jetpack Compose) that scans objects live and shows estimated EUR price ranges using on-device ML Kit.
-- Primary flows: continuous camera scanning, item list management, optional mock selling to eBay-like flow.
-- Scan modes: object detection, barcode/QR, document text OCR; tap-to-capture and long-press continuous scanning.
-- Privacy: detection/pricing runs on-device; optional cloud classification is supported for enhanced labels.
-- Offline-first and low-latency expectations; keep camera FPS stable and overlays responsive.
-- Target devices: Android API 24+ with CameraX; price demo for EU resale market.
+***REMOVED******REMOVED*** A) TL;DR Map (feature → touchpoints)
+- App shell/nav: `androidApp/src/main/java/com/scanium/app/MainActivity.kt`, `navigation/NavGraph.kt`, `ScaniumApp.kt`.
+- Camera UI/preview/gestures/overlays: `androidApp/src/main/java/com/scanium/app/camera/` (CameraScreen, CameraXManager, DetectionOverlay).
+- ML analyzers (objects/barcodes/OCR/pricing/cloud): `androidApp/src/main/java/com/scanium/app/ml/`.
+- Tracking/aggregation logic: `shared/core-tracking/src/commonMain` (ObjectTracker, ItemAggregator) via Android wrappers in `core-tracking`.
+- Portable models + enums: `shared/core-models/src/commonMain` (ImageRef, NormalizedRect, ScanMode, ScannedItem); Android aliases in `core-models`.
+- Domain pack loading/category mapping: `core-domainpack/src/main/java/com/scanium/app/domain/` (+ `core-domainpack/src/main/res/raw/home_resale_domain_pack.json`).
+- Item state + orchestration: `androidApp/src/main/java/com/scanium/app/items/ItemsViewModel.kt`.
+- Selling/mock listing flow: `androidApp/src/main/java/com/scanium/app/selling/`.
+- Camera/ML platform adapters: `android-platform-adapters/src/main/java/com/scanium/android/platform/adapters/` (Bitmap/ImageRef, Rect/NormalizedRect).
+- Platform ML/camera shells (namespaces only): `android-ml-mlkit`, `android-camera-camerax` (no sources expected).
+- Shared test utilities: `shared/test-utils` used by shared modules; Android tests in `androidApp/src/test` and `src/androidTest`.
+- Architecture refs: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/DOMAIN_PACK_ARCHITECTURE.md`](DOMAIN_PACK_ARCHITECTURE.md) if present, [`README.md`](../README.md).
 
-***REMOVED******REMOVED*** 2) Current Architecture (very compact)
-- Simplified MVVM: Compose UI screens → `ItemsViewModel` (shared state) → camera/ml/tracking/domain/selling layers.
-- State lives in `StateFlow`; UI collects via `collectAsState()`; `ItemsViewModel` aggregates detections and exposes item list/state.
-- Camera side: `CameraScreen` hosts preview/overlays; `CameraXManager` drives Capture/Analysis pipelines with scan mode routing.
-- ML layer wraps ML Kit (`ObjectDetectorClient`, `BarcodeScannerClient`, `DocumentTextRecognitionClient`) plus pricing and logging helpers.
-- Tracking via `ObjectTracker` + session aggregation to de-dup frames; results feed back into `ItemsViewModel`.
-- Navigation in `navigation/NavGraph.kt`; app entry in `MainActivity` → `ScaniumApp` composable.
-- Scan mode routing is driven by `ScanMode` enum; camera manager selects the appropriate analyzer (objects, barcodes, text) and pipes detections through tracker/aggregator.
+***REMOVED******REMOVED*** B) Module Table
+| Module | Responsibility | Inputs / Outputs | Do / Don’t | Key files |
+| --- | --- | --- | --- | --- |
+| androidApp | Compose UI, navigation, camera UX, ML wrappers, selling, persistence, cloud API, build config | Inputs: CameraX frames, ML Kit results, domain packs; Outputs: UI state, network calls | Do: keep platform logic here; Don’t: import from `android.*` into shared packages | `src/main/java/com/scanium/app/MainActivity.kt`, `navigation/NavGraph.kt`, `camera/CameraXManager.kt`, `ml/*`, `items/ItemsViewModel.kt`, `selling/*`, `data` |
+| core-models | Android wrapper for shared models/typealiases | Inputs: shared models; Outputs: Android-friendly types | Do: stay Android-free aside from namespace; Don’t: add platform imports (portability check) | `src/main/java/com/scanium/app/model/*`, `src/main/java/com/scanium/app/items/ScannedItem.kt` |
+| core-tracking | Android wrapper exposing shared tracking | Inputs: shared tracking; Outputs: Android-consumable tracker/aggregator | Do: delegate to shared; Don’t: add android.* (portability check applies) | `src/main/java/com/scanium/app/tracking/*`, `src/main/java/com/scanium/app/aggregation/*` |
+| core-domainpack | Domain pack IO, repository, category engine | Inputs: JSON packs, labels/prompts; Outputs: ItemCategory, domain config | Do: keep Android IO minimal; Don’t: depend on camera/ML classes | `domain/DomainPackProvider.kt`, `domain/repository/LocalDomainPackRepository.kt`, `domain/category/*`, `src/main/res/raw/home_resale_domain_pack.json` |
+| core-scan | Namespace holder for legacy scan contracts | Inputs/Outputs: n/a | Do: keep empty until migrated; Don’t: add UI/platform deps | `build.gradle.kts` (no sources) |
+| core-contracts | Namespace holder for shared contracts | Inputs/Outputs: n/a | Do: keep slim; Don’t: leak platform types | `build.gradle.kts` (no sources) |
+| android-platform-adapters | Bitmap/Rect ↔ portable model adapters | Inputs: Bitmap, Rect/RectF; Outputs: ImageRef/NormalizedRect | Do: convert at platform boundary; Don’t: push android.* into shared | `src/main/java/com/scanium/android/platform/adapters/*` |
+| android-ml-mlkit | ML Kit namespace shell | Inputs/Outputs: n/a | Do: keep placeholder until KMP adapters land; Don’t: add manifests with package attr | `build.gradle.kts` |
+| android-camera-camerax | CameraX namespace shell | Inputs/Outputs: n/a | Do: keep placeholder; Don’t: add manifests with package attr | `build.gradle.kts` |
+| shared:core-models | KMP portable primitives (ImageRef, NormalizedRect, ScanMode, ScannedItem, pricing/domain models) | Inputs: none; Outputs: serializable models | Do: stay platform-free; Don’t: import android.*, ML Kit, CameraX | `src/commonMain/kotlin/com/scanium/core/model/*`, `src/commonMain/kotlin/com/scanium/core/items/ScannedItem.kt` |
+| shared:core-tracking | KMP tracking/aggregation logic | Inputs: Raw detections (NormalizedRect, trackingIds); Outputs: tracked items/events | Do: pure Kotlin; Don’t: platform imports; respect golden tests | `src/commonMain/kotlin/com/scanium/core/tracking/*`, `src/commonMain/kotlin/com/scanium/core/aggregation/*` |
+| shared:test-utils | Test helpers for shared modules | Inputs: shared models/tracking; Outputs: fixtures/assert helpers | Do: keep deterministic; Don’t: add platform deps | `src/commonMain/kotlin/com/scanium/test/*` |
 
-***REMOVED******REMOVED*** 3) “Shared Brain” Target for iOS/KMP
-- Goal: extract platform-neutral logic for future KMP/iOS: detection session orchestration, tracking pipeline, aggregation/dedup, pricing, domain pack engine/contracts.
-- Shared pieces: session state machines, tracking heuristics, aggregation thresholds, domain pack parsing/selection, category mapping, and business rules around selling workflow state.
-- Platform-specific keepers: CameraX pipeline, ML Kit calls and image data types, Android permissions, Compose UI, haptics/audio, file access; iOS would swap native camera/ML wrappers and UI.
-- Domain pack JSON/config and selection interfaces should be portable; per-platform only the IO/loaders differ.
+Portability guards: root `checkPortableModules` blocks android imports in `core-models` + `core-tracking`; shared modules already KMP-only. `checkNoLegacyImports` forbids legacy `com.scanium.app.*` imports inside `androidApp`.
 
-***REMOVED******REMOVED*** 4) Critical Invariants (must not break)
-- De-dup rules: prefer ML Kit `trackingId`; fallback to spatial/IoU matching; `ItemsViewModel` aggregation/session dedupe prevents duplicate items when tracking IDs change.
-- Tracker reset: reset/clear candidates when scan mode changes, scanning stops, or starting a new session to avoid stale matches.
-- Domain pack contracts: config-driven taxonomy; `domainCategoryId` optional/non-breaking—existing ItemCategory consumers must continue working if field is absent.
-- Session aggregation thresholds should remain tuned for continuous scanning (REALTIME preset); changing them requires re-validating UX and tests.
+***REMOVED******REMOVED*** C) Dependency Graph (modules)
+```
+androidApp -> core-models, core-tracking, core-domainpack, core-scan, core-contracts,
+              android-ml-mlkit, android-camera-camerax, android-platform-adapters, shared:test-utils (tests)
+core-models -> shared:core-models
+core-tracking -> shared:core-tracking, shared:core-models, core-models
+core-domainpack -> core-models
+android-platform-adapters -> core-models
+shared:core-tracking -> shared:core-models
+shared:test-utils -> shared:core-models, shared:core-tracking
+```
 
-***REMOVED******REMOVED*** 5) Key Files Map (paths only)
-***REMOVED******REMOVED******REMOVED*** Entry points
-- `androidApp/src/main/java/com/scanium/app/MainActivity.kt` – Android entry; sets up Compose host.
-- `androidApp/src/main/java/com/scanium/app/ScaniumApp.kt` – Root composable + navigation wiring.
-- `androidApp/src/main/java/com/scanium/app/navigation/NavGraph.kt` – Navigation destinations/routes.
+***REMOVED******REMOVED*** D) Feature-routing Cheat Sheet
+- UI tweak/navigation: `androidApp` → `navigation/NavGraph.kt`, relevant screen under `camera/`, `items/`, `selling/`, `ui/theme/`.
+- Camera behavior (preview, focus, analyzer thread): `androidApp/camera/CameraXManager.kt`, `CameraScreen.kt`, `DetectionOverlay.kt`.
+- ML behavior (detectors/pricing/cloud): `androidApp/ml/ObjectDetectorClient.kt`, `BarcodeScannerClient.kt`, `DocumentTextRecognitionClient.kt`, `PricingEngine.kt`, `DetectionLogger.kt`.
+- Tracking/dedup logic: shared KMP in `shared/core-tracking`; Android entry/usage in `core-tracking` and `androidApp/items/ItemsViewModel.kt`.
+- Domain pack/category update: `core-domainpack/domain/category/*`, `domain/repository/LocalDomainPackRepository.kt`, raw JSON under `core-domainpack/src/main/res/raw/`.
+- Backend/cloud classification wiring: `androidApp/ml/CloudClassifierClient` (if present) and buildConfig fields in `androidApp/build.gradle.kts`.
+- Logging/monitoring/crash: `androidApp/ml/DetectionLogger.kt`, Sentry config via `BuildConfig.SENTRY_DSN`, general logs under respective modules.
+- Persistence (drafts/DataStore/Room): `androidApp/src/main/java/com/scanium/app/data/*`, Room entities/DAOs if added; selling cache in `selling/data/*`.
+- Platform adapters (Bitmap/Rect ↔ shared): `android-platform-adapters` extension functions.
+- Tests: fast shared logic → `shared:core-tracking` & `shared:core-models` JVM tests; Android features → `androidApp/src/test` or `src/androidTest`.
 
-***REMOVED******REMOVED******REMOVED*** Camera
-- `androidApp/src/main/java/com/scanium/app/camera/CameraScreen.kt` – Compose camera UI with overlays.
-- `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt` – CameraX lifecycle, analyzer selection per scan mode.
-- `androidApp/src/main/java/com/scanium/app/camera/DetectionOverlay.kt` – Draws bounding boxes/labels.
-- `core-models/src/main/java/com/scanium/app/camera/ScanMode.kt` – Enum for object/barcode/document scan modes.
+***REMOVED******REMOVED*** E) Change Safety Checklist
+- Run fast checks: `./gradlew prePushJvmCheck` (shared JVM tests + portability), `./gradlew test` (unit), `./gradlew assembleDebug` (app builds), `./gradlew lint` when touching UI/Android.
+- Avoid: android.* imports in shared/KMP modules; adding heavy deps to shared; leaking API keys; bypassing domain pack contracts; breaking tracker reset/aggregation invariants.
 
-***REMOVED******REMOVED******REMOVED*** ML
-- `androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt` – ML Kit object detector wrapper + detection pipeline entry.
-- `androidApp/src/main/java/com/scanium/app/ml/BarcodeScannerClient.kt` – Barcode/QR analyzer.
-- `androidApp/src/main/java/com/scanium/app/ml/DocumentTextRecognitionClient.kt` – OCR analyzer.
-- `androidApp/src/main/java/com/scanium/app/ml/PricingEngine.kt` – Demo EUR price range generator.
-- `androidApp/src/main/java/com/scanium/app/ml/DetectionLogger.kt` – Debug stats/logging.
-
-***REMOVED******REMOVED******REMOVED*** Tracking
-- `core-tracking/src/main/java/com/scanium/app/tracking/ObjectTracker.kt` – Multi-frame tracker with trackingId + spatial fallback.
-- `core-tracking/src/main/java/com/scanium/app/tracking/ObjectCandidate.kt` – Candidate state, IoU/distance helpers.
-- `core-tracking/src/main/java/com/scanium/app/aggregation/ItemAggregator.kt` – Session aggregation/dedup.
-
-***REMOVED******REMOVED******REMOVED*** Domain pack
-- `core-domainpack/src/main/java/com/scanium/app/domain/DomainPackProvider.kt` – Singleton accessor to packs.
-- `core-domainpack/src/main/java/com/scanium/app/domain/repository/LocalDomainPackRepository.kt` – Loads JSON packs from resources.
-- `core-domainpack/src/main/java/com/scanium/app/domain/category/BasicCategoryEngine.kt` – Domain category selection using labels/prompts.
-- `core-domainpack/src/main/java/com/scanium/app/domain/category/CategoryMapper.kt` – Maps domain categories to `ItemCategory`.
-- `core-domainpack/src/main/res/raw/home_resale_domain_pack.json` – Default config.
-
-***REMOVED******REMOVED******REMOVED*** Items/state
-- `androidApp/src/main/java/com/scanium/app/items/ItemsViewModel.kt` – Shared state, aggregation/dedup, classification orchestration.
-- `core-models/src/main/java/com/scanium/app/items/ScannedItem.kt` – Promoted detection model (typealias to shared).
-- `core-models/src/main/java/com/scanium/app/model/ImageRef.kt` – Portable image reference model.
-
-***REMOVED******REMOVED******REMOVED*** Selling (mock eBay)
-- `androidApp/src/main/java/com/scanium/app/selling/ui/SellOnEbayScreen.kt` – UI to select items and list them.
-- `androidApp/src/main/java/com/scanium/app/selling/domain/Listing.kt` – Listing status models.
-- `androidApp/src/main/java/com/scanium/app/selling/data/MockEbayApi.kt` – Mock API for listing creation.
-- `androidApp/src/main/java/com/scanium/app/selling/util/ListingTitleBuilder.kt` – Listing title generation.
-
-***REMOVED******REMOVED******REMOVED*** Tests (top 5)
-- `core-tracking/src/test/java/com/scanium/app/tracking/ObjectTrackerTest.kt` – Tracker confirmation/expiry cases.
-- `core-tracking/src/test/java/com/scanium/app/tracking/ObjectCandidateTest.kt` – Candidate math/IoU checks.
-- `androidApp/src/test/java/com/scanium/app/items/ItemsViewModelTest.kt` – State/aggregation dedup tests.
-- `androidApp/src/test/java/com/scanium/app/ml/PricingEngineTest.kt` – Price generation ranges.
-- `androidApp/src/test/java/com/scanium/app/domain/category/BasicCategoryEngineTest.kt` – Domain pack category selection.
-
-***REMOVED******REMOVED*** 6) Build/Test Commands (short)
-- `./scripts/build.sh assembleDebug` or `./gradlew assembleDebug` – build APK.
-- `./scripts/build.sh test` or `./gradlew test` – JVM unit tests (fast path).
-- `./gradlew connectedAndroidTest` – instrumented/UI tests (device/emulator required).
-- `./gradlew lint` – lint checks.
-
-***REMOVED******REMOVED*** 7) How to Work Efficiently in This Repo (token-saving rules)
-- Search-first workflow: use `rg` to find symbols, open only minimal file slices (progressive disclosure).
-- Prefer patch edits over wholesale rewrites; keep Compose/state patterns intact.
-- Run fast JVM tests before touching camera/instrumented code; avoid expensive UI tests unless necessary.
-- Keep changes self-contained; respect aggregation/tracking invariants and domain pack contracts before modifying pipelines.
+***REMOVED******REMOVED*** F) Where Config Lives
+- Build configs: set via `local.properties` or env → `androidApp/build.gradle.kts` (`SCANIUM_API_BASE_URL`, `SCANIUM_API_KEY`, `SENTRY_DSN`, legacy `CLOUD_CLASSIFIER_*`, `CLASSIFIER_SAVE_CROPS`). Example defaults in `local.properties.example` (not committed).
+- Signing/keystore paths also read from `local.properties` keys (`scanium.keystore.*`).
+- Domain packs: JSON under `core-domainpack/src/main/res/raw/`. Never commit secrets or real API keys.
