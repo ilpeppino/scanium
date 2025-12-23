@@ -7,9 +7,15 @@ import android.view.WindowManager
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Indication
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
@@ -31,7 +37,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.scanium.app.data.ItemsActionPreferences
 import com.scanium.app.media.MediaStoreSaver
@@ -65,6 +75,11 @@ fun ItemsListScreen(
 ) {
     val items by itemsViewModel.items.collectAsState()
     var previewDraft by remember { mutableStateOf<ListingDraft?>(null) }
+    
+    // Press-and-hold preview state
+    var previewItem by remember { mutableStateOf<ScannedItem?>(null) }
+    var previewBounds by remember { mutableStateOf<Rect?>(null) }
+    
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectionMode by remember { mutableStateOf(false) }
     var selectedAction by remember { mutableStateOf(SelectedItemsAction.SELL_ON_EBAY) }
@@ -186,244 +201,253 @@ fun ItemsListScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (selectionMode) "Select items" else "Detected Items") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    if (selectionMode) {
-                        TextButton(onClick = {
-                            selectedIds.clear()
-                            selectionMode = false
-                        }) {
-                            Text("Cancel")
-                        }
-                    } else if (items.isNotEmpty()) {
-                        IconButton(onClick = { itemsViewModel.clearAllItems() }) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(if (selectionMode) "Select items" else "Detected Items") },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Clear all"
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back"
                             )
                         }
+                    },
+                    actions = {
+                        if (selectionMode) {
+                            TextButton(onClick = {
+                                selectedIds.clear()
+                                selectionMode = false
+                            }) {
+                                Text("Cancel")
+                            }
+                        } else if (items.isNotEmpty()) {
+                            IconButton(onClick = { itemsViewModel.clearAllItems() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Clear all"
+                                )
+                            }
+                        }
                     }
-                }
-            )
-        },
-        floatingActionButton = {
-            if (selectionMode && selectedIds.isNotEmpty()) {
-                Box {
-                    // Custom split FAB with integrated dropdown
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shadowElevation = 6.dp,
-                        tonalElevation = 3.dp
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(0.dp)
+                )
+            },
+            floatingActionButton = {
+                if (selectionMode && selectedIds.isNotEmpty()) {
+                    Box {
+                        // Custom split FAB with integrated dropdown
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shadowElevation = 6.dp,
+                            tonalElevation = 3.dp
                         ) {
-                            // Main action button (icon + text)
                             Row(
-                                modifier = Modifier
-                                    .clickable { executeAction() }
-                                    .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(0.dp)
                             ) {
-                                Icon(
-                                    imageVector = when (selectedAction) {
-                                        SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                        SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
-                                        SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
-                                        SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
-                                    },
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-
-                                Text(
-                                    text = selectedAction.displayName,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-
-                            // Divider
-                            Box(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .height(24.dp)
-                                    .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
-                            )
-
-                            // Dropdown button
-                            Box(
-                                modifier = Modifier
-                                    .clickable { showActionMenu = true }
-                                    .padding(horizontal = 12.dp, vertical = 16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowDropDown,
-                                    contentDescription = "Select action",
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-                    }
-
-                    // Dropdown menu
-                    DropdownMenu(
-                        expanded = showActionMenu,
-                        onDismissRequest = { showActionMenu = false }
-                    ) {
-                        SelectedItemsAction.values().forEach { action ->
-                            DropdownMenuItem(
-                                text = { Text(action.displayName) },
-                                onClick = {
-                                    selectedAction = action
-                                    showActionMenu = false
-                                    scope.launch {
-                                        actionPreferences.setLastAction(action)
-                                    }
-                                    executeAction(action)
-                                },
-                                leadingIcon = {
+                                // Main action button (icon + text)
+                                Row(
+                                    modifier = Modifier
+                                        .clickable { executeAction() }
+                                        .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                     Icon(
-                                        imageVector = when (action) {
+                                        imageVector = when (selectedAction) {
                                             SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
                                             SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
                                             SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
                                             SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
                                         },
-                                        contentDescription = null
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
-                                },
-                                trailingIcon = if (selectedAction == action) {
-                                    {
+
+                                    Text(
+                                        text = selectedAction.displayName,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+
+                                // Divider
+                                Box(
+                                    modifier = Modifier
+                                        .width(1.dp)
+                                        .height(24.dp)
+                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
+                                )
+
+                                // Dropdown button
+                                Box(
+                                    modifier = Modifier
+                                        .clickable { showActionMenu = true }
+                                        .padding(horizontal = 12.dp, vertical = 16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowDropDown,
+                                        contentDescription = "Select action",
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+                        }
+
+                        // Dropdown menu
+                        DropdownMenu(
+                            expanded = showActionMenu,
+                            onDismissRequest = { showActionMenu = false }
+                        ) {
+                            SelectedItemsAction.values().forEach { action ->
+                                DropdownMenuItem(
+                                    text = { Text(action.displayName) },
+                                    onClick = {
+                                        selectedAction = action
+                                        showActionMenu = false
+                                        scope.launch {
+                                            actionPreferences.setLastAction(action)
+                                        }
+                                        executeAction(action)
+                                    },
+                                    leadingIcon = {
                                         Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = "Selected"
+                                            imageVector = when (action) {
+                                                SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
+                                                SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
+                                                SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
+                                                SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
+                                            },
+                                            contentDescription = null
                                         )
-                                    }
-                                } else null
-                            )
+                                    },
+                                    trailingIcon = if (selectedAction == action) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = "Selected"
+                                            )
+                                        }
+                                    } else null
+                                )
+                            }
                         }
                     }
                 }
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when {
-                items.isEmpty() -> {
-                    // Empty state
-                    EmptyItemsContent()
-                }
-                else -> {
-                    // Items list
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            top = 16.dp,
-                            bottom = if (selectionMode && selectedIds.isNotEmpty()) 96.dp else 16.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(
-                            items = items,
-                            key = { it.id }
-                        ) { item ->
-                            val dismissState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = { value ->
-                                    if (value == SwipeToDismissBoxValue.StartToEnd) {
-                                        deleteItem(item)
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                }
-                            )
-
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                enableDismissFromStartToEnd = true,
-                                enableDismissFromEndToStart = false,
-                                modifier = Modifier.animateItemPlacement(
-                                    animationSpec = spring(
-                                        stiffness = 300f,
-                                        dampingRatio = 0.8f
-                                    )
-                                ),
-                                backgroundContent = {
-                                    val isDismissing = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
-                                    val containerColor = if (isDismissing) {
-                                        MaterialTheme.colorScheme.errorContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    }
-                                    val iconTint = if (isDismissing) {
-                                        MaterialTheme.colorScheme.onErrorContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(containerColor)
-                                            .padding(horizontal = 16.dp),
-                                        contentAlignment = Alignment.CenterStart
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = "Delete",
-                                            tint = iconTint
-                                        )
-                                    }
-                                }
-                            ) {
-                                ItemRow(
-                                    item = item,
-                                    isSelected = selectedIds.contains(item.id),
-                                    onClick = {
-                                        toggleSelection(item)
-                                    },
-                                    onLongClick = {
-                                        scope.launch {
-                                            val draft = draftStore.getByItemId(item.id)
-                                                ?: ListingDraftBuilder.build(item)
-                                            previewDraft = draft
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                when {
+                    items.isEmpty() -> {
+                        // Empty state
+                        EmptyItemsContent()
+                    }
+                    else -> {
+                        // Items list
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 16.dp,
+                                bottom = if (selectionMode && selectedIds.isNotEmpty()) 96.dp else 16.dp
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(
+                                items = items,
+                                key = { it.id }
+                            ) { item ->
+                                val dismissState = rememberSwipeToDismissBoxState(
+                                    confirmValueChange = { value ->
+                                        if (value == SwipeToDismissBoxValue.StartToEnd) {
+                                            deleteItem(item)
+                                            true
+                                        } else {
+                                            false
                                         }
-                                    },
-                                    onRetryClassification = {
-                                        itemsViewModel.retryClassification(item.id)
                                     }
                                 )
+
+                                SwipeToDismissBox(
+                                    state = dismissState,
+                                    enableDismissFromStartToEnd = true,
+                                    enableDismissFromEndToStart = false,
+                                    modifier = Modifier.animateItemPlacement(
+                                        animationSpec = spring(
+                                            stiffness = 300f,
+                                            dampingRatio = 0.8f
+                                        )
+                                    ),
+                                    backgroundContent = {
+                                        val isDismissing = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
+                                        val containerColor = if (isDismissing) {
+                                            MaterialTheme.colorScheme.errorContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant
+                                        }
+                                        val iconTint = if (isDismissing) {
+                                            MaterialTheme.colorScheme.onErrorContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .background(containerColor)
+                                                .padding(horizontal = 16.dp),
+                                            contentAlignment = Alignment.CenterStart
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Delete",
+                                                tint = iconTint
+                                            )
+                                        }
+                                    }
+                                ) {
+                                    ItemRow(
+                                        item = item,
+                                        isSelected = selectedIds.contains(item.id),
+                                        onClick = {
+                                            toggleSelection(item)
+                                        },
+                                        onPreviewStart = { item, bounds ->
+                                            previewItem = item
+                                            previewBounds = bounds
+                                        },
+                                        onPreviewEnd = {
+                                            previewItem = null
+                                        },
+                                        onRetryClassification = {
+                                            itemsViewModel.retryClassification(item.id)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
         }
+        
+        // Full screen draft preview overlay
+        DraftPreviewOverlay(
+            item = previewItem,
+            sourceBounds = previewBounds,
+            isVisible = previewItem != null
+        )
     }
 
-    // Draft preview dialog
+    // Draft preview dialog (legacy/fallback if needed, but primary is overlay now)
     previewDraft?.let { draft ->
         DraftPreviewDialog(
             draft = draft,
@@ -431,7 +455,6 @@ fun ItemsListScreen(
         )
     }
 }
-
 /**
  * Single item row in the list.
  */
@@ -441,16 +464,41 @@ private fun ItemRow(
     item: ScannedItem,
     isSelected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onPreviewStart: (ScannedItem, Rect) -> Unit,
+    onPreviewEnd: () -> Unit,
     onRetryClassification: () -> Unit
 ) {
+    var currentBounds by remember { mutableStateOf<Rect?>(null) }
+    val interactionSource = remember { MutableInteractionSource() }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
+            .onGloballyPositioned { coordinates ->
+                currentBounds = coordinates.boundsInWindow()
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = { offset ->
+                        val press = PressInteraction.Press(offset)
+                        interactionSource.emit(press)
+                        val released = tryAwaitRelease()
+                        if (released) {
+                            interactionSource.emit(PressInteraction.Release(press))
+                        } else {
+                            interactionSource.emit(PressInteraction.Cancel(press))
+                        }
+                        // Always trigger preview end on release/cancel
+                        onPreviewEnd()
+                    },
+                    onLongPress = {
+                        currentBounds?.let { onPreviewStart(item, it) }
+                    },
+                    onTap = { 
+                        onClick() 
+                    }
+                )
+            },
         colors = if (isSelected) {
             CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
         } else {
