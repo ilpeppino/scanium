@@ -39,6 +39,7 @@ include(
     ":shared:test-utils",
     ":shared:telemetry-contract",
     ":shared:telemetry",
+    ":shared:diagnostics",
 )
 
 // Map shared modules to their directories under /shared
@@ -47,3 +48,4 @@ project(":shared:core-tracking").projectDir = file("shared/core-tracking")
 project(":shared:test-utils").projectDir = file("shared/test-utils")
 project(":shared:telemetry-contract").projectDir = file("shared/telemetry-contract")
 project(":shared:telemetry").projectDir = file("shared/telemetry")
+project(":shared:diagnostics").projectDir = file("shared/diagnostics")
