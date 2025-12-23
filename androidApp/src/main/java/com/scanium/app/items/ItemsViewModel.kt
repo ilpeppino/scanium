@@ -7,6 +7,8 @@ import com.scanium.app.BuildConfig
 import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.ItemAggregator
+import com.scanium.app.camera.OverlayTrack
+import com.scanium.app.camera.mapOverlayTracks
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.ml.PricingEngine
 import com.scanium.app.ml.classification.ClassificationMode
@@ -17,6 +19,7 @@ import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ClassifierDebugFlags
+import com.scanium.app.ml.DetectionResult
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.items.persistence.NoopScannedItemStore
@@ -75,6 +78,7 @@ class ItemsViewModel(
         private const val DEBUG_LOGGING = false
         // Async telemetry collection interval (ms) - only runs when enabled
         private const val TELEMETRY_INTERVAL_MS = 5000L
+        private const val OVERLAY_READY_THRESHOLD = 0.55f
     }
 
     // Async telemetry collection job (off the hot path)
@@ -83,9 +87,11 @@ class ItemsViewModel(
 
     // Private mutable state
     private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
+    private val _overlayTracks = MutableStateFlow<List<OverlayTrack>>(emptyList())
 
     // Public immutable state
     val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
+    val overlayTracks: StateFlow<List<OverlayTrack>> = _overlayTracks.asStateFlow()
 
     // Real-time item aggregator for similarity-based deduplication
     // Using REALTIME preset optimized for continuous scanning with camera movement
@@ -119,6 +125,9 @@ class ItemsViewModel(
     )
 
     private val priceStatusJobs = mutableMapOf<String, Job>()
+    private val overlayReadyStates = mutableMapOf<String, Boolean>()
+    private val overlayResolutionCache = mutableMapOf<String, String?>()
+    private var lastOverlayDetections: List<DetectionResult> = emptyList()
     
     // Cloud call gatekeeper (replaces ad-hoc throttling)
     private val cloudCallGate = com.scanium.app.ml.classification.CloudCallGate(
@@ -209,6 +218,54 @@ class ItemsViewModel(
                 updateItemsState()
             }
         }
+    }
+
+    fun updateOverlayDetections(detections: List<DetectionResult>) {
+        lastOverlayDetections = detections
+        renderOverlayTracks(detections)
+    }
+
+    private fun renderOverlayTracks(detections: List<DetectionResult>) {
+        val aggregatedItems = itemAggregator.getAggregatedItems()
+        val mapped = mapOverlayTracks(
+            detections = detections,
+            aggregatedItems = aggregatedItems,
+            readyConfidenceThreshold = OVERLAY_READY_THRESHOLD
+        )
+
+        mapped.forEach { track ->
+            val trackingId = track.trackingId
+            val aggregatedId = track.aggregatedId
+            if (trackingId != null) {
+                val previous = overlayResolutionCache[trackingId]
+                if (previous != aggregatedId) {
+                    ScaniumLog.d(
+                        TAG,
+                        "[OVERLAY] track=$trackingId -> aggregated=${aggregatedId ?: "none"} label=${track.label}"
+                    )
+                    overlayResolutionCache[trackingId] = aggregatedId
+                } else if (!overlayResolutionCache.containsKey(trackingId) && aggregatedId == null) {
+                    ScaniumLog.d(
+                        TAG,
+                        "[OVERLAY] track=$trackingId -> aggregated=none label=${track.label}"
+                    )
+                    overlayResolutionCache[trackingId] = aggregatedId
+                }
+            }
+
+            if (aggregatedId != null) {
+                val wasReady = overlayReadyStates[aggregatedId] ?: false
+                if (!wasReady && track.isReady) {
+                    ScaniumLog.d(
+                        TAG,
+                        "[OVERLAY] READY aggregated=$aggregatedId label=${track.label} conf=${track.confidence}"
+                    )
+                }
+                overlayReadyStates[aggregatedId] = track.isReady
+            }
+        }
+
+        _overlayTracks.value = mapped
     }
 
     /**
@@ -521,7 +578,8 @@ class ItemsViewModel(
             aggregatedId = aggregatedItem.aggregatedId,
             category = categoryOverride,
             label = labelOverride,
-            priceRange = priceRange
+            priceRange = priceRange,
+            classificationConfidence = result.confidence
         )
 
         itemAggregator.updateClassificationStatus(
@@ -534,11 +592,14 @@ class ItemsViewModel(
 
         viewModelScope.launch(mainDispatcher) {
             _items.value = itemAggregator.getScannedItems()
+            if (lastOverlayDetections.isNotEmpty()) {
+                renderOverlayTracks(lastOverlayDetections)
+            }
 
             if (BuildConfig.DEBUG) {
                 ScaniumLog.d(
                     TAG,
-                    "Classification result item=${aggregatedItem.aggregatedId} session=$sessionId mode=${result.mode} status=${result.status} requestId=${result.requestId}"
+                    "Classification result item=${aggregatedItem.aggregatedId} session=$sessionId mode=${result.mode} status=${result.status} confidence=${result.confidence} requestId=${result.requestId}"
                 )
             }
         }

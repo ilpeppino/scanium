@@ -148,32 +148,14 @@ fun CameraScreen(
     val callsFailed by ClassificationMetrics.callsFailed.collectAsState()
     val lastLatency by ClassificationMetrics.lastLatencyMs.collectAsState()
     val queueDepth by ClassificationMetrics.queueDepth.collectAsState()
+    val overlayTracks by itemsViewModel.overlayTracks.collectAsState()
 
     var previousClassificationMode by remember { mutableStateOf<ClassificationMode?>(null) }
 
-    // Detection overlay state
-    var currentDetections by remember { mutableStateOf<List<DetectionResult>>(emptyList()) }
     var imageSize by remember { mutableStateOf(Size(1280, 720)) }
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
-
-    val overlayDetections = remember(currentDetections, itemsCount) {
-        currentDetections.map { detection ->
-            val match = detection.trackingId?.let { id ->
-                itemsCount.firstOrNull { it.id == id.toString() }
-            }
-
-            if (match != null) {
-                detection.copy(
-                    priceEstimationStatus = match.priceEstimationStatus,
-                    estimatedPriceRange = match.estimatedPriceRange
-                )
-            } else {
-                detection
-            }
-        }
-    }
 
     DisposableEffect(view, cameraState) {
         val keepScreenOn = cameraState == CameraState.SCANNING
@@ -217,13 +199,13 @@ fun CameraScreen(
     }
 
     LaunchedEffect(cameraPermissionState.status.isGranted) {
-        if (!cameraPermissionState.status.isGranted) {
-            cameraManager.stopScanning()
-            cameraState = CameraState.IDLE
-            cameraErrorState = null
-            currentDetections = emptyList()
+            if (!cameraPermissionState.status.isGranted) {
+                cameraManager.stopScanning()
+                cameraState = CameraState.IDLE
+                cameraErrorState = null
+                itemsViewModel.updateOverlayDetections(emptyList())
+            }
         }
-    }
 
     // Check if ML Kit model is downloaded (first launch requirement)
     LaunchedEffect(cameraPermissionState.status.isGranted) {
@@ -274,7 +256,7 @@ fun CameraScreen(
                         cameraManager.stopScanning()
                         cameraErrorState = null
                         cameraState = CameraState.IDLE
-                        currentDetections = emptyList()
+                        itemsViewModel.updateOverlayDetections(emptyList())
                         rebindAttempts++
                     },
                     onViewItems = onNavigateToItems
@@ -367,9 +349,9 @@ fun CameraScreen(
                 }
 
                 // Detection overlay - bounding boxes and labels
-                if (overlayDetections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
+                if (overlayTracks.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
                     DetectionOverlay(
-                        detections = overlayDetections,
+                        detections = overlayTracks,
                         imageSize = imageSize,
                         previewSize = previewSize
                     )
@@ -425,7 +407,7 @@ fun CameraScreen(
                             if (cameraState == CameraState.SCANNING) {
                                 cameraState = CameraState.IDLE
                                 cameraManager.stopScanning()
-                                currentDetections = emptyList()
+                                itemsViewModel.updateOverlayDetections(emptyList())
                             }
 
                             // Trigger flash animation
@@ -478,7 +460,7 @@ fun CameraScreen(
                                     }
                                 },
                                 onDetectionResult = { detections ->
-                                    currentDetections = detections
+                                    itemsViewModel.updateOverlayDetections(detections)
                                 },
                                 onFrameSize = { size ->
                                     imageSize = size
@@ -510,7 +492,7 @@ fun CameraScreen(
                                     }
                                 },
                                 onDetectionResult = { detections ->
-                                    currentDetections = detections
+                                    itemsViewModel.updateOverlayDetections(detections)
                                 },
                                 onFrameSize = { size ->
                                     imageSize = size
@@ -520,19 +502,19 @@ fun CameraScreen(
                     },
                     onStopScanning = {
                         // Tap while scanning: stop
-                        if (cameraState == CameraState.SCANNING) {
+                            if (cameraState == CameraState.SCANNING) {
+                                cameraState = CameraState.IDLE
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                cameraManager.stopScanning()
+                                itemsViewModel.updateOverlayDetections(emptyList())
+                            }
+                        },
+                        onFlipCamera = {
                             cameraState = CameraState.IDLE
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            itemsViewModel.updateOverlayDetections(emptyList())
                             cameraManager.stopScanning()
-                            currentDetections = emptyList()
-                        }
-                    },
-                    onFlipCamera = {
-                        cameraState = CameraState.IDLE
-                        currentDetections = emptyList()
-                        cameraManager.stopScanning()
-                        lensFacing = if (boundLensFacing == CameraSelector.LENS_FACING_BACK) {
-                            CameraSelector.LENS_FACING_FRONT
+                            lensFacing = if (boundLensFacing == CameraSelector.LENS_FACING_BACK) {
+                                CameraSelector.LENS_FACING_FRONT
                         } else {
                             CameraSelector.LENS_FACING_BACK
                         }
