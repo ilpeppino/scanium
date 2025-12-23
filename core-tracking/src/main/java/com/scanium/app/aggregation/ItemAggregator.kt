@@ -418,12 +418,14 @@ class ItemAggregator(
         aggregatedId: String,
         category: ItemCategory?,
         label: String?,
-        priceRange: Pair<Double, Double>?
+        priceRange: Pair<Double, Double>?,
+        classificationConfidence: Float? = null
     ) {
         aggregatedItems[aggregatedId]?.let { item ->
             category?.let { item.enhancedCategory = it }
             label?.let { item.enhancedLabelText = it }
             priceRange?.let { item.enhancedPriceRange = it }
+            classificationConfidence?.let { item.classificationConfidence = it }
         }
     }
 
