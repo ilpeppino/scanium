@@ -253,6 +253,18 @@ NGROK_PID=$!
 print_status "ngrok started (PID: $NGROK_PID)"
 print_status "Waiting for ngrok tunnel..."
 
+NGROK_API="http://127.0.0.1:4040/api/tunnels"
+PUBLIC_URL="$(curl -fsS "$NGROK_API" | grep -oE 'https://[^"]+' | head -n 1 || true)"
+
+if [ -n "$PUBLIC_URL" ]; then
+  echo "✅ ngrok public URL: $PUBLIC_URL"
+  echo "   Example health:   $PUBLIC_URL/health"
+else
+  echo "⚠️  ngrok started but public URL not found via $NGROK_API"
+  echo "   Try: curl -s $NGROK_API"
+fi
+
+
 ***REMOVED*** Wait for ngrok to start and get URL
 MAX_WAIT=15
 WAITED=0
