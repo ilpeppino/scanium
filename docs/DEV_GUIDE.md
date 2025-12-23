@@ -117,6 +117,7 @@ See also `hooks/README.md` for pre-push validation setup.
 ```
 
 **On-device validation checklist:**
+
 - [ ] Point camera at edge objects: verify off-screen objects don't create items
 - [ ] Slowly pan camera: verify fewer duplicates appear
 - [ ] Check overlay remains smooth and stable (no lag)
@@ -124,6 +125,7 @@ See also `hooks/README.md` for pre-push validation setup.
 - [ ] Test with different lighting conditions
 
 ## Debugging tips
+
 - Use Logcat filters for tags like `CameraXManager`, `ObjectDetectorClient`, `CloudClassifier`, `ItemsViewModel`.
 - **New viewport/filtering logs:** Search for `[VIEWPORT]`, `[CROP_RECT]`, `[EDGE_FILTER]` tags.
 - **Deduplication logs:** Search for "SPATIAL-TEMPORAL MERGE" in `ItemAggregator` output.
