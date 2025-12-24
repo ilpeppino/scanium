@@ -64,6 +64,11 @@ class ScaniumApplication : Application() {
                 options.dsn = sentryDsn
                 options.isEnableAutoSessionTracking = true
 
+                // Set release and environment for proper tracking in Sentry UI
+                // Format: com.scanium.app@VERSION_NAME+VERSION_CODE
+                options.release = "com.scanium.app@${BuildConfig.VERSION_NAME}+${BuildConfig.VERSION_CODE}"
+                options.environment = if (BuildConfig.DEBUG) "dev" else "prod"
+
                 // Set initial enabled state based on user consent
                 val initialShare = runCatching {
                     runBlocking { settingsRepository.shareDiagnosticsFlow.first() }
