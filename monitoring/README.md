@@ -514,6 +514,224 @@ otelcol.processor.batch "mobile" {
 }
 ```
 
+## Alerting
+
+Scanium includes baseline alerts for monitoring application health. Alerts are provisioned automatically via Grafana's alerting provisioning system.
+
+### Alert Overview
+
+| Alert | Type | Condition | Severity |
+|-------|------|-----------|----------|
+| **Error Rate Spike** | Loki (logs) | > 50 errors/10min (prod) | Critical |
+| **Telemetry Drop** | Loki (logs) | 0 events in 15min (prod) | Critical |
+| **No Scan Sessions** | Loki (logs) | 0 sessions in 30min (prod) | Warning |
+| **Inference Latency** | Mimir (metrics) | p95 > 2000ms (prod) | Warning |
+| **Crash Spike** | Sentry | See Sentry setup below | N/A |
+
+### Configuring Contact Points
+
+Alerts use placeholder webhook URLs by default. To receive notifications, configure the following environment variables in `docker-compose.yml`:
+
+```yaml
+# Add to grafana service environment section
+environment:
+  # Webhook URLs (replace with your actual endpoints)
+  - SCANIUM_ALERT_WEBHOOK_URL=https://your-webhook.example.com/alerts
+  - SCANIUM_ALERT_WEBHOOK_URL_PROD=https://your-webhook.example.com/alerts/prod
+  - SCANIUM_ALERT_WEBHOOK_URL_DEV=https://your-webhook.example.com/alerts/dev
+
+  # Email (requires SMTP configuration)
+  - GF_SMTP_ENABLED=true
+  - GF_SMTP_HOST=smtp.example.com:587
+  - GF_SMTP_USER=alerts@example.com
+  - GF_SMTP_PASSWORD=${SMTP_PASSWORD}  # Use Docker secrets in production
+  - GF_SMTP_FROM_ADDRESS=alerts@example.com
+  - SCANIUM_ALERT_EMAIL=team@example.com
+```
+
+**Important:** Never commit secrets to the repository. Use environment variables, Docker secrets, or a secret manager.
+
+### Notification Routing
+
+Alerts are automatically routed based on the `env` label:
+
+| Environment | Contact Point | Group Wait | Repeat Interval |
+|-------------|---------------|------------|-----------------|
+| `prod` | scanium-high-priority | 10s | 1h |
+| `stage` | scanium-low-priority | 1m | 8h |
+| `dev` | scanium-low-priority | 2m | 24h |
+
+### Alert Thresholds
+
+Thresholds are configured in `grafana/provisioning/alerting/rules.yaml`. Default values:
+
+| Alert | Prod | Stage | Dev |
+|-------|------|-------|-----|
+| Error rate (errors/10min) | 50 | 100 | 200 |
+| Telemetry drop (min events) | 1 | N/A | N/A |
+| Inference latency p95 (ms) | 2000 | 3000 | N/A |
+
+To adjust thresholds, edit the `params` values in the rules file.
+
+### Sentry Crash Alerts (Not in Grafana)
+
+Crash spike monitoring should be configured directly in Sentry:
+
+1. **Create a Sentry project** for Scanium (if not already done)
+2. **Configure alert rules** in Sentry:
+   - Go to **Alerts → Create Alert Rule**
+   - Select **Issue Alert** for crash grouping
+   - Condition: "Number of events is more than X in Y minutes"
+   - Recommended: > 10 crashes in 10 minutes for production
+3. **Set up integrations** (Slack, PagerDuty, email) in Sentry settings
+4. **Add Sentry DSN** to the Android app configuration
+
+This approach is preferred because:
+- Sentry has richer crash symbolication and grouping
+- Native crash data isn't always forwarded to Grafana
+- Sentry provides better crash-specific context
+
+### Test Procedures
+
+Use these procedures to verify alerts are working correctly in development.
+
+#### Test A: Error Rate Spike
+
+Trigger: Send multiple error logs to exceed threshold.
+
+```bash
+# Send 60 error events (exceeds dev threshold of 50)
+for i in {1..60}; do
+  curl -X POST http://localhost:4318/v1/logs \
+    -H "Content-Type: application/json" \
+    -d '{
+      "resourceLogs": [{
+        "resource": {
+          "attributes": [
+            {"key": "service.name", "value": {"stringValue": "scanium-mobile"}},
+            {"key": "source", "value": {"stringValue": "scanium-mobile"}},
+            {"key": "env", "value": {"stringValue": "dev"}}
+          ]
+        },
+        "scopeLogs": [{
+          "scope": {"name": "test"},
+          "logRecords": [{
+            "timeUnixNano": "'$(date +%s)000000000'",
+            "severityNumber": 17,
+            "severityText": "ERROR",
+            "body": {"stringValue": "Test error event '$i' - simulated crash exception"}
+          }]
+        }]
+      }]
+    }' 2>/dev/null
+  echo "Sent error $i"
+done
+
+echo "✓ Sent 60 error events. Check Grafana Alerting UI in ~5-10 minutes."
+```
+
+Verify: Navigate to Grafana → Alerting → Alert rules → "Error Rate Spike (dev)"
+
+#### Test B: Telemetry Drop
+
+This alert only fires in production and requires NO events for 15 minutes. To test:
+
+1. Temporarily modify the rule to use `env="dev"`
+2. Stop sending any telemetry for 15+ minutes
+3. Verify the alert fires
+
+```bash
+# Quick verification that telemetry query works
+curl -s 'http://localhost:3100/loki/api/v1/query' \
+  --data-urlencode 'query=sum(count_over_time({source="scanium-mobile", env="dev"} [15m]))' \
+  | jq '.data.result'
+```
+
+#### Test C: Inference Latency
+
+Trigger: Send metrics with high latency values.
+
+```bash
+# Send histogram metric with high latency value
+# Note: This requires the actual metric name used in your app
+# Adjust 'ml_inference_latency_ms_bucket' to match your metric
+
+TIMESTAMP=$(date +%s)000
+
+curl -X POST http://localhost:4318/v1/metrics \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resourceMetrics": [{
+      "resource": {
+        "attributes": [
+          {"key": "service.name", "value": {"stringValue": "scanium-mobile"}},
+          {"key": "env", "value": {"stringValue": "dev"}}
+        ]
+      },
+      "scopeMetrics": [{
+        "scope": {"name": "ml"},
+        "metrics": [{
+          "name": "ml_inference_latency_ms",
+          "histogram": {
+            "dataPoints": [{
+              "timeUnixNano": "'$TIMESTAMP'",
+              "count": 100,
+              "sum": 350000,
+              "bucketCounts": [0, 0, 0, 0, 0, 0, 100],
+              "explicitBounds": [100, 250, 500, 1000, 2000, 5000]
+            }],
+            "aggregationTemporality": 2
+          }
+        }]
+      }]
+    }]
+  }'
+
+echo "✓ Sent high-latency histogram. Check Mimir for metric, then alert status."
+```
+
+Verify:
+```bash
+# Check if metric is ingested
+curl -s 'http://localhost:9009/prometheus/api/v1/query' \
+  --data-urlencode 'query=ml_inference_latency_ms_bucket' | jq '.data.result | length'
+```
+
+#### Verify All Alerts in UI
+
+1. Navigate to http://localhost:3000/alerting/list
+2. Check "Scanium Alerts" folder
+3. All rules should show "Normal" or "Pending" (not "Error")
+4. Click a rule to see evaluation history
+
+### Silencing Alerts
+
+To temporarily silence alerts during maintenance:
+
+1. Go to Grafana → Alerting → Silences
+2. Click "Add Silence"
+3. Add matchers (e.g., `env=dev` or `alertname=Error Rate Spike (dev)`)
+4. Set duration and save
+
+### Alert Troubleshooting
+
+**Alerts show "Error" state:**
+- Check Grafana logs: `docker compose logs grafana | grep -i alert`
+- Verify datasource connectivity in Grafana UI
+- Ensure queries return data in Explore view
+
+**Alerts never fire:**
+- Verify alert rule is enabled (not paused)
+- Check "for" duration hasn't been met yet
+- Use Explore to test the query manually
+- Check that labels match notification policy routes
+
+**No notifications received:**
+- Verify contact point configuration in UI
+- Check webhook endpoint is accessible from container
+- For email, verify SMTP settings are correct
+- Check Grafana logs for delivery errors
+
 ## Production Considerations
 
 This setup is optimized for **local development and NAS deployment**. For production:
@@ -536,7 +754,7 @@ This setup is optimized for **local development and NAS deployment**. For produc
 ### Reliability
 
 - [ ] Set up automated backups
-- [ ] Configure alerting (Alertmanager)
+- [x] Configure alerting (Alertmanager) - ✅ Baseline alerts provisioned
 - [ ] Monitor the monitoring stack itself
 - [ ] Implement high availability (multiple replicas)
 
