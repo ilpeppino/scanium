@@ -295,7 +295,7 @@ fun ObjectaNavGraph(
     val entitlementManager = androidx.compose.runtime.remember { com.scanium.app.data.EntitlementManager(settingsRepository, billingProvider) }
     val configProvider = androidx.compose.runtime.remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(settingsRepository, entitlementManager, configProvider)
+        factory = SettingsViewModel.Factory(context.applicationContext as android.app.Application, settingsRepository, entitlementManager, configProvider)
     )
     val paywallViewModel: PaywallViewModel = viewModel(
         factory = PaywallViewModel.Factory(billingProvider)

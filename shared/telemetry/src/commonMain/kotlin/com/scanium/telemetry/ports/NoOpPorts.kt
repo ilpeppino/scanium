@@ -68,3 +68,25 @@ object NoOpTracePort : TracePort {
         return NoOpSpanContext
     }
 }
+
+/**
+ * No-op implementation of [CrashPort] that discards all crash data.
+ *
+ * Useful for:
+ * - Testing without actual crash reporting backend
+ * - Disabling crash reporting in certain builds
+ * - Default implementation when no backend is configured
+ */
+object NoOpCrashPort : CrashPort {
+    override fun setTag(key: String, value: String) {
+        // No-op: discard tag
+    }
+
+    override fun addBreadcrumb(message: String, attributes: Map<String, String>) {
+        // No-op: discard breadcrumb
+    }
+
+    override fun captureException(throwable: Throwable, attributes: Map<String, String>) {
+        // No-op: discard exception
+    }
+}
