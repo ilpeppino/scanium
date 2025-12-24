@@ -105,9 +105,10 @@ fun CameraScreen(
     // Camera permission state
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
-    // CameraX manager
+    // Initialize CameraX manager
     val cameraManager = remember {
-        CameraXManager(context, lifecycleOwner)
+        val app = context.applicationContext as? com.scanium.app.ScaniumApplication
+        CameraXManager(context, lifecycleOwner, app?.telemetry)
     }
 
 

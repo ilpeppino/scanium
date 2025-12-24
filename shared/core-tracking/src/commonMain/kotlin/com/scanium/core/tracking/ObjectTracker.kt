@@ -3,6 +3,9 @@ package com.scanium.core.tracking
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.telemetry.facade.Telemetry
+import com.scanium.telemetry.TelemetrySeverity
+import kotlinx.datetime.Clock
 import kotlin.math.floor
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -21,10 +24,12 @@ import kotlin.random.Random
  *
  * @property config Configuration parameters for tracking behavior
  * @property logger Platform-specific logger implementation
+ * @property telemetry Telemetry facade for instrumentation
  */
 class ObjectTracker(
     private val config: TrackerConfig = TrackerConfig(),
-    private val logger: Logger = Logger.NONE
+    private val logger: Logger = Logger.NONE,
+    private val telemetry: Telemetry? = null
 ) {
     companion object {
         private const val TAG = "ObjectTracker"
@@ -37,95 +42,129 @@ class ObjectTracker(
 
     // Frame counter for tracking temporal information
     private var currentFrame: Long = 0
+    private var sessionStartTimeMs: Long = 0L
 
     // IDs of candidates that have been confirmed and promoted
     private val confirmedIds = mutableSetOf<String>()
+
+    init {
+        sessionStartTimeMs = Clock.System.now().toEpochMilliseconds()
+    }
 
     /**
      * Process detections from the current frame and return newly confirmed candidates.
      *
      * @param detections List of raw detections from ML Kit
+     * @param inferenceLatencyMs Time taken for ML inference in milliseconds
      * @return List of candidates that just reached confirmation threshold this frame
      */
-    fun processFrame(detections: List<DetectionInfo>): List<ObjectCandidate> {
-        currentFrame++
-        logger.i(TAG, ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}")
-
-        val newlyConfirmed = mutableListOf<ObjectCandidate>()
-        val matchedCandidates = mutableSetOf<String>()
-
-        // Process each detection
-        for ((index, detection) in detections.withIndex()) {
-            logger.i(TAG, "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}")
-
-            // Skip if bounding box is too small (hard filter)
-            if (detection.normalizedBoxArea < config.minBoxArea) {
-                logger.i(TAG, "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})")
-                continue
+    fun processFrame(detections: List<DetectionInfo>, inferenceLatencyMs: Long = 0): List<ObjectCandidate> {
+        val span = telemetry?.beginSpan("scan.process_frame")
+        try {
+            if (inferenceLatencyMs > 0) {
+                telemetry?.timer("ml.inference_latency_ms", inferenceLatencyMs, mapOf("type" to "object_detection"))
             }
 
-            // Note: We don't filter by confidence here - candidates can be created with low confidence
-            // The confirmation logic will check minConfidence threshold later
+            currentFrame++
+            logger.i(TAG, ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}")
 
-            // Try to match with existing candidate
-            val matchedCandidate = findMatchingCandidate(detection)
+            val newlyConfirmed = mutableListOf<ObjectCandidate>()
+            val matchedCandidates = mutableSetOf<String>()
 
-            if (matchedCandidate != null) {
-                // Update existing candidate
-                val wasConfirmed = isConfirmed(matchedCandidate)
+            // Process each detection
+            for ((index, detection) in detections.withIndex()) {
+                logger.i(TAG, "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}")
 
-                matchedCandidate.update(
-                    newBoundingBox = detection.boundingBox,
-                    frameNumber = currentFrame,
-                    confidence = detection.confidence,
-                    newCategory = detection.category,
-                    newLabelText = detection.labelText,
-                    newThumbnail = detection.thumbnail,
-                    boxArea = detection.normalizedBoxArea,
-                    newQualityScore = detection.qualityScore
-                )
-                matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
-                spatialIndex.upsert(matchedCandidate.internalId, matchedCandidate.indexBoundingBox())
-
-                matchedCandidates.add(matchedCandidate.internalId)
-
-                logger.i(TAG, "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}")
-
-                // Check if it just became confirmed
-                if (!wasConfirmed && isConfirmed(matchedCandidate)) {
-                    if (!confirmedIds.contains(matchedCandidate.internalId)) {
-                        confirmedIds.add(matchedCandidate.internalId)
-                        newlyConfirmed.add(matchedCandidate)
-                        logger.i(TAG, "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames")
-                    }
+                // Skip if bounding box is too small (hard filter)
+                if (detection.normalizedBoxArea < config.minBoxArea) {
+                    logger.i(TAG, "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})")
+                    continue
                 }
-            } else {
-                // Create new candidate
-                enforceCandidateLimit()
 
-                val newCandidate = createCandidate(detection)
-                candidates[newCandidate.internalId] = newCandidate
-                spatialIndex.upsert(newCandidate.internalId, newCandidate.indexBoundingBox())
-                matchedCandidates.add(newCandidate.internalId)
+                // Note: We don't filter by confidence here - candidates can be created with low confidence
+                // The confirmation logic will check minConfidence threshold later
 
-                logger.i(TAG, "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})")
+                // Try to match with existing candidate
+                val matchedCandidate = findMatchingCandidate(detection)
 
-                // Check if it's immediately confirmed (rare, but possible with minFramesToConfirm=1)
-                if (isConfirmed(newCandidate)) {
-                    if (!confirmedIds.contains(newCandidate.internalId)) {
-                        confirmedIds.add(newCandidate.internalId)
-                        newlyConfirmed.add(newCandidate)
-                        logger.i(TAG, "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}")
+                if (matchedCandidate != null) {
+                    // Update existing candidate
+                    val wasConfirmed = isConfirmed(matchedCandidate)
+
+                    matchedCandidate.update(
+                        newBoundingBox = detection.boundingBox,
+                        frameNumber = currentFrame,
+                        confidence = detection.confidence,
+                        newCategory = detection.category,
+                        newLabelText = detection.labelText,
+                        newThumbnail = detection.thumbnail,
+                        boxArea = detection.normalizedBoxArea,
+                        newQualityScore = detection.qualityScore
+                    )
+                    matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
+                    spatialIndex.upsert(matchedCandidate.internalId, matchedCandidate.indexBoundingBox())
+
+                    matchedCandidates.add(matchedCandidate.internalId)
+
+                    logger.i(TAG, "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}")
+
+                    // Check if it just became confirmed
+                    if (!wasConfirmed && isConfirmed(matchedCandidate)) {
+                        if (!confirmedIds.contains(matchedCandidate.internalId)) {
+                            confirmedIds.add(matchedCandidate.internalId)
+                            newlyConfirmed.add(matchedCandidate)
+                            logger.i(TAG, "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames")
+                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
+                                "candidate_id" to matchedCandidate.internalId,
+                                "category" to matchedCandidate.category.name,
+                                "label" to matchedCandidate.labelText
+                            ))
+                        }
+                    }
+                } else {
+                    // Create new candidate
+                    enforceCandidateLimit()
+
+                    val newCandidate = createCandidate(detection)
+                    candidates[newCandidate.internalId] = newCandidate
+                    spatialIndex.upsert(newCandidate.internalId, newCandidate.indexBoundingBox())
+                    matchedCandidates.add(newCandidate.internalId)
+
+                    logger.i(TAG, "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})")
+                    telemetry?.event("scan.candidate_created", TelemetrySeverity.DEBUG, mapOf(
+                        "candidate_id" to newCandidate.internalId,
+                        "category" to newCandidate.category.name,
+                        "top_label" to newCandidate.labelText,
+                        "confidence" to newCandidate.maxConfidence.toString()
+                    ))
+
+                    // Check if it's immediately confirmed (rare, but possible with minFramesToConfirm=1)
+                    if (isConfirmed(newCandidate)) {
+                        if (!confirmedIds.contains(newCandidate.internalId)) {
+                            confirmedIds.add(newCandidate.internalId)
+                            newlyConfirmed.add(newCandidate)
+                            logger.i(TAG, "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}")
+                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
+                                "candidate_id" to newCandidate.internalId,
+                                "category" to newCandidate.category.name,
+                                "label" to newCandidate.labelText
+                            ))
+                        }
                     }
                 }
             }
+
+            // Remove stale candidates
+            removeExpiredCandidates(matchedCandidates)
+
+            logger.i(TAG, ">>> processFrame END: returning ${newlyConfirmed.size} newly confirmed candidates")
+            return newlyConfirmed
+        } catch (e: Exception) {
+            span?.recordError(e.message ?: "Unknown error")
+            throw e
+        } finally {
+            span?.end()
         }
-
-        // Remove stale candidates
-        removeExpiredCandidates(matchedCandidates)
-
-        logger.i(TAG, ">>> processFrame END: returning ${newlyConfirmed.size} newly confirmed candidates")
-        return newlyConfirmed
     }
 
     /**
@@ -334,6 +373,10 @@ class ObjectTracker(
             if (framesSinceLastSeen > config.expiryFrames) {
                 toRemove.add(id)
                 logger.d(TAG, "Expiring candidate $id: not seen for $framesSinceLastSeen frames")
+                telemetry?.event("scan.candidate_expired", TelemetrySeverity.DEBUG, mapOf(
+                    "candidate_id" to id,
+                    "age_frames" to candidate.seenCount.toString()
+                ))
             }
         }
 
@@ -347,14 +390,35 @@ class ObjectTracker(
     /**
      * Reset the tracker, clearing all candidates and state.
      * Call this when starting a new scan session or switching modes.
+     *
+     * @param scanMode Optional scan mode to log with session start event
      */
-    fun reset() {
+    fun reset(scanMode: String? = null) {
         logger.i(TAG, "Resetting tracker: clearing ${candidates.size} candidates")
 
         candidates.clear()
         confirmedIds.clear()
         currentFrame = 0
         spatialIndex.clear()
+        sessionStartTimeMs = Clock.System.now().toEpochMilliseconds()
+
+        if (scanMode != null) {
+            telemetry?.event("scan.session_started", TelemetrySeverity.INFO, mapOf("scan_mode" to scanMode))
+        }
+    }
+
+    /**
+     * Explicitly stop the current tracking session.
+     *
+     * @param reason Reason for stopping (e.g., "user_stopped", "background")
+     */
+    fun stopSession(reason: String) {
+        val duration = Clock.System.now().toEpochMilliseconds() - sessionStartTimeMs
+        telemetry?.event("scan.session_stopped", TelemetrySeverity.INFO, mapOf(
+            "reason" to reason,
+            "duration_ms" to duration.toString(),
+            "final_frame_count" to currentFrame.toString()
+        ))
     }
 
     /**

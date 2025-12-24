@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
+import com.scanium.telemetry.facade.Telemetry
+
 /**
  * Android wrapper for platform-agnostic ClassificationOrchestrator.
  *
@@ -33,6 +35,7 @@ import kotlinx.coroutines.flow.stateIn
  * @param scope Coroutine scope for async operations
  * @param maxConcurrency Maximum concurrent classification requests (default: 2)
  * @param maxRetries Maximum retry attempts (default: 3)
+ * @param telemetry Telemetry facade for instrumentation
  */
 class ClassificationOrchestrator(
     modeFlow: StateFlow<ClassificationMode>,
@@ -41,7 +44,8 @@ class ClassificationOrchestrator(
     private val scope: CoroutineScope,
     maxConcurrency: Int = 2,
     maxRetries: Int = 3,
-    delayProvider: suspend (Long) -> Unit = { delay(it) }
+    delayProvider: suspend (Long) -> Unit = { delay(it) },
+    telemetry: Telemetry? = null
 ) {
     // Adapt Android classifiers to portable Classifier interface
     private val portableOnDeviceClassifier: Classifier = ClassifierAdapter(
@@ -79,7 +83,8 @@ class ClassificationOrchestrator(
         logger = AndroidLogger(),
         maxConcurrency = maxConcurrency,
         maxRetries = maxRetries,
-        delayProvider = delayProvider
+        delayProvider = delayProvider,
+        telemetry = telemetry
     )
 
     /**

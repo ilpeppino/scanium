@@ -86,6 +86,9 @@ fun ScaniumApp() {
                     dao = database.scannedItemDao(),
                     syncer = NoopScannedItemSyncer
                 )
+                
+                // Get Telemetry facade from Application
+                val telemetry = (context as? com.scanium.app.ScaniumApplication)?.telemetry
 
                 return ItemsViewModel(
                     classificationMode = classificationModeViewModel.classificationMode,
@@ -93,7 +96,8 @@ fun ScaniumApp() {
                     onDeviceClassifier = OnDeviceClassifier(),
                     cloudClassifier = CloudClassifier(context = context),
                     itemsStore = itemsRepository,
-                    stableItemCropper = StableItemCropper(context)
+                    stableItemCropper = StableItemCropper(context),
+                    telemetry = telemetry
                 ) as T
             }
         }
