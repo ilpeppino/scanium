@@ -254,30 +254,28 @@ print_status "ngrok started (PID: $NGROK_PID)"
 print_status "Waiting for ngrok tunnel..."
 
 NGROK_API="http://127.0.0.1:4040/api/tunnels"
-PUBLIC_URL="$(curl -fsS "$NGROK_API" | grep -oE 'https://[^"]+' | head -n 1 || true)"
-
-if [ -n "$PUBLIC_URL" ]; then
-  echo "✅ ngrok public URL: $PUBLIC_URL"
-  echo "   Example health:   $PUBLIC_URL/health"
-else
-  echo "⚠️  ngrok started but public URL not found via $NGROK_API"
-  echo "   Try: curl -s $NGROK_API"
-fi
-
-
-***REMOVED*** Wait for ngrok to start and get URL
 MAX_WAIT=15
 WAITED=0
 NGROK_URL=""
 
 while [ $WAITED -lt $MAX_WAIT ]; do
-    if [ -f .ngrok.log ]; then
-        NGROK_URL=$(grep -o 'https://[a-zA-Z0-9\-]*\.ngrok-free\.dev' .ngrok.log | head -1)
-        if [ ! -z "$NGROK_URL" ]; then
+    ***REMOVED*** Try 1: Check API (silent fail if not ready)
+    if API_RESPONSE=$(curl -s "$NGROK_API"); then
+        NGROK_URL=$(echo "$API_RESPONSE" | grep -oE 'https://[^"]+' | head -n 1 || true)
+        if [ -n "$NGROK_URL" ]; then
             break
         fi
     fi
 
+    ***REMOVED*** Try 2: Check log file
+    if [ -f .ngrok.log ]; then
+        NGROK_URL=$(grep -o 'https://[a-zA-Z0-9\-]*\.ngrok-free\.dev' .ngrok.log | head -1)
+        if [ -n "$NGROK_URL" ]; then
+            break
+        fi
+    fi
+
+    ***REMOVED*** Check if ngrok died
     if ! kill -0 $NGROK_PID 2>/dev/null; then
         print_error "ngrok crashed"
         echo "ngrok log:"
