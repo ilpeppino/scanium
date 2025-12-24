@@ -229,6 +229,9 @@ class ItemsViewModel(
     }
 
     fun updateOverlayDetections(detections: List<DetectionResult>) {
+        if (DEBUG_LOGGING) {
+            ScaniumLog.d(TAG, "[OVERLAY] updateOverlayDetections: ${detections.size} detections")
+        }
         lastOverlayDetections = detections
         renderOverlayTracks(detections)
     }
@@ -240,6 +243,15 @@ class ItemsViewModel(
             aggregatedItems = aggregatedItems,
             readyConfidenceThreshold = OVERLAY_READY_THRESHOLD
         )
+
+        // Log when overlay tracks change
+        val prevCount = _overlayTracks.value.size
+        if (mapped.size != prevCount) {
+            Log.d(TAG, "[OVERLAY] Track count changed: $prevCount -> ${mapped.size} (detections=${detections.size})")
+        }
+        if (mapped.isEmpty() && detections.isNotEmpty()) {
+            Log.w(TAG, "[OVERLAY] WARNING: ${detections.size} detections but 0 tracks after mapping!")
+        }
 
         mapped.forEach { track ->
             val trackingId = track.trackingId

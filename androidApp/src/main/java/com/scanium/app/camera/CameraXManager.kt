@@ -447,14 +447,10 @@ class CameraXManager(
                             onFrameSize(frameSize)
                         }
 
-                        // Use STREAM_MODE for object detection with tracking during continuous scanning
-                        val (items, detections) = processObjectDetectionWithTracking(
-                            inputImage = inputImage,
-                            lazyBitmapProvider = { imageProxy.toBitmap() },
-                            cropRect = imageBoundsForFiltering,
-                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
-                            analyzerLatencyMs = SystemClock.elapsedRealtime() - frameReceiveTime
-                        )
+                        // Use SINGLE_IMAGE_MODE for object detection with tracking during continuous scanning
+                        // CRITICAL: Use SINGLE_IMAGE_MODE to avoid blinking bounding boxes
+                        // STREAM_MODE produces unstable tracking IDs from ML Kit that change between frames
+                        val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
                         
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
