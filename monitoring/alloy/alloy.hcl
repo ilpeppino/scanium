@@ -62,11 +62,6 @@ otelcol.exporter.loki "mobile" {
 loki.write "mobile" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
-
-    // Retry configuration
-    retry_on_http_429 = true
-    max_backoff       = "5s"
-    min_backoff       = "100ms"
   }
 
   external_labels = {
@@ -83,18 +78,6 @@ otelcol.exporter.prometheus "mobile" {
 prometheus.remote_write "mobile" {
   endpoint {
     url = "http://mimir:9009/api/v1/push"
-
-    // Retry configuration
-    retry_on_http_429 = true
-    max_backoff       = "5s"
-    min_backoff       = "100ms"
-
-    // Queue configuration
-    capacity              = 10000
-    max_shards            = 5
-    min_shards            = 1
-    max_samples_per_send  = 2000
-    batch_send_deadline   = "5s"
   }
 
   external_labels = {
@@ -113,17 +96,6 @@ otelcol.exporter.otlp "tempo" {
       insecure             = true
       insecure_skip_verify = true
     }
-
-    // Retry configuration
-    retry_on_failure {
-      enabled         = true
-      initial_interval = "500ms"
-      max_interval    = "5s"
-      max_elapsed_time = "30s"
-    }
-
-    // Timeout
-    timeout = "10s"
   }
 }
 
@@ -194,18 +166,6 @@ prometheus.scrape "mimir" {
 prometheus.remote_write "pipeline" {
   endpoint {
     url = "http://mimir:9009/api/v1/push"
-
-    // Retry configuration
-    retry_on_http_429 = true
-    max_backoff       = "5s"
-    min_backoff       = "100ms"
-
-    // Queue configuration (smaller than app metrics, pipeline is lower volume)
-    capacity              = 5000
-    max_shards            = 2
-    min_shards            = 1
-    max_samples_per_send  = 1000
-    batch_send_deadline   = "5s"
   }
 
   external_labels = {

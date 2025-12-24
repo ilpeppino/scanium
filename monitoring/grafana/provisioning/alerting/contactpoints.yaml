@@ -14,11 +14,11 @@ contactPoints:
   - orgId: 1
     name: scanium-default
     receivers:
-      # Webhook receiver (placeholder - update URL in UI or via secrets)
+      # Webhook receiver (placeholder URL for local dev)
       - uid: scanium-webhook
         type: webhook
         settings:
-          url: "${SCANIUM_ALERT_WEBHOOK_URL:-http://localhost:8080/alerts}"
+          url: "http://localhost:8080/alerts"
           httpMethod: POST
           maxAlerts: 10
         disableResolveMessage: false
@@ -31,18 +31,10 @@ contactPoints:
       - uid: scanium-webhook-prod
         type: webhook
         settings:
-          url: "${SCANIUM_ALERT_WEBHOOK_URL_PROD:-http://localhost:8080/alerts/prod}"
+          url: "http://localhost:8080/alerts/prod"
           httpMethod: POST
           maxAlerts: 5
         disableResolveMessage: false
-      # Email fallback (requires SMTP configuration)
-      # Uncomment and configure GF_SMTP_* environment variables
-      # - uid: scanium-email-prod
-      #   type: email
-      #   settings:
-      #     addresses: "${SCANIUM_ALERT_EMAIL:-alerts@example.com}"
-      #     singleEmail: true
-      #   disableResolveMessage: false
 
   # Low priority contact point for dev/staging
   - orgId: 1
@@ -51,7 +43,7 @@ contactPoints:
       - uid: scanium-webhook-dev
         type: webhook
         settings:
-          url: "${SCANIUM_ALERT_WEBHOOK_URL_DEV:-http://localhost:8080/alerts/dev}"
+          url: "http://localhost:8080/alerts/dev"
           httpMethod: POST
           maxAlerts: 20
         disableResolveMessage: false
