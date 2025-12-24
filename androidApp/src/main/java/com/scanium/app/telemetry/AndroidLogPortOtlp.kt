@@ -1,5 +1,7 @@
 package com.scanium.app.telemetry
 
+import android.util.Log
+import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.TelemetryEvent
 import com.scanium.telemetry.TelemetrySeverity
 import com.scanium.telemetry.ports.LogPort
@@ -9,72 +11,94 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 /**
  * Android implementation of [LogPort] that exports logs via OTLP.
  *
  * ## Batching Strategy
- * - Accumulates log events in memory buffer
+ * - Accumulates log events in bounded queue
  * - Exports when batch size reached OR timeout elapsed
  * - Async/non-blocking (fire-and-forget)
  *
+ * ## Bounded Queue Behavior
+ * - Maximum queue size enforced (prevents memory exhaustion)
+ * - Drop policy: DROP_OLDEST (default) or DROP_NEWEST
+ * - When queue is full, oldest/newest events are dropped based on policy
+ *
  * ## Thread Safety
- * Uses ConcurrentLinkedQueue for thread-safe event accumulation.
+ * Uses ReentrantLock to protect bounded queue operations.
  *
  * ## Example Usage
  * ```kotlin
- * val config = OtlpConfiguration.localDev(serviceVersion = "1.0.0")
- * val logPort = AndroidLogPortOtlp(config)
- *
- * val telemetry = Telemetry(
- *     defaultAttributesProvider = myProvider,
- *     logPort = logPort,
- *     ...
- * )
+ * val telemetryConfig = TelemetryConfig.development()
+ * val otlpConfig = OtlpConfiguration.localDev(serviceVersion = "1.0.0")
+ * val logPort = AndroidLogPortOtlp(telemetryConfig, otlpConfig)
  * ```
  */
 class AndroidLogPortOtlp(
-    private val config: OtlpConfiguration
+    private val telemetryConfig: TelemetryConfig,
+    private val otlpConfig: OtlpConfiguration
 ) : LogPort {
 
-    private val exporter = OtlpHttpExporter(config)
-    private val buffer = ConcurrentLinkedQueue<TelemetryEvent>()
+    private val tag = "AndroidLogPortOtlp"
+    private val exporter = OtlpHttpExporter(otlpConfig, telemetryConfig)
+    private val buffer = ArrayDeque<TelemetryEvent>()
+    private val lock = ReentrantLock()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
-        config.validate()
+        otlpConfig.validate()
+        telemetryConfig // Validate via data class init
 
         // Start periodic batch export
         scope.launch {
             while (true) {
-                delay(config.batchTimeoutMs)
+                delay(telemetryConfig.flushIntervalMs)
                 flushIfNotEmpty()
             }
         }
     }
 
     override fun emit(event: TelemetryEvent) {
-        if (!config.enabled) return
+        if (!otlpConfig.enabled) return
 
-        buffer.offer(event)
+        lock.withLock {
+            // Check if queue is full
+            if (buffer.size >= telemetryConfig.maxQueueSize) {
+                when (telemetryConfig.dropPolicy) {
+                    TelemetryConfig.DropPolicy.DROP_OLDEST -> {
+                        buffer.removeFirstOrNull()
+                        Log.w(tag, "Queue full (${telemetryConfig.maxQueueSize}), dropped oldest event")
+                    }
+                    TelemetryConfig.DropPolicy.DROP_NEWEST -> {
+                        Log.w(tag, "Queue full (${telemetryConfig.maxQueueSize}), dropping newest event: ${event.name}")
+                        return // Don't add the new event
+                    }
+                }
+            }
 
-        // Flush if batch size reached
-        if (buffer.size >= config.maxBatchSize) {
-            flush()
+            buffer.addLast(event)
+
+            // Flush if batch size reached
+            if (buffer.size >= telemetryConfig.maxBatchSize) {
+                flush()
+            }
         }
     }
 
     /**
      * Flushes all buffered events to OTLP endpoint.
+     * Must be called within lock or from synchronized context.
      */
     private fun flush() {
-        val events = mutableListOf<TelemetryEvent>()
-
-        // Drain buffer
-        while (events.size < config.maxBatchSize) {
-            val event = buffer.poll() ?: break
-            events.add(event)
+        val events = lock.withLock {
+            val batch = mutableListOf<TelemetryEvent>()
+            while (batch.size < telemetryConfig.maxBatchSize && buffer.isNotEmpty()) {
+                batch.add(buffer.removeFirst())
+            }
+            batch
         }
 
         if (events.isEmpty()) return
@@ -110,12 +134,13 @@ class AndroidLogPortOtlp(
             )
         )
 
-        // Export (async, fire-and-forget)
+        // Export (async, with retry and backoff)
         exporter.exportLogs(request)
     }
 
     private fun flushIfNotEmpty() {
-        if (buffer.isNotEmpty()) {
+        val hasEvents = lock.withLock { buffer.isNotEmpty() }
+        if (hasEvents) {
             flush()
         }
     }

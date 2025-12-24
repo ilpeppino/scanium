@@ -104,6 +104,13 @@ class ScaniumApplication : Application() {
     }
 
     private fun initializeTelemetry() {
+        // Build TelemetryConfig based on build type
+        val telemetryConfig = if (BuildConfig.DEBUG) {
+            com.scanium.telemetry.TelemetryConfig.development()
+        } else {
+            com.scanium.telemetry.TelemetryConfig.production()
+        }
+
         // Build OTLP configuration from BuildConfig
         val otlpConfig = if (BuildConfig.OTLP_ENABLED && BuildConfig.OTLP_ENDPOINT.isNotBlank()) {
             OtlpConfiguration(
@@ -111,12 +118,14 @@ class ScaniumApplication : Application() {
                 endpoint = BuildConfig.OTLP_ENDPOINT,
                 environment = if (BuildConfig.DEBUG) "dev" else "prod",
                 serviceVersion = BuildConfig.VERSION_NAME,
-                traceSamplingRate = if (BuildConfig.DEBUG) 0.1 else 0.01, // 10% in dev, 1% in prod
+                traceSamplingRate = telemetryConfig.traceSampleRate, // Use TelemetryConfig value
                 debugLogging = BuildConfig.DEBUG
             ).also {
                 android.util.Log.i(
                     "ScaniumApplication",
-                    "OTLP telemetry enabled: endpoint=${it.endpoint}, env=${it.environment}, sampling=${it.traceSamplingRate}"
+                    "OTLP telemetry enabled: endpoint=${it.endpoint}, env=${it.environment}, " +
+                    "minSeverity=${telemetryConfig.minSeverity}, traceSampling=${telemetryConfig.traceSampleRate}, " +
+                    "maxQueue=${telemetryConfig.maxQueueSize}, dropPolicy=${telemetryConfig.dropPolicy}"
                 )
             }
         } else {
@@ -125,13 +134,14 @@ class ScaniumApplication : Application() {
             }
         }
 
-        // Create OTLP port implementations
-        val logPort = AndroidLogPortOtlp(otlpConfig)
-        val metricPort = AndroidMetricPortOtlp(otlpConfig)
-        val tracePort = AndroidTracePortOtlp(otlpConfig)
+        // Create OTLP port implementations with both configs
+        val logPort = AndroidLogPortOtlp(telemetryConfig, otlpConfig)
+        val metricPort = AndroidMetricPortOtlp(telemetryConfig, otlpConfig)
+        val tracePort = AndroidTracePortOtlp(telemetryConfig, otlpConfig)
 
-        // Create Telemetry facade
+        // Create Telemetry facade with config
         telemetry = Telemetry(
+            config = telemetryConfig,
             defaultAttributesProvider = AndroidDefaultAttributesProvider(),
             logPort = logPort,
             metricPort = metricPort,

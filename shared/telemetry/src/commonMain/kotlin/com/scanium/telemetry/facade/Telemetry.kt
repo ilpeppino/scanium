@@ -1,6 +1,7 @@
 package com.scanium.telemetry.facade
 
 import com.scanium.telemetry.AttributeSanitizer
+import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.TelemetryEvent
 import com.scanium.telemetry.TelemetrySeverity
 import com.scanium.telemetry.ports.CrashPort
@@ -19,11 +20,15 @@ import kotlinx.datetime.Clock
  * - Merging default attributes with user-provided attributes
  * - Enforcing required attribute presence (fail-fast)
  * - Event name validation
+ * - Runtime filtering by severity level
+ * - Enable/disable toggle
  *
  * ## Usage Example
  * ```kotlin
  * // Initialize (typically in platform-specific code)
+ * val config = TelemetryConfig.development()
  * val telemetry = Telemetry(
+ *     config = config,
  *     defaultAttributesProvider = myDefaultAttributesProvider,
  *     logPort = myLogPort,
  *     metricPort = myMetricPort,
@@ -52,6 +57,7 @@ import kotlinx.datetime.Clock
  * These are typically provided by [DefaultAttributesProvider] and merged with user attributes.
  * If required attributes are missing after merging, an [IllegalStateException] is thrown.
  *
+ * @param config Runtime configuration for telemetry behavior
  * @param defaultAttributesProvider Provides platform-specific default attributes
  * @param logPort Port for emitting log events (optional, uses NoOp if not provided)
  * @param metricPort Port for emitting metrics (optional, uses NoOp if not provided)
@@ -60,6 +66,7 @@ import kotlinx.datetime.Clock
  *                  WARN and ERROR events are automatically forwarded as breadcrumbs to crash reports.
  */
 class Telemetry(
+    private val config: TelemetryConfig = TelemetryConfig(),
     private val defaultAttributesProvider: DefaultAttributesProvider,
     private val logPort: LogPort,
     private val metricPort: MetricPort,
@@ -68,6 +75,10 @@ class Telemetry(
 ) {
     /**
      * Emits a telemetry event with automatic sanitization and attribute merging.
+     *
+     * Events are filtered based on configuration:
+     * - If telemetry is disabled, event is dropped
+     * - If severity is below minSeverity, event is dropped
      *
      * If a [crashPort] is configured, WARN and ERROR events are automatically forwarded
      * as breadcrumbs to crash reports. This helps provide context when crashes occur.
@@ -82,6 +93,10 @@ class Telemetry(
         severity: TelemetrySeverity,
         userAttributes: Map<String, String> = emptyMap()
     ) {
+        // Filter by config: enabled and minSeverity
+        if (!config.enabled) return
+        if (severity.ordinal < config.minSeverity.ordinal) return
+
         val mergedAttributes = mergeAndSanitize(userAttributes)
         validateRequiredAttributes(mergedAttributes)
 
@@ -153,6 +168,7 @@ class Telemetry(
         delta: Long = 1,
         userAttributes: Map<String, String> = emptyMap()
     ) {
+        if (!config.enabled) return
         val mergedAttributes = mergeAndSanitize(userAttributes)
         metricPort.counter(name, delta, mergedAttributes)
     }
@@ -169,6 +185,7 @@ class Telemetry(
         millis: Long,
         userAttributes: Map<String, String> = emptyMap()
     ) {
+        if (!config.enabled) return
         val mergedAttributes = mergeAndSanitize(userAttributes)
         metricPort.timer(name, millis, mergedAttributes)
     }
@@ -185,6 +202,7 @@ class Telemetry(
         value: Double,
         userAttributes: Map<String, String> = emptyMap()
     ) {
+        if (!config.enabled) return
         val mergedAttributes = mergeAndSanitize(userAttributes)
         metricPort.gauge(name, value, mergedAttributes)
     }
@@ -200,6 +218,7 @@ class Telemetry(
         name: String,
         userAttributes: Map<String, String> = emptyMap()
     ): SpanContext {
+        if (!config.enabled) return tracePort.beginSpan(name, emptyMap()) // Return no-op span
         val mergedAttributes = mergeAndSanitize(userAttributes)
         return tracePort.beginSpan(name, mergedAttributes)
     }
