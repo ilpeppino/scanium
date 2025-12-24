@@ -1,0 +1,177 @@
+version: '3.8'
+
+***REMOVED*** Scanium Observability Stack (LGTM + Alloy)
+***REMOVED*** - Loki: Logs storage
+***REMOVED*** - Grafana: Visualization
+***REMOVED*** - Tempo: Distributed tracing
+***REMOVED*** - Mimir: Metrics storage
+***REMOVED*** - Alloy: OTLP receiver & routing
+
+services:
+  ***REMOVED*** Grafana Alloy - OTLP receiver and telemetry router
+  alloy:
+    image: grafana/alloy:v1.0.0
+    container_name: scanium-alloy
+    restart: unless-stopped
+    ports:
+      - "4317:4317"  ***REMOVED*** OTLP gRPC (for future use)
+      - "4318:4318"  ***REMOVED*** OTLP HTTP (primary)
+      - "12345:12345" ***REMOVED*** Alloy UI
+    volumes:
+      - ./alloy/alloy.hcl:/etc/alloy/config.alloy:ro
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  ***REMOVED*** Loki - Log aggregation
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: scanium-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"  ***REMOVED*** Exposed for debugging, can be removed in production
+    volumes:
+      - ./loki/loki.yaml:/etc/loki/config.yaml:ro
+      - ./data/loki:/loki
+    command: -config.file=/etc/loki/config.yaml
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  ***REMOVED*** Tempo - Distributed tracing
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: scanium-tempo
+    restart: unless-stopped
+    ports:
+      - "3200:3200"  ***REMOVED*** Tempo HTTP (exposed for debugging)
+      - "4317"        ***REMOVED*** OTLP gRPC (internal only)
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo/config.yaml:ro
+      - ./data/tempo:/var/tempo
+    command: -config.file=/etc/tempo/config.yaml
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  ***REMOVED*** Mimir - Metrics storage (Prometheus-compatible)
+  mimir:
+    image: grafana/mimir:2.11.0
+    container_name: scanium-mimir
+    restart: unless-stopped
+    ports:
+      - "9009:9009"  ***REMOVED*** Mimir HTTP (exposed for debugging)
+    volumes:
+      - ./mimir/mimir.yaml:/etc/mimir/config.yaml:ro
+      - ./data/mimir:/data
+    command:
+      - -config.file=/etc/mimir/config.yaml
+      - -target=all
+    networks:
+      - observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9009/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  ***REMOVED*** Grafana - Visualization and dashboards
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: scanium-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"  ***REMOVED*** Grafana UI (publicly exposed)
+    environment:
+      ***REMOVED*** Anonymous auth for easy local dev (change for production)
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+
+      ***REMOVED*** Paths
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_PATHS_DATA=/var/lib/grafana
+
+      ***REMOVED*** Server
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+
+      ***REMOVED*** Disable usage stats
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=false
+
+      ***REMOVED*** Feature toggles
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./data/grafana:/var/lib/grafana
+    networks:
+      - observability
+    depends_on:
+      loki:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      mimir:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+networks:
+  observability:
+    name: scanium-observability
+    driver: bridge
+
+volumes:
+  ***REMOVED*** Named volumes for easier backup/restore
+  loki_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/loki
+
+  tempo_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/tempo
+
+  mimir_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/mimir
+
+  grafana_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./data/grafana
