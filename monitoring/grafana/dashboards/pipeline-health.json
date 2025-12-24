@@ -405,6 +405,521 @@
         "enableLogDetails": true,
         "sortOrder": "Descending"
       }
+    },
+    {
+      "id": 100,
+      "title": "Pipeline Self-Observability",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 1 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "id": 101,
+      "title": "Service Status",
+      "description": "Health status of observability services (1 = up, 0 = down)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 29, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{source=\"pipeline\"}",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+          ],
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "colorMode": "background",
+        "graphMode": "none",
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "id": 102,
+      "title": "Alloy Build Info",
+      "description": "Alloy version and build information",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 29, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "alloy_build_info{source=\"pipeline\"}",
+          "legendFormat": "v{{version}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "" },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "name"
+      }
+    },
+    {
+      "id": 103,
+      "title": "Alloy Uptime",
+      "description": "Time since Alloy process started",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 29, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - process_start_time_seconds{job=\"alloy\", source=\"pipeline\"}",
+          "legendFormat": "uptime"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 104,
+      "title": "Scrape Health",
+      "description": "Last successful scrape timestamp (seconds ago)",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 29, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "time() - scrape_samples_scraped{source=\"pipeline\"}",
+          "legendFormat": "{{job}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 60 },
+              { "color": "red", "value": 120 }
+            ]
+          },
+          "unit": "s",
+          "max": 300
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "id": 105,
+      "title": "OTLP Receiver - Accepted Records",
+      "description": "Records accepted by Alloy OTLP receivers (logs, metrics, spans)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 33, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_receiver_accepted_log_records{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Logs accepted/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(otelcol_receiver_accepted_metric_points{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Metrics accepted/s"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(otelcol_receiver_accepted_spans{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Spans accepted/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 106,
+      "title": "OTLP Receiver - Refused Records",
+      "description": "Records refused by Alloy OTLP receivers (indicates errors)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 33, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_receiver_refused_log_records{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Logs refused/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(otelcol_receiver_refused_metric_points{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Metrics refused/s"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(otelcol_receiver_refused_spans{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Spans refused/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": ".*" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 107,
+      "title": "Exporter - Sent Records",
+      "description": "Records successfully sent to backends (Loki, Mimir, Tempo)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 41, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_exporter_sent_log_records{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Logs sent/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(otelcol_exporter_sent_metric_points{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Metrics sent/s"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(otelcol_exporter_sent_spans{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Spans sent/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 108,
+      "title": "Exporter - Send Failures",
+      "description": "Records that failed to send (indicates backend issues)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 41, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_exporter_send_failed_log_records{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Logs failed/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(otelcol_exporter_send_failed_metric_points{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Metrics failed/s"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(otelcol_exporter_send_failed_spans{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Spans failed/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 109,
+      "title": "Queue Size",
+      "description": "Items currently queued for export (backpressure indicator)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 49, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(otelcol_exporter_queue_size{source=\"pipeline\"}) by (exporter) or vector(0)",
+          "legendFormat": "{{exporter}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 110,
+      "title": "Queue Capacity",
+      "description": "Maximum queue capacity for exporters",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 49, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(otelcol_exporter_queue_capacity{source=\"pipeline\"}) by (exporter) or vector(0)",
+          "legendFormat": "{{exporter}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "id": 111,
+      "title": "Retry Attempts",
+      "description": "Exporter retry attempts (indicates temporary failures)",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 49, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_exporter_enqueue_failed_log_records{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Logs enqueue failed/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(otelcol_exporter_enqueue_failed_metric_points{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Metrics enqueue failed/s"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(otelcol_exporter_enqueue_failed_spans{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Spans enqueue failed/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 112,
+      "title": "Loki Health",
+      "description": "Loki ingester memory streams and request rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 55, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "loki_ingester_memory_streams{source=\"pipeline\"} or vector(0)",
+          "legendFormat": "Active streams"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(loki_request_duration_seconds_count{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Requests/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 113,
+      "title": "Tempo Health",
+      "description": "Tempo live traces and request rate",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 55, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "tempo_ingester_live_traces{source=\"pipeline\"} or vector(0)",
+          "legendFormat": "Live traces"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(tempo_request_duration_seconds_count{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Requests/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 114,
+      "title": "Mimir Health",
+      "description": "Mimir active series and request rate",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 55, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "cortex_ingester_memory_series{source=\"pipeline\"} or vector(0)",
+          "legendFormat": "Active series"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(cortex_request_duration_seconds_count{source=\"pipeline\"}[5m])) or vector(0)",
+          "legendFormat": "Requests/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
     }
   ],
   "annotations": {
