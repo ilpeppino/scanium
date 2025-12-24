@@ -95,7 +95,7 @@ class AssistantViewModel(
             )
             val assistantMessage = AssistantMessage(
                 role = AssistantRole.ASSISTANT,
-                content = response.content,
+                content = response.text,
                 timestamp = System.currentTimeMillis(),
                 itemContextIds = itemIds
             )

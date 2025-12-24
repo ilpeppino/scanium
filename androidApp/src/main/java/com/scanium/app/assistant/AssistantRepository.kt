@@ -151,8 +151,9 @@ class AssistantRepository(
                         val assistantResponse = json.decodeFromString<AssistantResponse>(responseBody)
 
                         // Check if response was blocked by safety filters
-                        if (assistantResponse.safety?.blocked == true) {
-                            ScaniumLog.w(TAG, "Response blocked: ${assistantResponse.safety.reasonCode}")
+                        val safety = assistantResponse.safety
+                        if (safety?.blocked == true) {
+                            ScaniumLog.w(TAG, "Response blocked: ${safety.reasonCode}")
                         }
 
                         Result.success(assistantResponse)
