@@ -34,12 +34,35 @@ data class AssistantAction(
     val payload: Map<String, String> = emptyMap()
 )
 
+/**
+ * Safety information returned by the AI Gateway.
+ * Contains stable reason codes for client handling.
+ */
+@Serializable
+data class SafetyResponse(
+    val blocked: Boolean = false,
+    val reasonCode: String? = null,
+    val requestId: String? = null
+)
+
+/**
+ * Response from the AI Gateway.
+ * The gateway may use 'reply' or 'content' for the text response.
+ */
 @Serializable
 data class AssistantResponse(
-    val content: String,
+    /** Primary response field from gateway (newer API) */
+    val reply: String? = null,
+    /** Legacy response field (for backwards compatibility) */
+    val content: String? = null,
     val actions: List<AssistantAction> = emptyList(),
-    val citationsMetadata: Map<String, String>? = null
-)
+    val citationsMetadata: Map<String, String>? = null,
+    val safety: SafetyResponse? = null,
+    val correlationId: String? = null
+) {
+    /** Get the response text, preferring 'reply' over 'content' */
+    val text: String get() = reply ?: content ?: ""
+}
 
 @Serializable
 data class ItemAttributeSnapshot(
