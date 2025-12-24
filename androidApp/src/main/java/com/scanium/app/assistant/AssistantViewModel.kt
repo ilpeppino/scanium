@@ -49,13 +49,13 @@ class AssistantViewModel(
             val snapshots = mutableListOf<ItemContextSnapshot>()
 
             if (activeDraftId != null) {
-                val draft = draftStore.getDraft(activeDraftId)
+                val draft = draftStore.getByItemId(activeDraftId)
                 if (draft != null) {
                     snapshots.add(ItemContextSnapshotBuilder.fromDraft(draft))
                 }
             } else if (selectedItemIds.isNotEmpty()) {
-                val items = itemsViewModel.items.value.filter { selectedItemIds.contains(it.id) }
-                snapshots.addAll(items.map { it.toContextSnapshot() })
+                val itemsList = itemsViewModel.items.value.filter { selectedItemIds.contains(it.id) }
+                snapshots.addAll(itemsList.map { it.toContextSnapshot() })
             }
 
             _uiState.update { it.copy(contextItems = snapshots) }
@@ -86,9 +86,10 @@ class AssistantViewModel(
                 displayName = "Standard Listing"
             )
 
+            val currentMessages = _uiState.value.messages
             val request = AssistantPromptBuilder.buildRequest(
                 items = _uiState.value.contextItems,
-                conversation = _uiState.value.messages,
+                conversation = currentMessages,
                 userMessage = text,
                 exportProfile = exportProfile
             )
@@ -122,35 +123,29 @@ class AssistantViewModel(
 
     fun handleAction(action: AssistantAction) {
         when (action.type) {
-            AssistantActionType.APPLY_DRAFT_UPDATE -> applyDraftUpdate(action.payload)
+            AssistantActionType.APPLY_DRAFT_UPDATE -> applyDraftUpdate(action)
             AssistantActionType.COPY_TEXT -> { /* Handled by UI clipboard */ }
             AssistantActionType.OPEN_POSTING_ASSIST -> { /* Navigation event */ }
             else -> {}
         }
     }
 
-    private fun applyDraftUpdate(payload: Map<String, String>) {
+    private fun applyDraftUpdate(action: AssistantAction) {
+        val payload = action.payload
         val itemId = payload["itemId"] ?: return
         val title = payload["title"]
         val description = payload["description"]
 
         viewModelScope.launch {
             // If we have an active draft, update it
-            if (activeDraftId != null && activeDraftId == itemId) { // itemId in payload is usually draftId/itemId
-                 draftStore.updateDraft(activeDraftId) { draft ->
+            if (activeDraftId != null && activeDraftId == itemId) {
+                 val draft = draftStore.getByItemId(activeDraftId)
+                 if (draft != null) {
                      var newDraft = draft
                      if (title != null) newDraft = newDraft.copy(title = newDraft.title.copy(value = title))
                      if (description != null) newDraft = newDraft.copy(description = newDraft.description.copy(value = description))
-                     newDraft
+                     draftStore.upsert(newDraft)
                  }
-            } else {
-                // If scanned items, we might need to update item state or create draft
-                // For now, let's assume we update the ScannedItem via ItemsViewModel if possible, 
-                // or just ignore if strictly draft-only.
-                // But Assistant usually returns draft updates.
-                // If we are in "Items List", we don't have a draft.
-                // We could create a draft?
-                // For now, let's just log or toast "Draft not created yet" if no draft.
             }
             
             // Clear the action from pending
@@ -164,13 +159,12 @@ class AssistantViewModel(
 private fun ScannedItem.toContextSnapshot(): ItemContextSnapshot {
     return ItemContextSnapshot(
         itemId = this.id,
-        title = this.enhancedLabelText ?: this.labelText,
+        title = this.displayLabel,
         description = null, // ScannedItem doesn't have description until drafted
-        category = this.enhancedCategory?.name ?: this.category.name,
-        confidence = this.classificationConfidence ?: this.confidence,
+        category = this.category.name,
+        confidence = this.confidence,
         attributes = emptyList(), // TODO: extract attributes if available
-        priceEstimate = this.enhancedPriceRange?.let { (it.first + it.second) / 2 } 
-            ?: this.estimatedPriceRange?.let { (it.min + it.max) / 2 },
+        priceEstimate = this.estimatedPriceRange?.let { (it.low.amount + it.high.amount) / 2.0 },
         photosCount = if (this.fullImageUri != null || this.thumbnail != null) 1 else 0
     )
 }
