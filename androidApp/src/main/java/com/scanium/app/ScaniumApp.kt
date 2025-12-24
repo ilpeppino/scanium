@@ -70,7 +70,7 @@ fun ScaniumApp() {
     )
     
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(settingsRepository, entitlementManager, configProvider)
+        factory = SettingsViewModel.Factory(context as android.app.Application, settingsRepository, entitlementManager, configProvider)
     )
     
     val paywallViewModel: PaywallViewModel = viewModel(
