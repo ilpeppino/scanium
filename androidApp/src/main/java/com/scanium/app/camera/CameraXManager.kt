@@ -323,8 +323,9 @@ class CameraXManager(
 
             detectionScope.launch {
                 try {
-                    // Report actual frame dimensions (relative to visible area)
-                    val frameSize = Size(cropRect.width(), cropRect.height())
+                    // Report actual frame dimensions (full image, not cropped)
+                    // The overlay needs full image size for proper coordinate transformation
+                    val frameSize = Size(imageProxy.width, imageProxy.height)
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
                     }
@@ -439,8 +440,9 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
-                        // Report actual frame dimensions (relative to the visible area)
-                        val frameSize = Size(cropRect.width(), cropRect.height())
+                        // Report actual frame dimensions (full image, not cropped)
+                        // The overlay needs full image size for proper coordinate transformation
+                        val frameSize = Size(imageProxy.width, imageProxy.height)
                         withContext(Dispatchers.Main) {
                             onFrameSize(frameSize)
                         }

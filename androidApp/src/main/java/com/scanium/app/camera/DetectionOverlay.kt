@@ -52,19 +52,21 @@ fun DetectionOverlay(
     val labelTextStyle = MaterialTheme.typography.labelMedium.copy(color = Color.White)
     val readyColor = Color(0xFF1DB954)
     val hasEstimating = detections.any { it.priceEstimationStatus is PriceEstimationStatus.Estimating }
-    val pulseAlpha by if (hasEstimating) {
-        rememberInfiniteTransition(label = "pricePulse").animateFloat(
-            initialValue = 0.4f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "pricePulseValue"
-        )
-    } else {
-        remember { mutableStateOf(1f) }
-    }
+
+    // Pulse animation for price estimation - only animate when actually estimating
+    val infiniteTransition = rememberInfiniteTransition(label = "pricePulse")
+    val animatedPulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.4f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pricePulseValue"
+    )
+
+    // Use animated alpha when estimating, otherwise full opacity
+    val pulseAlpha = if (hasEstimating) animatedPulseAlpha else 1f
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val canvasWidth = size.width
@@ -92,7 +94,14 @@ fun DetectionOverlay(
             val status = detection.priceEstimationStatus
             val isReady = detection.isReady
             val isEstimating = status is PriceEstimationStatus.Estimating
-            val overlayAlpha = if (isEstimating) pulseAlpha else 1f
+
+            // Bounding boxes are always fully visible (no pulsing)
+            val boxAlpha = 1f
+
+            // Label pulses when classification incomplete or estimating price
+            val shouldPulseLabel = !isReady || isEstimating
+            val labelAlpha = if (shouldPulseLabel) pulseAlpha else 1f
+
             val outlineColor = if (isReady) readyColor else ScaniumBlue
             val glowColor = if (isReady) readyColor.copy(alpha = 0.45f) else CyanGlow.copy(alpha = 0.35f)
 
@@ -106,7 +115,7 @@ fun DetectionOverlay(
 
             // Draw glow stroke for better visibility on bright scenes
             drawRoundRect(
-                color = glowColor.copy(alpha = glowColor.alpha * overlayAlpha),
+                color = glowColor.copy(alpha = glowColor.alpha * boxAlpha),
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
@@ -115,7 +124,7 @@ fun DetectionOverlay(
 
             // Draw main bounding box stroke
             drawRoundRect(
-                color = outlineColor.copy(alpha = overlayAlpha),
+                color = outlineColor.copy(alpha = boxAlpha),
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
@@ -124,7 +133,7 @@ fun DetectionOverlay(
 
             // Draw crisp white border inside for contrast
             drawRoundRect(
-                color = Color.White.copy(alpha = overlayAlpha),
+                color = Color.White.copy(alpha = boxAlpha),
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
@@ -164,15 +173,18 @@ fun DetectionOverlay(
                 val maxLabelTop = max(0f, canvasHeight - labelHeight)
                 labelTop = labelTop.coerceIn(0f, maxLabelTop)
 
+                // Label background with pulsing alpha when scanning/estimating
                 drawRoundRect(
-                    color = labelBackgroundColor,
+                    color = labelBackgroundColor.copy(alpha = labelBackgroundColor.alpha * labelAlpha),
                     topLeft = Offset(labelLeft, labelTop),
                     size = ComposeSize(labelWidth, labelHeight),
                     cornerRadius = CornerRadius(labelCornerRadius, labelCornerRadius)
                 )
 
+                // Label text with pulsing alpha when scanning/estimating
                 drawText(
                     textLayoutResult = textLayoutResult,
+                    alpha = labelAlpha,
                     topLeft = Offset(
                         x = labelLeft + labelHorizontalPadding,
                         y = labelTop + labelVerticalPadding
