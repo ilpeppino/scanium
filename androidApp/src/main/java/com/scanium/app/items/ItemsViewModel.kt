@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -79,6 +80,7 @@ class ItemsViewModel(
         // Async telemetry collection interval (ms) - only runs when enabled
         private const val TELEMETRY_INTERVAL_MS = 5000L
         private const val OVERLAY_READY_THRESHOLD = 0.55f
+        private const val ANIMATION_ENABLED = true
     }
 
     // Async telemetry collection job (off the hot path)
@@ -88,10 +90,12 @@ class ItemsViewModel(
     // Private mutable state
     private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
     private val _overlayTracks = MutableStateFlow<List<OverlayTrack>>(emptyList())
+    private val _itemAddedEvents = kotlinx.coroutines.flow.MutableSharedFlow<ScannedItem>(extraBufferCapacity = 10)
 
     // Public immutable state
     val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
     val overlayTracks: StateFlow<List<OverlayTrack>> = _overlayTracks.asStateFlow()
+    val itemAddedEvents = _itemAddedEvents.asSharedFlow()
 
     // Real-time item aggregator for similarity-based deduplication
     // Using REALTIME preset optimized for continuous scanning with camera movement
@@ -440,10 +444,23 @@ class ItemsViewModel(
      *
      * Converts AggregatedItems to ScannedItems for UI compatibility.
      */
-    private fun updateItemsState(triggerClassification: Boolean = true) {
+    private fun updateItemsState(triggerClassification: Boolean = true, notifyNewItems: Boolean = true) {
+        val oldItems = _items.value
         val scannedItems = itemAggregator.getScannedItems()
         _items.value = scannedItems
         Log.d(TAG, "Updated UI state: ${scannedItems.size} items")
+
+        if (notifyNewItems && ANIMATION_ENABLED) {
+            val newItems = scannedItems.filter { newItem ->
+                oldItems.none { oldItem -> oldItem.id == newItem.id }
+            }
+            newItems.forEach {
+                if (DEBUG_LOGGING) {
+                    ScaniumLog.d(TAG, "Emitting new item event: ${it.id}")
+                }
+                _itemAddedEvents.tryEmit(it)
+            }
+        }
 
         syncPriceEstimations(scannedItems)
 
@@ -706,7 +723,7 @@ class ItemsViewModel(
 
             itemAggregator.seedFromScannedItems(persistedItems)
             withContext(mainDispatcher) {
-                updateItemsState(triggerClassification = false)
+                updateItemsState(triggerClassification = false, notifyNewItems = false)
             }
         }
     }
