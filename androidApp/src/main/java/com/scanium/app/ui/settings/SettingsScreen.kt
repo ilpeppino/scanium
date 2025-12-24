@@ -26,6 +26,7 @@ import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
 import com.scanium.app.media.StorageHelper
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
 import com.scanium.app.BuildConfig
 import com.scanium.app.model.user.UserEdition
@@ -51,6 +52,7 @@ fun SettingsScreen(
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
     val autoSaveEnabled by viewModel.autoSaveEnabled.collectAsState()
     val saveDirectoryUri by viewModel.saveDirectoryUri.collectAsState()
+    val forceFtueTour by viewModel.forceFtueTour.collectAsState()
 
     val dirPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -227,6 +229,24 @@ fun SettingsScreen(
                     subtitle = "Capture exception with diagnostics.json attachment",
                     icon = Icons.Default.BugReport,
                     onClick = { viewModel.triggerDiagnosticsTest() }
+                )
+
+                HorizontalDivider()
+                SettingsSectionTitle("First-Time Experience")
+
+                SettingsSwitchItem(
+                    title = "Force First-Time Tour",
+                    subtitle = "Always show tour on app launch (debug only)",
+                    icon = Icons.Default.Info,
+                    checked = forceFtueTour,
+                    onCheckedChange = { viewModel.setForceFtueTour(it) }
+                )
+
+                SettingsItem(
+                    title = "Reset Tour Progress",
+                    subtitle = "Clear tour completion flag",
+                    icon = Icons.Default.Refresh,
+                    onClick = { viewModel.resetFtueTour() }
                 )
             }
 

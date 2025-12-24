@@ -23,7 +23,8 @@ class SettingsViewModel(
     private val application: Application,
     private val settingsRepository: SettingsRepository,
     private val entitlementManager: EntitlementManager,
-    private val configProvider: ConfigProvider
+    private val configProvider: ConfigProvider,
+    private val ftueRepository: com.scanium.app.ftue.FtueRepository
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = settingsRepository.themeModeFlow
@@ -67,6 +68,9 @@ class SettingsViewModel(
     val remoteConfig: StateFlow<RemoteConfig> = configProvider.config
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RemoteConfig())
 
+    val forceFtueTour: StateFlow<Boolean> = ftueRepository.forceEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
@@ -94,7 +98,19 @@ class SettingsViewModel(
     fun setSaveDirectoryUri(uri: String?) {
         viewModelScope.launch { settingsRepository.setSaveDirectoryUri(uri) }
     }
-    
+
+    fun setForceFtueTour(enabled: Boolean) {
+        viewModelScope.launch {
+            ftueRepository.setForceEnabled(enabled)
+        }
+    }
+
+    fun resetFtueTour() {
+        viewModelScope.launch {
+            ftueRepository.reset()
+        }
+    }
+
     // For manual edition switching (Dev only ideally, but we put it here for now)
     fun setUserEdition(edition: UserEdition) {
         viewModelScope.launch { settingsRepository.setUserEdition(edition) }
@@ -205,11 +221,12 @@ class SettingsViewModel(
         private val application: Application,
         private val settingsRepository: SettingsRepository,
         private val entitlementManager: EntitlementManager,
-        private val configProvider: ConfigProvider
+        private val configProvider: ConfigProvider,
+        private val ftueRepository: com.scanium.app.ftue.FtueRepository
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SettingsViewModel(application, settingsRepository, entitlementManager, configProvider) as T
+            return SettingsViewModel(application, settingsRepository, entitlementManager, configProvider, ftueRepository) as T
         }
     }
 }

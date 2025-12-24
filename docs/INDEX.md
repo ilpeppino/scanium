@@ -15,6 +15,7 @@ Start here for up-to-date context. Keep reads under 3 minutes; follow links for 
 - [PRODUCT](./PRODUCT.md) – current app behavior, screens, and user flows.
 - [DECISIONS](./DECISIONS.md) – ADR-lite list of notable choices.
 - [CLEANUP_REPORT](./CLEANUP_REPORT.md) – mapping of this doc cleanup and where archived content lives.
+- [REVIEW_REPORT](./REVIEW_REPORT.md) – comprehensive architectural and security review (2025-12-24).
 
 ***REMOVED******REMOVED*** Docs maintenance checklist
 - Feature change: update PRODUCT; adjust ARCHITECTURE if flows/modules shift.
