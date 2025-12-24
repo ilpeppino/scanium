@@ -266,8 +266,9 @@ dependencies {
     implementation("com.android.billingclient:billing:6.1.0")
     implementation("com.android.billingclient:billing-ktx:6.1.0")
 
-    // Kotlinx Serialization (for Domain Pack JSON)
+    // Kotlinx Serialization (for Domain Pack JSON and OTLP export)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
 
     // OkHttp for cloud classification API
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
