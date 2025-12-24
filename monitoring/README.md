@@ -43,11 +43,13 @@ Complete observability infrastructure for Scanium mobile app using the **LGTM st
 
 | Service | Purpose | Ports | Storage |
 |---------|---------|-------|---------|
-| **Grafana** | Visualization & dashboards | 3000 (UI) | `./data/grafana` |
-| **Alloy** | OTLP receiver & router | 4317 (gRPC), 4318 (HTTP), 12345 (UI) | In-memory |
-| **Loki** | Log aggregation | 3100 (HTTP) | `./data/loki` |
-| **Tempo** | Distributed tracing | 3200 (HTTP), 4317 (OTLP) | `./data/tempo` |
-| **Mimir** | Metrics storage | 9009 (HTTP) | `./data/mimir` |
+| **Grafana** | Visualization & dashboards | 3000 (public) | `./data/grafana` |
+| **Alloy** | OTLP receiver & router | 4317 (gRPC, public), 4318 (HTTP, public), 12345 (UI, localhost) | In-memory |
+| **Loki** | Log aggregation | 3100 (localhost) | `./data/loki` |
+| **Tempo** | Distributed tracing | 3200 (localhost), 4317 (OTLP, internal) | `./data/tempo` |
+| **Mimir** | Metrics storage | 9009 (localhost) | `./data/mimir` |
+
+> **Security Note:** Backend service ports (Loki, Tempo, Mimir, Alloy UI) are bound to localhost (127.0.0.1) only. OTLP ingestion ports (4317, 4318) and Grafana (3000) are publicly accessible for app telemetry.
 
 ***REMOVED******REMOVED*** Quick Start
 
@@ -75,11 +77,11 @@ docker compose ps
 Expected output:
 ```
 NAME                STATUS              PORTS
-scanium-alloy      running (healthy)   0.0.0.0:4317-4318->4317-4318/tcp, 0.0.0.0:12345->12345/tcp
+scanium-alloy      running (healthy)   0.0.0.0:4317-4318->4317-4318/tcp, 127.0.0.1:12345->12345/tcp
 scanium-grafana    running (healthy)   0.0.0.0:3000->3000/tcp
-scanium-loki       running (healthy)   0.0.0.0:3100->3100/tcp
-scanium-mimir      running (healthy)   0.0.0.0:9009->9009/tcp
-scanium-tempo      running (healthy)   0.0.0.0:3200->3200/tcp
+scanium-loki       running (healthy)   127.0.0.1:3100->3100/tcp
+scanium-mimir      running (healthy)   127.0.0.1:9009->9009/tcp
+scanium-tempo      running (healthy)   127.0.0.1:3200->3200/tcp
 ```
 
 ***REMOVED******REMOVED******REMOVED*** 3. Access Grafana
@@ -732,6 +734,252 @@ To temporarily silence alerts during maintenance:
 - For email, verify SMTP settings are correct
 - Check Grafana logs for delivery errors
 
+***REMOVED******REMOVED*** Pipeline Self-Observability
+
+The observability stack monitors itself using Prometheus-style metrics scraped by Alloy. This enables dashboards and alerts for the pipeline health.
+
+***REMOVED******REMOVED******REMOVED*** Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Pipeline Self-Monitoring                      │
+├──────────────┬──────────────┬──────────────┬───────────────────┤
+│  Alloy       │    Loki      │   Tempo      │    Mimir          │
+│  :12345      │   :3100      │   :3200      │   :9009           │
+│  /metrics    │   /metrics   │   /metrics   │   /metrics        │
+└──────┬───────┴──────┬───────┴──────┬───────┴───────┬───────────┘
+       │              │              │               │
+       └──────────────┴──────────────┴───────────────┘
+                              │
+                    Alloy prometheus.scrape
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │     Mimir       │
+                    │ (source=pipeline)│
+                    └────────┬────────┘
+                             │
+              ┌──────────────┴──────────────┐
+              │                             │
+              ▼                             ▼
+     ┌─────────────────┐         ┌─────────────────┐
+     │   Dashboards    │         │     Alerts      │
+     │ Pipeline Health │         │ Pipeline Health │
+     └─────────────────┘         └─────────────────┘
+```
+
+***REMOVED******REMOVED******REMOVED*** Metrics Endpoints
+
+All metrics are available via Prometheus `/metrics` endpoints:
+
+| Service | Endpoint | Binding | Purpose |
+|---------|----------|---------|---------|
+| Alloy | `localhost:12345/metrics` | localhost only | Collector metrics |
+| Loki | `localhost:3100/metrics` | localhost only | Log storage metrics |
+| Tempo | `localhost:3200/metrics` | localhost only | Trace storage metrics |
+| Mimir | `localhost:9009/metrics` | localhost only | Metrics storage metrics |
+
+**Note:** Debug ports are bound to localhost (127.0.0.1) for security. Access from within Docker network uses internal hostnames.
+
+***REMOVED******REMOVED******REMOVED*** Verify Metrics Collection
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** From the host machine (localhost access):
+
+```bash
+***REMOVED*** Verify Alloy is exposing metrics
+curl -s http://localhost:12345/metrics | head -20
+
+***REMOVED*** Verify Loki metrics
+curl -s http://localhost:3100/metrics | head -20
+
+***REMOVED*** Verify Tempo metrics
+curl -s http://localhost:3200/metrics | head -20
+
+***REMOVED*** Verify Mimir metrics
+curl -s http://localhost:9009/metrics | head -20
+```
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** From within the Docker network:
+
+```bash
+***REMOVED*** Test from Alloy container (internal network access)
+docker exec scanium-alloy wget -qO- http://loki:3100/metrics | head -10
+docker exec scanium-alloy wget -qO- http://tempo:3200/metrics | head -10
+docker exec scanium-alloy wget -qO- http://mimir:9009/metrics | head -10
+
+***REMOVED*** Alloy scrapes its own metrics via localhost
+docker exec scanium-alloy wget -qO- http://localhost:12345/metrics | head -10
+```
+
+***REMOVED******REMOVED******REMOVED*** Verify Metrics in Mimir
+
+After starting the stack, wait ~30 seconds for scrapes, then query Mimir:
+
+```bash
+***REMOVED*** Check for pipeline metrics in Mimir
+curl -s 'http://localhost:9009/prometheus/api/v1/query' \
+  --data-urlencode 'query=up{source="pipeline"}' | jq '.data.result'
+
+***REMOVED*** Should return 4 results (alloy, loki, tempo, mimir) with value 1
+```
+
+In Grafana Explore (http://localhost:3000/explore):
+1. Select **Mimir** datasource
+2. Query: `up{source="pipeline"}`
+3. Should show 4 time series for each service
+
+***REMOVED******REMOVED******REMOVED*** Key Metrics Reference
+
+Pipeline metrics are labeled with `source="pipeline"` to distinguish from app telemetry.
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Alloy Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `up{job="alloy"}` | 1 if Alloy is up, 0 if down |
+| `alloy_build_info` | Version and build information |
+| `process_start_time_seconds` | Unix timestamp when Alloy started |
+| `otelcol_receiver_accepted_log_records` | Logs accepted by OTLP receiver |
+| `otelcol_receiver_accepted_metric_points` | Metrics accepted by OTLP receiver |
+| `otelcol_receiver_accepted_spans` | Spans accepted by OTLP receiver |
+| `otelcol_receiver_refused_*` | Records refused (indicates errors) |
+| `otelcol_exporter_sent_*` | Records successfully exported |
+| `otelcol_exporter_send_failed_*` | Export failures (backend issues) |
+| `otelcol_exporter_queue_size` | Current queue size |
+| `otelcol_exporter_queue_capacity` | Maximum queue capacity |
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Loki Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `up{job="loki"}` | 1 if Loki is up, 0 if down |
+| `loki_ingester_memory_streams` | Active log streams in memory |
+| `loki_request_duration_seconds_*` | Request latency histogram |
+| `loki_distributor_bytes_received_total` | Total bytes received |
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Tempo Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `up{job="tempo"}` | 1 if Tempo is up, 0 if down |
+| `tempo_ingester_live_traces` | Active traces in ingester |
+| `tempo_request_duration_seconds_*` | Request latency histogram |
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Mimir Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `up{job="mimir"}` | 1 if Mimir is up, 0 if down |
+| `cortex_ingester_memory_series` | Active metric series in memory |
+| `cortex_request_duration_seconds_*` | Request latency histogram |
+
+***REMOVED******REMOVED******REMOVED*** Pipeline Dashboard
+
+The **Pipeline Health** dashboard (http://localhost:3000/d/scanium-pipeline-health) includes a "Pipeline Self-Observability" section with panels for:
+
+- **Service Status:** UP/DOWN status for all services
+- **Alloy Build Info:** Version information
+- **Alloy Uptime:** Time since last restart
+- **OTLP Receiver Metrics:** Records accepted/refused per signal type
+- **Exporter Metrics:** Records sent and failures
+- **Queue Metrics:** Queue size and capacity
+- **Backend Health:** Loki/Tempo/Mimir request rates
+
+***REMOVED******REMOVED******REMOVED*** Pipeline Alerts
+
+Alerts are defined in `grafana/provisioning/alerting/rules.yaml` under the "Scanium - Pipeline Health" group:
+
+| Alert | Condition | Severity |
+|-------|-----------|----------|
+| Alloy Down | `up{job="alloy"} == 0` for 2m | Critical |
+| Loki Down | `up{job="loki"} == 0` for 2m | Critical |
+| Tempo Down | `up{job="tempo"} == 0` for 2m | Critical |
+| Mimir Down | `up{job="mimir"} == 0` for 2m | Critical |
+| Log Export Failures | Any failed log exports in 5m | Critical |
+| Metric Export Failures | Any failed metric exports in 5m | Critical |
+| Span Export Failures | Any failed span exports in 5m | Critical |
+| Receiver Refusing Data | Any refused records in 5m | Warning |
+| Queue Backpressure | Queue > 80% capacity for 5m | Warning |
+
+***REMOVED******REMOVED******REMOVED*** Pipeline Troubleshooting
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Test: Trigger Exporter Failure Alert
+
+To safely test exporter failure alerts in dev:
+
+```bash
+***REMOVED*** Step 1: Temporarily break Loki connectivity
+docker compose stop loki
+
+***REMOVED*** Step 2: Send a test log to Alloy (will fail to export)
+curl -X POST http://localhost:4318/v1/logs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "resourceLogs": [{
+      "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "test"}}]},
+      "scopeLogs": [{"logRecords": [{"body": {"stringValue": "Test log during Loki outage"}}]}]
+    }]
+  }'
+
+***REMOVED*** Step 3: Wait ~2 minutes, check exporter failure metrics
+curl -s 'http://localhost:9009/prometheus/api/v1/query' \
+  --data-urlencode 'query=otelcol_exporter_send_failed_log_records{source="pipeline"}' | jq
+
+***REMOVED*** Step 4: Check alert status in Grafana
+***REMOVED*** Navigate to http://localhost:3000/alerting/list
+
+***REMOVED*** Step 5: Restore Loki
+docker compose start loki
+
+***REMOVED*** Step 6: Verify recovery (failures should stop, alert should resolve)
+```
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Test: Service Down Alert
+
+```bash
+***REMOVED*** Stop a service to trigger "down" alert
+docker compose stop tempo
+
+***REMOVED*** Wait 2+ minutes, then check alerts
+***REMOVED*** Navigate to http://localhost:3000/alerting/list
+***REMOVED*** "Tempo Down" alert should be firing
+
+***REMOVED*** Restore service
+docker compose start tempo
+```
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Diagnose Exporter Issues
+
+```bash
+***REMOVED*** Check Alloy logs for export errors
+docker compose logs alloy | grep -i "error\|failed\|refused"
+
+***REMOVED*** Check exporter queue status
+curl -s 'http://localhost:9009/prometheus/api/v1/query' \
+  --data-urlencode 'query=otelcol_exporter_queue_size{source="pipeline"}' | jq
+
+***REMOVED*** Check if backends are reachable from Alloy
+docker exec scanium-alloy wget -qO- http://loki:3100/ready && echo "Loki OK"
+docker exec scanium-alloy wget -qO- http://tempo:3200/ready && echo "Tempo OK"
+docker exec scanium-alloy wget -qO- http://mimir:9009/ready && echo "Mimir OK"
+```
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** High Queue Size / Backpressure
+
+If queue metrics show high values:
+
+1. Check backend health (Loki/Tempo/Mimir)
+2. Check network connectivity between containers
+3. Consider increasing queue capacity in `alloy.hcl`:
+   ```hcl
+   prometheus.remote_write "pipeline" {
+     endpoint {
+       capacity = 10000  ***REMOVED*** Increase from default
+     }
+   }
+   ```
+4. Check for resource constraints (CPU/memory)
+
 ***REMOVED******REMOVED*** Production Considerations
 
 This setup is optimized for **local development and NAS deployment**. For production:
@@ -755,7 +1003,7 @@ This setup is optimized for **local development and NAS deployment**. For produc
 
 - [ ] Set up automated backups
 - [x] Configure alerting (Alertmanager) - ✅ Baseline alerts provisioned
-- [ ] Monitor the monitoring stack itself
+- [x] Monitor the monitoring stack itself - ✅ Pipeline health metrics enabled
 - [ ] Implement high availability (multiple replicas)
 
 ***REMOVED******REMOVED*** Backup & Restore

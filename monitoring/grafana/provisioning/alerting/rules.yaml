@@ -412,3 +412,489 @@ groups:
           severity: info
           env: stage
           component: ml
+
+  ***REMOVED*** ============================================================================
+  ***REMOVED*** Pipeline Health Alerts (Self-Observability)
+  ***REMOVED*** ============================================================================
+  ***REMOVED*** Monitors the health of the observability pipeline itself (Alloy, Loki, Tempo, Mimir)
+  - orgId: 1
+    name: Scanium - Pipeline Health
+    folder: Scanium Alerts
+    interval: 1m
+    rules:
+      ***REMOVED*** Service Down - Alloy
+      - uid: pipeline-alloy-down
+        title: "Alloy Down"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                up{job="alloy", source="pipeline"} or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params:
+                      - 1  ***REMOVED*** up < 1 means down
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: Alerting
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Alloy collector is down"
+          description: "Alloy OTLP receiver is not responding. No telemetry can be ingested."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+        labels:
+          severity: critical
+          component: alloy
+          type: availability
+
+      ***REMOVED*** Service Down - Loki
+      - uid: pipeline-loki-down
+        title: "Loki Down"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                up{job="loki", source="pipeline"} or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params:
+                      - 1
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: Alerting
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Loki is down"
+          description: "Loki log storage is not responding. Logs cannot be ingested or queried."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+        labels:
+          severity: critical
+          component: loki
+          type: availability
+
+      ***REMOVED*** Service Down - Tempo
+      - uid: pipeline-tempo-down
+        title: "Tempo Down"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                up{job="tempo", source="pipeline"} or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params:
+                      - 1
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: Alerting
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Tempo is down"
+          description: "Tempo trace storage is not responding. Traces cannot be ingested or queried."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+        labels:
+          severity: critical
+          component: tempo
+          type: availability
+
+      ***REMOVED*** Service Down - Mimir
+      - uid: pipeline-mimir-down
+        title: "Mimir Down"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                up{job="mimir", source="pipeline"} or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params:
+                      - 1
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: Alerting
+        execErrState: Error
+        for: 2m
+        annotations:
+          summary: "Mimir is down"
+          description: "Mimir metrics storage is not responding. Metrics cannot be ingested or queried."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***troubleshooting"
+        labels:
+          severity: critical
+          component: mimir
+          type: availability
+
+      ***REMOVED*** Alloy Exporter Failures (logs)
+      - uid: pipeline-exporter-failed-logs
+        title: "Alloy Log Export Failures"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                sum(increase(otelcol_exporter_send_failed_log_records{source="pipeline"}[5m])) or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0  ***REMOVED*** Any failures trigger alert
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Alloy failing to export logs"
+          description: "Alloy has failed to export log records to Loki in the last 5 minutes. Check Loki health and connectivity."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+        labels:
+          severity: critical
+          component: alloy
+          signal: logs
+          type: exporter
+
+      ***REMOVED*** Alloy Exporter Failures (metrics)
+      - uid: pipeline-exporter-failed-metrics
+        title: "Alloy Metric Export Failures"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                sum(increase(otelcol_exporter_send_failed_metric_points{source="pipeline"}[5m])) or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Alloy failing to export metrics"
+          description: "Alloy has failed to export metric points to Mimir in the last 5 minutes. Check Mimir health and connectivity."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+        labels:
+          severity: critical
+          component: alloy
+          signal: metrics
+          type: exporter
+
+      ***REMOVED*** Alloy Exporter Failures (traces)
+      - uid: pipeline-exporter-failed-spans
+        title: "Alloy Span Export Failures"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                sum(increase(otelcol_exporter_send_failed_spans{source="pipeline"}[5m])) or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Alloy failing to export traces"
+          description: "Alloy has failed to export spans to Tempo in the last 5 minutes. Check Tempo health and connectivity."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+        labels:
+          severity: critical
+          component: alloy
+          signal: traces
+          type: exporter
+
+      ***REMOVED*** Alloy Receiver Refusing Data (indicates overload or errors)
+      - uid: pipeline-receiver-refused
+        title: "Alloy Receiver Refusing Data"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                sum(increase(otelcol_receiver_refused_log_records{source="pipeline"}[5m]))
+                + sum(increase(otelcol_receiver_refused_metric_points{source="pipeline"}[5m]))
+                + sum(increase(otelcol_receiver_refused_spans{source="pipeline"}[5m]))
+                or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 0
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Alloy OTLP receiver refusing data"
+          description: "Alloy OTLP receiver is refusing incoming telemetry. This could indicate backpressure, malformed data, or resource constraints."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+        labels:
+          severity: warning
+          component: alloy
+          type: receiver
+
+      ***REMOVED*** Queue Backpressure Alert
+      - uid: pipeline-queue-backpressure
+        title: "Alloy Queue Backpressure"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                max(
+                  otelcol_exporter_queue_size{source="pipeline"} /
+                  otelcol_exporter_queue_capacity{source="pipeline"}
+                ) * 100 or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 80  ***REMOVED*** Alert at 80% queue capacity
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "Alloy exporter queue is filling up"
+          description: "One or more Alloy exporter queues are above 80% capacity. This indicates backpressure and potential data loss if it continues."
+          runbook_url: "https://github.com/ilpeppino/scanium/blob/main/monitoring/README.md***REMOVED***pipeline-troubleshooting"
+        labels:
+          severity: warning
+          component: alloy
+          type: backpressure
