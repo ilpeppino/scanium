@@ -1,0 +1,414 @@
+# Grafana Alerting - Alert Rules Provisioning
+# Baseline alerts for Scanium mobile app monitoring
+#
+# Alerts defined:
+# A) Error rate spike (Loki) - Detects unusual error log volume
+# B) Telemetry drop (Loki) - Detects when no telemetry is received
+# C) Inference latency regression (Mimir) - Detects ML inference slowdowns
+# D) Crash spike (Sentry) - Not implemented here; see README for Sentry setup
+
+apiVersion: 1
+
+groups:
+  # ============================================================================
+  # Error Rate Alerts (Loki-based)
+  # ============================================================================
+  - orgId: 1
+    name: Scanium - Error Rate
+    folder: Scanium Alerts
+    interval: 1m
+    rules:
+      # A) Error Rate Spike - Production
+      - uid: error-rate-spike-prod
+        title: "Error Rate Spike (prod)"
+        condition: C
+        data:
+          # Query A: Count error logs over 10m
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: |
+                sum(count_over_time({source="scanium-mobile", env="prod"} |~ `(?i)error|exception|fatal|crash` [10m]))
+              queryType: instant
+              refId: A
+          # Query B: Reduce to single value
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          # Query C: Threshold check (> 50 errors in 10m = alert)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 50  # Threshold: > 50 errors/10min
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "High error rate detected in production"
+          description: "Error count exceeded 50 in the last 10 minutes. Check logs for details."
+          runbook_url: "https://github.com/ilpeppino/scanium/wiki/runbooks/error-rate-spike"
+        labels:
+          severity: critical
+          env: prod
+          platform: android
+
+      # A) Error Rate Spike - Staging
+      - uid: error-rate-spike-stage
+        title: "Error Rate Spike (stage)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: |
+                sum(count_over_time({source="scanium-mobile", env="stage"} |~ `(?i)error|exception|fatal|crash` [10m]))
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 100  # Higher threshold for staging
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "High error rate detected in staging"
+          description: "Error count exceeded 100 in the last 10 minutes."
+        labels:
+          severity: warning
+          env: stage
+          platform: android
+
+      # A) Error Rate Spike - Dev (informational only)
+      - uid: error-rate-spike-dev
+        title: "Error Rate Spike (dev)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: |
+                sum(count_over_time({source="scanium-mobile", env="dev"} |~ `(?i)error|exception|fatal|crash` [10m]))
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 200  # Higher threshold for dev
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "High error rate detected in dev"
+          description: "Error count exceeded 200 in the last 10 minutes."
+        labels:
+          severity: info
+          env: dev
+          platform: android
+
+  # ============================================================================
+  # Telemetry Health Alerts (Loki-based)
+  # ============================================================================
+  - orgId: 1
+    name: Scanium - Telemetry Health
+    folder: Scanium Alerts
+    interval: 5m
+    rules:
+      # B) Telemetry Drop - No events received (prod only)
+      - uid: telemetry-drop-prod
+        title: "Telemetry Drop (prod)"
+        condition: C
+        data:
+          # Query A: Count ANY logs in last 15m
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: |
+                sum(count_over_time({source="scanium-mobile", env="prod"} [15m])) or vector(0)
+              queryType: instant
+              refId: A
+          # Query B: Reduce
+          - refId: B
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          # Query C: Alert if count == 0
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params:
+                      - 1  # Alert if < 1 event (i.e., 0 events)
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: Alerting  # Important: No data = telemetry problem!
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "No telemetry received from production"
+          description: "No scan events or logs received in the last 15 minutes. Check app connectivity and Alloy receiver."
+          runbook_url: "https://github.com/ilpeppino/scanium/wiki/runbooks/telemetry-drop"
+        labels:
+          severity: critical
+          env: prod
+          type: availability
+
+      # B) Telemetry Drop - Check for session_started events specifically
+      - uid: no-sessions-prod
+        title: "No Scan Sessions (prod)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 1800  # 30 minutes
+              to: 0
+            datasourceUid: loki
+            model:
+              expr: |
+                sum(count_over_time({source="scanium-mobile", env="prod"} |= `scan.session_started` [30m])) or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: lt
+                    params:
+                      - 1
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: Alerting
+        execErrState: Error
+        for: 30m
+        annotations:
+          summary: "No scan sessions started in production"
+          description: "No scan.session_started events in the last 30 minutes. This could indicate app issues or zero usage."
+        labels:
+          severity: warning
+          env: prod
+          type: usage
+
+  # ============================================================================
+  # Performance Alerts (Mimir/Prometheus-based)
+  # ============================================================================
+  - orgId: 1
+    name: Scanium - Performance
+    folder: Scanium Alerts
+    interval: 1m
+    rules:
+      # C) Inference Latency Regression - Production
+      - uid: inference-latency-prod
+        title: "Inference Latency Regression (prod)"
+        condition: C
+        data:
+          # Query A: P95 latency over 15m
+          # Note: Assumes histogram metric 'ml_inference_latency_ms_bucket' or similar
+          # Adjust metric name based on actual telemetry
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                histogram_quantile(0.95,
+                  sum by (le) (
+                    rate(ml_inference_latency_ms_bucket{env="prod"}[15m])
+                  )
+                )
+              queryType: instant
+              refId: A
+          # Query B: Reduce
+          - refId: B
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          # Query C: Alert if p95 > 2000ms (2 seconds)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 2000  # Threshold: p95 > 2000ms
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "ML inference latency regression in production"
+          description: "P95 inference latency exceeded 2000ms over the last 15 minutes. Model performance may be degraded."
+          runbook_url: "https://github.com/ilpeppino/scanium/wiki/runbooks/latency-regression"
+        labels:
+          severity: warning
+          env: prod
+          component: ml
+
+      # C) Inference Latency Regression - Staging (higher threshold)
+      - uid: inference-latency-stage
+        title: "Inference Latency Regression (stage)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: mimir
+            model:
+              expr: |
+                histogram_quantile(0.95,
+                  sum by (le) (
+                    rate(ml_inference_latency_ms_bucket{env="stage"}[15m])
+                  )
+                )
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 900
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 3000  # Higher threshold for staging: 3s
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "ML inference latency regression in staging"
+          description: "P95 inference latency exceeded 3000ms over the last 15 minutes."
+        labels:
+          severity: info
+          env: stage
+          component: ml
