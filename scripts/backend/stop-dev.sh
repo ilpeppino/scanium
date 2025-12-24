@@ -22,6 +22,32 @@ print_warning() {
     echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
+# Parse command-line flags
+STOP_MONITORING=0
+
+for arg in "$@"; do
+    case $arg in
+        --with-monitoring)
+            STOP_MONITORING=1
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --with-monitoring     Also stop monitoring stack"
+            echo "  -h, --help           Show this help message"
+            echo ""
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 echo -e "${YELLOW}"
 echo "╔═══════════════════════════════════════════╗"
 echo "║   Stopping Scanium Development Services  ║"
@@ -69,6 +95,26 @@ if docker ps --filter name=scanium-postgres --format '{{.Names}}' | grep -q scan
     print_success "PostgreSQL stopped"
 else
     print_warning "PostgreSQL not running"
+fi
+
+# Stop monitoring stack (if requested)
+if [ "$STOP_MONITORING" = "1" ]; then
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    MONITORING_SCRIPT="${SCRIPT_DIR}/../monitoring/stop-monitoring.sh"
+
+    if [ -f "$MONITORING_SCRIPT" ]; then
+        bash "$MONITORING_SCRIPT"
+    else
+        print_warning "Monitoring stop script not found: $MONITORING_SCRIPT"
+    fi
+else
+    # Check if monitoring is running and inform user
+    MONITORING_RUNNING=$(docker compose -p scanium-monitoring ps -q 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$MONITORING_RUNNING" -gt 0 ]; then
+        print_status "Monitoring stack is still running"
+        echo "  To stop: $0 --with-monitoring"
+        echo "  Or run: scripts/monitoring/stop-monitoring.sh"
+    fi
 fi
 
 # Clean up log files (optional)
