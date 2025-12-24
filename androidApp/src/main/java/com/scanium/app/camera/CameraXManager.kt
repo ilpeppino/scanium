@@ -306,22 +306,43 @@ class CameraXManager(
         // Clear any previous analyzer to avoid mixing modes
         imageAnalysis?.clearAnalyzer()
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
-            Log.d(TAG, "captureSingleFrame: Received image proxy ${imageProxy.width}x${imageProxy.height}")
-            detectionScope.launch {
-                // Report actual frame dimensions
-                val frameSize = Size(imageProxy.width, imageProxy.height)
-                withContext(Dispatchers.Main) {
-                    onFrameSize(frameSize)
-                }
+            val mediaImage = imageProxy.image
+            if (mediaImage == null) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
 
-                // Single-frame capture uses direct detection (no candidate tracking)
-                val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
-                withContext(Dispatchers.Main) {
-                    onResult(items)
-                    onDetectionResult(detections)
+            // Apply viewport crop consistently
+            val cropRect = calculateVisibleViewport(
+                imageWidth = imageProxy.width,
+                imageHeight = imageProxy.height,
+                previewWidth = previewViewWidth,
+                previewHeight = previewViewHeight
+            )
+            imageProxy.setCropRect(cropRect)
+
+            detectionScope.launch {
+                try {
+                    // Report actual frame dimensions (relative to visible area)
+                    val frameSize = Size(cropRect.width(), cropRect.height())
+                    withContext(Dispatchers.Main) {
+                        onFrameSize(frameSize)
+                    }
+
+                    // Single-frame capture uses direct detection (no candidate tracking)
+                    val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                    Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
+                    withContext(Dispatchers.Main) {
+                        onResult(items)
+                        onDetectionResult(detections)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in captureSingleFrame coroutine", e)
+                } finally {
+                    // processImageProxy already closes the proxy, but we should be careful.
+                    // Actually, processImageProxy has a finally { imageProxy.close() } block.
+                    imageAnalysis?.clearAnalyzer()
                 }
-                imageAnalysis?.clearAnalyzer()
             }
         }
     }
@@ -397,42 +418,46 @@ class CameraXManager(
                 val frameReceiveTime = SystemClock.elapsedRealtime()
                 Trace.beginSection("CameraXManager.analyzeFrame")
 
-                Log.d(TAG, "startScanning: Processing frame #$frameCounter ${imageProxy.width}x${imageProxy.height}")
+                val mediaImage = imageProxy.image
+                if (mediaImage == null) {
+                    imageProxy.close()
+                    isProcessing = false
+                    return@setAnalyzer
+                }
 
+                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
                 val inputImage = com.google.mlkit.vision.common.InputImage.fromMediaImage(
-                    imageProxy.image!!,
-                    imageProxy.imageInfo.rotationDegrees
+                    mediaImage,
+                    rotationDegrees
                 )
-                val lazyBitmapProvider = { imageProxy.toBitmap() }
-                val imageBoundsForFiltering = imageProxy.cropRect
+                
+                // IMPORTANT: Since ML Kit honors the MediaImage's cropRect (set by ViewPort),
+                // the resulting bounding boxes are relative to that cropRect.
+                // Therefore, for edge filtering, we must pass a relative Rect starting at (0,0).
+                val cropRect = imageProxy.cropRect
+                val imageBoundsForFiltering = android.graphics.Rect(0, 0, cropRect.width(), cropRect.height())
 
                 detectionScope.launch {
                     try {
-                        // Report actual frame dimensions
-                        val frameSize = Size(imageProxy.width, imageProxy.height)
+                        // Report actual frame dimensions (relative to the visible area)
+                        val frameSize = Size(cropRect.width(), cropRect.height())
                         withContext(Dispatchers.Main) {
                             onFrameSize(frameSize)
                         }
 
                         // Use STREAM_MODE for object detection with tracking during continuous scanning
-                        // CRITICAL: Use SINGLE_IMAGE_MODE to avoid ML Kit frame buffer crash
-                        // STREAM_MODE causes native crashes when frames get recycled
                         val (items, detections) = processObjectDetectionWithTracking(
                             inputImage = inputImage,
-                            lazyBitmapProvider = lazyBitmapProvider,
+                            lazyBitmapProvider = { imageProxy.toBitmap() },
                             cropRect = imageBoundsForFiltering,
                             edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
                             analyzerLatencyMs = SystemClock.elapsedRealtime() - frameReceiveTime
                         )
-                        Log.i(TAG, ">>> startScanning: processImageProxy returned ${items.size} items")
+                        
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
-                                Log.i(TAG, ">>> startScanning: Calling onResult callback with ${items.size} items")
                                 onResult(items)
-                            } else {
-                                Log.i(TAG, ">>> startScanning: No items to report, skipping onResult callback")
                             }
-                            // Always send detection results for overlay (even if empty to clear old detections)
                             onDetectionResult(detections)
                         }
 
@@ -441,39 +466,24 @@ class CameraXManager(
                         totalFramesProcessed++
                         framesInWindow++
 
-                        Log.i(TAG, "[METRICS] Frame #$frameCounter analyzer latency: ${analyzerLatencyMs}ms")
-
                         // [METRICS] Calculate and log frame rate every 1 second
                         val now = SystemClock.elapsedRealtime()
                         val timeSinceLastReport = now - lastFpsReportTime
                         if (timeSinceLastReport >= 1000L) {
                             val fps = (framesInWindow * 1000.0) / timeSinceLastReport
-                            val avgFps = (totalFramesProcessed * 1000.0) / (now - sessionStartTime)
-                            
                             _analysisFps.value = fps
-                            
-                            // Log only every 5 seconds to reduce spam
-                            if (totalFramesProcessed % 50 == 0) {
-                                Log.i(TAG, "[METRICS] Frame rate: current=${String.format("%.2f", fps)} fps, " +
-                                    "session_avg=${String.format("%.2f", avgFps)} fps, total_frames=$totalFramesProcessed")
-                            }
-                            
                             lastFpsReportTime = now
                             framesInWindow = 0
                         }
-
-                        // Periodic stats logging (every 10 frames)
-                        if (frameCounter % 10 == 0) {
-                            val stats = objectTracker.getStats()
-                            Log.i(TAG, "Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
-                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in analyzer coroutine", e)
                     } finally {
-                        Trace.endSection()
+                        imageProxy.close() // CRITICAL: Release the buffer
                         isProcessing = false
+                        Trace.endSection()
                     }
                 }
             } else {
-                // Close image proxy immediately if we're not processing it
                 imageProxy.close()
             }
         }
@@ -700,11 +710,13 @@ class CameraXManager(
 
         val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
         val out = ByteArrayOutputStream()
-        yuvImage.compressToJpeg(android.graphics.Rect(0, 0, width, height), 90, out)
+        // Use the proxy's cropRect to ensure the resulting bitmap matches the visible viewport
+        // and coordinate space used by ML Kit.
+        yuvImage.compressToJpeg(this.cropRect, 90, out)
         val jpegBytes = out.toByteArray()
 
         return android.graphics.BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
-            ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            ?: Bitmap.createBitmap(this.cropRect.width(), this.cropRect.height(), Bitmap.Config.ARGB_8888)
     }
 
     /**
