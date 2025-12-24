@@ -85,7 +85,39 @@ class ItemsViewModel(
         private const val OVERLAY_READY_THRESHOLD = 0.55f
         private const val ANIMATION_ENABLED = true
     }
-// ... (rest of class until ClassificationOrchestrator initialization)
+
+    // Async telemetry collection job (off the hot path)
+    private var telemetryJob: Job? = null
+    private val _telemetryEnabled = MutableStateFlow(false)
+
+    // Private mutable state
+    private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
+    private val _overlayTracks = MutableStateFlow<List<OverlayTrack>>(emptyList())
+    private val _itemAddedEvents = kotlinx.coroutines.flow.MutableSharedFlow<ScannedItem>(extraBufferCapacity = 10)
+
+    // Public immutable state
+    val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
+    val overlayTracks: StateFlow<List<OverlayTrack>> = _overlayTracks.asStateFlow()
+    val itemAddedEvents = _itemAddedEvents.asSharedFlow()
+
+    // Real-time item aggregator for similarity-based deduplication
+    // Using REALTIME preset optimized for continuous scanning with camera movement
+    private val itemAggregator = ItemAggregator(
+        config = AggregationPresets.REALTIME
+    )
+
+    private val classificationModeFlow = classificationMode
+
+    private val effectiveClassificationMode = if (entitlementManager != null) {
+        combine(
+            classificationModeFlow,
+            entitlementManager.entitlementPolicyFlow
+        ) { mode, entitlements ->
+            if (entitlements.canUseCloudClassification) mode else ClassificationMode.ON_DEVICE
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, ClassificationMode.ON_DEVICE)
+    } else {
+        classificationModeFlow
+    }
 
     private val classificationOrchestrator = ClassificationOrchestrator(
         modeFlow = effectiveClassificationMode,

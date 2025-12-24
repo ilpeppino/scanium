@@ -399,6 +399,13 @@ class CameraXManager(
 
                 Log.d(TAG, "startScanning: Processing frame #$frameCounter ${imageProxy.width}x${imageProxy.height}")
 
+                val inputImage = com.google.mlkit.vision.common.InputImage.fromMediaImage(
+                    imageProxy.image!!,
+                    imageProxy.imageInfo.rotationDegrees
+                )
+                val lazyBitmapProvider = { imageProxy.toBitmap() }
+                val imageBoundsForFiltering = imageProxy.cropRect
+
                 detectionScope.launch {
                     try {
                         // Report actual frame dimensions
