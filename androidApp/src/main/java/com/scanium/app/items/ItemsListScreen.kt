@@ -49,6 +49,7 @@ import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftBuilder
+import com.scanium.app.ftue.tourTarget
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -70,7 +71,8 @@ fun ItemsListScreen(
     onNavigateToDraft: (List<String>) -> Unit,
     onNavigateToAssistant: (List<String>) -> Unit,
     draftStore: ListingDraftStore,
-    itemsViewModel: ItemsViewModel = viewModel()
+    itemsViewModel: ItemsViewModel = viewModel(),
+    tourViewModel: com.scanium.app.ftue.TourViewModel? = null
 ) {
     val items by itemsViewModel.items.collectAsState()
     var previewDraft by remember { mutableStateOf<ListingDraft?>(null) }
@@ -91,6 +93,11 @@ fun ItemsListScreen(
     val lastAction by actionPreferences.lastAction.collectAsState(initial = SelectedItemsAction.SELL_ON_EBAY)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // FTUE tour state
+    val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
+    val isTourActive by tourViewModel?.isTourActive?.collectAsState() ?: remember { mutableStateOf(false) }
+    val targetBounds by tourViewModel?.targetBounds?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
 
     // SEC-010: Prevent screenshots of sensitive item data (prices, images)
     DisposableEffect(Unit) {
@@ -233,16 +240,26 @@ fun ItemsListScreen(
                                     }
                                 )
 
+                                val isFirstItem = items.firstOrNull() == item
+
                                 SwipeToDismissBox(
                                     state = dismissState,
                                     enableDismissFromStartToEnd = true,
                                     enableDismissFromEndToStart = false,
-                                    modifier = Modifier.animateItemPlacement(
-                                        animationSpec = spring(
-                                            stiffness = 300f,
-                                            dampingRatio = 0.8f
+                                    modifier = Modifier
+                                        .animateItemPlacement(
+                                            animationSpec = spring(
+                                                stiffness = 300f,
+                                                dampingRatio = 0.8f
+                                            )
                                         )
-                                    ),
+                                        .then(
+                                            if (tourViewModel != null && isFirstItem) {
+                                                Modifier.tourTarget("items_first_item", tourViewModel)
+                                            } else {
+                                                Modifier
+                                            }
+                                        ),
                                     backgroundContent = {
                                         val isDismissing = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
                                         val containerColor = if (isDismissing) {
@@ -310,7 +327,14 @@ fun ItemsListScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .then(
+                        if (tourViewModel != null) {
+                            Modifier.tourTarget("items_ai_assistant", tourViewModel)
+                        } else {
+                            Modifier
+                        }
+                    ),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer
             ) {
@@ -334,7 +358,15 @@ fun ItemsListScreen(
                     color = MaterialTheme.colorScheme.primaryContainer,
                     shadowElevation = 6.dp,
                     tonalElevation = 3.dp,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (tourViewModel != null) {
+                                Modifier.tourTarget("items_action_fab", tourViewModel)
+                            } else {
+                                Modifier
+                            }
+                        )
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -435,6 +467,35 @@ fun ItemsListScreen(
             sourceBounds = previewBounds,
             isVisible = previewItem != null
         )
+
+        // FTUE Tour Overlays
+        if (isTourActive && currentTourStep?.screen == com.scanium.app.ftue.TourScreen.ITEMS_LIST) {
+            when (currentTourStep?.key) {
+                com.scanium.app.ftue.TourStepKey.ITEMS_ACTION_FAB,
+                com.scanium.app.ftue.TourStepKey.ITEMS_AI_ASSISTANT,
+                com.scanium.app.ftue.TourStepKey.ITEMS_SWIPE_DELETE,
+                com.scanium.app.ftue.TourStepKey.ITEMS_SELECTION -> {
+                    currentTourStep?.let { step ->
+                        val bounds = step.targetKey?.let { targetBounds[it] }
+                        if (bounds != null || step.targetKey == null) {
+                            com.scanium.app.ftue.SpotlightTourOverlay(
+                                step = step,
+                                targetBounds = bounds,
+                                onNext = { tourViewModel?.nextStep() },
+                                onBack = { tourViewModel?.previousStep() },
+                                onSkip = { tourViewModel?.skipTour() }
+                            )
+                        }
+                    }
+                }
+                com.scanium.app.ftue.TourStepKey.COMPLETION -> {
+                    com.scanium.app.ftue.CompletionOverlay(
+                        onDismiss = { tourViewModel?.completeTour() }
+                    )
+                }
+                else -> { /* Camera steps */ }
+            }
+        }
     }
 
     // Draft preview dialog (legacy/fallback if needed, but primary is overlay now)

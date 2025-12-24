@@ -65,6 +65,7 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationMetrics
 import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.app.media.StorageHelper
+import com.scanium.app.ftue.tourTarget
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -93,7 +94,8 @@ fun CameraScreen(
     onNavigateToSettings: () -> Unit,
     itemsViewModel: ItemsViewModel = viewModel(),
     classificationModeViewModel: ClassificationModeViewModel,
-    cameraViewModel: CameraViewModel = viewModel()
+    cameraViewModel: CameraViewModel = viewModel(),
+    tourViewModel: com.scanium.app.ftue.TourViewModel? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -104,6 +106,11 @@ fun CameraScreen(
     val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
     val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
     val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
+
+    // FTUE tour state
+    val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
+    val isTourActive by tourViewModel?.isTourActive?.collectAsState() ?: remember { mutableStateOf(false) }
+    val targetBounds by tourViewModel?.targetBounds?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
 
     // Camera permission state
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
@@ -211,6 +218,14 @@ fun CameraScreen(
     LaunchedEffect(Unit) {
         if (!cameraPermissionState.status.isGranted) {
             cameraPermissionState.launchPermissionRequest()
+        }
+    }
+
+    // Start tour after permission is granted (if tour is active)
+    LaunchedEffect(cameraPermissionState.status.isGranted, isTourActive) {
+        if (cameraPermissionState.status.isGranted && isTourActive) {
+            delay(300) // Let camera initialize
+            tourViewModel?.startTour()
         }
     }
 
@@ -417,8 +432,15 @@ fun CameraScreen(
                     cameraState = cameraState,
                     scanMode = currentScanMode,
                     captureResolution = captureResolution,
-                    onNavigateToItems = onNavigateToItems,
+                    onNavigateToItems = {
+                        // If tour is on Items button step, advance before navigation
+                        if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS_BUTTON) {
+                            tourViewModel?.nextStep()
+                        }
+                        onNavigateToItems()
+                    },
                     onOpenSettings = { isSettingsOpen = true },
+                    tourViewModel = tourViewModel,
                     onModeChanged = { newMode ->
                         if (newMode != currentScanMode) {
                             // Stop scanning if active
@@ -604,6 +626,36 @@ fun CameraScreen(
                         onNavigateToSettings()
                     }
                 )
+
+                // FTUE Tour Overlays
+                if (isTourActive && cameraPermissionState.status.isGranted) {
+                    when (currentTourStep?.key) {
+                        com.scanium.app.ftue.TourStepKey.WELCOME -> {
+                            com.scanium.app.ftue.WelcomeOverlay(
+                                onStart = { tourViewModel?.nextStep() },
+                                onSkip = { tourViewModel?.skipTour() }
+                            )
+                        }
+                        com.scanium.app.ftue.TourStepKey.CAMERA_SETTINGS,
+                        com.scanium.app.ftue.TourStepKey.CAMERA_MODE_ICONS,
+                        com.scanium.app.ftue.TourStepKey.CAMERA_SHUTTER,
+                        com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS_BUTTON -> {
+                            currentTourStep?.let { step ->
+                                val bounds = step.targetKey?.let { targetBounds[it] }
+                                if (bounds != null || step.targetKey == null) {
+                                    com.scanium.app.ftue.SpotlightTourOverlay(
+                                        step = step,
+                                        targetBounds = bounds,
+                                        onNext = { tourViewModel?.nextStep() },
+                                        onBack = { tourViewModel?.previousStep() },
+                                        onSkip = { tourViewModel?.skipTour() }
+                                    )
+                                }
+                            }
+                        }
+                        else -> { /* Other steps handled in ItemsListScreen */ }
+                    }
+                }
             }
             else -> {
                 // Permission denied UI with educative content
@@ -744,6 +796,7 @@ private fun BoxScope.CameraOverlay(
     captureResolution: CaptureResolution,
     onNavigateToItems: () -> Unit,
     onOpenSettings: () -> Unit,
+    tourViewModel: com.scanium.app.ftue.TourViewModel?,
     onModeChanged: (ScanMode) -> Unit,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -772,6 +825,13 @@ private fun BoxScope.CameraOverlay(
                         Color.Black.copy(alpha = 0.5f),
                         shape = MaterialTheme.shapes.small
                     )
+                    .then(
+                        if (tourViewModel != null) {
+                            Modifier.tourTarget("camera_settings", tourViewModel)
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
@@ -783,7 +843,15 @@ private fun BoxScope.CameraOverlay(
 
         // Center slot: Mode icon selector (fills remaining space, centered)
         Box(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (tourViewModel != null) {
+                        Modifier.tourTarget("camera_mode_icons", tourViewModel)
+                    } else {
+                        Modifier
+                    }
+                ),
             contentAlignment = Alignment.Center
         ) {
             ScanModeIconSelector(
@@ -851,6 +919,13 @@ private fun BoxScope.CameraOverlay(
                                 Color.Black.copy(alpha = 0.5f),
                                 shape = MaterialTheme.shapes.small
                             )
+                            .then(
+                                if (tourViewModel != null) {
+                                    Modifier.tourTarget("camera_items_button", tourViewModel)
+                                } else {
+                                    Modifier
+                                }
+                            )
                     ) {
                         Icon(
                             imageVector = Icons.Default.List,
@@ -885,7 +960,15 @@ private fun BoxScope.CameraOverlay(
                     onTap = onShutterTap,
                     onLongPress = onShutterLongPress,
                     onStopScanning = onStopScanning,
-                    modifier = Modifier.offset(y = 6.dp)
+                    modifier = Modifier
+                        .offset(y = 6.dp)
+                        .then(
+                            if (tourViewModel != null) {
+                                Modifier.tourTarget("camera_shutter", tourViewModel)
+                            } else {
+                                Modifier
+                            }
+                        )
                 )
             }
 
