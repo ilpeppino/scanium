@@ -25,17 +25,16 @@ blocks_storage:
 
   tsdb:
     dir: /data/tsdb
-    retention_period: 15d
+    retention_period: 360h  # 15 days
     block_ranges_period: [ 2h ]
     ship_interval: 1m
 
   bucket_store:
     sync_dir: /data/tsdb-sync
-    max_chunk_pool_bytes: 2147483648  # 2GB
     index_cache:
       backend: inmemory
       inmemory:
-        max_size_mb: 512
+        max_size_bytes: 536870912  # 512MB
 
 compactor:
   data_dir: /data/compactor
@@ -64,7 +63,7 @@ memberlist:
     - mimir:7946
 
 ruler:
-  rule_path: /data/rules
+  rule_path: /tmp/mimir/ruler
   ring:
     kvstore:
       store: memberlist
@@ -72,7 +71,7 @@ ruler:
 ruler_storage:
   backend: filesystem
   filesystem:
-    dir: /data/rules
+    dir: /data/ruler-storage
 
 alertmanager:
   data_dir: /data/alertmanager
@@ -100,7 +99,6 @@ limits:
   # Query limits
   max_fetched_series_per_query: 100000
   max_fetched_chunk_bytes_per_query: 100000000
-  max_query_length: 32d
   max_query_parallelism: 32
   max_query_lookback: 0
   max_partial_query_length: 744h
@@ -115,6 +113,3 @@ limits:
   cardinality_analysis_enabled: true
   label_names_and_values_results_max_size_bytes: 419430400
   label_values_max_cardinality_label_names_per_request: 100
-
-runtime_config:
-  file: /data/runtime.yaml

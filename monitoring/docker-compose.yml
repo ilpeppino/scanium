@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Scanium Observability Stack (LGTM + Alloy)
 # - Loki: Logs storage
 # - Grafana: Visualization
