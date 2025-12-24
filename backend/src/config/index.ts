@@ -88,7 +88,9 @@ export const configSchema = z.object({
 
   assistant: z
     .object({
-      provider: z.enum(['mock', 'disabled']).default('mock'),
+      provider: z.enum(['mock', 'openai', 'disabled']).default('mock'),
+      openaiApiKey: z.string().optional(),
+      openaiModel: z.string().default('gpt-4o-mini'),
       apiKeys: z
         .string()
         .default('')
@@ -100,10 +102,18 @@ export const configSchema = z.object({
         ),
       rateLimitPerMinute: z.coerce.number().int().min(1).default(60),
       ipRateLimitPerMinute: z.coerce.number().int().min(1).default(60),
+      deviceRateLimitPerMinute: z.coerce.number().int().min(1).default(30),
       rateLimitWindowSeconds: z.coerce.number().int().min(1).default(60),
       rateLimitBackoffSeconds: z.coerce.number().int().min(1).default(30),
       rateLimitBackoffMaxSeconds: z.coerce.number().int().min(1).default(900),
       rateLimitRedisUrl: z.string().optional(),
+      dailyQuota: z.coerce.number().int().min(1).default(200),
+      maxInputChars: z.coerce.number().int().min(100).max(10000).default(2000),
+      maxOutputTokens: z.coerce.number().int().min(50).max(2000).default(500),
+      maxContextItems: z.coerce.number().int().min(1).max(50).default(10),
+      maxAttributesPerItem: z.coerce.number().int().min(1).max(100).default(20),
+      providerTimeoutMs: z.coerce.number().int().min(1000).max(120000).default(30000),
+      logContent: z.coerce.boolean().default(false),
       circuitBreakerFailureThreshold: z.coerce.number().int().min(1).default(5),
       circuitBreakerCooldownSeconds: z.coerce.number().int().min(1).default(60),
       circuitBreakerMinimumRequests: z.coerce.number().int().min(1).default(3),
@@ -200,13 +210,23 @@ export function loadConfig(): Config {
     },
     assistant: {
       provider: process.env.SCANIUM_ASSISTANT_PROVIDER,
+      openaiApiKey: process.env.OPENAI_API_KEY,
+      openaiModel: process.env.OPENAI_MODEL,
       apiKeys: process.env.SCANIUM_ASSISTANT_API_KEYS,
       rateLimitPerMinute: process.env.ASSIST_RATE_LIMIT_PER_MINUTE,
       ipRateLimitPerMinute: process.env.ASSIST_IP_RATE_LIMIT_PER_MINUTE,
+      deviceRateLimitPerMinute: process.env.ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE,
       rateLimitWindowSeconds: process.env.ASSIST_RATE_LIMIT_WINDOW_SECONDS,
       rateLimitBackoffSeconds: process.env.ASSIST_RATE_LIMIT_BACKOFF_SECONDS,
       rateLimitBackoffMaxSeconds: process.env.ASSIST_RATE_LIMIT_BACKOFF_MAX_SECONDS,
       rateLimitRedisUrl: process.env.ASSIST_RATE_LIMIT_REDIS_URL,
+      dailyQuota: process.env.ASSIST_DAILY_QUOTA,
+      maxInputChars: process.env.ASSIST_MAX_INPUT_CHARS,
+      maxOutputTokens: process.env.ASSIST_MAX_OUTPUT_TOKENS,
+      maxContextItems: process.env.ASSIST_MAX_CONTEXT_ITEMS,
+      maxAttributesPerItem: process.env.ASSIST_MAX_ATTRIBUTES_PER_ITEM,
+      providerTimeoutMs: process.env.ASSIST_PROVIDER_TIMEOUT_MS,
+      logContent: process.env.ASSIST_LOG_CONTENT,
       circuitBreakerFailureThreshold: process.env.ASSIST_CIRCUIT_FAILURE_THRESHOLD,
       circuitBreakerCooldownSeconds: process.env.ASSIST_CIRCUIT_COOLDOWN_SECONDS,
       circuitBreakerMinimumRequests: process.env.ASSIST_CIRCUIT_MIN_REQUESTS,
