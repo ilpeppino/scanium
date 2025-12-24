@@ -1,5 +1,7 @@
 package com.scanium.app.telemetry
 
+import android.util.Log
+import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.ports.SpanContext
 import com.scanium.telemetry.ports.TracePort
 import com.scanium.app.telemetry.otlp.*
@@ -8,8 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.random.Random
 
 /**
@@ -25,42 +28,51 @@ import kotlin.random.Random
  * - Span ID: 8-byte hex string (16 chars)
  * - Random generation (no collision handling for simplicity)
  *
+ * ## Bounded Queue Behavior
+ * - Maximum queue size enforced (prevents memory exhaustion)
+ * - Drop policy: DROP_OLDEST (default) or DROP_NEWEST
+ * - When queue is full, oldest/newest spans are dropped based on policy
+ *
  * ## Batching
- * - Accumulates completed spans in buffer
+ * - Accumulates completed spans in bounded buffer
  * - Exports when batch size reached OR timeout elapsed
  *
  * ## Thread Safety
- * Uses ConcurrentLinkedQueue for thread-safe span accumulation.
+ * Uses ReentrantLock to protect bounded queue operations.
  */
 class AndroidTracePortOtlp(
-    private val config: OtlpConfiguration
+    private val telemetryConfig: TelemetryConfig,
+    private val otlpConfig: OtlpConfiguration
 ) : TracePort {
 
-    private val exporter = OtlpHttpExporter(config)
-    private val buffer = ConcurrentLinkedQueue<Span>()
+    private val tag = "AndroidTracePortOtlp"
+    private val exporter = OtlpHttpExporter(otlpConfig, telemetryConfig)
+    private val buffer = ArrayDeque<Span>()
+    private val lock = ReentrantLock()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val spanIdGenerator = AtomicLong(Random.nextLong())
 
     init {
-        config.validate()
+        otlpConfig.validate()
+        telemetryConfig // Validate via data class init
 
         // Start periodic span export
         scope.launch {
             while (true) {
-                delay(config.batchTimeoutMs)
+                delay(telemetryConfig.flushIntervalMs)
                 flushIfNotEmpty()
             }
         }
     }
 
     override fun beginSpan(name: String, attributes: Map<String, String>): SpanContext {
-        if (!config.enabled) {
+        if (!otlpConfig.enabled) {
             return NoOpSpanContext
         }
 
         // Sampling decision
-        val shouldSample = Random.nextDouble() < config.traceSamplingRate
+        val shouldSample = Random.nextDouble() < telemetryConfig.traceSampleRate
         if (!shouldSample) {
             return NoOpSpanContext
         }
@@ -80,24 +92,41 @@ class AndroidTracePortOtlp(
     }
 
     private fun onSpanEnd(span: Span) {
-        buffer.offer(span)
+        lock.withLock {
+            // Check if queue is full
+            if (buffer.size >= telemetryConfig.maxQueueSize) {
+                when (telemetryConfig.dropPolicy) {
+                    TelemetryConfig.DropPolicy.DROP_OLDEST -> {
+                        buffer.removeFirstOrNull()
+                        Log.w(tag, "Span queue full (${telemetryConfig.maxQueueSize}), dropped oldest span")
+                    }
+                    TelemetryConfig.DropPolicy.DROP_NEWEST -> {
+                        Log.w(tag, "Span queue full (${telemetryConfig.maxQueueSize}), dropping newest span: ${span.name}")
+                        return // Don't add the new span
+                    }
+                }
+            }
 
-        // Flush if batch size reached
-        if (buffer.size >= config.maxBatchSize) {
-            flush()
+            buffer.addLast(span)
+
+            // Flush if batch size reached
+            if (buffer.size >= telemetryConfig.maxBatchSize) {
+                flush()
+            }
         }
     }
 
     /**
      * Flushes all buffered spans to OTLP endpoint.
+     * Must be called within lock or from synchronized context.
      */
     private fun flush() {
-        val spans = mutableListOf<Span>()
-
-        // Drain buffer
-        while (spans.size < config.maxBatchSize) {
-            val span = buffer.poll() ?: break
-            spans.add(span)
+        val spans = lock.withLock {
+            val batch = mutableListOf<Span>()
+            while (batch.size < telemetryConfig.maxBatchSize && buffer.isNotEmpty()) {
+                batch.add(buffer.removeFirst())
+            }
+            batch
         }
 
         if (spans.isEmpty()) return
@@ -120,12 +149,13 @@ class AndroidTracePortOtlp(
             )
         )
 
-        // Export (async, fire-and-forget)
+        // Export (async, with retry and backoff)
         exporter.exportTraces(request)
     }
 
     private fun flushIfNotEmpty() {
-        if (buffer.isNotEmpty()) {
+        val hasSpans = lock.withLock { buffer.isNotEmpty() }
+        if (hasSpans) {
             flush()
         }
     }

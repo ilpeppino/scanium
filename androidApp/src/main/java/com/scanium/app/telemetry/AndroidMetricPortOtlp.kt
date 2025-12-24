@@ -1,5 +1,6 @@
 package com.scanium.app.telemetry
 
+import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.ports.MetricPort
 import com.scanium.app.telemetry.otlp.*
 import kotlinx.coroutines.CoroutineScope
@@ -30,10 +31,11 @@ import java.util.concurrent.ConcurrentHashMap
  * Uses ConcurrentHashMap for thread-safe metric updates.
  */
 class AndroidMetricPortOtlp(
-    private val config: OtlpConfiguration
+    private val telemetryConfig: TelemetryConfig,
+    private val otlpConfig: OtlpConfiguration
 ) : MetricPort {
 
-    private val exporter = OtlpHttpExporter(config)
+    private val exporter = OtlpHttpExporter(otlpConfig, telemetryConfig)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     // Track counters (name+attrs -> cumulative value)
@@ -46,19 +48,20 @@ class AndroidMetricPortOtlp(
     private val gauges = ConcurrentHashMap<String, GaugeData>()
 
     init {
-        config.validate()
+        otlpConfig.validate()
+        telemetryConfig // Validate via data class init
 
         // Start periodic metric export
         scope.launch {
             while (true) {
-                delay(config.batchTimeoutMs)
+                delay(telemetryConfig.flushIntervalMs)
                 flush()
             }
         }
     }
 
     override fun counter(name: String, delta: Long, attributes: Map<String, String>) {
-        if (!config.enabled) return
+        if (!otlpConfig.enabled) return
 
         val key = metricKey(name, attributes)
         counters.compute(key) { _, existing ->
@@ -68,14 +71,14 @@ class AndroidMetricPortOtlp(
     }
 
     override fun timer(name: String, millis: Long, attributes: Map<String, String>) {
-        if (!config.enabled) return
+        if (!otlpConfig.enabled) return
 
         val key = metricKey(name, attributes)
         timers[key] = GaugeData(name, millis.toDouble(), attributes, System.currentTimeMillis())
     }
 
     override fun gauge(name: String, value: Double, attributes: Map<String, String>) {
-        if (!config.enabled) return
+        if (!otlpConfig.enabled) return
 
         val key = metricKey(name, attributes)
         gauges[key] = GaugeData(name, value, attributes, System.currentTimeMillis())

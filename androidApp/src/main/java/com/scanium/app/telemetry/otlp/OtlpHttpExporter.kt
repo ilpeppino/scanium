@@ -2,9 +2,11 @@ package com.scanium.app.telemetry.otlp
 
 import android.util.Log
 import com.scanium.app.telemetry.OtlpConfiguration
+import com.scanium.telemetry.TelemetryConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -13,6 +15,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
+import kotlin.math.pow
 
 /**
  * HTTP exporter for OTLP (OpenTelemetry Protocol) over HTTP/JSON.
@@ -24,11 +27,14 @@ import java.util.concurrent.TimeUnit
  * All export operations are async and non-blocking. Uses coroutines for background export.
  *
  * ## Error Handling
- * Errors are logged but do not throw exceptions (fire-and-forget telemetry).
- * Failed exports are dropped (no retry logic for simplicity).
+ * - Implements exponential backoff retry logic
+ * - Retries on network failures and 5xx errors
+ * - Does not retry on 4xx errors (client errors)
+ * - Errors are logged but do not throw exceptions (fire-and-forget telemetry)
  */
 class OtlpHttpExporter(
-    private val config: OtlpConfiguration
+    private val otlpConfig: OtlpConfiguration,
+    private val telemetryConfig: TelemetryConfig
 ) {
     private val tag = "OtlpHttpExporter"
 
@@ -39,9 +45,9 @@ class OtlpHttpExporter(
     }
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(config.httpTimeoutMs, TimeUnit.MILLISECONDS)
-        .writeTimeout(config.httpTimeoutMs, TimeUnit.MILLISECONDS)
-        .readTimeout(config.httpTimeoutMs, TimeUnit.MILLISECONDS)
+        .connectTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
+        .writeTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
+        .readTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
         .build()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -49,91 +55,75 @@ class OtlpHttpExporter(
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     /**
-     * Exports logs to OTLP endpoint.
+     * Exports logs to OTLP endpoint with exponential backoff retry.
      * POST {endpoint}/v1/logs
      */
     fun exportLogs(request: ExportLogsServiceRequest) {
-        if (!config.enabled) return
+        if (!otlpConfig.enabled) return
 
         scope.launch {
-            try {
-                val payload = json.encodeToString(request)
-                val url = "${config.endpoint}/v1/logs"
+            val payload = json.encodeToString(request)
+            val url = "${otlpConfig.endpoint}/v1/logs"
 
-                if (config.debugLogging) {
-                    Log.d(tag, "Exporting ${request.resourceLogs.sumOf { it.scopeLogs.sumOf { it.logRecords.size } }} logs to $url")
-                }
-
-                val httpRequest = Request.Builder()
-                    .url(url)
-                    .post(payload.toRequestBody(jsonMediaType))
-                    .header("Content-Type", "application/json")
-                    .build()
-
-                client.newCall(httpRequest).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        Log.w(tag, "Failed to export logs: HTTP ${response.code}")
-                    } else if (config.debugLogging) {
-                        Log.d(tag, "Successfully exported logs")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(tag, "Error exporting logs", e)
+            if (otlpConfig.debugLogging) {
+                Log.d(tag, "Exporting ${request.resourceLogs.sumOf { it.scopeLogs.sumOf { it.logRecords.size } }} logs to $url")
             }
+
+            executeWithRetry(url, payload, "logs")
         }
     }
 
     /**
-     * Exports metrics to OTLP endpoint.
+     * Exports metrics to OTLP endpoint with exponential backoff retry.
      * POST {endpoint}/v1/metrics
      */
     fun exportMetrics(request: ExportMetricsServiceRequest) {
-        if (!config.enabled) return
+        if (!otlpConfig.enabled) return
 
         scope.launch {
-            try {
-                val payload = json.encodeToString(request)
-                val url = "${config.endpoint}/v1/metrics"
+            val payload = json.encodeToString(request)
+            val url = "${otlpConfig.endpoint}/v1/metrics"
 
-                if (config.debugLogging) {
-                    Log.d(tag, "Exporting ${request.resourceMetrics.sumOf { it.scopeMetrics.sumOf { it.metrics.size } }} metrics to $url")
-                }
-
-                val httpRequest = Request.Builder()
-                    .url(url)
-                    .post(payload.toRequestBody(jsonMediaType))
-                    .header("Content-Type", "application/json")
-                    .build()
-
-                client.newCall(httpRequest).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        Log.w(tag, "Failed to export metrics: HTTP ${response.code}")
-                    } else if (config.debugLogging) {
-                        Log.d(tag, "Successfully exported metrics")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(tag, "Error exporting metrics", e)
+            if (otlpConfig.debugLogging) {
+                Log.d(tag, "Exporting ${request.resourceMetrics.sumOf { it.scopeMetrics.sumOf { it.metrics.size } }} metrics to $url")
             }
+
+            executeWithRetry(url, payload, "metrics")
         }
     }
 
     /**
-     * Exports traces to OTLP endpoint.
+     * Exports traces to OTLP endpoint with exponential backoff retry.
      * POST {endpoint}/v1/traces
      */
     fun exportTraces(request: ExportTraceServiceRequest) {
-        if (!config.enabled) return
+        if (!otlpConfig.enabled) return
 
         scope.launch {
+            val payload = json.encodeToString(request)
+            val url = "${otlpConfig.endpoint}/v1/traces"
+
+            if (otlpConfig.debugLogging) {
+                Log.d(tag, "Exporting ${request.resourceSpans.sumOf { it.scopeSpans.sumOf { it.spans.size } }} spans to $url")
+            }
+
+            executeWithRetry(url, payload, "traces")
+        }
+    }
+
+    /**
+     * Executes HTTP request with exponential backoff retry.
+     *
+     * Retry behavior:
+     * - Retries on network failures and 5xx server errors
+     * - Does NOT retry on 4xx client errors (bad request, auth, etc.)
+     * - Exponential backoff: baseMs * 2^attempt (e.g., 1s, 2s, 4s)
+     * - Max retries controlled by telemetryConfig.maxRetries
+     */
+    private suspend fun executeWithRetry(url: String, payload: String, signalType: String) {
+        var attempt = 0
+        while (attempt <= telemetryConfig.maxRetries) {
             try {
-                val payload = json.encodeToString(request)
-                val url = "${config.endpoint}/v1/traces"
-
-                if (config.debugLogging) {
-                    Log.d(tag, "Exporting ${request.resourceSpans.sumOf { it.scopeSpans.sumOf { it.spans.size } }} spans to $url")
-                }
-
                 val httpRequest = Request.Builder()
                     .url(url)
                     .post(payload.toRequestBody(jsonMediaType))
@@ -141,14 +131,38 @@ class OtlpHttpExporter(
                     .build()
 
                 client.newCall(httpRequest).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        Log.w(tag, "Failed to export traces: HTTP ${response.code}")
-                    } else if (config.debugLogging) {
-                        Log.d(tag, "Successfully exported traces")
+                    when {
+                        response.isSuccessful -> {
+                            if (otlpConfig.debugLogging) {
+                                Log.d(tag, "Successfully exported $signalType (attempt ${attempt + 1})")
+                            }
+                            return // Success, exit retry loop
+                        }
+                        response.code in 400..499 -> {
+                            // Client error, don't retry
+                            Log.w(tag, "Failed to export $signalType: HTTP ${response.code} (client error, not retrying)")
+                            return
+                        }
+                        else -> {
+                            // Server error or other, retry
+                            Log.w(tag, "Failed to export $signalType: HTTP ${response.code} (attempt ${attempt + 1}/${telemetryConfig.maxRetries + 1})")
+                        }
                     }
                 }
             } catch (e: Exception) {
-                Log.e(tag, "Error exporting traces", e)
+                Log.w(tag, "Error exporting $signalType (attempt ${attempt + 1}/${telemetryConfig.maxRetries + 1}): ${e.message}")
+            }
+
+            // If we get here, export failed and we should retry (if attempts remaining)
+            attempt++
+            if (attempt <= telemetryConfig.maxRetries) {
+                val backoffMs = telemetryConfig.retryBackoffMs * 2.0.pow(attempt - 1).toLong()
+                if (otlpConfig.debugLogging) {
+                    Log.d(tag, "Retrying $signalType export in ${backoffMs}ms...")
+                }
+                delay(backoffMs)
+            } else {
+                Log.e(tag, "Failed to export $signalType after ${telemetryConfig.maxRetries + 1} attempts, dropping batch")
             }
         }
     }
@@ -159,9 +173,9 @@ class OtlpHttpExporter(
     fun buildResource(): Resource {
         return Resource(
             attributes = listOf(
-                KeyValue("service.name", AnyValue.string(config.serviceName)),
-                KeyValue("service.version", AnyValue.string(config.serviceVersion)),
-                KeyValue("deployment.environment", AnyValue.string(config.environment)),
+                KeyValue("service.name", AnyValue.string(otlpConfig.serviceName)),
+                KeyValue("service.version", AnyValue.string(otlpConfig.serviceVersion)),
+                KeyValue("deployment.environment", AnyValue.string(otlpConfig.environment)),
                 KeyValue("telemetry.sdk.name", AnyValue.string("scanium-telemetry")),
                 KeyValue("telemetry.sdk.language", AnyValue.string("kotlin")),
                 KeyValue("telemetry.sdk.version", AnyValue.string("1.0.0"))
