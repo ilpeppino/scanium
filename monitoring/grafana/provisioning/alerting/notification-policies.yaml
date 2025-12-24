@@ -1,0 +1,43 @@
+# Grafana Alerting - Notification Policies Provisioning
+# Routes alerts to appropriate contact points based on environment labels
+
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    # Root notification policy
+    receiver: scanium-default
+    group_by:
+      - alertname
+      - env
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      # Production alerts -> high priority
+      - receiver: scanium-high-priority
+        matchers:
+          - env = prod
+        group_wait: 10s
+        group_interval: 1m
+        repeat_interval: 1h
+        continue: false
+        mute_time_intervals: []
+
+      # Staging alerts -> low priority
+      - receiver: scanium-low-priority
+        matchers:
+          - env = stage
+        group_wait: 1m
+        group_interval: 10m
+        repeat_interval: 8h
+        continue: false
+
+      # Development alerts -> low priority (with longer intervals)
+      - receiver: scanium-low-priority
+        matchers:
+          - env = dev
+        group_wait: 2m
+        group_interval: 30m
+        repeat_interval: 24h
+        continue: false
