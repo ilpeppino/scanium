@@ -128,6 +128,93 @@ otelcol.exporter.otlp "tempo" {
 }
 
 // ============================================================================
+// Pipeline Self-Observability (Prometheus Scraping)
+// ============================================================================
+// Scrape metrics from Alloy itself and LGTM backend services for self-monitoring.
+// Metrics are forwarded to Mimir for dashboarding and alerting.
+
+// Scrape Alloy's own metrics (exposed on the HTTP server port)
+prometheus.scrape "alloy" {
+  targets = [
+    {
+      __address__ = "localhost:12345",
+      job         = "alloy",
+      instance    = "scanium-alloy",
+    },
+  ]
+  forward_to      = [prometheus.remote_write.pipeline.receiver]
+  scrape_interval = "15s"
+  scrape_timeout  = "10s"
+}
+
+// Scrape Loki metrics
+prometheus.scrape "loki" {
+  targets = [
+    {
+      __address__ = "loki:3100",
+      job         = "loki",
+      instance    = "scanium-loki",
+    },
+  ]
+  forward_to      = [prometheus.remote_write.pipeline.receiver]
+  scrape_interval = "15s"
+  scrape_timeout  = "10s"
+}
+
+// Scrape Tempo metrics
+prometheus.scrape "tempo" {
+  targets = [
+    {
+      __address__ = "tempo:3200",
+      job         = "tempo",
+      instance    = "scanium-tempo",
+    },
+  ]
+  forward_to      = [prometheus.remote_write.pipeline.receiver]
+  scrape_interval = "15s"
+  scrape_timeout  = "10s"
+}
+
+// Scrape Mimir metrics
+prometheus.scrape "mimir" {
+  targets = [
+    {
+      __address__ = "mimir:9009",
+      job         = "mimir",
+      instance    = "scanium-mimir",
+    },
+  ]
+  forward_to      = [prometheus.remote_write.pipeline.receiver]
+  scrape_interval = "15s"
+  scrape_timeout  = "10s"
+}
+
+// Remote write for pipeline self-observability metrics
+// Kept separate from app metrics with source="pipeline"
+prometheus.remote_write "pipeline" {
+  endpoint {
+    url = "http://mimir:9009/api/v1/push"
+
+    // Retry configuration
+    retry_on_http_429 = true
+    max_backoff       = "5s"
+    min_backoff       = "100ms"
+
+    // Queue configuration (smaller than app metrics, pipeline is lower volume)
+    capacity              = 5000
+    max_shards            = 2
+    min_shards            = 1
+    max_samples_per_send  = 1000
+    batch_send_deadline   = "5s"
+  }
+
+  external_labels = {
+    source = "pipeline",
+    env    = "dev",
+  }
+}
+
+// ============================================================================
 // Debugging (optional - uncomment to log telemetry to console)
 // ============================================================================
 
