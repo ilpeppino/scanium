@@ -20,6 +20,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import com.scanium.app.media.StorageHelper
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Save
 import com.scanium.app.BuildConfig
 import com.scanium.app.model.user.UserEdition
 
@@ -34,6 +41,7 @@ fun SettingsScreen(
     onNavigateToAbout: () -> Unit,
     onNavigateToUpgrade: () -> Unit
 ) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     val allowCloud by viewModel.allowCloud.collectAsState()
     val allowAssistant by viewModel.allowAssistant.collectAsState()
@@ -41,6 +49,17 @@ fun SettingsScreen(
     val currentEdition by viewModel.currentEdition.collectAsState()
     val entitlementState by viewModel.entitlementState.collectAsState()
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
+    val autoSaveEnabled by viewModel.autoSaveEnabled.collectAsState()
+    val saveDirectoryUri by viewModel.saveDirectoryUri.collectAsState()
+
+    val dirPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            StorageHelper.takePersistablePermissions(context, it)
+            viewModel.setSaveDirectoryUri(it.toString())
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -86,6 +105,40 @@ fun SettingsScreen(
                         }
                     }
                 }
+            )
+
+            HorizontalDivider()
+            
+            SettingsSectionTitle("Storage")
+
+            SettingsSwitchItem(
+                title = "Automatically save photos",
+                subtitle = "Save captured items to device",
+                icon = Icons.Default.Save,
+                checked = autoSaveEnabled,
+                onCheckedChange = { viewModel.setAutoSaveEnabled(it) }
+            )
+
+            val folderName = saveDirectoryUri?.let { 
+                StorageHelper.getFolderDisplayName(context, Uri.parse(it)) 
+            } ?: "Tap to select folder"
+
+            ListItem(
+                headlineContent = { Text("Save location") },
+                supportingContent = { Text(folderName) },
+                leadingContent = { Icon(Icons.Default.Folder, contentDescription = null) },
+                modifier = Modifier.clickable(enabled = autoSaveEnabled) {
+                    dirPickerLauncher.launch(
+                        saveDirectoryUri?.let { Uri.parse(it) }
+                    )
+                },
+                colors = if (!autoSaveEnabled) {
+                     ListItemDefaults.colors(
+                        headlineColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        supportingColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                        leadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                     )
+                } else ListItemDefaults.colors()
             )
 
             HorizontalDivider()
@@ -153,13 +206,20 @@ fun SettingsScreen(
             if (BuildConfig.DEBUG) {
                 HorizontalDivider()
                 SettingsSectionTitle("Developer")
-                
+
                 SettingsSwitchItem(
                     title = "Developer Mode",
                     subtitle = "Unlock all features for testing",
                     icon = Icons.Default.BugReport,
                     checked = isDeveloperMode,
                     onCheckedChange = { viewModel.setDeveloperMode(it) }
+                )
+
+                SettingsItem(
+                    title = "Test Crash Reporting",
+                    subtitle = "Send test event to Sentry (handled exception)",
+                    icon = Icons.Default.BugReport,
+                    onClick = { viewModel.triggerCrashTest(throwCrash = false) }
                 )
             }
             

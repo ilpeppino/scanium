@@ -23,6 +23,8 @@ class SettingsRepository(private val context: Context) {
         private val SHARE_DIAGNOSTICS_KEY = booleanPreferencesKey("share_diagnostics")
         private val USER_EDITION_KEY = stringPreferencesKey("user_edition")
         private val DEVELOPER_MODE_KEY = booleanPreferencesKey("developer_mode")
+        private val AUTO_SAVE_ENABLED_KEY = booleanPreferencesKey("auto_save_enabled")
+        private val SAVE_DIRECTORY_URI_KEY = stringPreferencesKey("save_directory_uri")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -84,6 +86,30 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDeveloperMode(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEVELOPER_MODE_KEY] = enabled
+        }
+    }
+
+    val autoSaveEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[AUTO_SAVE_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setAutoSaveEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[AUTO_SAVE_ENABLED_KEY] = enabled
+        }
+    }
+
+    val saveDirectoryUriFlow: Flow<String?> = context.settingsDataStore.data.map { preferences ->
+        preferences[SAVE_DIRECTORY_URI_KEY]
+    }
+
+    suspend fun setSaveDirectoryUri(uri: String?) {
+        context.settingsDataStore.edit { preferences ->
+            if (uri != null) {
+                preferences[SAVE_DIRECTORY_URI_KEY] = uri
+            } else {
+                preferences.remove(SAVE_DIRECTORY_URI_KEY)
+            }
         }
     }
 }
