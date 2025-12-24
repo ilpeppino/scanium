@@ -99,10 +99,10 @@ class AssistantViewModel(
             result.onSuccess { response ->
                 val assistantMsg = AssistantMessage(
                     role = AssistantRole.ASSISTANT,
-                    content = response.content,
+                    content = response.text,
                     timestamp = System.currentTimeMillis()
                 )
-                
+
                 _uiState.update {
                     it.copy(
                         messages = it.messages + assistantMsg,
@@ -111,10 +111,16 @@ class AssistantViewModel(
                     )
                 }
             }.onFailure { error ->
+                // Use user-friendly message from AssistantException if available
+                val errorMessage = when (error) {
+                    is AssistantException -> error.userMessage
+                    else -> error.message ?: "Failed to get response"
+                }
+
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = error.message ?: "Failed to get response"
+                        error = errorMessage
                     )
                 }
             }
