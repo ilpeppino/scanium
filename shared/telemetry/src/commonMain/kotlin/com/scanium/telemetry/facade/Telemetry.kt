@@ -1,5 +1,6 @@
 package com.scanium.telemetry.facade
 
+import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.AttributeSanitizer
 import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.TelemetryEvent
@@ -64,6 +65,8 @@ import kotlinx.datetime.Clock
  * @param tracePort Port for emitting traces (optional, uses NoOp if not provided)
  * @param crashPort Port for crash reporting (optional, null if not provided). When provided,
  *                  WARN and ERROR events are automatically forwarded as breadcrumbs to crash reports.
+ * @param diagnosticsPort Port for diagnostics breadcrumb collection (optional, null if not provided).
+ *                        When provided, all events are automatically recorded as breadcrumbs for crash reports.
  */
 class Telemetry(
     private val config: TelemetryConfig = TelemetryConfig(),
@@ -71,7 +74,8 @@ class Telemetry(
     private val logPort: LogPort,
     private val metricPort: MetricPort,
     private val tracePort: TracePort,
-    private val crashPort: CrashPort? = null
+    private val crashPort: CrashPort? = null,
+    private val diagnosticsPort: DiagnosticsPort? = null
 ) {
     /**
      * Emits a telemetry event with automatic sanitization and attribute merging.
@@ -108,6 +112,10 @@ class Telemetry(
         )
 
         logPort.emit(event)
+
+        // Append to diagnostics buffer for crash-time attachment
+        // All events are recorded (INFO, WARN, ERROR) for context
+        diagnosticsPort?.appendBreadcrumb(event)
 
         // Forward WARN and ERROR events to crash reporting as breadcrumbs
         // This provides context for debugging crashes
