@@ -144,6 +144,63 @@ class SettingsViewModel(
         }
     }
 
+    /**
+     * Triggers a diagnostics bundle test to verify Sentry attachment.
+     * Only available in DEBUG builds via Developer settings.
+     *
+     * This will:
+     * 1. Emit several test telemetry events to populate DiagnosticsBuffer
+     * 2. Capture a test exception with diagnostics bundle attached
+     * 3. Log diagnostic info about the bundle size and event count
+     *
+     * The diagnostics bundle should appear as an attachment ("diagnostics.json")
+     * in the Sentry event in the Sentry dashboard.
+     */
+    fun triggerDiagnosticsTest() {
+        val scaniumApp = application as? ScaniumApplication
+        if (scaniumApp == null) {
+            throw IllegalStateException("Application is not ScaniumApplication")
+        }
+
+        // Emit some test telemetry events to populate the diagnostics buffer
+        scaniumApp.telemetry.info("diagnostics_test.started", mapOf(
+            "test_id" to "diag_${System.currentTimeMillis()}",
+            "test_type" to "manual_diagnostics_test"
+        ))
+
+        scaniumApp.telemetry.event("diagnostics_test.event_1", com.scanium.telemetry.TelemetrySeverity.DEBUG, mapOf(
+            "step" to "1",
+            "data" to "test_data_123"
+        ))
+
+        scaniumApp.telemetry.event("diagnostics_test.event_2", com.scanium.telemetry.TelemetrySeverity.INFO, mapOf(
+            "step" to "2",
+            "data" to "test_data_456"
+        ))
+
+        scaniumApp.telemetry.warn("diagnostics_test.warning", mapOf(
+            "step" to "3",
+            "warning_type" to "test_warning"
+        ))
+
+        // Check diagnostics buffer status
+        val breadcrumbCount = scaniumApp.diagnosticsPort.breadcrumbCount()
+        android.util.Log.i("DiagnosticsTest", "DiagnosticsBuffer has $breadcrumbCount events before capture")
+
+        // Capture a test exception (will include diagnostics bundle as attachment)
+        val testException = RuntimeException("🔬 Diagnostics bundle test - check for diagnostics.json attachment")
+        scaniumApp.crashPort.captureException(
+            throwable = testException,
+            attributes = mapOf(
+                "diagnostics_test" to "true",
+                "breadcrumb_count" to breadcrumbCount.toString(),
+                "trigger_source" to "settings_developer_menu"
+            )
+        )
+
+        android.util.Log.i("DiagnosticsTest", "Captured exception with diagnostics bundle ($breadcrumbCount events). Check Sentry for attachment.")
+    }
+
     class Factory(
         private val application: Application,
         private val settingsRepository: SettingsRepository,
