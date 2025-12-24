@@ -1,0 +1,75 @@
+# Tempo Configuration - Single-node development setup
+# Optimized for local/NAS deployment
+
+server:
+  http_listen_port: 3200
+  log_level: info
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+ingester:
+  max_block_duration: 5m               # Cut blocks after 5 minutes
+  max_block_bytes: 10485760            # 10MB
+
+compactor:
+  compaction:
+    block_retention: 168h              # 7 days retention
+    compacted_block_retention: 1h
+    compaction_window: 1h
+    max_compaction_objects: 1000000
+    retention_concurrency: 10
+    v2_in_buffer_bytes: 5242880        # 5MB
+    v2_out_buffer_bytes: 20971520      # 20MB
+    v2_prefetch_traces_count: 1000
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+    pool:
+      max_workers: 100
+      queue_depth: 10000
+
+querier:
+  max_concurrent_queries: 20
+  frontend_worker:
+    frontend_address: tempo:9095
+
+query_frontend:
+  search:
+    duration_slo: 5s
+    throughput_bytes_slo: 1.073741824e+09
+  trace_by_id:
+    duration_slo: 5s
+
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      cluster: scanium-dev
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://mimir:9009/api/v1/push
+        send_exemplars: true
+
+overrides:
+  defaults:
+    metrics_generator:
+      processors: [service-graphs, span-metrics]
+      generate_native_histograms: both
+    max_traces_per_user: 10000
+    max_bytes_per_trace: 5000000       # 5MB
+    max_search_bytes_per_trace: 50000  # 50KB
+    ingestion_rate_limit_bytes: 15000000  # 15MB/s
+    ingestion_burst_size_bytes: 20000000  # 20MB

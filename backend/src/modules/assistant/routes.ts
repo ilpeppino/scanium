@@ -24,6 +24,7 @@ const itemAttributeSchema = z.object({
 const itemContextSchema = z.object({
   itemId: z.string(),
   title: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   category: z.string().optional().nullable(),
   confidence: z.number().optional().nullable(),
   attributes: z.array(itemAttributeSchema).optional(),
