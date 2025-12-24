@@ -23,6 +23,8 @@ kotlin {
             dependencies {
                 // Dependency on shared:core-models
                 implementation(project(":shared:core-models"))
+                // Dependency on shared:telemetry for instrumentation
+                implementation(project(":shared:telemetry"))
 
                 // Kotlin Coroutines for async tracking
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")

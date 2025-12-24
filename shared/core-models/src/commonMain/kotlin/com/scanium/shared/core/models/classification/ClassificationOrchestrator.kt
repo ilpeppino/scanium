@@ -2,6 +2,8 @@ package com.scanium.shared.core.models.classification
 
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.telemetry.facade.Telemetry
+import com.scanium.telemetry.TelemetrySeverity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,7 @@ import kotlin.random.Random
  * @param logger Platform-specific logger implementation
  * @param maxConcurrency Maximum concurrent classification requests (default: 2)
  * @param maxRetries Maximum retry attempts (default: 3)
+ * @param telemetry Telemetry facade for instrumentation
  */
 class ClassificationOrchestrator(
     private val modeFlow: StateFlow<ClassificationMode>,
@@ -47,13 +50,16 @@ class ClassificationOrchestrator(
     private val logger: Logger = ConsoleLogger(),
     private val maxConcurrency: Int = 2,
     private val maxRetries: Int = 3,
-    private val delayProvider: suspend (Long) -> Unit = { delay(it) }
+    private val delayProvider: suspend (Long) -> Unit = { delay(it) },
+    private val telemetry: Telemetry? = null
 ) {
     companion object {
         private const val TAG = "ClassificationOrchestrator"
         private const val BASE_DELAY_MS = 2000L
         private const val MAX_DELAY_MS = 16000L
         private const val JITTER_FACTOR = 0.25 // ±25%
+        // Default domain pack ID if not specified
+        private const val DEFAULT_DOMAIN_PACK_ID = "default"
     }
 
     // Concurrency control: max 2 classification requests at a time
@@ -152,14 +158,17 @@ class ClassificationOrchestrator(
         pendingRequests.add(itemId)
 
         scope.launch {
+            val span = telemetry?.beginSpan("scan.classify_item")
             // [METRICS] Start classification turnaround measurement
             val classificationStartTime = Clock.System.now().toEpochMilliseconds()
+            var currentMode: ClassificationMode? = null
 
             try {
                 // Acquire semaphore (wait if 2 requests already in flight)
                 concurrencySemaphore.acquire()
 
                 val mode = modeFlow.value
+                currentMode = mode
                 val classifier = when (mode) {
                     ClassificationMode.CLOUD -> cloudClassifier
                     ClassificationMode.ON_DEVICE -> onDeviceClassifier
@@ -180,6 +189,11 @@ class ClassificationOrchestrator(
                 // [METRICS] Calculate classification turnaround
                 val turnaroundMs = Clock.System.now().toEpochMilliseconds() - classificationStartTime
                 logger.i(TAG, "[METRICS] Classification turnaround for $itemId: ${turnaroundMs}ms (mode=$mode, status=${result.status})")
+                
+                telemetry?.timer("ml.inference_latency_ms", turnaroundMs, mapOf(
+                    "type" to "classification",
+                    "mode" to mode.name.lowercase()
+                ))
 
                 when (result.status) {
                     ClassificationStatus.SUCCESS -> {
@@ -198,6 +212,12 @@ class ClassificationOrchestrator(
                             logger.e(TAG, "Classification permanently failed for $itemId: ${result.errorMessage}")
                             permanentlyFailedRequests.add(itemId)
                         }
+                        
+                        telemetry?.event("error.inference_failed", TelemetrySeverity.ERROR, mapOf(
+                            "error_type" to (result.errorMessage ?: "unknown"),
+                            "mode" to mode.name.lowercase()
+                        ))
+                        
                         cache[itemId] = result
                         onResult(itemId, result)
                     }
@@ -214,9 +234,15 @@ class ClassificationOrchestrator(
                 // [METRICS] Log error turnaround
                 val turnaroundMs = Clock.System.now().toEpochMilliseconds() - classificationStartTime
                 logger.i(TAG, "[METRICS] Classification error turnaround for $itemId: ${turnaroundMs}ms (error)")
+                
+                telemetry?.event("error.inference_failed", TelemetrySeverity.ERROR, mapOf(
+                    "error_type" to (t.message ?: "exception"),
+                    "mode" to (currentMode?.name?.lowercase() ?: "unknown")
+                ))
             } finally {
                 pendingRequests.remove(itemId)
                 concurrencySemaphore.release()
+                span?.end()
             }
         }
     }

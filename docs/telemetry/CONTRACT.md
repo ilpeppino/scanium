@@ -220,3 +220,18 @@ This contract is **stable** as of v1.0. Breaking changes will require:
 1. Major version bump
 2. Deprecation period for removed fields
 3. Migration guide for consumers
+
+## Event Catalog v1
+
+The following events are emitted by the Shared Brain logic:
+
+| Event Name               | Severity | Description                                      | Key Attributes |
+|--------------------------|----------|--------------------------------------------------|----------------|
+| `scan.session_started`   | INFO     | Scan session initialized (e.g. tracker reset)    | `scan_mode` |
+| `scan.session_stopped`   | INFO     | Scan session stopped manually or by system       | `reason`, `duration_ms`, `final_frame_count` |
+| `scan.process_frame`     | SPAN     | Trace span covering candidate tracking update    | - |
+| `scan.candidate_created` | DEBUG    | New candidate tracked                            | `candidate_id`, `category`, `top_label`, `confidence` |
+| `scan.candidate_confirmed`| INFO    | Candidate confirmed as stable                    | `candidate_id`, `category`, `label` |
+| `scan.candidate_expired` | DEBUG    | Candidate expired due to inactivity              | `candidate_id`, `age_frames` |
+| `ml.inference_latency_ms`| METRIC   | Latency of ML inference (detection/classification)| `type` (object_detection/classification), `mode` |
+| `error.inference_failed` | ERROR    | ML inference failure                             | `error_type`, `mode` |

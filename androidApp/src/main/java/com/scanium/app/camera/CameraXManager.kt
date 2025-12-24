@@ -29,6 +29,7 @@ import com.scanium.app.tracking.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
 import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.common.InputImage
+import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,7 +53,8 @@ import kotlin.coroutines.resumeWithException
  */
 class CameraXManager(
     private val context: Context,
-    private val lifecycleOwner: LifecycleOwner
+    private val lifecycleOwner: LifecycleOwner,
+    private val telemetry: Telemetry? = null
 ) {
     companion object {
         private const val TAG = "CameraXManager"
@@ -95,7 +97,8 @@ class CameraXManager(
             maxFrameGap = 8,              // Allow 8 frames gap for matching (more forgiving)
             minMatchScore = 0.2f,         // Lower match score threshold for better spatial matching
             expiryFrames = 15             // Keep candidates longer (15 frames)
-        )
+        ),
+        telemetry = telemetry
     )
 
     // Executor for camera operations
@@ -343,7 +346,7 @@ class CameraXManager(
         // Reset tracker when starting a new scan session or switching modes
         if (currentScanMode != scanMode || currentScanMode == null) {
             Log.i(TAG, "startScanning: Resetting tracker (mode change: $currentScanMode -> $scanMode)")
-            objectTracker.reset()
+            objectTracker.reset(scanMode = scanMode.name)
             currentScanMode = scanMode
         }
 
@@ -407,7 +410,13 @@ class CameraXManager(
                         // Use STREAM_MODE for object detection with tracking during continuous scanning
                         // CRITICAL: Use SINGLE_IMAGE_MODE to avoid ML Kit frame buffer crash
                         // STREAM_MODE causes native crashes when frames get recycled
-                        val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                        val (items, detections) = processObjectDetectionWithTracking(
+                            inputImage = inputImage,
+                            lazyBitmapProvider = lazyBitmapProvider,
+                            cropRect = imageBoundsForFiltering,
+                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
+                            analyzerLatencyMs = SystemClock.elapsedRealtime() - frameReceiveTime
+                        )
                         Log.i(TAG, ">>> startScanning: processImageProxy returned ${items.size} items")
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
@@ -474,6 +483,7 @@ class CameraXManager(
         scanJob?.cancel()
         scanJob = null
         // Reset tracker when stopping scan
+        objectTracker.stopSession("user_stopped")
         objectTracker.reset()
         currentScanMode = null
     }
@@ -623,7 +633,8 @@ class CameraXManager(
         inputImage: InputImage,
         lazyBitmapProvider: () -> Bitmap?,
         cropRect: android.graphics.Rect,
-        edgeInsetRatio: Float
+        edgeInsetRatio: Float,
+        analyzerLatencyMs: Long = 0
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
@@ -639,7 +650,7 @@ class CameraXManager(
         Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass")
 
         // Process detections through tracker
-        val confirmedCandidates = objectTracker.processFrame(trackingResponse.detectionInfos)
+        val confirmedCandidates = objectTracker.processFrame(trackingResponse.detectionInfos, analyzerLatencyMs)
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: ObjectTracker returned ${confirmedCandidates.size} newly confirmed candidates")
 
