@@ -18,6 +18,10 @@ const config = configSchema.parse({
     apiKeys: 'test-key',
     domainPackPath: 'src/modules/classifier/domain/home-resale.json',
   },
+  assistant: {
+    provider: 'disabled',
+    apiKeys: '',
+  },
   ebay: {
     env: 'sandbox',
     clientId: 'client',

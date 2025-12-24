@@ -4,6 +4,7 @@ import com.scanium.shared.core.models.listing.ExportProfileDefinition
 import com.scanium.shared.core.models.listing.ExportProfileId
 import com.scanium.shared.core.models.listing.ListingDraft
 import com.scanium.shared.core.models.listing.DraftFieldKey
+import kotlinx.serialization.Serializable
 
 enum class AssistantRole {
     USER,
@@ -11,6 +12,7 @@ enum class AssistantRole {
     SYSTEM
 }
 
+@Serializable
 data class AssistantMessage(
     val role: AssistantRole,
     val content: String,
@@ -26,26 +28,31 @@ enum class AssistantActionType {
     OPEN_URL
 }
 
+@Serializable
 data class AssistantAction(
     val type: AssistantActionType,
     val payload: Map<String, String> = emptyMap()
 )
 
+@Serializable
 data class AssistantResponse(
     val content: String,
     val actions: List<AssistantAction> = emptyList(),
     val citationsMetadata: Map<String, String>? = null
 )
 
+@Serializable
 data class ItemAttributeSnapshot(
     val key: String,
     val value: String,
     val confidence: Float? = null
 )
 
+@Serializable
 data class ItemContextSnapshot(
     val itemId: String,
     val title: String?,
+    val description: String?,
     val category: String?,
     val confidence: Float?,
     val attributes: List<ItemAttributeSnapshot> = emptyList(),
@@ -54,11 +61,13 @@ data class ItemContextSnapshot(
     val exportProfileId: ExportProfileId = ExportProfileId.GENERIC
 )
 
+@Serializable
 data class ExportProfileSnapshot(
     val id: ExportProfileId,
     val displayName: String
 )
 
+@Serializable
 data class AssistantPromptRequest(
     val items: List<ItemContextSnapshot>,
     val conversation: List<AssistantMessage>,
@@ -113,6 +122,7 @@ object ItemContextSnapshotBuilder {
         return ItemContextSnapshot(
             itemId = draft.itemId,
             title = draft.title.value?.takeIf { it.isNotBlank() },
+            description = draft.description.value?.takeIf { it.isNotBlank() },
             category = categoryField?.value?.takeIf { it.isNotBlank() },
             confidence = confidence,
             attributes = sortedAttributes,

@@ -34,6 +34,7 @@ export type ItemAttributeSnapshot = {
 export type ItemContextSnapshot = {
   itemId: string;
   title?: string | null;
+  description?: string | null;
   category?: string | null;
   confidence?: number | null;
   attributes?: ItemAttributeSnapshot[];

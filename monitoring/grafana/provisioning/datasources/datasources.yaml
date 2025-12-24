@@ -1,0 +1,81 @@
+# Grafana Datasource Provisioning
+# Automatically configures Loki, Tempo, and Mimir datasources
+
+apiVersion: 1
+
+datasources:
+  # Loki - Logs datasource
+  - name: Loki
+    type: loki
+    access: proxy
+    uid: loki
+    url: http://loki:3100
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        # Extract trace ID from logs and link to Tempo
+        - datasourceUid: tempo
+          matcherRegex: "trace_id=(\\w+)"
+          name: TraceID
+          url: "$${__value.raw}"
+    orgId: 1
+
+  # Tempo - Traces datasource
+  - name: Tempo
+    type: tempo
+    access: proxy
+    uid: tempo
+    url: http://tempo:3200
+    isDefault: false
+    version: 1
+    editable: true
+    jsonData:
+      httpMethod: GET
+      tracesToLogs:
+        # Link traces to logs in Loki
+        datasourceUid: loki
+        tags: ['service.name', 'deployment.environment']
+        mappedTags: [{ key: 'service.name', value: 'service' }]
+        mapTagNamesEnabled: false
+        spanStartTimeShift: '1h'
+        spanEndTimeShift: '1h'
+        filterByTraceID: true
+        filterBySpanID: false
+      tracesToMetrics:
+        # Link traces to metrics in Mimir
+        datasourceUid: mimir
+        tags: [{ key: 'service.name', value: 'service' }]
+        queries:
+          - name: 'Sample query'
+            query: 'sum(rate(tempo_spanmetrics_latency_bucket{$__tags}[5m]))'
+      serviceMap:
+        datasourceUid: mimir
+      search:
+        hide: false
+      nodeGraph:
+        enabled: true
+      lokiSearch:
+        datasourceUid: loki
+    orgId: 1
+
+  # Mimir - Metrics datasource (Prometheus-compatible)
+  - name: Mimir
+    type: prometheus
+    access: proxy
+    uid: mimir
+    url: http://mimir:9009/prometheus
+    isDefault: true
+    version: 1
+    editable: true
+    jsonData:
+      httpMethod: POST
+      prometheusType: Mimir
+      prometheusVersion: 2.40.0
+      exemplarTraceIdDestinations:
+        # Link exemplars to traces in Tempo
+        - name: traceID
+          datasourceUid: tempo
+    orgId: 1

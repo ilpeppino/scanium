@@ -27,6 +27,10 @@ describe('Security Plugin', () => {
       visionTimeoutMs: 10000,
       visionMaxRetries: 2,
     },
+    assistant: {
+      provider: 'disabled',
+      apiKeys: [],
+    },
     googleCredentialsPath: undefined,
     ebay: {
       env: 'sandbox',

@@ -1,0 +1,13 @@
+# Ignore all data directories
+data/
+
+# Ignore docker compose overrides
+docker-compose.override.yml
+
+# Ignore log files
+*.log
+
+# Ignore temporary files
+*.tmp
+*.swp
+.DS_Store

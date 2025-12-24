@@ -1,0 +1,120 @@
+# Mimir Configuration - Single-node development setup
+# Optimized for local/NAS deployment
+
+# Run all services in single process
+target: all
+
+multitenancy_enabled: false
+
+server:
+  http_listen_port: 9009
+  log_level: info
+  grpc_server_max_recv_msg_size: 104857600
+  grpc_server_max_send_msg_size: 104857600
+
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /data/tsdb
+
+blocks_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/blocks
+
+  tsdb:
+    dir: /data/tsdb
+    retention_period: 15d
+    block_ranges_period: [ 2h ]
+    ship_interval: 1m
+
+  bucket_store:
+    sync_dir: /data/tsdb-sync
+    max_chunk_pool_bytes: 2147483648  # 2GB
+    index_cache:
+      backend: inmemory
+      inmemory:
+        max_size_mb: 512
+
+compactor:
+  data_dir: /data/compactor
+  compaction_interval: 30m
+  deletion_delay: 2h
+  max_closing_blocks_concurrency: 2
+  max_opening_blocks_concurrency: 4
+  symbols_flushers_concurrency: 4
+  cleanup_interval: 15m
+  tenant_cleanup_delay: 5m
+
+ingester:
+  ring:
+    replication_factor: 1
+    kvstore:
+      store: memberlist
+
+distributor:
+  ring:
+    kvstore:
+      store: memberlist
+
+memberlist:
+  bind_port: 7946
+  join_members:
+    - mimir:7946
+
+ruler:
+  rule_path: /data/rules
+  ring:
+    kvstore:
+      store: memberlist
+
+ruler_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/rules
+
+alertmanager:
+  data_dir: /data/alertmanager
+  external_url: http://localhost:9009/alertmanager
+  enable_api: true
+
+alertmanager_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/alertmanager
+
+limits:
+  # Retention
+  compactor_blocks_retention_period: 15d
+
+  # Ingestion limits
+  ingestion_rate: 100000
+  ingestion_burst_size: 200000
+  max_global_series_per_user: 1500000
+  max_global_series_per_metric: 0
+  max_global_metadata_per_user: 30000
+  max_global_metadata_per_metric: 0
+  max_global_exemplars_per_user: 100000
+
+  # Query limits
+  max_fetched_series_per_query: 100000
+  max_fetched_chunk_bytes_per_query: 100000000
+  max_query_length: 32d
+  max_query_parallelism: 32
+  max_query_lookback: 0
+  max_partial_query_length: 744h
+  max_cache_freshness: 10m
+
+  # Compactor
+  compactor_split_and_merge_shards: 0
+  compactor_split_groups: 1
+  compactor_tenant_shard_size: 0
+
+  # Cardinality analysis
+  cardinality_analysis_enabled: true
+  label_names_and_values_results_max_size_bytes: 419430400
+  label_values_max_cardinality_label_names_per_request: 100
+
+runtime_config:
+  file: /data/runtime.yaml
