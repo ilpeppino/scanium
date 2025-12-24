@@ -14,9 +14,9 @@ services:
     container_name: scanium-alloy
     restart: unless-stopped
     ports:
-      - "4317:4317"  # OTLP gRPC (for future use)
-      - "4318:4318"  # OTLP HTTP (primary)
-      - "12345:12345" # Alloy UI
+      - "4317:4317"           # OTLP gRPC (public - app telemetry ingestion)
+      - "4318:4318"           # OTLP HTTP (public - app telemetry ingestion)
+      - "127.0.0.1:12345:12345" # Alloy UI/metrics (localhost only - debugging)
     volumes:
       - ./alloy/alloy.hcl:/etc/alloy/config.alloy:ro
     command:
@@ -39,7 +39,7 @@ services:
     container_name: scanium-loki
     restart: unless-stopped
     ports:
-      - "3100:3100"  # Exposed for debugging, can be removed in production
+      - "127.0.0.1:3100:3100"  # HTTP/metrics (localhost only - debugging)
     volumes:
       - ./loki/loki.yaml:/etc/loki/config.yaml:ro
       - ./data/loki:/loki
@@ -59,8 +59,8 @@ services:
     container_name: scanium-tempo
     restart: unless-stopped
     ports:
-      - "3200:3200"  # Tempo HTTP (exposed for debugging)
-      - "4317"        # OTLP gRPC (internal only)
+      - "127.0.0.1:3200:3200"  # HTTP/metrics (localhost only - debugging)
+      - "4317"                 # OTLP gRPC (internal only - no host binding)
     volumes:
       - ./tempo/tempo.yaml:/etc/tempo/config.yaml:ro
       - ./data/tempo:/var/tempo
@@ -80,7 +80,7 @@ services:
     container_name: scanium-mimir
     restart: unless-stopped
     ports:
-      - "9009:9009"  # Mimir HTTP (exposed for debugging)
+      - "127.0.0.1:9009:9009"  # HTTP/metrics (localhost only - debugging)
     volumes:
       - ./mimir/mimir.yaml:/etc/mimir/config.yaml:ro
       - ./data/mimir:/data
