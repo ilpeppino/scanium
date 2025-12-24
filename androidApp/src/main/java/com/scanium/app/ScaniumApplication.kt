@@ -3,6 +3,8 @@ package com.scanium.app
 import android.app.Application
 import com.scanium.app.crash.AndroidCrashPortAdapter
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.telemetry.*
+import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.ports.CrashPort
 import io.sentry.android.core.SentryAndroid
 import kotlinx.coroutines.CoroutineScope
@@ -21,6 +23,10 @@ class ScaniumApplication : Application() {
 
     // Expose CrashPort for use by Telemetry bridge
     lateinit var crashPort: CrashPort
+        private set
+
+    // Global Telemetry facade instance
+    lateinit var telemetry: Telemetry
         private set
 
     override fun onCreate() {
@@ -92,5 +98,47 @@ class ScaniumApplication : Application() {
             // Use NoOp adapter when Sentry is not configured
             crashPort = com.scanium.telemetry.ports.NoOpCrashPort
         }
+
+        // Initialize OTLP telemetry ports
+        initializeTelemetry()
+    }
+
+    private fun initializeTelemetry() {
+        // Build OTLP configuration from BuildConfig
+        val otlpConfig = if (BuildConfig.OTLP_ENABLED && BuildConfig.OTLP_ENDPOINT.isNotBlank()) {
+            OtlpConfiguration(
+                enabled = true,
+                endpoint = BuildConfig.OTLP_ENDPOINT,
+                environment = if (BuildConfig.DEBUG) "dev" else "prod",
+                serviceVersion = BuildConfig.VERSION_NAME,
+                traceSamplingRate = if (BuildConfig.DEBUG) 0.1 else 0.01, // 10% in dev, 1% in prod
+                debugLogging = BuildConfig.DEBUG
+            ).also {
+                android.util.Log.i(
+                    "ScaniumApplication",
+                    "OTLP telemetry enabled: endpoint=${it.endpoint}, env=${it.environment}, sampling=${it.traceSamplingRate}"
+                )
+            }
+        } else {
+            OtlpConfiguration.DISABLED.also {
+                android.util.Log.i("ScaniumApplication", "OTLP telemetry disabled")
+            }
+        }
+
+        // Create OTLP port implementations
+        val logPort = AndroidLogPortOtlp(otlpConfig)
+        val metricPort = AndroidMetricPortOtlp(otlpConfig)
+        val tracePort = AndroidTracePortOtlp(otlpConfig)
+
+        // Create Telemetry facade
+        telemetry = Telemetry(
+            defaultAttributesProvider = AndroidDefaultAttributesProvider(),
+            logPort = logPort,
+            metricPort = metricPort,
+            tracePort = tracePort,
+            crashPort = crashPort // Bridge telemetry to crash reporting
+        )
+
+        android.util.Log.i("ScaniumApplication", "Telemetry facade initialized")
     }
 }
