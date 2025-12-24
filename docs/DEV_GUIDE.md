@@ -1,9 +1,22 @@
 ***REMOVED*** Developer Guide
 
 ***REMOVED******REMOVED*** Prerequisites
-- JDK 17 (Gradle toolchain auto-detects).
-- Android Studio with Android SDK + emulator or physical device.
-- `local.properties` with `sdk.dir=...` (copy from `local.properties.example`).
+
+***REMOVED******REMOVED******REMOVED*** Android Development
+- JDK 17 (Gradle toolchain auto-detects)
+- Android Studio with Android SDK + emulator or physical device
+- `local.properties` with `sdk.dir=...` (copy from `local.properties.example`)
+
+***REMOVED******REMOVED******REMOVED*** Backend Development
+- Node.js 20+ (LTS recommended)
+- npm or yarn
+- Docker Desktop or Colima (for PostgreSQL and monitoring stack)
+- ngrok (for mobile device testing): `brew install ngrok/ngrok/ngrok`
+
+***REMOVED******REMOVED******REMOVED*** Optional (Observability)
+- Docker Compose V2 (included with Docker Desktop)
+- 4GB RAM available for Docker
+- 10GB disk space for monitoring data
 
 ***REMOVED******REMOVED*** Cloud Classification Setup (config-driven)
 
@@ -132,3 +145,441 @@ See also `hooks/README.md` for pre-push validation setup.
 - Detection overlays live in `androidApp/src/main/java/com/scanium/app/camera/DetectionOverlay.kt`; tweak drawing there.
 - Aggregation/tracking behavior is covered by tests in `androidApp/src/test/...` and `core-tracking/src/test/...`; add golden tests when changing heuristics.
 - For ML Kit analyzer crashes, enable verbose logs in the respective client classes under `androidApp/src/main/java/com/scanium/app/ml/`.
+
+---
+
+***REMOVED******REMOVED*** Backend Development Workflow
+
+***REMOVED******REMOVED******REMOVED*** Quick Start
+
+**One-command startup** (recommended):
+```bash
+***REMOVED*** Start everything: PostgreSQL + backend server + ngrok + monitoring stack
+scripts/backend/start-dev.sh
+
+***REMOVED*** What you get:
+***REMOVED*** ✅ PostgreSQL database (port 5432)
+***REMOVED*** ✅ Backend API server (port 8080)
+***REMOVED*** ✅ ngrok tunnel (public URL for mobile testing)
+***REMOVED*** ✅ Observability stack (Grafana, Loki, Tempo, Mimir, Alloy)
+```
+
+**Skip monitoring** (backend only):
+```bash
+scripts/backend/start-dev.sh --no-monitoring
+```
+
+**Environment variable override**:
+```bash
+MONITORING=0 scripts/backend/start-dev.sh
+```
+
+***REMOVED******REMOVED******REMOVED*** Initial Setup
+
+1. **Install dependencies**:
+   ```bash
+   cd backend
+   npm install
+   ```
+
+2. **Configure environment**:
+   ```bash
+   cp .env.example .env
+   ***REMOVED*** Edit .env with your configuration (DATABASE_URL, API keys, etc.)
+   ```
+
+3. **Run database migrations**:
+   ```bash
+   npm run prisma:migrate
+   ***REMOVED*** Or: npx prisma migrate dev
+   ```
+
+4. **Generate Prisma Client**:
+   ```bash
+   npm run prisma:generate
+   ***REMOVED*** Or: npx prisma generate
+   ```
+
+***REMOVED******REMOVED******REMOVED*** Development Commands
+
+**Start backend** (manual):
+```bash
+cd backend
+npm run dev              ***REMOVED*** Runs with nodemon (auto-restart on changes)
+```
+
+**Database operations**:
+```bash
+***REMOVED*** Run migrations
+npm run prisma:migrate            ***REMOVED*** Apply pending migrations
+npx prisma migrate dev --name <name>  ***REMOVED*** Create new migration
+
+***REMOVED*** Database management
+npx prisma studio                  ***REMOVED*** Open Prisma Studio GUI (localhost:5555)
+npx prisma db push                 ***REMOVED*** Push schema changes without migration
+npx prisma migrate reset           ***REMOVED*** Reset database (⚠️ deletes all data)
+```
+
+**Testing**:
+```bash
+npm test                   ***REMOVED*** Run backend tests
+npm run test:watch         ***REMOVED*** Watch mode
+npm run test:coverage      ***REMOVED*** Coverage report
+```
+
+**Type checking & linting**:
+```bash
+npm run type-check         ***REMOVED*** TypeScript type checking
+npm run lint               ***REMOVED*** ESLint
+npm run format             ***REMOVED*** Prettier formatting
+```
+
+***REMOVED******REMOVED******REMOVED*** Backend API Endpoints
+
+**Health & Status:**
+- `GET /healthz` - Health check (returns `{ status: "ok" }`)
+
+**Authentication (eBay OAuth):**
+- `POST /auth/ebay/start` - Initiate OAuth flow
+- `GET /auth/ebay/callback` - OAuth callback handler
+- `GET /auth/ebay/status` - Connection status
+
+*(Additional endpoints documented in `backend/src/routes/`)*
+
+***REMOVED******REMOVED******REMOVED*** Database Schema Changes
+
+1. **Edit schema**: Modify `backend/prisma/schema.prisma`
+2. **Create migration**: `npx prisma migrate dev --name add_user_table`
+3. **Generate client**: `npx prisma generate` (or `npm run prisma:generate`)
+4. **Test changes**: Run backend tests, verify in Prisma Studio
+5. **Commit migration**: Commit `prisma/migrations/` directory
+
+**Example schema change**:
+```prisma
+// backend/prisma/schema.prisma
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  category    String
+  price       Float?
+  imageUrl    String?
+  userId      String   // Added field
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  items       Item[]
+  createdAt   DateTime @default(now())
+}
+```
+
+***REMOVED******REMOVED******REMOVED*** Mobile Device Testing
+
+1. **Start backend with ngrok**:
+   ```bash
+   scripts/backend/start-dev.sh
+   ***REMOVED*** Note the ngrok URL (e.g., https://abc123.ngrok-free.dev)
+   ```
+
+2. **Update Android app**:
+   ```kotlin
+   // In SettingsScreen.kt or configuration
+   ScaniumApi("https://abc123.ngrok-free.dev")
+   ```
+
+3. **Rebuild and install app**:
+   ```bash
+   ./gradlew installDebug
+   ```
+
+4. **Test from mobile device**:
+   - App connects to backend via ngrok tunnel
+   - View logs in `backend/.dev-server.log`
+   - View telemetry in Grafana (if monitoring enabled)
+
+***REMOVED******REMOVED******REMOVED*** Troubleshooting Backend
+
+**PostgreSQL not starting**:
+```bash
+***REMOVED*** Check container status
+docker ps --filter name=scanium-postgres
+
+***REMOVED*** View logs
+docker logs scanium-postgres
+
+***REMOVED*** Restart container
+docker restart scanium-postgres
+```
+
+**Backend server crashes**:
+```bash
+***REMOVED*** View logs
+tail -f backend/.dev-server.log
+
+***REMOVED*** Check Node.js version
+node --version  ***REMOVED*** Should be 20+
+
+***REMOVED*** Reinstall dependencies
+cd backend && rm -rf node_modules package-lock.json && npm install
+```
+
+**ngrok URL changed**:
+- The start-dev.sh script will prompt you to update `.env`
+- Accept the prompt to automatically update `PUBLIC_BASE_URL`
+- Restart backend server if needed
+
+**Database connection errors**:
+```bash
+***REMOVED*** Check DATABASE_URL in .env
+cat backend/.env | grep DATABASE_URL
+
+***REMOVED*** Test PostgreSQL connection
+docker exec scanium-postgres psql -U scanium -d scanium -c "SELECT 1"
+
+***REMOVED*** Reset database (⚠️ deletes all data)
+cd backend && npx prisma migrate reset
+```
+
+---
+
+***REMOVED******REMOVED*** Observability Stack
+
+***REMOVED******REMOVED******REMOVED*** Overview
+
+Scanium uses the **LGTM stack** (Loki, Grafana, Tempo, Mimir) + Grafana Alloy for comprehensive observability:
+
+- **Grafana**: Visualization dashboards (port 3000)
+- **Alloy**: OpenTelemetry receiver (ports 4317 gRPC, 4318 HTTP)
+- **Loki**: Log aggregation (14-day retention)
+- **Tempo**: Distributed tracing (7-day retention)
+- **Mimir**: Prometheus-compatible metrics (15-day retention)
+
+***REMOVED******REMOVED******REMOVED*** Access Monitoring
+
+**View all URLs and health status**:
+```bash
+scripts/monitoring/print-urls.sh
+```
+
+**Common URLs**:
+- Grafana: http://localhost:3000 (anonymous admin access in dev)
+- Alloy OTLP gRPC: localhost:4317 (for telemetry ingestion)
+- Alloy OTLP HTTP: http://localhost:4318
+- Alloy UI: http://localhost:12345 (localhost only, debugging)
+- Loki: http://localhost:3100 (internal, access via Grafana)
+- Tempo: http://localhost:3200 (internal, access via Grafana)
+- Mimir: http://localhost:9009 (internal, access via Grafana)
+
+***REMOVED******REMOVED******REMOVED*** Managing Monitoring Stack
+
+**Start monitoring stack** (standalone):
+```bash
+scripts/monitoring/start-monitoring.sh
+```
+
+**Stop monitoring stack**:
+```bash
+scripts/monitoring/stop-monitoring.sh
+
+***REMOVED*** Or with backend
+scripts/backend/stop-dev.sh --with-monitoring
+```
+
+**View logs**:
+```bash
+***REMOVED*** All services
+docker compose -p scanium-monitoring logs -f
+
+***REMOVED*** Specific service
+docker compose -p scanium-monitoring logs -f grafana
+docker compose -p scanium-monitoring logs -f alloy
+docker compose -p scanium-monitoring logs -f loki
+```
+
+**Restart a service**:
+```bash
+docker compose -p scanium-monitoring restart grafana
+```
+
+**Health checks**:
+```bash
+***REMOVED*** Grafana
+curl http://localhost:3000/api/health
+
+***REMOVED*** Loki
+curl http://localhost:3100/ready
+
+***REMOVED*** Tempo
+curl http://localhost:3200/ready
+
+***REMOVED*** Mimir
+curl http://localhost:9009/ready
+
+***REMOVED*** Or use the helper script
+scripts/monitoring/print-urls.sh  ***REMOVED*** Shows health status of all services
+```
+
+***REMOVED******REMOVED******REMOVED*** Dashboards
+
+**Pre-provisioned dashboards** are in `monitoring/grafana/dashboards/`:
+- Pipeline health metrics (LGTM stack self-observability)
+- Backend API performance
+- *(Add custom dashboards as JSON files here)*
+
+**Add a new dashboard**:
+1. Create dashboard in Grafana UI (http://localhost:3000)
+2. Export as JSON
+3. Save to `monitoring/grafana/dashboards/my-dashboard.json`
+4. Restart Grafana: `docker compose -p scanium-monitoring restart grafana`
+
+***REMOVED******REMOVED******REMOVED*** Data Persistence
+
+**Data stored in** `monitoring/data/`:
+- `grafana/` - Dashboard settings, users, preferences
+- `loki/` - Log data
+- `tempo/` - Trace data
+- `mimir/` - Metrics data
+
+**Reset all data**:
+```bash
+***REMOVED*** ⚠️ This deletes all monitoring data
+rm -rf monitoring/data/*
+
+***REMOVED*** Recreate containers
+docker compose -p scanium-monitoring down
+docker compose -p scanium-monitoring up -d
+```
+
+***REMOVED******REMOVED******REMOVED*** Configuring Retention
+
+Edit retention in config files:
+
+**Loki** (`monitoring/loki/loki.yaml`):
+```yaml
+limits_config:
+  retention_period: 336h  ***REMOVED*** 14 days (default)
+```
+
+**Tempo** (`monitoring/tempo/tempo.yaml`):
+```yaml
+compactor:
+  compaction:
+    block_retention: 168h  ***REMOVED*** 7 days (default)
+```
+
+**Mimir** (`monitoring/mimir/mimir.yaml`):
+```yaml
+limits:
+  compactor_blocks_retention_period: 360h  ***REMOVED*** 15 days (default)
+```
+
+After editing, restart containers:
+```bash
+docker compose -p scanium-monitoring down
+docker compose -p scanium-monitoring up -d
+```
+
+***REMOVED******REMOVED******REMOVED*** Sending Telemetry
+
+**From backend** (OpenTelemetry SDK):
+```typescript
+// Backend automatically exports to Alloy
+// Configured in backend/src/index.ts
+// OTLP endpoint: http://localhost:4318 (HTTP)
+```
+
+**From Android app** (future):
+```kotlin
+// Configure OTLP exporter to send to Alloy
+// Use local.properties to configure endpoint:
+scanium.otlp.enabled=true
+scanium.otlp.endpoint=http://<lan-ip>:4318
+```
+
+***REMOVED******REMOVED******REMOVED*** Troubleshooting Monitoring
+
+**Grafana not accessible**:
+```bash
+***REMOVED*** Check if running
+docker ps --filter name=scanium-grafana
+
+***REMOVED*** View logs
+docker compose -p scanium-monitoring logs grafana
+
+***REMOVED*** Restart
+docker compose -p scanium-monitoring restart grafana
+```
+
+**No data in dashboards**:
+1. Check datasources are configured: Grafana → Connections → Data sources
+2. Verify Alloy is receiving data: http://localhost:12345
+3. Check backend is exporting telemetry (logs in `.dev-server.log`)
+4. Verify Loki/Tempo/Mimir are healthy: `scripts/monitoring/print-urls.sh`
+
+**Containers not starting**:
+```bash
+***REMOVED*** Check Docker daemon
+docker info
+
+***REMOVED*** View compose logs
+docker compose -p scanium-monitoring logs
+
+***REMOVED*** Check disk space
+df -h  ***REMOVED*** Need 10GB for data storage
+
+***REMOVED*** Check Docker resources
+docker stats  ***REMOVED*** Ensure 4GB RAM available
+```
+
+**Pre-existing config issue (Tempo)**:
+- Known issue: Tempo config has deprecated field (line 67)
+- Stack will work with Loki and Mimir; Tempo may restart
+- Fix by updating `monitoring/tempo/tempo.yaml` (separate task)
+
+---
+
+***REMOVED******REMOVED*** Development Workflow Summary
+
+***REMOVED******REMOVED******REMOVED*** Full Stack Development
+
+1. **Start everything**:
+   ```bash
+   scripts/backend/start-dev.sh  ***REMOVED*** Backend + PostgreSQL + ngrok + monitoring
+   ```
+
+2. **Develop Android app**:
+   ```bash
+   ./gradlew installDebug        ***REMOVED*** Build and install on device
+   ```
+
+3. **View telemetry**:
+   - Open Grafana: http://localhost:3000
+   - Explore logs, traces, metrics
+
+4. **Stop services**:
+   ```bash
+   scripts/backend/stop-dev.sh --with-monitoring
+   ```
+
+***REMOVED******REMOVED******REMOVED*** Backend-Only Development
+
+1. **Start backend** (no monitoring):
+   ```bash
+   scripts/backend/start-dev.sh --no-monitoring
+   ```
+
+2. **Develop and test**:
+   ```bash
+   cd backend
+   npm run dev          ***REMOVED*** Auto-restart on changes
+   npm test             ***REMOVED*** Run tests
+   ```
+
+3. **Stop backend**:
+   ```bash
+   scripts/backend/stop-dev.sh
+   ```

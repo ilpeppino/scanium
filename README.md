@@ -66,19 +66,14 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
 
 ***REMOVED******REMOVED*** Tech Stack
 
-***REMOVED******REMOVED******REMOVED*** Core Technologies
+***REMOVED******REMOVED******REMOVED*** Android Application
 - **Kotlin** - Primary programming language
 - **Jetpack Compose** - Modern declarative UI framework
 - **Material 3** - Material Design components and theming with Scanium branding
-
-***REMOVED******REMOVED******REMOVED*** Camera & ML
 - **CameraX** - Camera API for preview and image capture
 - **ML Kit Object Detection** - On-device object detection and classification with tracking
 - **ML Kit Barcode Scanning** - On-device barcode and QR code scanning
 - **Image Analysis** - Real-time video stream processing with multi-frame candidate tracking
-- **Sound Effects** - Camera shutter sound feedback
-
-***REMOVED******REMOVED******REMOVED*** Architecture & State
 - **MVVM Pattern** - ViewModel-based architecture
 - **Kotlin Coroutines** - Asynchronous programming
 - **StateFlow** - Reactive state management
@@ -86,12 +81,54 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
 - **Lifecycle Components** - Android lifecycle-aware components
 - **Kotlinx Serialization** - JSON parsing for Domain Pack configuration
 
+***REMOVED******REMOVED******REMOVED*** Backend Services
+- **Node.js + TypeScript** - Backend API server
+- **Prisma** - Database ORM and migrations
+- **PostgreSQL** - Primary database
+- **Express.js** - HTTP server framework
+- **ngrok** - Development tunneling for mobile device testing
+- **Docker Compose** - Container orchestration for local development
+
+***REMOVED******REMOVED******REMOVED*** Observability Stack (LGTM + Alloy)
+- **Grafana** - Visualization dashboards and alerting
+- **Alloy** - OpenTelemetry (OTLP) receiver and router
+- **Loki** - Log aggregation and storage
+- **Tempo** - Distributed tracing backend
+- **Mimir** - Prometheus-compatible metrics storage
+- **Docker Compose** - Containerized observability infrastructure
+
 ***REMOVED******REMOVED*** Architecture
 
-The project follows a **Simplified MVVM architecture** with feature-based package organization:
+Scanium is a **full-stack mobile application** consisting of three main components:
+
+***REMOVED******REMOVED******REMOVED*** System Overview
 
 ```
-app/src/main/java/com/scanium/app/
+┌─────────────────────────────────────────────────────────────────┐
+│                      Android Application                        │
+│  (Kotlin + Compose + ML Kit + CameraX)                         │
+└────────────────────┬────────────────────────────────────────────┘
+                     │ HTTPS (ngrok tunnel in dev)
+                     │ OTLP telemetry (Alloy)
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Backend API Server                           │
+│  (Node.js + TypeScript + Prisma + PostgreSQL)                  │
+└────────────────────┬────────────────────────────────────────────┘
+                     │ OpenTelemetry
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Observability Stack (LGTM + Alloy)                │
+│  Grafana → Loki (logs) + Tempo (traces) + Mimir (metrics)      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+***REMOVED******REMOVED******REMOVED*** Android Application
+
+The Android app follows a **Simplified MVVM architecture** with feature-based package organization:
+
+```
+androidApp/src/main/java/com/scanium/app/
 ├── camera/          ***REMOVED*** Camera functionality, CameraX, mode switching
 ├── domain/          ***REMOVED*** Domain Pack system (config, repository, category engine)
 ├── items/           ***REMOVED*** Detected items management and display
@@ -105,7 +142,36 @@ app/src/main/java/com/scanium/app/
 └── navigation/      ***REMOVED*** Navigation graph setup
 ```
 
-For detailed architecture documentation, see [ARCHITECTURE.md](./md/architecture/ARCHITECTURE.md).
+***REMOVED******REMOVED******REMOVED*** Backend Services
+
+```
+backend/
+├── src/
+│   ├── index.ts            ***REMOVED*** Express server entry point
+│   ├── routes/             ***REMOVED*** API endpoints
+│   ├── services/           ***REMOVED*** Business logic
+│   └── middleware/         ***REMOVED*** Auth, validation, error handling
+├── prisma/
+│   ├── schema.prisma       ***REMOVED*** Database schema
+│   └── migrations/         ***REMOVED*** Version-controlled schema changes
+└── docker-compose.yml      ***REMOVED*** PostgreSQL container
+```
+
+***REMOVED******REMOVED******REMOVED*** Observability Infrastructure
+
+```
+monitoring/
+├── docker-compose.yml      ***REMOVED*** LGTM stack + Alloy services
+├── grafana/
+│   ├── provisioning/       ***REMOVED*** Auto-configured datasources
+│   └── dashboards/         ***REMOVED*** Pre-built visualization dashboards
+├── alloy/alloy.hcl         ***REMOVED*** OTLP routing configuration
+├── loki/loki.yaml          ***REMOVED*** Log aggregation config
+├── tempo/tempo.yaml        ***REMOVED*** Distributed tracing config
+└── mimir/mimir.yaml        ***REMOVED*** Metrics storage config
+```
+
+For detailed architecture documentation, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/features/TRACKING_IMPLEMENTATION.md).
 
 ***REMOVED******REMOVED******REMOVED*** Key Architectural Decisions
@@ -128,6 +194,8 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/featu
 
 For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SETUP.md](./SETUP.md).
 
+***REMOVED******REMOVED******REMOVED*** Android Application Setup
+
 **Quick Start:**
 
 1. Clone the repository:
@@ -144,6 +212,55 @@ For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SET
    ```
 
 4. Run the app on an emulator or physical device
+
+***REMOVED******REMOVED******REMOVED*** Backend Development Setup
+
+**Prerequisites:**
+- Node.js 20+
+- Docker (for PostgreSQL and monitoring stack)
+- ngrok (for mobile device testing)
+
+**One-Command Startup (Recommended):**
+
+```bash
+***REMOVED*** Start backend + monitoring stack together
+scripts/backend/start-dev.sh
+
+***REMOVED*** This automatically starts:
+***REMOVED*** - PostgreSQL database
+***REMOVED*** - Backend API server (port 8080)
+***REMOVED*** - ngrok tunnel (for mobile testing)
+***REMOVED*** - Observability stack (Grafana, Loki, Tempo, Mimir, Alloy)
+```
+
+**What You Get:**
+- Backend API: http://localhost:8080
+- ngrok Public URL: Displayed in terminal (update mobile app with this URL)
+- Grafana Dashboards: http://localhost:3000
+- OTLP Endpoints: localhost:4317 (gRPC), localhost:4318 (HTTP)
+- Health checks and status for all services
+
+**Options:**
+```bash
+***REMOVED*** Skip monitoring stack
+scripts/backend/start-dev.sh --no-monitoring
+
+***REMOVED*** Stop all services
+scripts/backend/stop-dev.sh
+
+***REMOVED*** Stop including monitoring
+scripts/backend/stop-dev.sh --with-monitoring
+
+***REMOVED*** View monitoring URLs and health status
+scripts/monitoring/print-urls.sh
+```
+
+**Backend Configuration:**
+1. Copy `.env.example` to `.env` in the `backend/` directory
+2. Configure required environment variables
+3. Run database migrations: `cd backend && npm run prisma:migrate`
+
+See [docs/DEV_GUIDE.md](./docs/DEV_GUIDE.md) and [monitoring/README.md](./monitoring/README.md) for detailed setup instructions.
 
 ***REMOVED******REMOVED*** Building
 
@@ -177,16 +294,35 @@ scanium/
 ├── androidApp/                ***REMOVED*** Compose UI + feature orchestration
 │   ├── camera/                ***REMOVED*** CameraScreen, CameraXManager, DetectionOverlay
 │   ├── items/                 ***REMOVED*** ItemsListScreen, ItemDetailDialog, ItemsViewModel
-│   ├── ml/                    ***REMOVED*** ObjectDetectorClient, BarcodeScannerClient, DocumentTextRecognitionClient, PricingEngine
+│   ├── ml/                    ***REMOVED*** ObjectDetectorClient, BarcodeScannerClient, PricingEngine
 │   ├── navigation/            ***REMOVED*** ScaniumNavGraph + routes
 │   └── ui/                    ***REMOVED*** Material 3 theme and shared components
 ├── android-platform-adapters/ ***REMOVED*** Bitmap/Rect adapters → ImageRef/NormalizedRect
 ├── android-camera-camerax/    ***REMOVED*** CameraX helpers
 ├── android-ml-mlkit/          ***REMOVED*** ML Kit plumbing
-├── core-models/               ***REMOVED*** Portable models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
-├── core-tracking/             ***REMOVED*** Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
-├── core-domainpack/, core-scan/, core-contracts/ ***REMOVED*** Shared contracts and config stubs
-├── md/                        ***REMOVED*** Architecture, features, testing, fixes, improvements, debugging
+├── core-models/               ***REMOVED*** Portable models (ScannedItem, ImageRef, NormalizedRect)
+├── core-tracking/             ***REMOVED*** Tracking math (ObjectTracker, AggregatedItem)
+├── core-domainpack/, core-scan/, core-contracts/ ***REMOVED*** Shared contracts
+├── backend/                   ***REMOVED*** Node.js API server
+│   ├── src/                   ***REMOVED*** TypeScript source (routes, services, middleware)
+│   ├── prisma/                ***REMOVED*** Database schema and migrations
+│   ├── docker-compose.yml     ***REMOVED*** PostgreSQL container
+│   └── .env                   ***REMOVED*** Environment configuration (gitignored)
+├── monitoring/                ***REMOVED*** Observability stack (LGTM + Alloy)
+│   ├── docker-compose.yml     ***REMOVED*** Grafana, Loki, Tempo, Mimir, Alloy
+│   ├── grafana/               ***REMOVED*** Dashboards and datasource provisioning
+│   ├── alloy/                 ***REMOVED*** OTLP routing configuration
+│   ├── loki/, tempo/, mimir/  ***REMOVED*** Backend storage configs
+│   └── data/                  ***REMOVED*** Persistent data volumes (gitignored)
+├── scripts/                   ***REMOVED*** Build and development automation
+│   ├── backend/               ***REMOVED*** Backend dev scripts (start-dev, stop-dev)
+│   ├── monitoring/            ***REMOVED*** Monitoring scripts (start, stop, print-urls)
+│   └── build.sh               ***REMOVED*** Java 17 auto-detection for Android builds
+├── docs/                      ***REMOVED*** Project documentation
+│   ├── ARCHITECTURE.md        ***REMOVED*** System architecture
+│   ├── DEV_GUIDE.md           ***REMOVED*** Development workflow
+│   └── CODEX_CONTEXT.md       ***REMOVED*** Agent quickmap
+├── md/                        ***REMOVED*** Feature docs, fixes, testing guides
 ├── AGENTS.md
 ├── ROADMAP.md
 └── README.md

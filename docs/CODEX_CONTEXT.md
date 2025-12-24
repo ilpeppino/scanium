@@ -2,6 +2,8 @@
 - Update rule: when adding a module, append a row to the module table + dependency graph; when adding a feature area, add one bullet to TL;DR + Feature-routing.
 
 ***REMOVED******REMOVED*** A) TL;DR Map (feature → touchpoints)
+
+***REMOVED******REMOVED******REMOVED*** Android Application
 - App shell/nav: `androidApp/src/main/java/com/scanium/app/MainActivity.kt`, `navigation/NavGraph.kt`, `ScaniumApp.kt`.
 - Camera UI/preview/gestures/overlays: `androidApp/src/main/java/com/scanium/app/camera/` (CameraScreen, CameraXManager, DetectionOverlay).
 - ML analyzers (objects/barcodes/OCR/pricing/cloud): `androidApp/src/main/java/com/scanium/app/ml/`.
@@ -13,7 +15,34 @@
 - Camera/ML platform adapters: `android-platform-adapters/src/main/java/com/scanium/android/platform/adapters/` (Bitmap/ImageRef, Rect/NormalizedRect).
 - Platform ML/camera shells (namespaces only): `android-ml-mlkit`, `android-camera-camerax` (no sources expected).
 - Shared test utilities: `shared/test-utils` used by shared modules; Android tests in `androidApp/src/test` and `src/androidTest`.
-- Architecture refs: [`docs/ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/DOMAIN_PACK_ARCHITECTURE.md`](DOMAIN_PACK_ARCHITECTURE.md) if present, [`README.md`](../README.md).
+
+***REMOVED******REMOVED******REMOVED*** Backend Services
+- Backend entry point: `backend/src/index.ts` (Express server setup, middleware, OpenTelemetry).
+- API routes: `backend/src/routes/` (items.ts, auth/, health.ts).
+- Business logic: `backend/src/services/` (item management, auth, external integrations).
+- Database schema: `backend/prisma/schema.prisma` (Prisma models, relations, migrations).
+- Database container: `backend/docker-compose.yml` (PostgreSQL 16).
+- Environment config: `backend/.env` (API keys, database URL, ngrok settings - gitignored).
+
+***REMOVED******REMOVED******REMOVED*** Observability Stack
+- Monitoring stack: `monitoring/docker-compose.yml` (Grafana, Loki, Tempo, Mimir, Alloy).
+- Grafana dashboards: `monitoring/grafana/dashboards/` (pre-provisioned visualizations).
+- Grafana datasources: `monitoring/grafana/provisioning/datasources/` (Loki, Tempo, Mimir).
+- Alloy config: `monitoring/alloy/alloy.hcl` (OTLP routing rules).
+- Backend configs: `monitoring/{loki,tempo,mimir}/*.yaml` (retention, storage).
+
+***REMOVED******REMOVED******REMOVED*** Development Scripts
+- Integrated startup: `scripts/backend/start-dev.sh` (backend + PostgreSQL + ngrok + monitoring).
+- Integrated shutdown: `scripts/backend/stop-dev.sh` (with optional --with-monitoring).
+- Monitoring management: `scripts/monitoring/{start,stop,print-urls}.sh`.
+- Android build: `scripts/build.sh` (Java 17 auto-detection).
+
+***REMOVED******REMOVED******REMOVED*** Architecture Documentation
+- [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) - Full system architecture (Android + backend + observability).
+- [`docs/DEV_GUIDE.md`](DEV_GUIDE.md) - Development workflow and setup.
+- [`docs/DOMAIN_PACK_ARCHITECTURE.md`](DOMAIN_PACK_ARCHITECTURE.md) - Domain pack system (if present).
+- [`README.md`](../README.md) - Project overview and quick start.
+- [`monitoring/README.md`](../monitoring/README.md) - Observability stack guide.
 
 ***REMOVED******REMOVED*** B) Module Table
 | Module | Responsibility | Inputs / Outputs | Do / Don’t | Key files |
@@ -46,6 +75,8 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 ```
 
 ***REMOVED******REMOVED*** D) Feature-routing Cheat Sheet
+
+***REMOVED******REMOVED******REMOVED*** Android Application
 - UI tweak/navigation: `androidApp` → `navigation/NavGraph.kt`, relevant screen under `camera/`, `items/`, `selling/`, `ui/theme/`.
 - Camera behavior (preview, focus, analyzer thread): `androidApp/camera/CameraXManager.kt`, `CameraScreen.kt`, `DetectionOverlay.kt`.
 - ML behavior (detectors/pricing/cloud): `androidApp/ml/ObjectDetectorClient.kt`, `BarcodeScannerClient.kt`, `DocumentTextRecognitionClient.kt`, `PricingEngine.kt`, `DetectionLogger.kt`.
@@ -56,6 +87,31 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Persistence (drafts/DataStore/Room): `androidApp/src/main/java/com/scanium/app/data/*`, Room entities/DAOs if added; selling cache in `selling/data/*`.
 - Platform adapters (Bitmap/Rect ↔ shared): `android-platform-adapters` extension functions.
 - Tests: fast shared logic → `shared:core-tracking` & `shared:core-models` JVM tests; Android features → `androidApp/src/test` or `src/androidTest`.
+
+***REMOVED******REMOVED******REMOVED*** Backend Services
+- API endpoints: `backend/src/routes/` (add new routes here).
+- Business logic: `backend/src/services/` (service layer, external API calls).
+- Database schema changes: `backend/prisma/schema.prisma` → run `npx prisma migrate dev`.
+- Database queries: Use Prisma Client (`backend/src/services/*`).
+- Environment variables: `backend/.env` (never commit; use `.env.example` for templates).
+- Server config: `backend/src/index.ts` (middleware, CORS, OpenTelemetry).
+- Health checks: `backend/src/routes/health.ts`.
+
+***REMOVED******REMOVED******REMOVED*** Observability & Monitoring
+- Add dashboard: Create JSON in `monitoring/grafana/dashboards/`, restart Grafana.
+- Modify retention: Edit `monitoring/{loki,tempo,mimir}/*.yaml`, recreate containers.
+- OTLP routing changes: `monitoring/alloy/alloy.hcl`, restart Alloy container.
+- View logs: `docker compose -p scanium-monitoring logs -f [service]`.
+- Health checks: `scripts/monitoring/print-urls.sh`.
+
+***REMOVED******REMOVED******REMOVED*** Development Workflow
+- Start full dev environment: `scripts/backend/start-dev.sh` (backend + monitoring).
+- Start backend only: `scripts/backend/start-dev.sh --no-monitoring`.
+- Stop everything: `scripts/backend/stop-dev.sh --with-monitoring`.
+- View monitoring URLs: `scripts/monitoring/print-urls.sh`.
+- Backend logs: `tail -f backend/.dev-server.log`.
+- Database migrations: `cd backend && npx prisma migrate dev`.
+- Reset database: `cd backend && npx prisma migrate reset`.
 
 ***REMOVED******REMOVED*** E) Change Safety Checklist
 - Run fast checks: `./gradlew prePushJvmCheck` (shared JVM tests + portability), `./gradlew test` (unit), `./gradlew assembleDebug` (app builds), `./gradlew lint` when touching UI/Android.
