@@ -1,7 +1,11 @@
 package com.scanium.app.crash
 
+import android.util.Log
+import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.ports.CrashPort
+import io.sentry.Attachment
 import io.sentry.Breadcrumb
+import io.sentry.Hint
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 
@@ -11,32 +15,36 @@ import io.sentry.SentryLevel
  * This adapter bridges the vendor-neutral CrashPort interface to the Sentry Android SDK.
  * It translates CrashPort operations (tags, breadcrumbs, exceptions) into Sentry-specific calls.
  *
+ * ## Diagnostics Bundle Attachment
+ * If a [DiagnosticsPort] is provided, diagnostics bundles are automatically attached to all
+ * captured exceptions. The bundle contains:
+ * - Recent telemetry events (breadcrumbs from Telemetry facade)
+ * - Application context (platform, version, build, env, session_id)
+ * - Generation timestamp
+ *
+ * Bundle size is capped at [MAX_ATTACHMENT_BYTES] (128KB) to comply with Sentry limits.
+ *
  * ## Initialization
  * ```kotlin
  * // In Application.onCreate():
- * SentryAndroid.init(context) { options ->
- *     options.dsn = BuildConfig.SENTRY_DSN
- *     options.isEnableAutoSessionTracking = true
- *     options.beforeSend = ...  // User consent filtering
- * }
- *
- * val crashPort: CrashPort = AndroidCrashPortAdapter()
+ * val diagnosticsPort = DefaultDiagnosticsPort(...)
+ * val crashPort = AndroidCrashPortAdapter(diagnosticsPort)
  *
  * // Set required tags
  * crashPort.setTag("platform", "android")
  * crashPort.setTag("app_version", BuildConfig.VERSION_NAME)
- * crashPort.setTag("build", BuildConfig.VERSION_CODE.toString())
- * crashPort.setTag("env", if (BuildConfig.DEBUG) "dev" else "prod")
  * ```
  *
  * ## Thread Safety
  * Sentry SDK is thread-safe, so this adapter is also thread-safe.
  *
- * ## User Consent
- * User consent for crash reporting should be handled in the Sentry `beforeSend` callback
- * during initialization, not in this adapter.
+ * @param diagnosticsPort Optional diagnostics port for attaching diagnostic bundles to crash reports
  */
-class AndroidCrashPortAdapter : CrashPort {
+class AndroidCrashPortAdapter(
+    private val diagnosticsPort: DiagnosticsPort? = null
+) : CrashPort {
+
+    private val tag = "AndroidCrashPortAdapter"
 
     /**
      * Sets a Sentry tag.
@@ -89,6 +97,7 @@ class AndroidCrashPortAdapter : CrashPort {
      * - All tags set via setTag()
      * - All recent breadcrumbs
      * - Custom attributes passed to this method
+     * - Diagnostics bundle attachment (if diagnosticsPort provided)
      *
      * @param throwable The exception to report
      * @param attributes Additional context as key-value pairs (added as Sentry "extras")
@@ -99,6 +108,46 @@ class AndroidCrashPortAdapter : CrashPort {
             attributes.forEach { (key, value) ->
                 scope.setExtra(key, value)
             }
+
+            // Attach diagnostics bundle if available
+            if (diagnosticsPort != null) {
+                try {
+                    val bundleBytes = diagnosticsPort.buildDiagnosticsBundle()
+
+                    // Enforce size limit (128KB max)
+                    if (bundleBytes.size > MAX_ATTACHMENT_BYTES) {
+                        Log.w(tag, "Diagnostics bundle too large (${bundleBytes.size} bytes), capping to $MAX_ATTACHMENT_BYTES bytes")
+                        val cappedBytes = bundleBytes.copyOf(MAX_ATTACHMENT_BYTES)
+                        scope.addAttachment(
+                            Attachment(
+                                cappedBytes,
+                                "diagnostics-capped.json",
+                                "application/json"
+                            )
+                        )
+                    } else {
+                        scope.addAttachment(
+                            Attachment(
+                                bundleBytes,
+                                "diagnostics.json",
+                                "application/json"
+                            )
+                        )
+                        Log.d(tag, "Attached diagnostics bundle (${bundleBytes.size} bytes, ${diagnosticsPort.breadcrumbCount()} events)")
+                    }
+                } catch (e: Exception) {
+                    Log.e(tag, "Failed to attach diagnostics bundle", e)
+                    // Don't fail the exception capture if diagnostics fail
+                }
+            }
         }
+    }
+
+    companion object {
+        /**
+         * Maximum size for diagnostics bundle attachment (128KB).
+         * This ensures we don't exceed Sentry's attachment size limits.
+         */
+        const val MAX_ATTACHMENT_BYTES = 128 * 1024  // 128KB
     }
 }

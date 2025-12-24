@@ -4,6 +4,8 @@ import android.app.Application
 import com.scanium.app.crash.AndroidCrashPortAdapter
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.telemetry.*
+import com.scanium.diagnostics.DefaultDiagnosticsPort
+import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.ports.CrashPort
 import io.sentry.android.core.SentryAndroid
@@ -25,6 +27,10 @@ class ScaniumApplication : Application() {
     lateinit var crashPort: CrashPort
         private set
 
+    // Expose DiagnosticsPort for use by Developer Settings
+    lateinit var diagnosticsPort: DiagnosticsPort
+        private set
+
     // Global Telemetry facade instance
     lateinit var telemetry: Telemetry
         private set
@@ -34,6 +40,21 @@ class ScaniumApplication : Application() {
 
         val settingsRepository = SettingsRepository(this)
         val classificationPreferences = com.scanium.app.data.ClassificationPreferences(this)
+
+        // Initialize DiagnosticsPort (shared buffer for crash-time diagnostics)
+        diagnosticsPort = DefaultDiagnosticsPort(
+            contextProvider = {
+                mapOf(
+                    "platform" to "android",
+                    "app_version" to BuildConfig.VERSION_NAME,
+                    "build" to BuildConfig.VERSION_CODE.toString(),
+                    "env" to if (BuildConfig.DEBUG) "dev" else "prod",
+                    "session_id" to com.scanium.app.logging.CorrelationIds.currentClassificationSessionId()
+                )
+            },
+            maxEvents = 200,  // Keep last 200 events
+            maxBytes = 128 * 1024  // 128KB max (will be enforced again at attachment time)
+        )
 
         // Initialize Sentry via CrashPort adapter
         val sentryDsn = BuildConfig.SENTRY_DSN
@@ -56,8 +77,8 @@ class ScaniumApplication : Application() {
                 }
             }
 
-            // Create CrashPort adapter
-            crashPort = AndroidCrashPortAdapter()
+            // Create CrashPort adapter with diagnostics attachment
+            crashPort = AndroidCrashPortAdapter(diagnosticsPort)
 
             // Set required tags
             crashPort.setTag("platform", "android")
@@ -139,16 +160,17 @@ class ScaniumApplication : Application() {
         val metricPort = AndroidMetricPortOtlp(telemetryConfig, otlpConfig)
         val tracePort = AndroidTracePortOtlp(telemetryConfig, otlpConfig)
 
-        // Create Telemetry facade with config
+        // Create Telemetry facade with config and diagnostics
         telemetry = Telemetry(
             config = telemetryConfig,
             defaultAttributesProvider = AndroidDefaultAttributesProvider(),
             logPort = logPort,
             metricPort = metricPort,
             tracePort = tracePort,
-            crashPort = crashPort // Bridge telemetry to crash reporting
+            crashPort = crashPort, // Bridge telemetry to crash reporting
+            diagnosticsPort = diagnosticsPort // Collect breadcrumbs for crash-time attachment
         )
 
-        android.util.Log.i("ScaniumApplication", "Telemetry facade initialized")
+        android.util.Log.i("ScaniumApplication", "Telemetry facade initialized with diagnostics collection")
     }
 }

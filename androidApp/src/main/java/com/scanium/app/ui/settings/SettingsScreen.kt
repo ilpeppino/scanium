@@ -221,8 +221,15 @@ fun SettingsScreen(
                     icon = Icons.Default.BugReport,
                     onClick = { viewModel.triggerCrashTest(throwCrash = false) }
                 )
+
+                SettingsItem(
+                    title = "Test Diagnostics Bundle",
+                    subtitle = "Capture exception with diagnostics.json attachment",
+                    icon = Icons.Default.BugReport,
+                    onClick = { viewModel.triggerDiagnosticsTest() }
+                )
             }
-            
+
             Spacer(modifier = Modifier.height(32.dp))
             
             Text(
