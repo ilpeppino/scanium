@@ -22,6 +22,9 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -667,6 +670,67 @@ private fun CameraPreview(
 }
 
 /**
+ * Icon-based scan mode selector for the top bar.
+ *
+ * Displays three icons horizontally with clear selected state styling.
+ * Touch targets are at least 48dp for accessibility.
+ *
+ * @param currentMode The currently selected scan mode
+ * @param onModeChanged Callback when the user selects a different mode
+ * @param modifier Optional modifier for the selector container
+ */
+@Composable
+private fun ScanModeIconSelector(
+    currentMode: ScanMode,
+    onModeChanged: (ScanMode) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        ScanMode.values().forEach { mode ->
+            val isSelected = mode == currentMode
+            val icon = when (mode) {
+                ScanMode.OBJECT_DETECTION -> Icons.Outlined.Category
+                ScanMode.BARCODE -> Icons.Outlined.QrCodeScanner
+                ScanMode.DOCUMENT_TEXT -> Icons.Outlined.Description
+            }
+            val contentDescription = when (mode) {
+                ScanMode.OBJECT_DETECTION -> "Items mode"
+                ScanMode.BARCODE -> "Barcode mode"
+                ScanMode.DOCUMENT_TEXT -> "Document mode"
+            }
+
+            IconButton(
+                onClick = { onModeChanged(mode) },
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = if (isSelected) {
+                            Color.White.copy(alpha = 0.25f)
+                        } else {
+                            Color.Black.copy(alpha = 0.5f)
+                        },
+                        shape = MaterialTheme.shapes.small
+                    )
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    tint = if (isSelected) {
+                        Color.White
+                    } else {
+                        Color.White.copy(alpha = 0.6f)
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
  * Overlay UI on top of camera preview.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -687,82 +751,80 @@ private fun BoxScope.CameraOverlay(
     onFlipCamera: () -> Unit,
     isFlipEnabled: Boolean
 ) {
-    // Top bar
+    // Top bar with three-slot layout: hamburger (left), mode icons (center), logo (right)
     Row(
         modifier = Modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()
             .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = onOpenSettings,
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    Color.Black.copy(alpha = 0.5f),
-                    shape = MaterialTheme.shapes.small
-                )
+        // Left slot: Hamburger menu (fixed width)
+        Box(
+            modifier = Modifier.width(48.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
-            Icon(
-                imageVector = Icons.Default.Menu,
-                contentDescription = "Open settings",
-                tint = Color.White
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.5f),
+                        shape = MaterialTheme.shapes.small
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Menu,
+                    contentDescription = "Open settings",
+                    tint = Color.White
+                )
+            }
+        }
+
+        // Center slot: Mode icon selector (fills remaining space, centered)
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            ScanModeIconSelector(
+                currentMode = scanMode,
+                onModeChanged = onModeChanged
             )
         }
 
+        // Right slot: Scanium logo (fixed width)
         Box(
-            modifier = Modifier
-                .size(48.dp)
-                .background(
-                    Color.Black.copy(alpha = 0.5f),
-                    shape = MaterialTheme.shapes.small
-                ),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.width(48.dp),
+            contentAlignment = Alignment.CenterEnd
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.scanium_logo),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
-            )
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.5f),
+                        shape = MaterialTheme.shapes.small
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.scanium_logo),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+            }
         }
     }
 
-    // Bottom UI: Mode switcher and shutter button
+    // Bottom UI: Shutter button and controls
     Column(
         modifier = Modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Current mode indicator for clarity
-        Text(
-            text = when (scanMode) {
-                ScanMode.OBJECT_DETECTION -> "Object Detection"
-                ScanMode.BARCODE -> "Barcode Scanner"
-                ScanMode.DOCUMENT_TEXT -> "Text Recognition"
-            },
-            style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.9f),
-            modifier = Modifier
-                .background(
-                    Color.Black.copy(alpha = 0.4f),
-                    shape = MaterialTheme.shapes.small
-                )
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-        )
-
-        // Mode switcher (always visible)
-        ModeSwitcher(
-            currentMode = scanMode,
-            onModeChanged = onModeChanged,
-            modifier = Modifier
-        )
-
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
