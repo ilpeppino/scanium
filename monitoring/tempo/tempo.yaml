@@ -62,14 +62,6 @@ metrics_generator:
     remote_write:
       - url: http://mimir:9009/api/v1/push
         send_exemplars: true
-
-overrides:
-  defaults:
-    metrics_generator:
-      processors: [service-graphs, span-metrics]
-      generate_native_histograms: both
-    max_traces_per_user: 10000
-    max_bytes_per_trace: 5000000       ***REMOVED*** 5MB
-    max_search_bytes_per_trace: 50000  ***REMOVED*** 50KB
-    ingestion_rate_limit_bytes: 15000000  ***REMOVED*** 15MB/s
-    ingestion_burst_size_bytes: 20000000  ***REMOVED*** 20MB
+  processor:
+    service_graphs: {}
+    span_metrics: {}

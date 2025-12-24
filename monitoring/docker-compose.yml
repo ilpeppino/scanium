@@ -1,5 +1,3 @@
-version: '3.8'
-
 ***REMOVED*** Scanium Observability Stack (LGTM + Alloy)
 ***REMOVED*** - Loki: Logs storage
 ***REMOVED*** - Grafana: Visualization
