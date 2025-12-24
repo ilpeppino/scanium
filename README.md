@@ -66,19 +66,14 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
 
 ## Tech Stack
 
-### Core Technologies
+### Android Application
 - **Kotlin** - Primary programming language
 - **Jetpack Compose** - Modern declarative UI framework
 - **Material 3** - Material Design components and theming with Scanium branding
-
-### Camera & ML
 - **CameraX** - Camera API for preview and image capture
 - **ML Kit Object Detection** - On-device object detection and classification with tracking
 - **ML Kit Barcode Scanning** - On-device barcode and QR code scanning
 - **Image Analysis** - Real-time video stream processing with multi-frame candidate tracking
-- **Sound Effects** - Camera shutter sound feedback
-
-### Architecture & State
 - **MVVM Pattern** - ViewModel-based architecture
 - **Kotlin Coroutines** - Asynchronous programming
 - **StateFlow** - Reactive state management
@@ -86,12 +81,54 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
 - **Lifecycle Components** - Android lifecycle-aware components
 - **Kotlinx Serialization** - JSON parsing for Domain Pack configuration
 
+### Backend Services
+- **Node.js + TypeScript** - Backend API server
+- **Prisma** - Database ORM and migrations
+- **PostgreSQL** - Primary database
+- **Express.js** - HTTP server framework
+- **ngrok** - Development tunneling for mobile device testing
+- **Docker Compose** - Container orchestration for local development
+
+### Observability Stack (LGTM + Alloy)
+- **Grafana** - Visualization dashboards and alerting
+- **Alloy** - OpenTelemetry (OTLP) receiver and router
+- **Loki** - Log aggregation and storage
+- **Tempo** - Distributed tracing backend
+- **Mimir** - Prometheus-compatible metrics storage
+- **Docker Compose** - Containerized observability infrastructure
+
 ## Architecture
 
-The project follows a **Simplified MVVM architecture** with feature-based package organization:
+Scanium is a **full-stack mobile application** consisting of three main components:
+
+### System Overview
 
 ```
-app/src/main/java/com/scanium/app/
+┌─────────────────────────────────────────────────────────────────┐
+│                      Android Application                        │
+│  (Kotlin + Compose + ML Kit + CameraX)                         │
+└────────────────────┬────────────────────────────────────────────┘
+                     │ HTTPS (ngrok tunnel in dev)
+                     │ OTLP telemetry (Alloy)
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Backend API Server                           │
+│  (Node.js + TypeScript + Prisma + PostgreSQL)                  │
+└────────────────────┬────────────────────────────────────────────┘
+                     │ OpenTelemetry
+                     ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              Observability Stack (LGTM + Alloy)                │
+│  Grafana → Loki (logs) + Tempo (traces) + Mimir (metrics)      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Android Application
+
+The Android app follows a **Simplified MVVM architecture** with feature-based package organization:
+
+```
+androidApp/src/main/java/com/scanium/app/
 ├── camera/          # Camera functionality, CameraX, mode switching
 ├── domain/          # Domain Pack system (config, repository, category engine)
 ├── items/           # Detected items management and display
@@ -105,7 +142,36 @@ app/src/main/java/com/scanium/app/
 └── navigation/      # Navigation graph setup
 ```
 
-For detailed architecture documentation, see [ARCHITECTURE.md](./md/architecture/ARCHITECTURE.md).
+### Backend Services
+
+```
+backend/
+├── src/
+│   ├── index.ts            # Express server entry point
+│   ├── routes/             # API endpoints
+│   ├── services/           # Business logic
+│   └── middleware/         # Auth, validation, error handling
+├── prisma/
+│   ├── schema.prisma       # Database schema
+│   └── migrations/         # Version-controlled schema changes
+└── docker-compose.yml      # PostgreSQL container
+```
+
+### Observability Infrastructure
+
+```
+monitoring/
+├── docker-compose.yml      # LGTM stack + Alloy services
+├── grafana/
+│   ├── provisioning/       # Auto-configured datasources
+│   └── dashboards/         # Pre-built visualization dashboards
+├── alloy/alloy.hcl         # OTLP routing configuration
+├── loki/loki.yaml          # Log aggregation config
+├── tempo/tempo.yaml        # Distributed tracing config
+└── mimir/mimir.yaml        # Metrics storage config
+```
+
+For detailed architecture documentation, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
 For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/features/TRACKING_IMPLEMENTATION.md).
 
 ### Key Architectural Decisions
@@ -128,6 +194,8 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/featu
 
 For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SETUP.md](./SETUP.md).
 
+### Android Application Setup
+
 **Quick Start:**
 
 1. Clone the repository:
@@ -144,6 +212,55 @@ For detailed cross-platform setup instructions (macOS, Linux, Windows), see [SET
    ```
 
 4. Run the app on an emulator or physical device
+
+### Backend Development Setup
+
+**Prerequisites:**
+- Node.js 20+
+- Docker (for PostgreSQL and monitoring stack)
+- ngrok (for mobile device testing)
+
+**One-Command Startup (Recommended):**
+
+```bash
+# Start backend + monitoring stack together
+scripts/backend/start-dev.sh
+
+# This automatically starts:
+# - PostgreSQL database
+# - Backend API server (port 8080)
+# - ngrok tunnel (for mobile testing)
+# - Observability stack (Grafana, Loki, Tempo, Mimir, Alloy)
+```
+
+**What You Get:**
+- Backend API: http://localhost:8080
+- ngrok Public URL: Displayed in terminal (update mobile app with this URL)
+- Grafana Dashboards: http://localhost:3000
+- OTLP Endpoints: localhost:4317 (gRPC), localhost:4318 (HTTP)
+- Health checks and status for all services
+
+**Options:**
+```bash
+# Skip monitoring stack
+scripts/backend/start-dev.sh --no-monitoring
+
+# Stop all services
+scripts/backend/stop-dev.sh
+
+# Stop including monitoring
+scripts/backend/stop-dev.sh --with-monitoring
+
+# View monitoring URLs and health status
+scripts/monitoring/print-urls.sh
+```
+
+**Backend Configuration:**
+1. Copy `.env.example` to `.env` in the `backend/` directory
+2. Configure required environment variables
+3. Run database migrations: `cd backend && npm run prisma:migrate`
+
+See [docs/DEV_GUIDE.md](./docs/DEV_GUIDE.md) and [monitoring/README.md](./monitoring/README.md) for detailed setup instructions.
 
 ## Building
 
@@ -177,16 +294,35 @@ scanium/
 ├── androidApp/                # Compose UI + feature orchestration
 │   ├── camera/                # CameraScreen, CameraXManager, DetectionOverlay
 │   ├── items/                 # ItemsListScreen, ItemDetailDialog, ItemsViewModel
-│   ├── ml/                    # ObjectDetectorClient, BarcodeScannerClient, DocumentTextRecognitionClient, PricingEngine
+│   ├── ml/                    # ObjectDetectorClient, BarcodeScannerClient, PricingEngine
 │   ├── navigation/            # ScaniumNavGraph + routes
 │   └── ui/                    # Material 3 theme and shared components
 ├── android-platform-adapters/ # Bitmap/Rect adapters → ImageRef/NormalizedRect
 ├── android-camera-camerax/    # CameraX helpers
 ├── android-ml-mlkit/          # ML Kit plumbing
-├── core-models/               # Portable models (ScannedItem, ImageRef, NormalizedRect, ItemCategory)
-├── core-tracking/             # Aggregation/tracking math (ObjectTracker, AggregatedItem, ObjectCandidate)
-├── core-domainpack/, core-scan/, core-contracts/ # Shared contracts and config stubs
-├── md/                        # Architecture, features, testing, fixes, improvements, debugging
+├── core-models/               # Portable models (ScannedItem, ImageRef, NormalizedRect)
+├── core-tracking/             # Tracking math (ObjectTracker, AggregatedItem)
+├── core-domainpack/, core-scan/, core-contracts/ # Shared contracts
+├── backend/                   # Node.js API server
+│   ├── src/                   # TypeScript source (routes, services, middleware)
+│   ├── prisma/                # Database schema and migrations
+│   ├── docker-compose.yml     # PostgreSQL container
+│   └── .env                   # Environment configuration (gitignored)
+├── monitoring/                # Observability stack (LGTM + Alloy)
+│   ├── docker-compose.yml     # Grafana, Loki, Tempo, Mimir, Alloy
+│   ├── grafana/               # Dashboards and datasource provisioning
+│   ├── alloy/                 # OTLP routing configuration
+│   ├── loki/, tempo/, mimir/  # Backend storage configs
+│   └── data/                  # Persistent data volumes (gitignored)
+├── scripts/                   # Build and development automation
+│   ├── backend/               # Backend dev scripts (start-dev, stop-dev)
+│   ├── monitoring/            # Monitoring scripts (start, stop, print-urls)
+│   └── build.sh               # Java 17 auto-detection for Android builds
+├── docs/                      # Project documentation
+│   ├── ARCHITECTURE.md        # System architecture
+│   ├── DEV_GUIDE.md           # Development workflow
+│   └── CODEX_CONTEXT.md       # Agent quickmap
+├── md/                        # Feature docs, fixes, testing guides
 ├── AGENTS.md
 ├── ROADMAP.md
 └── README.md
