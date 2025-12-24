@@ -59,19 +59,82 @@ Complete observability infrastructure for Scanium mobile app using the **LGTM st
 - 4GB RAM available for Docker
 - 10GB disk space for data storage
 
-***REMOVED******REMOVED******REMOVED*** 1. Start the Stack
+***REMOVED******REMOVED******REMOVED*** Recommended: Integrated Startup (Backend + Monitoring)
+
+The easiest way to start both the backend and monitoring stack together:
 
 ```bash
-cd monitoring
-docker compose up -d
+***REMOVED*** From repo root - starts PostgreSQL, backend server, ngrok, AND monitoring stack
+scripts/backend/start-dev.sh
+
+***REMOVED*** Or explicitly enable monitoring (already the default)
+scripts/backend/start-dev.sh --with-monitoring
+
+***REMOVED*** Skip monitoring if you only need the backend
+scripts/backend/start-dev.sh --no-monitoring
+
+***REMOVED*** Or use environment variable
+MONITORING=0 scripts/backend/start-dev.sh
 ```
 
-***REMOVED******REMOVED******REMOVED*** 2. Verify Services
+**What this does:**
+1. ✅ Starts backend services (PostgreSQL, API, ngrok)
+2. ✅ Starts monitoring stack (Grafana, Alloy, Loki, Tempo, Mimir)
+3. ✅ Performs health checks on all services
+4. ✅ Displays access URLs for all dashboards and endpoints
+5. ✅ Handles idempotency (safe to run multiple times)
+
+**Output includes:**
+- Grafana dashboard URL (http://localhost:3000)
+- OTLP endpoints for app telemetry (localhost:4317/4318)
+- Backend storage endpoints (Loki, Tempo, Mimir)
+- Health status of all services
+- Management commands for logs, restart, stop
+
+**To stop everything:**
+```bash
+***REMOVED*** Stop backend + monitoring
+scripts/backend/stop-dev.sh --with-monitoring
+
+***REMOVED*** Stop only backend (leaves monitoring running)
+scripts/backend/stop-dev.sh
+```
+
+***REMOVED******REMOVED******REMOVED*** Alternative: Standalone Monitoring Startup
+
+If you only want to run the monitoring stack without the backend:
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** 1. Start the Stack
+
+```bash
+***REMOVED*** Option 1: Use helper script (recommended)
+scripts/monitoring/start-monitoring.sh
+
+***REMOVED*** Option 2: Use docker compose directly
+cd monitoring
+docker compose -p scanium-monitoring up -d
+```
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** 2. View Access URLs and Health Status
+
+```bash
+***REMOVED*** Display all URLs, health checks, and management commands
+scripts/monitoring/print-urls.sh
+```
+
+This script provides:
+- ✅ Grafana dashboard URL (with LAN IP for mobile testing)
+- ✅ OTLP ingestion endpoints (gRPC + HTTP)
+- ✅ Backend storage endpoints (Loki, Tempo, Mimir)
+- ✅ Real-time health status for all services
+- ✅ Management commands (logs, restart, stop)
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** 3. Verify Services Manually
 
 Wait for all services to become healthy (~30 seconds):
 
 ```bash
-docker compose ps
+docker compose -p scanium-monitoring ps
 ```
 
 Expected output:
@@ -84,14 +147,26 @@ scanium-mimir      running (healthy)   127.0.0.1:9009->9009/tcp
 scanium-tempo      running (healthy)   127.0.0.1:3200->3200/tcp
 ```
 
-***REMOVED******REMOVED******REMOVED*** 3. Access Grafana
+***REMOVED******REMOVED******REMOVED******REMOVED*** 4. Access Grafana
 
 Open http://localhost:3000 in your browser.
 
 - **Authentication:** Disabled (anonymous admin access for local dev)
 - **Datasources:** Pre-configured (Loki, Tempo, Mimir)
+- **Dashboards:** Automatically provisioned from `monitoring/grafana/dashboards/`
 
-***REMOVED******REMOVED******REMOVED*** 4. Configure Android App
+***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Stop the Monitoring Stack
+
+```bash
+***REMOVED*** Option 1: Use helper script
+scripts/monitoring/stop-monitoring.sh
+
+***REMOVED*** Option 2: Use docker compose directly
+cd monitoring
+docker compose -p scanium-monitoring down
+```
+
+***REMOVED******REMOVED******REMOVED*** 6. Configure Android App
 
 Edit `androidApp/local.properties`:
 

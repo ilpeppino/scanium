@@ -1,7 +1,7 @@
 ***REMOVED***!/bin/bash
 
 ***REMOVED*** Scanium Backend Development Startup Script
-***REMOVED*** Starts PostgreSQL, Backend Server, and ngrok with error handling
+***REMOVED*** Starts PostgreSQL, Backend Server, ngrok, and optional monitoring stack
 
 set -eo pipefail  ***REMOVED*** Exit on error or pipeline failure
 
@@ -15,6 +15,40 @@ NC='\033[0m' ***REMOVED*** No Color
 ***REMOVED*** PID files for cleanup
 BACKEND_PID=""
 NGROK_PID=""
+
+***REMOVED*** Parse command-line flags
+ENABLE_MONITORING="${MONITORING:-1}"  ***REMOVED*** Default to enabled (can be overridden by env var)
+
+for arg in "$@"; do
+    case $arg in
+        --with-monitoring)
+            ENABLE_MONITORING=1
+            shift
+            ;;
+        --no-monitoring)
+            ENABLE_MONITORING=0
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --with-monitoring     Enable monitoring stack (default)"
+            echo "  --no-monitoring       Disable monitoring stack"
+            echo "  -h, --help           Show this help message"
+            echo ""
+            echo "Environment variables:"
+            echo "  MONITORING=1/0        Override monitoring stack (1=enabled, 0=disabled)"
+            echo ""
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $arg"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
 
 ***REMOVED*** Cleanup function
 cleanup() {
@@ -243,7 +277,36 @@ fi
 
 echo ""
 
-***REMOVED*** 6. Start ngrok
+***REMOVED*** 6. Start monitoring stack (optional)
+if [ "$ENABLE_MONITORING" = "1" ]; then
+    print_status "Starting monitoring stack..."
+
+    ***REMOVED*** Check if Docker is available
+    if command -v docker &> /dev/null && docker info &> /dev/null 2>&1; then
+        ***REMOVED*** Run monitoring startup script
+        MONITORING_SCRIPT="${SCRIPT_DIR}/../monitoring/start-monitoring.sh"
+        if [ -f "$MONITORING_SCRIPT" ]; then
+            if bash "$MONITORING_SCRIPT"; then
+                print_success "Monitoring stack started"
+            else
+                print_warning "Monitoring stack failed to start (continuing anyway)"
+            fi
+        else
+            print_warning "Monitoring script not found: $MONITORING_SCRIPT"
+        fi
+    else
+        print_warning "Docker not available - skipping monitoring stack"
+        print_status "Backend will run without observability. To enable monitoring:"
+        echo "  1. Install/start Docker"
+        echo "  2. Re-run this script"
+    fi
+    echo ""
+else
+    print_status "Monitoring stack disabled (use --with-monitoring to enable)"
+    echo ""
+fi
+
+***REMOVED*** 7. Start ngrok
 print_status "Starting ngrok tunnel..."
 
 ***REMOVED*** Start ngrok in background
@@ -302,7 +365,7 @@ fi
 print_success "ngrok tunnel established"
 echo ""
 
-***REMOVED*** 7. Check if PUBLIC_BASE_URL needs updating
+***REMOVED*** 8. Check if PUBLIC_BASE_URL needs updating
 CURRENT_PUBLIC_URL=$(grep "^PUBLIC_BASE_URL=" .env | cut -d'=' -f2)
 
 if [ "$CURRENT_PUBLIC_URL" != "$NGROK_URL" ]; then
@@ -341,7 +404,7 @@ if [ "$CURRENT_PUBLIC_URL" != "$NGROK_URL" ]; then
     fi
 fi
 
-***REMOVED*** 8. Test ngrok endpoint
+***REMOVED*** 9. Test ngrok endpoint
 print_status "Testing ngrok endpoint..."
 NGROK_HEALTH=$(curl -s "$NGROK_URL/healthz" 2>&1)
 if [[ $NGROK_HEALTH == *"ok"* ]]; then
@@ -352,7 +415,7 @@ fi
 
 echo ""
 
-***REMOVED*** 9. Display summary
+***REMOVED*** 10. Display summary
 echo -e "${GREEN}"
 echo "╔═══════════════════════════════════════════╗"
 echo "║          Services Running                 ║"
@@ -362,6 +425,14 @@ echo -e "${NC}"
 echo -e "${BLUE}PostgreSQL:${NC}      localhost:5432 (Container: scanium-postgres)"
 echo -e "${BLUE}Backend Server:${NC}  http://localhost:8080 (PID: $BACKEND_PID)"
 echo -e "${BLUE}ngrok Tunnel:${NC}    $NGROK_URL (PID: $NGROK_PID)"
+
+if [ "$ENABLE_MONITORING" = "1" ]; then
+    ***REMOVED*** Check if monitoring stack is actually running
+    MONITORING_RUNNING=$(docker compose -p scanium-monitoring ps -q 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$MONITORING_RUNNING" -gt 0 ]; then
+        echo -e "${BLUE}Monitoring:${NC}      Enabled (LGTM Stack + Alloy)"
+    fi
+fi
 echo ""
 
 echo -e "${GREEN}╔═══════════════════════════════════════════╗"
@@ -407,6 +478,18 @@ if [ "$CURRENT_PUBLIC_URL" != "$NGROK_URL" ]; then
     echo "2. Update RuName redirect URL to:"
     echo -e "   ${GREEN}$NGROK_URL/auth/ebay/callback${NC}"
     echo ""
+fi
+
+***REMOVED*** Display monitoring stack URLs if enabled
+if [ "$ENABLE_MONITORING" = "1" ]; then
+    MONITORING_RUNNING=$(docker compose -p scanium-monitoring ps -q 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$MONITORING_RUNNING" -gt 0 ]; then
+        echo ""
+        PRINT_URLS_SCRIPT="${SCRIPT_DIR}/../monitoring/print-urls.sh"
+        if [ -f "$PRINT_URLS_SCRIPT" ]; then
+            bash "$PRINT_URLS_SCRIPT" || true
+        fi
+    fi
 fi
 
 echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
