@@ -202,11 +202,14 @@ dependencies {
     implementation(project(":android-ml-mlkit"))
     implementation(project(":android-camera-camerax"))
     implementation(project(":android-platform-adapters"))
+    implementation(project(":shared:telemetry"))
+    implementation(project(":shared:telemetry-contract"))
 
     // AndroidX Core
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
+    implementation("androidx.documentfile:documentfile:1.0.1")
 
     // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2024.05.00"))
