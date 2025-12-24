@@ -3,6 +3,7 @@ package com.scanium.telemetry.facade
 import com.scanium.telemetry.AttributeSanitizer
 import com.scanium.telemetry.TelemetryEvent
 import com.scanium.telemetry.TelemetrySeverity
+import com.scanium.telemetry.ports.CrashPort
 import com.scanium.telemetry.ports.LogPort
 import com.scanium.telemetry.ports.MetricPort
 import com.scanium.telemetry.ports.SpanContext
@@ -55,15 +56,21 @@ import kotlinx.datetime.Clock
  * @param logPort Port for emitting log events (optional, uses NoOp if not provided)
  * @param metricPort Port for emitting metrics (optional, uses NoOp if not provided)
  * @param tracePort Port for emitting traces (optional, uses NoOp if not provided)
+ * @param crashPort Port for crash reporting (optional, null if not provided). When provided,
+ *                  WARN and ERROR events are automatically forwarded as breadcrumbs to crash reports.
  */
 class Telemetry(
     private val defaultAttributesProvider: DefaultAttributesProvider,
     private val logPort: LogPort,
     private val metricPort: MetricPort,
-    private val tracePort: TracePort
+    private val tracePort: TracePort,
+    private val crashPort: CrashPort? = null
 ) {
     /**
      * Emits a telemetry event with automatic sanitization and attribute merging.
+     *
+     * If a [crashPort] is configured, WARN and ERROR events are automatically forwarded
+     * as breadcrumbs to crash reports. This helps provide context when crashes occur.
      *
      * @param name Event name (e.g., "scan.started")
      * @param severity Event severity level
@@ -86,6 +93,31 @@ class Telemetry(
         )
 
         logPort.emit(event)
+
+        // Forward WARN and ERROR events to crash reporting as breadcrumbs
+        // This provides context for debugging crashes
+        if (crashPort != null && (severity == TelemetrySeverity.WARN || severity == TelemetrySeverity.ERROR)) {
+            crashPort.addBreadcrumb(
+                message = name,
+                attributes = filterRelevantAttributes(mergedAttributes)
+            )
+        }
+    }
+
+    /**
+     * Filters attributes to keep only relevant ones for breadcrumbs.
+     * Excludes common attributes that are already set as tags on crash reports.
+     * This keeps breadcrumb payloads focused and small.
+     */
+    private fun filterRelevantAttributes(attributes: Map<String, String>): Map<String, String> {
+        val excludeKeys = setOf(
+            TelemetryEvent.ATTR_PLATFORM,
+            TelemetryEvent.ATTR_APP_VERSION,
+            TelemetryEvent.ATTR_BUILD,
+            TelemetryEvent.ATTR_ENV,
+            TelemetryEvent.ATTR_SESSION_ID
+        )
+        return attributes.filterKeys { it !in excludeKeys }
     }
 
     /**
