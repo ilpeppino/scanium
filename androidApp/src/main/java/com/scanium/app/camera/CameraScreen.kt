@@ -152,6 +152,15 @@ fun CameraScreen(
     val lastLatency by ClassificationMetrics.lastLatencyMs.collectAsState()
     val queueDepth by ClassificationMetrics.queueDepth.collectAsState()
     val overlayTracks by itemsViewModel.overlayTracks.collectAsState()
+    
+    // Animation state for newly added items
+    var lastAddedItem by remember { mutableStateOf<com.scanium.app.items.ScannedItem?>(null) }
+    
+    LaunchedEffect(itemsViewModel) {
+        itemsViewModel.itemAddedEvents.collect { item: com.scanium.app.items.ScannedItem ->
+            lastAddedItem = item
+        }
+    }
 
     var previousClassificationMode by remember { mutableStateOf<ClassificationMode?>(null) }
 
@@ -399,6 +408,8 @@ fun CameraScreen(
                 // Overlay UI
                 CameraOverlay(
                     itemsCount = itemsCount.size,
+                    lastAddedItem = lastAddedItem,
+                    onAnimationFinished = { lastAddedItem = null },
                     cameraState = cameraState,
                     scanMode = currentScanMode,
                     captureResolution = captureResolution,
@@ -661,6 +672,8 @@ private fun CameraPreview(
 @Composable
 private fun BoxScope.CameraOverlay(
     itemsCount: Int,
+    lastAddedItem: com.scanium.app.items.ScannedItem?,
+    onAnimationFinished: () -> Unit,
     cameraState: CameraState,
     scanMode: ScanMode,
     captureResolution: CaptureResolution,
@@ -781,6 +794,21 @@ private fun BoxScope.CameraOverlay(
                             contentDescription = "View items",
                             tint = Color.White
                         )
+                    }
+                }
+                
+                // Item added animation overlay
+                lastAddedItem?.let { item ->
+                    key(item.id) {
+                        Box(
+                            modifier = Modifier.align(Alignment.Center),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ItemAddedAnimation(
+                                item = item,
+                                onAnimationFinished = onAnimationFinished
+                            )
+                        }
                     }
                 }
             }
