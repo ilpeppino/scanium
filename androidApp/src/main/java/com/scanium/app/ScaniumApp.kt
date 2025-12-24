@@ -53,7 +53,8 @@ fun ScaniumApp() {
     val settingsRepository = remember { SettingsRepository(context) }
     val billingRepository = remember { BillingRepository(context) }
     val configProvider = remember { AndroidRemoteConfigProvider(context, scope) }
-    
+    val ftueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
+
     // Choose billing provider based on build type
     val billingProvider = remember {
         if (BuildConfig.DEBUG) {
@@ -70,9 +71,9 @@ fun ScaniumApp() {
     )
     
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(context as android.app.Application, settingsRepository, entitlementManager, configProvider)
+        factory = SettingsViewModel.Factory(context as android.app.Application, settingsRepository, entitlementManager, configProvider, ftueRepository)
     )
-    
+
     val paywallViewModel: PaywallViewModel = viewModel(
         factory = PaywallViewModel.Factory(billingProvider)
     )
@@ -105,6 +106,10 @@ fun ScaniumApp() {
 
     val draftStore = remember { ListingDraftRepository(database.listingDraftDao()) }
 
+    val tourViewModel: com.scanium.app.ftue.TourViewModel = viewModel(
+        factory = com.scanium.app.ftue.TourViewModel.provideFactory(ftueRepository, itemsViewModel)
+    )
+
     // Use the config manager's current config for MockEbayApi
     val mockEbayConfig by MockEbayConfigManager.config.collectAsState()
     val marketplaceService = remember(mockEbayConfig) {
@@ -118,7 +123,8 @@ fun ScaniumApp() {
         settingsViewModel = settingsViewModel,
         paywallViewModel = paywallViewModel,
         marketplaceService = marketplaceService,
-        draftStore = draftStore
+        draftStore = draftStore,
+        tourViewModel = tourViewModel
     )
 }
 

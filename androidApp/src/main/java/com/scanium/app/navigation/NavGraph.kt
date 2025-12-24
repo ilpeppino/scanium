@@ -61,7 +61,8 @@ fun ScaniumNavGraph(
     settingsViewModel: SettingsViewModel,
     paywallViewModel: PaywallViewModel,
     marketplaceService: EbayMarketplaceService,
-    draftStore: ListingDraftStore
+    draftStore: ListingDraftStore,
+    tourViewModel: com.scanium.app.ftue.TourViewModel
 ) {
     NavHost(
         navController = navController,
@@ -76,7 +77,8 @@ fun ScaniumNavGraph(
                     navController.navigate(Routes.SETTINGS)
                 },
                 itemsViewModel = itemsViewModel,
-                classificationModeViewModel = classificationModeViewModel
+                classificationModeViewModel = classificationModeViewModel,
+                tourViewModel = tourViewModel
             )
         }
 
@@ -138,7 +140,8 @@ fun ScaniumNavGraph(
                     }
                 },
                 draftStore = draftStore,
-                itemsViewModel = itemsViewModel
+                itemsViewModel = itemsViewModel,
+                tourViewModel = tourViewModel
             )
         }
 
@@ -294,11 +297,16 @@ fun ObjectaNavGraph(
     val billingProvider = androidx.compose.runtime.remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
     val entitlementManager = androidx.compose.runtime.remember { com.scanium.app.data.EntitlementManager(settingsRepository, billingProvider) }
     val configProvider = androidx.compose.runtime.remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
+    val ftueRepository = androidx.compose.runtime.remember { com.scanium.app.ftue.FtueRepository(context) }
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(context.applicationContext as android.app.Application, settingsRepository, entitlementManager, configProvider)
+        factory = SettingsViewModel.Factory(context.applicationContext as android.app.Application, settingsRepository, entitlementManager, configProvider, ftueRepository)
     )
     val paywallViewModel: PaywallViewModel = viewModel(
         factory = PaywallViewModel.Factory(billingProvider)
+    )
+
+    val tourViewModel: com.scanium.app.ftue.TourViewModel = viewModel(
+        factory = com.scanium.app.ftue.TourViewModel.provideFactory(ftueRepository, itemsViewModel)
     )
 
     ScaniumNavGraph(
@@ -308,6 +316,7 @@ fun ObjectaNavGraph(
         settingsViewModel = settingsViewModel,
         paywallViewModel = paywallViewModel,
         marketplaceService = marketplaceService,
-        draftStore = com.scanium.app.selling.persistence.NoopListingDraftStore
+        draftStore = com.scanium.app.selling.persistence.NoopListingDraftStore,
+        tourViewModel = tourViewModel
     )
 }
