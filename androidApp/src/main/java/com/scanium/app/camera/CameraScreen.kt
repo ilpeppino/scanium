@@ -61,6 +61,7 @@ import com.google.accompanist.permissions.shouldShowRationale
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationMetrics
 import com.scanium.app.settings.ClassificationModeViewModel
+import com.scanium.app.media.StorageHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -98,6 +99,8 @@ fun CameraScreen(
     val scope = rememberCoroutineScope()
     val settingsRepository = remember { SettingsRepository(context) }
     val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
+    val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
+    val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
 
     // Camera permission state
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
@@ -440,6 +443,26 @@ fun CameraScreen(
                                         // Capture high-res image and update items with it
                                         scope.launch {
                                             val highResUri = cameraManager.captureHighResImage()
+                                            
+                                            if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
+                                                try {
+                                                     context.contentResolver.openInputStream(highResUri)?.use { input ->
+                                                         val savedUri = StorageHelper.saveToDirectory(
+                                                             context, 
+                                                             Uri.parse(saveDirectoryUri), 
+                                                             input, 
+                                                             "image/jpeg", 
+                                                             "Scanium"
+                                                         )
+                                                         if (savedUri == null) {
+                                                             Log.e("CameraScreen", "Failed to auto-save image")
+                                                         }
+                                                     }
+                                                } catch (e: Exception) {
+                                                    Log.e("CameraScreen", "Error auto-saving image", e)
+                                                }
+                                            }
+
                                             val itemsWithHighRes = if (highResUri != null) {
                                                 items.map { item ->
                                                     item.copy(
@@ -480,6 +503,26 @@ fun CameraScreen(
                                         // Capture high-res image for continuous scan items
                                         scope.launch {
                                             val highResUri = cameraManager.captureHighResImage()
+
+                                            if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
+                                                try {
+                                                     context.contentResolver.openInputStream(highResUri)?.use { input ->
+                                                         val savedUri = StorageHelper.saveToDirectory(
+                                                             context, 
+                                                             Uri.parse(saveDirectoryUri), 
+                                                             input, 
+                                                             "image/jpeg", 
+                                                             "Scanium"
+                                                         )
+                                                         if (savedUri == null) {
+                                                             Log.e("CameraScreen", "Failed to auto-save image")
+                                                         }
+                                                     }
+                                                } catch (e: Exception) {
+                                                    Log.e("CameraScreen", "Error auto-saving image", e)
+                                                }
+                                            }
+
                                             val itemsWithHighRes = if (highResUri != null) {
                                                 items.map { item ->
                                                     item.copy(fullImageUri = highResUri)

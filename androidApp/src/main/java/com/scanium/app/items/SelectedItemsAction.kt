@@ -11,10 +11,6 @@ enum class SelectedItemsAction(
         displayName = "Sell on eBay",
         description = "List items on eBay marketplace"
     ),
-    SAVE_TO_DEVICE(
-        displayName = "Save to device",
-        description = "Save item snapshots to Gallery"
-    ),
     REVIEW_DRAFT(
         displayName = "Review draft",
         description = "Open a listing draft for the selected item"

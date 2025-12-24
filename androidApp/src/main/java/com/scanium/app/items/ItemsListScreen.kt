@@ -44,7 +44,6 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.scanium.app.data.ItemsActionPreferences
-import com.scanium.app.media.MediaStoreSaver
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -149,36 +148,6 @@ fun ItemsListScreen(
 
     fun executeAction(action: SelectedItemsAction = selectedAction) {
         when (action) {
-            SelectedItemsAction.SAVE_TO_DEVICE -> {
-                scope.launch {
-                    // Get selected items with their images (prefer high-res URI, fallback to thumbnail)
-                    val selectedItems = items.filter { selectedIds.contains(it.id) }
-                    val imagesToSave = selectedItems.mapNotNull { item ->
-                        val uri = item.fullImagePath?.let(Uri::parse) ?: item.fullImageUri
-                        val imageRef = item.thumbnailRef ?: item.thumbnail
-                        if (uri != null || imageRef != null) {
-                            Triple(item.id, uri, imageRef)
-                        } else null
-                    }
-
-                    if (imagesToSave.isEmpty()) {
-                        snackbarHostState.showSnackbar("No images to save")
-                        return@launch
-                    }
-
-                    // Save to gallery (uses high-res URIs when available)
-                    val result = MediaStoreSaver.saveImagesToGallery(context, imagesToSave)
-
-                    // Show result to user
-                    snackbarHostState.showSnackbar(result.getStatusMessage())
-
-                    // Clear selection after successful save
-                    if (result.isSuccess) {
-                        selectedIds.clear()
-                        selectionMode = false
-                    }
-                }
-            }
             SelectedItemsAction.SELL_ON_EBAY -> {
                 onNavigateToSell(selectedIds.toList())
             }
@@ -258,7 +227,6 @@ fun ItemsListScreen(
                                     Icon(
                                         imageVector = when (selectedAction) {
                                             SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                            SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
                                             SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
                                             SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
                                         },
@@ -317,7 +285,6 @@ fun ItemsListScreen(
                                         Icon(
                                             imageVector = when (action) {
                                                 SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                                SelectedItemsAction.SAVE_TO_DEVICE -> Icons.Default.Save
                                                 SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
                                                 SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
                                             },
