@@ -159,14 +159,6 @@ fun ItemsListScreen(
                     scope.launch { snackbarHostState.showSnackbar("Select an item to review") }
                 }
             }
-            SelectedItemsAction.ASK_ASSISTANT -> {
-                val selected = selectedIds.toList()
-                if (selected.isNotEmpty()) {
-                    onNavigateToAssistant(selected)
-                } else {
-                    scope.launch { snackbarHostState.showSnackbar("Select items to ask about") }
-                }
-            }
         }
     }
 
@@ -201,109 +193,6 @@ fun ItemsListScreen(
                         }
                     }
                 )
-            },
-            floatingActionButton = {
-                if (selectionMode && selectedIds.isNotEmpty()) {
-                    Box {
-                        // Custom split FAB with integrated dropdown
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shadowElevation = 6.dp,
-                            tonalElevation = 3.dp
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(0.dp)
-                            ) {
-                                // Main action button (icon + text)
-                                Row(
-                                    modifier = Modifier
-                                        .clickable { executeAction() }
-                                        .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = when (selectedAction) {
-                                            SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                            SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
-                                            SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
-                                        },
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-
-                                    Text(
-                                        text = selectedAction.displayName,
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-
-                                // Divider
-                                Box(
-                                    modifier = Modifier
-                                        .width(1.dp)
-                                        .height(24.dp)
-                                        .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
-                                )
-
-                                // Dropdown button
-                                Box(
-                                    modifier = Modifier
-                                        .clickable { showActionMenu = true }
-                                        .padding(horizontal = 12.dp, vertical = 16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = "Select action",
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-                        }
-
-                        // Dropdown menu
-                        DropdownMenu(
-                            expanded = showActionMenu,
-                            onDismissRequest = { showActionMenu = false }
-                        ) {
-                            SelectedItemsAction.values().forEach { action ->
-                                DropdownMenuItem(
-                                    text = { Text(action.displayName) },
-                                    onClick = {
-                                        selectedAction = action
-                                        showActionMenu = false
-                                        scope.launch {
-                                            actionPreferences.setLastAction(action)
-                                        }
-                                        executeAction(action)
-                                    },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = when (action) {
-                                                SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                                SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
-                                                SelectedItemsAction.ASK_ASSISTANT -> Icons.Default.Chat
-                                            },
-                                            contentDescription = null
-                                        )
-                                    },
-                                    trailingIcon = if (selectedAction == action) {
-                                        {
-                                            Icon(
-                                                imageVector = Icons.Default.Check,
-                                                contentDescription = "Selected"
-                                            )
-                                        }
-                                    } else null
-                                )
-                            }
-                        }
-                    }
-                }
             },
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { paddingValues ->
@@ -405,7 +294,141 @@ fun ItemsListScreen(
                 }
             }
         }
-        
+
+        // Overlay controls when items are selected
+        if (selectionMode && selectedIds.isNotEmpty()) {
+            // AI Assistant button - bottom-right
+            FloatingActionButton(
+                onClick = {
+                    val selected = selectedIds.toList()
+                    if (selected.isNotEmpty()) {
+                        onNavigateToAssistant(selected)
+                    } else {
+                        scope.launch { snackbarHostState.showSnackbar("Select items to ask about") }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Chat,
+                    contentDescription = "AI assistant"
+                )
+            }
+
+            // Action dropdown control - bottom-center
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
+                    .fillMaxWidth(0.65f)
+            ) {
+                // Custom split FAB with integrated dropdown
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shadowElevation = 6.dp,
+                    tonalElevation = 3.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(0.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Main action button (icon + text)
+                        Row(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { executeAction() }
+                                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = when (selectedAction) {
+                                    SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
+                                    SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
+                                },
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+
+                            Text(
+                                text = selectedAction.displayName,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
+                        // Divider
+                        Box(
+                            modifier = Modifier
+                                .width(1.dp)
+                                .height(24.dp)
+                                .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
+                        )
+
+                        // Dropdown button
+                        Box(
+                            modifier = Modifier
+                                .clickable { showActionMenu = true }
+                                .padding(horizontal = 12.dp, vertical = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "Select action",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+
+                // Dropdown menu
+                DropdownMenu(
+                    expanded = showActionMenu,
+                    onDismissRequest = { showActionMenu = false }
+                ) {
+                    SelectedItemsAction.values().forEach { action ->
+                        DropdownMenuItem(
+                            text = { Text(action.displayName) },
+                            onClick = {
+                                selectedAction = action
+                                showActionMenu = false
+                                scope.launch {
+                                    actionPreferences.setLastAction(action)
+                                }
+                                executeAction(action)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = when (action) {
+                                        SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
+                                        SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
+                                    },
+                                    contentDescription = null
+                                )
+                            },
+                            trailingIcon = if (selectedAction == action) {
+                                {
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Selected"
+                                    )
+                                }
+                            } else null
+                        )
+                    }
+                }
+            }
+        }
+
         // Full screen draft preview overlay
         DraftPreviewOverlay(
             item = previewItem,
