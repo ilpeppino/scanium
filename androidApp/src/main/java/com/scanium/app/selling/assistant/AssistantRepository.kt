@@ -12,6 +12,7 @@ import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.ExportProfileSnapshot
 import com.scanium.app.listing.ExportProfileDefinition
 import com.scanium.app.listing.ExportProfiles
+import com.scanium.app.network.security.RequestSigner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -111,7 +112,15 @@ private class CloudAssistantRepository(
             .url(endpoint)
             .post(body.toRequestBody("application/json".toMediaType()))
             .apply {
-                apiKey?.let { header("X-API-Key", it) }
+                apiKey?.let { key ->
+                    header("X-API-Key", key)
+                    // Add HMAC signature for replay protection (SEC-004)
+                    RequestSigner.addSignatureHeaders(
+                        builder = this,
+                        apiKey = key,
+                        requestBody = body
+                    )
+                }
                 header("X-Scanium-Correlation-Id", correlationId)
                 header("X-Client", "Scanium-Android")
                 header("X-App-Version", BuildConfig.VERSION_NAME)
