@@ -3,6 +3,8 @@ package com.scanium.android.platform.adapters
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.scanium.shared.core.models.model.ImageRef
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
 /**
@@ -24,7 +26,9 @@ fun Bitmap.toImageRefJpeg(quality: Int = 85): ImageRef.Bytes {
     )
 }
 
-fun ImageRef.Bytes.toBitmap(): Bitmap {
-    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+suspend fun ImageRef.Bytes.toBitmap(): Bitmap {
+    val bitmap = withContext(Dispatchers.Default) {
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }
     return requireNotNull(bitmap) { "Failed to decode Bitmap from ImageRef bytes" }
 }
