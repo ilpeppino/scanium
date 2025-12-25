@@ -21,7 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.scanium.app.items.ScannedItem
-import com.scanium.app.ml.BarcodeScannerClient
+import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
@@ -80,7 +80,7 @@ class CameraXManager(
     private var imageCapture: ImageCapture? = null
 
     private val objectDetector = ObjectDetectorClient()
-    private val barcodeScanner = BarcodeScannerClient()
+    private val barcodeDetector = BarcodeDetectorClient()
     private val textRecognizer = DocumentTextRecognitionClient()
 
     private val _analysisFps = MutableStateFlow(0.0)
@@ -612,7 +612,7 @@ class CameraXManager(
                 }
                 ScanMode.BARCODE -> {
                     // Barcode and text scanners don't return DetectionResults yet
-                    val items = barcodeScanner.scanBarcodes(
+                    val items = barcodeDetector.scanBarcodes(
                         image = inputImage,
                         sourceBitmap = lazyBitmapProvider
                     )
@@ -809,7 +809,7 @@ class CameraXManager(
         lifecycleOwner.lifecycle.removeObserver(lifecycleObserver)
         objectTracker.reset() // Ensure tracker is cleaned up
         objectDetector.close()
-        barcodeScanner.close()
+        barcodeDetector.close()
         textRecognizer.close()
         cameraExecutor.shutdown()
         detectionScope.cancel()

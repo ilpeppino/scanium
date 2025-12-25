@@ -18,10 +18,10 @@ import kotlinx.coroutines.tasks.await
  *
  * Configures ML Kit to scan all barcode formats and convert results to ScannedItems.
  */
-class BarcodeScannerClient {
+class BarcodeDetectorClient {
 
     companion object {
-        private const val TAG = "BarcodeScannerClient"
+        private const val TAG = "BarcodeDetectorClient"
     }
 
     // ML Kit barcode scanner configured to detect all formats
