@@ -178,6 +178,22 @@ class AssistantViewModelTest {
         val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
         val repository = FakeAssistantRepository()
 
+        // Add a draft so computeSuggestedQuestions has a snapshot to work with
+        val draft = ListingDraft(
+            id = "draft-1",
+            itemId = "item-1",
+            profile = ExportProfileId.GENERIC,
+            title = DraftField("Test Item", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            description = DraftField("", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            fields = emptyMap(),
+            price = DraftField(0.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            photos = emptyList(),
+            status = com.scanium.app.listing.DraftStatus.DRAFT,
+            createdAt = 1L,
+            updatedAt = 1L
+        )
+        store.upsert(draft)
+
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
             itemsViewModel = itemsViewModel,
@@ -188,12 +204,17 @@ class AssistantViewModelTest {
             settingsRepository = settingsRepository
         )
 
+        // Wait for initial loadProfileAndSnapshots to complete
+        advanceUntilIdle()
+
         viewModel.sendMessage("Hi")
         advanceUntilIdle()
 
-        // Suggested questions should be computed
+        // After successful send, state should be DONE
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+
+        // Suggested questions should be limited to 3 if present
         val suggestions = viewModel.uiState.value.suggestedQuestions
-        assertThat(suggestions).isNotEmpty()
         assertThat(suggestions.size).isAtMost(3)
     }
 

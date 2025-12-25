@@ -284,4 +284,60 @@ class SettingsRepository(private val context: Context) {
             preferences[VOICE_LANGUAGE_KEY] = language
         }
     }
+
+    // =========================================================================
+    // Privacy Safe Mode
+    // =========================================================================
+
+    /**
+     * Activates Privacy Safe Mode by disabling all cloud data sharing features.
+     * This is a one-tap way to ensure no data leaves the device.
+     *
+     * Disables:
+     * - Cloud classification
+     * - Assistant images
+     * - Share diagnostics
+     *
+     * Note: Does NOT disable voice mode (local STT) as it uses on-device processing.
+     */
+    suspend fun enablePrivacySafeMode() {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] = false
+            preferences[ALLOW_ASSISTANT_IMAGES_KEY] = false
+            preferences[SHARE_DIAGNOSTICS_KEY] = false
+        }
+    }
+
+    /**
+     * Checks if Privacy Safe Mode is effectively active.
+     * Returns true if all cloud sharing features are disabled.
+     */
+    val isPrivacySafeModeActiveFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        val cloudOff = !(preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] ?: true)
+        val imagesOff = !(preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false)
+        val diagnosticsOff = !(preferences[SHARE_DIAGNOSTICS_KEY] ?: false)
+        cloudOff && imagesOff && diagnosticsOff
+    }
+
+    /**
+     * Resets all privacy-related settings to their default values.
+     *
+     * Defaults:
+     * - Cloud classification: ON (default true)
+     * - Assistant: OFF (default false)
+     * - Assistant images: OFF (default false)
+     * - Voice mode: OFF (default false)
+     * - Speak answers: OFF (default false)
+     * - Share diagnostics: OFF (default false)
+     */
+    suspend fun resetPrivacySettings() {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] = true
+            preferences[ALLOW_ASSISTANT_KEY] = false
+            preferences[ALLOW_ASSISTANT_IMAGES_KEY] = false
+            preferences[VOICE_MODE_ENABLED_KEY] = false
+            preferences[SPEAK_ANSWERS_KEY] = false
+            preferences[SHARE_DIAGNOSTICS_KEY] = false
+        }
+    }
 }
