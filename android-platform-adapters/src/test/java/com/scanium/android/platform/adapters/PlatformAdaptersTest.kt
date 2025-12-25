@@ -5,6 +5,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import com.google.common.truth.Truth.assertThat
 import com.scanium.core.models.geometry.NormalizedRect
+import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -78,7 +79,7 @@ class PlatformAdaptersTest {
         val bitmap = Bitmap.createBitmap(2, 3, Bitmap.Config.ARGB_8888)
 
         val imageRef = bitmap.toImageRefJpeg(quality = 90)
-        val decoded = imageRef.toBitmap()
+        val decoded = runBlocking { imageRef.toBitmap() }
 
         assertThat(imageRef.mimeType).isEqualTo("image/jpeg")
         assertThat(imageRef.width).isEqualTo(2)
