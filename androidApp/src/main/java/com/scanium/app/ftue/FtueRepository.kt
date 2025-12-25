@@ -18,6 +18,7 @@ class FtueRepository(private val context: Context) {
     companion object {
         private val FTUE_COMPLETED_KEY = booleanPreferencesKey("ftue_completed")
         private val FTUE_FORCE_ENABLED_KEY = booleanPreferencesKey("ftue_force_enabled")
+        private val PERMISSION_EDUCATION_SHOWN_KEY = booleanPreferencesKey("permission_education_shown")
     }
 
     /**
@@ -35,6 +36,15 @@ class FtueRepository(private val context: Context) {
      */
     val forceEnabledFlow: Flow<Boolean> = context.ftueDataStore.data.map { preferences ->
         preferences[FTUE_FORCE_ENABLED_KEY] ?: false
+    }
+
+    /**
+     * Flow indicating whether the permission education dialog has been shown.
+     * This dialog explains why camera access is needed before requesting permission.
+     * Defaults to false (not shown).
+     */
+    val permissionEducationShownFlow: Flow<Boolean> = context.ftueDataStore.data.map { preferences ->
+        preferences[PERMISSION_EDUCATION_SHOWN_KEY] ?: false
     }
 
     /**
@@ -58,10 +68,31 @@ class FtueRepository(private val context: Context) {
     }
 
     /**
+     * Sets the permission education shown status.
+     * @param shown True if the education dialog has been shown, false otherwise
+     */
+    suspend fun setPermissionEducationShown(shown: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[PERMISSION_EDUCATION_SHOWN_KEY] = shown
+        }
+    }
+
+    /**
      * Resets the tour completion status, allowing the tour to be shown again.
      */
     suspend fun reset() {
         setCompleted(false)
+    }
+
+    /**
+     * Resets all FTUE state including permission education.
+     * Useful for debugging or when user wants to see onboarding again.
+     */
+    suspend fun resetAll() {
+        context.ftueDataStore.edit { preferences ->
+            preferences[FTUE_COMPLETED_KEY] = false
+            preferences[PERMISSION_EDUCATION_SHOWN_KEY] = false
+        }
     }
 }
 
