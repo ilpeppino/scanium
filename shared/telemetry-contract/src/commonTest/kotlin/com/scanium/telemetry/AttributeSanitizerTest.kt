@@ -85,15 +85,16 @@ class AttributeSanitizerTest {
         val incomplete = mapOf(
             "platform" to "android",
             "app_version" to "1.0.0"
-            // Missing: build, env, session_id
+            // Missing: build, env, session_id, data_region
         )
 
         val missing = AttributeSanitizer.validateRequiredAttributes(incomplete)
 
-        assertEquals(3, missing.size)
+        assertEquals(4, missing.size)
         assertTrue(missing.contains(TelemetryEvent.ATTR_BUILD))
         assertTrue(missing.contains(TelemetryEvent.ATTR_ENV))
         assertTrue(missing.contains(TelemetryEvent.ATTR_SESSION_ID))
+        assertTrue(missing.contains(TelemetryEvent.ATTR_DATA_REGION))
     }
 
     @Test
@@ -103,7 +104,8 @@ class AttributeSanitizerTest {
             "app_version" to "1.0.0",
             "build" to "42",
             "env" to "prod",
-            "session_id" to "abc-123"
+            "session_id" to "abc-123",
+            "data_region" to "US"
         )
 
         val missing = AttributeSanitizer.validateRequiredAttributes(complete)

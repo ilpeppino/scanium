@@ -188,7 +188,8 @@ object AttributeSanitizer {
             TelemetryEvent.ATTR_APP_VERSION,
             TelemetryEvent.ATTR_BUILD,
             TelemetryEvent.ATTR_ENV,
-            TelemetryEvent.ATTR_SESSION_ID
+            TelemetryEvent.ATTR_SESSION_ID,
+            TelemetryEvent.ATTR_DATA_REGION
         )
 
         return required.filter { it !in attributes }
