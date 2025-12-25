@@ -108,28 +108,28 @@ class ListingStatusManager(
      * Gets all items that have been listed.
      */
     fun getListedItems(): List<ScannedItem> {
-        return _items.value.filter { it.listingStatus == ItemListingStatus.LISTED }
+        return _items.value.filter { it.listingStatus == ItemListingStatus.LISTED_ACTIVE }
     }
 
     /**
      * Gets all items that are pending listing.
      */
     fun getPendingItems(): List<ScannedItem> {
-        return _items.value.filter { it.listingStatus == ItemListingStatus.PENDING }
+        return _items.value.filter { it.listingStatus == ItemListingStatus.LISTING_IN_PROGRESS }
     }
 
     /**
      * Gets all items that failed to list.
      */
     fun getFailedItems(): List<ScannedItem> {
-        return _items.value.filter { it.listingStatus == ItemListingStatus.FAILED }
+        return _items.value.filter { it.listingStatus == ItemListingStatus.LISTING_FAILED }
     }
 
     /**
      * Marks an item as listing in progress.
      */
     fun markListingInProgress(itemId: String): List<ScannedItem> {
-        return updateListingStatus(itemId, ItemListingStatus.PENDING)
+        return updateListingStatus(itemId, ItemListingStatus.LISTING_IN_PROGRESS)
     }
 
     /**
@@ -142,7 +142,7 @@ class ListingStatusManager(
     ): List<ScannedItem> {
         return updateListingStatus(
             itemId = itemId,
-            status = ItemListingStatus.LISTED,
+            status = ItemListingStatus.LISTED_ACTIVE,
             listingId = listingId,
             listingUrl = listingUrl
         )
@@ -152,14 +152,14 @@ class ListingStatusManager(
      * Marks an item as failed to list.
      */
     fun markListingFailed(itemId: String): List<ScannedItem> {
-        return updateListingStatus(itemId, ItemListingStatus.FAILED)
+        return updateListingStatus(itemId, ItemListingStatus.LISTING_FAILED)
     }
 
     /**
      * Resets the listing status for an item.
      */
     fun resetListingStatus(itemId: String): List<ScannedItem> {
-        return updateListingStatus(itemId, ItemListingStatus.DRAFT)
+        return updateListingStatus(itemId, ItemListingStatus.NOT_LISTED)
     }
 
     // ==================== Internal Methods ====================

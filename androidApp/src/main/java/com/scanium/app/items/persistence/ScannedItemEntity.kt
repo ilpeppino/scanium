@@ -154,6 +154,7 @@ private data class ImageFields(
 private fun ImageRef?.toImageFields(): ImageFields? {
     return when (this) {
         is ImageRef.Bytes -> ImageFields(bytes = bytes, mimeType = mimeType, width = width, height = height)
+        is ImageRef.CacheKey -> null // CacheKey cannot be persisted directly, would need resolution first
         null -> null
     }
 }
