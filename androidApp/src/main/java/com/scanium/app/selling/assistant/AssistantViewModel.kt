@@ -15,11 +15,13 @@ import com.scanium.app.listing.ListingDraftBuilder
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantMessage
+import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
 import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.ItemContextSnapshotBuilder
+import com.scanium.app.data.SettingsRepository
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -80,7 +83,8 @@ class AssistantViewModel(
     private val draftStore: ListingDraftStore,
     private val exportProfileRepository: com.scanium.app.listing.ExportProfileRepository,
     private val exportProfilePreferences: ExportProfilePreferences,
-    private val assistantRepository: AssistantRepository
+    private val assistantRepository: AssistantRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AssistantUiState(itemIds = itemIds))
     val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
@@ -124,12 +128,16 @@ class AssistantViewModel(
                 // Update stage to LLM processing
                 _uiState.update { it.copy(loadingStage = LoadingStage.LLM_PROCESSING) }
 
+                // Get current assistant preferences
+                val prefs = settingsRepository.assistantPrefsFlow.first()
+
                 val response = assistantRepository.send(
                     items = state.snapshots,
                     history = state.entries.map { it.message },
                     userMessage = trimmed,
                     exportProfile = state.profile,
-                    correlationId = correlationId
+                    correlationId = correlationId,
+                    assistantPrefs = prefs
                 )
 
                 val assistantMessage = AssistantMessage(
@@ -188,11 +196,12 @@ class AssistantViewModel(
     }
 
     /**
-     * Compute context-aware suggested questions.
+     * Compute context-aware suggested questions based on item category.
      */
     private fun computeSuggestedQuestions(snapshots: List<ItemContextSnapshot>): List<String> {
         val suggestions = mutableListOf<String>()
         val snapshot = snapshots.firstOrNull() ?: return defaultSuggestions()
+        val category = snapshot.category?.lowercase() ?: ""
 
         // Check what's missing
         val hasBrand = snapshot.attributes?.any { it.key.equals("brand", ignoreCase = true) } == true
@@ -201,37 +210,72 @@ class AssistantViewModel(
         val description = snapshot.description
         val hasTitle = !title.isNullOrBlank() && title.length > 5
         val hasDescription = !description.isNullOrBlank() && description.length > 20
+        val priceEstimate = snapshot.priceEstimate
+        val hasPrice = priceEstimate != null && priceEstimate > 0
 
-        // Brand-related suggestions
-        if (!hasBrand) {
-            suggestions.add("What brand is this?")
+        // Category-specific suggestions
+        when {
+            category.contains("electronic") || category.contains("phone") || category.contains("computer") || category.contains("camera") -> {
+                if (!hasBrand) suggestions.add("What brand and model is this?")
+                suggestions.add("What's the storage capacity?")
+                suggestions.add("Does it power on? Any screen issues?")
+                suggestions.add("Are all accessories included?")
+                suggestions.add("Any scratches or dents?")
+            }
+            category.contains("furniture") || category.contains("home") || category.contains("decor") || category.contains("chair") || category.contains("table") -> {
+                suggestions.add("What are the dimensions (H x W x D)?")
+                suggestions.add("What material is it made of?")
+                suggestions.add("Any scratches, stains, or wear?")
+                suggestions.add("Is assembly required?")
+                if (!hasColor) suggestions.add("What color/finish is it?")
+            }
+            category.contains("fashion") || category.contains("clothing") || category.contains("shoes") || category.contains("apparel") -> {
+                if (!hasBrand) suggestions.add("What brand is this?")
+                suggestions.add("What size is this?")
+                if (!hasColor) suggestions.add("What color is it?")
+                suggestions.add("What's the fabric/material?")
+                suggestions.add("Any signs of wear or defects?")
+            }
+            category.contains("toy") || category.contains("game") || category.contains("puzzle") -> {
+                suggestions.add("Is it complete with all pieces?")
+                suggestions.add("What age range is it for?")
+                suggestions.add("Does it require batteries?")
+                if (!hasBrand) suggestions.add("What brand is this?")
+            }
+            category.contains("book") || category.contains("media") || category.contains("dvd") || category.contains("vinyl") -> {
+                suggestions.add("Who is the author/artist?")
+                suggestions.add("Is this a first edition?")
+                suggestions.add("Condition of binding/pages?")
+                suggestions.add("Any markings or highlights?")
+            }
+            category.contains("sport") || category.contains("fitness") || category.contains("outdoor") || category.contains("bike") -> {
+                if (!hasBrand) suggestions.add("What brand is this?")
+                suggestions.add("What size is it?")
+                suggestions.add("Any damage or wear?")
+                suggestions.add("Does it include accessories?")
+            }
+            else -> {
+                // General fallback suggestions
+                if (!hasBrand) suggestions.add("What brand is this?")
+                if (!hasColor) suggestions.add("What color is this item?")
+                suggestions.add("What details should I add?")
+                suggestions.add("Any defects to mention?")
+            }
         }
 
-        // Color suggestions
-        if (!hasColor) {
-            suggestions.add("What color is this item?")
-        }
-
-        // Title/description improvements
-        if (!hasTitle || snapshot.title?.length ?: 0 < 15) {
+        // Always add these if not covered
+        if (!hasTitle || (snapshot.title?.length ?: 0) < 15) {
             suggestions.add("Suggest a better title")
         }
-
         if (!hasDescription) {
             suggestions.add("Help me write a description")
         }
-
-        // Add some general suggestions if we don't have enough
-        if (suggestions.size < 3) {
-            suggestions.add("What details should I add?")
+        if (!hasPrice) {
+            suggestions.add("What should I price this at?")
         }
 
-        if (suggestions.size < 3) {
-            suggestions.add("What should I mention to avoid buyer questions?")
-        }
-
-        // Shuffle and take 3
-        return suggestions.shuffled().take(3)
+        // Remove duplicates, shuffle, and take 3
+        return suggestions.distinct().shuffled().take(3)
     }
 
     private fun defaultSuggestions(): List<String> = listOf(
@@ -361,7 +405,8 @@ class AssistantViewModel(
             draftStore: ListingDraftStore,
             exportProfileRepository: com.scanium.app.listing.ExportProfileRepository,
             exportProfilePreferences: ExportProfilePreferences,
-            assistantRepository: AssistantRepository
+            assistantRepository: AssistantRepository,
+            settingsRepository: SettingsRepository
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -371,7 +416,8 @@ class AssistantViewModel(
                     draftStore = draftStore,
                     exportProfileRepository = exportProfileRepository,
                     exportProfilePreferences = exportProfilePreferences,
-                    assistantRepository = assistantRepository
+                    assistantRepository = assistantRepository,
+                    settingsRepository = settingsRepository
                 ) as T
             }
         }

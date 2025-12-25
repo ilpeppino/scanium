@@ -125,6 +125,20 @@ export const configSchema = z.object({
       enableRequestDedup: z.coerce.boolean().default(true),
       /** Staged response timeout for pending requests (ms) */
       stagedResponseTimeoutMs: z.coerce.number().int().min(5000).max(120000).default(60000),
+      /** Enable eBay comps tool (official API only) */
+      enableEbayComps: z.coerce.boolean().default(false),
+      /** eBay comps cache TTL in seconds (default 1h) */
+      ebayCompsCacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(3600),
+      /** eBay comps rate limit per minute */
+      ebayCompsRateLimitPerMinute: z.coerce.number().int().min(1).max(100).default(10),
+      /** Enable template packs for category-aware responses */
+      enableTemplatePacks: z.coerce.boolean().default(true),
+      /** Default assistant language */
+      defaultLanguage: z.string().default('EN'),
+      /** Default assistant tone */
+      defaultTone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL']).default('NEUTRAL'),
+      /** Default region for currency/marketplace */
+      defaultRegion: z.enum(['NL', 'DE', 'BE', 'FR', 'UK', 'US', 'EU']).default('EU'),
     })
     .default({}),
 

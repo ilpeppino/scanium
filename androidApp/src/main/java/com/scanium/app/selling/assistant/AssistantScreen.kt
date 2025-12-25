@@ -5,6 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,7 +28,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -94,6 +100,7 @@ fun AssistantScreen(
     val profileRepository = remember { AssetExportProfileRepository(context) }
     val profilePreferences = remember { ExportProfilePreferences(context) }
     val assistantRepository = remember { AssistantRepositoryFactory().create() }
+    val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
     val viewModel: AssistantViewModel = viewModel(
         factory = AssistantViewModel.factory(
             itemIds = itemIds,
@@ -101,16 +108,40 @@ fun AssistantScreen(
             draftStore = draftStore,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
-            assistantRepository = assistantRepository
+            assistantRepository = assistantRepository,
+            settingsRepository = settingsRepository
         )
     )
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     var inputText by remember { mutableStateOf("") }
-    var readAloudEnabled by remember { mutableStateOf(false) }
     val voiceController = remember { AssistantVoiceController(context) }
     var lastSpokenTimestamp by remember { mutableStateOf<Long?>(null) }
+
+    // Voice mode settings
+    val voiceModeEnabled by settingsRepository.voiceModeEnabledFlow.collectAsState(initial = false)
+    val speakAnswersEnabled by settingsRepository.speakAnswersEnabledFlow.collectAsState(initial = false)
+    val autoSendTranscript by settingsRepository.autoSendTranscriptFlow.collectAsState(initial = true)
+    val voiceLanguage by settingsRepository.voiceLanguageFlow.collectAsState(initial = "")
+    val assistantLanguage by settingsRepository.assistantLanguageFlow.collectAsState(initial = "EN")
+
+    // Voice state from controller
+    val voiceState by voiceController.voiceState.collectAsState()
+    val partialTranscript by voiceController.partialTranscript.collectAsState()
+
+    // Update voice language when settings change
+    LaunchedEffect(voiceLanguage, assistantLanguage) {
+        val effectiveLanguage = voiceLanguage.ifEmpty { assistantLanguage }
+        voiceController.setLanguage(effectiveLanguage)
+    }
+
+    // Initialize TTS if speak answers is enabled
+    LaunchedEffect(speakAnswersEnabled) {
+        if (speakAnswersEnabled) {
+            voiceController.initializeTts()
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose { voiceController.shutdown() }
@@ -124,8 +155,9 @@ fun AssistantScreen(
         }
     }
 
-    LaunchedEffect(state.entries, readAloudEnabled) {
-        if (!readAloudEnabled) return@LaunchedEffect
+    // Auto-speak assistant responses when enabled
+    LaunchedEffect(state.entries, speakAnswersEnabled) {
+        if (!speakAnswersEnabled) return@LaunchedEffect
         val lastAssistant = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
         val timestamp = lastAssistant?.message?.timestamp
         if (timestamp != null && timestamp != lastSpokenTimestamp) {
@@ -134,14 +166,30 @@ fun AssistantScreen(
         }
     }
 
+    // Handle voice recognition result callback
+    val handleVoiceResult: (VoiceResult) -> Unit = { result ->
+        when (result) {
+            is VoiceResult.Success -> {
+                inputText = result.transcript
+                if (autoSendTranscript && result.transcript.isNotBlank()) {
+                    viewModel.sendMessage(result.transcript)
+                    inputText = ""
+                }
+            }
+            is VoiceResult.Error -> {
+                scope.launch { snackbarHostState.showSnackbar(result.message) }
+            }
+            is VoiceResult.Cancelled -> {
+                // User cancelled, no action needed
+            }
+        }
+    }
+
     val micPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            voiceController.startListening(
-                onResult = { recognized -> inputText = recognized },
-                onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
-            )
+            voiceController.startListening(handleVoiceResult)
         } else {
             scope.launch { snackbarHostState.showSnackbar("Microphone permission denied") }
         }
@@ -157,12 +205,22 @@ fun AssistantScreen(
                     }
                 },
                 actions = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Read aloud", style = MaterialTheme.typography.labelMedium)
-                        Switch(
-                            checked = readAloudEnabled,
-                            onCheckedChange = { readAloudEnabled = it }
-                        )
+                    // Show voice state indicator when speaking
+                    if (voiceState == VoiceState.SPEAKING) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Speaking...", style = MaterialTheme.typography.labelMedium)
+                            IconButton(onClick = { voiceController.stopSpeaking() }) {
+                                Icon(Icons.Default.Stop, contentDescription = "Stop speaking")
+                            }
+                        }
                     }
                 }
             )
@@ -284,6 +342,15 @@ fun AssistantScreen(
                 }
             }
 
+            // Voice listening indicator
+            if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.TRANSCRIBING) {
+                VoiceListeningIndicator(
+                    state = voiceState,
+                    partialTranscript = partialTranscript,
+                    onStop = { voiceController.stopListening() }
+                )
+            }
+
             // Smart suggested questions (context-aware)
             SmartSuggestionsRow(
                 suggestions = state.suggestedQuestions.ifEmpty {
@@ -316,27 +383,51 @@ fun AssistantScreen(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Voice icon button
-                        IconButton(
-                            onClick = {
-                                val hasPermission = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.RECORD_AUDIO
-                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                if (hasPermission) {
-                                    voiceController.startListening(
-                                        onResult = { recognized -> inputText = recognized },
-                                        onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } }
-                                    )
-                                } else {
-                                    micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Mic,
-                                contentDescription = "Voice input"
+                        // Voice icon button - only show if voice mode is enabled
+                        if (voiceModeEnabled) {
+                            val isListening = voiceState == VoiceState.LISTENING
+                            val isTranscribing = voiceState == VoiceState.TRANSCRIBING
+                            val isActive = isListening || isTranscribing
+
+                            // Animate mic button color when active
+                            val micColor by animateColorAsState(
+                                targetValue = when {
+                                    isListening -> MaterialTheme.colorScheme.error
+                                    isTranscribing -> MaterialTheme.colorScheme.tertiary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                animationSpec = tween(300),
+                                label = "micColor"
                             )
+
+                            IconButton(
+                                onClick = {
+                                    when {
+                                        isActive -> {
+                                            // Stop listening if already active
+                                            voiceController.stopListening()
+                                        }
+                                        else -> {
+                                            // Start listening
+                                            val hasPermission = ContextCompat.checkSelfPermission(
+                                                context,
+                                                Manifest.permission.RECORD_AUDIO
+                                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                            if (hasPermission) {
+                                                voiceController.startListening(handleVoiceResult)
+                                            } else {
+                                                micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                            }
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (isActive) Icons.Default.Stop else Icons.Default.Mic,
+                                    contentDescription = if (isActive) "Stop listening" else "Voice input",
+                                    tint = micColor
+                                )
+                            }
                         }
 
                         // Send icon button
@@ -659,5 +750,94 @@ private fun actionLabel(action: AssistantAction): String {
         AssistantActionType.OPEN_SHARE -> "Share draft"
         AssistantActionType.OPEN_URL -> "Open link"
         AssistantActionType.SUGGEST_NEXT_PHOTO -> "Take photo"
+    }
+}
+
+/**
+ * Visual indicator shown when voice is actively listening or transcribing.
+ */
+@Composable
+private fun VoiceListeningIndicator(
+    state: VoiceState,
+    partialTranscript: String,
+    onStop: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when (state) {
+                VoiceState.LISTENING -> MaterialTheme.colorScheme.errorContainer
+                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                // Pulsing indicator
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = when (state) {
+                        VoiceState.LISTENING -> MaterialTheme.colorScheme.error
+                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiary
+                        else -> MaterialTheme.colorScheme.primary
+                    }
+                )
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = when (state) {
+                            VoiceState.LISTENING -> "Listening..."
+                            VoiceState.TRANSCRIBING -> "Transcribing..."
+                            else -> ""
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        color = when (state) {
+                            VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
+                            VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                    if (partialTranscript.isNotBlank()) {
+                        Text(
+                            text = partialTranscript,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = when (state) {
+                                VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                            },
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            IconButton(onClick = onStop) {
+                Icon(
+                    imageVector = Icons.Default.Stop,
+                    contentDescription = "Stop listening",
+                    tint = when (state) {
+                        VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
+                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
     }
 }

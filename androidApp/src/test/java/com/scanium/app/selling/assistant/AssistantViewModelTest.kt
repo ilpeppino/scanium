@@ -14,6 +14,8 @@ import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
+import com.scanium.app.model.AssistantPrefs
+import com.scanium.app.data.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -36,6 +38,7 @@ class AssistantViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var itemsViewModel: ItemsViewModel
+    private lateinit var settingsRepository: SettingsRepository
 
     @Before
     fun setUp() {
@@ -44,6 +47,7 @@ class AssistantViewModelTest {
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher
         )
+        settingsRepository = SettingsRepository(ApplicationProvider.getApplicationContext())
     }
 
     @After
@@ -64,7 +68,8 @@ class AssistantViewModelTest {
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
-            assistantRepository = repository
+            assistantRepository = repository,
+            settingsRepository = settingsRepository
         )
 
         // Initial state should be IDLE
@@ -96,7 +101,8 @@ class AssistantViewModelTest {
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
-            assistantRepository = repository
+            assistantRepository = repository,
+            settingsRepository = settingsRepository
         )
 
         viewModel.sendMessage("What color is this?")
@@ -120,7 +126,8 @@ class AssistantViewModelTest {
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
-            assistantRepository = repository
+            assistantRepository = repository,
+            settingsRepository = settingsRepository
         )
 
         viewModel.sendMessage("What color is this?")
@@ -145,7 +152,8 @@ class AssistantViewModelTest {
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
-            assistantRepository = repository
+            assistantRepository = repository,
+            settingsRepository = settingsRepository
         )
 
         // First send should fail
@@ -176,7 +184,8 @@ class AssistantViewModelTest {
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
-            assistantRepository = repository
+            assistantRepository = repository,
+            settingsRepository = settingsRepository
         )
 
         viewModel.sendMessage("Hi")
@@ -214,7 +223,8 @@ class AssistantViewModelTest {
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
-            assistantRepository = FakeAssistantRepository()
+            assistantRepository = FakeAssistantRepository(),
+            settingsRepository = settingsRepository
         )
 
         val action = AssistantAction(
@@ -263,7 +273,8 @@ class AssistantViewModelTest {
             userMessage: String,
             exportProfile: ExportProfileDefinition,
             correlationId: String,
-            imageAttachments: List<ItemImageAttachment>
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?
         ): com.scanium.app.model.AssistantResponse {
             return com.scanium.app.model.AssistantResponse("ok")
         }
@@ -276,7 +287,8 @@ class AssistantViewModelTest {
             userMessage: String,
             exportProfile: ExportProfileDefinition,
             correlationId: String,
-            imageAttachments: List<ItemImageAttachment>
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?
         ): com.scanium.app.model.AssistantResponse {
             // Simulate a long-running request that never completes
             kotlinx.coroutines.delay(Long.MAX_VALUE)
@@ -291,7 +303,8 @@ class AssistantViewModelTest {
             userMessage: String,
             exportProfile: ExportProfileDefinition,
             correlationId: String,
-            imageAttachments: List<ItemImageAttachment>
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?
         ): com.scanium.app.model.AssistantResponse {
             throw RuntimeException("Network error")
         }
@@ -306,7 +319,8 @@ class AssistantViewModelTest {
             userMessage: String,
             exportProfile: ExportProfileDefinition,
             correlationId: String,
-            imageAttachments: List<ItemImageAttachment>
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?
         ): com.scanium.app.model.AssistantResponse {
             callCount++
             if (callCount == 1) {

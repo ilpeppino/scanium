@@ -5,6 +5,7 @@ import com.scanium.app.BuildConfig
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantMessage
+import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantPromptBuilder
 import com.scanium.app.model.AssistantResponse
 import com.scanium.app.model.AssistantRole
@@ -52,7 +53,8 @@ interface AssistantRepository {
         userMessage: String,
         exportProfile: ExportProfileDefinition,
         correlationId: String,
-        imageAttachments: List<ItemImageAttachment> = emptyList()
+        imageAttachments: List<ItemImageAttachment> = emptyList(),
+        assistantPrefs: AssistantPrefs? = null
     ): AssistantResponse
 }
 
@@ -87,13 +89,14 @@ private class FallbackAssistantRepository(
         userMessage: String,
         exportProfile: ExportProfileDefinition,
         correlationId: String,
-        imageAttachments: List<ItemImageAttachment>
+        imageAttachments: List<ItemImageAttachment>,
+        assistantPrefs: AssistantPrefs?
     ): AssistantResponse {
         return try {
-            primary.send(items, history, userMessage, exportProfile, correlationId, imageAttachments)
+            primary.send(items, history, userMessage, exportProfile, correlationId, imageAttachments, assistantPrefs)
         } catch (error: Exception) {
             // Fallback doesn't support images - just pass empty list
-            fallback.send(items, history, userMessage, exportProfile, correlationId, emptyList())
+            fallback.send(items, history, userMessage, exportProfile, correlationId, emptyList(), assistantPrefs)
         }
     }
 }
@@ -115,7 +118,8 @@ private class CloudAssistantRepository(
         userMessage: String,
         exportProfile: ExportProfileDefinition,
         correlationId: String,
-        imageAttachments: List<ItemImageAttachment>
+        imageAttachments: List<ItemImageAttachment>,
+        assistantPrefs: AssistantPrefs?
     ): AssistantResponse = withContext(Dispatchers.IO) {
         if (baseUrl.isBlank()) {
             throw IllegalStateException("Assistant backend not configured")
@@ -127,7 +131,8 @@ private class CloudAssistantRepository(
             message = userMessage,
             exportProfile = ExportProfileSnapshotDto.fromModel(
                 ExportProfileSnapshot(exportProfile.id, exportProfile.displayName)
-            )
+            ),
+            assistantPrefs = assistantPrefs?.let { AssistantPrefsDto.fromModel(it) }
         )
 
         val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
@@ -223,7 +228,8 @@ private class LocalAssistantRepository : AssistantRepository {
         userMessage: String,
         exportProfile: ExportProfileDefinition,
         correlationId: String,
-        imageAttachments: List<ItemImageAttachment>
+        imageAttachments: List<ItemImageAttachment>,
+        assistantPrefs: AssistantPrefs?
     ): AssistantResponse {
         // Local fallback doesn't process images - they are ignored
         AssistantPromptBuilder.buildRequest(
@@ -288,8 +294,30 @@ private data class AssistantChatRequest(
     val items: List<ItemContextSnapshotDto>,
     val history: List<AssistantMessageDto> = emptyList(),
     val message: String,
-    val exportProfile: ExportProfileSnapshotDto? = null
+    val exportProfile: ExportProfileSnapshotDto? = null,
+    val assistantPrefs: AssistantPrefsDto? = null
 )
+
+@Serializable
+private data class AssistantPrefsDto(
+    val language: String? = null,
+    val tone: String? = null,
+    val region: String? = null,
+    val units: String? = null,
+    val verbosity: String? = null
+) {
+    companion object {
+        fun fromModel(model: AssistantPrefs): AssistantPrefsDto {
+            return AssistantPrefsDto(
+                language = model.language,
+                tone = model.tone?.name,
+                region = model.region?.name,
+                units = model.units?.name,
+                verbosity = model.verbosity?.name
+            )
+        }
+    }
+}
 
 @Serializable
 private data class AssistantChatResponse(
