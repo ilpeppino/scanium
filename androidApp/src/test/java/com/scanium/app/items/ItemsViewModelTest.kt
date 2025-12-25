@@ -317,6 +317,27 @@ class ItemsViewModelTest {
         assertThat(viewModel.getItemCount()).isEqualTo(0)
     }
 
+    @Test
+    fun whenCreatingExportPayload_thenUsesSelectedItems() = runTest {
+        // Arrange
+        viewModel.addItems(
+            listOf(
+                createTestItem(id = "item-1", labelText = "Camera"),
+                createTestItem(id = "item-2", labelText = "Lamp")
+            )
+        )
+        val selectedId = viewModel.items.first().first().id
+
+        // Act
+        val payload = viewModel.createExportPayload(listOf(selectedId))
+
+        // Assert
+        assertThat(payload).isNotNull()
+        assertThat(payload?.items).hasSize(1)
+        assertThat(payload?.items?.first()?.id).isEqualTo(selectedId)
+        assertThat(viewModel.exportPayload.first()).isEqualTo(payload)
+    }
+
     // ==================== Session-Level De-Duplication Tests ====================
 
     @Test
