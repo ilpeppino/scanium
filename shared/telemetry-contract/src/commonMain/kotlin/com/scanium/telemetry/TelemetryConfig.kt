@@ -19,7 +19,8 @@ import kotlinx.serialization.Serializable
  *     minSeverity = TelemetrySeverity.INFO,
  *     traceSampleRate = 0.1,
  *     maxQueueSize = 1000,
- *     flushIntervalMs = 5000
+ *     flushIntervalMs = 5000,
+ *     dataRegion = "EU"
  * )
  * ```
  *
@@ -37,6 +38,7 @@ import kotlinx.serialization.Serializable
  * @property dropPolicy Policy when queue is full: DROP_OLDEST or DROP_NEWEST.
  * @property maxRetries Maximum retry attempts for failed exports (default: 3).
  * @property retryBackoffMs Base backoff in milliseconds for exponential retry (default: 1000ms).
+ * @property dataRegion Region where telemetry data is stored/processed (e.g., "EU", "US").
  */
 @Serializable
 data class TelemetryConfig(
@@ -48,7 +50,8 @@ data class TelemetryConfig(
     val maxBatchSize: Int = 100,
     val dropPolicy: DropPolicy = DropPolicy.DROP_OLDEST,
     val maxRetries: Int = 3,
-    val retryBackoffMs: Long = 1000
+    val retryBackoffMs: Long = 1000,
+    val dataRegion: String = "US"
 ) {
     init {
         require(traceSampleRate in 0.0..1.0) {
@@ -68,6 +71,9 @@ data class TelemetryConfig(
         }
         require(retryBackoffMs > 0) {
             "retryBackoffMs must be positive, got $retryBackoffMs"
+        }
+        require(dataRegion.isNotBlank()) {
+            "dataRegion must not be blank"
         }
     }
 
@@ -101,7 +107,8 @@ data class TelemetryConfig(
             traceSampleRate = 0.1,
             maxQueueSize = 1000,
             flushIntervalMs = 5000,
-            maxBatchSize = 100
+            maxBatchSize = 100,
+            dataRegion = "US"
         )
 
         /**
@@ -116,7 +123,8 @@ data class TelemetryConfig(
             traceSampleRate = 0.01,
             maxQueueSize = 500,
             flushIntervalMs = 10000,
-            maxBatchSize = 100
+            maxBatchSize = 100,
+            dataRegion = "US"
         )
 
         /**
@@ -131,7 +139,8 @@ data class TelemetryConfig(
             traceSampleRate = 0.05,
             maxQueueSize = 750,
             flushIntervalMs = 7500,
-            maxBatchSize = 100
+            maxBatchSize = 100,
+            dataRegion = "US"
         )
     }
 }

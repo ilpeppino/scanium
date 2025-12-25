@@ -135,7 +135,7 @@ class ScaniumApplication : Application() {
             com.scanium.telemetry.TelemetryConfig.development()
         } else {
             com.scanium.telemetry.TelemetryConfig.production()
-        }
+        }.copy(dataRegion = BuildConfig.TELEMETRY_DATA_REGION)
 
         // Build OTLP configuration from BuildConfig
         val otlpConfig = if (BuildConfig.OTLP_ENABLED && BuildConfig.OTLP_ENDPOINT.isNotBlank()) {
@@ -168,7 +168,7 @@ class ScaniumApplication : Application() {
         // Create Telemetry facade with config and diagnostics
         telemetry = Telemetry(
             config = telemetryConfig,
-            defaultAttributesProvider = AndroidDefaultAttributesProvider(),
+            defaultAttributesProvider = AndroidDefaultAttributesProvider(telemetryConfig.dataRegion),
             logPort = logPort,
             metricPort = metricPort,
             tracePort = tracePort,
