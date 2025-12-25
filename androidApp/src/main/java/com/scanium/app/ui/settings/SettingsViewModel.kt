@@ -106,6 +106,9 @@ class SettingsViewModel(
     val voiceLanguage: StateFlow<String> = settingsRepository.voiceLanguageFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val assistantHapticsEnabled: StateFlow<Boolean> = settingsRepository.assistantHapticsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     // Privacy Safe Mode
     val isPrivacySafeModeActive: StateFlow<Boolean> = settingsRepository.isPrivacySafeModeActiveFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -190,6 +193,10 @@ class SettingsViewModel(
 
     fun setVoiceLanguage(language: String) {
         viewModelScope.launch { settingsRepository.setVoiceLanguage(language) }
+    }
+
+    fun setAssistantHapticsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAssistantHapticsEnabled(enabled) }
     }
 
     // Privacy Safe Mode

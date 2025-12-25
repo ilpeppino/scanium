@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -81,6 +82,7 @@ fun SettingsScreen(
     val speakAnswersEnabled by viewModel.speakAnswersEnabled.collectAsState()
     val autoSendTranscript by viewModel.autoSendTranscript.collectAsState()
     val voiceLanguage by viewModel.voiceLanguage.collectAsState()
+    val assistantHapticsEnabled by viewModel.assistantHapticsEnabled.collectAsState()
 
     // Privacy Safe Mode
     val isPrivacySafeModeActive by viewModel.isPrivacySafeModeActive.collectAsState()
@@ -342,6 +344,14 @@ fun SettingsScreen(
                     checked = autoSendTranscript,
                     enabled = voiceModeEnabled,
                     onCheckedChange = { viewModel.setAutoSendTranscript(it) }
+                )
+
+                SettingsSwitchItem(
+                    title = "Assistant Haptics",
+                    subtitle = "Vibrate on send/apply/copy actions",
+                    icon = Icons.Default.Vibration,
+                    checked = assistantHapticsEnabled,
+                    onCheckedChange = { viewModel.setAssistantHapticsEnabled(it) }
                 )
 
                 SettingsDropdownItem(

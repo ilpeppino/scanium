@@ -88,6 +88,24 @@ describe('POST /v1/assist/chat', () => {
     expect(body.actions?.length).toBeGreaterThan(0);
   });
 
+  it('returns assistant error payload for validation failures', async () => {
+    const app = await appPromise;
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/assist/chat',
+      headers: { 'x-api-key': 'assist-key' },
+      payload: {
+        items: 'invalid',
+        message: 42,
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
+    expect(body.assistantError?.type).toBe('validation_error');
+    expect(body.assistantError?.category).toBe('policy');
+  });
+
   it('refuses disallowed scraping requests', async () => {
     const app = await appPromise;
     const res = await app.inject({
