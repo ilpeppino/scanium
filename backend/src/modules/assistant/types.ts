@@ -1,5 +1,73 @@
 export type AssistantRole = 'USER' | 'ASSISTANT' | 'SYSTEM';
 
+// ============================================================================
+// Personalization Preferences
+// ============================================================================
+
+/**
+ * Tone preference for assistant responses.
+ */
+export type AssistantTone = 'NEUTRAL' | 'FRIENDLY' | 'PROFESSIONAL';
+
+/**
+ * Region preference (affects currency, marketplace mentions).
+ */
+export type AssistantRegion = 'NL' | 'DE' | 'BE' | 'FR' | 'UK' | 'US' | 'EU';
+
+/**
+ * Unit system preference.
+ */
+export type AssistantUnits = 'METRIC' | 'IMPERIAL';
+
+/**
+ * Verbosity preference.
+ */
+export type AssistantVerbosity = 'CONCISE' | 'NORMAL' | 'DETAILED';
+
+/**
+ * User's assistant personalization preferences.
+ * Sent with each request, not stored server-side.
+ */
+export type AssistantPrefs = {
+  /** Language code (e.g., 'EN', 'NL', 'DE') */
+  language?: string;
+  /** Response tone */
+  tone?: AssistantTone;
+  /** Region for currency/marketplace context */
+  region?: AssistantRegion;
+  /** Unit system */
+  units?: AssistantUnits;
+  /** Response verbosity */
+  verbosity?: AssistantVerbosity;
+};
+
+// ============================================================================
+// Structured Response Types (for PR5 template-driven responses)
+// ============================================================================
+
+/**
+ * Structured selling help response sections.
+ */
+export type StructuredSellingHelp = {
+  /** Suggested title with placeholders filled */
+  suggestedTitle?: {
+    value: string;
+    confidence: ConfidenceTier;
+  };
+  /** Suggested description with sections */
+  suggestedDescription?: {
+    value: string;
+    sections: Array<{ id: string; label: string; content: string }>;
+    confidence: ConfidenceTier;
+  };
+  /** Missing info checklist */
+  missingInfoChecklist?: string[];
+  /** Buyer FAQ suggestions */
+  buyerFaqSuggestions?: string[];
+  /** Template pack used */
+  templatePackId?: string;
+};
+
 export type AssistantMessage = {
   role: AssistantRole;
   content: string;
@@ -85,6 +153,8 @@ export type AssistantResponse = {
   suggestedDraftUpdates?: SuggestedDraftUpdate[];
   /** Suggested next photo instruction when evidence is insufficient */
   suggestedNextPhoto?: string;
+  /** Structured selling help (template-driven) */
+  structuredHelp?: StructuredSellingHelp;
 };
 
 export type ItemAttributeSnapshot = {
@@ -138,6 +208,8 @@ export type AssistantChatRequest = {
   history?: AssistantMessage[];
   message: string;
   exportProfile?: ExportProfileSnapshot;
+  /** User's personalization preferences */
+  assistantPrefs?: AssistantPrefs;
 };
 
 /**

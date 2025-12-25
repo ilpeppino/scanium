@@ -414,9 +414,9 @@ function sanitizeHtml(text: string): string {
  * Ensures only safe action types and validated payloads are returned to client.
  */
 export function sanitizeActions(actions: AssistantAction[] = []): AssistantAction[] {
-  return actions
+  const mapped: (AssistantAction | null)[] = actions
     .filter((action) => SAFE_ACTIONS.has(action.type))
-    .map((action) => {
+    .map((action): AssistantAction | null => {
       const payload = sanitizePayload(action.payload);
       if (action.type === 'OPEN_URL') {
         const url = payload?.url;
@@ -427,13 +427,11 @@ export function sanitizeActions(actions: AssistantAction[] = []): AssistantActio
       return {
         type: action.type,
         payload,
-        ...(action.label && { label: sanitizeHtml(action.label).slice(0, 100) }),
-        ...(action.requiresConfirmation !== undefined && {
-          requiresConfirmation: action.requiresConfirmation,
-        }),
+        label: action.label ? sanitizeHtml(action.label).slice(0, 100) : undefined,
+        requiresConfirmation: action.requiresConfirmation,
       };
-    })
-    .filter((action): action is AssistantAction => Boolean(action));
+    });
+  return mapped.filter((action): action is AssistantAction => action !== null);
 }
 
 // ============================================================================

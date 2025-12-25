@@ -19,7 +19,7 @@ import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.core.export.ExportPayload
-import com.scanium.core.export.toExportPayload
+import com.scanium.app.items.export.toExportPayload
 import com.scanium.shared.core.models.pricing.PriceEstimatorProvider
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.CoroutineDispatcher

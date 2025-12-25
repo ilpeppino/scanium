@@ -28,8 +28,20 @@ import com.scanium.app.media.StorageHelper
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.scanium.app.BuildConfig
 import com.scanium.app.model.user.UserEdition
+import com.scanium.app.model.AssistantRegion
+import com.scanium.app.model.AssistantTone
+import com.scanium.app.model.AssistantUnits
+import com.scanium.app.model.AssistantVerbosity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +66,19 @@ fun SettingsScreen(
     val saveDirectoryUri by viewModel.saveDirectoryUri.collectAsState()
     val allowAssistantImages by viewModel.allowAssistantImages.collectAsState()
     val forceFtueTour by viewModel.forceFtueTour.collectAsState()
+
+    // Assistant Personalization
+    val assistantLanguage by viewModel.assistantLanguage.collectAsState()
+    val assistantTone by viewModel.assistantTone.collectAsState()
+    val assistantRegion by viewModel.assistantRegion.collectAsState()
+    val assistantUnits by viewModel.assistantUnits.collectAsState()
+    val assistantVerbosity by viewModel.assistantVerbosity.collectAsState()
+
+    // Voice Mode
+    val voiceModeEnabled by viewModel.voiceModeEnabled.collectAsState()
+    val speakAnswersEnabled by viewModel.speakAnswersEnabled.collectAsState()
+    val autoSendTranscript by viewModel.autoSendTranscript.collectAsState()
+    val voiceLanguage by viewModel.voiceLanguage.collectAsState()
 
     val dirPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -193,6 +218,123 @@ fun SettingsScreen(
                 onCheckedChange = { viewModel.setAllowAssistantImages(it) }
             )
 
+            // Assistant Personalization Section (only show when assistant is enabled)
+            if (allowAssistant) {
+                HorizontalDivider()
+                SettingsSectionTitle("Assistant Personalization")
+
+                SettingsDropdownItem(
+                    title = "Language",
+                    subtitle = "Assistant response language",
+                    icon = Icons.Default.Language,
+                    selectedValue = assistantLanguage,
+                    options = listOf("EN" to "English", "NL" to "Dutch", "DE" to "German", "FR" to "French"),
+                    onValueChange = { viewModel.setAssistantLanguage(it) }
+                )
+
+                SettingsDropdownItem(
+                    title = "Tone",
+                    subtitle = "Response style",
+                    icon = Icons.Default.Tune,
+                    selectedValue = assistantTone.name,
+                    options = listOf(
+                        AssistantTone.NEUTRAL.name to "Neutral",
+                        AssistantTone.FRIENDLY.name to "Friendly",
+                        AssistantTone.PROFESSIONAL.name to "Professional"
+                    ),
+                    onValueChange = { viewModel.setAssistantTone(AssistantTone.valueOf(it)) }
+                )
+
+                SettingsDropdownItem(
+                    title = "Region",
+                    subtitle = "Affects currency and marketplace suggestions",
+                    icon = Icons.Default.Language,
+                    selectedValue = assistantRegion.name,
+                    options = listOf(
+                        AssistantRegion.NL.name to "Netherlands",
+                        AssistantRegion.DE.name to "Germany",
+                        AssistantRegion.BE.name to "Belgium",
+                        AssistantRegion.FR.name to "France",
+                        AssistantRegion.UK.name to "United Kingdom",
+                        AssistantRegion.US.name to "United States",
+                        AssistantRegion.EU.name to "Europe (General)"
+                    ),
+                    onValueChange = { viewModel.setAssistantRegion(AssistantRegion.valueOf(it)) }
+                )
+
+                SettingsDropdownItem(
+                    title = "Units",
+                    subtitle = "Measurement system",
+                    icon = Icons.Default.Tune,
+                    selectedValue = assistantUnits.name,
+                    options = listOf(
+                        AssistantUnits.METRIC.name to "Metric (cm, kg)",
+                        AssistantUnits.IMPERIAL.name to "Imperial (in, lb)"
+                    ),
+                    onValueChange = { viewModel.setAssistantUnits(AssistantUnits.valueOf(it)) }
+                )
+
+                SettingsDropdownItem(
+                    title = "Verbosity",
+                    subtitle = "Response detail level",
+                    icon = Icons.Default.Tune,
+                    selectedValue = assistantVerbosity.name,
+                    options = listOf(
+                        AssistantVerbosity.CONCISE.name to "Concise",
+                        AssistantVerbosity.NORMAL.name to "Normal",
+                        AssistantVerbosity.DETAILED.name to "Detailed"
+                    ),
+                    onValueChange = { viewModel.setAssistantVerbosity(AssistantVerbosity.valueOf(it)) }
+                )
+
+                // Voice Mode Section
+                HorizontalDivider()
+                SettingsSectionTitle("Voice Mode")
+
+                SettingsSwitchItem(
+                    title = "Enable Voice Mode",
+                    subtitle = "Use microphone for hands-free input",
+                    icon = Icons.Default.Mic,
+                    checked = voiceModeEnabled,
+                    onCheckedChange = { viewModel.setVoiceModeEnabled(it) }
+                )
+
+                SettingsSwitchItem(
+                    title = "Speak Answers Aloud",
+                    subtitle = "Read assistant responses using text-to-speech",
+                    icon = Icons.Default.VolumeUp,
+                    checked = speakAnswersEnabled,
+                    enabled = voiceModeEnabled,
+                    onCheckedChange = { viewModel.setSpeakAnswersEnabled(it) }
+                )
+
+                SettingsSwitchItem(
+                    title = "Auto-send After Transcription",
+                    subtitle = "Automatically send message after voice input",
+                    icon = Icons.Default.Send,
+                    checked = autoSendTranscript,
+                    enabled = voiceModeEnabled,
+                    onCheckedChange = { viewModel.setAutoSendTranscript(it) }
+                )
+
+                SettingsDropdownItem(
+                    title = "Voice Language",
+                    subtitle = "Language for speech recognition and TTS",
+                    icon = Icons.Default.Language,
+                    selectedValue = voiceLanguage.ifEmpty { "Follow assistant ($assistantLanguage)" },
+                    options = listOf(
+                        "" to "Follow assistant language",
+                        "EN" to "English",
+                        "NL" to "Dutch",
+                        "DE" to "German",
+                        "FR" to "French",
+                        "ES" to "Spanish",
+                        "IT" to "Italian"
+                    ),
+                    onValueChange = { viewModel.setVoiceLanguage(it) }
+                )
+            }
+
             HorizontalDivider()
 
             SettingsSectionTitle("Legal")
@@ -319,4 +461,62 @@ fun SettingsSwitchItem(
         },
         modifier = Modifier.clickable(enabled = enabled) { onCheckedChange(!checked) }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsDropdownItem(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    selectedValue: String,
+    options: List<Pair<String, String>>, // value to displayLabel
+    onValueChange: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedLabel = options.find { it.first == selectedValue }?.second ?: selectedValue
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        ListItem(
+            headlineContent = { Text(title) },
+            supportingContent = {
+                Column {
+                    subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                    Text(
+                        text = selectedLabel,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            },
+            leadingContent = icon?.let { { Icon(it, contentDescription = null) } },
+            trailingContent = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            modifier = Modifier
+                .menuAnchor()
+                .clickable { expanded = true }
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { (value, label) ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    onClick = {
+                        onValueChange(value)
+                        expanded = false
+                    },
+                    leadingIcon = if (value == selectedValue) {
+                        { Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+                    } else null
+                )
+            }
+        }
+    }
 }

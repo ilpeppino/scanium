@@ -18,6 +18,11 @@ import com.scanium.app.model.billing.EntitlementState
 import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.model.config.FeatureFlagRepository
 import com.scanium.app.model.config.RemoteConfig
+import com.scanium.app.model.AssistantPrefs
+import com.scanium.app.model.AssistantRegion
+import com.scanium.app.model.AssistantTone
+import com.scanium.app.model.AssistantUnits
+import com.scanium.app.model.AssistantVerbosity
 
 class SettingsViewModel(
     private val application: Application,
@@ -69,6 +74,38 @@ class SettingsViewModel(
     val forceFtueTour: StateFlow<Boolean> = ftueRepository.forceEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    // Assistant Personalization
+    val assistantLanguage: StateFlow<String> = settingsRepository.assistantLanguageFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "EN")
+
+    val assistantTone: StateFlow<AssistantTone> = settingsRepository.assistantToneFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantTone.NEUTRAL)
+
+    val assistantRegion: StateFlow<AssistantRegion> = settingsRepository.assistantRegionFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantRegion.EU)
+
+    val assistantUnits: StateFlow<AssistantUnits> = settingsRepository.assistantUnitsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantUnits.METRIC)
+
+    val assistantVerbosity: StateFlow<AssistantVerbosity> = settingsRepository.assistantVerbosityFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantVerbosity.NORMAL)
+
+    val assistantPrefs: StateFlow<AssistantPrefs> = settingsRepository.assistantPrefsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantPrefs())
+
+    // Voice Mode settings
+    val voiceModeEnabled: StateFlow<Boolean> = settingsRepository.voiceModeEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val speakAnswersEnabled: StateFlow<Boolean> = settingsRepository.speakAnswersEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val autoSendTranscript: StateFlow<Boolean> = settingsRepository.autoSendTranscriptFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val voiceLanguage: StateFlow<String> = settingsRepository.voiceLanguageFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
@@ -111,6 +148,44 @@ class SettingsViewModel(
         viewModelScope.launch {
             ftueRepository.reset()
         }
+    }
+
+    // Assistant Personalization setters
+    fun setAssistantLanguage(language: String) {
+        viewModelScope.launch { settingsRepository.setAssistantLanguage(language) }
+    }
+
+    fun setAssistantTone(tone: AssistantTone) {
+        viewModelScope.launch { settingsRepository.setAssistantTone(tone) }
+    }
+
+    fun setAssistantRegion(region: AssistantRegion) {
+        viewModelScope.launch { settingsRepository.setAssistantRegion(region) }
+    }
+
+    fun setAssistantUnits(units: AssistantUnits) {
+        viewModelScope.launch { settingsRepository.setAssistantUnits(units) }
+    }
+
+    fun setAssistantVerbosity(verbosity: AssistantVerbosity) {
+        viewModelScope.launch { settingsRepository.setAssistantVerbosity(verbosity) }
+    }
+
+    // Voice Mode setters
+    fun setVoiceModeEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setVoiceModeEnabled(enabled) }
+    }
+
+    fun setSpeakAnswersEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setSpeakAnswersEnabled(enabled) }
+    }
+
+    fun setAutoSendTranscript(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setAutoSendTranscript(enabled) }
+    }
+
+    fun setVoiceLanguage(language: String) {
+        viewModelScope.launch { settingsRepository.setVoiceLanguage(language) }
     }
 
     // For manual edition switching (Dev only ideally, but we put it here for now)
