@@ -22,7 +22,8 @@ class TelemetryTest {
             TelemetryEvent.ATTR_APP_VERSION to "1.0.0",
             TelemetryEvent.ATTR_BUILD to "1",
             TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_DEV,
-            TelemetryEvent.ATTR_SESSION_ID to "test-session-123"
+            TelemetryEvent.ATTR_SESSION_ID to "test-session-123",
+            TelemetryEvent.ATTR_DATA_REGION to "US"
         )
     ) : DefaultAttributesProvider {
         override fun getDefaultAttributes(): Map<String, String> = attributes
@@ -123,6 +124,7 @@ class TelemetryTest {
         assertEquals("1", event.attributes[TelemetryEvent.ATTR_BUILD])
         assertEquals(TelemetryEvent.ENV_DEV, event.attributes[TelemetryEvent.ATTR_ENV])
         assertEquals("test-session-123", event.attributes[TelemetryEvent.ATTR_SESSION_ID])
+        assertEquals("US", event.attributes[TelemetryEvent.ATTR_DATA_REGION])
 
         // Verify user attribute is present
         assertEquals("custom_value", event.attributes["custom_field"])
@@ -156,7 +158,7 @@ class TelemetryTest {
         val incompleteProvider = TestDefaultAttributesProvider(
             attributes = mapOf(
                 TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_ANDROID
-                // Missing: app_version, build, env, session_id
+                // Missing: app_version, build, env, session_id, data_region
             )
         )
 
@@ -176,6 +178,7 @@ class TelemetryTest {
         assertTrue(exception.message!!.contains(TelemetryEvent.ATTR_BUILD))
         assertTrue(exception.message!!.contains(TelemetryEvent.ATTR_ENV))
         assertTrue(exception.message!!.contains(TelemetryEvent.ATTR_SESSION_ID))
+        assertTrue(exception.message!!.contains(TelemetryEvent.ATTR_DATA_REGION))
     }
 
     @Test
