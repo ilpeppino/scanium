@@ -22,14 +22,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.*
@@ -44,7 +40,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
-import com.scanium.app.data.ItemsActionPreferences
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -68,8 +63,6 @@ import java.util.*
 @Composable
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToSell: (List<String>) -> Unit,
-    onNavigateToDraft: (List<String>) -> Unit,
     onNavigateToAssistant: (List<String>) -> Unit,
     draftStore: ListingDraftStore,
     itemsViewModel: ItemsViewModel = viewModel(),
@@ -84,14 +77,10 @@ fun ItemsListScreen(
     
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectionMode by remember { mutableStateOf(false) }
-    var selectedAction by remember { mutableStateOf(SelectedItemsAction.SELL_ON_EBAY) }
-    var showActionMenu by remember { mutableStateOf(false) }
     var lastDeletedItem by remember { mutableStateOf<ScannedItem?>(null) }
     var lastDeletedWasSelected by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val actionPreferences = remember { ItemsActionPreferences(context) }
-    val lastAction by actionPreferences.lastAction.collectAsState(initial = SelectedItemsAction.SELL_ON_EBAY)
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -148,12 +137,6 @@ fun ItemsListScreen(
         }
     }
 
-    LaunchedEffect(lastAction) {
-        if (selectedAction != lastAction) {
-            selectedAction = lastAction
-        }
-    }
-
     LaunchedEffect(itemsViewModel) {
         itemsViewModel.cloudClassificationAlerts.collect { alert ->
             val result = snackbarHostState.showSnackbar(
@@ -163,22 +146,6 @@ fun ItemsListScreen(
             )
             if (result == SnackbarResult.ActionPerformed) {
                 itemsViewModel.retryClassification(alert.itemId)
-            }
-        }
-    }
-
-    fun executeAction(action: SelectedItemsAction = selectedAction) {
-        when (action) {
-            SelectedItemsAction.SELL_ON_EBAY -> {
-                onNavigateToSell(selectedIds.toList())
-            }
-            SelectedItemsAction.REVIEW_DRAFT -> {
-                val selected = selectedIds.toList()
-                if (selected.isNotEmpty()) {
-                    onNavigateToDraft(selected)
-                } else {
-                    scope.launch { snackbarHostState.showSnackbar("Select an item to review") }
-                }
             }
         }
     }
@@ -358,7 +325,7 @@ fun ItemsListScreen(
                 )
             }
 
-            // Action dropdown control - bottom-center
+            // Marketplace CTA (disabled placeholder)
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -366,12 +333,11 @@ fun ItemsListScreen(
                     .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
                     .fillMaxWidth(0.65f)
             ) {
-                // Custom split FAB with integrated dropdown
                 Surface(
                     shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 6.dp,
-                    tonalElevation = 3.dp,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shadowElevation = 0.dp,
+                    tonalElevation = 0.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .then(
@@ -384,93 +350,16 @@ fun ItemsListScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(0.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
                     ) {
-                        // Main action button (icon + text)
-                        Row(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { executeAction() }
-                                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = when (selectedAction) {
-                                    SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                    SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
-                                },
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-
-                            Text(
-                                text = selectedAction.displayName,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-
-                        // Divider
-                        Box(
-                            modifier = Modifier
-                                .width(1.dp)
-                                .height(24.dp)
-                                .background(MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
+                        Text(
+                            text = "Marketplace integrations (coming later)",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        // Dropdown button
-                        Box(
-                            modifier = Modifier
-                                .clickable { showActionMenu = true }
-                                .padding(horizontal = 12.dp, vertical = 16.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Select action",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                }
-
-                // Dropdown menu
-                DropdownMenu(
-                    expanded = showActionMenu,
-                    onDismissRequest = { showActionMenu = false }
-                ) {
-                    SelectedItemsAction.values().forEach { action ->
-                        DropdownMenuItem(
-                            text = { Text(action.displayName) },
-                            onClick = {
-                                selectedAction = action
-                                showActionMenu = false
-                                scope.launch {
-                                    actionPreferences.setLastAction(action)
-                                }
-                                executeAction(action)
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = when (action) {
-                                        SelectedItemsAction.SELL_ON_EBAY -> Icons.Default.ShoppingCart
-                                        SelectedItemsAction.REVIEW_DRAFT -> Icons.Default.OpenInNew
-                                    },
-                                    contentDescription = null
-                                )
-                            },
-                            trailingIcon = if (selectedAction == action) {
-                                {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = "Selected"
-                                    )
-                                }
-                            } else null
-                        )
-                    }
                 }
             }
         }
