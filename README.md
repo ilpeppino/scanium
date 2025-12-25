@@ -53,7 +53,7 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
   - Long-press to scan: Continuous detection while holding the button
 - **Price Estimation**: Category-based price ranges for detected objects
 - **Items Management**: View and manage all detected items with their estimated prices
-- **eBay Selling Integration (Mock)**: Complete marketplace flow with realistic simulation
+- **Marketplace Selling Integration (Mock)**: Complete marketplace flow with realistic simulation (UI temporarily disabled)
   - Multi-select items from detected list
   - Review and edit listing drafts (title, price, condition)
   - High-quality image preparation for web/mobile listings
