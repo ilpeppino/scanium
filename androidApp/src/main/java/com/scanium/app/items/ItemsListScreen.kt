@@ -42,6 +42,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.scanium.app.items.export.CsvExportWriter
+import com.scanium.app.items.export.ZipExportWriter
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -89,6 +90,7 @@ fun ItemsListScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val csvExportWriter = remember { CsvExportWriter() }
+    val zipExportWriter = remember { ZipExportWriter() }
 
     // FTUE tour state
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -175,6 +177,27 @@ fun ItemsListScreen(
                 itemsViewModel.retryClassification(alert.itemId)
             }
         }
+    }
+
+    fun shareZip(file: File) {
+        val authority = "${context.packageName}.fileprovider"
+        val uri = FileProvider.getUriForFile(context, authority, file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/zip"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = ClipData.newUri(context.contentResolver, file.name, uri)
+        }
+        val chooser = Intent.createChooser(intent, "Share ZIP")
+        if (context !is Activity) {
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { context.startActivity(chooser) }
+            .onFailure {
+                scope.launch {
+                    snackbarHostState.showSnackbar("Unable to share ZIP")
+                }
+            }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -460,28 +483,53 @@ fun ItemsListScreen(
                 )
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showExportDialog = false
-                        scope.launch {
-                            val payload = exportPayload
-                            if (payload == null) {
-                                snackbarHostState.showSnackbar("Select items to export")
-                                return@launch
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(
+                        onClick = {
+                            showExportDialog = false
+                            scope.launch {
+                                val payload = exportPayload
+                                if (payload == null) {
+                                    snackbarHostState.showSnackbar("Select items to export")
+                                    return@launch
+                                }
+                                val result = csvExportWriter.writeToCache(context, payload)
+                                val message = result.fold(
+                                    onSuccess = { file ->
+                                        shareCsv(file)
+                                        "CSV ready to share"
+                                    },
+                                    onFailure = { "Failed to export CSV" }
+                                )
+                                snackbarHostState.showSnackbar(message)
                             }
-                            val result = csvExportWriter.writeToCache(context, payload)
-                            val message = result.fold(
-                                onSuccess = { file ->
-                                    shareCsv(file)
-                                    "CSV ready to share"
-                                },
-                                onFailure = { "Failed to export CSV" }
-                            )
-                            snackbarHostState.showSnackbar(message)
                         }
+                    ) {
+                        Text("CSV")
                     }
-                ) {
-                    Text("CSV")
+                    TextButton(
+                        onClick = {
+                            showExportDialog = false
+                            scope.launch {
+                                val payload = exportPayload
+                                if (payload == null) {
+                                    snackbarHostState.showSnackbar("Select items to export")
+                                    return@launch
+                                }
+                                val result = zipExportWriter.writeToCache(context, payload)
+                                val message = result.fold(
+                                    onSuccess = { file ->
+                                        shareZip(file)
+                                        "ZIP ready to share"
+                                    },
+                                    onFailure = { "Failed to export ZIP" }
+                                )
+                                snackbarHostState.showSnackbar(message)
+                            }
+                        }
+                    ) {
+                        Text("ZIP (CSV + photos)")
+                    }
                 }
             },
             dismissButton = {
