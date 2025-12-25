@@ -25,6 +25,7 @@ class SettingsRepository(private val context: Context) {
         private val DEVELOPER_MODE_KEY = booleanPreferencesKey("developer_mode")
         private val AUTO_SAVE_ENABLED_KEY = booleanPreferencesKey("auto_save_enabled")
         private val SAVE_DIRECTORY_URI_KEY = stringPreferencesKey("save_directory_uri")
+        private val ALLOW_ASSISTANT_IMAGES_KEY = booleanPreferencesKey("allow_assistant_images")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -110,6 +111,20 @@ class SettingsRepository(private val context: Context) {
             } else {
                 preferences.remove(SAVE_DIRECTORY_URI_KEY)
             }
+        }
+    }
+
+    /**
+     * Whether to allow images to be sent to the AI assistant.
+     * Default is OFF for privacy reasons.
+     */
+    val allowAssistantImagesFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false
+    }
+
+    suspend fun setAllowAssistantImages(allow: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ALLOW_ASSISTANT_IMAGES_KEY] = allow
         }
     }
 }

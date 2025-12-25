@@ -1,5 +1,5 @@
 import { AssistantProvider } from './provider.js';
-import { AssistantChatRequest, AssistantResponse } from './types.js';
+import { AssistantChatRequest, AssistantChatRequestWithVision, AssistantResponse } from './types.js';
 import { refusalResponse, sanitizeActions, shouldRefuse } from './safety.js';
 import { CircuitBreaker } from '../../infra/resilience/circuit-breaker.js';
 
@@ -14,7 +14,7 @@ export class AssistantService {
     private readonly options: AssistantServiceOptions
   ) {}
 
-  async respond(request: AssistantChatRequest): Promise<AssistantResponse> {
+  async respond(request: AssistantChatRequest | AssistantChatRequestWithVision): Promise<AssistantResponse> {
     if (shouldRefuse(request.message || '')) {
       return refusalResponse();
     }
@@ -24,10 +24,15 @@ export class AssistantService {
       content: response.content,
       actions: sanitizeActions(response.actions),
       citationsMetadata: response.citationsMetadata,
+      confidenceTier: response.confidenceTier,
+      evidence: response.evidence,
+      suggestedAttributes: response.suggestedAttributes,
+      suggestedDraftUpdates: response.suggestedDraftUpdates,
+      suggestedNextPhoto: response.suggestedNextPhoto,
     };
   }
 
-  private async callWithRetry(request: AssistantChatRequest): Promise<AssistantResponse> {
+  private async callWithRetry(request: AssistantChatRequest | AssistantChatRequestWithVision): Promise<AssistantResponse> {
     if (!this.options.breaker.canRequest()) {
       return {
         content:

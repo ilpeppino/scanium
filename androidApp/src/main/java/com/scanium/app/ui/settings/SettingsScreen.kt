@@ -52,6 +52,7 @@ fun SettingsScreen(
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
     val autoSaveEnabled by viewModel.autoSaveEnabled.collectAsState()
     val saveDirectoryUri by viewModel.saveDirectoryUri.collectAsState()
+    val allowAssistantImages by viewModel.allowAssistantImages.collectAsState()
     val forceFtueTour by viewModel.forceFtueTour.collectAsState()
 
     val dirPickerLauncher = rememberLauncherForActivityResult(
@@ -183,8 +184,17 @@ fun SettingsScreen(
                 onCheckedChange = { viewModel.setAllowAssistant(it) }
             )
 
+            SettingsSwitchItem(
+                title = "Send Images to Assistant",
+                subtitle = "Allow item thumbnails to be sent for visual context",
+                icon = Icons.Default.Cloud,
+                checked = allowAssistantImages,
+                enabled = allowAssistant, // Only available when assistant is enabled
+                onCheckedChange = { viewModel.setAllowAssistantImages(it) }
+            )
+
             HorizontalDivider()
-            
+
             SettingsSectionTitle("Legal")
             
             SettingsItem(

@@ -57,6 +57,9 @@ class SettingsViewModel(
     val saveDirectoryUri: StateFlow<String?> = settingsRepository.saveDirectoryUriFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val allowAssistantImages: StateFlow<Boolean> = settingsRepository.allowAssistantImagesFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     val entitlements = entitlementManager.entitlementPolicyFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.scanium.app.model.user.FreeEntitlements)
 
@@ -92,6 +95,10 @@ class SettingsViewModel(
 
     fun setSaveDirectoryUri(uri: String?) {
         viewModelScope.launch { settingsRepository.setSaveDirectoryUri(uri) }
+    }
+
+    fun setAllowAssistantImages(allow: Boolean) {
+        viewModelScope.launch { settingsRepository.setAllowAssistantImages(allow) }
     }
 
     fun setForceFtueTour(enabled: Boolean) {

@@ -16,6 +16,8 @@ import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantMessage
 import com.scanium.app.model.AssistantRole
+import com.scanium.app.model.ConfidenceTier
+import com.scanium.app.model.EvidenceBullet
 import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.ItemContextSnapshotBuilder
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -31,15 +33,41 @@ import kotlinx.coroutines.launch
 
 data class AssistantChatEntry(
     val message: AssistantMessage,
-    val actions: List<AssistantAction> = emptyList()
+    val actions: List<AssistantAction> = emptyList(),
+    val confidenceTier: ConfidenceTier? = null,
+    val evidence: List<EvidenceBullet> = emptyList(),
+    val suggestedNextPhoto: String? = null,
+    /** Whether this entry represents a failed request */
+    val isFailed: Boolean = false,
+    /** Error message if failed */
+    val errorMessage: String? = null
 )
+
+/**
+ * Loading stage for staged responses.
+ */
+enum class LoadingStage {
+    IDLE,
+    VISION_PROCESSING,
+    LLM_PROCESSING,
+    DONE,
+    ERROR
+}
 
 data class AssistantUiState(
     val itemIds: List<String> = emptyList(),
     val snapshots: List<ItemContextSnapshot> = emptyList(),
     val profile: ExportProfileDefinition = ExportProfiles.generic(),
     val entries: List<AssistantChatEntry> = emptyList(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    /** Current loading stage for progress indication */
+    val loadingStage: LoadingStage = LoadingStage.IDLE,
+    /** Failed message text to preserve for retry */
+    val failedMessageText: String? = null,
+    /** Smart suggested questions based on context */
+    val suggestedQuestions: List<String> = emptyList(),
+    /** Whether provider is unavailable */
+    val providerUnavailable: Boolean = false
 )
 
 sealed class AssistantUiEvent {
@@ -77,7 +105,12 @@ class AssistantViewModel(
         )
 
         _uiState.update { state ->
-            state.copy(entries = state.entries + AssistantChatEntry(userMessage), isLoading = true)
+            state.copy(
+                entries = state.entries + AssistantChatEntry(userMessage),
+                isLoading = true,
+                loadingStage = LoadingStage.VISION_PROCESSING,
+                failedMessageText = null
+            )
         }
 
         viewModelScope.launch {
@@ -86,31 +119,126 @@ class AssistantViewModel(
                 TAG,
                 "Assist request correlationId=$correlationId items=${state.snapshots.size} messageLength=${trimmed.length}"
             )
-            val response = assistantRepository.send(
-                items = state.snapshots,
-                history = state.entries.map { it.message },
-                userMessage = trimmed,
-                exportProfile = state.profile,
-                correlationId = correlationId
-            )
-            val assistantMessage = AssistantMessage(
-                role = AssistantRole.ASSISTANT,
-                content = response.text,
-                timestamp = System.currentTimeMillis(),
-                itemContextIds = itemIds
-            )
-            _uiState.update { current ->
-                current.copy(
-                    entries = current.entries + AssistantChatEntry(assistantMessage, response.actions),
-                    isLoading = false
+
+            try {
+                // Update stage to LLM processing
+                _uiState.update { it.copy(loadingStage = LoadingStage.LLM_PROCESSING) }
+
+                val response = assistantRepository.send(
+                    items = state.snapshots,
+                    history = state.entries.map { it.message },
+                    userMessage = trimmed,
+                    exportProfile = state.profile,
+                    correlationId = correlationId
                 )
+
+                val assistantMessage = AssistantMessage(
+                    role = AssistantRole.ASSISTANT,
+                    content = response.text,
+                    timestamp = System.currentTimeMillis(),
+                    itemContextIds = itemIds
+                )
+
+                // Check if provider is unavailable
+                val isUnavailable = response.citationsMetadata?.get("providerUnavailable") == "true"
+
+                _uiState.update { current ->
+                    current.copy(
+                        entries = current.entries + AssistantChatEntry(
+                            message = assistantMessage,
+                            actions = response.actions,
+                            confidenceTier = response.confidenceTier,
+                            evidence = response.evidence,
+                            suggestedNextPhoto = response.suggestedNextPhoto
+                        ),
+                        isLoading = false,
+                        loadingStage = LoadingStage.DONE,
+                        providerUnavailable = isUnavailable,
+                        suggestedQuestions = computeSuggestedQuestions(current.snapshots)
+                    )
+                }
+
+                ScaniumLog.i(
+                    TAG,
+                    "Assist response correlationId=$correlationId actions=${response.actions.size} fromCache=${response.citationsMetadata?.get("fromCache")}"
+                )
+            } catch (e: Exception) {
+                ScaniumLog.e(TAG, "Assist request failed correlationId=$correlationId", e)
+
+                _uiState.update { current ->
+                    current.copy(
+                        isLoading = false,
+                        loadingStage = LoadingStage.ERROR,
+                        failedMessageText = trimmed
+                    )
+                }
+
+                _events.emit(AssistantUiEvent.ShowSnackbar("Request failed. Tap retry to try again."))
             }
-            ScaniumLog.i(
-                TAG,
-                "Assist response correlationId=$correlationId actions=${response.actions.size}"
-            )
         }
     }
+
+    /**
+     * Retry the last failed message.
+     */
+    fun retryLastMessage() {
+        val failedText = _uiState.value.failedMessageText ?: return
+        _uiState.update { it.copy(loadingStage = LoadingStage.IDLE, failedMessageText = null) }
+        sendMessage(failedText)
+    }
+
+    /**
+     * Compute context-aware suggested questions.
+     */
+    private fun computeSuggestedQuestions(snapshots: List<ItemContextSnapshot>): List<String> {
+        val suggestions = mutableListOf<String>()
+        val snapshot = snapshots.firstOrNull() ?: return defaultSuggestions()
+
+        // Check what's missing
+        val hasBrand = snapshot.attributes?.any { it.key.equals("brand", ignoreCase = true) } == true
+        val hasColor = snapshot.attributes?.any { it.key.equals("color", ignoreCase = true) } == true
+        val title = snapshot.title
+        val description = snapshot.description
+        val hasTitle = !title.isNullOrBlank() && title.length > 5
+        val hasDescription = !description.isNullOrBlank() && description.length > 20
+
+        // Brand-related suggestions
+        if (!hasBrand) {
+            suggestions.add("What brand is this?")
+        }
+
+        // Color suggestions
+        if (!hasColor) {
+            suggestions.add("What color is this item?")
+        }
+
+        // Title/description improvements
+        if (!hasTitle || snapshot.title?.length ?: 0 < 15) {
+            suggestions.add("Suggest a better title")
+        }
+
+        if (!hasDescription) {
+            suggestions.add("Help me write a description")
+        }
+
+        // Add some general suggestions if we don't have enough
+        if (suggestions.size < 3) {
+            suggestions.add("What details should I add?")
+        }
+
+        if (suggestions.size < 3) {
+            suggestions.add("What should I mention to avoid buyer questions?")
+        }
+
+        // Shuffle and take 3
+        return suggestions.shuffled().take(3)
+    }
+
+    private fun defaultSuggestions(): List<String> = listOf(
+        "Suggest a better title",
+        "What details should I add?",
+        "Estimate price range"
+    )
 
     fun applyDraftUpdate(action: AssistantAction) {
         if (action.type != AssistantActionType.APPLY_DRAFT_UPDATE) return
@@ -134,6 +262,32 @@ class AssistantViewModel(
                 "Draft update applied correlationId=$correlationId itemId=$itemId"
             )
             _events.emit(AssistantUiEvent.ShowSnackbar("Draft updated"))
+            refreshSnapshots()
+        }
+    }
+
+    fun addAttributes(action: AssistantAction) {
+        if (action.type != AssistantActionType.ADD_ATTRIBUTES) return
+        val payload = action.payload
+        val itemId = payload["itemId"] ?: itemIds.firstOrNull() ?: return
+        val correlationId = CorrelationIds.newDraftRequestId()
+
+        viewModelScope.launch {
+            val draft = draftStore.getByItemId(itemId)
+                ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
+                    ?.let { ListingDraftBuilder.build(it) }
+            if (draft == null) {
+                _events.emit(AssistantUiEvent.ShowSnackbar("No draft available"))
+                return@launch
+            }
+
+            val updated = updateDraftFromPayload(draft, payload)
+            draftStore.upsert(updated)
+            ScaniumLog.i(
+                TAG,
+                "Attributes added correlationId=$correlationId itemId=$itemId"
+            )
+            _events.emit(AssistantUiEvent.ShowSnackbar("Attributes added"))
             refreshSnapshots()
         }
     }
