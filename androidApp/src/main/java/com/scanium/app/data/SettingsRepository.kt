@@ -45,6 +45,7 @@ class SettingsRepository(private val context: Context) {
         private val SPEAK_ANSWERS_KEY = booleanPreferencesKey("speak_answers_enabled")
         private val AUTO_SEND_TRANSCRIPT_KEY = booleanPreferencesKey("auto_send_transcript")
         private val VOICE_LANGUAGE_KEY = stringPreferencesKey("voice_language")
+        private val ASSISTANT_HAPTICS_KEY = booleanPreferencesKey("assistant_haptics_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -282,6 +283,20 @@ class SettingsRepository(private val context: Context) {
     suspend fun setVoiceLanguage(language: String) {
         context.settingsDataStore.edit { preferences ->
             preferences[VOICE_LANGUAGE_KEY] = language
+        }
+    }
+
+    /**
+     * Whether assistant interactions should trigger haptic feedback.
+     * Default is OFF.
+     */
+    val assistantHapticsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[ASSISTANT_HAPTICS_KEY] ?: false
+    }
+
+    suspend fun setAssistantHapticsEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ASSISTANT_HAPTICS_KEY] = enabled
         }
     }
 
