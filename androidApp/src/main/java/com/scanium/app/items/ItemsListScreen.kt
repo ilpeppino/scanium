@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.*
@@ -79,6 +78,8 @@ fun ItemsListScreen(
     var selectionMode by remember { mutableStateOf(false) }
     var lastDeletedItem by remember { mutableStateOf<ScannedItem?>(null) }
     var lastDeletedWasSelected by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    val exportPayload by itemsViewModel.exportPayload.collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -325,7 +326,7 @@ fun ItemsListScreen(
                 )
             }
 
-            // Marketplace CTA (disabled placeholder)
+            // Export CTA
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -348,18 +349,31 @@ fun ItemsListScreen(
                             }
                         )
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 14.dp)
                     ) {
+                        Button(
+                            onClick = {
+                                val payload = itemsViewModel.createExportPayload(selectedIds.toList())
+                                if (payload != null) {
+                                    showExportDialog = true
+                                } else {
+                                    scope.launch { snackbarHostState.showSnackbar("Select items to export") }
+                                }
+                            }
+                        ) {
+                            Text("Export")
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Marketplace integrations (coming later)",
-                            style = MaterialTheme.typography.labelLarge,
+                            text = "Use items outside Scanium",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
                 }
             }
         }
@@ -406,6 +420,24 @@ fun ItemsListScreen(
         DraftPreviewDialog(
             draft = draft,
             onDismiss = { previewDraft = null }
+        )
+    }
+
+    if (showExportDialog) {
+        val exportCount = exportPayload?.items?.size ?: selectedIds.size
+        AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title = { Text("Export formats coming next") },
+            text = {
+                Text(
+                    "Selected $exportCount item${if (exportCount == 1) "" else "s"}."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showExportDialog = false }) {
+                    Text("OK")
+                }
+            }
         )
     }
 }
