@@ -153,6 +153,19 @@ fun ItemsListScreen(
         }
     }
 
+    LaunchedEffect(itemsViewModel) {
+        itemsViewModel.cloudClassificationAlerts.collect { alert ->
+            val result = snackbarHostState.showSnackbar(
+                message = alert.message,
+                actionLabel = "Retry",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                itemsViewModel.retryClassification(alert.itemId)
+            }
+        }
+    }
+
     fun executeAction(action: SelectedItemsAction = selectedAction) {
         when (action) {
             SelectedItemsAction.SELL_ON_EBAY -> {

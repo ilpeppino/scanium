@@ -14,6 +14,7 @@ import com.scanium.app.ml.PricingEngine
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationOrchestrator
 import com.scanium.app.ml.classification.ClassificationResult
+import com.scanium.app.ml.classification.ClassificationStatus
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassifier
@@ -95,11 +96,15 @@ class ItemsViewModel(
     private val _items = MutableStateFlow<List<ScannedItem>>(emptyList())
     private val _overlayTracks = MutableStateFlow<List<OverlayTrack>>(emptyList())
     private val _itemAddedEvents = kotlinx.coroutines.flow.MutableSharedFlow<ScannedItem>(extraBufferCapacity = 10)
+    private val _cloudClassificationAlerts = kotlinx.coroutines.flow.MutableSharedFlow<CloudClassificationAlert>(
+        extraBufferCapacity = 5
+    )
 
     // Public immutable state
     val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
     val overlayTracks: StateFlow<List<OverlayTrack>> = _overlayTracks.asStateFlow()
     val itemAddedEvents = _itemAddedEvents.asSharedFlow()
+    val cloudClassificationAlerts = _cloudClassificationAlerts.asSharedFlow()
 
     // Real-time item aggregator for similarity-based deduplication
     // Using REALTIME preset optimized for continuous scanning with camera movement
@@ -137,6 +142,7 @@ class ItemsViewModel(
     private val overlayReadyStates = mutableMapOf<String, Boolean>()
     private val overlayResolutionCache = mutableMapOf<String, String?>()
     private var lastOverlayDetections: List<DetectionResult> = emptyList()
+    private val notifiedCloudErrorItems = mutableSetOf<String>()
     
     // Cloud call gatekeeper (replaces ad-hoc throttling)
     private val cloudCallGate = com.scanium.app.ml.classification.CloudCallGate(
@@ -632,6 +638,22 @@ class ItemsViewModel(
             requestId = result.requestId
         )
 
+        if (result.status == ClassificationStatus.FAILED && result.mode == ClassificationMode.CLOUD) {
+            val shouldNotify = result.errorMessage?.contains("using on-device labels", ignoreCase = true) == true
+            if (shouldNotify && notifiedCloudErrorItems.add(aggregatedItem.aggregatedId)) {
+                viewModelScope.launch {
+                    _cloudClassificationAlerts.emit(
+                        CloudClassificationAlert(
+                            itemId = aggregatedItem.aggregatedId,
+                            message = "Cloud classification unavailable. Using on-device labels."
+                        )
+                    )
+                }
+            }
+        } else {
+            notifiedCloudErrorItems.remove(aggregatedItem.aggregatedId)
+        }
+
         viewModelScope.launch(mainDispatcher) {
             _items.value = itemAggregator.getScannedItems()
             if (lastOverlayDetections.isNotEmpty()) {
@@ -711,6 +733,7 @@ class ItemsViewModel(
         }
 
         Log.i(TAG, "Retrying classification for item $itemId")
+        notifiedCloudErrorItems.remove(itemId)
 
         // Mark as pending using thread-safe method
         itemAggregator.markClassificationPending(listOf(itemId))
@@ -786,3 +809,8 @@ class ItemsViewModel(
         }
     }
 }
+
+data class CloudClassificationAlert(
+    val itemId: String,
+    val message: String
+)
