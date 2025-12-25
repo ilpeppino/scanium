@@ -8,9 +8,18 @@ import {
   SuggestedAttribute,
   SuggestedDraftUpdate,
   ItemContextSnapshot,
+  AssistantPrefs,
+  StructuredSellingHelp,
 } from './types.js';
 import { VisualFacts } from '../vision/types.js';
 import { resolveAttributes, ResolvedAttributes, ResolvedAttribute } from '../vision/attribute-resolver.js';
+import {
+  selectTemplatePack,
+  generateTitleSuggestion,
+  getMissingInfoQuestions,
+  getBuyerFaqSuggestions,
+  TemplatePack,
+} from './template-packs.js';
 
 export interface AssistantProvider {
   respond(request: AssistantChatRequest | AssistantChatRequestWithVision): Promise<AssistantResponse>;
@@ -731,8 +740,159 @@ function buildGroundedResponseContent(
 }
 
 /**
+ * Check if a message is asking for listing help (title, description, etc.)
+ */
+function isListingHelpQuestion(message: string): boolean {
+  const keywords = [
+    'title', 'description', 'listing', 'improve', 'suggest', 'write',
+    'help me', 'better', 'draft', 'create', 'make', 'generate',
+  ];
+  const lower = message.toLowerCase();
+  return keywords.some((kw) => lower.includes(kw));
+}
+
+/**
+ * Apply tone preference to response content.
+ */
+function applyTone(content: string, tone?: string): string {
+  if (!tone || tone === 'NEUTRAL') return content;
+
+  if (tone === 'FRIENDLY') {
+    // Add friendly touches
+    if (!content.startsWith('Great') && !content.startsWith('Sure') && !content.startsWith('Happy')) {
+      content = 'Happy to help! ' + content;
+    }
+  } else if (tone === 'PROFESSIONAL') {
+    // Make more formal
+    content = content.replace(/!/g, '.');
+    content = content.replace(/Great!/g, 'Understood.');
+    content = content.replace(/Happy to help!/g, '');
+  }
+
+  return content.trim();
+}
+
+/**
+ * Format currency based on region preference.
+ */
+function formatCurrency(amount: number, region?: string): string {
+  const regionCurrency: Record<string, string> = {
+    NL: 'EUR', DE: 'EUR', BE: 'EUR', FR: 'EUR', EU: 'EUR',
+    UK: 'GBP', US: 'USD',
+  };
+  const currency = regionCurrency[region ?? 'EU'] ?? 'EUR';
+  const symbols: Record<string, string> = { EUR: '€', GBP: '£', USD: '$' };
+  return `${symbols[currency] ?? currency}${amount.toFixed(0)}`;
+}
+
+/**
+ * Format dimensions based on units preference.
+ */
+function formatDimensions(cm: number, units?: string): string {
+  if (units === 'IMPERIAL') {
+    const inches = cm / 2.54;
+    return `${inches.toFixed(1)}"`;
+  }
+  return `${cm} cm`;
+}
+
+/**
+ * Build structured selling help from template pack and resolved attributes.
+ */
+function buildStructuredHelp(
+  pack: TemplatePack,
+  item: ItemContextSnapshot,
+  resolved?: ResolvedAttributes,
+  prefs?: AssistantPrefs
+): StructuredSellingHelp {
+  const existingAttrs: Record<string, string | undefined> = {};
+
+  // Collect existing attributes
+  if (item.attributes) {
+    for (const attr of item.attributes) {
+      existingAttrs[attr.key.toLowerCase()] = attr.value;
+    }
+  }
+
+  // Add resolved attributes
+  if (resolved?.brand) existingAttrs.brand = resolved.brand.value;
+  if (resolved?.model) existingAttrs.model = resolved.model.value;
+  if (resolved?.color) existingAttrs.color = resolved.color.value;
+  if (resolved?.material) existingAttrs.material = resolved.material.value;
+
+  // Generate title suggestion
+  const titleSuggestion = generateTitleSuggestion(pack, {
+    brand: existingAttrs.brand,
+    model: existingAttrs.model,
+    color: existingAttrs.color,
+    condition: existingAttrs.condition,
+    size: existingAttrs.size,
+    material: existingAttrs.material,
+    keyFeature: item.title ?? undefined,
+  });
+
+  // Determine confidence
+  let titleConfidence: ConfidenceTier = 'MED';
+  if (existingAttrs.brand && existingAttrs.model) {
+    titleConfidence = 'HIGH';
+  } else if (!existingAttrs.brand && !existingAttrs.model) {
+    titleConfidence = 'LOW';
+  }
+
+  // Get missing info and FAQ suggestions
+  const missingInfoChecklist = getMissingInfoQuestions(pack, existingAttrs, 5);
+  const buyerFaqSuggestions = getBuyerFaqSuggestions(pack, 5);
+
+  // Build description sections
+  const descriptionSections: Array<{ id: string; label: string; content: string }> = [];
+  for (const section of pack.descriptionSections) {
+    let content = '';
+    if (section.id === 'condition' && existingAttrs.condition) {
+      content = existingAttrs.condition;
+    } else if (section.id === 'brand' && existingAttrs.brand) {
+      content = existingAttrs.brand;
+    } else if (section.id === 'material' && existingAttrs.material) {
+      content = existingAttrs.material;
+    } else if (section.id === 'color' && existingAttrs.color) {
+      content = existingAttrs.color;
+    }
+    descriptionSections.push({
+      id: section.id,
+      label: section.label,
+      content: content || `[Add ${section.label.toLowerCase()}]`,
+    });
+  }
+
+  // Build description text
+  const descriptionText = descriptionSections
+    .filter((s) => !s.content.startsWith('['))
+    .map((s) => `**${s.label}:** ${s.content}`)
+    .join('\n');
+
+  return {
+    suggestedTitle: {
+      value: titleSuggestion,
+      confidence: titleConfidence,
+    },
+    suggestedDescription: descriptionText ? {
+      value: descriptionText,
+      sections: descriptionSections,
+      confidence: 'MED',
+    } : undefined,
+    missingInfoChecklist,
+    buyerFaqSuggestions,
+    templatePackId: pack.packId,
+  };
+}
+
+/**
  * Grounded Assistant Provider that uses VisualFacts and AttributeResolver
  * for evidence-based responses.
+ *
+ * PR5 additions:
+ * - Template pack integration for category-aware responses
+ * - Personalization preferences (tone, language, region, units)
+ * - Structured selling help output
  */
 export class GroundedMockAssistantProvider implements AssistantProvider {
   private readonly fallbackProvider: MockAssistantProvider;
@@ -746,31 +906,93 @@ export class GroundedMockAssistantProvider implements AssistantProvider {
     const primaryItem = request.items[0];
     const visualRequest = request as AssistantChatRequestWithVision;
     const visualFacts = visualRequest.visualFacts?.get(primaryItem?.itemId ?? '');
+    const prefs = request.assistantPrefs;
+
+    // Select template pack based on category
+    const category = primaryItem?.category;
+    const templatePack = selectTemplatePack(category);
 
     // Detect if this is a visual question
     const { requiresVision, questionType } = detectVisualQuestion(message);
 
-    // If no visual evidence needed or available, use fallback
-    if (!requiresVision || !visualFacts) {
-      return this.fallbackProvider.respond(request);
+    // Check if this is a listing help question
+    const isListingHelp = isListingHelpQuestion(message);
+
+    // Resolve attributes from VisualFacts if available
+    let resolved: ResolvedAttributes | undefined;
+    if (visualFacts) {
+      resolved = resolveAttributes(primaryItem?.itemId ?? '', visualFacts);
     }
 
-    // Resolve attributes from VisualFacts
-    const resolved = resolveAttributes(primaryItem?.itemId ?? '', visualFacts);
+    // Build structured help if this is a listing-related question
+    let structuredHelp: StructuredSellingHelp | undefined;
+    if (isListingHelp && primaryItem) {
+      structuredHelp = buildStructuredHelp(templatePack, primaryItem, resolved, prefs);
+    }
 
-    // Build response components
-    const responseData = buildGroundedResponseContent(resolved, questionType, primaryItem!);
-    const evidence = buildEvidenceFromResolved(resolved, questionType);
-    const suggestedAttributes = buildSuggestedAttributesFromResolved(resolved);
-    const actions = buildActionsFromResolved(resolved, primaryItem!, questionType);
+    // If no visual evidence needed or available, handle with template-aware fallback
+    if (!requiresVision || !visualFacts) {
+      // Build response content based on question type
+      let content: string;
+      let actions: AssistantAction[] = [];
+
+      if (isListingHelp && structuredHelp?.suggestedTitle) {
+        content = `Here's a suggested title based on the ${templatePack.displayName} template:\n\n`;
+        content += `**"${structuredHelp.suggestedTitle.value}"**\n\n`;
+
+        if (structuredHelp.missingInfoChecklist && structuredHelp.missingInfoChecklist.length > 0) {
+          content += `To improve your listing, consider adding:\n`;
+          for (const q of structuredHelp.missingInfoChecklist.slice(0, 3)) {
+            content += `• ${q}\n`;
+          }
+        }
+
+        // Add apply action
+        if (primaryItem) {
+          actions.push({
+            type: 'APPLY_DRAFT_UPDATE',
+            payload: {
+              itemId: primaryItem.itemId,
+              title: structuredHelp.suggestedTitle.value,
+            },
+            label: 'Apply title',
+            requiresConfirmation: structuredHelp.suggestedTitle.confidence === 'LOW',
+          });
+        }
+      } else {
+        // Fallback to default response
+        const fallbackResponse = await this.fallbackProvider.respond(request);
+        content = fallbackResponse.content;
+        actions = fallbackResponse.actions ?? [];
+      }
+
+      // Apply tone preference
+      content = applyTone(content, prefs?.tone);
+
+      return {
+        content,
+        actions: actions.length > 0 ? actions : undefined,
+        structuredHelp,
+      };
+    }
+
+    // Build response components with visual evidence
+    const responseData = buildGroundedResponseContent(resolved!, questionType, primaryItem!);
+    const evidence = buildEvidenceFromResolved(resolved!, questionType);
+    const suggestedAttributes = buildSuggestedAttributesFromResolved(resolved!);
+    const actions = buildActionsFromResolved(resolved!, primaryItem!, questionType);
+
+    // Apply tone preference
+    const content = applyTone(responseData.content, prefs?.tone);
 
     return {
-      content: responseData.content,
+      content,
       actions: actions.length > 0 ? actions : undefined,
       confidenceTier: responseData.confidence,
       evidence: evidence.length > 0 ? evidence : undefined,
       suggestedAttributes: suggestedAttributes.length > 0 ? suggestedAttributes : undefined,
-      suggestedNextPhoto: resolved.suggestedNextPhoto,
+      suggestedNextPhoto: resolved!.suggestedNextPhoto,
+      structuredHelp,
     };
   }
 }

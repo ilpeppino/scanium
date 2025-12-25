@@ -49,17 +49,17 @@ type RouteOpts = { config: Config };
 const itemAttributeSchema = z.object({
   key: z.string(),
   value: z.string(),
-  confidence: z.number().optional().nullable(),
+  confidence: z.number().optional().nullable().transform((v) => v ?? undefined),
 });
 
 const itemContextSchema = z.object({
   itemId: z.string(),
-  title: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
-  category: z.string().optional().nullable(),
-  confidence: z.number().optional().nullable(),
+  title: z.string().optional().nullable().transform((v) => v ?? undefined),
+  description: z.string().optional().nullable().transform((v) => v ?? undefined),
+  category: z.string().optional().nullable().transform((v) => v ?? undefined),
+  confidence: z.number().optional().nullable().transform((v) => v ?? undefined),
   attributes: z.array(itemAttributeSchema).optional(),
-  priceEstimate: z.number().optional().nullable(),
+  priceEstimate: z.number().optional().nullable().transform((v) => v ?? undefined),
   photosCount: z.number().int().optional(),
   exportProfileId: z.string().optional(),
 });
@@ -71,6 +71,14 @@ const messageSchema = z.object({
   itemContextIds: z.array(z.string()).optional(),
 });
 
+const assistantPrefsSchema = z.object({
+  language: z.string().optional(),
+  tone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL']).optional(),
+  region: z.enum(['NL', 'DE', 'BE', 'FR', 'UK', 'US', 'EU']).optional(),
+  units: z.enum(['METRIC', 'IMPERIAL']).optional(),
+  verbosity: z.enum(['CONCISE', 'NORMAL', 'DETAILED']).optional(),
+}).optional();
+
 const requestSchema = z.object({
   items: z.array(itemContextSchema),
   history: z.array(messageSchema).optional(),
@@ -81,6 +89,7 @@ const requestSchema = z.object({
       displayName: z.string(),
     })
     .optional(),
+  assistantPrefs: assistantPrefsSchema,
 });
 
 // Image upload limits

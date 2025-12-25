@@ -5,7 +5,7 @@ import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toBitmap
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.core.export.ExportPayload
-import com.scanium.core.models.image.ImageRef
+import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedOutputStream

@@ -12,6 +12,67 @@ enum class AssistantRole {
     SYSTEM
 }
 
+// ============================================================================
+// Personalization Preferences
+// ============================================================================
+
+/**
+ * Tone preference for assistant responses.
+ */
+enum class AssistantTone {
+    NEUTRAL,
+    FRIENDLY,
+    PROFESSIONAL
+}
+
+/**
+ * Region preference (affects currency, marketplace mentions).
+ */
+enum class AssistantRegion {
+    NL,
+    DE,
+    BE,
+    FR,
+    UK,
+    US,
+    EU
+}
+
+/**
+ * Unit system preference.
+ */
+enum class AssistantUnits {
+    METRIC,
+    IMPERIAL
+}
+
+/**
+ * Verbosity preference.
+ */
+enum class AssistantVerbosity {
+    CONCISE,
+    NORMAL,
+    DETAILED
+}
+
+/**
+ * User's assistant personalization preferences.
+ * Sent with each request, not stored server-side.
+ */
+@Serializable
+data class AssistantPrefs(
+    /** Language code (e.g., 'EN', 'NL', 'DE') */
+    val language: String? = null,
+    /** Response tone */
+    val tone: AssistantTone? = null,
+    /** Region for currency/marketplace context */
+    val region: AssistantRegion? = null,
+    /** Unit system */
+    val units: AssistantUnits? = null,
+    /** Response verbosity */
+    val verbosity: AssistantVerbosity? = null
+)
+
 @Serializable
 data class AssistantMessage(
     val role: AssistantRole,
@@ -165,7 +226,9 @@ data class AssistantPromptRequest(
     val conversation: List<AssistantMessage>,
     val userMessage: String,
     val exportProfile: ExportProfileSnapshot,
-    val systemPrompt: String
+    val systemPrompt: String,
+    /** User's personalization preferences */
+    val assistantPrefs: AssistantPrefs? = null
 )
 
 object AssistantPromptBuilder {
@@ -180,7 +243,8 @@ You are Scanium Seller Assistant. Provide safe, honest guidance for listing item
         items: List<ItemContextSnapshot>,
         userMessage: String,
         exportProfile: ExportProfileDefinition,
-        conversation: List<AssistantMessage> = emptyList()
+        conversation: List<AssistantMessage> = emptyList(),
+        assistantPrefs: AssistantPrefs? = null
     ): AssistantPromptRequest {
         return AssistantPromptRequest(
             items = items,
@@ -190,7 +254,8 @@ You are Scanium Seller Assistant. Provide safe, honest guidance for listing item
                 id = exportProfile.id,
                 displayName = exportProfile.displayName
             ),
-            systemPrompt = SYSTEM_PROMPT.trim()
+            systemPrompt = SYSTEM_PROMPT.trim(),
+            assistantPrefs = assistantPrefs
         )
     }
 }

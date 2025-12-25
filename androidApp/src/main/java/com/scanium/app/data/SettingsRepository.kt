@@ -8,7 +8,13 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.model.user.UserEdition
+import com.scanium.app.model.AssistantPrefs
+import com.scanium.app.model.AssistantRegion
+import com.scanium.app.model.AssistantTone
+import com.scanium.app.model.AssistantUnits
+import com.scanium.app.model.AssistantVerbosity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -26,6 +32,19 @@ class SettingsRepository(private val context: Context) {
         private val AUTO_SAVE_ENABLED_KEY = booleanPreferencesKey("auto_save_enabled")
         private val SAVE_DIRECTORY_URI_KEY = stringPreferencesKey("save_directory_uri")
         private val ALLOW_ASSISTANT_IMAGES_KEY = booleanPreferencesKey("allow_assistant_images")
+
+        // Assistant personalization preferences
+        private val ASSISTANT_LANGUAGE_KEY = stringPreferencesKey("assistant_language")
+        private val ASSISTANT_TONE_KEY = stringPreferencesKey("assistant_tone")
+        private val ASSISTANT_REGION_KEY = stringPreferencesKey("assistant_region")
+        private val ASSISTANT_UNITS_KEY = stringPreferencesKey("assistant_units")
+        private val ASSISTANT_VERBOSITY_KEY = stringPreferencesKey("assistant_verbosity")
+
+        // Voice mode preferences
+        private val VOICE_MODE_ENABLED_KEY = booleanPreferencesKey("voice_mode_enabled")
+        private val SPEAK_ANSWERS_KEY = booleanPreferencesKey("speak_answers_enabled")
+        private val AUTO_SEND_TRANSCRIPT_KEY = booleanPreferencesKey("auto_send_transcript")
+        private val VOICE_LANGUAGE_KEY = stringPreferencesKey("voice_language")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -125,6 +144,144 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAllowAssistantImages(allow: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[ALLOW_ASSISTANT_IMAGES_KEY] = allow
+        }
+    }
+
+    // =========================================================================
+    // Assistant Personalization Preferences
+    // =========================================================================
+
+    val assistantLanguageFlow: Flow<String> = context.settingsDataStore.data.map { preferences ->
+        preferences[ASSISTANT_LANGUAGE_KEY] ?: "EN"
+    }
+
+    suspend fun setAssistantLanguage(language: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ASSISTANT_LANGUAGE_KEY] = language
+        }
+    }
+
+    val assistantToneFlow: Flow<AssistantTone> = context.settingsDataStore.data.map { preferences ->
+        val raw = preferences[ASSISTANT_TONE_KEY]
+        raw?.let { runCatching { AssistantTone.valueOf(it) }.getOrNull() } ?: AssistantTone.NEUTRAL
+    }
+
+    suspend fun setAssistantTone(tone: AssistantTone) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ASSISTANT_TONE_KEY] = tone.name
+        }
+    }
+
+    val assistantRegionFlow: Flow<AssistantRegion> = context.settingsDataStore.data.map { preferences ->
+        val raw = preferences[ASSISTANT_REGION_KEY]
+        raw?.let { runCatching { AssistantRegion.valueOf(it) }.getOrNull() } ?: AssistantRegion.EU
+    }
+
+    suspend fun setAssistantRegion(region: AssistantRegion) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ASSISTANT_REGION_KEY] = region.name
+        }
+    }
+
+    val assistantUnitsFlow: Flow<AssistantUnits> = context.settingsDataStore.data.map { preferences ->
+        val raw = preferences[ASSISTANT_UNITS_KEY]
+        raw?.let { runCatching { AssistantUnits.valueOf(it) }.getOrNull() } ?: AssistantUnits.METRIC
+    }
+
+    suspend fun setAssistantUnits(units: AssistantUnits) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ASSISTANT_UNITS_KEY] = units.name
+        }
+    }
+
+    val assistantVerbosityFlow: Flow<AssistantVerbosity> = context.settingsDataStore.data.map { preferences ->
+        val raw = preferences[ASSISTANT_VERBOSITY_KEY]
+        raw?.let { runCatching { AssistantVerbosity.valueOf(it) }.getOrNull() } ?: AssistantVerbosity.NORMAL
+    }
+
+    suspend fun setAssistantVerbosity(verbosity: AssistantVerbosity) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[ASSISTANT_VERBOSITY_KEY] = verbosity.name
+        }
+    }
+
+    /**
+     * Combined flow that emits the current assistant preferences.
+     * This can be collected to get all preferences as a single object.
+     */
+    val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
+        assistantLanguageFlow,
+        assistantToneFlow,
+        assistantRegionFlow,
+        assistantUnitsFlow,
+        assistantVerbosityFlow
+    ) { language, tone, region, units, verbosity ->
+        AssistantPrefs(
+            language = language,
+            tone = tone,
+            region = region,
+            units = units,
+            verbosity = verbosity
+        )
+    }
+
+    // =========================================================================
+    // Voice Mode Preferences
+    // =========================================================================
+
+    /**
+     * Whether voice mode is enabled (master toggle).
+     * Default is OFF for privacy-first approach.
+     */
+    val voiceModeEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[VOICE_MODE_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setVoiceModeEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[VOICE_MODE_ENABLED_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether to speak assistant answers aloud (TTS).
+     * Default is OFF for privacy-first approach.
+     */
+    val speakAnswersEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[SPEAK_ANSWERS_KEY] ?: false
+    }
+
+    suspend fun setSpeakAnswersEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[SPEAK_ANSWERS_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether to automatically send message after transcription.
+     * Default is ON for fewer steps.
+     */
+    val autoSendTranscriptFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[AUTO_SEND_TRANSCRIPT_KEY] ?: true
+    }
+
+    suspend fun setAutoSendTranscript(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[AUTO_SEND_TRANSCRIPT_KEY] = enabled
+        }
+    }
+
+    /**
+     * Voice language for STT/TTS.
+     * Empty string means follow assistant language setting.
+     */
+    val voiceLanguageFlow: Flow<String> = context.settingsDataStore.data.map { preferences ->
+        preferences[VOICE_LANGUAGE_KEY] ?: ""
+    }
+
+    suspend fun setVoiceLanguage(language: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[VOICE_LANGUAGE_KEY] = language
         }
     }
 }
