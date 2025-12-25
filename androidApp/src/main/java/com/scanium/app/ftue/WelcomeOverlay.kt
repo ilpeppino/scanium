@@ -97,14 +97,14 @@ fun WelcomeOverlay(
 
                 FeatureBullet(
                     icon = Icons.Default.ShoppingCart,
-                    text = "Select items and easily sell them on eBay"
+                    text = "Select items and export them for other apps"
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FeatureBullet(
                     icon = Icons.Default.AutoAwesome,
-                    text = "Get pricing and selling help from the AI assistant"
+                    text = "Get pricing and export help from the AI assistant"
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))

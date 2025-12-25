@@ -236,7 +236,7 @@ class TourViewModel(
                 screen = TourScreen.ITEMS_LIST,
                 targetKey = "items_action_fab",
                 title = "Quick Actions",
-                description = "After selecting items, use this menu to sell on eBay, review drafts, or perform bulk actions.",
+                description = "After selecting items, use this menu to export them, review drafts, or perform bulk actions.",
                 requiresUserAction = false,
                 spotlightShape = SpotlightShape.ROUNDED_RECT
             ),
@@ -247,7 +247,7 @@ class TourViewModel(
                 screen = TourScreen.ITEMS_LIST,
                 targetKey = "items_ai_assistant",
                 title = "AI Assistant",
-                description = "Get help with pricing, descriptions, and selling strategies for your selected items.",
+                description = "Get help with pricing, descriptions, and export strategies for your selected items.",
                 requiresUserAction = false,
                 spotlightShape = SpotlightShape.CIRCLE
             ),
