@@ -3,7 +3,6 @@ package com.scanium.app.items.classification
 import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.aggregation.AggregatedItem
-import com.scanium.app.data.EntitlementManager
 import com.scanium.app.items.CloudClassificationAlert
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.ThumbnailCache
@@ -59,7 +58,8 @@ import kotlinx.coroutines.withContext
  * @param scope Coroutine scope for async operations
  * @param stateManager Reference to the items state manager
  * @param classificationMode StateFlow of current classification mode
- * @param entitlementManager Optional entitlement manager for cloud gating
+ * @param cloudClassificationEnabled Flow indicating if cloud classification is enabled
+ *        (combines user preferences, remote config, and entitlements via FeatureFlagRepository)
  * @param onDeviceClassifier On-device classifier implementation
  * @param cloudClassifier Cloud classifier implementation
  * @param stableItemCropper Provider for preparing classification thumbnails
@@ -72,7 +72,7 @@ class ItemClassificationCoordinator(
     private val scope: CoroutineScope,
     private val stateManager: ItemsStateManager,
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
-    private val entitlementManager: EntitlementManager? = null,
+    cloudClassificationEnabled: StateFlow<Boolean>? = null,
     onDeviceClassifier: ItemClassifier = NoopClassifier,
     cloudClassifier: ItemClassifier = NoopClassifier,
     private val stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
@@ -87,12 +87,14 @@ class ItemClassificationCoordinator(
 
     private val classificationModeFlow = classificationMode
 
-    private val effectiveClassificationMode = if (entitlementManager != null) {
+    // Effective mode: fall back to ON_DEVICE if cloud classification is not enabled
+    // cloudClassificationEnabled combines user prefs, remote config, and entitlements
+    private val effectiveClassificationMode = if (cloudClassificationEnabled != null) {
         combine(
             classificationModeFlow,
-            entitlementManager.entitlementPolicyFlow
-        ) { mode, entitlements ->
-            if (entitlements.canUseCloudClassification) mode else ClassificationMode.ON_DEVICE
+            cloudClassificationEnabled
+        ) { mode, cloudEnabled ->
+            if (cloudEnabled) mode else ClassificationMode.ON_DEVICE
         }.stateIn(scope, SharingStarted.Eagerly, ClassificationMode.ON_DEVICE)
     } else {
         classificationModeFlow
