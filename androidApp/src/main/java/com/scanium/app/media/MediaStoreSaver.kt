@@ -1,13 +1,16 @@
 package com.scanium.app.media
 
 import android.content.ContentValues
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.android.platform.adapters.toBitmap
 import com.scanium.android.platform.adapters.toImageRefJpeg
@@ -64,6 +67,11 @@ object MediaStoreSaver {
         val errors = mutableListOf<String>()
 
         Log.i(TAG, "Starting save operation for ${images.size} images")
+        if (!hasWritePermission(context)) {
+            val errorMsg = "Storage permission not granted"
+            Log.w(TAG, errorMsg)
+            return@withContext SaveResult(0, images.size, listOf(errorMsg))
+        }
 
         images.forEachIndexed { index, (itemId, fullImageUri, thumbnail) ->
             try {
@@ -207,5 +215,15 @@ object MediaStoreSaver {
             resolver.delete(imageUri, null, null)
             throw e
         }
+    }
+
+    private fun hasWritePermission(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return true
+        }
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
     }
 }
