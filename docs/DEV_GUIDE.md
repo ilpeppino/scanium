@@ -142,6 +142,7 @@ See also `hooks/README.md` for pre-push validation setup.
 - Use Logcat filters for tags like `CameraXManager`, `ObjectDetectorClient`, `CloudClassifier`, `ItemsViewModel`.
 - **New viewport/filtering logs:** Search for `[VIEWPORT]`, `[CROP_RECT]`, `[EDGE_FILTER]` tags.
 - **Deduplication logs:** Search for "SPATIAL-TEMPORAL MERGE" in `ItemAggregator` output.
+- **AI Assistant logs:** Filter for `AssistantRepo` tag to see request/response activity and multipart image uploads.
 - Detection overlays live in `androidApp/src/main/java/com/scanium/app/camera/DetectionOverlay.kt`; tweak drawing there.
 - Aggregation/tracking behavior is covered by tests in `androidApp/src/test/...` and `core-tracking/src/test/...`; add golden tests when changing heuristics.
 - For ML Kit analyzer crashes, enable verbose logs in the respective client classes under `androidApp/src/main/java/com/scanium/app/ml/`.

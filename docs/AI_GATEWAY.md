@@ -42,7 +42,7 @@ Send a message to the AI assistant.
 | `X-Scanium-Device-Id` | No | Device ID (hashed) for rate limiting |
 | `X-Client` | No | Client identifier (e.g., `Scanium-Android`) |
 | `X-App-Version` | No | Client app version |
-| `Content-Type` | Yes | Must be `application/json` |
+| `Content-Type` | Yes | `application/json` or `multipart/form-data` |
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Request Body
 
@@ -101,6 +101,44 @@ Send a message to the AI assistant.
 | `items[].photosCount` | integer | No | - | Number of photos |
 | `history` | array | No | Last 10 | Conversation history |
 | `exportProfile` | object | No | - | Target marketplace profile |
+
+***REMOVED******REMOVED******REMOVED******REMOVED*** Multipart Request (with Images)
+
+When sending images for visual context, use `multipart/form-data` content type. The endpoint accepts both JSON-only and multipart requests for backward compatibility.
+
+**Field Structure:**
+
+| Field Name | Type | Required | Description |
+|------------|------|----------|-------------|
+| `payload` | text | Yes | JSON payload (same structure as JSON body above) |
+| `itemImages[<itemId>]` | file | No | Image file for the specified item ID |
+
+**Image Limits:**
+
+| Limit | Value |
+|-------|-------|
+| Max images per item | 3 |
+| Max total images | 10 |
+| Max file size | 2 MB |
+| Allowed types | `image/jpeg`, `image/png` |
+
+**Example multipart request:**
+
+```bash
+curl -X POST http://localhost:8080/v1/assist/chat \
+  -H "X-API-Key: dev-key" \
+  -F 'payload={
+    "message": "What details can you see in this item?",
+    "items": [{"itemId": "item-123", "title": "Camera"}]
+  }' \
+  -F 'itemImages[item-123]=@camera_photo.jpg;type=image/jpeg'
+```
+
+**Notes:**
+- Images are processed in-memory only; they are not stored on disk
+- Only images with `itemId` matching an item in the payload are processed
+- Images are passed to the LLM provider as base64-encoded data for visual analysis
+- The Android setting "Send Images to Assistant" (default OFF) controls whether images are attached
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** Response (Success)
 

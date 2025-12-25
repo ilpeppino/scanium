@@ -364,11 +364,13 @@ export function normalizeMessage(text: string, maxLength: number): {
 // ============================================================================
 
 const SAFE_ACTIONS = new Set([
+  'ADD_ATTRIBUTES',
   'APPLY_DRAFT_UPDATE',
   'COPY_TEXT',
   'OPEN_POSTING_ASSIST',
   'OPEN_SHARE',
   'OPEN_URL',
+  'SUGGEST_NEXT_PHOTO',
 ]);
 
 const MAX_PAYLOAD_VALUE_LENGTH = 1000;
@@ -396,6 +398,18 @@ function isSafeUrl(url?: string): boolean {
 }
 
 /**
+ * Escape HTML special characters to prevent XSS.
+ */
+function sanitizeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&***REMOVED***39;');
+}
+
+/**
  * Sanitize actions returned by the LLM.
  * Ensures only safe action types and validated payloads are returned to client.
  */
@@ -410,7 +424,14 @@ export function sanitizeActions(actions: AssistantAction[] = []): AssistantActio
           return null;
         }
       }
-      return { type: action.type, payload };
+      return {
+        type: action.type,
+        payload,
+        ...(action.label && { label: sanitizeHtml(action.label).slice(0, 100) }),
+        ...(action.requiresConfirmation !== undefined && {
+          requiresConfirmation: action.requiresConfirmation,
+        }),
+      };
     })
     .filter((action): action is AssistantAction => Boolean(action));
 }

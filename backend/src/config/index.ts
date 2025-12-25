@@ -117,6 +117,56 @@ export const configSchema = z.object({
       circuitBreakerFailureThreshold: z.coerce.number().int().min(1).default(5),
       circuitBreakerCooldownSeconds: z.coerce.number().int().min(1).default(60),
       circuitBreakerMinimumRequests: z.coerce.number().int().min(1).default(3),
+      /** Response cache TTL in seconds (default 1h) */
+      responseCacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(3600),
+      /** Maximum response cache entries */
+      responseCacheMaxEntries: z.coerce.number().int().min(10).max(5000).default(1000),
+      /** Enable request deduplication (in-flight coalescing) */
+      enableRequestDedup: z.coerce.boolean().default(true),
+      /** Staged response timeout for pending requests (ms) */
+      stagedResponseTimeoutMs: z.coerce.number().int().min(5000).max(120000).default(60000),
+    })
+    .default({}),
+
+  // Vision extraction for assistant
+  vision: z
+    .object({
+      /** Enable vision extraction for assistant requests */
+      enabled: z.coerce.boolean().default(true),
+      /** Vision provider: 'mock' for testing, 'google' for production */
+      provider: z.enum(['mock', 'google']).default('mock'),
+      /** Enable OCR text detection */
+      enableOcr: z.coerce.boolean().default(true),
+      /** Enable label detection */
+      enableLabels: z.coerce.boolean().default(true),
+      /** Enable logo detection (additional cost) */
+      enableLogos: z.coerce.boolean().default(true),
+      /** Enable dominant color extraction */
+      enableColors: z.coerce.boolean().default(true),
+      /** Vision API timeout in milliseconds */
+      timeoutMs: z.coerce.number().int().min(1000).max(30000).default(10000),
+      /** Maximum retries for Vision API calls */
+      maxRetries: z.coerce.number().int().min(0).max(5).default(2),
+      /** Cache TTL in seconds (default 6h for VisualFacts) */
+      cacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(21600),
+      /** Maximum cache entries */
+      cacheMaxEntries: z.coerce.number().int().min(10).max(10000).default(500),
+      /** Maximum OCR snippets per item */
+      maxOcrSnippets: z.coerce.number().int().min(1).max(50).default(10),
+      /** Maximum label hints per item */
+      maxLabelHints: z.coerce.number().int().min(1).max(50).default(10),
+      /** Maximum logo hints per item */
+      maxLogoHints: z.coerce.number().int().min(1).max(10).default(5),
+      /** Maximum dominant colors per item */
+      maxColors: z.coerce.number().int().min(1).max(10).default(5),
+      /** Maximum OCR snippet length */
+      maxOcrSnippetLength: z.coerce.number().int().min(10).max(500).default(100),
+      /** Minimum OCR confidence (0-1) */
+      minOcrConfidence: z.coerce.number().min(0).max(1).default(0.5),
+      /** Minimum label confidence (0-1) */
+      minLabelConfidence: z.coerce.number().min(0).max(1).default(0.5),
+      /** Minimum logo confidence (0-1) */
+      minLogoConfidence: z.coerce.number().min(0).max(1).default(0.5),
     })
     .default({}),
 
@@ -230,6 +280,30 @@ export function loadConfig(): Config {
       circuitBreakerFailureThreshold: process.env.ASSIST_CIRCUIT_FAILURE_THRESHOLD,
       circuitBreakerCooldownSeconds: process.env.ASSIST_CIRCUIT_COOLDOWN_SECONDS,
       circuitBreakerMinimumRequests: process.env.ASSIST_CIRCUIT_MIN_REQUESTS,
+      responseCacheTtlSeconds: process.env.ASSIST_RESPONSE_CACHE_TTL_SECONDS,
+      responseCacheMaxEntries: process.env.ASSIST_RESPONSE_CACHE_MAX_ENTRIES,
+      enableRequestDedup: process.env.ASSIST_ENABLE_REQUEST_DEDUP,
+      stagedResponseTimeoutMs: process.env.ASSIST_STAGED_RESPONSE_TIMEOUT_MS,
+    },
+    vision: {
+      enabled: process.env.VISION_ENABLED,
+      provider: process.env.VISION_PROVIDER,
+      enableOcr: process.env.VISION_ENABLE_OCR,
+      enableLabels: process.env.VISION_ENABLE_LABELS,
+      enableLogos: process.env.VISION_ENABLE_LOGOS,
+      enableColors: process.env.VISION_ENABLE_COLORS,
+      timeoutMs: process.env.VISION_TIMEOUT_MS,
+      maxRetries: process.env.VISION_MAX_RETRIES,
+      cacheTtlSeconds: process.env.VISION_CACHE_TTL_SECONDS,
+      cacheMaxEntries: process.env.VISION_CACHE_MAX_ENTRIES,
+      maxOcrSnippets: process.env.VISION_MAX_OCR_SNIPPETS,
+      maxLabelHints: process.env.VISION_MAX_LABEL_HINTS,
+      maxLogoHints: process.env.VISION_MAX_LOGO_HINTS,
+      maxColors: process.env.VISION_MAX_COLORS,
+      maxOcrSnippetLength: process.env.VISION_MAX_OCR_SNIPPET_LENGTH,
+      minOcrConfidence: process.env.VISION_MIN_OCR_CONFIDENCE,
+      minLabelConfidence: process.env.VISION_MIN_LABEL_CONFIDENCE,
+      minLogoConfidence: process.env.VISION_MIN_LOGO_CONFIDENCE,
     },
     googleCredentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS,
     ebay: {
