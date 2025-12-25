@@ -15,13 +15,14 @@ import com.scanium.app.listing.ListingDraftBuilder
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantMessage
-import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
 import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.ItemContextSnapshotBuilder
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.platform.ConnectivityStatus
+import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
@@ -57,6 +58,12 @@ enum class LoadingStage {
     ERROR
 }
 
+enum class AssistantMode {
+    ONLINE,
+    OFFLINE,
+    LIMITED
+}
+
 data class AssistantUiState(
     val itemIds: List<String> = emptyList(),
     val snapshots: List<ItemContextSnapshot> = emptyList(),
@@ -67,10 +74,16 @@ data class AssistantUiState(
     val loadingStage: LoadingStage = LoadingStage.IDLE,
     /** Failed message text to preserve for retry */
     val failedMessageText: String? = null,
+    /** Last user message for retry */
+    val lastUserMessage: String? = null,
     /** Smart suggested questions based on context */
     val suggestedQuestions: List<String> = emptyList(),
-    /** Whether provider is unavailable */
-    val providerUnavailable: Boolean = false
+    /** Current assistant mode */
+    val assistantMode: AssistantMode = AssistantMode.ONLINE,
+    /** Whether device is online */
+    val isOnline: Boolean = true,
+    /** Last backend failure for messaging */
+    val lastBackendFailure: AssistantBackendFailure? = null
 )
 
 sealed class AssistantUiEvent {
@@ -84,7 +97,9 @@ class AssistantViewModel(
     private val exportProfileRepository: com.scanium.app.listing.ExportProfileRepository,
     private val exportProfilePreferences: ExportProfilePreferences,
     private val assistantRepository: AssistantRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val localAssistantHelper: LocalAssistantHelper,
+    private val connectivityStatusProvider: ConnectivityStatusProvider
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AssistantUiState(itemIds = itemIds))
     val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
@@ -94,6 +109,7 @@ class AssistantViewModel(
 
     init {
         loadProfileAndSnapshots()
+        observeConnectivity()
     }
 
     fun sendMessage(text: String) {
@@ -113,7 +129,8 @@ class AssistantViewModel(
                 entries = state.entries + AssistantChatEntry(userMessage),
                 isLoading = true,
                 loadingStage = LoadingStage.VISION_PROCESSING,
-                failedMessageText = null
+                failedMessageText = null,
+                lastUserMessage = trimmed
             )
         }
 
@@ -128,6 +145,20 @@ class AssistantViewModel(
             // Note: Currently images are not attached in this implementation.
             // When image support is added, check settingsRepository.allowAssistantImagesFlow
             // and only include thumbnails if that toggle is ON.
+
+            if (!state.isOnline) {
+                applyLocalFallback(
+                    trimmed,
+                    state,
+                    AssistantBackendFailure(
+                        type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                        category = AssistantBackendErrorCategory.TEMPORARY,
+                        retryable = true,
+                        message = "Offline"
+                    )
+                )
+                return@launch
+            }
 
             try {
                 // Update stage to LLM processing
@@ -155,9 +186,6 @@ class AssistantViewModel(
                     itemContextIds = itemIds
                 )
 
-                // Check if provider is unavailable
-                val isUnavailable = response.citationsMetadata?.get("providerUnavailable") == "true"
-
                 _uiState.update { current ->
                     current.copy(
                         entries = current.entries + AssistantChatEntry(
@@ -169,8 +197,9 @@ class AssistantViewModel(
                         ),
                         isLoading = false,
                         loadingStage = LoadingStage.DONE,
-                        providerUnavailable = isUnavailable,
-                        suggestedQuestions = computeSuggestedQuestions(current.snapshots)
+                        suggestedQuestions = computeSuggestedQuestions(current.snapshots),
+                        lastBackendFailure = null,
+                        assistantMode = resolveMode(current.isOnline, null)
                     )
                 }
 
@@ -178,18 +207,18 @@ class AssistantViewModel(
                     TAG,
                     "Assist response correlationId=$correlationId actions=${response.actions.size} fromCache=${response.citationsMetadata?.get("fromCache")}"
                 )
+            } catch (e: AssistantBackendException) {
+                ScaniumLog.w(TAG, "Assist backend failure correlationId=$correlationId type=${e.failure.type}", e)
+                applyLocalFallback(trimmed, _uiState.value, e.failure)
             } catch (e: Exception) {
+                val failure = AssistantBackendFailure(
+                    type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
+                    category = AssistantBackendErrorCategory.TEMPORARY,
+                    retryable = true,
+                    message = "Assistant request failed"
+                )
                 ScaniumLog.e(TAG, "Assist request failed correlationId=$correlationId", e)
-
-                _uiState.update { current ->
-                    current.copy(
-                        isLoading = false,
-                        loadingStage = LoadingStage.ERROR,
-                        failedMessageText = trimmed
-                    )
-                }
-
-                _events.emit(AssistantUiEvent.ShowSnackbar("Request failed. Tap retry to try again."))
+                applyLocalFallback(trimmed, _uiState.value, failure)
             }
         }
     }
@@ -198,7 +227,13 @@ class AssistantViewModel(
      * Retry the last failed message.
      */
     fun retryLastMessage() {
-        val failedText = _uiState.value.failedMessageText ?: return
+        val failedText = _uiState.value.lastUserMessage ?: return
+        if (!_uiState.value.isOnline) {
+            viewModelScope.launch {
+                _events.emit(AssistantUiEvent.ShowSnackbar("You're offline. Retry when back online."))
+            }
+            return
+        }
         _uiState.update { it.copy(loadingStage = LoadingStage.IDLE, failedMessageText = null) }
         sendMessage(failedText)
     }
@@ -367,6 +402,72 @@ class AssistantViewModel(
         _uiState.update { it.copy(snapshots = snapshots) }
     }
 
+    private fun observeConnectivity() {
+        viewModelScope.launch {
+            connectivityStatusProvider.statusFlow.collect { status ->
+                val online = status == ConnectivityStatus.ONLINE
+                _uiState.update { current ->
+                    current.copy(
+                        isOnline = online,
+                        assistantMode = resolveMode(online, current.lastBackendFailure)
+                    )
+                }
+                ScaniumLog.i(TAG, "Assistant connectivity status=$status")
+            }
+        }
+    }
+
+    private fun resolveMode(
+        isOnline: Boolean,
+        failure: AssistantBackendFailure?
+    ): AssistantMode {
+        return if (!isOnline) {
+            AssistantMode.OFFLINE
+        } else if (failure != null) {
+            AssistantMode.LIMITED
+        } else {
+            AssistantMode.ONLINE
+        }
+    }
+
+    private suspend fun applyLocalFallback(
+        message: String,
+        state: AssistantUiState,
+        failure: AssistantBackendFailure
+    ) {
+        val response = localAssistantHelper.buildResponse(
+            items = state.snapshots,
+            userMessage = message,
+            failure = failure
+        )
+        val assistantMessage = AssistantMessage(
+            role = AssistantRole.ASSISTANT,
+            content = response.text,
+            timestamp = System.currentTimeMillis(),
+            itemContextIds = itemIds
+        )
+        _uiState.update { current ->
+            current.copy(
+                entries = current.entries + AssistantChatEntry(
+                    message = assistantMessage,
+                    actions = response.actions,
+                    confidenceTier = response.confidenceTier,
+                    evidence = response.evidence,
+                    suggestedNextPhoto = response.suggestedNextPhoto
+                ),
+                isLoading = false,
+                loadingStage = LoadingStage.DONE,
+                suggestedQuestions = computeSuggestedQuestions(current.snapshots),
+                lastBackendFailure = failure,
+                assistantMode = resolveMode(current.isOnline, failure)
+            )
+        }
+        ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} type=${failure.type}")
+        _events.emit(
+            AssistantUiEvent.ShowSnackbar("Using limited offline assistance. Retry online when ready.")
+        )
+    }
+
     private fun updateDraftFromPayload(draft: ListingDraft, payload: Map<String, String>): ListingDraft {
         var updated = draft
         val now = System.currentTimeMillis()
@@ -414,7 +515,9 @@ class AssistantViewModel(
             exportProfileRepository: com.scanium.app.listing.ExportProfileRepository,
             exportProfilePreferences: ExportProfilePreferences,
             assistantRepository: AssistantRepository,
-            settingsRepository: SettingsRepository
+            settingsRepository: SettingsRepository,
+            localAssistantHelper: LocalAssistantHelper,
+            connectivityStatusProvider: ConnectivityStatusProvider
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -425,7 +528,9 @@ class AssistantViewModel(
                     exportProfileRepository = exportProfileRepository,
                     exportProfilePreferences = exportProfilePreferences,
                     assistantRepository = assistantRepository,
-                    settingsRepository = settingsRepository
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    connectivityStatusProvider = connectivityStatusProvider
                 ) as T
             }
         }

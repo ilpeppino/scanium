@@ -6,7 +6,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,16 +18,17 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
@@ -45,7 +45,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -65,6 +64,12 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -87,6 +92,7 @@ import com.scanium.app.selling.export.AssetExportProfileRepository
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
+import com.scanium.app.platform.ConnectivityObserver
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 
@@ -103,6 +109,8 @@ fun AssistantScreen(
     val profileRepository = remember { AssetExportProfileRepository(context) }
     val profilePreferences = remember { ExportProfilePreferences(context) }
     val assistantRepository = remember { AssistantRepositoryFactory().create() }
+    val localAssistantHelper = remember { LocalAssistantHelper() }
+    val connectivityObserver = remember { ConnectivityObserver(context) }
     val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
     val viewModel: AssistantViewModel = viewModel(
         factory = AssistantViewModel.factory(
@@ -112,7 +120,9 @@ fun AssistantScreen(
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
             assistantRepository = assistantRepository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            connectivityStatusProvider = connectivityObserver
         )
     )
     val state by viewModel.uiState.collectAsState()
@@ -121,6 +131,7 @@ fun AssistantScreen(
     var inputText by remember { mutableStateOf("") }
     val voiceController = remember { AssistantVoiceController(context) }
     var lastSpokenTimestamp by remember { mutableStateOf<Long?>(null) }
+    val hapticFeedback = LocalHapticFeedback.current
 
     // Voice mode settings
     val voiceModeEnabled by settingsRepository.voiceModeEnabledFlow.collectAsState(initial = false)
@@ -128,10 +139,13 @@ fun AssistantScreen(
     val autoSendTranscript by settingsRepository.autoSendTranscriptFlow.collectAsState(initial = true)
     val voiceLanguage by settingsRepository.voiceLanguageFlow.collectAsState(initial = "")
     val assistantLanguage by settingsRepository.assistantLanguageFlow.collectAsState(initial = "EN")
+    val assistantHapticsEnabled by settingsRepository.assistantHapticsEnabledFlow.collectAsState(initial = false)
 
     // Voice state from controller
     val voiceState by voiceController.voiceState.collectAsState()
     val partialTranscript by voiceController.partialTranscript.collectAsState()
+    val latestAssistantTimestamp = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
+        ?.message?.timestamp
 
     // Update voice language when settings change
     LaunchedEffect(voiceLanguage, assistantLanguage) {
@@ -224,7 +238,10 @@ fun AssistantScreen(
             TopAppBar(
                 title = { Text("Export Assistant") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    ) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -241,8 +258,13 @@ fun AssistantScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Speaking...", style = MaterialTheme.typography.labelMedium)
-                            IconButton(onClick = { voiceController.stopSpeaking() }) {
-                                Icon(Icons.Default.Stop, contentDescription = "Stop speaking")
+                            IconButton(
+                                onClick = { voiceController.stopSpeaking() },
+                                modifier = Modifier
+                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                    .semantics { contentDescription = "Stop reading aloud" }
+                            ) {
+                                Icon(Icons.Default.Stop, contentDescription = null)
                             }
                         }
                     }
@@ -280,59 +302,75 @@ fun AssistantScreen(
                     }
                 }
 
+                AssistantModeIndicator(mode = state.assistantMode)
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = 12.dp)
+                        .semantics { traversalIndex = 0f },
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(state.entries) { entry ->
-                        MessageBubble(entry = entry, onAction = { action ->
-                            handleAssistantAction(
-                                action = action,
-                                state = state,
-                                viewModel = viewModel,
-                                onOpenPostingAssist = onOpenPostingAssist,
-                                onShare = { itemId ->
-                                    scope.launch {
-                                        val draft = draftStore.getByItemId(itemId)
-                                            ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
-                                                ?.let { ListingDraftBuilder.build(it) }
-                                        if (draft == null) {
-                                            snackbarHostState.showSnackbar("No draft to share")
-                                            return@launch
+                    itemsIndexed(state.entries) { _, entry ->
+                        val isLatestAssistant = entry.message.role == AssistantRole.ASSISTANT &&
+                            entry.message.timestamp == latestAssistantTimestamp
+                        MessageBubble(
+                            entry = entry,
+                            modifier = if (isLatestAssistant) {
+                                Modifier.semantics { traversalIndex = 1f }
+                            } else {
+                                Modifier
+                            },
+                            actionTraversalIndex = if (isLatestAssistant) 2f else null,
+                            onAction = { action ->
+                                handleAssistantAction(
+                                    action = action,
+                                    state = state,
+                                    viewModel = viewModel,
+                                    hapticFeedback = hapticFeedback,
+                                    hapticsEnabled = assistantHapticsEnabled,
+                                    onOpenPostingAssist = onOpenPostingAssist,
+                                    onShare = { itemId ->
+                                        scope.launch {
+                                            val draft = draftStore.getByItemId(itemId)
+                                                ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
+                                                    ?.let { ListingDraftBuilder.build(it) }
+                                            if (draft == null) {
+                                                snackbarHostState.showSnackbar("No draft to share")
+                                                return@launch
+                                            }
+                                            val profile = state.profile.takeIf { it.id == draft.profile }
+                                                ?: ExportProfiles.generic()
+                                            val export = ListingDraftFormatter.format(draft, profile)
+                                            val currentItem = itemsViewModel.items.value.firstOrNull { it.id == draft.itemId }
+                                            val shareImages = draft.photos.map { it.image }.ifEmpty {
+                                                listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
+                                            }
+                                            val imageUris = ListingShareHelper.writeShareImages(
+                                                context = context,
+                                                itemId = draft.itemId,
+                                                images = shareImages
+                                            )
+                                            val intent = ListingShareHelper.buildShareIntent(
+                                                contentResolver = context.contentResolver,
+                                                text = export.shareText,
+                                                imageUris = imageUris
+                                            )
+                                            val chooser = Intent.createChooser(intent, "Share listing")
+                                            context.startActivity(chooser)
                                         }
-                                        val profile = state.profile.takeIf { it.id == draft.profile }
-                                            ?: ExportProfiles.generic()
-                                        val export = ListingDraftFormatter.format(draft, profile)
-                                        val currentItem = itemsViewModel.items.value.firstOrNull { it.id == draft.itemId }
-                                        val shareImages = draft.photos.map { it.image }.ifEmpty {
-                                            listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
-                                        }
-                                        val imageUris = ListingShareHelper.writeShareImages(
-                                            context = context,
-                                            itemId = draft.itemId,
-                                            images = shareImages
-                                        )
-                                        val intent = ListingShareHelper.buildShareIntent(
-                                            contentResolver = context.contentResolver,
-                                            text = export.shareText,
-                                            imageUris = imageUris
-                                        )
-                                        val chooser = Intent.createChooser(intent, "Share listing")
-                                        context.startActivity(chooser)
+                                    },
+                                    onOpenUrl = { url ->
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                        context.startActivity(intent)
+                                    },
+                                    onCopyText = { label, text ->
+                                        ListingClipboardHelper.copy(context, label, text)
+                                        scope.launch { snackbarHostState.showSnackbar("$label copied") }
                                     }
-                                },
-                                onOpenUrl = { url ->
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                    context.startActivity(intent)
-                                },
-                                onCopyText = { label, text ->
-                                    ListingClipboardHelper.copy(context, label, text)
-                                    scope.launch { snackbarHostState.showSnackbar("$label copied") }
-                                }
-                            )
-                        })
+                                )
+                            }
+                        )
                     }
                     item {
                         Spacer(modifier = Modifier.height(4.dp))
@@ -340,9 +378,13 @@ fun AssistantScreen(
                 }
             }
 
-            // Provider unavailable warning (cloud misconfigured or AI provider down)
-            if (state.providerUnavailable) {
-                ProviderUnavailableBanner()
+            if (state.lastUserMessage != null && state.assistantMode != AssistantMode.ONLINE) {
+                AssistantModeBanner(
+                    mode = state.assistantMode,
+                    failure = state.lastBackendFailure,
+                    retryEnabled = state.isOnline && state.lastUserMessage != null,
+                    onRetry = { viewModel.retryLastMessage() }
+                )
             }
 
             // Loading stage indicator
@@ -398,6 +440,7 @@ fun AssistantScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .semantics { traversalIndex = 3f }
                     .navigationBarsPadding()
                     .imePadding(),
                 placeholder = { Text("Ask about listing improvements...") },
@@ -449,11 +492,20 @@ fun AssistantScreen(
                                             }
                                         }
                                     }
-                                }
+                                },
+                                modifier = Modifier
+                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                    .semantics {
+                                        contentDescription = if (isActive) {
+                                            "Stop voice input"
+                                        } else {
+                                            "Start voice input"
+                                        }
+                                    }
                             ) {
                                 Icon(
                                     imageVector = if (isActive) Icons.Default.Stop else Icons.Default.Mic,
-                                    contentDescription = if (isActive) "Stop listening" else "Voice input",
+                                    contentDescription = null,
                                     tint = micColor
                                 )
                             }
@@ -464,13 +516,19 @@ fun AssistantScreen(
                             onClick = {
                                 val text = inputText
                                 inputText = ""
+                                if (assistantHapticsEnabled) {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
                                 viewModel.sendMessage(text)
                             },
-                            enabled = inputText.isNotBlank()
+                            enabled = inputText.isNotBlank(),
+                            modifier = Modifier
+                                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                .semantics { contentDescription = "Send message" }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Send,
-                                contentDescription = "Send message",
+                                contentDescription = null,
                                 tint = if (inputText.isNotBlank()) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
@@ -488,6 +546,9 @@ fun AssistantScreen(
                         if (inputText.isNotBlank()) {
                             val text = inputText
                             inputText = ""
+                            if (assistantHapticsEnabled) {
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
                             viewModel.sendMessage(text)
                         }
                     }
@@ -500,6 +561,8 @@ fun AssistantScreen(
 @Composable
 private fun MessageBubble(
     entry: AssistantChatEntry,
+    modifier: Modifier = Modifier,
+    actionTraversalIndex: Float? = null,
     onAction: (AssistantAction) -> Unit
 ) {
     val isUser = entry.message.role == AssistantRole.USER
@@ -519,7 +582,7 @@ private fun MessageBubble(
         )
     }
 
-    Column(horizontalAlignment = alignment, modifier = Modifier.fillMaxWidth()) {
+    Column(horizontalAlignment = alignment, modifier = modifier.fillMaxWidth()) {
         Card(
             colors = CardDefaults.cardColors(containerColor = background)
         ) {
@@ -553,16 +616,33 @@ private fun MessageBubble(
             Row(
                 modifier = Modifier
                     .padding(top = 8.dp)
-                    .horizontalScroll(rememberScrollState()),
+                    .horizontalScroll(rememberScrollState())
+                    .then(
+                        if (actionTraversalIndex != null) {
+                            Modifier.semantics { traversalIndex = actionTraversalIndex }
+                        } else {
+                            Modifier
+                        }
+                    ),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 entry.actions.forEach { action ->
                     if (action.requiresConfirmation) {
-                        OutlinedButton(onClick = { pendingConfirmAction = action }) {
+                        OutlinedButton(
+                            onClick = { pendingConfirmAction = action },
+                            modifier = Modifier
+                                .sizeIn(minHeight = 48.dp)
+                                .semantics { contentDescription = actionContentDescription(action) }
+                        ) {
                             Text(text = actionLabel(action), textAlign = TextAlign.Center)
                         }
                     } else {
-                        Button(onClick = { onAction(action) }) {
+                        Button(
+                            onClick = { onAction(action) },
+                            modifier = Modifier
+                                .sizeIn(minHeight = 48.dp)
+                                .semantics { contentDescription = actionContentDescription(action) }
+                        ) {
                             Text(text = actionLabel(action), textAlign = TextAlign.Center)
                         }
                     }
@@ -704,12 +784,84 @@ private fun RetryBanner(onRetry: () -> Unit) {
     }
 }
 
-/**
- * Banner shown when the AI provider is unavailable or cloud is misconfigured.
- * Provides clear feedback instead of silent failures.
- */
 @Composable
-private fun ProviderUnavailableBanner() {
+private fun AssistantModeIndicator(mode: AssistantMode) {
+    val (label, color) = when (mode) {
+        AssistantMode.ONLINE -> "Mode: Online" to MaterialTheme.colorScheme.primary
+        AssistantMode.OFFLINE -> "Mode: Offline / Limited" to MaterialTheme.colorScheme.error
+        AssistantMode.LIMITED -> "Mode: Limited (Local)" to MaterialTheme.colorScheme.tertiary
+    }
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium,
+        color = color,
+        modifier = Modifier
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+            .semantics { traversalIndex = -1f }
+    )
+}
+
+@Composable
+private fun AssistantModeBanner(
+    mode: AssistantMode,
+    failure: AssistantBackendFailure?,
+    retryEnabled: Boolean,
+    onRetry: () -> Unit
+) {
+    val title = when (mode) {
+        AssistantMode.OFFLINE -> "Using limited offline assistance"
+        AssistantMode.LIMITED -> "Using limited assistance"
+        AssistantMode.ONLINE -> "Assistant online"
+    }
+    val detail = when (mode) {
+        AssistantMode.OFFLINE -> "You're offline. Local helper suggestions are available until connectivity returns."
+        AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Local helper suggestions are shown instead."
+        AssistantMode.ONLINE -> ""
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+            )
+            failure?.message?.let { message ->
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = onRetry,
+                enabled = retryEnabled,
+                modifier = Modifier.semantics { contentDescription = "Retry online" }
+            ) {
+                Text("Retry online")
+            }
+        }
+    }
+}
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -767,12 +919,22 @@ private fun handleAssistantAction(
     action: AssistantAction,
     state: AssistantUiState,
     viewModel: AssistantViewModel,
+    hapticFeedback: HapticFeedback,
+    hapticsEnabled: Boolean,
     onOpenPostingAssist: (List<String>, Int) -> Unit,
     onShare: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
     onCopyText: (String, String) -> Unit,
     onSuggestNextPhoto: (String) -> Unit = {}
 ) {
+    if (hapticsEnabled && action.type in setOf(
+            AssistantActionType.APPLY_DRAFT_UPDATE,
+            AssistantActionType.ADD_ATTRIBUTES,
+            AssistantActionType.COPY_TEXT
+        )
+    ) {
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    }
     when (action.type) {
         AssistantActionType.APPLY_DRAFT_UPDATE -> viewModel.applyDraftUpdate(action)
         AssistantActionType.ADD_ATTRIBUTES -> viewModel.addAttributes(action)
@@ -813,6 +975,28 @@ private fun actionLabel(action: AssistantAction): String {
         AssistantActionType.OPEN_SHARE -> "Share draft"
         AssistantActionType.OPEN_URL -> "Open link"
         AssistantActionType.SUGGEST_NEXT_PHOTO -> "Take photo"
+    }
+}
+
+private fun actionContentDescription(action: AssistantAction): String {
+    return when (action.type) {
+        AssistantActionType.APPLY_DRAFT_UPDATE -> {
+            when {
+                action.payload.containsKey("title") -> "Apply title"
+                action.payload.containsKey("description") -> "Apply description"
+                action.payload.containsKey("price") -> "Apply price"
+                else -> "Apply draft update"
+            }
+        }
+        AssistantActionType.ADD_ATTRIBUTES -> "Apply attributes"
+        AssistantActionType.COPY_TEXT -> {
+            val label = action.payload["label"] ?: "text"
+            "Copy $label"
+        }
+        AssistantActionType.OPEN_POSTING_ASSIST -> "Open posting assist"
+        AssistantActionType.OPEN_SHARE -> "Share draft"
+        AssistantActionType.OPEN_URL -> "Open link"
+        AssistantActionType.SUGGEST_NEXT_PHOTO -> "Take next photo"
     }
 }
 
@@ -890,10 +1074,15 @@ private fun VoiceListeningIndicator(
                 }
             }
 
-            IconButton(onClick = onStop) {
+            IconButton(
+                onClick = onStop,
+                modifier = Modifier
+                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    .semantics { contentDescription = "Stop voice input" }
+            ) {
                 Icon(
                     imageVector = Icons.Default.Stop,
-                    contentDescription = "Stop listening",
+                    contentDescription = null,
                     tint = when (state) {
                         VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
                         VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
