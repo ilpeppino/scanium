@@ -3,6 +3,7 @@ package com.scanium.app
 import android.app.Application
 import com.scanium.app.crash.AndroidCrashPortAdapter
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.telemetry.*
 import com.scanium.diagnostics.DefaultDiagnosticsPort
 import com.scanium.diagnostics.DiagnosticsPort
@@ -177,5 +178,9 @@ class ScaniumApplication : Application() {
         )
 
         android.util.Log.i("ScaniumApplication", "Telemetry facade initialized with diagnostics collection")
+
+        // Initialize PerformanceMonitor for global access to performance telemetry
+        PerformanceMonitor.init(telemetry)
+        android.util.Log.i("ScaniumApplication", "PerformanceMonitor initialized")
     }
 }
