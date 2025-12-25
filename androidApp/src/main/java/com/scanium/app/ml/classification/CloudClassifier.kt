@@ -6,6 +6,7 @@ import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.ml.ItemCategory
+import com.scanium.app.network.security.RequestSigner
 import com.scanium.shared.core.models.config.CloudClassifierConfig
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
@@ -135,7 +136,16 @@ class CloudClassifier(
                 .url(endpoint)
                 .post(requestBody)
                 .apply {
-                    config.apiKey?.let { header("X-API-Key", it) }
+                    config.apiKey?.let { apiKey ->
+                        header("X-API-Key", apiKey)
+                        // Add HMAC signature for replay protection (SEC-004)
+                        RequestSigner.addSignatureHeaders(
+                            builder = this,
+                            apiKey = apiKey,
+                            params = mapOf("domainPackId" to domainPackId),
+                            binaryContentSize = imageBytes.size.toLong()
+                        )
+                    }
                     header("X-Scanium-Correlation-Id", correlationId)
                     header("X-Client", "Scanium-Android")
                     header("X-App-Version", BuildConfig.VERSION_NAME)
