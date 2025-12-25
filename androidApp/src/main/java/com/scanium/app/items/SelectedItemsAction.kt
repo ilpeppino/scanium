@@ -8,8 +8,8 @@ enum class SelectedItemsAction(
     val description: String
 ) {
     SELL_ON_EBAY(
-        displayName = "Sell on eBay",
-        description = "List items on eBay marketplace"
+        displayName = "Export items",
+        description = "Use items elsewhere with export formats"
     ),
     REVIEW_DRAFT(
         displayName = "Review draft",

@@ -417,8 +417,15 @@ fun ItemsListScreen(
                             Text("Export")
                         }
                         Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = {},
+                            enabled = false
+                        ) {
+                            Text("Marketplace integrations (coming later)")
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Use items outside Scanium",
+                            text = "Use items elsewhere",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -763,6 +770,12 @@ private fun BoxScope.EmptyItemsContent() {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Use the camera to scan objects",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Export to spreadsheets, chat apps, or marketplaces.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
