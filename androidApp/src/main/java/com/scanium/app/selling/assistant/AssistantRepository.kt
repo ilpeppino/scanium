@@ -6,14 +6,13 @@ import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantMessage
 import com.scanium.app.model.AssistantPrefs
-import com.scanium.app.model.AssistantPromptBuilder
 import com.scanium.app.model.AssistantResponse
-import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.ExportProfileSnapshot
 import com.scanium.app.listing.ExportProfileDefinition
-import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.network.security.RequestSigner
+import java.io.IOException
+import java.net.SocketTimeoutException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -58,6 +57,43 @@ interface AssistantRepository {
     ): AssistantResponse
 }
 
+enum class AssistantBackendErrorType {
+    PROVIDER_UNAVAILABLE,
+    RATE_LIMITED,
+    NETWORK_TIMEOUT,
+    VISION_UNAVAILABLE,
+    VALIDATION_ERROR
+}
+
+enum class AssistantBackendErrorCategory {
+    TEMPORARY,
+    POLICY
+}
+
+data class AssistantBackendFailure(
+    val type: AssistantBackendErrorType,
+    val category: AssistantBackendErrorCategory,
+    val retryable: Boolean,
+    val retryAfterSeconds: Int? = null,
+    val message: String? = null
+) {
+    fun toMetadata(): Map<String, String> {
+        val metadata = mutableMapOf(
+            "assistantErrorType" to type.name.lowercase(),
+            "assistantErrorCategory" to category.name.lowercase(),
+            "assistantErrorRetryable" to retryable.toString()
+        )
+        retryAfterSeconds?.let { metadata["assistantErrorRetryAfter"] = it.toString() }
+        message?.let { metadata["assistantErrorMessage"] = it }
+        return metadata
+    }
+}
+
+class AssistantBackendException(
+    val failure: AssistantBackendFailure,
+    cause: Throwable? = null
+) : Exception(failure.message, cause)
+
 private class AssistantRepositoryLogger {
     fun log(message: String) {
         Log.d("AssistantRepo", message)
@@ -73,31 +109,7 @@ class AssistantRepositoryFactory(
     fun create(): AssistantRepository {
         val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.orEmpty()
         val apiKey = BuildConfig.SCANIUM_API_KEY.takeIf { it.isNotBlank() }
-        val cloud = CloudAssistantRepository(client, baseUrl, apiKey)
-        val fallback = LocalAssistantRepository()
-        return FallbackAssistantRepository(primary = cloud, fallback = fallback)
-    }
-}
-
-private class FallbackAssistantRepository(
-    private val primary: AssistantRepository,
-    private val fallback: AssistantRepository
-) : AssistantRepository {
-    override suspend fun send(
-        items: List<ItemContextSnapshot>,
-        history: List<AssistantMessage>,
-        userMessage: String,
-        exportProfile: ExportProfileDefinition,
-        correlationId: String,
-        imageAttachments: List<ItemImageAttachment>,
-        assistantPrefs: AssistantPrefs?
-    ): AssistantResponse {
-        return try {
-            primary.send(items, history, userMessage, exportProfile, correlationId, imageAttachments, assistantPrefs)
-        } catch (error: Exception) {
-            // Fallback doesn't support images - just pass empty list
-            fallback.send(items, history, userMessage, exportProfile, correlationId, emptyList(), assistantPrefs)
-        }
+        return CloudAssistantRepository(client, baseUrl, apiKey)
     }
 }
 
@@ -122,7 +134,14 @@ private class CloudAssistantRepository(
         assistantPrefs: AssistantPrefs?
     ): AssistantResponse = withContext(Dispatchers.IO) {
         if (baseUrl.isBlank()) {
-            throw IllegalStateException("Assistant backend not configured")
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
+                    category = AssistantBackendErrorCategory.POLICY,
+                    retryable = false,
+                    message = "Assistant backend not configured"
+                )
+            )
         }
 
         val requestPayload = AssistantChatRequest(
@@ -145,14 +164,39 @@ private class CloudAssistantRepository(
             buildJsonRequest(endpoint, payloadJson, correlationId)
         }
 
-        client.newCall(request).execute().use { response ->
-            val responseBody = response.body?.string()
-            if (response.isSuccessful && responseBody != null) {
-                val parsed = json.decodeFromString(AssistantChatResponse.serializer(), responseBody)
-                return@withContext parsed.toModel()
+        try {
+            client.newCall(request).execute().use { response ->
+                val responseBody = response.body?.string()
+                if (response.isSuccessful && responseBody != null) {
+                    val parsed = json.decodeFromString(AssistantChatResponse.serializer(), responseBody)
+                    parsed.assistantError?.let { throw AssistantBackendException(it.toFailure()) }
+                    return@withContext parsed.toModel()
+                }
+                logger.log("Assistant backend error: ${response.code} ${responseBody.orEmpty()}")
+                throw mapHttpFailure(response.code, responseBody)
             }
-            logger.log("Assistant backend error: ${response.code} ${responseBody.orEmpty()}")
-            throw IOException("Assistant backend error ${response.code}")
+        } catch (error: AssistantBackendException) {
+            throw error
+        } catch (error: SocketTimeoutException) {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                    category = AssistantBackendErrorCategory.TEMPORARY,
+                    retryable = true,
+                    message = "Assistant request timed out"
+                ),
+                error
+            )
+        } catch (error: IOException) {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                    category = AssistantBackendErrorCategory.TEMPORARY,
+                    retryable = true,
+                    message = "Network error contacting assistant"
+                ),
+                error
+            )
         }
     }
 
@@ -219,73 +263,43 @@ private class CloudAssistantRepository(
         builder.header("X-Client", "Scanium-Android")
         builder.header("X-App-Version", BuildConfig.VERSION_NAME)
     }
-}
 
-private class LocalAssistantRepository : AssistantRepository {
-    override suspend fun send(
-        items: List<ItemContextSnapshot>,
-        history: List<AssistantMessage>,
-        userMessage: String,
-        exportProfile: ExportProfileDefinition,
-        correlationId: String,
-        imageAttachments: List<ItemImageAttachment>,
-        assistantPrefs: AssistantPrefs?
-    ): AssistantResponse {
-        // Local fallback doesn't process images - they are ignored
-        AssistantPromptBuilder.buildRequest(
-            items = items,
-            userMessage = userMessage,
-            exportProfile = exportProfile,
-            conversation = history
-        )
+    private fun mapHttpFailure(code: Int, responseBody: String?): AssistantBackendException {
+        val assistantError = responseBody?.let {
+            runCatching { json.decodeFromString(AssistantErrorResponse.serializer(), it) }.getOrNull()
+        }?.assistantError
 
-        val primary = items.firstOrNull()
-        if (primary == null) {
-            return AssistantResponse(
-                content = "Attach at least one item so I can tailor the listing advice."
+        if (assistantError != null) {
+            return AssistantBackendException(assistantError.toFailure())
+        }
+
+        val failure = when (code) {
+            400 -> AssistantBackendFailure(
+                type = AssistantBackendErrorType.VALIDATION_ERROR,
+                category = AssistantBackendErrorCategory.POLICY,
+                retryable = false,
+                message = "Assistant request invalid"
+            )
+            429 -> AssistantBackendFailure(
+                type = AssistantBackendErrorType.RATE_LIMITED,
+                category = AssistantBackendErrorCategory.POLICY,
+                retryable = true,
+                message = "Assistant rate limit exceeded"
+            )
+            503 -> AssistantBackendFailure(
+                type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Assistant provider unavailable"
+            )
+            else -> AssistantBackendFailure(
+                type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Assistant backend error"
             )
         }
-
-        val message = userMessage.lowercase()
-        if (message.contains("price") || message.contains("estimate")) {
-            val estimate = primary.priceEstimate
-            val content = if (estimate != null && estimate > 0.0) {
-                val low = (estimate * 0.85).toInt()
-                val high = (estimate * 1.15).toInt().coerceAtLeast(low + 1)
-                "Based on the current draft estimate, a reasonable range is EUR $low-$high."
-            } else {
-                "I do not have enough data for a reliable price range yet. Share condition, brand, and comparable prices to refine."
-            }
-            return AssistantResponse(content = content)
-        }
-
-        if (message.contains("title")) {
-            val base = primary.title ?: primary.category ?: "Item"
-            val suggestion = "Used $base".trim()
-            return AssistantResponse(
-                content = "Suggested title: \"$suggestion\".",
-                actions = listOf(
-                    AssistantAction(
-                        type = AssistantActionType.APPLY_DRAFT_UPDATE,
-                        payload = mapOf("itemId" to primary.itemId, "title" to suggestion)
-                    ),
-                    AssistantAction(
-                        type = AssistantActionType.COPY_TEXT,
-                        payload = mapOf("label" to "Title", "text" to suggestion)
-                    )
-                )
-            )
-        }
-
-        if (message.contains("detail") || message.contains("missing")) {
-            return AssistantResponse(
-                content = "Confirm brand/model, note condition issues, capture measurements, and take clear photos of labels and defects."
-            )
-        }
-
-        return AssistantResponse(
-            content = "I can help with listing improvements, missing details, and safe pricing guidance. What should we refine?"
-        )
+        return AssistantBackendException(failure)
     }
 }
 
@@ -329,7 +343,8 @@ private data class AssistantChatResponse(
     val evidence: List<EvidenceBulletDto> = emptyList(),
     val suggestedAttributes: List<SuggestedAttributeDto> = emptyList(),
     val suggestedDraftUpdates: List<SuggestedDraftUpdateDto> = emptyList(),
-    val suggestedNextPhoto: String? = null
+    val suggestedNextPhoto: String? = null,
+    val assistantError: AssistantErrorDto? = null
 ) {
     fun toModel(): AssistantResponse {
         return AssistantResponse(
@@ -346,6 +361,47 @@ private data class AssistantChatResponse(
 
     private fun parseConfidenceTier(tier: String): com.scanium.app.model.ConfidenceTier? {
         return runCatching { com.scanium.app.model.ConfidenceTier.valueOf(tier) }.getOrNull()
+    }
+}
+
+@Serializable
+private data class AssistantErrorResponse(
+    val assistantError: AssistantErrorDto? = null
+)
+
+@Serializable
+private data class AssistantErrorDto(
+    val type: String,
+    val category: String,
+    val retryable: Boolean,
+    val retryAfterSeconds: Int? = null,
+    val message: String? = null
+) {
+    fun toFailure(): AssistantBackendFailure {
+        return AssistantBackendFailure(
+            type = parseType(type),
+            category = parseCategory(category),
+            retryable = retryable,
+            retryAfterSeconds = retryAfterSeconds,
+            message = message
+        )
+    }
+
+    private fun parseType(raw: String): AssistantBackendErrorType {
+        return when (raw.lowercase()) {
+            "rate_limited" -> AssistantBackendErrorType.RATE_LIMITED
+            "network_timeout" -> AssistantBackendErrorType.NETWORK_TIMEOUT
+            "vision_unavailable" -> AssistantBackendErrorType.VISION_UNAVAILABLE
+            "validation_error" -> AssistantBackendErrorType.VALIDATION_ERROR
+            else -> AssistantBackendErrorType.PROVIDER_UNAVAILABLE
+        }
+    }
+
+    private fun parseCategory(raw: String): AssistantBackendErrorCategory {
+        return when (raw.lowercase()) {
+            "policy" -> AssistantBackendErrorCategory.POLICY
+            else -> AssistantBackendErrorCategory.TEMPORARY
+        }
     }
 }
 
