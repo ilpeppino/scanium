@@ -65,6 +65,8 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationMetrics
 import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.app.media.StorageHelper
+import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.ftue.PermissionEducationDialog
 import com.scanium.app.ftue.tourTarget
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -103,9 +105,14 @@ fun CameraScreen(
     val hapticFeedback = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val settingsRepository = remember { SettingsRepository(context) }
+    val ftueRepository = remember { FtueRepository(context) }
     val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
     val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
     val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
+
+    // Permission education state (shown before first permission request)
+    val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
+    var showPermissionEducationDialog by remember { mutableStateOf(false) }
 
     // FTUE tour state
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -214,10 +221,16 @@ fun CameraScreen(
         cameraManager.updateTargetRotation(targetRotation)
     }
 
-    // Request permission on first launch
-    LaunchedEffect(Unit) {
+    // Show permission education dialog or request permission on first launch
+    LaunchedEffect(permissionEducationShown) {
         if (!cameraPermissionState.status.isGranted) {
-            cameraPermissionState.launchPermissionRequest()
+            if (!permissionEducationShown) {
+                // First launch: show education dialog before requesting permission
+                showPermissionEducationDialog = true
+            } else {
+                // Education already shown: request permission directly
+                cameraPermissionState.launchPermissionRequest()
+            }
         }
     }
 
@@ -672,6 +685,19 @@ fun CameraScreen(
                     }
                 )
             }
+        }
+
+        // Permission education dialog (shown before first permission request)
+        if (showPermissionEducationDialog) {
+            PermissionEducationDialog(
+                onContinue = {
+                    showPermissionEducationDialog = false
+                    scope.launch {
+                        ftueRepository.setPermissionEducationShown(true)
+                    }
+                    cameraPermissionState.launchPermissionRequest()
+                }
+            )
         }
     }
 }
