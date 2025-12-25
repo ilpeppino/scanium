@@ -14,14 +14,22 @@ class CsvExportSerializer(
     }
 ) {
     fun serialize(payload: ExportPayload): String = buildString {
-        append(COLUMN_ORDER.joinToString(","))
-        payload.items.forEach { item ->
-            append("\n")
-            append(serializeItem(item))
+        writeTo(this, payload.items)
+    }
+
+    fun writeTo(
+        output: Appendable,
+        items: List<ExportItem>,
+        imageFilenameProvider: (ExportItem) -> String = { item -> imageFilename(item.imageRef) }
+    ) {
+        output.append(COLUMN_ORDER.joinToString(","))
+        items.forEach { item ->
+            output.append("\n")
+            output.append(serializeItem(item, imageFilenameProvider(item)))
         }
     }
 
-    private fun serializeItem(item: ExportItem): String {
+    private fun serializeItem(item: ExportItem, imageFilename: String): String {
         val attributesJson = json.encodeToString(
             MapSerializer(String.serializer(), String.serializer()),
             item.attributes.toSortedMap()
@@ -34,7 +42,7 @@ class CsvExportSerializer(
             attributesJson,
             item.priceMin?.toString().orEmpty(),
             item.priceMax?.toString().orEmpty(),
-            imageFilename(item.imageRef)
+            imageFilename
         )
         return values.joinToString(",") { csvEscape(it) }
     }
