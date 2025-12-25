@@ -57,6 +57,7 @@
 | android-ml-mlkit | ML Kit namespace shell | Inputs/Outputs: n/a | Do: keep placeholder until KMP adapters land; Don’t: add manifests with package attr | `build.gradle.kts` |
 | android-camera-camerax | CameraX namespace shell | Inputs/Outputs: n/a | Do: keep placeholder; Don’t: add manifests with package attr | `build.gradle.kts` |
 | shared:core-models | KMP portable primitives (ImageRef, NormalizedRect, ScanMode, ScannedItem, pricing/domain models) | Inputs: none; Outputs: serializable models | Do: stay platform-free; Don’t: import android.*, ML Kit, CameraX | `src/commonMain/kotlin/com/scanium/core/model/*`, `src/commonMain/kotlin/com/scanium/core/items/ScannedItem.kt` |
+| shared:core-export | KMP export models + mappers for selected items | Inputs: ScannedItem; Outputs: ExportItem/ExportPayload | Do: stay platform-free; Don’t: depend on android.* | `src/commonMain/kotlin/com/scanium/core/export/*` |
 | shared:core-tracking | KMP tracking/aggregation logic | Inputs: Raw detections (NormalizedRect, trackingIds); Outputs: tracked items/events | Do: pure Kotlin; Don’t: platform imports; respect golden tests | `src/commonMain/kotlin/com/scanium/core/tracking/*`, `src/commonMain/kotlin/com/scanium/core/aggregation/*` |
 | shared:test-utils | Test helpers for shared modules | Inputs: shared models/tracking; Outputs: fixtures/assert helpers | Do: keep deterministic; Don’t: add platform deps | `src/commonMain/kotlin/com/scanium/test/*` |
 
@@ -71,6 +72,7 @@ core-tracking -> shared:core-tracking, shared:core-models, core-models
 core-domainpack -> core-models
 android-platform-adapters -> core-models
 shared:core-tracking -> shared:core-models
+shared:core-export -> shared:core-models
 shared:test-utils -> shared:core-models, shared:core-tracking
 ```
 
