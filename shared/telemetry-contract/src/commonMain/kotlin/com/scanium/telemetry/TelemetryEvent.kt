@@ -17,6 +17,7 @@ import kotlinx.serialization.Serializable
  * - `build`: Build number (e.g., "42")
  * - `env`: Environment ("dev", "staging", "prod")
  * - `session_id`: Unique session identifier
+ * - `data_region`: Data residency region ("EU", "US")
  *
  * ***REMOVED******REMOVED*** Optional Attributes
  * - `trace_id`: Distributed tracing identifier (for correlating events)
@@ -84,6 +85,9 @@ data class TelemetryEvent(
 
         /** Required attribute: session identifier */
         const val ATTR_SESSION_ID = "session_id"
+
+        /** Required attribute: data residency region */
+        const val ATTR_DATA_REGION = "data_region"
 
         /** Optional attribute: trace identifier for distributed tracing */
         const val ATTR_TRACE_ID = "trace_id"

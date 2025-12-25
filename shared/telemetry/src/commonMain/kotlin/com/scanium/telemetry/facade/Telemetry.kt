@@ -53,7 +53,7 @@ import kotlinx.datetime.Clock
  *
  * ***REMOVED******REMOVED*** Required Attributes
  * The facade enforces that all events include required attributes:
- * - platform, app_version, build, env, session_id
+ * - platform, app_version, build, env, session_id, data_region
  *
  * These are typically provided by [DefaultAttributesProvider] and merged with user attributes.
  * If required attributes are missing after merging, an [IllegalStateException] is thrown.

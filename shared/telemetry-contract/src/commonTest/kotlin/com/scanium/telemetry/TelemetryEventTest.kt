@@ -88,6 +88,7 @@ class TelemetryEventTest {
         assertEquals("build", TelemetryEvent.ATTR_BUILD)
         assertEquals("env", TelemetryEvent.ATTR_ENV)
         assertEquals("session_id", TelemetryEvent.ATTR_SESSION_ID)
+        assertEquals("data_region", TelemetryEvent.ATTR_DATA_REGION)
         assertEquals("trace_id", TelemetryEvent.ATTR_TRACE_ID)
 
         assertEquals("android", TelemetryEvent.PLATFORM_ANDROID)
@@ -109,7 +110,8 @@ class TelemetryEventTest {
                 TelemetryEvent.ATTR_APP_VERSION to "1.0.0",
                 TelemetryEvent.ATTR_BUILD to "42",
                 TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_PROD,
-                TelemetryEvent.ATTR_SESSION_ID to "session-123"
+                TelemetryEvent.ATTR_SESSION_ID to "session-123",
+                TelemetryEvent.ATTR_DATA_REGION to "EU"
             )
         )
 
@@ -118,6 +120,7 @@ class TelemetryEventTest {
         assertEquals("42", event.attributes[TelemetryEvent.ATTR_BUILD])
         assertEquals(TelemetryEvent.ENV_PROD, event.attributes[TelemetryEvent.ATTR_ENV])
         assertEquals("session-123", event.attributes[TelemetryEvent.ATTR_SESSION_ID])
+        assertEquals("EU", event.attributes[TelemetryEvent.ATTR_DATA_REGION])
     }
 
     @Test
