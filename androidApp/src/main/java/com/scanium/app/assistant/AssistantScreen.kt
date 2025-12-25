@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -13,12 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.shared.core.models.assistant.AssistantAction
 import com.scanium.shared.core.models.assistant.AssistantActionType
 import com.scanium.shared.core.models.assistant.AssistantMessage
 import com.scanium.shared.core.models.assistant.AssistantRole
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,6 +33,23 @@ fun AssistantScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var inputText by remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+
+    // Auto-scroll to bottom when new messages arrive
+    LaunchedEffect(uiState.messages.size, uiState.isLoading, uiState.pendingActions.size) {
+        if (uiState.messages.isNotEmpty()) {
+            // Calculate total items including messages, loading indicator, and pending actions
+            val totalItems = uiState.messages.size + 
+                (if (uiState.isLoading) 1 else 0) + 
+                (if (uiState.error != null) 1 else 0) + 
+                (if (uiState.pendingActions.isNotEmpty()) 1 else 0)
+            
+            if (totalItems > 0) {
+                listState.animateScrollToItem(totalItems - 1)
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -45,6 +67,7 @@ fun AssistantScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .imePadding() // Pushes content up when keyboard opens
         ) {
             // Context Chips
             if (uiState.contextItems.isNotEmpty()) {
@@ -66,6 +89,7 @@ fun AssistantScreen(
 
             // Chat Messages
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 16.dp),
@@ -118,7 +142,14 @@ fun AssistantScreen(
                     onValueChange = { inputText = it },
                     modifier = Modifier.weight(1f),
                     placeholder = { Text("Ask about your items...") },
-                    maxLines = 3
+                    maxLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = {
+                        if (inputText.isNotBlank() && !uiState.isLoading) {
+                            viewModel.sendMessage(inputText)
+                            inputText = ""
+                        }
+                    })
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(

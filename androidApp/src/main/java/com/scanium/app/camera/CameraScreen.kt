@@ -1,11 +1,15 @@
 package com.scanium.app.camera
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.view.OrientationEventListener
 import android.view.Surface
+import android.view.WindowManager
 import android.util.Log
 import android.util.Size
 import android.widget.Toast
@@ -187,16 +191,7 @@ fun CameraScreen(
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
 
-    DisposableEffect(view, cameraState) {
-        val keepScreenOn = cameraState == CameraState.SCANNING
-        view.keepScreenOn = keepScreenOn
-
-        onDispose {
-            if (keepScreenOn) {
-                view.keepScreenOn = false
-            }
-        }
-    }
+    KeepScreenOn(enabled = cameraState == CameraState.SCANNING)
 
     DisposableEffect(view) {
         val orientationListener = object : OrientationEventListener(context) {
@@ -1298,6 +1293,34 @@ private fun ModelLoadingOverlay(state: ModelDownloadState) {
         }
     }
 }
+
+@Composable
+private fun KeepScreenOn(enabled: Boolean) {
+    val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
+
+    DisposableEffect(activity, enabled) {
+        if (enabled) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+
+        onDispose {
+            if (enabled) {
+                activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
+        }
+    }
+}
+
+private fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
+
 
 /**
  * Error dialog shown when ML Kit model download fails.
