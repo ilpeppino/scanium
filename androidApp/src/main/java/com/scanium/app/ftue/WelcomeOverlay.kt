@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -103,7 +103,7 @@ fun WelcomeOverlay(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FeatureBullet(
-                    icon = Icons.Default.Chat,
+                    icon = Icons.Default.AutoAwesome,
                     text = "Get pricing and selling help from the AI assistant"
                 )
 
