@@ -24,4 +24,17 @@ sealed class ImageRef {
             require(width > 0 && height > 0) { "width and height must be positive" }
         }
     }
+
+    data class CacheKey(
+        val key: String,
+        override val mimeType: String,
+        override val width: Int,
+        override val height: Int,
+    ) : ImageRef() {
+        init {
+            require(key.isNotBlank()) { "key must not be blank" }
+            require(mimeType.isNotBlank()) { "mimeType must not be blank" }
+            require(width > 0 && height > 0) { "width and height must be positive" }
+        }
+    }
 }

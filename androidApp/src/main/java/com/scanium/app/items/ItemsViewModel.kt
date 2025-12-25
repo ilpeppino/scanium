@@ -27,6 +27,7 @@ import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.pricing.PriceEstimationRepository
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceEstimatorProvider
+import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -298,6 +299,7 @@ class ItemsViewModel(
 
         priceStatusJobs.remove(itemId)?.cancel()
         priceEstimationRepository.cancel(itemId)
+        ThumbnailCache.remove(itemId)
 
         // Remove from aggregator
         itemAggregator.removeItem(itemId)
@@ -323,6 +325,7 @@ class ItemsViewModel(
 
         priceStatusJobs.values.forEach { it.cancel() }
         priceStatusJobs.clear()
+        ThumbnailCache.clear()
 
         // Reset aggregator
         itemAggregator.reset()
@@ -463,11 +466,12 @@ class ItemsViewModel(
     private fun updateItemsState(triggerClassification: Boolean = true, notifyNewItems: Boolean = true) {
         val oldItems = _items.value
         val scannedItems = itemAggregator.getScannedItems()
-        _items.value = scannedItems
-        Log.d(TAG, "Updated UI state: ${scannedItems.size} items")
+        val cachedItems = cacheThumbnails(scannedItems)
+        _items.value = cachedItems
+        Log.d(TAG, "Updated UI state: ${cachedItems.size} items")
 
         if (notifyNewItems && ANIMATION_ENABLED) {
-            val newItems = scannedItems.filter { newItem ->
+            val newItems = cachedItems.filter { newItem ->
                 oldItems.none { oldItem -> oldItem.id == newItem.id }
             }
             newItems.forEach {
@@ -478,7 +482,7 @@ class ItemsViewModel(
             }
         }
 
-        syncPriceEstimations(scannedItems)
+        syncPriceEstimations(cachedItems)
 
         persistItems(scannedItems)
 
@@ -571,16 +575,21 @@ class ItemsViewModel(
 
         return withContext(workerDispatcher) {
             items.mapNotNull { aggregatedItem ->
+                val fallbackThumbnail = resolveCachedThumbnail(aggregatedItem)
                 val preparedThumbnail = runCatching {
                     stableItemCropper.prepare(aggregatedItem)
                 }.onFailure { error ->
                     Log.w(TAG, "Failed to prepare stable thumbnail for ${aggregatedItem.aggregatedId}", error)
                 }.getOrNull()
 
-                val thumbnailToUse = preparedThumbnail ?: aggregatedItem.thumbnail
+                val resolvedPrepared = resolveCacheKey(preparedThumbnail)
+                val thumbnailToUse = resolvedPrepared ?: fallbackThumbnail
                 if (thumbnailToUse == null) {
                     null
                 } else {
+                    if (thumbnailToUse is ImageRef.Bytes) {
+                        ThumbnailCache.put(aggregatedItem.aggregatedId, thumbnailToUse)
+                    }
                     itemAggregator.updateThumbnail(aggregatedItem.aggregatedId, thumbnailToUse)
                     aggregatedItem
                 }
@@ -747,6 +756,33 @@ class ItemsViewModel(
     private fun persistItems(items: List<ScannedItem>) {
         viewModelScope.launch(workerDispatcher) {
             itemsStore.upsertAll(items)
+        }
+    }
+
+    private fun cacheThumbnails(items: List<ScannedItem>): List<ScannedItem> {
+        return items.map { item ->
+            val thumbnail = item.thumbnailRef ?: item.thumbnail
+            val bytesRef = thumbnail as? ImageRef.Bytes ?: return@map item
+            ThumbnailCache.put(item.id, bytesRef)
+            val cachedRef = ImageRef.CacheKey(
+                key = item.id,
+                mimeType = bytesRef.mimeType,
+                width = bytesRef.width,
+                height = bytesRef.height
+            )
+            itemAggregator.updateThumbnail(item.id, cachedRef)
+            item.copy(thumbnail = cachedRef, thumbnailRef = cachedRef)
+        }
+    }
+
+    private fun resolveCachedThumbnail(item: AggregatedItem): ImageRef? {
+        return resolveCacheKey(item.thumbnail)
+    }
+
+    private fun resolveCacheKey(thumbnail: ImageRef?): ImageRef? {
+        return when (thumbnail) {
+            is ImageRef.CacheKey -> ThumbnailCache.get(thumbnail.key)
+            else -> thumbnail
         }
     }
 }

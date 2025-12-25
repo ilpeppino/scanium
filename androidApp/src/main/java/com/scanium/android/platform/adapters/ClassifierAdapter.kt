@@ -7,6 +7,7 @@ import com.scanium.shared.core.models.classification.ClassificationSource
 import com.scanium.shared.core.models.classification.ClassificationStatus
 import com.scanium.shared.core.models.classification.Classifier
 import com.scanium.shared.core.models.model.ImageRef
+import com.scanium.app.model.resolveBytes
 import com.scanium.shared.core.models.ml.ItemCategory as SharedItemCategory
 import com.scanium.app.ml.ItemCategory as AndroidItemCategory
 import com.scanium.app.ml.classification.ClassificationMode as AndroidClassificationMode
@@ -32,20 +33,17 @@ class ClassifierAdapter(
         domainPackId: String
     ): ClassificationResult {
         // Convert ImageRef to Bitmap
-        val bitmap = when (thumbnail) {
-            is ImageRef.Bytes -> thumbnail.toBitmap()
-            else -> {
-                // Unsupported ImageRef type
-                return ClassificationResult(
-                    domainCategoryId = null,
-                    confidence = 0f,
-                    source = source,
-                    label = null,
-                    status = ClassificationStatus.FAILED,
-                    errorMessage = "Unsupported ImageRef type: ${thumbnail::class.simpleName}"
-                )
-            }
-        }
+        val bytes = thumbnail.resolveBytes()
+            ?: return ClassificationResult(
+                domainCategoryId = null,
+                confidence = 0f,
+                source = source,
+                label = null,
+                status = ClassificationStatus.FAILED,
+                errorMessage = "Unsupported ImageRef type: ${thumbnail::class.simpleName}"
+            )
+
+        val bitmap = bytes.toBitmap()
 
         // Create Android ClassificationInput
         val input = ClassificationInput(
