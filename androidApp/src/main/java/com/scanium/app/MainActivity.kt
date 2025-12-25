@@ -1,6 +1,7 @@
 package com.scanium.app
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,7 +30,11 @@ class MainActivity : ComponentActivity() {
         // Initialize Domain Pack provider (config-driven category taxonomy)
         // This loads the home_resale_domain_pack.json and sets up the CategoryEngine
         // for future CLIP/cloud classification integration (Track A foundation)
-        DomainPackProvider.initialize(this)
+        try {
+            DomainPackProvider.initialize(this)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize Domain Pack provider", e)
+        }
 
         setContent {
             val settingsRepository = remember { SettingsRepository(this@MainActivity) }
@@ -49,5 +54,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "MainActivity"
     }
 }
