@@ -103,7 +103,7 @@ fun PaywallScreen(
                 // Feature List
                 FeatureRow("Unlimited Cloud Classification")
                 FeatureRow("AI Listing Assistant")
-                FeatureRow("Batch Export to eBay")
+                FeatureRow("Batch Export")
                 FeatureRow("Support Development")
                 
                 Spacer(modifier = Modifier.height(48.dp))

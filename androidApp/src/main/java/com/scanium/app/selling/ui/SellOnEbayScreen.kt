@@ -63,7 +63,7 @@ fun SellOnEbayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Sell on eBay (Mock)") },
+                title = { Text("Export to eBay (Mock)") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -80,7 +80,7 @@ fun SellOnEbayScreen(
                         .padding(12.dp)
                         .fillMaxWidth()
                 ) {
-                    Text("Post to eBay (Mock)")
+                    Text("Export to eBay (Mock)")
                 }
             }
         }

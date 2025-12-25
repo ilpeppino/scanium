@@ -32,7 +32,7 @@ fun AssistantScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Seller Assistant") },
+                title = { Text("Export Assistant") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
