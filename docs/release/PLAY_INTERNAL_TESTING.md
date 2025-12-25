@@ -21,18 +21,30 @@ scanium.key.password=your_key_password
 
 **WARNING:** Never commit your keystore file or passwords to the repository.
 
-***REMOVED******REMOVED*** 3. Building the App Bundle (AAB)
+For CI/CD, use environment variables:
+- `SCANIUM_KEYSTORE_FILE`
+- `SCANIUM_KEYSTORE_PASSWORD`
+- `SCANIUM_KEY_ALIAS`
+- `SCANIUM_KEY_PASSWORD`
 
-Google Play requires the Android App Bundle format for new applications.
+***REMOVED******REMOVED*** 3. Build Commands
 
-To generate a release AAB:
+***REMOVED******REMOVED******REMOVED*** Run Tests First
+```bash
+./gradlew test
+```
 
+***REMOVED******REMOVED******REMOVED*** Debug Build (for local testing)
+```bash
+./gradlew assembleDebug
+```
+Output: `androidApp/build/outputs/apk/debug/androidApp-debug.apk`
+
+***REMOVED******REMOVED******REMOVED*** Release Bundle (for Play Store)
 ```bash
 ./gradlew bundleRelease
 ```
-
-The output will be located at:
-`androidApp/build/outputs/bundle/release/androidApp-release.aab`
+Output: `androidApp/build/outputs/bundle/release/androidApp-release.aab`
 
 ***REMOVED******REMOVED*** 4. Versioning
 
@@ -63,10 +75,91 @@ You can set versions via environment variables for CI:
 
 After installing from the Play Store, verify the following:
 
-- [ ] **Scan Mode:** Continuous scanning works smoothly.
-- [ ] **Object Detection:** Items are detected and aggregated.
-- [ ] **Cloud Classification:** If enabled, enhanced labels appear after stabilization.
-- [ ] **Drafting:** Can create an eBay listing draft from a scanned item.
-- [ ] **Copy/Share:** Posting Assist works and copies data to clipboard.
-- [ ] **Diagnostics:** Crash reporting (Sentry) initializes if opted-in.
-- [ ] **Data Safety:** Compliance screens (Privacy, Terms, About) are accessible.
+***REMOVED******REMOVED******REMOVED*** Core Functionality
+- [ ] **Scan Mode:** Continuous scanning works smoothly
+- [ ] **Object Detection:** Items are detected and aggregated
+- [ ] **Cloud Classification:** If enabled, enhanced labels appear after stabilization
+- [ ] **Drafting:** Can create a listing draft from a scanned item
+- [ ] **Copy/Share:** Posting Assist works and copies data to clipboard
+
+***REMOVED******REMOVED******REMOVED*** Assistant & Voice (PR6+)
+- [ ] **Assistant Toggle:** Can enable/disable in Settings → Features
+- [ ] **Assistant Chat:** Can send messages and receive responses
+- [ ] **Assistant Images Toggle:** Can enable/disable image sending
+- [ ] **Voice Mode Toggle:** Can enable/disable in Settings
+- [ ] **Mic Button:** Appears only when Voice Mode enabled
+- [ ] **Voice Recording:** Mic indicator visible during listening
+- [ ] **Voice Stop:** Recording stops when pressing stop or backgrounding app
+- [ ] **TTS Playback:** Responses spoken aloud when Speak Answers enabled
+- [ ] **No Background Mic:** Verify mic doesn't record when app backgrounded
+
+***REMOVED******REMOVED******REMOVED*** Privacy & Data
+- [ ] **Privacy Policy:** Accessible via Settings → Legal
+- [ ] **Terms of Service:** Accessible via Settings → Legal
+- [ ] **Data Usage:** Accessible via Settings → Privacy & Data
+- [ ] **Privacy Safe Mode:** Can enable/disable all cloud sharing with one tap
+- [ ] **Reset Privacy:** Can restore privacy settings to defaults
+- [ ] **Crash Reporting:** Opt-in toggle works (default OFF)
+
+***REMOVED******REMOVED******REMOVED*** Network Failure Handling
+- [ ] **Airplane Mode + Cloud:** Shows clear error, falls back gracefully
+- [ ] **Airplane Mode + Assistant:** Shows clear error message
+- [ ] **API Timeout:** Shows retry option, no infinite spinner
+
+***REMOVED******REMOVED*** 8. Assistant + Voice Specific Tests
+
+***REMOVED******REMOVED******REMOVED*** Toggle Behavior
+| Test | Expected Result | Pass |
+|------|-----------------|------|
+| Assistant OFF, send message | Should not work or show upsell | [ ] |
+| Assistant ON, Images OFF, send message | Message sent, no images in request | [ ] |
+| Assistant ON, Images ON, send message | Message sent with thumbnails | [ ] |
+| Voice Mode OFF | Mic button not visible | [ ] |
+| Voice Mode ON | Mic button visible in assistant input | [ ] |
+
+***REMOVED******REMOVED******REMOVED*** Microphone Indicator
+| Test | Expected Result | Pass |
+|------|-----------------|------|
+| Tap mic button | Indicator shows "Listening..." | [ ] |
+| Speak, wait for result | Indicator shows "Transcribing..." then disappears | [ ] |
+| Tap stop during listening | Recording stops immediately | [ ] |
+| Background app during listening | Recording stops, no crash | [ ] |
+
+***REMOVED******REMOVED******REMOVED*** No Background Mic
+1. Enable Voice Mode
+2. Open Assistant screen
+3. Start listening (tap mic)
+4. While still listening, press Home
+5. **Expected:** Recording stops, no continued mic access
+6. Return to app
+7. **Expected:** State is IDLE, not LISTENING
+
+***REMOVED******REMOVED******REMOVED*** TTS Playback
+| Test | Expected Result | Pass |
+|------|-----------------|------|
+| Speak Answers OFF, receive response | No audio playback | [ ] |
+| Speak Answers ON, receive response | Response spoken aloud | [ ] |
+| Tap stop during speaking | Audio stops immediately | [ ] |
+
+***REMOVED******REMOVED*** 9. Logcat Filters for Verification
+
+```bash
+***REMOVED*** Cloud classification on/off
+adb logcat -s CloudClassifier FeatureFlagRepository | grep -iE "cloud|enabled|disabled"
+
+***REMOVED*** Assistant image sending on/off
+adb logcat -s AssistantViewModel AssistantRepository | grep -iE "image|thumbnail"
+
+***REMOVED*** Voice listening start/stop
+adb logcat -s AssistantVoice | grep -iE "listening|stopped|shutdown|dispose"
+
+***REMOVED*** Crash reporting opt-in
+adb logcat -s AndroidCrashPortAdapter Sentry | grep -iE "capture|diagnostics"
+
+***REMOVED*** Privacy safe mode
+adb logcat | grep -iE "privacy.?safe|enablePrivacySafeMode"
+```
+
+***REMOVED******REMOVED*** 10. Pre-Release Checklist
+
+Complete the full [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) before publishing.

@@ -33,6 +33,8 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -79,6 +81,9 @@ fun SettingsScreen(
     val speakAnswersEnabled by viewModel.speakAnswersEnabled.collectAsState()
     val autoSendTranscript by viewModel.autoSendTranscript.collectAsState()
     val voiceLanguage by viewModel.voiceLanguage.collectAsState()
+
+    // Privacy Safe Mode
+    val isPrivacySafeModeActive by viewModel.isPrivacySafeModeActive.collectAsState()
 
     val dirPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
@@ -194,6 +199,28 @@ fun SettingsScreen(
                 icon = Icons.Default.BugReport,
                 checked = shareDiagnostics,
                 onCheckedChange = { viewModel.setShareDiagnostics(it) }
+            )
+
+            SettingsSwitchItem(
+                title = "Privacy Safe Mode",
+                subtitle = if (isPrivacySafeModeActive) "Active - no data leaves device" else "Disable all cloud sharing",
+                icon = Icons.Default.Shield,
+                checked = isPrivacySafeModeActive,
+                onCheckedChange = { enabled ->
+                    if (enabled) {
+                        viewModel.enablePrivacySafeMode()
+                    } else {
+                        // Re-enable cloud classification when turning off safe mode
+                        viewModel.setAllowCloud(true)
+                    }
+                }
+            )
+
+            SettingsItem(
+                title = "Reset Privacy Settings",
+                subtitle = "Restore defaults for all privacy options",
+                icon = Icons.Default.RestartAlt,
+                onClick = { viewModel.resetPrivacySettings() }
             )
 
             HorizontalDivider()

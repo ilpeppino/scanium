@@ -119,10 +119,15 @@ class AssistantViewModel(
 
         viewModelScope.launch {
             val state = _uiState.value
+
             ScaniumLog.i(
                 TAG,
                 "Assist request correlationId=$correlationId items=${state.snapshots.size} messageLength=${trimmed.length}"
             )
+
+            // Note: Currently images are not attached in this implementation.
+            // When image support is added, check settingsRepository.allowAssistantImagesFlow
+            // and only include thumbnails if that toggle is ON.
 
             try {
                 // Update stage to LLM processing
@@ -131,12 +136,15 @@ class AssistantViewModel(
                 // Get current assistant preferences
                 val prefs = settingsRepository.assistantPrefsFlow.first()
 
+                // Images are currently not attached (empty list).
+                // Future implementation should only include images if allowImages is true.
                 val response = assistantRepository.send(
                     items = state.snapshots,
                     history = state.entries.map { it.message },
                     userMessage = trimmed,
                     exportProfile = state.profile,
                     correlationId = correlationId,
+                    imageAttachments = emptyList(), // Explicit: no images sent
                     assistantPrefs = prefs
                 )
 
