@@ -25,6 +25,7 @@ import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
+import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.tracking.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
 import com.scanium.android.platform.adapters.toNormalizedRect
@@ -594,6 +595,11 @@ class CameraXManager(
         useStreamMode: Boolean = false
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         var cachedBitmap: Bitmap? = null
+        val frameStartTime = SystemClock.elapsedRealtime()
+        val span = telemetry?.beginSpan(PerformanceMonitor.Spans.FRAME_ANALYSIS, mapOf(
+            "scan_mode" to scanMode.name,
+            "stream_mode" to useStreamMode.toString()
+        ))
         return try {
             Log.i(TAG, ">>> processImageProxy: START - scanMode=$scanMode, useStreamMode=$useStreamMode, isScanning=$isScanning")
 
@@ -695,8 +701,18 @@ class CameraXManager(
             }
         } catch (e: Exception) {
             Log.e(TAG, ">>> processImageProxy: ERROR", e)
+            span?.recordError(e.message ?: "Unknown error")
             Pair(emptyList(), emptyList())
         } finally {
+            // Record frame analysis duration
+            val frameDuration = SystemClock.elapsedRealtime() - frameStartTime
+            PerformanceMonitor.recordTimer(
+                PerformanceMonitor.Metrics.FRAME_ANALYSIS_LATENCY_MS,
+                frameDuration,
+                mapOf("scan_mode" to scanMode.name)
+            )
+            span?.end()
+
             cachedBitmap?.let { bitmap ->
                 if (!bitmap.isRecycled) {
                     bitmap.recycle()
@@ -731,8 +747,14 @@ class CameraXManager(
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass")
 
-        // Process detections through tracker
+        // Process detections through tracker with timing
+        val trackingStartTime = SystemClock.elapsedRealtime()
         val confirmedCandidates = objectTracker.processFrame(trackingResponse.detectionInfos, analyzerLatencyMs)
+        PerformanceMonitor.recordTimer(
+            PerformanceMonitor.Metrics.TRACKING_LATENCY_MS,
+            SystemClock.elapsedRealtime() - trackingStartTime,
+            mapOf("detection_count" to trackingResponse.detectionInfos.size.toString())
+        )
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: ObjectTracker returned ${confirmedCandidates.size} newly confirmed candidates")
 

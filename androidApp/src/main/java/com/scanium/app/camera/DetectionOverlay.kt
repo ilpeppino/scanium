@@ -1,6 +1,8 @@
 package com.scanium.app.camera
 
 import android.graphics.RectF
+import android.os.SystemClock
+import android.os.Trace
 import android.util.Size
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -26,6 +28,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.scanium.app.camera.OverlayTrack
+import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.platform.toRectF
 import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.CyanGlow
@@ -69,6 +72,9 @@ fun DetectionOverlay(
     val pulseAlpha = if (hasEstimating) animatedPulseAlpha else 1f
 
     Canvas(modifier = modifier.fillMaxSize()) {
+        val drawStartTime = SystemClock.elapsedRealtime()
+        Trace.beginSection("DetectionOverlay.draw")
+
         val canvasWidth = size.width
         val canvasHeight = size.height
 
@@ -191,6 +197,17 @@ fun DetectionOverlay(
                     )
                 )
             }
+        }
+
+        // Record overlay draw timing
+        Trace.endSection()
+        val drawDuration = SystemClock.elapsedRealtime() - drawStartTime
+        if (detections.isNotEmpty()) {
+            PerformanceMonitor.recordTimer(
+                PerformanceMonitor.Metrics.OVERLAY_DRAW_LATENCY_MS,
+                drawDuration,
+                mapOf("detection_count" to detections.size.toString())
+            )
         }
     }
 }
