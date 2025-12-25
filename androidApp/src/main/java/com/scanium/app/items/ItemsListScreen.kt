@@ -39,6 +39,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
+import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -84,6 +85,7 @@ fun ItemsListScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val csvExportWriter = remember { CsvExportWriter() }
 
     // FTUE tour state
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -427,15 +429,37 @@ fun ItemsListScreen(
         val exportCount = exportPayload?.items?.size ?: selectedIds.size
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            title = { Text("Export formats coming next") },
+            title = { Text("Export items") },
             text = {
                 Text(
                     "Selected $exportCount item${if (exportCount == 1) "" else "s"}."
                 )
             },
             confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExportDialog = false
+                        scope.launch {
+                            val payload = exportPayload
+                            if (payload == null) {
+                                snackbarHostState.showSnackbar("Select items to export")
+                                return@launch
+                            }
+                            val result = csvExportWriter.writeToCache(context, payload)
+                            val message = result.fold(
+                                onSuccess = { file -> "CSV saved to ${file.name}" },
+                                onFailure = { "Failed to export CSV" }
+                            )
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    }
+                ) {
+                    Text("CSV")
+                }
+            },
+            dismissButton = {
                 TextButton(onClick = { showExportDialog = false }) {
-                    Text("OK")
+                    Text("Cancel")
                 }
             }
         )
