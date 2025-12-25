@@ -20,7 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Launch
 import androidx.compose.material.icons.filled.MoreVert
@@ -134,7 +134,7 @@ fun PostingAssistScreen(
                             onOpenAssistant(state.itemIds, state.currentIndex)
                         }
                     ) {
-                        Icon(imageVector = Icons.Default.Chat, contentDescription = "Ask assistant")
+                        Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "Ask assistant")
                     }
                     IconButton(onClick = { targetDialogVisible = true }) {
                         Icon(imageVector = Icons.Default.Launch, contentDescription = "Open target")

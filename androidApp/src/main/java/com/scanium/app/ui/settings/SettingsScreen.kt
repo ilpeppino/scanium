@@ -7,10 +7,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -177,7 +177,7 @@ fun SettingsScreen(
             SettingsSwitchItem(
                 title = "Assistant Features",
                 subtitle = "Enable AI assistant (Experimental)",
-                icon = Icons.Default.SmartToy,
+                icon = Icons.Default.AutoAwesome,
                 checked = allowAssistant,
                 enabled = currentEdition != UserEdition.FREE, // Only for Pro/Dev
                 onCheckedChange = { viewModel.setAllowAssistant(it) }
