@@ -106,6 +106,10 @@ class SettingsViewModel(
     val voiceLanguage: StateFlow<String> = settingsRepository.voiceLanguageFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    // Privacy Safe Mode
+    val isPrivacySafeModeActive: StateFlow<Boolean> = settingsRepository.isPrivacySafeModeActiveFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
@@ -186,6 +190,15 @@ class SettingsViewModel(
 
     fun setVoiceLanguage(language: String) {
         viewModelScope.launch { settingsRepository.setVoiceLanguage(language) }
+    }
+
+    // Privacy Safe Mode
+    fun enablePrivacySafeMode() {
+        viewModelScope.launch { settingsRepository.enablePrivacySafeMode() }
+    }
+
+    fun resetPrivacySettings() {
+        viewModelScope.launch { settingsRepository.resetPrivacySettings() }
     }
 
     // For manual edition switching (Dev only ideally, but we put it here for now)

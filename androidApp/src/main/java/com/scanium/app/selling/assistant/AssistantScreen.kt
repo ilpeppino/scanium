@@ -59,6 +59,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -143,8 +146,29 @@ fun AssistantScreen(
         }
     }
 
+    // Stop voice when leaving screen (dispose)
     DisposableEffect(Unit) {
         onDispose { voiceController.shutdown() }
+    }
+
+    // Stop voice recording when app goes to background (lifecycle-aware)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                    // Stop any active voice recording when app goes to background
+                    // This ensures no background mic usage
+                    voiceController.stopListening()
+                    voiceController.stopSpeaking()
+                }
+                else -> { /* No action needed for other lifecycle events */ }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     LaunchedEffect(viewModel.events) {
@@ -314,6 +338,11 @@ fun AssistantScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                     }
                 }
+            }
+
+            // Provider unavailable warning (cloud misconfigured or AI provider down)
+            if (state.providerUnavailable) {
+                ProviderUnavailableBanner()
             }
 
             // Loading stage indicator
@@ -671,6 +700,40 @@ private fun RetryBanner(onRetry: () -> Unit) {
             Button(onClick = onRetry) {
                 Text("Retry")
             }
+        }
+    }
+}
+
+/**
+ * Banner shown when the AI provider is unavailable or cloud is misconfigured.
+ * Provides clear feedback instead of silent failures.
+ */
+@Composable
+private fun ProviderUnavailableBanner() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+            Text(
+                text = "Assistant running in limited mode",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "AI provider is temporarily unavailable. You're seeing local suggestions only. Full assistant features will return when connectivity is restored.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+            )
         }
     }
 }
