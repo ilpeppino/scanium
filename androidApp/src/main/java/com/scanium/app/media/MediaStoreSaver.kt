@@ -12,8 +12,8 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.android.platform.adapters.toBitmap
 import com.scanium.android.platform.adapters.toImageRefJpeg
+import com.scanium.app.model.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -79,7 +79,7 @@ object MediaStoreSaver {
                     // Prefer high-res URI
                     saveFromUri(context, fullImageUri, itemId, index)
                 } else if (thumbnail != null) {
-                    val thumbnailBitmap = (thumbnail as? ImageRef.Bytes)?.toBitmap()
+                    val thumbnailBitmap = thumbnail.toBitmap()
                         ?: throw IllegalArgumentException("Unsupported thumbnail type: ${thumbnail::class.java.simpleName}")
                     // Fallback to thumbnail
                     saveSingleBitmap(context, thumbnailBitmap, itemId, index)

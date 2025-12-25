@@ -6,9 +6,9 @@ import android.graphics.RectF
 import android.net.Uri
 import android.util.Log
 import com.scanium.android.platform.adapters.toImageRefJpeg
-import com.scanium.android.platform.adapters.toBitmap
 import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.app.camera.ImageUtils
+import com.scanium.app.model.toBitmap
 import com.scanium.app.platform.toRectF
 import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.Dispatchers
@@ -109,7 +109,7 @@ class StableItemCropper(
             Log.w(TAG, "Failed to load bitmap from $uri, falling back to detection thumbnail")
         }
 
-        return (fallback as? ImageRef.Bytes)?.toBitmap()
+        return fallback.toBitmap()
     }
 
     private fun calculateCropRect(
