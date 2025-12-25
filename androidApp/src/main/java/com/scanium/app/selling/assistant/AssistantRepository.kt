@@ -19,11 +19,31 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+
+/**
+ * Image data to attach to an assistant request.
+ * Images are sent as multipart form data when present.
+ */
+data class ItemImageAttachment(
+    val itemId: String,
+    val imageBytes: ByteArray,
+    val mimeType: String,
+    val filename: String = "thumbnail.jpg"
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ItemImageAttachment) return false
+        return itemId == other.itemId && imageBytes.contentEquals(other.imageBytes)
+    }
+
+    override fun hashCode(): Int = itemId.hashCode() * 31 + imageBytes.contentHashCode()
+}
 
 interface AssistantRepository {
     suspend fun send(
@@ -31,7 +51,8 @@ interface AssistantRepository {
         history: List<AssistantMessage>,
         userMessage: String,
         exportProfile: ExportProfileDefinition,
-        correlationId: String
+        correlationId: String,
+        imageAttachments: List<ItemImageAttachment> = emptyList()
     ): AssistantResponse
 }
 
@@ -65,12 +86,14 @@ private class FallbackAssistantRepository(
         history: List<AssistantMessage>,
         userMessage: String,
         exportProfile: ExportProfileDefinition,
-        correlationId: String
+        correlationId: String,
+        imageAttachments: List<ItemImageAttachment>
     ): AssistantResponse {
         return try {
-            primary.send(items, history, userMessage, exportProfile, correlationId)
+            primary.send(items, history, userMessage, exportProfile, correlationId, imageAttachments)
         } catch (error: Exception) {
-            fallback.send(items, history, userMessage, exportProfile, correlationId)
+            // Fallback doesn't support images - just pass empty list
+            fallback.send(items, history, userMessage, exportProfile, correlationId, emptyList())
         }
     }
 }
@@ -91,13 +114,14 @@ private class CloudAssistantRepository(
         history: List<AssistantMessage>,
         userMessage: String,
         exportProfile: ExportProfileDefinition,
-        correlationId: String
+        correlationId: String,
+        imageAttachments: List<ItemImageAttachment>
     ): AssistantResponse = withContext(Dispatchers.IO) {
         if (baseUrl.isBlank()) {
             throw IllegalStateException("Assistant backend not configured")
         }
 
-        val requestBody = AssistantChatRequest(
+        val requestPayload = AssistantChatRequest(
             items = items.map { ItemContextSnapshotDto.fromModel(it) },
             history = history.map { AssistantMessageDto.fromModel(it) },
             message = userMessage,
@@ -107,25 +131,14 @@ private class CloudAssistantRepository(
         )
 
         val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
-        val body = json.encodeToString(AssistantChatRequest.serializer(), requestBody)
-        val request = Request.Builder()
-            .url(endpoint)
-            .post(body.toRequestBody("application/json".toMediaType()))
-            .apply {
-                apiKey?.let { key ->
-                    header("X-API-Key", key)
-                    // Add HMAC signature for replay protection (SEC-004)
-                    RequestSigner.addSignatureHeaders(
-                        builder = this,
-                        apiKey = key,
-                        requestBody = body
-                    )
-                }
-                header("X-Scanium-Correlation-Id", correlationId)
-                header("X-Client", "Scanium-Android")
-                header("X-App-Version", BuildConfig.VERSION_NAME)
-            }
-            .build()
+        val payloadJson = json.encodeToString(AssistantChatRequest.serializer(), requestPayload)
+
+        // Use multipart when images are attached, otherwise use JSON
+        val request = if (imageAttachments.isNotEmpty()) {
+            buildMultipartRequest(endpoint, payloadJson, imageAttachments, correlationId)
+        } else {
+            buildJsonRequest(endpoint, payloadJson, correlationId)
+        }
 
         client.newCall(request).execute().use { response ->
             val responseBody = response.body?.string()
@@ -137,6 +150,70 @@ private class CloudAssistantRepository(
             throw IOException("Assistant backend error ${response.code}")
         }
     }
+
+    private fun buildJsonRequest(
+        endpoint: String,
+        payloadJson: String,
+        correlationId: String
+    ): Request {
+        return Request.Builder()
+            .url(endpoint)
+            .post(payloadJson.toRequestBody("application/json".toMediaType()))
+            .apply { addCommonHeaders(this, payloadJson, correlationId) }
+            .build()
+    }
+
+    private fun buildMultipartRequest(
+        endpoint: String,
+        payloadJson: String,
+        imageAttachments: List<ItemImageAttachment>,
+        correlationId: String
+    ): Request {
+        val multipartBuilder = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("payload", payloadJson)
+
+        // Add images with field naming scheme: itemImages[itemId]
+        imageAttachments.forEachIndexed { index, attachment ->
+            val fieldName = "itemImages[${attachment.itemId}]"
+            val mediaType = attachment.mimeType.toMediaType()
+            val filename = "image_${index}_${attachment.filename}"
+            multipartBuilder.addFormDataPart(
+                fieldName,
+                filename,
+                attachment.imageBytes.toRequestBody(mediaType)
+            )
+        }
+
+        val multipartBody = multipartBuilder.build()
+
+        logger.log("Sending multipart request with ${imageAttachments.size} images")
+
+        return Request.Builder()
+            .url(endpoint)
+            .post(multipartBody)
+            .apply { addCommonHeaders(this, payloadJson, correlationId) }
+            .build()
+    }
+
+    private fun addCommonHeaders(
+        builder: Request.Builder,
+        payloadJson: String,
+        correlationId: String
+    ) {
+        apiKey?.let { key ->
+            builder.header("X-API-Key", key)
+            // Add HMAC signature for replay protection (SEC-004)
+            RequestSigner.addSignatureHeaders(
+                builder = builder,
+                apiKey = key,
+                requestBody = payloadJson
+            )
+        }
+        builder.header("X-Scanium-Correlation-Id", correlationId)
+        builder.header("X-Client", "Scanium-Android")
+        builder.header("X-App-Version", BuildConfig.VERSION_NAME)
+    }
 }
 
 private class LocalAssistantRepository : AssistantRepository {
@@ -145,8 +222,10 @@ private class LocalAssistantRepository : AssistantRepository {
         history: List<AssistantMessage>,
         userMessage: String,
         exportProfile: ExportProfileDefinition,
-        correlationId: String
+        correlationId: String,
+        imageAttachments: List<ItemImageAttachment>
     ): AssistantResponse {
+        // Local fallback doesn't process images - they are ignored
         AssistantPromptBuilder.buildRequest(
             items = items,
             userMessage = userMessage,
@@ -217,14 +296,28 @@ private data class AssistantChatResponse(
     val content: String,
     val actions: List<AssistantActionDto> = emptyList(),
     @SerialName("citationsMetadata")
-    val citationsMetadata: Map<String, String>? = null
+    val citationsMetadata: Map<String, String>? = null,
+    val confidenceTier: String? = null,
+    val evidence: List<EvidenceBulletDto> = emptyList(),
+    val suggestedAttributes: List<SuggestedAttributeDto> = emptyList(),
+    val suggestedDraftUpdates: List<SuggestedDraftUpdateDto> = emptyList(),
+    val suggestedNextPhoto: String? = null
 ) {
     fun toModel(): AssistantResponse {
         return AssistantResponse(
             content = content,
             actions = actions.map { it.toModel() },
-            citationsMetadata = citationsMetadata
+            citationsMetadata = citationsMetadata,
+            confidenceTier = confidenceTier?.let { parseConfidenceTier(it) },
+            evidence = evidence.map { it.toModel() },
+            suggestedAttributes = suggestedAttributes.map { it.toModel() },
+            suggestedDraftUpdates = suggestedDraftUpdates.map { it.toModel() },
+            suggestedNextPhoto = suggestedNextPhoto
         )
+    }
+
+    private fun parseConfidenceTier(tier: String): com.scanium.app.model.ConfidenceTier? {
+        return runCatching { com.scanium.app.model.ConfidenceTier.valueOf(tier) }.getOrNull()
     }
 }
 
@@ -250,12 +343,67 @@ private data class AssistantMessageDto(
 @Serializable
 private data class AssistantActionDto(
     val type: String,
-    val payload: Map<String, String> = emptyMap()
+    val payload: Map<String, String> = emptyMap(),
+    val label: String? = null,
+    val requiresConfirmation: Boolean = false
 ) {
     fun toModel(): AssistantAction {
         val actionType = runCatching { AssistantActionType.valueOf(type) }
             .getOrElse { AssistantActionType.COPY_TEXT }
-        return AssistantAction(type = actionType, payload = payload)
+        return AssistantAction(
+            type = actionType,
+            payload = payload,
+            label = label,
+            requiresConfirmation = requiresConfirmation
+        )
+    }
+}
+
+@Serializable
+private data class EvidenceBulletDto(
+    val type: String,
+    val text: String
+) {
+    fun toModel() = com.scanium.app.model.EvidenceBullet(type = type, text = text)
+}
+
+@Serializable
+private data class SuggestedAttributeDto(
+    val key: String,
+    val value: String,
+    val confidence: String,
+    val source: String? = null
+) {
+    fun toModel() = com.scanium.app.model.SuggestedAttribute(
+        key = key,
+        value = value,
+        confidence = parseConfidence(confidence),
+        source = source
+    )
+
+    private fun parseConfidence(tier: String): com.scanium.app.model.ConfidenceTier {
+        return runCatching { com.scanium.app.model.ConfidenceTier.valueOf(tier) }
+            .getOrElse { com.scanium.app.model.ConfidenceTier.LOW }
+    }
+}
+
+@Serializable
+private data class SuggestedDraftUpdateDto(
+    val field: String,
+    val value: String,
+    val confidence: String,
+    val requiresConfirmation: Boolean = false
+) {
+    fun toModel() = com.scanium.app.model.SuggestedDraftUpdate(
+        field = field,
+        value = value,
+        confidence = parseConfidence(confidence),
+        requiresConfirmation = requiresConfirmation
+    )
+
+    private fun parseConfidence(tier: String): com.scanium.app.model.ConfidenceTier {
+        return runCatching { com.scanium.app.model.ConfidenceTier.valueOf(tier) }
+            .getOrElse { com.scanium.app.model.ConfidenceTier.LOW }
     }
 }
 

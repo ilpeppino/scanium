@@ -21,17 +21,23 @@ data class AssistantMessage(
 )
 
 enum class AssistantActionType {
+    ADD_ATTRIBUTES,
     APPLY_DRAFT_UPDATE,
     COPY_TEXT,
     OPEN_POSTING_ASSIST,
     OPEN_SHARE,
-    OPEN_URL
+    OPEN_URL,
+    SUGGEST_NEXT_PHOTO
 }
 
 @Serializable
 data class AssistantAction(
     val type: AssistantActionType,
-    val payload: Map<String, String> = emptyMap()
+    val payload: Map<String, String> = emptyMap(),
+    /** Label to display on the action button/chip */
+    val label: String? = null,
+    /** Whether this action requires user confirmation (e.g., for LOW confidence) */
+    val requiresConfirmation: Boolean = false
 )
 
 /**
@@ -43,6 +49,59 @@ data class SafetyResponse(
     val blocked: Boolean = false,
     val reasonCode: String? = null,
     val requestId: String? = null
+)
+
+/**
+ * Confidence tier for assistant responses.
+ * HIGH: Strong visual evidence supports the answer.
+ * MED: Some evidence, but not conclusive.
+ * LOW: Insufficient evidence; response is speculative.
+ */
+enum class ConfidenceTier {
+    HIGH,
+    MED,
+    LOW
+}
+
+/**
+ * Evidence bullet derived from VisualFacts.
+ */
+@Serializable
+data class EvidenceBullet(
+    /** Type of evidence */
+    val type: String,
+    /** Human-readable evidence statement */
+    val text: String
+)
+
+/**
+ * Suggested attribute with confidence.
+ */
+@Serializable
+data class SuggestedAttribute(
+    /** Attribute key (brand, model, color, etc.) */
+    val key: String,
+    /** Suggested value */
+    val value: String,
+    /** Confidence tier for this suggestion */
+    val confidence: ConfidenceTier,
+    /** Source of suggestion (ocr, logo, color, etc.) */
+    val source: String? = null
+)
+
+/**
+ * Suggested draft updates (title, description).
+ */
+@Serializable
+data class SuggestedDraftUpdate(
+    /** Field to update */
+    val field: String,
+    /** Suggested value */
+    val value: String,
+    /** Confidence tier for this suggestion */
+    val confidence: ConfidenceTier,
+    /** Whether this requires user confirmation before applying */
+    val requiresConfirmation: Boolean = false
 )
 
 /**
@@ -58,7 +117,17 @@ data class AssistantResponse(
     val actions: List<AssistantAction> = emptyList(),
     val citationsMetadata: Map<String, String>? = null,
     val safety: SafetyResponse? = null,
-    val correlationId: String? = null
+    val correlationId: String? = null,
+    /** Confidence tier for the response (when visual evidence is used) */
+    val confidenceTier: ConfidenceTier? = null,
+    /** Evidence bullets referencing VisualFacts */
+    val evidence: List<EvidenceBullet> = emptyList(),
+    /** Suggested attributes derived from visual evidence */
+    val suggestedAttributes: List<SuggestedAttribute> = emptyList(),
+    /** Suggested draft updates (title, description) */
+    val suggestedDraftUpdates: List<SuggestedDraftUpdate> = emptyList(),
+    /** Suggested next photo instruction when evidence is insufficient */
+    val suggestedNextPhoto: String? = null
 ) {
     /** Get the response text, preferring 'reply' over 'content' */
     val text: String get() = reply ?: content ?: ""

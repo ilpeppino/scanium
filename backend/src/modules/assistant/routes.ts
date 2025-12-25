@@ -1,10 +1,10 @@
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyPluginAsync, FastifyRequest } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { Config } from '../../config/index.js';
 import { ApiKeyManager } from '../classifier/api-key-manager.js';
 import { AssistantService } from './service.js';
-import { MockAssistantProvider } from './provider.js';
+import { MockAssistantProvider, GroundedMockAssistantProvider } from './provider.js';
 import {
   RedisClient,
   SlidingWindowRateLimiter,
@@ -22,6 +22,27 @@ import {
   type SecurityReasonCode,
 } from './safety.js';
 import { DailyQuotaStore } from './quota-store.js';
+import { ItemImageMetadata, AssistantChatRequestWithVision, AssistantResponse } from './types.js';
+import {
+  VisionExtractor,
+  MockVisionExtractor,
+  computeImageHash,
+  VisualFactsCache,
+  buildCacheKey,
+  VisionImageInput,
+  VisualFacts,
+} from '../vision/index.js';
+import {
+  UnifiedCache,
+  buildAssistantCacheKey,
+  buildItemSnapshotHash,
+  normalizeQuestion,
+} from '../../infra/cache/unified-cache.js';
+import {
+  StagedRequestManager,
+  buildVisionPreview,
+  StagedRequestStatus,
+} from './staged-request.js';
 
 type RouteOpts = { config: Config };
 
@@ -62,6 +83,23 @@ const requestSchema = z.object({
     .optional(),
 });
 
+// Image upload limits
+const IMAGE_LIMITS = {
+  MAX_IMAGES_PER_ITEM: 3,
+  MAX_TOTAL_IMAGES: 10,
+  MAX_FILE_SIZE_BYTES: 2 * 1024 * 1024, // 2MB
+  ALLOWED_MIME_TYPES: ['image/jpeg', 'image/png'] as const,
+};
+
+type AllowedMimeType = (typeof IMAGE_LIMITS.ALLOWED_MIME_TYPES)[number];
+
+/**
+ * Field naming scheme for multipart image uploads:
+ * - `itemImages[<itemId>]` - maps image to specific item
+ * - Example: `itemImages[abc123]` uploads image for item "abc123"
+ */
+const ITEM_IMAGE_FIELD_PATTERN = /^itemImages\[(.+)\]$/;
+
 /**
  * Build safety response object for API responses.
  * Uses stable reason codes that don't reveal internal details.
@@ -81,13 +119,64 @@ function buildSafetyResponse(
 export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, opts) => {
   const { config } = opts;
   const apiKeyManager = new ApiKeyManager(config.assistant.apiKeys);
-  const provider = new MockAssistantProvider();
+
+  // Use GroundedMockAssistantProvider for vision-enabled responses
+  const provider = new GroundedMockAssistantProvider();
   const breaker = new CircuitBreaker({
     failureThreshold: config.assistant.circuitBreakerFailureThreshold,
     cooldownMs: config.assistant.circuitBreakerCooldownSeconds * 1000,
     minimumRequests: config.assistant.circuitBreakerMinimumRequests,
   });
   const service = new AssistantService(provider, { breaker, retries: 2 });
+
+  // Vision extraction setup
+  const visionConfig = config.vision;
+  const visionExtractor =
+    visionConfig.provider === 'google'
+      ? new VisionExtractor({
+          timeoutMs: visionConfig.timeoutMs,
+          maxRetries: visionConfig.maxRetries,
+          enableLogoDetection: visionConfig.enableLogos,
+          maxOcrSnippetLength: visionConfig.maxOcrSnippetLength,
+          minOcrConfidence: visionConfig.minOcrConfidence,
+          minLabelConfidence: visionConfig.minLabelConfidence,
+          minLogoConfidence: visionConfig.minLogoConfidence,
+        })
+      : new MockVisionExtractor();
+
+  const visionCache = new VisualFactsCache({
+    ttlMs: visionConfig.cacheTtlSeconds * 1000,
+    maxEntries: visionConfig.cacheMaxEntries,
+  });
+
+  // Response cache for assistant answers
+  const responseCache = new UnifiedCache<AssistantResponse>({
+    ttlMs: config.assistant.responseCacheTtlSeconds * 1000,
+    maxEntries: config.assistant.responseCacheMaxEntries,
+    name: 'assistant-response',
+    enableDedup: config.assistant.enableRequestDedup,
+  });
+
+  // Usage accounting callback
+  responseCache.setUsageCallback((event) => {
+    fastify.log.debug(
+      {
+        cacheEvent: event.type,
+        cacheName: event.cacheName,
+        cacheKey: event.cacheKey.slice(0, 16),
+        ...event.metadata,
+      },
+      'Cache event'
+    );
+  });
+
+  // Staged request manager for async processing
+  const stagedRequestManager = new StagedRequestManager({
+    timeoutMs: config.assistant.stagedResponseTimeoutMs,
+    maxConcurrent: 100,
+    cleanupIntervalMs: 30000,
+    resultRetentionMs: 300000,
+  });
 
   // Daily quota store (in-memory, resets at midnight UTC)
   const quotaStore = new DailyQuotaStore({
@@ -138,6 +227,9 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
 
   fastify.addHook('onClose', async () => {
     quotaStore.stop();
+    visionCache.stop();
+    responseCache.stop();
+    stagedRequestManager.stop();
     await redisClient?.quit?.();
   });
 
@@ -246,8 +338,35 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         });
     }
 
+    // Determine content type and parse request body
+    const contentType = request.headers['content-type'] ?? '';
+    const isMultipart = contentType.includes('multipart/form-data');
+
+    let requestBody: unknown;
+    let attachedImages = new Map<string, ItemImageMetadata[]>();
+
+    if (isMultipart) {
+      const multipartResult = await parseMultipartRequest(request);
+      if (!multipartResult.success) {
+        request.log.warn({ correlationId, error: multipartResult.error }, 'Multipart parsing failed');
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: multipartResult.error,
+            correlationId,
+          },
+          safety: buildSafetyResponse(true, 'VALIDATION_ERROR', requestId),
+        });
+      }
+      requestBody = multipartResult.jsonData;
+      attachedImages = multipartResult.images;
+    } else {
+      // JSON body (backward compatible)
+      requestBody = request.body;
+    }
+
     // Schema validation
-    const parsed = requestSchema.safeParse(request.body);
+    const parsed = requestSchema.safeParse(requestBody);
     if (!parsed.success) {
       request.log.warn({ correlationId }, 'Request validation failed');
       return reply.status(400).send({
@@ -258,6 +377,18 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         },
         safety: buildSafetyResponse(true, 'VALIDATION_ERROR', requestId),
       });
+    }
+
+    // Merge images into items if multipart request
+    if (isMultipart && attachedImages.size > 0) {
+      parsed.data.items = mergeImagesIntoItems(parsed.data.items, attachedImages);
+
+      // Log image attachment metadata
+      const imageCount = Array.from(attachedImages.values()).reduce((sum, arr) => sum + arr.length, 0);
+      request.log.info(
+        { correlationId, imageCount, itemsWithImages: attachedImages.size },
+        'Images attached to assistant request'
+      );
     }
 
     // Apply security limits and normalize input
@@ -300,6 +431,85 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     // PII redaction before processing
     const { request: sanitizedRequest, piiRedacted } = redactRequestPii(validated.request);
 
+    // Vision extraction for items with images
+    const visualFactsMap = new Map<string, VisualFacts>();
+    let visionCacheHits = 0;
+    let visionExtractions = 0;
+    let visionErrors = 0;
+
+    if (visionConfig.enabled) {
+      for (const item of sanitizedRequest.items) {
+        if (!item.itemImages || item.itemImages.length === 0) continue;
+
+        // Compute image hashes for cache key
+        const imageHashes = item.itemImages.map((img) => computeImageHash(img.base64Data));
+        const cacheKey = buildCacheKey(imageHashes, { featureVersion: 'v1' });
+
+        // Check cache first
+        const cachedFacts = visionCache.get(cacheKey);
+        if (cachedFacts) {
+          visualFactsMap.set(item.itemId, cachedFacts);
+          visionCacheHits++;
+          request.log.debug(
+            { correlationId, itemId: item.itemId, cacheKey: cacheKey.slice(0, 16) },
+            'Vision cache hit'
+          );
+          continue;
+        }
+
+        // Extract visual facts
+        try {
+          const images: VisionImageInput[] = item.itemImages.map((img) => ({
+            base64Data: img.base64Data,
+            mimeType: img.mimeType,
+            filename: img.filename,
+          }));
+
+          const result = await visionExtractor.extractVisualFacts(item.itemId, images, {
+            enableOcr: visionConfig.enableOcr,
+            enableLabels: visionConfig.enableLabels,
+            enableLogos: visionConfig.enableLogos,
+            enableColors: visionConfig.enableColors,
+            maxOcrSnippets: visionConfig.maxOcrSnippets,
+            maxLabelHints: visionConfig.maxLabelHints,
+            maxLogoHints: visionConfig.maxLogoHints,
+            maxColors: visionConfig.maxColors,
+          });
+
+          if (result.success && result.facts) {
+            visualFactsMap.set(item.itemId, result.facts);
+            visionCache.set(cacheKey, result.facts);
+            visionExtractions++;
+            request.log.info(
+              {
+                correlationId,
+                itemId: item.itemId,
+                imageCount: images.length,
+                timingsMs: result.facts.extractionMeta.timingsMs,
+                colorsFound: result.facts.dominantColors.length,
+                ocrSnippets: result.facts.ocrSnippets.length,
+                labelsFound: result.facts.labelHints.length,
+                logosFound: result.facts.logoHints?.length ?? 0,
+              },
+              'Vision extraction completed'
+            );
+          } else {
+            visionErrors++;
+            request.log.warn(
+              { correlationId, itemId: item.itemId, error: result.error, errorCode: result.errorCode },
+              'Vision extraction failed'
+            );
+          }
+        } catch (error) {
+          visionErrors++;
+          request.log.error(
+            { correlationId, itemId: item.itemId, error },
+            'Vision extraction error'
+          );
+        }
+      }
+    }
+
     // Log request metadata (NOT content by default)
     const logData: Record<string, unknown> = {
       correlationId,
@@ -309,6 +519,9 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       historyLength: sanitizedRequest.history?.length ?? 0,
       piiRedacted,
       quotaRemaining: quotaResult.remaining,
+      visionCacheHits,
+      visionExtractions,
+      visionErrors,
     };
 
     // Only log content if explicitly enabled (for debugging only)
@@ -318,31 +531,139 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
 
     request.log.info(logData, 'Assistant request');
 
-    // Call assistant service
+    // Build request with visual facts
+    const requestWithVision: AssistantChatRequestWithVision = {
+      ...sanitizedRequest,
+      visualFacts: visualFactsMap.size > 0 ? visualFactsMap : undefined,
+    };
+
+    // Build response cache key
+    const primaryItem = sanitizedRequest.items[0];
+    const itemSnapshotHash = primaryItem
+      ? buildItemSnapshotHash({
+          itemId: primaryItem.itemId,
+          title: primaryItem.title,
+          category: primaryItem.category,
+          attributes: primaryItem.attributes,
+        })
+      : '';
+    const imageHashes = visualFactsMap.size > 0
+      ? [...visualFactsMap.values()].flatMap((f) => f.extractionMeta.imageHashes)
+      : [];
+    const responseCacheKey = buildAssistantCacheKey({
+      promptVersion: 'v1',
+      question: sanitizedRequest.message,
+      itemSnapshotHash,
+      imageHashes,
+      providerId: config.assistant.provider,
+    });
+
+    // Check response cache (with deduplication)
     try {
-      const response = await service.respond(sanitizedRequest);
+      const response = await responseCache.getOrCompute(responseCacheKey, async () => {
+        return await service.respond(requestWithVision);
+      });
+
       usageStore.recordAssistant(apiKey, false);
+
+      // Check if this was a cache hit
+      const cacheStats = responseCache.getStats();
+      const fromCache = cacheStats.hits > 0;
+
+      request.log.info(
+        { correlationId, fromCache, cacheKey: responseCacheKey.slice(0, 16) },
+        'Assistant response'
+      );
 
       return reply.status(200).send({
         reply: response.content,
         actions: response.actions,
-        citationsMetadata: response.citationsMetadata,
+        citationsMetadata: {
+          ...response.citationsMetadata,
+          ...(fromCache ? { fromCache: 'true' } : {}),
+        },
+        confidenceTier: response.confidenceTier,
+        evidence: response.evidence,
+        suggestedAttributes: response.suggestedAttributes,
+        suggestedDraftUpdates: response.suggestedDraftUpdates,
+        suggestedNextPhoto: response.suggestedNextPhoto,
         safety: buildSafetyResponse(false, null, requestId),
         correlationId,
       });
     } catch (error) {
-      request.log.error({ correlationId, error }, 'Assistant service error');
+      const errorDetails = {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        name: error instanceof Error ? error.name : typeof error,
+      };
+      request.log.error({ correlationId, error: errorDetails }, 'Assistant service error');
       usageStore.recordAssistant(apiKey, true);
 
-      return reply.status(503).send({
-        error: {
-          code: 'PROVIDER_UNAVAILABLE',
-          message: 'Assistant temporarily unavailable',
-          correlationId,
-        },
-        safety: buildSafetyResponse(true, 'PROVIDER_UNAVAILABLE', requestId),
+      // Return graceful fallback instead of 503
+      return reply.status(200).send({
+        reply: 'I\'m having trouble processing your request right now. I can still help with general listing guidance. Try asking about improving your title, description, or what details to add.',
+        actions: [],
+        confidenceTier: 'LOW',
+        evidence: [],
+        citationsMetadata: { providerUnavailable: 'true' },
+        safety: buildSafetyResponse(false, 'PROVIDER_UNAVAILABLE', requestId),
+        correlationId,
       });
     }
+  });
+
+  // Staged request status endpoint for polling
+  fastify.get('/assist/chat/status/:requestId', async (request, reply) => {
+    const { requestId } = request.params as { requestId: string };
+
+    const status = stagedRequestManager.getStatus(requestId);
+    if (!status) {
+      return reply.status(404).send({
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Request not found or expired',
+        },
+      });
+    }
+
+    return reply.status(200).send({
+      requestId: status.requestId,
+      stage: status.stage,
+      visionPreview: status.visionPreview,
+      response: status.response,
+      error: status.error,
+      correlationId: status.correlationId,
+    });
+  });
+
+  // Cache stats endpoint for monitoring
+  fastify.get('/assist/cache/stats', async (request, reply) => {
+    const apiKey = (request.headers['x-api-key'] as string | undefined)?.trim();
+    if (!apiKey || !apiKeyManager.validateKey(apiKey)) {
+      return reply.status(401).send({
+        error: { code: 'UNAUTHORIZED', message: 'Missing or invalid API key' },
+      });
+    }
+
+    const visionStats = visionCache.stats();
+    const responseStats = responseCache.getStats();
+    const stagedStats = stagedRequestManager.getStats();
+
+    return reply.status(200).send({
+      vision: {
+        size: visionStats.size,
+        maxEntries: visionStats.maxEntries,
+        ttlMs: visionStats.ttlMs,
+      },
+      response: {
+        size: responseStats.size,
+        hits: responseStats.hits,
+        misses: responseStats.misses,
+        coalescedRequests: responseStats.coalescedRequests,
+        evictions: responseStats.evictions,
+      },
+      staged: stagedStats,
+    });
   });
 };
 
@@ -385,4 +706,114 @@ function extractDeviceId(request: { headers: Record<string, unknown> }): string 
   if (typeof raw !== 'string') return null;
   const trimmed = raw.trim();
   return trimmed ? sha256Hex(trimmed) : null;
+}
+
+type MultipartParseResult =
+  | { success: true; jsonData: unknown; images: Map<string, ItemImageMetadata[]> }
+  | { success: false; error: string };
+
+/**
+ * Parse multipart form data and extract JSON payload + images.
+ * Field naming scheme: `itemImages[<itemId>]` maps images to specific items.
+ */
+async function parseMultipartRequest(request: FastifyRequest): Promise<MultipartParseResult> {
+  const images = new Map<string, ItemImageMetadata[]>();
+  let jsonData: unknown = null;
+  let totalImageCount = 0;
+  const perItemCount = new Map<string, number>();
+
+  try {
+    const parts = request.parts();
+
+    for await (const part of parts) {
+      if (part.type === 'field') {
+        // Handle JSON payload field
+        if (part.fieldname === 'payload') {
+          try {
+            jsonData = JSON.parse(part.value as string);
+          } catch {
+            return { success: false, error: 'Invalid JSON in payload field' };
+          }
+        }
+      } else if (part.type === 'file') {
+        // Handle image file
+        const match = ITEM_IMAGE_FIELD_PATTERN.exec(part.fieldname);
+        if (!match) {
+          // Consume the stream to prevent hanging
+          await part.toBuffer();
+          continue;
+        }
+
+        const itemId = match[1];
+
+        // Validate MIME type
+        if (!IMAGE_LIMITS.ALLOWED_MIME_TYPES.includes(part.mimetype as AllowedMimeType)) {
+          await part.toBuffer();
+          return { success: false, error: `Unsupported image type: ${part.mimetype}` };
+        }
+
+        // Check total image limit
+        if (totalImageCount >= IMAGE_LIMITS.MAX_TOTAL_IMAGES) {
+          await part.toBuffer();
+          return { success: false, error: `Maximum ${IMAGE_LIMITS.MAX_TOTAL_IMAGES} images allowed total` };
+        }
+
+        // Check per-item limit
+        const currentItemCount = perItemCount.get(itemId) ?? 0;
+        if (currentItemCount >= IMAGE_LIMITS.MAX_IMAGES_PER_ITEM) {
+          await part.toBuffer();
+          return { success: false, error: `Maximum ${IMAGE_LIMITS.MAX_IMAGES_PER_ITEM} images allowed per item` };
+        }
+
+        // Read file data
+        const buffer = await part.toBuffer();
+
+        // Double-check size (fastify/multipart should enforce, but be safe)
+        if (buffer.length > IMAGE_LIMITS.MAX_FILE_SIZE_BYTES) {
+          return { success: false, error: `Image exceeds ${IMAGE_LIMITS.MAX_FILE_SIZE_BYTES / 1024 / 1024}MB limit` };
+        }
+
+        const imageMetadata: ItemImageMetadata = {
+          filename: part.filename,
+          mimeType: part.mimetype as AllowedMimeType,
+          sizeBytes: buffer.length,
+          base64Data: buffer.toString('base64'),
+        };
+
+        // Add to images map
+        const existingImages = images.get(itemId) ?? [];
+        existingImages.push(imageMetadata);
+        images.set(itemId, existingImages);
+
+        totalImageCount++;
+        perItemCount.set(itemId, currentItemCount + 1);
+      }
+    }
+
+    if (jsonData === null) {
+      return { success: false, error: 'Missing payload field in multipart request' };
+    }
+
+    return { success: true, jsonData, images };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return { success: false, error: `Multipart parsing failed: ${message}` };
+  }
+}
+
+/**
+ * Merge images into item contexts by itemId.
+ * Only attaches images to items present in the request; orphan images are dropped.
+ */
+function mergeImagesIntoItems<T extends { itemId: string }>(
+  items: T[],
+  images: Map<string, ItemImageMetadata[]>
+): (T & { itemImages?: ItemImageMetadata[] })[] {
+  return items.map((item) => {
+    const itemImages = images.get(item.itemId);
+    if (itemImages && itemImages.length > 0) {
+      return { ...item, itemImages };
+    }
+    return item;
+  });
 }

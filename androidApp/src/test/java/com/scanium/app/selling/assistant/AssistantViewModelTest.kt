@@ -52,6 +52,143 @@ class AssistantViewModelTest {
     }
 
     @Test
+    fun sendMessage_setsLoadingState() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = DelayingAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository
+        )
+
+        // Initial state should be IDLE
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.IDLE)
+        assertThat(viewModel.uiState.value.isLoading).isFalse()
+
+        // Send message - with UnconfinedTestDispatcher, coroutine starts immediately
+        // so we'll be in LLM_PROCESSING (since VISION_PROCESSING is set sync, then updated to LLM)
+        viewModel.sendMessage("What color is this?")
+
+        // Should be loading now (at LLM_PROCESSING stage since coroutine ran immediately)
+        assertThat(viewModel.uiState.value.isLoading).isTrue()
+        // Stage should be in a processing state (either VISION or LLM)
+        assertThat(viewModel.uiState.value.loadingStage).isIn(
+            listOf(LoadingStage.VISION_PROCESSING, LoadingStage.LLM_PROCESSING)
+        )
+    }
+
+    @Test
+    fun sendMessage_updatesToLLMProcessingAfterVision() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository
+        )
+
+        viewModel.sendMessage("What color is this?")
+        advanceUntilIdle()
+
+        // After completion, stage should be DONE
+        assertThat(viewModel.uiState.value.isLoading).isFalse()
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+    }
+
+    @Test
+    fun sendMessage_failure_setsErrorStage() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FailingAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository
+        )
+
+        viewModel.sendMessage("What color is this?")
+        advanceUntilIdle()
+
+        // After failure, stage should be ERROR and message should be preserved
+        assertThat(viewModel.uiState.value.isLoading).isFalse()
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.ERROR)
+        assertThat(viewModel.uiState.value.failedMessageText).isEqualTo("What color is this?")
+    }
+
+    @Test
+    fun retryLastMessage_resetsStageAndRetries() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = SuccessAfterFailureRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository
+        )
+
+        // First send should fail
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.ERROR)
+        assertThat(viewModel.uiState.value.failedMessageText).isEqualTo("Test message")
+
+        // Retry should succeed
+        viewModel.retryLastMessage()
+        advanceUntilIdle()
+
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+        assertThat(viewModel.uiState.value.failedMessageText).isNull()
+    }
+
+    @Test
+    fun sendMessage_computesSuggestedQuestions() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository
+        )
+
+        viewModel.sendMessage("Hi")
+        advanceUntilIdle()
+
+        // Suggested questions should be computed
+        val suggestions = viewModel.uiState.value.suggestedQuestions
+        assertThat(suggestions).isNotEmpty()
+        assertThat(suggestions.size).isAtMost(3)
+    }
+
+    @Test
     fun applyDraftUpdate_persistsChanges() = runTest {
         val store = FakeDraftStore()
         val profileRepository = FakeExportProfileRepository()
@@ -125,8 +262,56 @@ class AssistantViewModelTest {
             history: List<com.scanium.app.model.AssistantMessage>,
             userMessage: String,
             exportProfile: ExportProfileDefinition,
-            correlationId: String
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>
         ): com.scanium.app.model.AssistantResponse {
+            return com.scanium.app.model.AssistantResponse("ok")
+        }
+    }
+
+    private class DelayingAssistantRepository : AssistantRepository {
+        override suspend fun send(
+            items: List<com.scanium.app.model.ItemContextSnapshot>,
+            history: List<com.scanium.app.model.AssistantMessage>,
+            userMessage: String,
+            exportProfile: ExportProfileDefinition,
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>
+        ): com.scanium.app.model.AssistantResponse {
+            // Simulate a long-running request that never completes
+            kotlinx.coroutines.delay(Long.MAX_VALUE)
+            return com.scanium.app.model.AssistantResponse("ok")
+        }
+    }
+
+    private class FailingAssistantRepository : AssistantRepository {
+        override suspend fun send(
+            items: List<com.scanium.app.model.ItemContextSnapshot>,
+            history: List<com.scanium.app.model.AssistantMessage>,
+            userMessage: String,
+            exportProfile: ExportProfileDefinition,
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>
+        ): com.scanium.app.model.AssistantResponse {
+            throw RuntimeException("Network error")
+        }
+    }
+
+    private class SuccessAfterFailureRepository : AssistantRepository {
+        private var callCount = 0
+
+        override suspend fun send(
+            items: List<com.scanium.app.model.ItemContextSnapshot>,
+            history: List<com.scanium.app.model.AssistantMessage>,
+            userMessage: String,
+            exportProfile: ExportProfileDefinition,
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>
+        ): com.scanium.app.model.AssistantResponse {
+            callCount++
+            if (callCount == 1) {
+                throw RuntimeException("Network error")
+            }
             return com.scanium.app.model.AssistantResponse("ok")
         }
     }
