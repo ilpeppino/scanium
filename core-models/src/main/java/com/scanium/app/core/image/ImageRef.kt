@@ -7,4 +7,8 @@ package com.scanium.app.core.image
  * com.scanium.core.models.image.ImageRef. This alias keeps existing imports
  * compiling during the KMP migration.
  */
+@Deprecated(
+    message = "Use com.scanium.app.model.ImageRef instead.",
+    replaceWith = ReplaceWith("ImageRef", "com.scanium.app.model.ImageRef"),
+)
 typealias ImageRef = com.scanium.core.models.image.ImageRef
