@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.BuildConfig
 import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.model.config.RemoteConfig
+import com.scanium.app.network.security.RequestSigner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -93,15 +94,27 @@ class AndroidRemoteConfigProvider(
 
         try {
             val deviceHash = getOrGenerateDeviceHash()
-            val url = BuildConfig.SCANIUM_API_BASE_URL + "/v1/config"
-            
-            val request = Request.Builder()
+            val urlPath = "/v1/config"
+            val url = BuildConfig.SCANIUM_API_BASE_URL + urlPath
+            val apiKey = BuildConfig.SCANIUM_API_KEY
+
+            val requestBuilder = Request.Builder()
                 .url(url)
                 .addHeader("X-Scanium-Device-Hash", deviceHash)
                 .addHeader("X-Scanium-Platform", "android")
                 .addHeader("X-Scanium-App-Version", BuildConfig.VERSION_NAME)
-                .addHeader("X-API-Key", BuildConfig.SCANIUM_API_KEY)
-                .build()
+                .addHeader("X-API-Key", apiKey)
+
+            // Add HMAC signature for replay protection (SEC-004)
+            if (apiKey.isNotBlank()) {
+                RequestSigner.addSignatureHeadersForGet(
+                    builder = requestBuilder,
+                    apiKey = apiKey,
+                    urlPath = urlPath
+                )
+            }
+
+            val request = requestBuilder.build()
 
             val response = withContext(Dispatchers.IO) {
                 client.newCall(request).execute()

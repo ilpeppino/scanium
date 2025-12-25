@@ -4,6 +4,7 @@ import android.provider.Settings
 import com.scanium.app.BuildConfig
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
+import com.scanium.app.network.security.RequestSigner
 import com.scanium.shared.core.models.assistant.AssistantPromptRequest
 import com.scanium.shared.core.models.assistant.AssistantResponse
 import kotlinx.coroutines.Dispatchers
@@ -116,7 +117,8 @@ class AssistantRepository(
         val correlationId = CorrelationIds.currentClassificationSessionId()
 
         try {
-            val requestBody = json.encodeToString(request).toRequestBody("application/json".toMediaType())
+            val requestBodyJson = json.encodeToString(request)
+            val requestBody = requestBodyJson.toRequestBody("application/json".toMediaType())
 
             val httpRequestBuilder = Request.Builder()
                 .url(endpoint)
@@ -125,6 +127,13 @@ class AssistantRepository(
                 .header("X-Scanium-Correlation-Id", correlationId)
                 .header("X-Client", "Scanium-Android")
                 .header("X-App-Version", BuildConfig.VERSION_NAME)
+
+            // Add HMAC signature for replay protection (SEC-004)
+            RequestSigner.addSignatureHeaders(
+                builder = httpRequestBuilder,
+                apiKey = apiKey,
+                requestBody = requestBodyJson
+            )
 
             // Add device ID for rate limiting (hashed for privacy)
             val deviceId = getDeviceId()
