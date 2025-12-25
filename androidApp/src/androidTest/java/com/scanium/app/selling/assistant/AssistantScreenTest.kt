@@ -45,7 +45,7 @@ class AssistantScreenTest {
             )
         }
 
-        composeTestRule.onNodeWithText("Seller Assistant").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Export Assistant").assertIsDisplayed()
         composeTestRule.onNodeWithText("Vintage Lamp").assertIsDisplayed()
     }
 

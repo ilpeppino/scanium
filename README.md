@@ -53,14 +53,10 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
   - Long-press to scan: Continuous detection while holding the button
 - **Price Estimation**: Category-based price ranges for detected objects
 - **Items Management**: View and manage all detected items with their estimated prices
-- **Marketplace Selling Integration (Mock)**: Complete marketplace flow with realistic simulation (UI temporarily disabled)
+- **Export-First Sharing**: Export selected items to CSV/ZIP for spreadsheets, chat apps, or marketplaces (marketplace integrations temporarily disabled)
   - Multi-select items from detected list
-  - Review and edit listing drafts (title, price, condition)
-  - High-quality image preparation for web/mobile listings
-  - Mock eBay API with configurable delays and failure modes
-  - Real-time listing status tracking (Posting, Listed, Failed)
-  - View listing URLs and status badges
-  - Debug settings for testing various scenarios
+  - Export CSV summaries and ZIP bundles with images
+  - Share exports via standard Android share sheet
 - **Privacy-First**: All processing happens on-device with no cloud calls
 - **Debug Logging**: Comprehensive detection statistics and threshold tuning in debug builds
 
@@ -137,7 +133,7 @@ androidApp/src/main/java/com/scanium/app/
 ├── selling/         ***REMOVED*** eBay marketplace integration (mock)
 │   ├── data/        ***REMOVED*** API, repository, marketplace service
 │   ├── domain/      ***REMOVED*** Listing models, status, conditions
-│   ├── ui/          ***REMOVED*** Sell screen, listing VM, debug settings
+│   ├── ui/          ***REMOVED*** Marketplace screen, listing VM, debug settings
 │   └── util/        ***REMOVED*** Image preparation, draft mapping
 └── navigation/      ***REMOVED*** Navigation graph setup
 ```
@@ -346,15 +342,13 @@ scanium/
    - In continuous scanning mode, each physical object appears only once (de-duplicated)
    - The tracker confirms objects instantly for responsive detection
 6. **Manage items** - Tap "View Items" to see all detected objects
-7. **Sell on eBay (Mock)**:
+7. **Export items**:
    - **Long-press** an item to enter selection mode
    - **Tap** to select multiple items
-   - Tap **"Sell on eBay"** in the top bar
-   - **Review and edit** listing drafts (title, price, condition)
-   - Tap **"Post to eBay (Mock)"** to create listings
-   - Watch **real-time status updates** (Posting → Listed/Failed)
-   - Return to items list to see **status badges**
-   - Tap **"View"** on listed items to open mock listing URL
+   - Tap **"Export"** to open export options
+   - Choose **CSV** for spreadsheets or **ZIP** for images + data
+   - Share the export with chat apps or other tools
+   - Marketplace integrations are **coming later** (currently disabled)
 8. **Delete items** - Tap the delete icon in the top bar to clear all items
 
 ***REMOVED******REMOVED*** Permissions
@@ -365,7 +359,7 @@ The app requires the following permission:
 ***REMOVED******REMOVED*** Current Limitations
 
 - **Mocked pricing data** - Prices are generated locally based on category
- - **Local-only persistence** - Items are stored on-device; history is captured but not surfaced in UI (no cloud sync/export yet)
+- **Local-only persistence** - Items are stored on-device; no cloud sync yet
 - **ML Kit categories** - Object detection limited to 5 coarse categories (Fashion, Food, Home goods, Places, Plants)
 - **No backend** - All processing is local
 
@@ -416,17 +410,11 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 - Adaptive tracking thresholds based on scene complexity
 
 ***REMOVED******REMOVED******REMOVED*** Recently Implemented ✅
-- ✅ **eBay Selling Integration (Mock)**: Complete end-to-end marketplace flow with real scanning + mocked eBay
+- ✅ **Export-First Sharing (CSV/ZIP)**: Export selected items for spreadsheets, chat apps, or marketplaces
   - Multi-selection UI with long-press and tap gestures
-  - Draft review screen with editable titles, prices, and conditions
-  - High-quality image preparation (ListingImagePreparer) with resolution scaling and quality logging
-  - Realistic Mock eBay API with configurable network delays (400-1200ms) and failure modes
-  - Real-time listing status tracking (NOT_LISTED → LISTING_IN_PROGRESS → LISTED_ACTIVE/LISTING_FAILED)
-  - Status badges with color coding in items list
-  - "View listing" button to open mock URLs
-  - Debug settings dialog for testing failure scenarios
-  - Full ViewModel communication layer (ItemsViewModel ↔ ListingViewModel)
-  - 4 new unit tests for selling components
+  - CSV summaries + ZIP bundles with images
+  - Share sheet integration for quick handoff
+  - Marketplace integrations are disabled while export-first UX ships
 - ✅ **Domain Pack Category System** (Track A): Config-driven fine-grained categorization with 23 categories and 10 attributes
 - ✅ **Cross-Platform Build System**: Portable build.sh script and Java 17 toolchain for multi-machine development
 - ✅ **UI Refinements**: Slim vertical slider, clean overlay text, minimal camera interface
@@ -450,7 +438,7 @@ All project documentation is organized in the `md/` folder by category:
 - [Aggregation System](./md/features/AGGREGATION_SYSTEM.md) - Real-time item aggregation and similarity matching
 - [Threshold Slider](./md/features/THRESHOLD_SLIDER.md) - Interactive threshold tuning UI component
 - [Object Tracking](./md/features/TRACKING_IMPLEMENTATION.md) - Multi-frame object tracking system
-- [eBay Selling Integration](./md/features/EBAY_SELLING_INTEGRATION.md) - Complete marketplace flow with mock eBay API
+- [eBay Selling Integration](./md/features/EBAY_SELLING_INTEGRATION.md) - Marketplace flow with mock eBay API (currently disabled in UI)
 
 ***REMOVED******REMOVED******REMOVED*** Testing
 - [Test Suite](./md/testing/TEST_SUITE.md) - Comprehensive test documentation and coverage
