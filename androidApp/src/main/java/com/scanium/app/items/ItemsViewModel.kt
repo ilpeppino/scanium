@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.AggregationStats
 import com.scanium.app.camera.OverlayTrack
-import com.scanium.app.data.EntitlementManager
 import com.scanium.app.items.classification.ItemClassificationCoordinator
 import com.scanium.app.items.listing.ListingStatusManager
 import com.scanium.app.items.overlay.OverlayTrackManager
@@ -47,7 +46,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 class ItemsViewModel(
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
-    private val entitlementManager: EntitlementManager? = null,
+    cloudClassificationEnabled: StateFlow<Boolean>? = null,
     onDeviceClassifier: ItemClassifier = NoopClassifier,
     cloudClassifier: ItemClassifier = NoopClassifier,
     private val itemsStore: ScannedItemStore = NoopScannedItemStore,
@@ -88,7 +87,7 @@ class ItemsViewModel(
         scope = viewModelScope,
         stateManager = stateManager,
         classificationMode = classificationMode,
-        entitlementManager = entitlementManager,
+        cloudClassificationEnabled = cloudClassificationEnabled,
         onDeviceClassifier = onDeviceClassifier,
         cloudClassifier = cloudClassifier,
         stableItemCropper = stableItemCropper,

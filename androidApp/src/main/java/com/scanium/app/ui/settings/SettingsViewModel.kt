@@ -16,33 +16,28 @@ import kotlinx.coroutines.launch
 
 import com.scanium.app.model.billing.EntitlementState
 import com.scanium.app.model.config.ConfigProvider
+import com.scanium.app.model.config.FeatureFlagRepository
 import com.scanium.app.model.config.RemoteConfig
-import kotlinx.coroutines.flow.combine
 
 class SettingsViewModel(
     private val application: Application,
     private val settingsRepository: SettingsRepository,
     private val entitlementManager: EntitlementManager,
     private val configProvider: ConfigProvider,
+    private val featureFlagRepository: FeatureFlagRepository,
     private val ftueRepository: com.scanium.app.ftue.FtueRepository
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = settingsRepository.themeModeFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
 
-    val allowCloud: StateFlow<Boolean> = combine(
-        settingsRepository.allowCloudClassificationFlow,
-        configProvider.config
-    ) { userPref, remote ->
-        userPref && remote.featureFlags.enableCloud
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    // Use centralized FeatureFlagRepository for cloud classification state
+    val allowCloud: StateFlow<Boolean> = featureFlagRepository.isCloudClassificationEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val allowAssistant: StateFlow<Boolean> = combine(
-        settingsRepository.allowAssistantFlow,
-        configProvider.config
-    ) { userPref, remote ->
-        userPref && remote.featureFlags.enableAssistant
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    // Use centralized FeatureFlagRepository for assistant state
+    val allowAssistant: StateFlow<Boolean> = featureFlagRepository.isAssistantEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val shareDiagnostics: StateFlow<Boolean> = settingsRepository.shareDiagnosticsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -76,11 +71,11 @@ class SettingsViewModel(
     }
 
     fun setAllowCloud(allow: Boolean) {
-        viewModelScope.launch { settingsRepository.setAllowCloudClassification(allow) }
+        viewModelScope.launch { featureFlagRepository.setCloudClassificationEnabled(allow) }
     }
 
     fun setAllowAssistant(allow: Boolean) {
-        viewModelScope.launch { settingsRepository.setAllowAssistant(allow) }
+        viewModelScope.launch { featureFlagRepository.setAssistantEnabled(allow) }
     }
 
     fun setShareDiagnostics(share: Boolean) {
@@ -222,11 +217,12 @@ class SettingsViewModel(
         private val settingsRepository: SettingsRepository,
         private val entitlementManager: EntitlementManager,
         private val configProvider: ConfigProvider,
+        private val featureFlagRepository: FeatureFlagRepository,
         private val ftueRepository: com.scanium.app.ftue.FtueRepository
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SettingsViewModel(application, settingsRepository, entitlementManager, configProvider, ftueRepository) as T
+            return SettingsViewModel(application, settingsRepository, entitlementManager, configProvider, featureFlagRepository, ftueRepository) as T
         }
     }
 }
