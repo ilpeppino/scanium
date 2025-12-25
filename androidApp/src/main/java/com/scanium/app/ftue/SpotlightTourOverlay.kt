@@ -1,5 +1,6 @@
 package com.scanium.app.ftue
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,10 +31,13 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.scanium.app.BuildConfig
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -56,6 +60,35 @@ fun SpotlightTourOverlay(
     onSkip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val density = LocalDensity.current
+
+    // Get the system bar top inset to compensate for coordinate space mismatch.
+    // Target bounds are captured in window coordinates (boundsInWindow()),
+    // but this overlay uses windowInsetsPadding which shifts content down by the status bar.
+    // We must subtract the status bar height from target Y coordinates.
+    val statusBarHeightPx = with(density) {
+        WindowInsets.systemBars.getTop(this).toFloat()
+    }
+
+    // Adjust bounds from window coordinates to overlay's coordinate space
+    val adjustedBounds = remember(targetBounds, statusBarHeightPx) {
+        targetBounds?.let { bounds ->
+            Rect(
+                left = bounds.left,
+                top = bounds.top - statusBarHeightPx,
+                right = bounds.right,
+                bottom = bounds.bottom - statusBarHeightPx
+            )
+        }
+    }
+
+    // Debug logging (only in debug builds)
+    if (BuildConfig.DEBUG && targetBounds != null) {
+        Log.d("SpotlightOverlay", "Original bounds: $targetBounds")
+        Log.d("SpotlightOverlay", "Status bar height: $statusBarHeightPx")
+        Log.d("SpotlightOverlay", "Adjusted bounds: $adjustedBounds")
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -63,7 +96,7 @@ fun SpotlightTourOverlay(
     ) {
         // Spotlight scrim with cutout
         SpotlightScrim(
-            targetBounds = targetBounds,
+            targetBounds = adjustedBounds,
             spotlightShape = step.spotlightShape,
             requiresUserAction = step.requiresUserAction
         )
@@ -71,7 +104,7 @@ fun SpotlightTourOverlay(
         // Tooltip bubble
         TooltipBubble(
             step = step,
-            targetBounds = targetBounds,
+            targetBounds = adjustedBounds,
             onNext = onNext,
             onBack = onBack,
             onSkip = onSkip
@@ -81,6 +114,11 @@ fun SpotlightTourOverlay(
 
 /**
  * Renders the dimmed scrim with a transparent spotlight cutout.
+ *
+ * BlendMode.Clear requires the Canvas to render to an offscreen buffer.
+ * We achieve this by adding graphicsLayer { alpha = 0.99f } which forces
+ * Compose to use a separate compositing layer. Without this, BlendMode.Clear
+ * would clear to black (the window background) instead of transparent.
  *
  * @param targetBounds Bounds of the control to highlight
  * @param spotlightShape Shape of the spotlight cutout
@@ -100,6 +138,11 @@ private fun SpotlightScrim(
     Canvas(
         modifier = Modifier
             .fillMaxSize()
+            // CRITICAL: graphicsLayer with alpha < 1.0 forces offscreen compositing.
+            // This is required for BlendMode.Clear to work correctly.
+            // Without this, Clear would clear to the window background (black)
+            // instead of making a truly transparent hole.
+            .graphicsLayer { alpha = 0.99f }
             .pointerInput(requiresUserAction) {
                 if (!requiresUserAction) {
                     // Block all pointer events when user action is not required
@@ -131,22 +174,47 @@ private fun SpotlightScrim(
                         center = Offset(centerX, centerY),
                         blendMode = BlendMode.Clear
                     )
+
+                    // Debug: draw outline around cutout (DEBUG builds only)
+                    if (BuildConfig.DEBUG) {
+                        drawCircle(
+                            color = Color.Red,
+                            radius = radius,
+                            center = Offset(centerX, centerY),
+                            style = Stroke(width = 2.dp.toPx())
+                        )
+                    }
                 }
 
                 SpotlightShape.ROUNDED_RECT -> {
+                    val cutoutTopLeft = Offset(
+                        bounds.left - spotlightPadding,
+                        bounds.top - spotlightPadding
+                    )
+                    val cutoutSize = Size(
+                        bounds.width + spotlightPadding * 2,
+                        bounds.height + spotlightPadding * 2
+                    )
+                    val cornerRadius = CornerRadius(16.dp.toPx())
+
                     drawRoundRect(
                         color = Color.Transparent,
-                        topLeft = Offset(
-                            bounds.left - spotlightPadding,
-                            bounds.top - spotlightPadding
-                        ),
-                        size = Size(
-                            bounds.width + spotlightPadding * 2,
-                            bounds.height + spotlightPadding * 2
-                        ),
-                        cornerRadius = CornerRadius(16.dp.toPx()),
+                        topLeft = cutoutTopLeft,
+                        size = cutoutSize,
+                        cornerRadius = cornerRadius,
                         blendMode = BlendMode.Clear
                     )
+
+                    // Debug: draw outline around cutout (DEBUG builds only)
+                    if (BuildConfig.DEBUG) {
+                        drawRoundRect(
+                            color = Color.Red,
+                            topLeft = cutoutTopLeft,
+                            size = cutoutSize,
+                            cornerRadius = cornerRadius,
+                            style = Stroke(width = 2.dp.toPx())
+                        )
+                    }
                 }
             }
         }
