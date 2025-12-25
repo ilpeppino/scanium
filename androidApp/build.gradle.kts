@@ -56,6 +56,11 @@ android {
         val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
         val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
         val sentryDsn = localPropertyOrEnv("scanium.sentry.dsn", "SCANIUM_SENTRY_DSN")
+        val telemetryDataRegion = localPropertyOrEnv(
+            "scanium.telemetry.data_region",
+            "SCANIUM_TELEMETRY_DATA_REGION",
+            "US"
+        )
 
         // OTLP (OpenTelemetry Protocol) configuration
         val otlpEndpoint = localPropertyOrEnv("scanium.otlp.endpoint", "SCANIUM_OTLP_ENDPOINT", "")
@@ -66,6 +71,7 @@ android {
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
         buildConfigField("String", "OTLP_ENDPOINT", "\"$otlpEndpoint\"")
         buildConfigField("boolean", "OTLP_ENABLED", otlpEnabled)
+        buildConfigField("String", "TELEMETRY_DATA_REGION", "\"$telemetryDataRegion\"")
 
         // Legacy fields for backward compatibility (deprecated)
         buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")

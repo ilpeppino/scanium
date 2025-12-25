@@ -13,8 +13,11 @@ import com.scanium.telemetry.facade.DefaultAttributesProvider
  * - build: From BuildConfig.VERSION_CODE
  * - env: Based on build type (debug = "dev", release = "prod")
  * - session_id: From CorrelationIds.currentClassificationSessionId()
+ * - data_region: Data residency region ("EU" or "US")
  */
-class AndroidDefaultAttributesProvider : DefaultAttributesProvider {
+class AndroidDefaultAttributesProvider(
+    private val dataRegion: String
+) : DefaultAttributesProvider {
 
     override fun getDefaultAttributes(): Map<String, String> {
         return mapOf(
@@ -22,7 +25,8 @@ class AndroidDefaultAttributesProvider : DefaultAttributesProvider {
             TelemetryEvent.ATTR_APP_VERSION to BuildConfig.VERSION_NAME,
             TelemetryEvent.ATTR_BUILD to BuildConfig.VERSION_CODE.toString(),
             TelemetryEvent.ATTR_ENV to getEnvironment(),
-            TelemetryEvent.ATTR_SESSION_ID to getSessionId()
+            TelemetryEvent.ATTR_SESSION_ID to getSessionId(),
+            TelemetryEvent.ATTR_DATA_REGION to dataRegion
         )
     }
 
