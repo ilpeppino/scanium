@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.scanium.app.model.resolveBytes
 import com.scanium.shared.core.models.model.ImageRef
 import java.io.File
 import java.util.Locale
@@ -26,7 +27,7 @@ object ListingShareHelper {
         val authority = "${context.packageName}.fileprovider"
 
         images
-            .filterIsInstance<ImageRef.Bytes>()
+            .mapNotNull { it.resolveBytes() }
             .take(maxImages)
             .mapIndexedNotNull { index, image ->
                 if (!image.mimeType.startsWith("image/")) return@mapIndexedNotNull null
