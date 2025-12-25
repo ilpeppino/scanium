@@ -228,6 +228,7 @@ class ItemsViewModel(
         listingId: String? = null,
         listingUrl: String? = null
     ) {
+        stateManager.updateListingStatus(itemId, status, listingId, listingUrl)
         listingManager.updateListingStatus(itemId, status, listingId, listingUrl)
     }
 

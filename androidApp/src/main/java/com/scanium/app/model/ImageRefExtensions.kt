@@ -3,8 +3,8 @@ package com.scanium.app.model
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
-import com.scanium.android.platform.adapters.toBitmap
 import com.scanium.app.items.ThumbnailCache
+import com.scanium.app.platform.toBitmap
 import com.scanium.shared.core.models.model.ImageRef
 
 /**

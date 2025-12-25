@@ -51,6 +51,15 @@ Complete observability infrastructure for Scanium mobile app using the **LGTM st
 
 > **Security Note:** Backend service ports (Loki, Tempo, Mimir, Alloy UI) are bound to localhost (127.0.0.1) only. OTLP ingestion ports (4317, 4318) and Grafana (3000) are publicly accessible for app telemetry.
 
+***REMOVED******REMOVED*** Dashboards
+
+The following DevOps dashboards are provisioned automatically:
+
+1.  **Ops Overview**: Executive summary ("Are we OK?"). Key rates, drop detection, and top errors.
+2.  **Application Health**: Functional correctness. Scan funnel (Started -> Created -> Confirmed), ratios, and mode usage.
+3.  **Performance & Latency**: Regression detection. Inference latency (p50/p95/p99), latency by version, and trace integration.
+4.  **Errors & Failures**: Detailed error analysis. Error rates, top error types, and log drilldowns.
+
 ***REMOVED******REMOVED*** Quick Start
 
 ***REMOVED******REMOVED******REMOVED*** Prerequisites

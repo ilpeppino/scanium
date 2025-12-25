@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
 import kotlin.math.max
@@ -61,22 +62,26 @@ fun SpotlightTourOverlay(
     modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
 
-    // Get the system bar top inset to compensate for coordinate space mismatch.
+    // Get the system bar insets to compensate for coordinate space mismatch.
     // Target bounds are captured in window coordinates (boundsInWindow()),
-    // but this overlay uses windowInsetsPadding which shifts content down by the status bar.
-    // We must subtract the status bar height from target Y coordinates.
+    // but this overlay uses windowInsetsPadding which shifts content by system bar sizes.
+    // We must subtract these insets from target coordinates.
     val statusBarHeightPx = with(density) {
         WindowInsets.systemBars.getTop(this).toFloat()
     }
+    val leftInsetPx = with(density) {
+        WindowInsets.systemBars.getLeft(this, layoutDirection).toFloat()
+    }
 
     // Adjust bounds from window coordinates to overlay's coordinate space
-    val adjustedBounds = remember(targetBounds, statusBarHeightPx) {
+    val adjustedBounds = remember(targetBounds, statusBarHeightPx, leftInsetPx) {
         targetBounds?.let { bounds ->
             Rect(
-                left = bounds.left,
+                left = bounds.left - leftInsetPx,
                 top = bounds.top - statusBarHeightPx,
-                right = bounds.right,
+                right = bounds.right - leftInsetPx,
                 bottom = bounds.bottom - statusBarHeightPx
             )
         }
@@ -85,7 +90,7 @@ fun SpotlightTourOverlay(
     // Debug logging (only in debug builds)
     if (BuildConfig.DEBUG && targetBounds != null) {
         Log.d("SpotlightOverlay", "Original bounds: $targetBounds")
-        Log.d("SpotlightOverlay", "Status bar height: $statusBarHeightPx")
+        Log.d("SpotlightOverlay", "Status bar height: $statusBarHeightPx, left inset: $leftInsetPx")
         Log.d("SpotlightOverlay", "Adjusted bounds: $adjustedBounds")
     }
 

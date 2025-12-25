@@ -201,6 +201,36 @@ class ItemsStateManager(
     }
 
     /**
+     * Updates the listing status of a scanned item.
+     * This updates the item directly in the items state and persists the change.
+     *
+     * @param itemId The ID of the item to update
+     * @param status The new listing status
+     * @param listingId Optional eBay listing ID
+     * @param listingUrl Optional URL to view the listing
+     */
+    fun updateListingStatus(
+        itemId: String,
+        status: com.scanium.shared.core.models.items.ItemListingStatus,
+        listingId: String? = null,
+        listingUrl: String? = null
+    ) {
+        val updatedItems = _items.value.map { item ->
+            if (item.id == itemId) {
+                item.copy(
+                    listingStatus = status,
+                    listingId = listingId,
+                    listingUrl = listingUrl
+                )
+            } else {
+                item
+            }
+        }
+        _items.value = updatedItems
+        persistItems(updatedItems)
+    }
+
+    /**
      * Seed the aggregator from persisted items (used on startup).
      */
     fun seedFromScannedItems(items: List<ScannedItem>) {

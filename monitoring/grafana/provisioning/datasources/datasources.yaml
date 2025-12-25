@@ -8,7 +8,7 @@ datasources:
   - name: Loki
     type: loki
     access: proxy
-    uid: loki
+    uid: LOKI
     url: http://loki:3100
     isDefault: false
     version: 1
@@ -17,7 +17,7 @@ datasources:
       maxLines: 1000
       derivedFields:
         ***REMOVED*** Extract trace ID from logs and link to Tempo
-        - datasourceUid: tempo
+        - datasourceUid: TEMPO
           matcherRegex: "trace_id=(\\w+)"
           name: TraceID
           url: "$${__value.raw}"
@@ -27,7 +27,7 @@ datasources:
   - name: Tempo
     type: tempo
     access: proxy
-    uid: tempo
+    uid: TEMPO
     url: http://tempo:3200
     isDefault: false
     version: 1
@@ -36,7 +36,7 @@ datasources:
       httpMethod: GET
       tracesToLogs:
         ***REMOVED*** Link traces to logs in Loki
-        datasourceUid: loki
+        datasourceUid: LOKI
         tags: ['service.name', 'deployment.environment']
         mappedTags: [{ key: 'service.name', value: 'service' }]
         mapTagNamesEnabled: false
@@ -46,26 +46,26 @@ datasources:
         filterBySpanID: false
       tracesToMetrics:
         ***REMOVED*** Link traces to metrics in Mimir
-        datasourceUid: mimir
+        datasourceUid: MIMIR
         tags: [{ key: 'service.name', value: 'service' }]
         queries:
           - name: 'Sample query'
             query: 'sum(rate(tempo_spanmetrics_latency_bucket{$__tags}[5m]))'
       serviceMap:
-        datasourceUid: mimir
+        datasourceUid: MIMIR
       search:
         hide: false
       nodeGraph:
         enabled: true
       lokiSearch:
-        datasourceUid: loki
+        datasourceUid: LOKI
     orgId: 1
 
   ***REMOVED*** Mimir - Metrics datasource (Prometheus-compatible)
   - name: Mimir
     type: prometheus
     access: proxy
-    uid: mimir
+    uid: MIMIR
     url: http://mimir:9009/prometheus
     isDefault: true
     version: 1
@@ -77,5 +77,5 @@ datasources:
       exemplarTraceIdDestinations:
         ***REMOVED*** Link exemplars to traces in Tempo
         - name: traceID
-          datasourceUid: tempo
+          datasourceUid: TEMPO
     orgId: 1

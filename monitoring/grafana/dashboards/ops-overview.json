@@ -1,0 +1,178 @@
+{
+  "uid": "scanium-ops-overview",
+  "title": "Scanium - Ops Overview",
+  "description": "Executive operational overview: Are we OK?",
+  "tags": ["scanium", "ops", "executive"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "platform",
+        "label": "Platform",
+        "type": "custom",
+        "query": "android,ios",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "android", "value": "android", "selected": false },
+          { "text": "ios", "value": "ios", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "dev,stage,prod",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "dev", "value": "dev", "selected": false },
+          { "text": "stage", "value": "stage", "selected": false },
+          { "text": "prod", "value": "prod", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "app_version",
+        "label": "App Version",
+        "type": "query",
+        "datasource": { "type": "loki", "uid": "LOKI" },
+        "query": "label_values({source=\"scanium-mobile\"}, app_version)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Sessions Started Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (platform) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_started\" [5m]))",
+          "legendFormat": "{{platform}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Error Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (platform) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=~\"error.*\" [5m]))",
+          "legendFormat": "{{platform}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "drawStyle": "line", "fillOpacity": 10, "lineWidth": 2 },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Telemetry Drop Detector (15m)",
+      "description": "Red if no events received in last 15m",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 4 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\"} [15m]))",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "color": { "mode": "thresholds" },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Inference Latency (p95)",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 4, "w": 8, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(ml_inference_latency_ms_bucket{source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Top 10 Error Types (30m)",
+      "type": "barchart",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (event_name) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=~\"error.*\" [30m])))",
+          "legendFormat": "{{event_name}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal"
+      }
+    }
+  ]
+}

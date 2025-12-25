@@ -1,8 +1,8 @@
 {
   "uid": "scanium-app-health",
-  "title": "Scanium - App Health",
-  "description": "Application health monitoring: errors, crashes, and telemetry status",
-  "tags": ["scanium", "health", "errors"],
+  "title": "Scanium - Application Health",
+  "description": "Functional correctness and usage funnel",
+  "tags": ["scanium", "health", "app"],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -18,10 +18,7 @@
         "label": "Platform",
         "type": "custom",
         "query": "android,ios",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": { "text": "All", "value": "$__all" },
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
           { "text": "android", "value": "android", "selected": false },
@@ -34,15 +31,12 @@
         "name": "env",
         "label": "Environment",
         "type": "custom",
-        "query": "dev,staging,prod",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "query": "dev,stage,prod",
+        "current": { "text": "All", "value": "$__all" },
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
           { "text": "dev", "value": "dev", "selected": false },
-          { "text": "staging", "value": "staging", "selected": false },
+          { "text": "stage", "value": "stage", "selected": false },
           { "text": "prod", "value": "prod", "selected": false }
         ],
         "includeAll": true,
@@ -52,226 +46,119 @@
         "name": "app_version",
         "label": "App Version",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "loki" },
+        "datasource": { "type": "loki", "uid": "LOKI" },
         "query": "label_values({source=\"scanium-mobile\"}, app_version)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        }
+        "current": { "text": "All", "value": "$__all" }
       }
     ]
   },
   "panels": [
     {
       "id": 1,
-      "title": "Error Events Rate",
-      "description": "Rate of error events (event_name matching error.*)",
+      "title": "Scan Funnel (Started -> Created -> Confirmed)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (event_name) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=~\"error\\\\..*\" [5m]))",
-          "legendFormat": "{{event_name}}"
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_started\" [5m]))",
+          "legendFormat": "Session Started"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_created\" [5m]))",
+          "legendFormat": "Candidate Created"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_confirmed\" [5m]))",
+          "legendFormat": "Candidate Confirmed"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "lineWidth": 2,
-            "pointSize": 5,
-            "showPoints": "auto"
-          },
-          "unit": "short"
+          "custom": { "fillOpacity": 10, "drawStyle": "bars" }
         }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "tooltip": { "mode": "multi" }
       }
     },
     {
       "id": 2,
-      "title": "Top Error Events (Last 1h)",
-      "description": "Most frequent error events",
-      "type": "table",
-      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "topk(10, sum by (event_name, error_type) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=~\"error\\\\..*\" [$__range])))",
-          "instant": true
-        }
-      ],
-      "transformations": [
-        {
-          "id": "labelsToFields",
-          "options": { "mode": "columns" }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": { "align": "left" }
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "Value" },
-            "properties": [{ "id": "displayName", "value": "Count" }]
-          }
-        ]
-      }
-    },
-    {
-      "id": 3,
-      "title": "Telemetry Status (Last 15m)",
-      "description": "Total events in last 15 minutes - detects telemetry drop",
+      "title": "Confirmation Ratio (Confirmed / Created)",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} [15m]))",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_confirmed\" [1h])) / sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_created\" [1h]))",
           "instant": true
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "green", "value": 10 }
+              { "color": "green", "value": 0.5 }
             ]
-          },
-          "unit": "short",
-          "noValue": "No Data"
+          }
         }
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background",
-        "textMode": "value_and_name"
       }
+    },
+    {
+      "id": 3,
+      "title": "Scan Mode Usage",
+      "type": "piechart",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (scan_mode) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_started\" [1h]))",
+          "legendFormat": "{{scan_mode}}"
+        }
+      ]
     },
     {
       "id": 4,
-      "title": "Error Rate Trend",
-      "description": "Error events percentage of total events",
-      "type": "stat",
-      "gridPos": { "x": 6, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "title": "Session Duration Distribution",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=~\"error\\\\..*\" [1h])) / sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} [1h])) * 100",
-          "instant": true
+          "expr": "quantile_over_time(0.5, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_stopped\" | unwrap duration_ms [5m])",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "quantile_over_time(0.95, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_stopped\" | unwrap duration_ms [5m])",
+          "legendFormat": "p95"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 10 }
-            ]
-          },
-          "unit": "percent",
-          "noValue": "0%"
-        }
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background"
-      }
+      "fieldConfig": { "defaults": { "unit": "ms" } }
     },
     {
       "id": 5,
-      "title": "Inference Failures",
-      "description": "ML inference failure events",
-      "type": "stat",
-      "gridPos": { "x": 12, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"error.inference_failed\" [1h]))",
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 10 }
-            ]
-          },
-          "unit": "short",
-          "noValue": "0"
-        }
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 6,
-      "title": "Events by Severity",
-      "description": "Distribution of events by severity level",
-      "type": "piechart",
-      "gridPos": { "x": 18, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (severity) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json [1h]))",
-          "instant": true,
-          "legendFormat": "{{severity}}"
-        }
-      ],
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "pieType": "donut"
-      }
-    },
-    {
-      "id": 7,
-      "title": "Recent Error Logs",
-      "description": "Latest error event logs",
+      "title": "Sessions by ID (Drilldown)",
       "type": "logs",
-      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "{source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=~\"error\\\\..*\""
+          "expr": "{source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_started\""
         }
-      ],
-      "options": {
-        "showTime": true,
-        "showLabels": true,
-        "wrapLogMessage": true,
-        "enableLogDetails": true,
-        "sortOrder": "Descending"
-      }
+      ]
     }
-  ],
-  "annotations": {
-    "list": []
-  }
+  ]
 }

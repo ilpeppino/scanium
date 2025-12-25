@@ -28,7 +28,7 @@ groups:
             relativeTimeRange:
               from: 600
               to: 0
-            datasourceUid: loki
+            datasourceUid: LOKI
             model:
               expr: |
                 sum(count_over_time({source="scanium-mobile", env="prod"} |~ `(?i)error|exception|fatal|crash` [10m]))
@@ -82,7 +82,7 @@ groups:
             relativeTimeRange:
               from: 600
               to: 0
-            datasourceUid: loki
+            datasourceUid: LOKI
             model:
               expr: |
                 sum(count_over_time({source="scanium-mobile", env="stage"} |~ `(?i)error|exception|fatal|crash` [10m]))
@@ -133,7 +133,7 @@ groups:
             relativeTimeRange:
               from: 600
               to: 0
-            datasourceUid: loki
+            datasourceUid: LOKI
             model:
               expr: |
                 sum(count_over_time({source="scanium-mobile", env="dev"} |~ `(?i)error|exception|fatal|crash` [10m]))
@@ -193,7 +193,7 @@ groups:
             relativeTimeRange:
               from: 900
               to: 0
-            datasourceUid: loki
+            datasourceUid: LOKI
             model:
               expr: |
                 sum(count_over_time({source="scanium-mobile", env="prod"} [15m])) or vector(0)
@@ -247,7 +247,7 @@ groups:
             relativeTimeRange:
               from: 1800  ***REMOVED*** 30 minutes
               to: 0
-            datasourceUid: loki
+            datasourceUid: LOKI
             model:
               expr: |
                 sum(count_over_time({source="scanium-mobile", env="prod"} |= `scan.session_started` [30m])) or vector(0)
@@ -309,7 +309,7 @@ groups:
             relativeTimeRange:
               from: 900
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 histogram_quantile(0.95,
@@ -367,7 +367,7 @@ groups:
             relativeTimeRange:
               from: 900
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 histogram_quantile(0.95,
@@ -431,7 +431,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 up{job="alloy", source="pipeline"} or vector(0)
@@ -483,7 +483,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 up{job="loki", source="pipeline"} or vector(0)
@@ -535,7 +535,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 up{job="tempo", source="pipeline"} or vector(0)
@@ -587,7 +587,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 up{job="mimir", source="pipeline"} or vector(0)
@@ -639,7 +639,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 sum(increase(otelcol_exporter_send_failed_log_records{source="pipeline"}[5m])) or vector(0)
@@ -692,7 +692,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 sum(increase(otelcol_exporter_send_failed_metric_points{source="pipeline"}[5m])) or vector(0)
@@ -745,7 +745,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 sum(increase(otelcol_exporter_send_failed_spans{source="pipeline"}[5m])) or vector(0)
@@ -798,7 +798,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 sum(increase(otelcol_receiver_refused_log_records{source="pipeline"}[5m]))
@@ -853,7 +853,7 @@ groups:
             relativeTimeRange:
               from: 300
               to: 0
-            datasourceUid: mimir
+            datasourceUid: MIMIR
             model:
               expr: |
                 max(
