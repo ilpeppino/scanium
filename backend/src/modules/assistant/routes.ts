@@ -22,7 +22,7 @@ import {
   type SecurityReasonCode,
 } from './safety.js';
 import { DailyQuotaStore } from './quota-store.js';
-import { ItemImageMetadata, AssistantChatRequestWithVision, AssistantResponse } from './types.js';
+import { ItemImageMetadata, AssistantChatRequestWithVision, AssistantResponse, AssistantErrorPayload } from './types.js';
 import {
   VisionExtractor,
   MockVisionExtractor,
@@ -254,6 +254,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           message: 'Assistant is disabled',
           correlationId,
         },
+        assistantError: buildAssistantError('provider_unavailable', 'policy', false, undefined, 'Assistant disabled'),
         safety: buildSafetyResponse(false, 'PROVIDER_NOT_CONFIGURED', requestId),
       });
     }
@@ -284,6 +285,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             message: 'Please wait before sending another message',
             correlationId,
           },
+          assistantError: buildAssistantError(
+            'rate_limited',
+            'policy',
+            true,
+            ipLimit.retryAfterSeconds,
+            'Rate limit reached'
+          ),
           safety: buildSafetyResponse(true, 'RATE_LIMITED', requestId),
         });
     }
@@ -301,6 +309,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             message: 'Please wait before sending another message',
             correlationId,
           },
+          assistantError: buildAssistantError(
+            'rate_limited',
+            'policy',
+            true,
+            apiKeyLimit.retryAfterSeconds,
+            'Rate limit reached'
+          ),
           safety: buildSafetyResponse(true, 'RATE_LIMITED', requestId),
         });
     }
@@ -320,6 +335,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
               message: 'Please wait before sending another message',
               correlationId,
             },
+            assistantError: buildAssistantError(
+              'rate_limited',
+              'policy',
+              true,
+              deviceLimit.retryAfterSeconds,
+              'Rate limit reached'
+            ),
             safety: buildSafetyResponse(true, 'RATE_LIMITED', requestId),
           });
       }
@@ -343,6 +365,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             message: 'Daily message limit reached. Try again tomorrow.',
             correlationId,
           },
+          assistantError: buildAssistantError(
+            'rate_limited',
+            'policy',
+            true,
+            resetIn,
+            'Daily quota exceeded'
+          ),
           safety: buildSafetyResponse(true, 'QUOTA_EXCEEDED', requestId),
         });
     }
@@ -364,6 +393,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             message: multipartResult.error,
             correlationId,
           },
+          assistantError: buildAssistantError(
+            'validation_error',
+            'policy',
+            false,
+            undefined,
+            multipartResult.error
+          ),
           safety: buildSafetyResponse(true, 'VALIDATION_ERROR', requestId),
         });
       }
@@ -384,6 +420,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           message: 'Message could not be processed',
           correlationId,
         },
+        assistantError: buildAssistantError(
+          'validation_error',
+          'policy',
+          false,
+          undefined,
+          'Validation failed'
+        ),
         safety: buildSafetyResponse(true, 'VALIDATION_ERROR', requestId),
       });
     }
@@ -410,6 +453,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           message: 'Message could not be processed',
           correlationId,
         },
+        assistantError: buildAssistantError(
+          'validation_error',
+          'policy',
+          false,
+          undefined,
+          validated.error
+        ),
         safety: buildSafetyResponse(true, 'VALIDATION_ERROR', requestId),
       });
     }
@@ -591,6 +641,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           ...response.citationsMetadata,
           ...(fromCache ? { fromCache: 'true' } : {}),
         },
+        assistantError: buildAssistantErrorIfNeeded(
+          response.assistantError,
+          visionConfig.enabled,
+          sanitizedRequest.items,
+          visionErrors,
+          visualFactsMap.size
+        ),
         confidenceTier: response.confidenceTier,
         evidence: response.evidence,
         suggestedAttributes: response.suggestedAttributes,
@@ -608,6 +665,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       request.log.error({ correlationId, error: errorDetails }, 'Assistant service error');
       usageStore.recordAssistant(apiKey, true);
 
+      const isTimeout =
+        error instanceof Error &&
+        (error.name === 'AbortError' || error.message.toLowerCase().includes('timeout'));
+      const fallbackError = isTimeout
+        ? buildAssistantError('network_timeout', 'temporary', true, undefined, 'Assistant request timed out')
+        : buildAssistantError('provider_unavailable', 'temporary', true, undefined, 'Assistant provider unavailable');
+
       // Return graceful fallback instead of 503
       return reply.status(200).send({
         reply: 'I\'m having trouble processing your request right now. I can still help with general listing guidance. Try asking about improving your title, description, or what details to add.',
@@ -615,6 +679,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         confidenceTier: 'LOW',
         evidence: [],
         citationsMetadata: { providerUnavailable: 'true' },
+        assistantError: fallbackError,
         safety: buildSafetyResponse(false, 'PROVIDER_UNAVAILABLE', requestId),
         correlationId,
       });
@@ -825,4 +890,41 @@ function mergeImagesIntoItems<T extends { itemId: string }>(
     }
     return item;
   });
+}
+
+function buildAssistantError(
+  type: AssistantErrorPayload['type'],
+  category: AssistantErrorPayload['category'],
+  retryable: boolean,
+  retryAfterSeconds?: number,
+  message?: string
+): AssistantErrorPayload {
+  return {
+    type,
+    category,
+    retryable,
+    retryAfterSeconds,
+    message,
+  };
+}
+
+function buildAssistantErrorIfNeeded(
+  responseError: AssistantErrorPayload | undefined,
+  visionEnabled: boolean,
+  items: Array<{ itemImages?: ItemImageMetadata[] }>,
+  visionErrors: number,
+  visualFactsSize: number
+): AssistantErrorPayload | undefined {
+  if (responseError) return responseError;
+  const hasImages = items.some((item) => (item.itemImages?.length ?? 0) > 0);
+  if (visionEnabled && hasImages && visionErrors > 0 && visualFactsSize === 0) {
+    return buildAssistantError(
+      'vision_unavailable',
+      'temporary',
+      true,
+      undefined,
+      'Vision extraction unavailable'
+    );
+  }
+  return undefined;
 }

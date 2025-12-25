@@ -143,6 +143,7 @@ export type AssistantResponse = {
   content: string;
   actions?: AssistantAction[];
   citationsMetadata?: Record<string, string>;
+  assistantError?: AssistantErrorPayload;
   /** Confidence tier for the response (when visual evidence is used) */
   confidenceTier?: ConfidenceTier;
   /** Evidence bullets referencing VisualFacts */
@@ -155,6 +156,23 @@ export type AssistantResponse = {
   suggestedNextPhoto?: string;
   /** Structured selling help (template-driven) */
   structuredHelp?: StructuredSellingHelp;
+};
+
+export type AssistantErrorType =
+  | 'provider_unavailable'
+  | 'rate_limited'
+  | 'network_timeout'
+  | 'vision_unavailable'
+  | 'validation_error';
+
+export type AssistantErrorCategory = 'temporary' | 'policy';
+
+export type AssistantErrorPayload = {
+  type: AssistantErrorType;
+  category: AssistantErrorCategory;
+  retryable: boolean;
+  retryAfterSeconds?: number;
+  message?: string;
 };
 
 export type ItemAttributeSnapshot = {

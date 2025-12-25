@@ -16,6 +16,8 @@ import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.platform.ConnectivityStatus
+import com.scanium.app.platform.ConnectivityStatusProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -39,6 +41,8 @@ class AssistantViewModelTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var itemsViewModel: ItemsViewModel
     private lateinit var settingsRepository: SettingsRepository
+    private lateinit var connectivityStatusProvider: FakeConnectivityStatusProvider
+    private lateinit var localAssistantHelper: LocalAssistantHelper
 
     @Before
     fun setUp() {
@@ -48,6 +52,8 @@ class AssistantViewModelTest {
             mainDispatcher = testDispatcher
         )
         settingsRepository = SettingsRepository(ApplicationProvider.getApplicationContext())
+        connectivityStatusProvider = FakeConnectivityStatusProvider()
+        localAssistantHelper = LocalAssistantHelper()
     }
 
     @After
@@ -69,7 +75,9 @@ class AssistantViewModelTest {
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
             assistantRepository = repository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            connectivityStatusProvider = connectivityStatusProvider
         )
 
         // Initial state should be IDLE
@@ -102,7 +110,9 @@ class AssistantViewModelTest {
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
             assistantRepository = repository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            connectivityStatusProvider = connectivityStatusProvider
         )
 
         viewModel.sendMessage("What color is this?")
@@ -114,7 +124,7 @@ class AssistantViewModelTest {
     }
 
     @Test
-    fun sendMessage_failure_setsErrorStage() = runTest {
+    fun sendMessage_failure_usesLocalFallback() = runTest {
         val store = FakeDraftStore()
         val profileRepository = FakeExportProfileRepository()
         val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
@@ -127,20 +137,23 @@ class AssistantViewModelTest {
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
             assistantRepository = repository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            connectivityStatusProvider = connectivityStatusProvider
         )
 
         viewModel.sendMessage("What color is this?")
         advanceUntilIdle()
 
-        // After failure, stage should be ERROR and message should be preserved
+        // After failure, should fall back to local helper and mark limited mode
         assertThat(viewModel.uiState.value.isLoading).isFalse()
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.ERROR)
-        assertThat(viewModel.uiState.value.failedMessageText).isEqualTo("What color is this?")
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
+        assertThat(viewModel.uiState.value.lastBackendFailure).isNotNull()
     }
 
     @Test
-    fun retryLastMessage_resetsStageAndRetries() = runTest {
+    fun retryLastMessage_retriesOnlineAfterFallback() = runTest {
         val store = FakeDraftStore()
         val profileRepository = FakeExportProfileRepository()
         val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
@@ -153,22 +166,24 @@ class AssistantViewModelTest {
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
             assistantRepository = repository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            connectivityStatusProvider = connectivityStatusProvider
         )
 
-        // First send should fail
+        // First send should fall back locally
         viewModel.sendMessage("Test message")
         advanceUntilIdle()
 
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.ERROR)
-        assertThat(viewModel.uiState.value.failedMessageText).isEqualTo("Test message")
+        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
 
-        // Retry should succeed
+        // Retry should succeed online
         viewModel.retryLastMessage()
         advanceUntilIdle()
 
         assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
-        assertThat(viewModel.uiState.value.failedMessageText).isNull()
+        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.ONLINE)
     }
 
     @Test
@@ -201,7 +216,9 @@ class AssistantViewModelTest {
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
             assistantRepository = repository,
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            connectivityStatusProvider = connectivityStatusProvider
         )
 
         // Wait for initial loadProfileAndSnapshots to complete
@@ -245,7 +262,9 @@ class AssistantViewModelTest {
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
             assistantRepository = FakeAssistantRepository(),
-            settingsRepository = settingsRepository
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            connectivityStatusProvider = connectivityStatusProvider
         )
 
         val action = AssistantAction(
@@ -348,6 +367,15 @@ class AssistantViewModelTest {
                 throw RuntimeException("Network error")
             }
             return com.scanium.app.model.AssistantResponse("ok")
+        }
+    }
+
+    private class FakeConnectivityStatusProvider : ConnectivityStatusProvider {
+        private val status = kotlinx.coroutines.flow.MutableStateFlow(ConnectivityStatus.ONLINE)
+        override val statusFlow = status
+
+        fun setStatus(newStatus: ConnectivityStatus) {
+            status.value = newStatus
         }
     }
 }
