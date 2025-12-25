@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.graphics.RectF
+import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
 import java.io.ByteArrayOutputStream
@@ -57,10 +58,12 @@ fun Bitmap.toImageRefJpeg(quality: Int = 85): ImageRef.Bytes {
 }
 
 fun ImageRef.Bytes.toBitmap(): Bitmap {
-    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-        ?: Bitmap.createBitmap(
-            width.coerceAtLeast(1),
-            height.coerceAtLeast(1),
-            Bitmap.Config.ARGB_8888,
-        )
+    return PerformanceMonitor.measureBitmapDecode("${width}x${height}") {
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            ?: Bitmap.createBitmap(
+                width.coerceAtLeast(1),
+                height.coerceAtLeast(1),
+                Bitmap.Config.ARGB_8888,
+            )
+    }
 }
