@@ -58,6 +58,8 @@ class CameraXManager(
 ) {
     companion object {
         private const val TAG = "CameraXManager"
+        private const val DEFAULT_MOTION_SCORE = 0.2
+        private const val LUMA_SAMPLE_STEP = 8
 
         // PHASE 3: Edge gating margin
         // Detections whose center falls within this margin from the cropRect edge are dropped
@@ -134,6 +136,11 @@ class CameraXManager(
     private var totalFramesProcessed = 0
     private var lastFpsReportTime = 0L
     private var framesInWindow = 0
+
+    // Motion-aware analysis interval
+    private var lastMotionScore = DEFAULT_MOTION_SCORE
+    private var previousLumaSample: ByteArray? = null
+    private var reusableLumaSample: ByteArray? = null
 
     // PHASE 5: Rate-limited logging
     private var viewportLoggedOnce = false
@@ -380,12 +387,15 @@ class CameraXManager(
         totalFramesProcessed = 0
         lastFpsReportTime = sessionStartTime
         framesInWindow = 0
+        lastMotionScore = DEFAULT_MOTION_SCORE
+        previousLumaSample = null
+        reusableLumaSample = null
 
         var lastAnalysisTime = 0L
         var isProcessing = false // Prevent overlapping processing
 
         // Log initial configuration
-        val initialIntervalMs = 1000L / com.scanium.app.ml.classification.ClassifierDebugFlags.analysisFps
+        val initialIntervalMs = analysisIntervalMsForMotion(lastMotionScore)
         com.scanium.app.ml.DetectionLogger.logConfiguration(
             minSeenCount = 1,
             minConfidence = 0.0f,
@@ -405,8 +415,9 @@ class CameraXManager(
                 return@setAnalyzer
             }
 
-            // Dynamic throttling based on debug flags
-            val analysisIntervalMs = 1000L / com.scanium.app.ml.classification.ClassifierDebugFlags.analysisFps
+            // Dynamic throttling based on motion
+            val motionScore = computeMotionScore(imageProxy)
+            val analysisIntervalMs = analysisIntervalMsForMotion(motionScore)
             val currentTime = System.currentTimeMillis()
 
             // Only process if enough time has passed AND we're not already processing
@@ -485,6 +496,62 @@ class CameraXManager(
                 imageProxy.close()
             }
         }
+    }
+
+    private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
+        motionScore <= 0.1 -> 2000L
+        motionScore <= 0.5 -> 800L
+        else -> 400L
+    }
+
+    private fun computeMotionScore(imageProxy: ImageProxy): Double {
+        val plane = imageProxy.planes.firstOrNull() ?: return lastMotionScore
+        val width = imageProxy.width
+        val height = imageProxy.height
+        if (width == 0 || height == 0) return lastMotionScore
+
+        val sampleWidth = (width + LUMA_SAMPLE_STEP - 1) / LUMA_SAMPLE_STEP
+        val sampleHeight = (height + LUMA_SAMPLE_STEP - 1) / LUMA_SAMPLE_STEP
+        val sampleSize = sampleWidth * sampleHeight
+
+        var currentSample = reusableLumaSample
+        if (currentSample == null || currentSample.size != sampleSize) {
+            currentSample = ByteArray(sampleSize)
+        }
+
+        val buffer = plane.buffer
+        val rowStride = plane.rowStride
+        val pixelStride = plane.pixelStride
+        var sampleIndex = 0
+        var y = 0
+        while (y < height) {
+            var x = 0
+            while (x < width) {
+                val bufferIndex = y * rowStride + x * pixelStride
+                currentSample[sampleIndex] = buffer.get(bufferIndex)
+                sampleIndex++
+                x += LUMA_SAMPLE_STEP
+            }
+            y += LUMA_SAMPLE_STEP
+        }
+
+        val previousSample = previousLumaSample
+        val motionScore = if (previousSample != null && previousSample.size == sampleSize) {
+            var diffSum = 0L
+            for (i in 0 until sampleIndex) {
+                diffSum += kotlin.math.abs(
+                    (currentSample[i].toInt() and 0xFF) - (previousSample[i].toInt() and 0xFF)
+                )
+            }
+            diffSum.toDouble() / (sampleIndex * 255.0)
+        } else {
+            lastMotionScore
+        }
+
+        previousLumaSample = currentSample
+        reusableLumaSample = previousSample
+        lastMotionScore = motionScore
+        return motionScore
     }
 
     /**
