@@ -1,12 +1,19 @@
 package com.scanium.app.items
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.scanium.app.data.FakeItemsRepository
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.items.persistence.ScannedItemStore
+import com.scanium.core.models.geometry.NormalizedRect
+import com.scanium.core.models.ml.ItemCategory
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,18 +22,30 @@ import org.junit.runner.RunWith
  * Instrumented tests for ItemsViewModel in Android environment.
  *
  * These tests verify the ViewModel works correctly on actual Android runtime,
- * testing StateFlow behavior and Android-specific concerns with the repository layer.
+ * testing StateFlow behavior, persistence loading, and Android-specific concerns.
  */
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class ItemsViewModelInstrumentedTest {
 
     private lateinit var viewModel: ItemsViewModel
-    private lateinit var fakeRepository: FakeItemsRepository
+    private lateinit var fakeStore: InstrumentedFakeScannedItemStore
+    private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
-        fakeRepository = FakeItemsRepository()
-        viewModel = ItemsViewModel(fakeRepository)
+        Dispatchers.setMain(testDispatcher)
+        fakeStore = InstrumentedFakeScannedItemStore()
+        viewModel = ItemsViewModel(
+            itemsStore = fakeStore,
+            workerDispatcher = testDispatcher,
+            mainDispatcher = testDispatcher
+        )
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -34,9 +53,13 @@ class ItemsViewModelInstrumentedTest {
         // Arrange
         val item = ScannedItem(
             id = "test-1",
+            thumbnail = null,
             category = ItemCategory.FASHION,
             priceRange = 10.0 to 20.0,
-            confidence = 0.8f
+            confidence = 0.8f,
+            timestamp = System.currentTimeMillis(),
+            boundingBox = NormalizedRect(0.1f, 0.1f, 0.5f, 0.5f),
+            labelText = "Fashion"
         )
 
         // Act
@@ -46,22 +69,20 @@ class ItemsViewModelInstrumentedTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("test-1")
     }
 
     @Test
     fun whenConcurrentAdditions_thenAllItemsSafelyAdded() = runBlocking {
-        // Arrange - Create multiple items
-        val items = (1..10).map { index ->
-            ScannedItem(
-                id = "item-$index",
-                category = ItemCategory.FASHION,
-                priceRange = 10.0 to 20.0,
-                confidence = 0.5f
-            )
-        }
+        // Arrange - Create multiple items with distinct categories to avoid merging
+        val items = listOf(
+            createTestItem("item-1", ItemCategory.FASHION),
+            createTestItem("item-2", ItemCategory.ELECTRONICS),
+            createTestItem("item-3", ItemCategory.HOME_GOOD),
+            createTestItem("item-4", ItemCategory.PLANT),
+            createTestItem("item-5", ItemCategory.FOOD)
+        )
 
-        // Act - Add items concurrently
+        // Act - Add items
         items.forEach { item ->
             viewModel.addItem(item)
         }
@@ -69,41 +90,41 @@ class ItemsViewModelInstrumentedTest {
 
         // Assert
         val resultItems = viewModel.items.first()
-        assertThat(resultItems).hasSize(10)
+        assertThat(resultItems).hasSize(5)
     }
 
     @Test
-    fun whenViewModelRecreated_thenItemsDoNotPersist() = runBlocking {
-        // Arrange
-        viewModel.addItem(
-            ScannedItem(
-                id = "test-1",
-                category = ItemCategory.FASHION,
-                priceRange = 10.0 to 20.0
-            )
+    fun whenViewModelCreatedWithPersistedItems_thenItemsAreLoaded() = runBlocking {
+        // Arrange - Pre-populate the store with persisted items
+        val persistedItems = listOf(
+            createTestItem("persisted-1", ItemCategory.FASHION),
+            createTestItem("persisted-2", ItemCategory.ELECTRONICS)
         )
-        delay(100)
+        fakeStore.seedItems(persistedItems)
 
-        // Act - Create new ViewModel instance (simulates process death)
-        val newRepository = FakeItemsRepository()
-        val newViewModel = ItemsViewModel(newRepository)
+        // Act - Create new ViewModel (should load persisted items)
+        val newViewModel = ItemsViewModel(
+            itemsStore = fakeStore,
+            workerDispatcher = testDispatcher,
+            mainDispatcher = testDispatcher
+        )
+        delay(100) // Give loading time to complete
+
+        // Assert - Items should be loaded from persistence
         val items = newViewModel.items.first()
-
-        // Assert - New instance should be empty
-        assertThat(items).isEmpty()
+        assertThat(items).hasSize(2)
     }
 
     @Test
     fun whenRemovingAndReAdding_thenItemAppearsAgain() = runBlocking {
         // Arrange
-        val item = ScannedItem(
-            id = "test-1",
-            category = ItemCategory.FASHION,
-            priceRange = 10.0 to 20.0
-        )
+        val item = createTestItem("test-1", ItemCategory.FASHION)
         viewModel.addItem(item)
         delay(100)
-        viewModel.removeItem("test-1")
+
+        // Get aggregated ID
+        val aggregatedId = viewModel.items.first().first().id
+        viewModel.removeItem(aggregatedId)
         delay(100)
 
         // Act - Re-add the same item
@@ -113,6 +134,68 @@ class ItemsViewModelInstrumentedTest {
         // Assert
         val items = viewModel.items.first()
         assertThat(items).hasSize(1)
-        assertThat(items[0].id).isEqualTo("test-1")
+    }
+
+    @Test
+    fun whenItemsCleared_thenNewViewModelStartsEmpty() = runBlocking {
+        // Arrange - Add items and then clear
+        viewModel.addItem(createTestItem("item-1", ItemCategory.FASHION))
+        delay(100)
+        viewModel.clearAllItems()
+        delay(100)
+
+        // Act - Create new ViewModel
+        val newViewModel = ItemsViewModel(
+            itemsStore = fakeStore,
+            workerDispatcher = testDispatcher,
+            mainDispatcher = testDispatcher
+        )
+        delay(100)
+
+        // Assert - New ViewModel should be empty (store was cleared)
+        val items = newViewModel.items.first()
+        assertThat(items).isEmpty()
+    }
+
+    private fun createTestItem(id: String, category: ItemCategory): ScannedItem {
+        return ScannedItem(
+            id = id,
+            thumbnail = null,
+            category = category,
+            priceRange = 10.0 to 20.0,
+            confidence = 0.8f,
+            timestamp = System.currentTimeMillis(),
+            boundingBox = NormalizedRect(0.1f, 0.1f, 0.5f, 0.5f),
+            labelText = category.name
+        )
+    }
+}
+
+/**
+ * Fake implementation of ScannedItemStore for instrumented testing.
+ */
+class InstrumentedFakeScannedItemStore : ScannedItemStore {
+    private val items = mutableListOf<ScannedItem>()
+
+    fun seedItems(seedItems: List<ScannedItem>) {
+        items.clear()
+        items.addAll(seedItems)
+    }
+
+    override suspend fun loadAll(): List<ScannedItem> {
+        return items.toList()
+    }
+
+    override suspend fun upsertAll(items: List<ScannedItem>) {
+        this.items.clear()
+        this.items.addAll(items)
+    }
+
+    override suspend fun deleteById(itemId: String) {
+        items.removeAll { it.id == itemId }
+    }
+
+    override suspend fun deleteAll() {
+        items.clear()
     }
 }
