@@ -18,6 +18,8 @@ import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.ml.classification.NoopClassifier
+import com.scanium.core.export.ExportPayload
+import com.scanium.core.export.toExportPayload
 import com.scanium.shared.core.models.pricing.PriceEstimatorProvider
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.CoroutineDispatcher
@@ -123,6 +125,10 @@ class ItemsViewModel(
     /** Current similarity threshold for aggregation */
     val similarityThreshold: StateFlow<Float> = stateManager.similarityThreshold
 
+    /** Latest in-memory export payload for selected items */
+    private val _exportPayload = MutableStateFlow<ExportPayload?>(null)
+    val exportPayload: StateFlow<ExportPayload?> = _exportPayload
+
     init {
         classificationCoordinator.startNewSession()
 
@@ -204,6 +210,26 @@ class ItemsViewModel(
      */
     fun updateOverlayDetections(detections: List<DetectionResult>) {
         overlayManager.updateOverlayDetections(detections)
+    }
+
+    // ==================== Export Operations ====================
+
+    /**
+     * Create an in-memory export payload for selected items.
+     */
+    fun createExportPayload(selectedIds: List<String>): ExportPayload? {
+        if (selectedIds.isEmpty()) {
+            _exportPayload.value = null
+            return null
+        }
+
+        val selectedSet = selectedIds.toSet()
+        val selectedItems = stateManager.getScannedItems()
+            .filter { it.id in selectedSet }
+
+        val payload = selectedItems.takeIf { it.isNotEmpty() }?.toExportPayload()
+        _exportPayload.value = payload
+        return payload
     }
 
     // ==================== Classification Operations (Delegated to ClassificationCoordinator) ====================

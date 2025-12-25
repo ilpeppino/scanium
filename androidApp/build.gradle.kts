@@ -214,6 +214,7 @@ dependencies {
     implementation(project(":android-ml-mlkit"))
     implementation(project(":android-camera-camerax"))
     implementation(project(":android-platform-adapters"))
+    implementation(project(":shared:core-export"))
     implementation(project(":shared:telemetry"))
     implementation(project(":shared:telemetry-contract"))
 
