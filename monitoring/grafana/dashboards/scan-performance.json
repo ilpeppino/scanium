@@ -1,8 +1,8 @@
 {
   "uid": "scanium-scan-performance",
-  "title": "Scanium - Scan Performance",
-  "description": "ML inference latency and scan session performance metrics",
-  "tags": ["scanium", "performance", "ml"],
+  "title": "Scanium - Performance & Latency",
+  "description": "Regression detection for ML and frame processing",
+  "tags": ["scanium", "performance", "ml", "latency"],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -18,10 +18,7 @@
         "label": "Platform",
         "type": "custom",
         "query": "android,ios",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": { "text": "All", "value": "$__all" },
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
           { "text": "android", "value": "android", "selected": false },
@@ -34,15 +31,12 @@
         "name": "env",
         "label": "Environment",
         "type": "custom",
-        "query": "dev,staging,prod",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
+        "query": "dev,stage,prod",
+        "current": { "text": "All", "value": "$__all" },
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
           { "text": "dev", "value": "dev", "selected": false },
-          { "text": "staging", "value": "staging", "selected": false },
+          { "text": "stage", "value": "stage", "selected": false },
           { "text": "prod", "value": "prod", "selected": false }
         ],
         "includeAll": true,
@@ -52,26 +46,22 @@
         "name": "app_version",
         "label": "App Version",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "loki" },
+        "datasource": { "type": "loki", "uid": "LOKI" },
         "query": "label_values({source=\"scanium-mobile\"}, app_version)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        }
+        "current": { "text": "All", "value": "$__all" }
       }
     ]
   },
   "panels": [
     {
       "id": 1,
-      "title": "ML Inference Latency (Mimir)",
-      "description": "ML inference latency p50/p95 from Mimir metrics",
+      "title": "Inference Latency (p50/p95/p99)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -89,243 +79,45 @@
           "legendFormat": "p99"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 2
-          },
-          "unit": "ms",
-          "noValue": "No metrics yet"
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
-        "tooltip": { "mode": "multi" }
-      }
+      "fieldConfig": { "defaults": { "unit": "ms" } }
     },
     {
       "id": 2,
-      "title": "ML Inference Latency (Loki Fallback)",
-      "description": "ML inference latency from log events when metrics unavailable",
+      "title": "Latency by App Version (p95)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
-          "expr": "quantile_over_time(0.50, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"ml.inference_latency_ms\" | unwrap latency_ms [5m]) by (type)",
-          "legendFormat": "p50 {{type}}"
-        },
-        {
-          "refId": "B",
-          "expr": "quantile_over_time(0.95, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"ml.inference_latency_ms\" | unwrap latency_ms [5m]) by (type)",
-          "legendFormat": "p95 {{type}}"
+          "expr": "topk(5, histogram_quantile(0.95, sum by (le, app_version) (rate(ml_inference_latency_ms_bucket{source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\"}[5m]))))",
+          "legendFormat": "{{app_version}}"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 2
-          },
-          "unit": "ms",
-          "noValue": "No data"
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
-        "tooltip": { "mode": "multi" }
-      }
+      "fieldConfig": { "defaults": { "unit": "ms" } }
     },
     {
       "id": 3,
-      "title": "Session Duration p50/p95",
-      "description": "Scan session duration from session_stopped events",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "quantile_over_time(0.50, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_stopped\" | unwrap duration_ms [5m])",
-          "legendFormat": "p50"
-        },
-        {
-          "refId": "B",
-          "expr": "quantile_over_time(0.95, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_stopped\" | unwrap duration_ms [5m])",
-          "legendFormat": "p95"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "lineWidth": 2
-          },
-          "unit": "ms",
-          "noValue": "No sessions"
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
-        "tooltip": { "mode": "multi" }
-      }
-    },
-    {
-      "id": 4,
-      "title": "Inference Rate by Type",
-      "description": "Number of ML inferences by type (detection/classification)",
-      "type": "timeseries",
-      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (type, mode) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"ml.inference_latency_ms\" [5m]))",
-          "legendFormat": "{{type}} ({{mode}})"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "lineWidth": 0,
-            "stacking": { "mode": "normal" }
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "tooltip": { "mode": "multi" }
-      }
-    },
-    {
-      "id": 5,
-      "title": "Avg Inference Latency (Current)",
-      "description": "Current average inference latency",
+      "title": "Trace Count (Tempo)",
       "type": "stat",
-      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "x": 0, "y": 8, "w": 6, "h": 4 },
+      "datasource": { "type": "tempo", "uid": "TEMPO" },
       "targets": [
         {
           "refId": "A",
-          "expr": "avg_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"ml.inference_latency_ms\" | unwrap latency_ms [15m])",
-          "instant": true
+          "queryType": "nativeSearch",
+          "limit": 20,
+          "expr": "{ span.http.method = \"POST\" }" 
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 100 },
-              { "color": "red", "value": 200 }
-            ]
-          },
-          "unit": "ms",
-          "noValue": "N/A"
+      "description": "Just a link to explore traces",
+      "links": [
+         {
+          "title": "Explore Traces",
+          "url": "/explore?orgId=1&left=%7B%22datasource%22:%22TEMPO%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22datasource%22:%7B%22type%22:%22tempo%22,%22uid%22:%22TEMPO%22%7D,%22queryType%22:%22nativeSearch%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D",
+          "targetBlank": true
         }
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["mean"] },
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 6,
-      "title": "Avg Session Duration",
-      "description": "Average scan session duration",
-      "type": "stat",
-      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "avg_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_stopped\" | unwrap duration_ms [1h])",
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "blue", "value": null }
-            ]
-          },
-          "unit": "ms",
-          "noValue": "N/A"
-        }
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["mean"] },
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 7,
-      "title": "Total Inferences (1h)",
-      "description": "Total ML inferences in last hour",
-      "type": "stat",
-      "gridPos": { "x": 12, "y": 16, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"ml.inference_latency_ms\" [1h]))",
-          "instant": true
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "blue", "value": null }
-            ]
-          },
-          "unit": "short",
-          "noValue": "0"
-        }
-      },
-      "options": {
-        "reduceOptions": { "calcs": ["lastNotNull"] },
-        "colorMode": "background"
-      }
-    },
-    {
-      "id": 8,
-      "title": "Inference by Mode",
-      "description": "Inference distribution by classification mode",
-      "type": "piechart",
-      "gridPos": { "x": 18, "y": 16, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by (mode) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"ml.inference_latency_ms\" [1h]))",
-          "instant": true,
-          "legendFormat": "{{mode}}"
-        }
-      ],
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right" },
-        "pieType": "donut"
-      }
+      ]
     }
-  ],
-  "annotations": {
-    "list": []
-  }
+  ]
 }

@@ -8,6 +8,7 @@ import com.scanium.shared.core.models.classification.ClassificationStatus
 import com.scanium.shared.core.models.classification.Classifier
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.app.model.resolveBytes
+import com.scanium.app.platform.toBitmap
 import com.scanium.shared.core.models.ml.ItemCategory as SharedItemCategory
 import com.scanium.app.ml.ItemCategory as AndroidItemCategory
 import com.scanium.app.ml.classification.ClassificationMode as AndroidClassificationMode
