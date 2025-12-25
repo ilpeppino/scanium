@@ -19,6 +19,7 @@ import com.scanium.app.items.persistence.ScannedItemDatabase
 import com.scanium.app.items.persistence.ScannedItemRepository
 import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.navigation.ScaniumNavGraph
+import com.scanium.app.data.AndroidFeatureFlagRepository
 import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.ml.classification.CloudClassifier
 import com.scanium.app.ml.classification.OnDeviceClassifier
@@ -32,6 +33,8 @@ import com.scanium.app.billing.AndroidBillingProvider
 import com.scanium.app.billing.FakeBillingProvider
 import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.data.AndroidRemoteConfigProvider
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 
 /**
  * Root Composable for the Scanium app.
@@ -65,13 +68,28 @@ fun ScaniumApp() {
     }
     
     val entitlementManager = remember { EntitlementManager(settingsRepository, billingProvider) }
-    
+
+    // Centralized feature flag repository (TECH-006 fix)
+    val featureFlagRepository = remember {
+        AndroidFeatureFlagRepository(
+            settingsRepository = settingsRepository,
+            configProvider = configProvider,
+            entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow
+        )
+    }
+
+    // StateFlow for cloud classification enabled state (used by ItemsViewModel)
+    val cloudClassificationEnabled = remember(featureFlagRepository) {
+        featureFlagRepository.isCloudClassificationEnabled
+            .stateIn(scope, SharingStarted.Eagerly, true)
+    }
+
     val classificationModeViewModel: ClassificationModeViewModel = viewModel(
         factory = ClassificationModeViewModel.factory(classificationPreferences)
     )
-    
+
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(context as android.app.Application, settingsRepository, entitlementManager, configProvider, ftueRepository)
+        factory = SettingsViewModel.Factory(context as android.app.Application, settingsRepository, entitlementManager, configProvider, featureFlagRepository, ftueRepository)
     )
 
     val paywallViewModel: PaywallViewModel = viewModel(
@@ -87,13 +105,13 @@ fun ScaniumApp() {
                     dao = database.scannedItemDao(),
                     syncer = NoopScannedItemSyncer
                 )
-                
+
                 // Get Telemetry facade from Application
                 val telemetry = (context as? com.scanium.app.ScaniumApplication)?.telemetry
 
                 return ItemsViewModel(
                     classificationMode = classificationModeViewModel.classificationMode,
-                    entitlementManager = entitlementManager,
+                    cloudClassificationEnabled = cloudClassificationEnabled,
                     onDeviceClassifier = OnDeviceClassifier(),
                     cloudClassifier = CloudClassifier(context = context),
                     itemsStore = itemsRepository,
