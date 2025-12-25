@@ -5,6 +5,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.tracking.DetectionInfo
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect
@@ -160,8 +161,10 @@ class ObjectDetectorClient {
             // Choose the appropriate detector
             val detector = if (useStreamMode) streamDetector else singleImageDetector
 
-            // Run detection
-            val detectedObjects = detector.process(image).await()
+            // Run detection with performance measurement
+            val detectedObjects = PerformanceMonitor.measureMlInference("object_detection") {
+                detector.process(image).await()
+            }
 
             Log.d(TAG, "Detected ${detectedObjects.size} objects")
             detectedObjects.forEachIndexed { index, obj ->
@@ -338,21 +341,25 @@ class ObjectDetectorClient {
 
             // Try detection with original image first
             Log.i(TAG, ">>> Attempting detection with original InputImage...")
-            val task = detector.process(image)
 
-            // Add failure listener to catch any errors
-            task.addOnFailureListener { exception ->
-                Log.e(TAG, ">>> ML Kit process() FAILED", exception)
-                Log.e(TAG, ">>> Exception type: ${exception.javaClass.simpleName}")
-                Log.e(TAG, ">>> Exception message: ${exception.message}")
+            // Run detection with performance measurement
+            val detectedObjects = PerformanceMonitor.measureMlInference("object_detection_tracking") {
+                val task = detector.process(image)
+
+                // Add failure listener to catch any errors
+                task.addOnFailureListener { exception ->
+                    Log.e(TAG, ">>> ML Kit process() FAILED", exception)
+                    Log.e(TAG, ">>> Exception type: ${exception.javaClass.simpleName}")
+                    Log.e(TAG, ">>> Exception message: ${exception.message}")
+                }
+
+                task.addOnSuccessListener { objects ->
+                    Log.i(TAG, ">>> ML Kit process() SUCCESS - returned ${objects.size} objects")
+                }
+
+                // Await the result
+                task.await()
             }
-
-            task.addOnSuccessListener { objects ->
-                Log.i(TAG, ">>> ML Kit process() SUCCESS - returned ${objects.size} objects")
-            }
-
-            // Await the result
-            val detectedObjects = task.await()
 
             Log.i(TAG, ">>> ML Kit returned ${detectedObjects.size} raw objects from original image")
 
@@ -636,52 +643,58 @@ class ObjectDetectorClient {
      * @param rotationDegrees Rotation to apply after cropping for correct display orientation
      */
     private fun cropThumbnail(source: Bitmap, boundingBox: Rect, rotationDegrees: Int = 0): Bitmap? {
-        return try {
-            val adjustedBox = boundingBox.tighten(
-                insetRatio = BOUNDING_BOX_TIGHTEN_RATIO,
-                frameWidth = source.width,
-                frameHeight = source.height
-            )
-            // Ensure bounding box is within bitmap bounds
-            val left = adjustedBox.left.coerceIn(0, source.width - 1)
-            val top = adjustedBox.top.coerceIn(0, source.height - 1)
-            val width = (adjustedBox.width()).coerceIn(1, source.width - left)
-            val height = (adjustedBox.height()).coerceIn(1, source.height - top)
-
-            // CRITICAL: Limit thumbnail size to save memory
-            // Higher resolution crops (up to 512px) preserve detail for cloud classification
-            val maxDimension = MAX_THUMBNAIL_DIMENSION_PX
-            val scale = minOf(1.0f, maxDimension.toFloat() / maxOf(width, height))
-            val thumbnailWidth = (width * scale).toInt().coerceAtLeast(1)
-            val thumbnailHeight = (height * scale).toInt().coerceAtLeast(1)
-
-            // Create small thumbnail with independent pixel data
-            val croppedBitmap = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.ARGB_8888)
-            val canvas = android.graphics.Canvas(croppedBitmap)
-            val srcRect = android.graphics.Rect(left, top, left + width, top + height)
-            val dstRect = android.graphics.Rect(0, 0, thumbnailWidth, thumbnailHeight)
-            canvas.drawBitmap(source, srcRect, dstRect, null)
-
-            // Rotate thumbnail to match display orientation
-            val rotatedBitmap = if (rotationDegrees != 0) {
-                val matrix = android.graphics.Matrix()
-                matrix.postRotate(rotationDegrees.toFloat())
-                val rotated = Bitmap.createBitmap(
-                    croppedBitmap, 0, 0,
-                    croppedBitmap.width, croppedBitmap.height,
-                    matrix, true
+        return PerformanceMonitor.measure(
+            metricName = PerformanceMonitor.Metrics.THUMBNAIL_CROP_LATENCY_MS,
+            spanName = PerformanceMonitor.Spans.THUMBNAIL_CROP,
+            attributes = mapOf("source_size" to "${source.width}x${source.height}")
+        ) {
+            try {
+                val adjustedBox = boundingBox.tighten(
+                    insetRatio = BOUNDING_BOX_TIGHTEN_RATIO,
+                    frameWidth = source.width,
+                    frameHeight = source.height
                 )
-                croppedBitmap.recycle() // Free the unrotated bitmap
-                rotated
-            } else {
-                croppedBitmap
-            }
+                // Ensure bounding box is within bitmap bounds
+                val left = adjustedBox.left.coerceIn(0, source.width - 1)
+                val top = adjustedBox.top.coerceIn(0, source.height - 1)
+                val width = (adjustedBox.width()).coerceIn(1, source.width - left)
+                val height = (adjustedBox.height()).coerceIn(1, source.height - top)
 
-            Log.d(TAG, "Created thumbnail: ${rotatedBitmap.width}x${rotatedBitmap.height} (cropped: ${thumbnailWidth}x${thumbnailHeight}, rotation: ${rotationDegrees}°)")
-            rotatedBitmap
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create thumbnail", e)
-            null
+                // CRITICAL: Limit thumbnail size to save memory
+                // Higher resolution crops (up to 512px) preserve detail for cloud classification
+                val maxDimension = MAX_THUMBNAIL_DIMENSION_PX
+                val scale = minOf(1.0f, maxDimension.toFloat() / maxOf(width, height))
+                val thumbnailWidth = (width * scale).toInt().coerceAtLeast(1)
+                val thumbnailHeight = (height * scale).toInt().coerceAtLeast(1)
+
+                // Create small thumbnail with independent pixel data
+                val croppedBitmap = Bitmap.createBitmap(thumbnailWidth, thumbnailHeight, Bitmap.Config.ARGB_8888)
+                val canvas = android.graphics.Canvas(croppedBitmap)
+                val srcRect = android.graphics.Rect(left, top, left + width, top + height)
+                val dstRect = android.graphics.Rect(0, 0, thumbnailWidth, thumbnailHeight)
+                canvas.drawBitmap(source, srcRect, dstRect, null)
+
+                // Rotate thumbnail to match display orientation
+                val rotatedBitmap = if (rotationDegrees != 0) {
+                    val matrix = android.graphics.Matrix()
+                    matrix.postRotate(rotationDegrees.toFloat())
+                    val rotated = Bitmap.createBitmap(
+                        croppedBitmap, 0, 0,
+                        croppedBitmap.width, croppedBitmap.height,
+                        matrix, true
+                    )
+                    croppedBitmap.recycle() // Free the unrotated bitmap
+                    rotated
+                } else {
+                    croppedBitmap
+                }
+
+                Log.d(TAG, "Created thumbnail: ${rotatedBitmap.width}x${rotatedBitmap.height} (cropped: ${thumbnailWidth}x${thumbnailHeight}, rotation: ${rotationDegrees}°)")
+                rotatedBitmap
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create thumbnail", e)
+                null
+            }
         }
     }
 

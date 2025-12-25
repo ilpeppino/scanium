@@ -6,6 +6,7 @@ import com.scanium.core.models.items.ScannedItem
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.models.pricing.PriceRange
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.telemetry.facade.Telemetry
 import kotlinx.datetime.Clock
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -19,7 +20,8 @@ import kotlin.random.Random
 class ItemAggregator(
     private val config: AggregationConfig = AggregationConfig(),
     private val logger: Logger = Logger.NONE,
-    private val mergePolicy: SpatialTemporalMergePolicy = SpatialTemporalMergePolicy()
+    private val mergePolicy: SpatialTemporalMergePolicy = SpatialTemporalMergePolicy(),
+    private val telemetry: Telemetry? = null
 ) {
     companion object {
         private const val TAG = "ItemAggregator"
@@ -43,54 +45,75 @@ class ItemAggregator(
     fun getCurrentSimilarityThreshold(): Float = dynamicThreshold ?: config.similarityThreshold
 
     fun processDetection(detection: ScannedItem): AggregatedItem {
-        val currentThreshold = getCurrentSimilarityThreshold()
-        logger.i(TAG, ">>> processDetection id=${detection.aggregatedId}, category=${detection.category}, confidence=${detection.confidence}")
+        val span = telemetry?.beginSpan("aggregation.process_detection", mapOf(
+            "detection_id" to detection.aggregatedId,
+            "category" to detection.category.name
+        ))
+        try {
+            val currentThreshold = getCurrentSimilarityThreshold()
+            logger.i(TAG, ">>> processDetection id=${detection.aggregatedId}, category=${detection.category}, confidence=${detection.confidence}")
 
-        val (bestMatch, bestSimilarity) = findBestMatch(detection)
+            val (bestMatch, bestSimilarity) = findBestMatch(detection)
 
-        if (bestMatch != null && bestSimilarity >= currentThreshold) {
-            logger.w(TAG, "✓ MERGE detection ${detection.aggregatedId} → ${bestMatch.aggregatedId} (similarity=$bestSimilarity)")
-            bestMatch.merge(detection)
-            // Update candidate metadata cache
-            updateCandidateMetadata(bestMatch)
-            return bestMatch
+            if (bestMatch != null && bestSimilarity >= currentThreshold) {
+                logger.w(TAG, "✓ MERGE detection ${detection.aggregatedId} → ${bestMatch.aggregatedId} (similarity=$bestSimilarity)")
+                bestMatch.merge(detection)
+                // Update candidate metadata cache
+                updateCandidateMetadata(bestMatch)
+                span?.setAttribute("result", "merge")
+                return bestMatch
+            }
+
+            // PHASE 4: Fallback to spatial-temporal merge policy when regular similarity fails
+            // This handles tracker ID churn and cases where the full similarity calculation is too strict
+            val timestampMs = nowMillis()
+            val categoryId = detection.category.ordinal
+            val spatialMatch = findSpatialTemporalMatch(
+                detection.boundingBox,
+                timestampMs,
+                categoryId
+            )
+
+            if (spatialMatch != null) {
+                logger.w(TAG, "✓ SPATIAL-TEMPORAL MERGE detection ${detection.aggregatedId} → ${spatialMatch.aggregatedId} (tracker ID churn)")
+                spatialMatch.merge(detection)
+                // Update candidate metadata cache
+                updateCandidateMetadata(spatialMatch)
+                span?.setAttribute("result", "spatial_merge")
+                return spatialMatch
+            }
+
+            val newItem = createAggregatedItem(detection)
+            aggregatedItems[newItem.aggregatedId] = newItem
+            // Add to candidate metadata cache
+            updateCandidateMetadata(newItem)
+
+            if (bestMatch != null) {
+                logger.w(TAG, "✗ CREATE NEW (similarity $bestSimilarity < threshold $currentThreshold)")
+                logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
+            } else {
+                logger.i(TAG, "✗ CREATE NEW (no existing items)")
+            }
+
+            span?.setAttribute("result", "new_item")
+            return newItem
+        } finally {
+            span?.end()
         }
-
-        // PHASE 4: Fallback to spatial-temporal merge policy when regular similarity fails
-        // This handles tracker ID churn and cases where the full similarity calculation is too strict
-        val timestampMs = nowMillis()
-        val categoryId = detection.category.ordinal
-        val spatialMatch = findSpatialTemporalMatch(
-            detection.boundingBox,
-            timestampMs,
-            categoryId
-        )
-
-        if (spatialMatch != null) {
-            logger.w(TAG, "✓ SPATIAL-TEMPORAL MERGE detection ${detection.aggregatedId} → ${spatialMatch.aggregatedId} (tracker ID churn)")
-            spatialMatch.merge(detection)
-            // Update candidate metadata cache
-            updateCandidateMetadata(spatialMatch)
-            return spatialMatch
-        }
-
-        val newItem = createAggregatedItem(detection)
-        aggregatedItems[newItem.aggregatedId] = newItem
-        // Add to candidate metadata cache
-        updateCandidateMetadata(newItem)
-
-        if (bestMatch != null) {
-            logger.w(TAG, "✗ CREATE NEW (similarity $bestSimilarity < threshold $currentThreshold)")
-            logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
-        } else {
-            logger.i(TAG, "✗ CREATE NEW (no existing items)")
-        }
-
-        return newItem
     }
 
-    fun processDetections(detections: List<ScannedItem>): List<AggregatedItem> =
-        detections.map { processDetection(it) }
+    fun processDetections(detections: List<ScannedItem>): List<AggregatedItem> {
+        if (detections.isEmpty()) return emptyList()
+
+        val span = telemetry?.beginSpan("aggregation.process_batch", mapOf(
+            "batch_size" to detections.size.toString()
+        ))
+        return try {
+            detections.map { processDetection(it) }
+        } finally {
+            span?.end()
+        }
+    }
 
     fun getAggregatedItems(): List<AggregatedItem> = aggregatedItems.values.toList()
 
