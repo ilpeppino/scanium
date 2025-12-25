@@ -122,17 +122,6 @@ fun ScaniumNavGraph(
                 onNavigateBack = {
                     navController.popBackStack()
                 },
-                onNavigateToSell = { ids ->
-                    if (ids.isNotEmpty()) {
-                        navController.navigate("${Routes.SELL_ON_EBAY}/${ids.joinToString(",")}")
-                    }
-                },
-                onNavigateToDraft = { ids ->
-                    if (ids.isNotEmpty()) {
-                        val encoded = Uri.encode(ids.joinToString(","))
-                        navController.navigate("${Routes.DRAFT_REVIEW}?itemIds=$encoded")
-                    }
-                },
                 onNavigateToAssistant = { ids ->
                     if (ids.isNotEmpty()) {
                         val encoded = Uri.encode(ids.joinToString(","))
