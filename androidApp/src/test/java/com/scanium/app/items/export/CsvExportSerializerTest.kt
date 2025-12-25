@@ -51,6 +51,27 @@ class CsvExportSerializerTest {
         assertThat(lines[1]).isEqualTo(expectedRow)
     }
 
+    @Test
+    fun writeTo_usesCustomImageFilenameProvider() {
+        val item = ExportItem(
+            id = "item-99",
+            title = "Item",
+            description = "Desc",
+            category = "Cat",
+            attributes = emptyMap(),
+            imageRef = null
+        )
+        val output = StringBuilder()
+
+        CsvExportSerializer().writeTo(output, listOf(item)) {
+            "images/item_${it.id}.jpg"
+        }
+
+        val lines = output.toString().split("\n")
+        assertThat(lines).hasSize(2)
+        assertThat(lines[1]).contains(",images/item_${item.id}.jpg")
+    }
+
     private fun csvEscape(value: String): String {
         val needsQuotes = value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")
         if (!needsQuotes) {
