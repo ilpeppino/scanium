@@ -1,15 +1,7 @@
 package com.scanium.app.items
 
-import com.scanium.app.camera.ImageUtils
-import android.content.Context
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.animateRectAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,29 +19,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.scanium.app.model.toImageBitmap
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
 import kotlin.math.roundToInt
 
 /**
@@ -66,7 +48,6 @@ fun DraftPreviewOverlay(
     sourceBounds: Rect?,
     isVisible: Boolean
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
 
     // Animation state
@@ -81,11 +62,9 @@ fun DraftPreviewOverlay(
     )
 
     if (expansionProgress > 0f && item != null && sourceBounds != null) {
-        // Load high-res image (only when item is non-null)
-        val fullImage by rememberFullImageBitmap(item, context)
-        // Fallback to thumbnail if full image not yet loaded
-        val thumbnailImage = remember(item) { (item.thumbnailRef ?: item.thumbnail).toImageBitmap() }
-        val displayImage = fullImage ?: thumbnailImage
+        // Use the same image source as the list thumbnail for consistency
+        // This ensures list and preview show the same exact image, just at different sizes
+        val displayImage = remember(item) { (item.thumbnailRef ?: item.thumbnail).toImageBitmap() }
 
         Box(
             modifier = Modifier
@@ -131,7 +110,7 @@ fun DraftPreviewOverlay(
                             bitmap = displayImage,
                             contentDescription = "Full size preview",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Fit
                         )
                     } else {
                         Box(
@@ -181,39 +160,4 @@ fun DraftPreviewOverlay(
 
 private fun lerp(start: Float, stop: Float, fraction: Float): Float {
     return (1 - fraction) * start + fraction * stop
-}
-
-@Composable
-private fun rememberFullImageBitmap(item: ScannedItem, context: Context): State<ImageBitmap?> {
-    return produceState<ImageBitmap?>(initialValue = null, item) {
-        value = withContext(Dispatchers.IO) {
-            try {
-                // Try URI first
-                val uri = item.fullImageUri
-                if (uri != null) {
-                     context.contentResolver.openInputStream(uri)?.use { stream ->
-                        BitmapFactory.decodeStream(stream)?.let { bitmap ->
-                            val rotation = ImageUtils.readExifRotation(context, uri)
-                            ImageUtils.rotateBitmap(bitmap, rotation).asImageBitmap()
-                        }
-                    }
-                } else {
-                    // Try path
-                    val path = item.fullImagePath
-                    if (path != null) {
-                        BitmapFactory.decodeFile(path)?.let { bitmap ->
-                            val rotation = ImageUtils.readExifRotation(path)
-                            ImageUtils.rotateBitmap(bitmap, rotation).asImageBitmap()
-                        }
-                    } else {
-                        null
-                    }
-                }
-            } catch (e: Exception) {
-                // Log error or ignore
-                e.printStackTrace()
-                null
-            }
-        }
-    }
 }

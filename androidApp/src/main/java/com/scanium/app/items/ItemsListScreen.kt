@@ -23,8 +23,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -352,7 +353,7 @@ fun ItemsListScreen(
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer
             ) {
                 Icon(
-                    imageVector = Icons.Default.Chat,
+                    imageVector = Icons.Default.AutoAwesome,
                     contentDescription = "AI assistant"
                 )
             }
@@ -588,8 +589,9 @@ private fun ItemRow(
                         .background(
                             MaterialTheme.colorScheme.surfaceVariant,
                             shape = MaterialTheme.shapes.small
-                        ),
-                    contentScale = ContentScale.Crop
+                        )
+                        .clip(MaterialTheme.shapes.small),
+                    contentScale = ContentScale.Fit
                 )
             } ?: run {
                 // Placeholder if no thumbnail
