@@ -1,6 +1,7 @@
 package com.scanium.app.items
 
 import android.app.Activity
+import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.view.WindowManager
@@ -39,6 +40,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
@@ -47,6 +49,7 @@ import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftBuilder
 import com.scanium.app.ftue.tourTarget
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -138,6 +141,27 @@ fun ItemsListScreen(
                 lastDeletedItem = null
             }
         }
+    }
+
+    fun shareCsv(file: File) {
+        val authority = "${context.packageName}.fileprovider"
+        val uri = FileProvider.getUriForFile(context, authority, file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = ClipData.newUri(context.contentResolver, file.name, uri)
+        }
+        val chooser = Intent.createChooser(intent, "Share CSV")
+        if (context !is Activity) {
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { context.startActivity(chooser) }
+            .onFailure {
+                scope.launch {
+                    snackbarHostState.showSnackbar("Unable to share CSV")
+                }
+            }
     }
 
     LaunchedEffect(itemsViewModel) {
@@ -447,7 +471,10 @@ fun ItemsListScreen(
                             }
                             val result = csvExportWriter.writeToCache(context, payload)
                             val message = result.fold(
-                                onSuccess = { file -> "CSV saved to ${file.name}" },
+                                onSuccess = { file ->
+                                    shareCsv(file)
+                                    "CSV ready to share"
+                                },
                                 onFailure = { "Failed to export CSV" }
                             )
                             snackbarHostState.showSnackbar(message)
