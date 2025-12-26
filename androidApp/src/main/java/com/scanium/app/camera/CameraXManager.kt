@@ -20,6 +20,7 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.scanium.app.BuildConfig
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
@@ -99,7 +100,8 @@ class CameraXManager(
             minBoxArea = 0.0005f,         // Very small box area (0.05% of frame)
             maxFrameGap = 8,              // Allow 8 frames gap for matching (more forgiving)
             minMatchScore = 0.2f,         // Lower match score threshold for better spatial matching
-            expiryFrames = 15             // Keep candidates longer (15 frames)
+            expiryFrames = 15,            // Keep candidates longer (15 frames)
+            enableVerboseLogging = BuildConfig.DEBUG
         ),
         telemetry = telemetry
     )
