@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +32,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -57,26 +60,50 @@ fun SpotlightTourOverlay(
     onSkip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val overlayBoundsInWindow = remember { mutableStateOf<Rect?>(null) }
+
     // We use BoxWithConstraints to get the full screen size for clamping calculations.
     // The overlay is expected to be full-screen (edge-to-edge).
     // We do NOT apply windowInsetsPadding here, as targetBounds are captured in Window coordinates
     // (via boundsInWindow()), so we want our coordinate system to match the Window exactly.
     BoxWithConstraints(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .onGloballyPositioned { coordinates ->
+                overlayBoundsInWindow.value = coordinates.boundsInWindow()
+            }
     ) {
         val screenWidth = constraints.maxWidth
         val screenHeight = constraints.maxHeight
+        val overlayOffsetX = overlayBoundsInWindow.value?.left ?: 0f
+        val debugPaddingPx = with(LocalDensity.current) { 8.dp.toPx() }
+        val adjustedTargetBounds = targetBounds?.let { bounds ->
+            Rect(
+                left = bounds.left - overlayOffsetX,
+                top = bounds.top,
+                right = bounds.right - overlayOffsetX,
+                bottom = bounds.bottom
+            )
+        }
+        val spotlightTarget = adjustedTargetBounds?.let { buildSpotlightTarget(it) }
 
         // Debug logging (only in debug builds)
-        if (BuildConfig.DEBUG && targetBounds != null) {
-            Log.d("SpotlightOverlay", "Target bounds: $targetBounds")
+        if (BuildConfig.DEBUG && spotlightTarget != null) {
+            Log.d("SpotlightOverlay", "Target bounds: ${spotlightTarget.rect}")
             Log.d("SpotlightOverlay", "Screen size: $screenWidth x $screenHeight")
-            Log.d("SpotlightOverlay", "Target Center X: ${targetBounds.center.x}")
+            Log.d("SpotlightOverlay", "Overlay width: $screenWidth")
+            Log.d("SpotlightOverlay", "Target X: left=${spotlightTarget.left}, right=${spotlightTarget.right}, width=${spotlightTarget.width}, centerX=${spotlightTarget.centerX}")
+            val debugCutoutRect = calculateCutoutRect(
+                bounds = spotlightTarget.rect,
+                spotlightShape = step.spotlightShape,
+                paddingPx = debugPaddingPx
+            )
+            Log.d("SpotlightOverlay", "Cutout rect: left=${debugCutoutRect.left}, right=${debugCutoutRect.right}")
         }
 
         // Spotlight scrim with cutout
         SpotlightScrim(
-            targetBounds = targetBounds,
+            target = spotlightTarget,
             spotlightShape = step.spotlightShape,
             requiresUserAction = step.requiresUserAction
         )
@@ -84,7 +111,7 @@ fun SpotlightTourOverlay(
         // Tooltip bubble
         TooltipBubble(
             step = step,
-            targetBounds = targetBounds,
+            target = spotlightTarget,
             screenWidth = screenWidth,
             screenHeight = screenHeight,
             onNext = onNext,
@@ -93,21 +120,27 @@ fun SpotlightTourOverlay(
         )
         
         // Debug visualization (DEBUG only)
-        if (BuildConfig.DEBUG && targetBounds != null) {
+        if (BuildConfig.DEBUG && spotlightTarget != null) {
              Canvas(modifier = Modifier.fillMaxSize()) {
-                 // Draw target bounds outline
+                 val cutoutRect = calculateCutoutRect(
+                     bounds = spotlightTarget.rect,
+                     spotlightShape = step.spotlightShape,
+                     paddingPx = debugPaddingPx
+                 )
+
+                 // Draw cutout outline rectangle
                  drawRect(
                      color = Color.Green,
-                     topLeft = targetBounds.topLeft,
-                     size = targetBounds.size,
+                     topLeft = cutoutRect.topLeft,
+                     size = cutoutRect.size,
                      style = Stroke(width = 2.dp.toPx())
                  )
                  
                  // Draw vertical line at target center X
                  drawLine(
                      color = Color.Cyan,
-                     start = Offset(targetBounds.center.x, 0f),
-                     end = Offset(targetBounds.center.x, size.height),
+                     start = Offset(spotlightTarget.centerX, 0f),
+                     end = Offset(spotlightTarget.centerX, size.height),
                      strokeWidth = 2.dp.toPx()
                  )
              }
@@ -129,7 +162,7 @@ fun SpotlightTourOverlay(
  */
 @Composable
 private fun SpotlightScrim(
-    targetBounds: Rect?,
+    target: SpotlightTarget?,
     spotlightShape: SpotlightShape,
     requiresUserAction: Boolean
 ) {
@@ -159,13 +192,13 @@ private fun SpotlightScrim(
         drawRect(color = Color.Black.copy(alpha = 0.7f))
 
         // Cut out spotlight area using BlendMode.Clear
-        targetBounds?.let { bounds ->
+        target?.let { spotlightTarget ->
             when (spotlightShape) {
                 SpotlightShape.CIRCLE -> {
                     // Use center from bounds directly
-                    val centerX = bounds.center.x
-                    val centerY = bounds.center.y
-                    val radius = max(bounds.width, bounds.height) / 2 + spotlightPadding
+                    val centerX = spotlightTarget.centerX
+                    val centerY = spotlightTarget.rect.center.y
+                    val radius = max(spotlightTarget.width, spotlightTarget.rect.height) / 2 + spotlightPadding
 
                     drawCircle(
                         color = Color.Transparent,
@@ -176,18 +209,17 @@ private fun SpotlightScrim(
                 }
 
                 SpotlightShape.ROUNDED_RECT -> {
-                    // Expand bounds by padding symmetrically
-                    val cutoutLeft = bounds.left - spotlightPadding
-                    val cutoutTop = bounds.top - spotlightPadding
-                    val cutoutWidth = bounds.width + spotlightPadding * 2
-                    val cutoutHeight = bounds.height + spotlightPadding * 2
-                    
+                    val cutoutRect = calculateCutoutRect(
+                        bounds = spotlightTarget.rect,
+                        spotlightShape = spotlightShape,
+                        paddingPx = spotlightPadding
+                    )
                     val cornerRadius = CornerRadius(16.dp.toPx())
 
                     drawRoundRect(
                         color = Color.Transparent,
-                        topLeft = Offset(cutoutLeft, cutoutTop),
-                        size = Size(cutoutWidth, cutoutHeight),
+                        topLeft = cutoutRect.topLeft,
+                        size = cutoutRect.size,
                         cornerRadius = cornerRadius,
                         blendMode = BlendMode.Clear
                     )
@@ -211,7 +243,7 @@ private fun SpotlightScrim(
 @Composable
 private fun TooltipBubble(
     step: TourStep,
-    targetBounds: Rect?,
+    target: SpotlightTarget?,
     screenWidth: Int,
     screenHeight: Int,
     onNext: () -> Unit,
@@ -230,7 +262,7 @@ private fun TooltipBubble(
 
                 // Horizontal positioning:
                 // Anchor to target center X, then clamp within screen bounds
-                val targetCenterX = targetBounds?.center?.x ?: (screenWidth / 2f)
+                val targetCenterX = target?.centerX ?: (screenWidth / 2f)
                 val desiredLeft = targetCenterX - (width / 2)
                 
                 val marginPx = (16 * density.density).roundToInt()
@@ -241,7 +273,7 @@ private fun TooltipBubble(
 
                 // Vertical positioning:
                 // Based on target position relative to screen center
-                val y = calculateTooltipY(targetBounds, height, screenHeight.toFloat(), density)
+                val y = calculateTooltipY(target?.rect, height, screenHeight.toFloat(), density)
 
                 layout(width, height) {
                     placeable.place(x.roundToInt(), y.roundToInt())
@@ -336,5 +368,53 @@ private fun calculateTooltipY(
     } else {
         // Target in bottom half, show tooltip above
         targetBounds.top - tooltipHeight - tooltipMargin
+    }
+}
+
+private data class SpotlightTarget(
+    val rect: Rect,
+    val left: Float,
+    val right: Float,
+    val width: Float,
+    val centerX: Float
+)
+
+private fun buildSpotlightTarget(bounds: Rect): SpotlightTarget {
+    val left = bounds.left
+    val right = bounds.right
+    val width = bounds.width
+    val centerX = left + (width / 2f)
+    return SpotlightTarget(
+        rect = bounds,
+        left = left,
+        right = right,
+        width = width,
+        centerX = centerX
+    )
+}
+
+private fun calculateCutoutRect(
+    bounds: Rect,
+    spotlightShape: SpotlightShape,
+    paddingPx: Float
+): Rect {
+    return when (spotlightShape) {
+        SpotlightShape.CIRCLE -> {
+            val radius = max(bounds.width, bounds.height) / 2 + paddingPx
+            Rect(
+                left = bounds.center.x - radius,
+                top = bounds.center.y - radius,
+                right = bounds.center.x + radius,
+                bottom = bounds.center.y + radius
+            )
+        }
+        SpotlightShape.ROUNDED_RECT -> {
+            Rect(
+                left = bounds.left - paddingPx,
+                top = bounds.top - paddingPx,
+                right = bounds.right + paddingPx,
+                bottom = bounds.bottom + paddingPx
+            )
+        }
     }
 }
