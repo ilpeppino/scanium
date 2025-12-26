@@ -9,6 +9,7 @@ import com.scanium.app.ml.DetectionResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Manages overlay tracks for camera detection overlays.
@@ -37,7 +38,7 @@ class OverlayTrackManager(
     }
 
     // Overlay state
-    private val _overlayTracks = MutableStateFlow<List<OverlayTrack>>(emptyList())
+    private val _overlayTracks = MutableStateFlow<List<OverlayTrack>>(CopyOnWriteArrayList())
     val overlayTracks: StateFlow<List<OverlayTrack>> = _overlayTracks.asStateFlow()
 
     // Internal caches
@@ -72,7 +73,7 @@ class OverlayTrackManager(
      * Clear all overlay state.
      */
     fun clear() {
-        _overlayTracks.value = emptyList()
+        _overlayTracks.value = CopyOnWriteArrayList()
         overlayReadyStates.clear()
         overlayResolutionCache.clear()
         lastOverlayDetections = emptyList()
@@ -141,6 +142,6 @@ class OverlayTrackManager(
             }
         }
 
-        _overlayTracks.value = mapped
+        _overlayTracks.value = CopyOnWriteArrayList(mapped)
     }
 }
