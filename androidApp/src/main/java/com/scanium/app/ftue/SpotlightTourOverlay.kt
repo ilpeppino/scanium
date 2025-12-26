@@ -19,6 +19,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -32,12 +34,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
+import com.scanium.app.data.SettingsRepository
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -60,7 +64,10 @@ fun SpotlightTourOverlay(
     onSkip: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val overlayBoundsInWindow = remember { mutableStateOf<Rect?>(null) }
+    val overlayTopLeftInWindow = remember { mutableStateOf<Offset?>(null) }
+    val context = LocalContext.current
+    val settingsRepository = remember { SettingsRepository(context) }
+    val showDebugBounds by settingsRepository.devShowFtueBoundsFlow.collectAsState(initial = false)
 
     // We use BoxWithConstraints to get the full screen size for clamping calculations.
     // The overlay is expected to be full-screen (edge-to-edge).
@@ -70,25 +77,26 @@ fun SpotlightTourOverlay(
         modifier = modifier
             .fillMaxSize()
             .onGloballyPositioned { coordinates ->
-                overlayBoundsInWindow.value = coordinates.boundsInWindow()
+                overlayTopLeftInWindow.value = coordinates.positionInWindow()
             }
     ) {
         val screenWidth = constraints.maxWidth
         val screenHeight = constraints.maxHeight
-        val overlayOffsetX = overlayBoundsInWindow.value?.left ?: 0f
+        val overlayOffset = overlayTopLeftInWindow.value
         val debugPaddingPx = with(LocalDensity.current) { 8.dp.toPx() }
         val adjustedTargetBounds = targetBounds?.let { bounds ->
+            val offset = overlayOffset ?: return@let null
             Rect(
-                left = bounds.left - overlayOffsetX,
-                top = bounds.top,
-                right = bounds.right - overlayOffsetX,
-                bottom = bounds.bottom
+                left = bounds.left - offset.x,
+                top = bounds.top - offset.y,
+                right = bounds.right - offset.x,
+                bottom = bounds.bottom - offset.y
             )
         }
         val spotlightTarget = adjustedTargetBounds?.let { buildSpotlightTarget(it) }
 
         // Debug logging (only in debug builds)
-        if (BuildConfig.DEBUG && spotlightTarget != null) {
+        if (BuildConfig.DEBUG && showDebugBounds && spotlightTarget != null) {
             Log.d("SpotlightOverlay", "Target bounds: ${spotlightTarget.rect}")
             Log.d("SpotlightOverlay", "Screen size: $screenWidth x $screenHeight")
             Log.d("SpotlightOverlay", "Overlay width: $screenWidth")
@@ -120,7 +128,7 @@ fun SpotlightTourOverlay(
         )
         
         // Debug visualization (DEBUG only)
-        if (BuildConfig.DEBUG && spotlightTarget != null) {
+        if (BuildConfig.DEBUG && showDebugBounds && spotlightTarget != null) {
              Canvas(modifier = Modifier.fillMaxSize()) {
                  val cutoutRect = calculateCutoutRect(
                      bounds = spotlightTarget.rect,
@@ -130,7 +138,7 @@ fun SpotlightTourOverlay(
 
                  // Draw cutout outline rectangle
                  drawRect(
-                     color = Color.Green,
+                     color = Color.White.copy(alpha = 0.7f),
                      topLeft = cutoutRect.topLeft,
                      size = cutoutRect.size,
                      style = Stroke(width = 2.dp.toPx())
@@ -138,7 +146,7 @@ fun SpotlightTourOverlay(
                  
                  // Draw vertical line at target center X
                  drawLine(
-                     color = Color.Cyan,
+                     color = Color.White.copy(alpha = 0.7f),
                      start = Offset(spotlightTarget.centerX, 0f),
                      end = Offset(spotlightTarget.centerX, size.height),
                      strokeWidth = 2.dp.toPx()
