@@ -27,6 +27,9 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.*
@@ -46,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
-import com.scanium.app.model.ImageRef
+import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.listing.ListingDraft
@@ -86,7 +89,8 @@ fun ItemsListScreen(
     var selectionMode by remember { mutableStateOf(false) }
     var lastDeletedItem by remember { mutableStateOf<ScannedItem?>(null) }
     var lastDeletedWasSelected by remember { mutableStateOf(false) }
-    var showExportDialog by remember { mutableStateOf(false) }
+    var showShareMenu by remember { mutableStateOf(false) }
+    var isExporting by remember { mutableStateOf(false) }
     val exportPayload by itemsViewModel.exportPayload.collectAsState()
 
     val context = LocalContext.current
@@ -209,6 +213,104 @@ fun ItemsListScreen(
                 scope.launch {
                     snackbarHostState.showSnackbar("Unable to share ZIP")
                 }
+            }
+    }
+
+    /**
+     * Share selected items via system share sheet.
+     * Shares images if available, otherwise shares a text summary.
+     */
+    suspend fun shareItems(selectedItems: List<ScannedItem>) {
+        if (selectedItems.isEmpty()) {
+            snackbarHostState.showSnackbar("Select items to share")
+            return
+        }
+
+        val authority = "${context.packageName}.fileprovider"
+        val shareDir = File(context.cacheDir, "share_items").apply {
+            if (!exists()) mkdirs()
+            // Clean old files
+            listFiles()?.forEach { it.delete() }
+        }
+
+        // Collect image URIs from items
+        val imageUris = mutableListOf<Uri>()
+        selectedItems.forEachIndexed { index, item ->
+            val imageRef = item.thumbnailRef ?: item.thumbnail
+            when (imageRef) {
+                is ImageRef.CacheKey -> {
+                    // Copy from cache to share directory
+                    val cacheFile = File(context.cacheDir, imageRef.key)
+                    if (cacheFile.exists()) {
+                        val shareFile = File(shareDir, "item_${index + 1}.jpg")
+                        cacheFile.copyTo(shareFile, overwrite = true)
+                        val uri = FileProvider.getUriForFile(context, authority, shareFile)
+                        imageUris.add(uri)
+                    }
+                }
+                is ImageRef.Bytes -> {
+                    // Write bytes to share file
+                    val shareFile = File(shareDir, "item_${index + 1}.jpg")
+                    shareFile.writeBytes(imageRef.bytes)
+                    val uri = FileProvider.getUriForFile(context, authority, shareFile)
+                    imageUris.add(uri)
+                }
+                else -> { /* No image available */ }
+            }
+        }
+
+        // Build text summary
+        val textSummary = buildString {
+            appendLine("Scanium Items (${selectedItems.size})")
+            appendLine()
+            selectedItems.forEachIndexed { index, item ->
+                appendLine("${index + 1}. ${item.displayLabel}")
+                if (item.formattedPriceRange.isNotBlank()) {
+                    appendLine("   Price: ${item.formattedPriceRange}")
+                }
+                item.labelText?.let { label ->
+                    appendLine("   Category: $label")
+                }
+            }
+        }
+
+        val intent = if (imageUris.size > 1) {
+            // Multiple images: use ACTION_SEND_MULTIPLE
+            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = "image/*"
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(imageUris))
+                putExtra(Intent.EXTRA_TEXT, textSummary)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                // Grant permissions for all URIs
+                clipData = ClipData.newRawUri("", imageUris.first()).apply {
+                    imageUris.drop(1).forEach { addItem(ClipData.Item(it)) }
+                }
+            }
+        } else if (imageUris.size == 1) {
+            // Single image: use ACTION_SEND
+            Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_STREAM, imageUris.first())
+                putExtra(Intent.EXTRA_TEXT, textSummary)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newUri(context.contentResolver, "item", imageUris.first())
+            }
+        } else {
+            // No images: share text only
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, textSummary)
+            }
+        }
+
+        val chooser = Intent.createChooser(intent, "Share items")
+        if (context !is Activity) {
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        runCatching { context.startActivity(chooser) }
+            .onFailure {
+                snackbarHostState.showSnackbar("Unable to share items")
             }
     }
 
@@ -357,7 +459,7 @@ fun ItemsListScreen(
 
         // Overlay controls when items are selected
         if (selectionMode && selectedIds.isNotEmpty()) {
-            // AI Assistant button - bottom-right
+            // AI Assistant button - bottom-left
             FloatingActionButton(
                 onClick = {
                     val selected = selectedIds.toList()
@@ -368,7 +470,7 @@ fun ItemsListScreen(
                     }
                 },
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
+                    .align(Alignment.BottomStart)
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(16.dp)
                     .then(
@@ -387,61 +489,135 @@ fun ItemsListScreen(
                 )
             }
 
-            // Export CTA
+            // Share button with dropdown menu - bottom-right
             Box(
                 modifier = Modifier
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.BottomEnd)
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
-                    .fillMaxWidth(0.65f)
+                    .padding(16.dp)
+                    .then(
+                        if (tourViewModel != null) {
+                            Modifier.tourTarget("items_action_fab", tourViewModel)
+                        } else {
+                            Modifier
+                        }
+                    )
             ) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shadowElevation = 0.dp,
-                    tonalElevation = 0.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (tourViewModel != null) {
-                                Modifier.tourTarget("items_action_fab", tourViewModel)
-                            } else {
-                                Modifier
-                            }
-                        )
+                FloatingActionButton(
+                    onClick = { showShareMenu = true },
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                val payload = itemsViewModel.createExportPayload(selectedIds.toList())
-                                if (payload != null) {
-                                    showExportDialog = true
-                                } else {
-                                    scope.launch { snackbarHostState.showSnackbar("Select items to export") }
-                                }
-                            }
-                        ) {
-                            Text("Export")
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = {},
-                            enabled = false
-                        ) {
-                            Text("Marketplace integrations (coming later)")
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Use items elsewhere",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (isExporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share"
                         )
                     }
+                }
+
+                // Share menu dropdown
+                DropdownMenu(
+                    expanded = showShareMenu,
+                    onDismissRequest = { showShareMenu = false }
+                ) {
+                    // Share... (system share sheet)
+                    DropdownMenuItem(
+                        text = { Text("Share…") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            showShareMenu = false
+                            val selectedItems = items.filter { selectedIds.contains(it.id) }
+                            scope.launch {
+                                isExporting = true
+                                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    shareItems(selectedItems)
+                                }
+                                isExporting = false
+                            }
+                        }
+                    )
+
+                    HorizontalDivider()
+
+                    // Export CSV
+                    DropdownMenuItem(
+                        text = { Text("Export CSV") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.Description,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            showShareMenu = false
+                            val payload = itemsViewModel.createExportPayload(selectedIds.toList())
+                            if (payload == null) {
+                                scope.launch { snackbarHostState.showSnackbar("Select items to export") }
+                                return@DropdownMenuItem
+                            }
+                            scope.launch {
+                                isExporting = true
+                                val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    csvExportWriter.writeToCache(context, payload)
+                                }
+                                isExporting = false
+                                val message = result.fold(
+                                    onSuccess = { file ->
+                                        shareCsv(file)
+                                        "CSV ready to share"
+                                    },
+                                    onFailure = { "Failed to export CSV" }
+                                )
+                                snackbarHostState.showSnackbar(message)
+                            }
+                        }
+                    )
+
+                    // Export ZIP
+                    DropdownMenuItem(
+                        text = { Text("Export ZIP") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.FolderZip,
+                                contentDescription = null
+                            )
+                        },
+                        onClick = {
+                            showShareMenu = false
+                            val payload = itemsViewModel.createExportPayload(selectedIds.toList())
+                            if (payload == null) {
+                                scope.launch { snackbarHostState.showSnackbar("Select items to export") }
+                                return@DropdownMenuItem
+                            }
+                            scope.launch {
+                                isExporting = true
+                                val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                    zipExportWriter.writeToCache(context, payload)
+                                }
+                                isExporting = false
+                                val message = result.fold(
+                                    onSuccess = { file ->
+                                        shareZip(file)
+                                        "ZIP ready to share"
+                                    },
+                                    onFailure = { "Failed to export ZIP" }
+                                )
+                                snackbarHostState.showSnackbar(message)
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -490,75 +666,8 @@ fun ItemsListScreen(
             onDismiss = { previewDraft = null }
         )
     }
-
-    if (showExportDialog) {
-        val exportCount = exportPayload?.items?.size ?: selectedIds.size
-        AlertDialog(
-            onDismissRequest = { showExportDialog = false },
-            title = { Text("Export items") },
-            text = {
-                Text(
-                    "Selected $exportCount item${if (exportCount == 1) "" else "s"}."
-                )
-            },
-            confirmButton = {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(
-                        onClick = {
-                            showExportDialog = false
-                            scope.launch {
-                                val payload = exportPayload
-                                if (payload == null) {
-                                    snackbarHostState.showSnackbar("Select items to export")
-                                    return@launch
-                                }
-                                val result = csvExportWriter.writeToCache(context, payload)
-                                val message = result.fold(
-                                    onSuccess = { file ->
-                                        shareCsv(file)
-                                        "CSV ready to share"
-                                    },
-                                    onFailure = { "Failed to export CSV" }
-                                )
-                                snackbarHostState.showSnackbar(message)
-                            }
-                        }
-                    ) {
-                        Text("CSV")
-                    }
-                    TextButton(
-                        onClick = {
-                            showExportDialog = false
-                            scope.launch {
-                                val payload = exportPayload
-                                if (payload == null) {
-                                    snackbarHostState.showSnackbar("Select items to export")
-                                    return@launch
-                                }
-                                val result = zipExportWriter.writeToCache(context, payload)
-                                val message = result.fold(
-                                    onSuccess = { file ->
-                                        shareZip(file)
-                                        "ZIP ready to share"
-                                    },
-                                    onFailure = { "Failed to export ZIP" }
-                                )
-                                snackbarHostState.showSnackbar(message)
-                            }
-                        }
-                    ) {
-                        Text("ZIP (CSV + photos)")
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExportDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 }
+
 /**
  * Single item row in the list.
  */
