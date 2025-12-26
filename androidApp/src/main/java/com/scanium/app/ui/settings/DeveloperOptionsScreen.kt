@@ -37,6 +37,7 @@ fun DeveloperOptionsScreen(
     val forceFtueTour by viewModel.forceFtueTour.collectAsState()
     val autoRefreshEnabled by viewModel.autoRefreshEnabled.collectAsState()
     val copyResult by viewModel.copyResult.collectAsState()
+    val allowScreenshots by viewModel.allowScreenshots.collectAsState()
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -74,6 +75,18 @@ fun DeveloperOptionsScreen(
                 onRefresh = { viewModel.refreshDiagnostics() },
                 onCopyDiagnostics = { viewModel.copyDiagnosticsToClipboard() },
                 onAutoRefreshChange = { viewModel.setAutoRefreshEnabled(it) }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            SettingsSectionTitle("Diagnostics & Security")
+
+            SettingsSwitchItem(
+                title = "Allow screenshots",
+                subtitle = if (allowScreenshots) "Screenshots allowed" else "Screenshots blocked (FLAG_SECURE)",
+                icon = Icons.Default.ScreenLockPortrait,
+                checked = allowScreenshots,
+                onCheckedChange = { viewModel.setAllowScreenshots(it) }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
