@@ -180,6 +180,15 @@ fun ItemsListScreen(
         }
     }
 
+    LaunchedEffect(itemsViewModel) {
+        itemsViewModel.persistenceAlerts.collect { alert ->
+            snackbarHostState.showSnackbar(
+                message = alert.message,
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
+
     fun shareZip(file: File) {
         val authority = "${context.packageName}.fileprovider"
         val uri = FileProvider.getUriForFile(context, authority, file)

@@ -27,6 +27,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 
 /**
  * ViewModel for managing detected items across the app.
@@ -122,6 +124,10 @@ class ItemsViewModel(
     /** Alerts for cloud classification errors */
     val cloudClassificationAlerts: SharedFlow<CloudClassificationAlert> = classificationCoordinator.cloudClassificationAlerts
 
+    /** Alerts for persistence errors */
+    private val _persistenceAlerts = MutableSharedFlow<PersistenceAlert>(extraBufferCapacity = 1)
+    val persistenceAlerts: SharedFlow<PersistenceAlert> = _persistenceAlerts.asSharedFlow()
+
     /** Current similarity threshold for aggregation */
     val similarityThreshold: StateFlow<Float> = stateManager.similarityThreshold
 
@@ -140,6 +146,18 @@ class ItemsViewModel(
         }
 
         listingManager.setItemsReference(stateManager.items)
+
+        viewModelScope.launch {
+            itemsStore.errors.collect { error ->
+                _persistenceAlerts.emit(
+                    PersistenceAlert(
+                        message = "Unable to save scanned items. Please try again.",
+                        operation = error.operation,
+                        throwable = error.throwable
+                    )
+                )
+            }
+        }
 
         Log.i(TAG, "ItemsViewModel initialized with managers")
     }
@@ -339,4 +357,13 @@ class ItemsViewModel(
 data class CloudClassificationAlert(
     val itemId: String,
     val message: String
+)
+
+/**
+ * Alert data class for persistence errors.
+ */
+data class PersistenceAlert(
+    val message: String,
+    val operation: String,
+    val throwable: Throwable
 )
