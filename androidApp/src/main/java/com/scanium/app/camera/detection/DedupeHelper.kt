@@ -25,6 +25,9 @@ class DedupeHelper(
     /** Recently seen items, keyed by generated dedupe key */
     private val recentlySeen = mutableMapOf<String, SeenEntry>()
 
+    /** Recently seen barcodes, keyed by rawValue for value-based deduplication */
+    private val recentlySeenBarcodes = mutableMapOf<String, BarcodeSeenEntry>()
+
     /** Lock for thread-safe access */
     private val lock = Any()
 
@@ -188,6 +191,131 @@ class DedupeHelper(
         }
     }
 
+    // ==================== Barcode-Specific Deduplication ====================
+
+    /**
+     * Check if a barcode with this rawValue has been seen recently.
+     * Uses value-based deduplication (not spatial) for barcodes.
+     *
+     * @param rawValue The raw barcode value
+     * @param format The barcode format (e.g., FORMAT_QR_CODE, FORMAT_EAN_13)
+     * @param currentTimeMs Current timestamp
+     * @return true if this barcode is a duplicate that should be skipped
+     */
+    fun isBarcodeDuplicate(
+        rawValue: String,
+        format: Int,
+        currentTimeMs: Long = SystemClock.elapsedRealtime()
+    ): Boolean {
+        synchronized(lock) {
+            // Clean expired barcode entries periodically
+            if (shouldCleanup()) {
+                cleanupExpiredBarcodes(currentTimeMs)
+            }
+
+            val expiryWindowMs = config.expiryWindowMs[DetectorType.BARCODE]
+                ?: config.defaultExpiryWindowMs
+
+            val existing = recentlySeenBarcodes[rawValue]
+            if (existing != null) {
+                // Check if not expired
+                if (currentTimeMs - existing.lastSeenMs <= expiryWindowMs) {
+                    // Update last seen time
+                    recentlySeenBarcodes[rawValue] = existing.copy(
+                        lastSeenMs = currentTimeMs,
+                        seenCount = existing.seenCount + 1
+                    )
+                    android.util.Log.d(TAG, "[DEDUPE_HIT] Barcode duplicate: value=$rawValue, seenCount=${existing.seenCount + 1}")
+                    return true
+                }
+            }
+
+            return false
+        }
+    }
+
+    /**
+     * Record a barcode as seen.
+     * Call this after successfully processing a barcode detection.
+     *
+     * @param rawValue The raw barcode value
+     * @param format The barcode format
+     * @param itemId Optional ID of the created ScannedItem
+     * @param currentTimeMs Current timestamp
+     */
+    fun recordBarcodeSeen(
+        rawValue: String,
+        format: Int,
+        itemId: String? = null,
+        currentTimeMs: Long = SystemClock.elapsedRealtime()
+    ) {
+        synchronized(lock) {
+            val existing = recentlySeenBarcodes[rawValue]
+
+            recentlySeenBarcodes[rawValue] = BarcodeSeenEntry(
+                rawValue = rawValue,
+                format = format,
+                itemId = itemId,
+                firstSeenMs = existing?.firstSeenMs ?: currentTimeMs,
+                lastSeenMs = currentTimeMs,
+                seenCount = (existing?.seenCount ?: 0) + 1
+            )
+            android.util.Log.d(TAG, "[BARCODE_SEEN] Recorded barcode: value=$rawValue, format=$format")
+        }
+    }
+
+    /**
+     * Check and record barcode in one atomic operation.
+     *
+     * @param rawValue The raw barcode value
+     * @param format The barcode format
+     * @param itemId Optional ID for the ScannedItem
+     * @param currentTimeMs Current timestamp
+     * @return true if this is a NEW barcode (not a duplicate), false if duplicate
+     */
+    fun checkAndRecordBarcode(
+        rawValue: String,
+        format: Int,
+        itemId: String? = null,
+        currentTimeMs: Long = SystemClock.elapsedRealtime()
+    ): Boolean {
+        synchronized(lock) {
+            val isDupe = isBarcodeDuplicate(rawValue, format, currentTimeMs)
+            if (!isDupe) {
+                recordBarcodeSeen(rawValue, format, itemId, currentTimeMs)
+                android.util.Log.d(TAG, "[BARCODE_NEW] New barcode detected: value=$rawValue, format=$format")
+            }
+            return !isDupe
+        }
+    }
+
+    /**
+     * Remove expired barcode entries.
+     */
+    private fun cleanupExpiredBarcodes(currentTimeMs: Long) {
+        val expiryWindowMs = config.expiryWindowMs[DetectorType.BARCODE]
+            ?: config.defaultExpiryWindowMs
+
+        val iterator = recentlySeenBarcodes.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next().value
+            if (currentTimeMs - entry.lastSeenMs > expiryWindowMs) {
+                iterator.remove()
+            }
+        }
+    }
+
+    /**
+     * Reset barcode deduplication state.
+     */
+    fun resetBarcodes() {
+        synchronized(lock) {
+            recentlySeenBarcodes.clear()
+        }
+    }
+
+    // ==================== General Reset Methods ====================
+
     /**
      * Reset deduplication state for a specific detector.
      */
@@ -208,6 +336,7 @@ class DedupeHelper(
     fun resetAll() {
         synchronized(lock) {
             recentlySeen.clear()
+            recentlySeenBarcodes.clear()
             operationCount = 0
         }
     }
@@ -222,7 +351,8 @@ class DedupeHelper(
             }
             return DedupeStats(
                 totalTracked = recentlySeen.size,
-                trackedByType = byType
+                trackedByType = byType,
+                trackedBarcodes = recentlySeenBarcodes.size
             )
         }
     }
@@ -266,9 +396,22 @@ private data class SeenEntry(
 )
 
 /**
+ * Entry tracking a recently seen barcode by its raw value.
+ */
+private data class BarcodeSeenEntry(
+    val rawValue: String,
+    val format: Int,
+    val itemId: String?,
+    val firstSeenMs: Long,
+    val lastSeenMs: Long,
+    val seenCount: Int
+)
+
+/**
  * Deduplication statistics for debugging.
  */
 data class DedupeStats(
     val totalTracked: Int,
-    val trackedByType: Map<DetectorType, Int>
+    val trackedByType: Map<DetectorType, Int>,
+    val trackedBarcodes: Int = 0
 )
