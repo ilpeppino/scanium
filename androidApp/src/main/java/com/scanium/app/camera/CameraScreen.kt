@@ -163,6 +163,7 @@ fun CameraScreen(
     val queueDepth by ClassificationMetrics.queueDepth.collectAsState()
     val overlayTracks by itemsViewModel.overlayTracks.collectAsState()
     val latestQrUrl by itemsViewModel.latestQrUrl.collectAsState()
+    val documentCandidateState by cameraManager.documentCandidateState.collectAsState()
     
     // Animation state for newly added items
     var lastAddedItem by remember { mutableStateOf<com.scanium.app.items.ScannedItem?>(null) }
@@ -396,6 +397,15 @@ fun CameraScreen(
                         imageSize = imageSize,
                         previewSize = previewSize
                     )
+                }
+
+                documentCandidateState?.let { candidateState ->
+                    if (previewSize.width > 0 && previewSize.height > 0) {
+                        DocumentAlignmentOverlay(
+                            candidateState = candidateState,
+                            imageSize = imageSize
+                        )
+                    }
                 }
 
                 // Cloud configuration status banner
