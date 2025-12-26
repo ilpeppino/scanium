@@ -1,11 +1,13 @@
 package com.scanium.app.items
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.aggregation.AggregationPresets
 import com.scanium.app.aggregation.AggregationStats
 import com.scanium.app.camera.OverlayTrack
+import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.items.classification.ItemClassificationCoordinator
 import com.scanium.app.items.listing.ListingStatusManager
 import com.scanium.app.items.overlay.OverlayTrackManager
@@ -24,12 +26,15 @@ import com.scanium.shared.core.models.pricing.PriceEstimatorProvider
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * ViewModel for managing detected items across the app.
@@ -63,6 +68,7 @@ class ItemsViewModel(
 ) : ViewModel() {
     companion object {
         private const val TAG = "ItemsViewModel"
+        private const val QR_URL_TTL_MS = 2000L
     }
 
     // ==================== Managers ====================
@@ -118,6 +124,14 @@ class ItemsViewModel(
 
     /** Current overlay tracks for camera detection visualization */
     val overlayTracks: StateFlow<List<OverlayTrack>> = overlayManager.overlayTracks
+
+    /** Latest detected QR URL (if any) */
+    private val _latestQrUrl = MutableStateFlow<String?>(null)
+    val latestQrUrl: StateFlow<String?> = _latestQrUrl
+
+    /** Timestamp of the last detected QR URL */
+    private val _lastQrSeenTimestampMs = MutableStateFlow(0L)
+    val lastQrSeenTimestampMs: StateFlow<Long> = _lastQrSeenTimestampMs
 
     /** Events emitted when new items are added (for animations) */
     val itemAddedEvents: SharedFlow<ScannedItem> = stateManager.itemAddedEvents
@@ -229,6 +243,16 @@ class ItemsViewModel(
      */
     fun updateOverlayDetections(detections: List<DetectionResult>) {
         overlayManager.updateOverlayDetections(detections)
+    }
+
+    /**
+     * Update QR URL overlay state based on detection router events.
+     */
+    fun onDetectionEvent(event: DetectionEvent) {
+        when (event) {
+            is DetectionEvent.BarcodeDetected -> updateQrUrl(event)
+            else -> Unit
+        }
     }
 
     // ==================== Export Operations ====================
@@ -349,6 +373,34 @@ class ItemsViewModel(
         super.onCleared()
         stateManager.disableTelemetry()
         Log.i(TAG, "ItemsViewModel cleared")
+    }
+
+    private var qrUrlClearJob: Job? = null
+
+    private fun updateQrUrl(event: DetectionEvent.BarcodeDetected) {
+        val url = event.items.asSequence()
+            .mapNotNull { it.barcodeValue }
+            .mapNotNull(::parseUrl)
+            .lastOrNull()
+            ?: return
+
+        _latestQrUrl.value = url
+        _lastQrSeenTimestampMs.value = event.timestampMs
+
+        qrUrlClearJob?.cancel()
+        qrUrlClearJob = viewModelScope.launch {
+            delay(QR_URL_TTL_MS)
+            val lastSeen = _lastQrSeenTimestampMs.value
+            if (System.currentTimeMillis() - lastSeen >= QR_URL_TTL_MS) {
+                _latestQrUrl.value = null
+            }
+        }
+    }
+
+    private fun parseUrl(value: String): String? {
+        val uri = runCatching { Uri.parse(value) }.getOrNull() ?: return null
+        val scheme = uri.scheme?.lowercase(Locale.US)
+        return if (scheme == "http" || scheme == "https") value else null
     }
 }
 

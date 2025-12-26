@@ -18,6 +18,7 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
@@ -50,6 +51,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -160,6 +162,7 @@ fun CameraScreen(
     val lastLatency by ClassificationMetrics.lastLatencyMs.collectAsState()
     val queueDepth by ClassificationMetrics.queueDepth.collectAsState()
     val overlayTracks by itemsViewModel.overlayTracks.collectAsState()
+    val latestQrUrl by itemsViewModel.latestQrUrl.collectAsState()
     
     // Animation state for newly added items
     var lastAddedItem by remember { mutableStateOf<com.scanium.app.items.ScannedItem?>(null) }
@@ -431,6 +434,19 @@ fun CameraScreen(
                     )
                 }
 
+                latestQrUrl?.let { url ->
+                    QrUrlOverlay(
+                        url = url,
+                        onOpen = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 120.dp)
+                    )
+                }
+
                 // Overlay UI
                 CameraOverlay(
                     itemsCount = itemsCount.size,
@@ -506,6 +522,9 @@ fun CameraScreen(
                                 onDetectionResult = { detections ->
                                     itemsViewModel.updateOverlayDetections(detections)
                                 },
+                                onDetectionEvent = { event ->
+                                    itemsViewModel.onDetectionEvent(event)
+                                },
                                 onFrameSize = { size ->
                                     imageSize = size
                                 }
@@ -557,6 +576,9 @@ fun CameraScreen(
                                 },
                                 onDetectionResult = { detections ->
                                     itemsViewModel.updateOverlayDetections(detections)
+                                },
+                                onDetectionEvent = { event ->
+                                    itemsViewModel.onDetectionEvent(event)
                                 },
                                 onFrameSize = { size ->
                                     imageSize = size
@@ -714,6 +736,31 @@ private fun CameraPreview(
         } else {
             onBindingFailed(result.error)
         }
+    }
+}
+
+@Composable
+private fun QrUrlOverlay(
+    url: String,
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .clickable(onClick = onOpen)
+            .padding(horizontal = 16.dp),
+        shape = MaterialTheme.shapes.small,
+        color = Color.Black.copy(alpha = 0.7f),
+        tonalElevation = 2.dp
+    ) {
+        Text(
+            text = url,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        )
     }
 }
 
