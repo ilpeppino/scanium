@@ -139,6 +139,7 @@ See also `hooks/README.md` for pre-push validation setup.
 
 ## Debugging tips
 
+- **Developer Options**: Access Settings → Developer Options for System Health diagnostics (backend, network, permissions). See section below.
 - Use Logcat filters for tags like `CameraXManager`, `ObjectDetectorClient`, `CloudClassifier`, `ItemsViewModel`.
 - **New viewport/filtering logs:** Search for `[VIEWPORT]`, `[CROP_RECT]`, `[EDGE_FILTER]` tags.
 - **Deduplication logs:** Search for "SPATIAL-TEMPORAL MERGE" in `ItemAggregator` output.
@@ -146,6 +147,92 @@ See also `hooks/README.md` for pre-push validation setup.
 - Detection overlays live in `androidApp/src/main/java/com/scanium/app/camera/DetectionOverlay.kt`; tweak drawing there.
 - Aggregation/tracking behavior is covered by tests in `androidApp/src/test/...` and `core-tracking/src/test/...`; add golden tests when changing heuristics.
 - For ML Kit analyzer crashes, enable verbose logs in the respective client classes under `androidApp/src/main/java/com/scanium/app/ml/`.
+
+---
+
+## Developer Options (Debug Builds)
+
+Developer Options provides runtime diagnostics for troubleshooting connectivity, permissions, and device capabilities.
+
+### Accessing Developer Options
+
+1. Launch the app (debug build)
+2. Navigate to **Settings** (gear icon on camera screen)
+3. Tap **Developer Options** in the developer section
+
+### System Health Panel
+
+The System Health panel displays real-time diagnostics:
+
+| Check | What It Tests | Status Values |
+|-------|---------------|---------------|
+| **Backend** | Pings `/health` endpoint | Healthy (200), Degraded (401-403), Down (5xx/timeout) |
+| **Network** | Network connectivity | Transport type (WiFi/Cellular/VPN), Metered status |
+| **Permissions** | Camera, Microphone | Granted / Not granted |
+| **Capabilities** | Speech recognition, TTS, Camera lenses | Available / Unavailable |
+| **App Config** | Version, build, device, SDK, base URL | Informational |
+
+### Features
+
+- **Auto-refresh**: Toggle to refresh diagnostics every 15 seconds
+- **Manual refresh**: Tap refresh button for immediate update
+- **Copy diagnostics**: Copy plaintext summary to clipboard for sharing
+- **Developer Mode**: Toggle to unlock all features for testing
+- **FTUE Tour**: Reset or force-enable first-time experience tour
+- **Crash Test**: Send test exceptions to Sentry
+
+### Interpreting Results
+
+**Backend "Down" status:**
+- Check if backend is running: `scripts/backend/start-dev.sh`
+- Verify base URL in Settings matches ngrok URL
+- Check network connectivity (WiFi/Cellular)
+
+**Permissions not granted:**
+- App will prompt on first use
+- Go to Android Settings → Apps → Scanium → Permissions
+
+**Capabilities unavailable:**
+- Speech recognition requires Google app installed
+- Camera lenses depend on device hardware
+
+### Copying Diagnostics for Support
+
+1. Open Developer Options
+2. Tap the copy button (clipboard icon)
+3. Paste in support tickets, Slack, or email
+
+Example output:
+```
+=== Scanium Diagnostics ===
+Generated: 2025-12-26 10:30:45
+
+--- App Info ---
+Version: 1.0.0 (123)
+Build: debug
+Device: Google Pixel 7
+Android: 14 (SDK 34)
+
+--- Backend ---
+Status: HEALTHY
+Detail: OK (200)
+Latency: 145ms
+Base URL: https://abc123.ngrok-free.dev
+
+--- Network ---
+Connected: Yes
+Transport: WIFI
+Metered: No
+
+--- Permissions ---
+Camera: Granted
+Microphone: Granted
+
+--- Capabilities ---
+Speech Recognition: Available
+Text-to-Speech: Available
+Camera Lenses: Back, Front
+```
 
 ---
 

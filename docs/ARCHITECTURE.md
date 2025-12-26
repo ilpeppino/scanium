@@ -89,6 +89,37 @@ Single source of truth for how Scanium is structured and how we evolve it. Scani
 
 ---
 
+### Developer Options & Diagnostics (Debug-only)
+
+The `androidApp/diagnostics/` package provides runtime health checks and system diagnostics, accessible via Developer Options in Settings:
+
+**Components:**
+- `DiagnosticsRepository`: Performs health checks (backend /health endpoint, network status, permissions, capabilities) and generates clipboard-ready summaries
+- `DeveloperOptionsViewModel`: Manages diagnostics state, auto-refresh (15s interval), and developer settings
+- `DeveloperOptionsScreen`: Material 3 UI with System Health panel, status indicators, and debug controls
+
+**Diagnostics State:**
+```kotlin
+data class DiagnosticsState(
+    backendHealth: HealthCheckResult,    // Backend /health endpoint status + latency
+    networkStatus: NetworkStatus,         // WiFi/Cellular/VPN, metered status
+    permissions: List<PermissionStatus>,  // Camera, Microphone grant status
+    capabilities: List<CapabilityStatus>, // Speech recognition, TTS, camera lenses
+    appConfig: AppConfigSnapshot          // Version, build type, device, base URL
+)
+```
+
+**Features:**
+- Real-time backend connectivity check with latency display
+- Network transport detection (WiFi/Cellular/Ethernet/VPN)
+- Permission and capability status indicators
+- App configuration snapshot (version, device, SDK, base URL)
+- Auto-refresh toggle (15-second interval)
+- Copy diagnostics summary to clipboard
+- FTUE tour controls and crash test triggers
+
+---
+
 ## Target Architecture (layers)
 - **Presentation (platform-specific):** Compose UI (Android), future SwiftUI (iOS). Pure UI + state wiring only.
 - **Platform Scanning Layer:** Camera + on-device detectors; emits portable `RawDetection` + thumbnails. Android = CameraX/ML Kit; iOS (future) = AVFoundation/Apple Vision.
@@ -430,7 +461,9 @@ curl http://localhost:9009/ready            # Mimir
 - ✅ Backend API server with PostgreSQL (done)
 - ✅ Observability stack with LGTM + Alloy (done)
 - ✅ Integrated dev startup workflow (done)
-- Harden shared contracts and config (done)
+- ✅ Harden shared contracts and config (done)
+- ✅ Developer Options with System Health diagnostics (done)
+- ✅ WCAG 2.1 accessibility compliance (done)
 - Adapt orchestrator to shared contracts; add mocks/tests
 - Route classifier outputs through domain pack mapping and surface status in UI
 - Add iOS clients against the same contracts once Android path is stable

@@ -61,7 +61,8 @@ fun SettingsScreen(
     onNavigateToPrivacy: () -> Unit,
     onNavigateToTerms: () -> Unit,
     onNavigateToAbout: () -> Unit,
-    onNavigateToUpgrade: () -> Unit
+    onNavigateToUpgrade: () -> Unit,
+    onNavigateToDeveloperOptions: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -70,11 +71,9 @@ fun SettingsScreen(
     val shareDiagnostics by viewModel.shareDiagnostics.collectAsState()
     val currentEdition by viewModel.currentEdition.collectAsState()
     val entitlementState by viewModel.entitlementState.collectAsState()
-    val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
     val autoSaveEnabled by viewModel.autoSaveEnabled.collectAsState()
     val saveDirectoryUri by viewModel.saveDirectoryUri.collectAsState()
     val allowAssistantImages by viewModel.allowAssistantImages.collectAsState()
-    val forceFtueTour by viewModel.forceFtueTour.collectAsState()
 
     // Assistant Personalization
     val assistantLanguage by viewModel.assistantLanguage.collectAsState()
@@ -439,44 +438,11 @@ fun SettingsScreen(
                 HorizontalDivider()
                 SettingsSectionTitle("Developer")
 
-                SettingsSwitchItem(
-                    title = "Developer Mode",
-                    subtitle = "Unlock all features for testing",
-                    icon = Icons.Default.BugReport,
-                    checked = isDeveloperMode,
-                    onCheckedChange = { viewModel.setDeveloperMode(it) }
-                )
-
                 SettingsItem(
-                    title = "Test Crash Reporting",
-                    subtitle = "Send test event to Sentry (handled exception)",
+                    title = "Developer Options",
+                    subtitle = "System health, diagnostics, and debug tools",
                     icon = Icons.Default.BugReport,
-                    onClick = { viewModel.triggerCrashTest(throwCrash = false) }
-                )
-
-                SettingsItem(
-                    title = "Test Diagnostics Bundle",
-                    subtitle = "Capture exception with diagnostics.json attachment",
-                    icon = Icons.Default.BugReport,
-                    onClick = { viewModel.triggerDiagnosticsTest() }
-                )
-
-                HorizontalDivider()
-                SettingsSectionTitle("First-Time Experience")
-
-                SettingsSwitchItem(
-                    title = "Force First-Time Tour",
-                    subtitle = "Always show tour on app launch (debug only)",
-                    icon = Icons.Default.Info,
-                    checked = forceFtueTour,
-                    onCheckedChange = { viewModel.setForceFtueTour(it) }
-                )
-
-                SettingsItem(
-                    title = "Reset Tour Progress",
-                    subtitle = "Clear tour completion flag",
-                    icon = Icons.Default.Refresh,
-                    onClick = { viewModel.resetFtueTour() }
+                    onClick = onNavigateToDeveloperOptions
                 )
             }
 

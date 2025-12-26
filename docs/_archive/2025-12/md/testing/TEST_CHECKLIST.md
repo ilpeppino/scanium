@@ -142,3 +142,51 @@ If fix doesn't work:
 2. Check for ML Kit download errors
 3. Verify device compatibility (minSdk 24+)
 4. Try single-shot detection (tap) vs scanning (long-press)
+
+---
+
+## TalkBack Accessibility Testing
+
+### Pre-Test Setup
+- [ ] Enable TalkBack: Settings → Accessibility → TalkBack → ON
+- [ ] Enable "Explore by touch"
+- [ ] Familiarize with gestures: single finger swipe (navigate), double tap (activate)
+
+### CameraScreen Tests
+
+#### Navigation Order
+- [ ] Swipe through elements in logical order: Settings → Mode icons → Logo → Items button → Shutter → Flip camera
+- [ ] Verify traversal order matches visual layout (top-to-bottom, left-to-right)
+
+#### Content Descriptions
+- [ ] Settings button: Announces "Open settings"
+- [ ] Mode icons: Announces mode name + selected state (e.g., "Items mode. Selected")
+- [ ] Shutter button: Announces capture instructions based on state
+- [ ] Items button: Announces "View items"
+- [ ] Flip camera: Announces "Flip camera"
+- [ ] Scanium logo: Announces "Scanium logo"
+
+#### Touch Targets
+- [ ] All buttons respond to double-tap gesture
+- [ ] No "Touch target too small" warnings in Accessibility Scanner
+
+### ItemsListScreen Tests
+
+#### Touch Targets
+- [ ] All buttons respond to double-tap
+- [ ] Retry button meets 48dp minimum
+- [ ] View listing button meets 48dp minimum
+
+#### Card Navigation
+- [ ] Each item card announces: label, price, confidence, status
+- [ ] Selected state announced when toggling
+
+#### Action Buttons
+- [ ] Retry button: Announces "Retry classification for this item"
+- [ ] View listing button: Announces "View listing on marketplace"
+- [ ] Export button: Announces with context
+
+### Validation Tools
+- [ ] Run Android Accessibility Scanner on both screens
+- [ ] Verify no critical issues flagged
+- [ ] Test with Switch Access (optional)
