@@ -70,7 +70,7 @@ class ThrottleHelper {
      */
     fun canInvoke(detectorType: DetectorType, currentTimeMs: Long = SystemClock.elapsedRealtime()): Boolean {
         synchronized(lock) {
-            val lastTime = lastInvocationTime[detectorType] ?: 0L
+            val lastTime = lastInvocationTime[detectorType] ?: return true
             val minInterval = minIntervals[detectorType] ?: 0L
             return (currentTimeMs - lastTime) >= minInterval
         }
@@ -87,10 +87,10 @@ class ThrottleHelper {
      */
     fun tryInvoke(detectorType: DetectorType, currentTimeMs: Long = SystemClock.elapsedRealtime()): Boolean {
         synchronized(lock) {
-            val lastTime = lastInvocationTime[detectorType] ?: 0L
+            val lastTime = lastInvocationTime[detectorType]
             val minInterval = minIntervals[detectorType] ?: 0L
 
-            return if ((currentTimeMs - lastTime) >= minInterval) {
+            return if (lastTime == null || (currentTimeMs - lastTime) >= minInterval) {
                 lastInvocationTime[detectorType] = currentTimeMs
                 true
             } else {
@@ -116,7 +116,7 @@ class ThrottleHelper {
      */
     fun timeUntilAllowed(detectorType: DetectorType, currentTimeMs: Long = SystemClock.elapsedRealtime()): Long {
         synchronized(lock) {
-            val lastTime = lastInvocationTime[detectorType] ?: 0L
+            val lastTime = lastInvocationTime[detectorType] ?: return 0L
             val minInterval = minIntervals[detectorType] ?: 0L
             val elapsed = currentTimeMs - lastTime
             return (minInterval - elapsed).coerceAtLeast(0L)
