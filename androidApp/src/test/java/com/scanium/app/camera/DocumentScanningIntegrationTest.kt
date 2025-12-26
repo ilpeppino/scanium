@@ -58,6 +58,7 @@ class DocumentScanningIntegrationTest {
                 ScanMode.OBJECT_DETECTION -> "object"
                 ScanMode.BARCODE -> "barcode"
                 ScanMode.DOCUMENT_TEXT -> "document"
+                else -> "other"
             }
 
             assertNotNull("When expression should handle $mode", result)
@@ -195,6 +196,7 @@ class DocumentScanningIntegrationTest {
             ItemCategory.ELECTRONICS -> "electronics"
             ItemCategory.DOCUMENT -> "document"
             ItemCategory.UNKNOWN -> "unknown"
+            else -> "other"
         }
 
         assertEquals("document", result)
