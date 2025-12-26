@@ -108,6 +108,11 @@ fun CameraScreen(
     val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
     val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
 
+    // Detection settings (for beta testing - developer toggles)
+    val barcodeDetectionEnabled by settingsRepository.devBarcodeDetectionEnabledFlow.collectAsState(initial = true)
+    val documentDetectionEnabled by settingsRepository.devDocumentDetectionEnabledFlow.collectAsState(initial = true)
+    val adaptiveThrottlingEnabled by settingsRepository.devAdaptiveThrottlingEnabledFlow.collectAsState(initial = true)
+
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
     var showPermissionEducationDialog by remember { mutableStateOf(false) }
@@ -220,6 +225,19 @@ fun CameraScreen(
 
     LaunchedEffect(targetRotation) {
         cameraManager.updateTargetRotation(targetRotation)
+    }
+
+    // Apply detection settings to camera manager when they change
+    LaunchedEffect(barcodeDetectionEnabled) {
+        cameraManager.setBarcodeDetectionEnabled(barcodeDetectionEnabled)
+    }
+
+    LaunchedEffect(documentDetectionEnabled) {
+        cameraManager.setDocumentDetectionEnabled(documentDetectionEnabled)
+    }
+
+    LaunchedEffect(adaptiveThrottlingEnabled) {
+        cameraManager.setAdaptiveThrottlingEnabled(adaptiveThrottlingEnabled)
     }
 
     // Show permission education dialog or request permission on first launch

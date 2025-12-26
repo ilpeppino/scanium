@@ -39,6 +39,9 @@ fun DeveloperOptionsScreen(
     val autoRefreshEnabled by viewModel.autoRefreshEnabled.collectAsState()
     val copyResult by viewModel.copyResult.collectAsState()
     val allowScreenshots by viewModel.allowScreenshots.collectAsState()
+    val barcodeDetectionEnabled by viewModel.barcodeDetectionEnabled.collectAsState()
+    val documentDetectionEnabled by viewModel.documentDetectionEnabled.collectAsState()
+    val adaptiveThrottlingEnabled by viewModel.adaptiveThrottlingEnabled.collectAsState()
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -101,6 +104,35 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.BugReport,
                 checked = isDeveloperMode,
                 onCheckedChange = { viewModel.setDeveloperMode(it) }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Detection Settings Section (Performance & Low-Power Mode)
+            SettingsSectionTitle("Detection & Performance")
+
+            SettingsSwitchItem(
+                title = "Barcode/QR Detection",
+                subtitle = if (barcodeDetectionEnabled) "Scanning for barcodes and QR codes" else "Barcode detection disabled",
+                icon = Icons.Default.CropFree,
+                checked = barcodeDetectionEnabled,
+                onCheckedChange = { viewModel.setBarcodeDetectionEnabled(it) }
+            )
+
+            SettingsSwitchItem(
+                title = "Document Detection",
+                subtitle = if (documentDetectionEnabled) "Detecting document candidates" else "Document detection disabled",
+                icon = Icons.Default.Article,
+                checked = documentDetectionEnabled,
+                onCheckedChange = { viewModel.setDocumentDetectionEnabled(it) }
+            )
+
+            SettingsSwitchItem(
+                title = "Adaptive Throttling",
+                subtitle = if (adaptiveThrottlingEnabled) "Low-power mode: auto-adjusts scan rate" else "Fixed scan rate (may drain battery)",
+                icon = Icons.Default.Speed,
+                checked = adaptiveThrottlingEnabled,
+                onCheckedChange = { viewModel.setAdaptiveThrottlingEnabled(it) }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
