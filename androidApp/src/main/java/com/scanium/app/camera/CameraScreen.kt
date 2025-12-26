@@ -26,9 +26,6 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
@@ -39,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,10 +48,6 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
@@ -81,14 +73,6 @@ import com.scanium.app.ftue.tourTarget
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-
-/**
- * Custom saver for ScanMode enum to persist across configuration changes.
- */
-private val ScanModeSaver = Saver<ScanMode, String>(
-    save = { it.name },
-    restore = { savedValue -> ScanMode.valueOf(savedValue) }
-)
 
 /**
  * Camera screen with full-screen preview and Android-style shutter button.
@@ -150,13 +134,7 @@ fun CameraScreen(
     var isCameraBinding by remember { mutableStateOf(false) }
     var rebindAttempts by remember { mutableStateOf(0) }
 
-    // Current scan mode (persisted across configuration changes)
-    var currentScanMode by rememberSaveable(stateSaver = ScanModeSaver) {
-        mutableStateOf(ScanMode.OBJECT_DETECTION)
-    }
-
-    // Flash animation state for mode transitions
-    var showFlash by remember { mutableStateOf(false) }
+    val currentScanMode = ScanMode.OBJECT_DETECTION
 
     // Model download state for first-launch experience
     var modelDownloadState by remember { mutableStateOf<ModelDownloadState>(ModelDownloadState.Checking) }
@@ -375,15 +353,6 @@ fun CameraScreen(
                     }
                 )
 
-                // Flash animation overlay for mode transitions
-                if (showFlash) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.White.copy(alpha = 0.6f))
-                    )
-                }
-
                 // Model download loading overlay (first launch)
                 when (val state = modelDownloadState) {
                     is ModelDownloadState.Checking,
@@ -468,7 +437,6 @@ fun CameraScreen(
                     lastAddedItem = lastAddedItem,
                     onAnimationFinished = { lastAddedItem = null },
                     cameraState = cameraState,
-                    scanMode = currentScanMode,
                     captureResolution = captureResolution,
                     onNavigateToItems = {
                         // If tour is on Items button step, advance before navigation
@@ -480,25 +448,6 @@ fun CameraScreen(
                     onOpenSettings = { isSettingsOpen = true },
                     tourViewModel = tourViewModel,
                     showShutterHint = showShutterHint,
-                    onModeChanged = { newMode ->
-                        if (newMode != currentScanMode) {
-                            // Stop scanning if active
-                            if (cameraState == CameraState.SCANNING) {
-                                cameraState = CameraState.IDLE
-                                cameraManager.stopScanning()
-                                itemsViewModel.updateOverlayDetections(emptyList())
-                            }
-
-                            // Trigger flash animation
-                            scope.launch {
-                                showFlash = true
-                                delay(150)
-                                currentScanMode = newMode
-                                delay(100)
-                                showFlash = false
-                            }
-                        }
-                    },
                     onShutterTap = {
                         // Single tap: capture one frame
                         if (cameraState == CameraState.IDLE) {
@@ -509,11 +458,7 @@ fun CameraScreen(
                                 onResult = { items ->
                                     cameraState = CameraState.IDLE
                                     if (items.isEmpty()) {
-                                        val message = when (currentScanMode) {
-                                            ScanMode.OBJECT_DETECTION -> "No objects detected. Try pointing at prominent items."
-                                            ScanMode.BARCODE -> "No barcode detected. Point at a barcode or QR code."
-                                            ScanMode.DOCUMENT_TEXT -> "No text detected. Point at a document or text."
-                                        }
+                                        val message = "No objects detected. Try pointing at prominent items."
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                     } else {
                                         // Capture high-res image and update items with it
@@ -676,7 +621,6 @@ fun CameraScreen(
                             )
                         }
                         com.scanium.app.ftue.TourStepKey.CAMERA_SETTINGS,
-                        com.scanium.app.ftue.TourStepKey.CAMERA_MODE_ICONS,
                         com.scanium.app.ftue.TourStepKey.CAMERA_SHUTTER,
                         com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS_BUTTON -> {
                             currentTourStep?.let { step ->
@@ -774,72 +718,6 @@ private fun CameraPreview(
 }
 
 /**
- * Icon-based scan mode selector for the top bar.
- *
- * Displays three icons horizontally with clear selected state styling.
- * Touch targets are at least 48dp for accessibility.
- *
- * @param currentMode The currently selected scan mode
- * @param onModeChanged Callback when the user selects a different mode
- * @param modifier Optional modifier for the selector container
- */
-@Composable
-private fun ScanModeIconSelector(
-    currentMode: ScanMode,
-    onModeChanged: (ScanMode) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        ScanMode.values().forEach { mode ->
-            val isSelected = mode == currentMode
-            val icon = when (mode) {
-                ScanMode.OBJECT_DETECTION -> Icons.Outlined.Category
-                ScanMode.BARCODE -> Icons.Outlined.QrCodeScanner
-                ScanMode.DOCUMENT_TEXT -> Icons.Outlined.Description
-            }
-            val contentDescription = when (mode) {
-                ScanMode.OBJECT_DETECTION -> "Items mode"
-                ScanMode.BARCODE -> "Barcode mode"
-                ScanMode.DOCUMENT_TEXT -> "Document mode"
-            }
-
-            IconButton(
-                onClick = { onModeChanged(mode) },
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = if (isSelected) {
-                            Color.White.copy(alpha = 0.25f)
-                        } else {
-                            Color.Black.copy(alpha = 0.5f)
-                        },
-                        shape = MaterialTheme.shapes.small
-                    )
-                    .semantics {
-                        role = Role.RadioButton
-                        selected = isSelected
-                        this.contentDescription = "$contentDescription. ${if (isSelected) "Selected" else "Not selected"}"
-                    }
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isSelected) {
-                        Color.White
-                    } else {
-                        Color.White.copy(alpha = 0.6f)
-                    }
-                )
-            }
-        }
-    }
-}
-
-/**
  * Overlay UI on top of camera preview.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -849,20 +727,18 @@ private fun BoxScope.CameraOverlay(
     lastAddedItem: com.scanium.app.items.ScannedItem?,
     onAnimationFinished: () -> Unit,
     cameraState: CameraState,
-    scanMode: ScanMode,
     captureResolution: CaptureResolution,
     onNavigateToItems: () -> Unit,
     onOpenSettings: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
     showShutterHint: Boolean,
-    onModeChanged: (ScanMode) -> Unit,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
     onStopScanning: () -> Unit,
     onFlipCamera: () -> Unit,
     isFlipEnabled: Boolean
 ) {
-    // Top bar with three-slot layout: hamburger (left), mode icons (center), logo (right)
+    // Top bar with two-slot layout: hamburger (left), logo (right)
     Row(
         modifier = Modifier
             .align(Alignment.TopCenter)
@@ -900,24 +776,7 @@ private fun BoxScope.CameraOverlay(
             }
         }
 
-        // Center slot: Mode icon selector (fills remaining space, centered)
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .then(
-                    if (tourViewModel != null) {
-                        Modifier.tourTarget("camera_mode_icons", tourViewModel)
-                    } else {
-                        Modifier
-                    }
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            ScanModeIconSelector(
-                currentMode = scanMode,
-                onModeChanged = onModeChanged
-            )
-        }
+        Spacer(modifier = Modifier.weight(1f))
 
         // Right slot: Scanium logo (fixed width)
         Box(
@@ -1178,9 +1037,9 @@ private fun PermissionDeniedContent(
         // Description - varies based on permission state
         Text(
             text = if (isPermanentlyDenied) {
-                "Camera access has been disabled for Scanium. To use object detection, barcode scanning, and document text recognition, please enable camera access in your device settings."
+                "Camera access has been disabled for Scanium. To scan and catalog items, please enable camera access in your device settings."
             } else {
-                "Scanium uses your camera to detect and catalog objects, scan barcodes, and recognize text in your environment."
+                "Scanium uses your camera to detect and catalog objects in your environment."
             },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1208,8 +1067,6 @@ private fun PermissionDeniedContent(
                 )
 
                 FeatureItem("📦", "Object detection and cataloging")
-                FeatureItem("📱", "Barcode and QR code scanning")
-                FeatureItem("📄", "Document and text recognition")
                 FeatureItem("📸", "High-quality image capture")
             }
         }
