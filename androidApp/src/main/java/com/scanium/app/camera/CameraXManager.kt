@@ -31,6 +31,7 @@ import com.scanium.app.tracking.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
 import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.common.InputImage
+import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DetectionRouterConfig
 import com.scanium.telemetry.facade.Telemetry
@@ -320,6 +321,7 @@ class CameraXManager(
         scanMode: ScanMode,
         onResult: (List<ScannedItem>) -> Unit,
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
+        onDetectionEvent: (DetectionEvent) -> Unit = {},
         onFrameSize: (Size) -> Unit = {}
     ) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
@@ -351,7 +353,12 @@ class CameraXManager(
                     }
 
                     // Single-frame capture uses direct detection (no candidate tracking)
-                    val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
+                    val (items, detections) = processImageProxy(
+                        imageProxy = imageProxy,
+                        scanMode = scanMode,
+                        useStreamMode = false,
+                        onDetectionEvent = onDetectionEvent
+                    )
                     Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                     withContext(Dispatchers.Main) {
                         onResult(items)
@@ -376,6 +383,7 @@ class CameraXManager(
         scanMode: ScanMode,
         onResult: (List<ScannedItem>) -> Unit,
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
+        onDetectionEvent: (DetectionEvent) -> Unit = {},
         onFrameSize: (Size) -> Unit = {}
     ) {
         if (isScanning) {
@@ -481,10 +489,12 @@ class CameraXManager(
                         // Use SINGLE_IMAGE_MODE for object detection with tracking during continuous scanning
                         // CRITICAL: Use SINGLE_IMAGE_MODE to avoid blinking bounding boxes
                         // STREAM_MODE produces unstable tracking IDs from ML Kit that change between frames
-                        val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-
-                        // Record detection results through router for future dedupe support
-                        detectionRouter.processObjectResults(items, detections)
+                        val (items, detections) = processImageProxy(
+                            imageProxy = imageProxy,
+                            scanMode = scanMode,
+                            useStreamMode = false,
+                            onDetectionEvent = onDetectionEvent
+                        )
 
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
@@ -616,7 +626,8 @@ class CameraXManager(
     private suspend fun processImageProxy(
         imageProxy: ImageProxy,
         scanMode: ScanMode,
-        useStreamMode: Boolean = false
+        useStreamMode: Boolean = false,
+        onDetectionEvent: (DetectionEvent) -> Unit = {}
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         var cachedBitmap: Bitmap? = null
         val frameStartTime = SystemClock.elapsedRealtime()
@@ -692,6 +703,8 @@ class CameraXManager(
                             edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
                         )
                         Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results")
+                        val event = detectionRouter.processObjectResults(items, detections)
+                        onDetectionEvent(event)
                         Pair(items, detections)
                     } else {
                         // Single-shot detection without tracking
@@ -704,6 +717,11 @@ class CameraXManager(
                             edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
                         )
                         Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
+                        val event = detectionRouter.processObjectResults(
+                            response.scannedItems,
+                            response.detectionResults
+                        )
+                        onDetectionEvent(event)
                         Pair(response.scannedItems, response.detectionResults)
                     }
                 }
@@ -725,6 +743,7 @@ class CameraXManager(
                         } else {
                             // Process through router for deduplication
                             val (event, uniqueItems) = detectionRouter.processBarcodeResults(rawItems)
+                            onDetectionEvent(event)
                             Log.i(TAG, "[BARCODE] Detected ${rawItems.size} barcodes, ${uniqueItems.size} unique after dedupe")
                             Pair(uniqueItems, emptyList())
                         }
@@ -735,6 +754,8 @@ class CameraXManager(
                         image = inputImage,
                         sourceBitmap = lazyBitmapProvider
                     )
+                    val event = detectionRouter.processDocumentResults(items)
+                    onDetectionEvent(event)
                     Pair(items, emptyList())
                 }
             }
