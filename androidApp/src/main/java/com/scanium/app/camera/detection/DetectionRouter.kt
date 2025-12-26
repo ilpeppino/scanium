@@ -9,6 +9,8 @@ import com.scanium.app.ml.DetectionResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -41,8 +43,19 @@ class DetectionRouter(
     // Throttling helper for rate-limiting detector invocations
     private val throttleHelper = ThrottleHelper()
 
+    // Adaptive throttle policy for low-power mode
+    private val adaptivePolicy = AdaptiveThrottlePolicy(config.adaptiveConfig)
+
     // Deduplication helper for filtering duplicate detections
     private val dedupeHelper = DedupeHelper(config.dedupeConfig)
+
+    // Detector enable/disable flags (default ON for beta)
+    private val _barcodeDetectionEnabled = AtomicBoolean(config.barcodeDetectionEnabled)
+    private val _documentDetectionEnabled = AtomicBoolean(config.documentDetectionEnabled)
+
+    // Expose adaptive throttle state
+    val isAdaptiveThrottling: StateFlow<Boolean> = adaptivePolicy.isThrottling
+    val adaptiveMultiplier: StateFlow<Float> = adaptivePolicy.adaptiveMultiplier
 
     // Debug counters (atomic for thread safety)
     private val frameCounter = AtomicLong(0)
@@ -140,9 +153,17 @@ class DetectionRouter(
 
     /**
      * Attempt to invoke barcode detection.
-     * Future: Will be used when barcode detector is integrated.
+     * Returns false if detection is disabled or throttled.
      */
     fun tryInvokeBarcodeDetection(timestampMs: Long = SystemClock.elapsedRealtime()): Boolean {
+        // Check if barcode detection is enabled
+        if (!_barcodeDetectionEnabled.get()) {
+            if (config.enableVerboseLogging) {
+                Log.d(TAG, "[BARCODE] Detection disabled - skipping")
+            }
+            return false
+        }
+
         val allowed = throttleHelper.tryInvoke(DetectorType.BARCODE, timestampMs)
         if (allowed) {
             barcodeDetectionCounter.incrementAndGet()
@@ -154,9 +175,17 @@ class DetectionRouter(
 
     /**
      * Attempt to invoke document detection.
-     * Future: Will be used when document detector is integrated.
+     * Returns false if detection is disabled or throttled.
      */
     fun tryInvokeDocumentDetection(timestampMs: Long = SystemClock.elapsedRealtime()): Boolean {
+        // Check if document detection is enabled
+        if (!_documentDetectionEnabled.get()) {
+            if (config.enableVerboseLogging) {
+                Log.d(TAG, "[DOCUMENT] Detection disabled - skipping")
+            }
+            return false
+        }
+
         val allowed = throttleHelper.tryInvoke(DetectorType.DOCUMENT, timestampMs)
         if (allowed) {
             documentDetectionCounter.incrementAndGet()
@@ -315,10 +344,79 @@ class DetectionRouter(
 
     /**
      * Get current throttle interval for a detector.
+     * If adaptive throttling is enabled, returns the adjusted interval.
      */
     fun getThrottleInterval(detectorType: DetectorType): Long {
+        val baseInterval = throttleHelper.getMinInterval(detectorType)
+        return adaptivePolicy.applyToInterval(baseInterval)
+    }
+
+    /**
+     * Get the base (unadjusted) throttle interval for a detector.
+     */
+    fun getBaseThrottleInterval(detectorType: DetectorType): Long {
         return throttleHelper.getMinInterval(detectorType)
     }
+
+    /**
+     * Records frame processing time for adaptive throttling.
+     *
+     * @param processingTimeMs Time taken to process the frame in milliseconds
+     */
+    fun recordFrameProcessingTime(processingTimeMs: Long) {
+        adaptivePolicy.recordProcessingTime(processingTimeMs)
+    }
+
+    // =========================================================================
+    // Detector Enable/Disable Controls
+    // =========================================================================
+
+    /**
+     * Enables or disables barcode/QR detection.
+     */
+    fun setBarcodeDetectionEnabled(enabled: Boolean) {
+        val wasEnabled = _barcodeDetectionEnabled.getAndSet(enabled)
+        if (wasEnabled != enabled) {
+            Log.i(TAG, "Barcode detection ${if (enabled) "enabled" else "disabled"}")
+        }
+    }
+
+    /**
+     * Checks if barcode detection is enabled.
+     */
+    fun isBarcodeDetectionEnabled(): Boolean = _barcodeDetectionEnabled.get()
+
+    /**
+     * Enables or disables document candidate detection.
+     */
+    fun setDocumentDetectionEnabled(enabled: Boolean) {
+        val wasEnabled = _documentDetectionEnabled.getAndSet(enabled)
+        if (wasEnabled != enabled) {
+            Log.i(TAG, "Document detection ${if (enabled) "enabled" else "disabled"}")
+        }
+    }
+
+    /**
+     * Checks if document detection is enabled.
+     */
+    fun isDocumentDetectionEnabled(): Boolean = _documentDetectionEnabled.get()
+
+    /**
+     * Enables or disables adaptive throttling (low-power mode).
+     */
+    fun setAdaptiveThrottlingEnabled(enabled: Boolean) {
+        adaptivePolicy.setEnabled(enabled)
+    }
+
+    /**
+     * Checks if adaptive throttling is enabled.
+     */
+    fun isAdaptiveThrottlingEnabled(): Boolean = adaptivePolicy.isEnabled
+
+    /**
+     * Gets adaptive throttle policy statistics.
+     */
+    fun getAdaptiveStats(): AdaptiveThrottleStats = adaptivePolicy.getStats()
 
     /**
      * Reset all router state.
@@ -328,6 +426,7 @@ class DetectionRouter(
         resetCounters()
         throttleHelper.resetAll()
         dedupeHelper.resetAll()
+        adaptivePolicy.reset()
         _lastEvent.value = null
     }
 
@@ -403,6 +502,15 @@ data class DetectionRouterConfig(
 
     /** Deduplication configuration */
     val dedupeConfig: DedupeConfig = DedupeConfig(),
+
+    /** Adaptive throttle configuration for low-power mode */
+    val adaptiveConfig: AdaptiveThrottleConfig = AdaptiveThrottleConfig(),
+
+    /** Whether barcode/QR detection is enabled (default ON for beta) */
+    val barcodeDetectionEnabled: Boolean = true,
+
+    /** Whether document candidate detection is enabled (default ON for beta) */
+    val documentDetectionEnabled: Boolean = true,
 
     /** Enable verbose logging for debugging */
     val enableVerboseLogging: Boolean = BuildConfig.DEBUG,

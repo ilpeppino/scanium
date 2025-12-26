@@ -50,6 +50,11 @@ class SettingsRepository(private val context: Context) {
         // Developer preferences
         private val DEV_ALLOW_SCREENSHOTS_KEY = booleanPreferencesKey("dev_allow_screenshots")
         private val DEV_SHOW_FTUE_BOUNDS_KEY = booleanPreferencesKey("dev_show_ftue_bounds")
+
+        // Detection settings (developer toggles for beta)
+        private val DEV_BARCODE_DETECTION_ENABLED_KEY = booleanPreferencesKey("dev_barcode_detection_enabled")
+        private val DEV_DOCUMENT_DETECTION_ENABLED_KEY = booleanPreferencesKey("dev_document_detection_enabled")
+        private val DEV_ADAPTIVE_THROTTLING_ENABLED_KEY = booleanPreferencesKey("dev_adaptive_throttling_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -329,6 +334,52 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAssistantHapticsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[ASSISTANT_HAPTICS_KEY] = enabled
+        }
+    }
+
+    // =========================================================================
+    // Detection Settings (Developer Toggles for Beta)
+    // =========================================================================
+
+    /**
+     * Whether barcode/QR detection is enabled.
+     * Default is ON for beta.
+     */
+    val devBarcodeDetectionEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_BARCODE_DETECTION_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setDevBarcodeDetectionEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_BARCODE_DETECTION_ENABLED_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether document candidate detection is enabled.
+     * Default is ON for beta.
+     */
+    val devDocumentDetectionEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_DOCUMENT_DETECTION_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setDevDocumentDetectionEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_DOCUMENT_DETECTION_ENABLED_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether adaptive throttling (low-power mode) is enabled.
+     * Default is ON for beta.
+     */
+    val devAdaptiveThrottlingEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_ADAPTIVE_THROTTLING_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setDevAdaptiveThrottlingEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_ADAPTIVE_THROTTLING_ENABLED_KEY] = enabled
         }
     }
 
