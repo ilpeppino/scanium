@@ -87,9 +87,13 @@ fun DetectionOverlay(
         )
 
         // Bounding box appearance constants
-        val boxStrokeWidth = 3.dp.toPx()
+        val minBoxStrokeWidth = 2.dp.toPx()
+        val maxBoxStrokeWidth = 4.dp.toPx()
         val boxCornerRadius = 12.dp.toPx()
-        val glowStrokeWidth = 6.dp.toPx()
+        val minGlowStrokeWidth = 4.dp.toPx()
+        val maxGlowStrokeWidth = 8.dp.toPx()
+        val minInnerStrokeWidth = 1.dp.toPx()
+        val maxInnerStrokeWidth = 2.dp.toPx()
         val labelHorizontalPadding = 8.dp.toPx()
         val labelVerticalPadding = 4.dp.toPx()
         val labelCornerRadius = 10.dp.toPx()
@@ -110,6 +114,13 @@ fun DetectionOverlay(
 
             val outlineColor = if (isReady) readyColor else ScaniumBlue
             val glowColor = if (isReady) readyColor.copy(alpha = 0.45f) else CyanGlow.copy(alpha = 0.35f)
+            val clampedConfidence = detection.confidence.coerceIn(0f, 1f)
+            val boxStrokeWidth = minBoxStrokeWidth +
+                (maxBoxStrokeWidth - minBoxStrokeWidth) * clampedConfidence
+            val glowStrokeWidth = minGlowStrokeWidth +
+                (maxGlowStrokeWidth - minGlowStrokeWidth) * clampedConfidence
+            val innerStrokeWidth = minInnerStrokeWidth +
+                (maxInnerStrokeWidth - minInnerStrokeWidth) * clampedConfidence
 
             // Convert normalized bbox to image space coordinates
             val imageSpaceRect = detection.bboxNorm.toRectF(imageSize.width, imageSize.height)
@@ -143,7 +154,7 @@ fun DetectionOverlay(
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
-                style = Stroke(width = boxStrokeWidth / 2f)
+                style = Stroke(width = innerStrokeWidth)
             )
 
             // Category + price label near the bounding box
