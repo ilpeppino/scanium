@@ -31,6 +31,8 @@ import com.scanium.app.tracking.ObjectTracker
 import com.scanium.app.tracking.TrackerConfig
 import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.common.InputImage
+import com.scanium.app.camera.detection.DetectionRouter
+import com.scanium.app.camera.detection.DetectionRouterConfig
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,6 +88,14 @@ class CameraXManager(
     private val objectDetector = ObjectDetectorClient()
     private val barcodeDetector = BarcodeDetectorClient()
     private val textRecognizer = DocumentTextRecognitionClient()
+
+    // Detection router for throttling and future multi-detector orchestration
+    private val detectionRouter = DetectionRouter(
+        config = DetectionRouterConfig(
+            enableVerboseLogging = BuildConfig.DEBUG,
+            enableDebugLogging = BuildConfig.DEBUG
+        )
+    )
 
     private val _analysisFps = MutableStateFlow(0.0)
     /** Real-time analysis FPS for performance monitoring */
@@ -385,6 +395,9 @@ class CameraXManager(
         isScanning = true
         frameCounter = 0
 
+        // Start detection router session for metrics tracking
+        detectionRouter.startSession()
+
         // Initialize performance metrics
         sessionStartTime = SystemClock.elapsedRealtime()
         totalFramesProcessed = 0
@@ -461,11 +474,18 @@ class CameraXManager(
                             onFrameSize(frameSize)
                         }
 
+                        // Route through detection router for metrics tracking
+                        // Note: Currently just records invocation, does not change detection behavior
+                        detectionRouter.routeDetection(scanMode, frameReceiveTime)
+
                         // Use SINGLE_IMAGE_MODE for object detection with tracking during continuous scanning
                         // CRITICAL: Use SINGLE_IMAGE_MODE to avoid blinking bounding boxes
                         // STREAM_MODE produces unstable tracking IDs from ML Kit that change between frames
                         val (items, detections) = processImageProxy(imageProxy, scanMode, useStreamMode = false)
-                        
+
+                        // Record detection results through router for future dedupe support
+                        detectionRouter.processObjectResults(items, detections)
+
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
                                 onResult(items)
@@ -567,6 +587,8 @@ class CameraXManager(
         imageAnalysis?.clearAnalyzer()
         scanJob?.cancel()
         scanJob = null
+        // Stop detection router session (logs stats)
+        detectionRouter.stopSession()
         // Reset tracker when stopping scan
         objectTracker.stopSession("user_stopped")
         objectTracker.reset()
