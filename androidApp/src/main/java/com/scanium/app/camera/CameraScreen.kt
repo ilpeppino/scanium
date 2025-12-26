@@ -173,6 +173,7 @@ fun CameraScreen(
     val lowDataMode by classificationModeViewModel.lowDataMode.collectAsState()
     val verboseLogging by classificationModeViewModel.verboseLogging.collectAsState()
     val analysisFps by cameraManager.analysisFps.collectAsState()
+    val shutterHintShown by ftueRepository.shutterHintShownFlow.collectAsState(initial = true)
     
     // Performance metrics
     val callsStarted by ClassificationMetrics.callsStarted.collectAsState()
@@ -198,7 +199,18 @@ fun CameraScreen(
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
 
+    var showShutterHint by remember { mutableStateOf(false) }
+
     KeepScreenOn(enabled = cameraState == CameraState.SCANNING)
+
+    LaunchedEffect(shutterHintShown) {
+        if (!shutterHintShown) {
+            showShutterHint = true
+            delay(3000)
+            showShutterHint = false
+            ftueRepository.setShutterHintShown(true)
+        }
+    }
 
     DisposableEffect(view) {
         val orientationListener = object : OrientationEventListener(context) {
@@ -1006,6 +1018,7 @@ private fun BoxScope.CameraOverlay(
                     onTap = onShutterTap,
                     onLongPress = onShutterLongPress,
                     onStopScanning = onStopScanning,
+                    showHint = showShutterHint,
                     modifier = Modifier
                         .offset(y = 6.dp)
                         .then(
