@@ -479,6 +479,7 @@ fun CameraScreen(
                     },
                     onOpenSettings = { isSettingsOpen = true },
                     tourViewModel = tourViewModel,
+                    showShutterHint = showShutterHint,
                     onModeChanged = { newMode ->
                         if (newMode != currentScanMode) {
                             // Stop scanning if active
@@ -853,6 +854,7 @@ private fun BoxScope.CameraOverlay(
     onNavigateToItems: () -> Unit,
     onOpenSettings: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    showShutterHint: Boolean,
     onModeChanged: (ScanMode) -> Unit,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
