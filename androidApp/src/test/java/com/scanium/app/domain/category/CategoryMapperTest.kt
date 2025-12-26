@@ -45,6 +45,8 @@ class CategoryMapperTest {
             "PLANT" to ItemCategory.PLANT,
             "ELECTRONICS" to ItemCategory.ELECTRONICS,
             "DOCUMENT" to ItemCategory.DOCUMENT,
+            "BARCODE" to ItemCategory.BARCODE,
+            "QR_CODE" to ItemCategory.QR_CODE,
             "UNKNOWN" to ItemCategory.UNKNOWN
         )
 
@@ -106,7 +108,7 @@ class CategoryMapperTest {
 
         assertThat(validNames).containsExactly(
             "FASHION", "HOME_GOOD", "FOOD", "PLACE", "PLANT",
-            "ELECTRONICS", "DOCUMENT", "UNKNOWN"
+            "ELECTRONICS", "DOCUMENT", "BARCODE", "QR_CODE", "UNKNOWN"
         )
     }
 

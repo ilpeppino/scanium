@@ -78,7 +78,7 @@ class ThrottleHelperTest {
     @Test
     fun `getMinInterval returns correct values`() {
         assertEquals(400L, helper.getMinInterval(DetectorType.OBJECT))
-        assertEquals(100L, helper.getMinInterval(DetectorType.BARCODE))
+        assertEquals(250L, helper.getMinInterval(DetectorType.BARCODE))
         assertEquals(500L, helper.getMinInterval(DetectorType.DOCUMENT))
     }
 
