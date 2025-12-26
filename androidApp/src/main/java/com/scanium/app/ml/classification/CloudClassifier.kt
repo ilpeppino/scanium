@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.scanium.app.BuildConfig
+import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.network.security.RequestSigner
@@ -91,11 +92,7 @@ class CloudClassifier(
         .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 
-    private val config = CloudClassifierConfig(
-        baseUrl = BuildConfig.SCANIUM_API_BASE_URL,
-        apiKey = BuildConfig.SCANIUM_API_KEY.takeIf { it.isNotBlank() },
-        domainPackId = domainPackId
-    )
+    private val apiKeyStore = context?.applicationContext?.let { SecureApiKeyStore(it) }
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -103,6 +100,7 @@ class CloudClassifier(
     }
 
     override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.IO) {
+        val config = currentConfig()
         if (!config.isConfigured) {
             ScaniumLog.w(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
             return@withContext failureResult(
@@ -223,6 +221,12 @@ class CloudClassifier(
 
         return@withContext failureResult(lastError ?: "Unable to classify", offline = lastError?.contains("Offline", true) == true)
     }
+
+    private fun currentConfig(): CloudClassifierConfig = CloudClassifierConfig(
+        baseUrl = BuildConfig.SCANIUM_API_BASE_URL,
+        apiKey = apiKeyStore?.getApiKey(),
+        domainPackId = domainPackId
+    )
 
     private fun failureResult(message: String, offline: Boolean = false): ClassificationResult {
         val errorMessage = if (offline) {
