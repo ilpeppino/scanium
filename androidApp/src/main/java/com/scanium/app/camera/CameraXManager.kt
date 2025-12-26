@@ -529,6 +529,9 @@ class CameraXManager(
                         totalFramesProcessed++
                         framesInWindow++
 
+                        // Feed processing time to adaptive throttle policy
+                        detectionRouter.recordFrameProcessingTime(analyzerLatencyMs)
+
                         // [METRICS] Calculate and log frame rate every 1 second
                         val now = SystemClock.elapsedRealtime()
                         val timeSinceLastReport = now - lastFpsReportTime
@@ -537,6 +540,14 @@ class CameraXManager(
                             _analysisFps.value = fps
                             lastFpsReportTime = now
                             framesInWindow = 0
+
+                            // Log adaptive throttle state periodically (beta troubleshooting)
+                            if (BuildConfig.DEBUG) {
+                                val adaptiveStats = detectionRouter.getAdaptiveStats()
+                                if (adaptiveStats.isThrottling) {
+                                    Log.i(TAG, "[LOW_POWER] Adaptive throttling active: multiplier=${"%.2f".format(adaptiveStats.adaptiveMultiplier)}, avgLatency=${adaptiveStats.rollingAverageMs}ms")
+                                }
+                            }
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Error in analyzer coroutine", e)
@@ -1096,6 +1107,57 @@ class CameraXManager(
         Log.i(TAG, "resetTracker: Manually resetting object tracker")
         objectTracker.reset()
     }
+
+    // =========================================================================
+    // Detection Router Controls (for developer settings)
+    // =========================================================================
+
+    /**
+     * Enables or disables barcode/QR detection.
+     */
+    fun setBarcodeDetectionEnabled(enabled: Boolean) {
+        detectionRouter.setBarcodeDetectionEnabled(enabled)
+    }
+
+    /**
+     * Checks if barcode detection is enabled.
+     */
+    fun isBarcodeDetectionEnabled(): Boolean = detectionRouter.isBarcodeDetectionEnabled()
+
+    /**
+     * Enables or disables document candidate detection.
+     */
+    fun setDocumentDetectionEnabled(enabled: Boolean) {
+        detectionRouter.setDocumentDetectionEnabled(enabled)
+    }
+
+    /**
+     * Checks if document detection is enabled.
+     */
+    fun isDocumentDetectionEnabled(): Boolean = detectionRouter.isDocumentDetectionEnabled()
+
+    /**
+     * Enables or disables adaptive throttling (low-power mode).
+     */
+    fun setAdaptiveThrottlingEnabled(enabled: Boolean) {
+        detectionRouter.setAdaptiveThrottlingEnabled(enabled)
+    }
+
+    /**
+     * Checks if adaptive throttling is enabled.
+     */
+    fun isAdaptiveThrottlingEnabled(): Boolean = detectionRouter.isAdaptiveThrottlingEnabled()
+
+    /**
+     * Gets the current adaptive throttle multiplier.
+     * Returns 1.0 if not throttling, >1.0 if throttling.
+     */
+    val adaptiveThrottleMultiplier: StateFlow<Float> = detectionRouter.adaptiveMultiplier
+
+    /**
+     * Gets whether adaptive throttling is currently active.
+     */
+    val isAdaptiveThrottling: StateFlow<Boolean> = detectionRouter.isAdaptiveThrottling
 
     /**
      * PHASE 3: Calculate the visible viewport rect based on PreviewView aspect ratio.

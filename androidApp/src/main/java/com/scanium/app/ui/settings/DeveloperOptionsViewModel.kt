@@ -49,6 +49,16 @@ class DeveloperOptionsViewModel(
     val showFtueDebugBounds: StateFlow<Boolean> = settingsRepository.devShowFtueBoundsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    // Detection settings (default ON for beta)
+    val barcodeDetectionEnabled: StateFlow<Boolean> = settingsRepository.devBarcodeDetectionEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val documentDetectionEnabled: StateFlow<Boolean> = settingsRepository.devDocumentDetectionEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val adaptiveThrottlingEnabled: StateFlow<Boolean> = settingsRepository.devAdaptiveThrottlingEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     // Auto-refresh state
     private val _autoRefreshEnabled = MutableStateFlow(false)
     val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -149,6 +159,25 @@ class DeveloperOptionsViewModel(
     fun setShowFtueDebugBounds(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDevShowFtueBounds(enabled)
+        }
+    }
+
+    // Detection settings
+    fun setBarcodeDetectionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevBarcodeDetectionEnabled(enabled)
+        }
+    }
+
+    fun setDocumentDetectionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevDocumentDetectionEnabled(enabled)
+        }
+    }
+
+    fun setAdaptiveThrottlingEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevAdaptiveThrottlingEnabled(enabled)
         }
     }
 
