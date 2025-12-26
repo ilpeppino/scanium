@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -82,8 +81,8 @@ fun WelcomeOverlay(
 
                 // Feature bullets
                 FeatureBullet(
-                    icon = Icons.Default.QrCodeScanner,
-                    text = "Scan items with Object Detection, Barcode, or Document modes"
+                    icon = Icons.Default.Camera,
+                    text = "Scan items with object detection"
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
