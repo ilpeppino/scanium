@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -819,14 +820,20 @@ private fun ItemRow(
                 }
 
                 // Classification error message and retry button
-                if (item.classificationStatus == "FAILED" && item.classificationErrorMessage != null) {
+                if (item.classificationStatus == "FAILED") {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ErrorOutline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
                         Text(
-                            text = item.classificationErrorMessage!!,
+                            text = item.classificationErrorMessage ?: "Classification failed",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 1,
