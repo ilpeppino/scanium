@@ -1,5 +1,6 @@
 package com.scanium.app.classification
 
+import android.content.Context
 import com.scanium.app.config.AndroidCloudConfigProvider
 import com.scanium.shared.core.models.classification.Classifier
 import com.scanium.shared.core.models.config.CloudConfigProvider
@@ -12,7 +13,8 @@ import com.scanium.shared.core.models.config.CloudConfigProvider
 object ClassifierProvider {
 
     fun provide(
-        configProvider: CloudConfigProvider = AndroidCloudConfigProvider()
+        context: Context,
+        configProvider: CloudConfigProvider = AndroidCloudConfigProvider(context)
     ): Classifier {
         val config = configProvider.current()
         // When cloud config is missing, stay non-blocking with NoOp.
