@@ -214,6 +214,121 @@ This runbook describes the canonical “golden” manual regression that every p
 
 ---
 
+***REMOVED******REMOVED*** Full Scanner Mode
+***REMOVED******REMOVED******REMOVED*** SCN-FULL-001 – Object Scan (Single + Continuous)
+- [ ] Status
+- Test ID: SCN-FULL-001
+- Title: Capture objects with tap and long-press
+- Area: Camera
+- Preconditions: Camera permission granted; stable lighting.
+- Test Data / Setup: Two distinct objects (e.g., book + box) on desk.
+- Steps:
+  1. Set scan mode to Items (object).
+  2. Tap shutter once on object A.
+  3. Long-press shutter for 3 seconds while moving to object B, then release.
+- Expected Results:
+  1. Overlay boxes appear for each detection.
+  2. Items list count increases by at least 2 (object A + object B).
+  3. Long-press shows continuous scanning state until release.
+- Failure Notes / Diagnostics: Inspect `CameraXManager` logs for `captureSingleFrame` and `startScanning`.
+- Automation Hints: `testTag("shutterButton")`; long-press gesture; `@full`.
+
+***REMOVED******REMOVED******REMOVED*** SCN-FULL-002 – Barcode Scan + Dedupe
+- [ ] Status
+- Test ID: SCN-FULL-002
+- Title: Barcode detection dedupes repeated scans
+- Area: Camera
+- Preconditions: Developer Options → Barcode/QR Detection enabled.
+- Test Data / Setup: Two different barcodes (A and B).
+- Steps:
+  1. Switch to Barcode scan mode.
+  2. Scan barcode A and wait for overlay to settle.
+  3. Scan barcode A again within 5 seconds.
+  4. Scan barcode B.
+- Expected Results:
+  1. First scan adds a barcode item.
+  2. Second scan within the dedupe window does not add a new item.
+  3. Barcode B adds a second item with its barcode value.
+- Failure Notes / Diagnostics: Check logcat for `[BARCODE_DETECTED]` and dedupe logs; verify item detail shows `Barcode Value`.
+- Automation Hints: Use deterministic barcode fixtures; `@full`.
+
+***REMOVED******REMOVED******REMOVED*** SCN-FULL-003 – QR URL Overlay + Open Browser
+- [ ] Status
+- Test ID: SCN-FULL-003
+- Title: QR URL overlay opens external browser
+- Area: Camera
+- Preconditions: Developer Options → Barcode/QR Detection enabled; default browser installed.
+- Test Data / Setup: QR code containing a short https URL.
+- Steps:
+  1. Switch to Barcode scan mode.
+  2. Scan the QR code and observe the URL pill overlay.
+  3. Tap the URL pill.
+- Expected Results:
+  1. URL pill appears and auto-dismisses after ~2 seconds if untouched.
+  2. Tapping the pill launches the browser via ACTION_VIEW.
+  3. A QR_CODE item is recorded with the URL as the barcode value.
+- Failure Notes / Diagnostics: Verify `ItemsViewModel.latestQrUrl` updates and clears; check browser intent in logcat.
+- Automation Hints: `testTag("qr-url-pill")` (add if missing); `@full`.
+
+***REMOVED******REMOVED******REMOVED*** SCN-FULL-004 – Document Overlay Scan + Cancel
+- [ ] Status
+- Test ID: SCN-FULL-004
+- Title: Document overlay supports scan and cancellation
+- Area: Camera
+- Preconditions: Developer Options → Document Detection enabled; bright, flat document.
+- Test Data / Setup: Printed receipt or letter.
+- Steps:
+  1. Switch to Document scan mode and center the document.
+  2. Wait for the alignment overlay and “Scan document” pill.
+  3. Tap “Scan document” and let one scan finish.
+  4. Repeat step 3, then immediately navigate away (Items or Back) to cancel.
+- Expected Results:
+  1. Overlay appears only when a document candidate is detected.
+  2. Successful scan adds a document item with recognized text.
+  3. Cancelled scan adds no new item and returns to Idle state.
+- Failure Notes / Diagnostics: Look for `scanDocument: Successfully scanned` or `Scan was cancelled` in logcat.
+- Automation Hints: `testTag("document-scan-pill")` (add if missing); `@full`.
+
+***REMOVED******REMOVED******REMOVED*** SCN-FULL-005 – Full Scanner Session Performance (5–10 min)
+- [ ] Status
+- Test ID: SCN-FULL-005
+- Title: Mixed-mode scanning stays stable over time
+- Area: Performance
+- Preconditions: Fully charged device; Wi‑Fi enabled.
+- Test Data / Setup: Mix of objects, barcodes, and documents.
+- Steps:
+  1. For 5–10 minutes, alternate scan modes every 30–60 seconds.
+  2. Perform at least 5 object scans, 5 barcode scans, 2 QR scans, and 2 document scans.
+  3. Keep camera preview active for entire session.
+- Expected Results:
+  1. No crash, ANR, or CameraX rebind failure.
+  2. Preview remains responsive; overlays appear promptly.
+  3. Memory usage stable (no runaway growth in `dumpsys meminfo`).
+- Failure Notes / Diagnostics: Capture `adb logcat` and `adb shell dumpsys meminfo com.scanium.app`.
+- Automation Hints: Mark as `@performance @manual`.
+
+***REMOVED******REMOVED******REMOVED*** SCN-FULL-006 – Developer Detection Toggles
+- [ ] Status
+- Test ID: SCN-FULL-006
+- Title: Barcode/QR + Document detection toggles gate behavior
+- Area: Developer
+- Preconditions: Debug build; Developer Options accessible.
+- Test Data / Setup: Same barcode and document as previous tests.
+- Steps:
+  1. In Developer Options, disable “Barcode/QR Detection”.
+  2. Return to CameraScreen, scan a barcode/QR code.
+  3. Re-enable “Barcode/QR Detection”.
+  4. Disable “Document Detection”, switch to Document mode, and aim at document.
+  5. Re-enable “Document Detection”.
+- Expected Results:
+  1. With barcode detection off, no barcode items or QR overlay appear.
+  2. With document detection off, no document overlay pill appears.
+  3. Re-enabling toggles restores detection immediately.
+- Failure Notes / Diagnostics: Confirm `DetectionRouter` logs reflect enabled/disabled state.
+- Automation Hints: Tag toggles `testTag("toggle-barcode-detection")`, `testTag("toggle-document-detection")`.
+
+---
+
 ***REMOVED******REMOVED*** Full Regression Suite
 ***REMOVED******REMOVED******REMOVED*** SCN-REG-001 – FTUE Spotlight Layout Audit
 - [ ] Status
