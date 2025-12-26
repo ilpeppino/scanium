@@ -14,7 +14,6 @@ enum class TourScreen {
 enum class TourStepKey {
     WELCOME,
     CAMERA_SETTINGS,
-    CAMERA_MODE_ICONS,
     CAMERA_SHUTTER,
     CAMERA_ITEMS_BUTTON,
     ITEMS_ACTION_FAB,

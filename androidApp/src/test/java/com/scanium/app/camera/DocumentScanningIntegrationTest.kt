@@ -48,28 +48,6 @@ class DocumentScanningIntegrationTest {
     }
 
     @Test
-    fun `verify mode switching workflow`() {
-        // Simulate mode switching through all modes
-        val modes = ScanMode.values()
-
-        // Start with OBJECT_DETECTION
-        var currentMode = ScanMode.OBJECT_DETECTION
-        assertEquals(ScanMode.OBJECT_DETECTION, currentMode)
-
-        // Switch to BARCODE
-        currentMode = modes[1]
-        assertEquals(ScanMode.BARCODE, currentMode)
-
-        // Switch to DOCUMENT_TEXT
-        currentMode = modes[2]
-        assertEquals(ScanMode.DOCUMENT_TEXT, currentMode)
-
-        // Can switch back to OBJECT_DETECTION
-        currentMode = modes[0]
-        assertEquals(ScanMode.OBJECT_DETECTION, currentMode)
-    }
-
-    @Test
     fun `verify when expression covers all modes`() {
         // This test ensures that when statements in the codebase
         // will handle all three modes correctly
@@ -110,17 +88,6 @@ class DocumentScanningIntegrationTest {
         assertEquals("Document", category.displayName)
         assertNotNull(category.name)
         assertEquals("DOCUMENT", category.name)
-    }
-
-    @Test
-    fun `verify mode count matches UI expectations`() {
-        // The UI expects exactly 3 modes for the three-segment slider
-        val modes = ScanMode.values()
-        assertEquals(
-            "UI slider expects exactly 3 modes",
-            3,
-            modes.size
-        )
     }
 
     @Test
@@ -180,23 +147,6 @@ class DocumentScanningIntegrationTest {
                 )
             )
         }
-    }
-
-    @Test
-    fun `verify mode switching doesn't skip modes`() {
-        // Verify that all modes are accessible in sequence
-        val modes = ScanMode.values()
-        val visitedModes = mutableSetOf<ScanMode>()
-
-        for (i in modes.indices) {
-            visitedModes.add(modes[i])
-        }
-
-        assertEquals(
-            "All modes should be visitable",
-            modes.size,
-            visitedModes.size
-        )
     }
 
     @Test
