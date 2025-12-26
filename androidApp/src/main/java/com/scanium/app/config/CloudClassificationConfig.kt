@@ -1,5 +1,6 @@
 package com.scanium.app.config
 
+import android.content.Context
 import com.scanium.shared.core.models.config.CloudClassifierConfig
 
 /**
@@ -8,7 +9,6 @@ import com.scanium.shared.core.models.config.CloudClassifierConfig
  * AndroidCloudConfigProvider.
  */
 object CloudClassificationConfig {
-    private val provider = AndroidCloudConfigProvider()
-
-    fun current(): CloudClassifierConfig = provider.current()
+    fun current(context: Context): CloudClassifierConfig =
+        AndroidCloudConfigProvider(context).current()
 }
