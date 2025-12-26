@@ -65,7 +65,15 @@ android {
         val otlpEndpoint = localPropertyOrEnv("scanium.otlp.endpoint", "SCANIUM_OTLP_ENDPOINT", "")
         val otlpEnabled = localPropertyOrEnv("scanium.otlp.enabled", "SCANIUM_OTLP_ENABLED", "false")
 
+        // SEC-003: TLS Certificate pinning for MITM protection
+        // Set the SHA-256 certificate pin hash in local.properties or environment:
+        //   scanium.api.certificate.pin=sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+        // To obtain the pin hash for your server, use:
+        //   openssl s_client -servername <host> -connect <host>:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+        val certificatePin = localPropertyOrEnv("scanium.api.certificate.pin", "SCANIUM_API_CERTIFICATE_PIN", "")
+
         buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "SCANIUM_API_CERTIFICATE_PIN", "\"$certificatePin\"")
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
         buildConfigField("String", "OTLP_ENDPOINT", "\"$otlpEndpoint\"")
         buildConfigField("boolean", "OTLP_ENABLED", otlpEnabled)

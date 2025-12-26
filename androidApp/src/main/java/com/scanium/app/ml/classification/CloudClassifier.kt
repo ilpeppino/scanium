@@ -16,11 +16,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import okhttp3.CertificatePinner
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.net.URI
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -90,6 +92,28 @@ class CloudClassifier(
     private val client = OkHttpClient.Builder()
         .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .apply {
+            // SEC-003: Add certificate pinning for MITM protection
+            val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
+            val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
+            if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
+                val host = try {
+                    URI(baseUrl).host ?: ""
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to parse host from base URL for certificate pinning", e)
+                    ""
+                }
+                if (host.isNotBlank()) {
+                    val pinner = CertificatePinner.Builder()
+                        .add(host, certificatePin)
+                        .build()
+                    certificatePinner(pinner)
+                    Log.d(TAG, "Certificate pinning enabled for host: $host")
+                }
+            } else if (certificatePin.isBlank() && baseUrl.isNotBlank()) {
+                Log.w(TAG, "Certificate pinning not configured - set SCANIUM_API_CERTIFICATE_PIN for production")
+            }
+        }
         .build()
 
     private val apiKeyStore = context?.applicationContext?.let { SecureApiKeyStore(it) }
