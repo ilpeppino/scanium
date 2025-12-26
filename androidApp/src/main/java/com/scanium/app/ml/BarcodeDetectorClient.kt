@@ -11,6 +11,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect
 import com.scanium.app.items.ScannedItem
+import com.scanium.shared.core.models.ml.ItemCategory
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -129,7 +130,9 @@ class BarcodeDetectorClient {
                 category = category,
                 priceRange = 0.0 to 0.0,
                 confidence = confidence,
-                boundingBox = bboxNorm
+                boundingBox = bboxNorm,
+                barcodeValue = barcodeValue,
+                labelText = formatLabel(barcode.format)
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error converting barcode to item", e)
@@ -138,28 +141,53 @@ class BarcodeDetectorClient {
     }
 
     /**
+     * Returns a human-readable format label for the barcode format.
+     */
+    private fun formatLabel(format: Int): String {
+        return when (format) {
+            Barcode.FORMAT_QR_CODE -> "QR Code"
+            Barcode.FORMAT_EAN_13 -> "EAN-13"
+            Barcode.FORMAT_EAN_8 -> "EAN-8"
+            Barcode.FORMAT_UPC_A -> "UPC-A"
+            Barcode.FORMAT_UPC_E -> "UPC-E"
+            Barcode.FORMAT_CODE_128 -> "Code 128"
+            Barcode.FORMAT_CODE_39 -> "Code 39"
+            Barcode.FORMAT_CODE_93 -> "Code 93"
+            Barcode.FORMAT_ITF -> "ITF"
+            Barcode.FORMAT_CODABAR -> "Codabar"
+            Barcode.FORMAT_DATA_MATRIX -> "Data Matrix"
+            Barcode.FORMAT_AZTEC -> "Aztec"
+            Barcode.FORMAT_PDF417 -> "PDF417"
+            else -> "Barcode"
+        }
+    }
+
+    /**
      * Determines the item category based on barcode type.
-     * Product barcodes (EAN, UPC) are likely to be product items.
+     * Returns BARCODE for linear barcodes, QR_CODE for QR codes.
      */
     private fun determineCategoryFromBarcode(barcode: Barcode): ItemCategory {
         return when (barcode.format) {
+            Barcode.FORMAT_QR_CODE -> {
+                Log.d(TAG, "QR code detected: ${barcode.rawValue}")
+                ItemCategory.QR_CODE
+            }
             Barcode.FORMAT_EAN_13,
             Barcode.FORMAT_EAN_8,
             Barcode.FORMAT_UPC_A,
-            Barcode.FORMAT_UPC_E -> {
-                // Product barcodes - could be food, electronics, fashion, etc.
-                // For PoC, we'll default to UNKNOWN and let the pricing engine handle it
-                Log.d(TAG, "Product barcode detected: ${barcode.rawValue}")
-                ItemCategory.UNKNOWN
-            }
-            Barcode.FORMAT_QR_CODE -> {
-                // QR codes can contain various data
-                Log.d(TAG, "QR code detected: ${barcode.rawValue}")
-                ItemCategory.UNKNOWN
+            Barcode.FORMAT_UPC_E,
+            Barcode.FORMAT_CODE_128,
+            Barcode.FORMAT_CODE_39,
+            Barcode.FORMAT_CODE_93,
+            Barcode.FORMAT_ITF,
+            Barcode.FORMAT_CODABAR -> {
+                Log.d(TAG, "Barcode detected: format=${barcode.format}, value=${barcode.rawValue}")
+                ItemCategory.BARCODE
             }
             else -> {
-                Log.d(TAG, "Other barcode format: ${barcode.format}")
-                ItemCategory.UNKNOWN
+                // Other 2D codes (Data Matrix, Aztec, PDF417) categorized as BARCODE
+                Log.d(TAG, "Other barcode format: ${barcode.format}, value=${barcode.rawValue}")
+                ItemCategory.BARCODE
             }
         }
     }
