@@ -708,12 +708,27 @@ class CameraXManager(
                     }
                 }
                 ScanMode.BARCODE -> {
-                    // Barcode and text scanners don't return DetectionResults yet
-                    val items = barcodeDetector.scanBarcodes(
-                        image = inputImage,
-                        sourceBitmap = lazyBitmapProvider
-                    )
-                    Pair(items, emptyList())
+                    // Check throttle before running barcode detection
+                    val canRun = detectionRouter.tryInvokeBarcodeDetection()
+                    if (!canRun) {
+                        Log.d(TAG, "[BARCODE] Throttled - skipping frame")
+                        Pair(emptyList(), emptyList())
+                    } else {
+                        // Run barcode detection
+                        val rawItems = barcodeDetector.scanBarcodes(
+                            image = inputImage,
+                            sourceBitmap = lazyBitmapProvider
+                        )
+
+                        if (rawItems.isEmpty()) {
+                            Pair(emptyList(), emptyList())
+                        } else {
+                            // Process through router for deduplication
+                            val (event, uniqueItems) = detectionRouter.processBarcodeResults(rawItems)
+                            Log.i(TAG, "[BARCODE] Detected ${rawItems.size} barcodes, ${uniqueItems.size} unique after dedupe")
+                            Pair(uniqueItems, emptyList())
+                        }
+                    }
                 }
                 ScanMode.DOCUMENT_TEXT -> {
                     val items = textRecognizer.recognizeText(

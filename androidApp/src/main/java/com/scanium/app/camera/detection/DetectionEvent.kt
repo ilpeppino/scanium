@@ -30,13 +30,25 @@ sealed class DetectionEvent {
 
     /**
      * Barcode/QR code detection results.
-     * Future: Will contain barcode value, format, and bounding box.
+     * Contains detected barcode items with their raw values and formats.
+     *
+     * @param items List of detected barcode ScannedItems (already deduplicated)
+     * @param rawDetectionCount Number of barcodes detected before deduplication
+     * @param dedupedCount Number of barcodes filtered by deduplication
      */
     data class BarcodeDetected(
         override val timestampMs: Long,
         override val source: DetectorType = DetectorType.BARCODE,
-        val items: List<ScannedItem>
-    ) : DetectionEvent()
+        val items: List<ScannedItem>,
+        val rawDetectionCount: Int = items.size,
+        val dedupedCount: Int = 0
+    ) : DetectionEvent() {
+        /** True if at least one new barcode was detected */
+        val hasNewBarcodes: Boolean get() = items.isNotEmpty()
+
+        /** Extract barcode values for logging/debugging */
+        val barcodeValues: List<String> get() = items.mapNotNull { it.barcodeValue }
+    }
 
     /**
      * Document candidate detection results.
