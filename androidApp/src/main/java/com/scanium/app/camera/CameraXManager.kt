@@ -34,6 +34,10 @@ import com.google.mlkit.vision.common.InputImage
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DetectionRouterConfig
+import com.scanium.app.camera.detection.DetectorType
+import com.scanium.app.camera.detection.DocumentCandidate
+import com.scanium.app.camera.detection.DocumentCandidateDetector
+import com.scanium.app.camera.detection.DocumentCandidateState
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,6 +69,8 @@ class CameraXManager(
         private const val TAG = "CameraXManager"
         private const val DEFAULT_MOTION_SCORE = 0.2
         private const val LUMA_SAMPLE_STEP = 8
+        private const val DOCUMENT_CANDIDATE_TTL_MS = 800L
+        private const val DOCUMENT_CANDIDATE_MIN_CONFIDENCE = 0.45f
 
         // PHASE 3: Edge gating margin
         // Detections whose center falls within this margin from the cropRect edge are dropped
@@ -93,14 +99,22 @@ class CameraXManager(
     // Detection router for throttling and future multi-detector orchestration
     private val detectionRouter = DetectionRouter(
         config = DetectionRouterConfig(
+            throttleIntervals = mapOf(
+                DetectorType.DOCUMENT to 400L
+            ),
             enableVerboseLogging = BuildConfig.DEBUG,
             enableDebugLogging = BuildConfig.DEBUG
         )
     )
 
+    private val documentCandidateDetector = DocumentCandidateDetector()
+
     private val _analysisFps = MutableStateFlow(0.0)
     /** Real-time analysis FPS for performance monitoring */
     val analysisFps: StateFlow<Double> = _analysisFps.asStateFlow()
+
+    private val _documentCandidateState = MutableStateFlow<DocumentCandidateState?>(null)
+    val documentCandidateState: StateFlow<DocumentCandidateState?> = _documentCandidateState.asStateFlow()
 
     // Object tracker for de-duplication
     // Using very permissive thresholds to ensure items are actually promoted
@@ -343,11 +357,11 @@ class CameraXManager(
             )
             imageProxy.setCropRect(cropRect)
 
-            detectionScope.launch {
-                try {
-                    // Report actual frame dimensions (full image, not cropped)
-                    // The overlay needs full image size for proper coordinate transformation
-                    val frameSize = Size(imageProxy.width, imageProxy.height)
+        detectionScope.launch {
+            try {
+                // Report actual frame dimensions (full image, not cropped)
+                // The overlay needs full image size for proper coordinate transformation
+                val frameSize = Size(imageProxy.width, imageProxy.height)
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
                     }
@@ -482,6 +496,13 @@ class CameraXManager(
                             onFrameSize(frameSize)
                         }
 
+                        val documentCandidate = if (detectionRouter.tryInvokeDocumentDetection(frameReceiveTime)) {
+                            documentCandidateDetector.detect(imageProxy, frameReceiveTime)
+                        } else {
+                            null
+                        }
+                        updateDocumentCandidateState(documentCandidate, frameReceiveTime)
+
                         // Route through detection router for metrics tracking
                         // Note: Currently just records invocation, does not change detection behavior
                         detectionRouter.routeDetection(scanMode, frameReceiveTime)
@@ -535,6 +556,22 @@ class CameraXManager(
         motionScore <= 0.1 -> 2000L
         motionScore <= 0.5 -> 800L
         else -> 400L
+    }
+
+    private fun updateDocumentCandidateState(candidate: DocumentCandidate?, timestampMs: Long) {
+        val current = _documentCandidateState.value
+        if (candidate != null && candidate.confidence >= DOCUMENT_CANDIDATE_MIN_CONFIDENCE) {
+            _documentCandidateState.value = DocumentCandidateState(
+                candidate = candidate,
+                lastSeenMs = timestampMs,
+                averageProcessingMs = documentCandidateDetector.averageProcessingMs()
+            )
+            return
+        }
+
+        if (current != null && timestampMs - current.lastSeenMs > DOCUMENT_CANDIDATE_TTL_MS) {
+            _documentCandidateState.value = null
+        }
     }
 
     private fun computeMotionScore(imageProxy: ImageProxy): Double {
@@ -599,6 +636,7 @@ class CameraXManager(
         scanJob = null
         // Stop detection router session (logs stats)
         detectionRouter.stopSession()
+        _documentCandidateState.value = null
         // Reset tracker when stopping scan
         objectTracker.stopSession("user_stopped")
         objectTracker.reset()
