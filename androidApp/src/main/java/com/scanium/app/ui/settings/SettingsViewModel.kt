@@ -101,7 +101,7 @@ class SettingsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val autoSendTranscript: StateFlow<Boolean> = settingsRepository.autoSendTranscriptFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val voiceLanguage: StateFlow<String> = settingsRepository.voiceLanguageFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")

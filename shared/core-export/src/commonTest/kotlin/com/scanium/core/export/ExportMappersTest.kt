@@ -1,6 +1,6 @@
 package com.scanium.core.export
 
-import com.scanium.core.models.image.ImageRef
+import com.scanium.core.models.image.ImageRefBytes
 import com.scanium.core.models.items.ScannedItem
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.pricing.Money
@@ -16,7 +16,7 @@ class ExportMappersTest {
             category = ItemCategory.ELECTRONICS,
             labelText = "Laptop",
             boundingBox = com.scanium.core.models.geometry.NormalizedRect(0f, 0f, 1f, 1f),
-            thumbnail = ImageRef.Bytes(
+            thumbnail = ImageRefBytes(
                 bytes = byteArrayOf(1, 2, 3),
                 mimeType = "image/jpeg",
                 width = 10,
