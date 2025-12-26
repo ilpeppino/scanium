@@ -43,6 +43,9 @@ class DeveloperOptionsViewModel(
     val forceFtueTour: StateFlow<Boolean> = ftueRepository.forceEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val allowScreenshots: StateFlow<Boolean> = settingsRepository.devAllowScreenshotsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     // Auto-refresh state
     private val _autoRefreshEnabled = MutableStateFlow(false)
     val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -131,6 +134,12 @@ class DeveloperOptionsViewModel(
     fun setForceFtueTour(enabled: Boolean) {
         viewModelScope.launch {
             ftueRepository.setForceEnabled(enabled)
+        }
+    }
+
+    fun setAllowScreenshots(allowed: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevAllowScreenshots(allowed)
         }
     }
 

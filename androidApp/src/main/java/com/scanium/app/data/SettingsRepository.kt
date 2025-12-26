@@ -46,6 +46,9 @@ class SettingsRepository(private val context: Context) {
         private val AUTO_SEND_TRANSCRIPT_KEY = booleanPreferencesKey("auto_send_transcript")
         private val VOICE_LANGUAGE_KEY = stringPreferencesKey("voice_language")
         private val ASSISTANT_HAPTICS_KEY = booleanPreferencesKey("assistant_haptics_enabled")
+
+        // Developer preferences
+        private val DEV_ALLOW_SCREENSHOTS_KEY = booleanPreferencesKey("dev_allow_screenshots")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -283,6 +286,20 @@ class SettingsRepository(private val context: Context) {
     suspend fun setVoiceLanguage(language: String) {
         context.settingsDataStore.edit { preferences ->
             preferences[VOICE_LANGUAGE_KEY] = language
+        }
+    }
+
+    /**
+     * Developer preference to allow screenshots.
+     * Default true to avoid disrupting debugging workflows.
+     */
+    val devAllowScreenshotsFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_ALLOW_SCREENSHOTS_KEY] ?: true
+    }
+
+    suspend fun setDevAllowScreenshots(allowed: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_ALLOW_SCREENSHOTS_KEY] = allowed
         }
     }
 
