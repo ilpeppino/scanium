@@ -260,10 +260,10 @@ class SettingsRepository(private val context: Context) {
 
     /**
      * Whether to automatically send message after transcription.
-     * Default is ON for fewer steps.
+     * Default is OFF so users can edit transcripts for privacy.
      */
     val autoSendTranscriptFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[AUTO_SEND_TRANSCRIPT_KEY] ?: true
+        preferences[AUTO_SEND_TRANSCRIPT_KEY] ?: false
     }
 
     suspend fun setAutoSendTranscript(enabled: Boolean) {
@@ -352,6 +352,7 @@ class SettingsRepository(private val context: Context) {
             preferences[ALLOW_ASSISTANT_IMAGES_KEY] = false
             preferences[VOICE_MODE_ENABLED_KEY] = false
             preferences[SPEAK_ANSWERS_KEY] = false
+            preferences[AUTO_SEND_TRANSCRIPT_KEY] = false
             preferences[SHARE_DIAGNOSTICS_KEY] = false
         }
     }

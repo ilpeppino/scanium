@@ -88,8 +88,9 @@ fun DataUsageScreen(
                     "• Audio storage: Audio is NOT stored or uploaded by default\n" +
                     "• Text-to-Speech: Responses can be spoken aloud using on-device TTS\n\n" +
                     "Toggles:\n" +
-                    "• Settings → Enable Voice Mode\n" +
-                    "• Settings → Speak Answers Aloud"
+                    "• Settings → Voice input (microphone)\n" +
+                    "• Settings → Read assistant replies aloud\n" +
+                    "• Settings → Auto-send after voice recognition (optional)"
             )
 
             DataUsageSectionWithIcon(

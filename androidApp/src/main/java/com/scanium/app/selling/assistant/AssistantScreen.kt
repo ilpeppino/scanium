@@ -136,7 +136,7 @@ fun AssistantScreen(
     // Voice mode settings
     val voiceModeEnabled by settingsRepository.voiceModeEnabledFlow.collectAsState(initial = false)
     val speakAnswersEnabled by settingsRepository.speakAnswersEnabledFlow.collectAsState(initial = false)
-    val autoSendTranscript by settingsRepository.autoSendTranscriptFlow.collectAsState(initial = true)
+    val autoSendTranscript by settingsRepository.autoSendTranscriptFlow.collectAsState(initial = false)
     val voiceLanguage by settingsRepository.voiceLanguageFlow.collectAsState(initial = "")
     val assistantLanguage by settingsRepository.assistantLanguageFlow.collectAsState(initial = "EN")
     val assistantHapticsEnabled by settingsRepository.assistantHapticsEnabledFlow.collectAsState(initial = false)
@@ -146,6 +146,8 @@ fun AssistantScreen(
     val partialTranscript by voiceController.partialTranscript.collectAsState()
     val latestAssistantTimestamp = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
         ?.message?.timestamp
+    val lastVoiceError by voiceController.lastError.collectAsState()
+    val speechAvailable = voiceController.isSpeechAvailable
 
     // Update voice language when settings change
     LaunchedEffect(voiceLanguage, assistantLanguage) {
@@ -246,7 +248,6 @@ fun AssistantScreen(
                     }
                 },
                 actions = {
-                    // Show voice state indicator when speaking
                     if (voiceState == VoiceState.SPEAKING) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -422,6 +423,23 @@ fun AssistantScreen(
                 )
             }
 
+            if (voiceState == VoiceState.ERROR && lastVoiceError != null) {
+                VoiceErrorBanner(
+                    message = lastVoiceError!!,
+                    retryEnabled = speechAvailable,
+                    onRetry = {
+                        if (speechAvailable) {
+                            voiceController.startListening(handleVoiceResult)
+                        }
+                    },
+                    onDismiss = { voiceController.stopListening() }
+                )
+            }
+
+            if (voiceModeEnabled && !speechAvailable) {
+                VoiceUnavailableBanner()
+            }
+
             // Smart suggested questions (context-aware)
             SmartSuggestionsRow(
                 suggestions = state.suggestedQuestions.ifEmpty {
@@ -475,12 +493,9 @@ fun AssistantScreen(
                             IconButton(
                                 onClick = {
                                     when {
-                                        isActive -> {
-                                            // Stop listening if already active
-                                            voiceController.stopListening()
-                                        }
+                                        !speechAvailable -> Unit
+                                        isActive -> voiceController.stopListening()
                                         else -> {
-                                            // Start listening
                                             val hasPermission = ContextCompat.checkSelfPermission(
                                                 context,
                                                 Manifest.permission.RECORD_AUDIO
@@ -493,6 +508,7 @@ fun AssistantScreen(
                                         }
                                     }
                                 },
+                                enabled = speechAvailable,
                                 modifier = Modifier
                                     .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                                     .semantics {
@@ -503,9 +519,19 @@ fun AssistantScreen(
                                         }
                                     }
                             ) {
+                                val icon = when {
+                                    !speechAvailable -> Icons.Default.MicOff
+                                    isActive -> Icons.Default.Stop
+                                    else -> Icons.Default.Mic
+                                }
+                                val description = when {
+                                    !speechAvailable -> "Voice input unavailable"
+                                    isActive -> "Stop listening"
+                                    else -> "Voice input"
+                                }
                                 Icon(
-                                    imageVector = if (isActive) Icons.Default.Stop else Icons.Default.Mic,
-                                    contentDescription = null,
+                                    imageVector = icon,
+                                    contentDescription = description,
                                     tint = micColor
                                 )
                             }
@@ -1088,6 +1114,90 @@ private fun VoiceListeningIndicator(
                         VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun VoiceErrorBanner(
+    message: String,
+    retryEnabled: Boolean,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    text = "Tap retry or edit and send manually.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onDismiss) {
+                    Text("Dismiss")
+                }
+                Button(onClick = onRetry, enabled = retryEnabled) {
+                    Text("Retry")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VoiceUnavailableBanner() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.MicOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Column {
+                Text(
+                    text = "Voice input unavailable on this device",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "You can keep typing questions while we disable the mic button.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
             }
         }
