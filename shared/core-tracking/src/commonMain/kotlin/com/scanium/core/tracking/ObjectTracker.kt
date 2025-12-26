@@ -66,18 +66,33 @@ class ObjectTracker(
             }
 
             currentFrame++
-            logger.i(TAG, ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}")
+            if (config.enableVerboseLogging) {
+                logger.i(
+                    TAG,
+                    ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}"
+                )
+            }
 
             val newlyConfirmed = mutableListOf<ObjectCandidate>()
             val matchedCandidates = mutableSetOf<String>()
 
             // Process each detection
             for ((index, detection) in detections.withIndex()) {
-                logger.i(TAG, "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}")
+                if (config.enableVerboseLogging) {
+                    logger.i(
+                        TAG,
+                        "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}"
+                    )
+                }
 
                 // Skip if bounding box is too small (hard filter)
                 if (detection.normalizedBoxArea < config.minBoxArea) {
-                    logger.i(TAG, "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})")
+                    if (config.enableVerboseLogging) {
+                        logger.i(
+                            TAG,
+                            "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})"
+                        )
+                    }
                     continue
                 }
 
@@ -106,14 +121,24 @@ class ObjectTracker(
 
                     matchedCandidates.add(matchedCandidate.internalId)
 
-                    logger.i(TAG, "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}")
+                    if (config.enableVerboseLogging) {
+                        logger.i(
+                            TAG,
+                            "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}"
+                        )
+                    }
 
                     // Check if it just became confirmed
                     if (!wasConfirmed && isConfirmed(matchedCandidate)) {
                         if (!confirmedIds.contains(matchedCandidate.internalId)) {
                             confirmedIds.add(matchedCandidate.internalId)
                             newlyConfirmed.add(matchedCandidate)
-                            logger.i(TAG, "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames")
+                            if (config.enableVerboseLogging) {
+                                logger.i(
+                                    TAG,
+                                    "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames"
+                                )
+                            }
                             telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
                                 "candidate_id" to matchedCandidate.internalId,
                                 "category" to matchedCandidate.category.name,
@@ -130,7 +155,12 @@ class ObjectTracker(
                     spatialIndex.upsert(newCandidate.internalId, newCandidate.indexBoundingBox())
                     matchedCandidates.add(newCandidate.internalId)
 
-                    logger.i(TAG, "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})")
+                    if (config.enableVerboseLogging) {
+                        logger.i(
+                            TAG,
+                            "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})"
+                        )
+                    }
                     telemetry?.event("scan.candidate_created", TelemetrySeverity.DEBUG, mapOf(
                         "candidate_id" to newCandidate.internalId,
                         "category" to newCandidate.category.name,
@@ -143,7 +173,12 @@ class ObjectTracker(
                         if (!confirmedIds.contains(newCandidate.internalId)) {
                             confirmedIds.add(newCandidate.internalId)
                             newlyConfirmed.add(newCandidate)
-                            logger.i(TAG, "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}")
+                            if (config.enableVerboseLogging) {
+                                logger.i(
+                                    TAG,
+                                    "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}"
+                                )
+                            }
                             telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
                                 "candidate_id" to newCandidate.internalId,
                                 "category" to newCandidate.category.name,
@@ -157,7 +192,9 @@ class ObjectTracker(
             // Remove stale candidates
             removeExpiredCandidates(matchedCandidates)
 
-            logger.i(TAG, ">>> processFrame END: returning ${newlyConfirmed.size} newly confirmed candidates")
+            if (config.enableVerboseLogging) {
+                logger.i(TAG, ">>> processFrame END: returning ${newlyConfirmed.size} newly confirmed candidates")
+            }
             return newlyConfirmed
         } catch (e: Exception) {
             span?.recordError(e.message ?: "Unknown error")
@@ -241,7 +278,9 @@ class ObjectTracker(
         }
 
         if (bestMatch != null) {
-            logger.d(TAG, "Spatial match found: ${bestMatch.internalId} (score=$bestScore)")
+            if (config.enableVerboseLogging) {
+                logger.d(TAG, "Spatial match found: ${bestMatch.internalId} (score=$bestScore)")
+            }
         }
 
         return bestMatch
@@ -312,10 +351,12 @@ class ObjectTracker(
         candidates.remove(toRemove.internalId)
         confirmedIds.remove(toRemove.internalId)
         spatialIndex.remove(toRemove.internalId)
-        logger.d(
-            TAG,
-            "Evicting candidate ${toRemove.internalId} to maintain maxTrackedCandidates=${config.maxTrackedCandidates}"
-        )
+        if (config.enableVerboseLogging) {
+            logger.d(
+                TAG,
+                "Evicting candidate ${toRemove.internalId} to maintain maxTrackedCandidates=${config.maxTrackedCandidates}"
+            )
+        }
     }
 
     /**
@@ -372,7 +413,9 @@ class ObjectTracker(
 
             if (framesSinceLastSeen > config.expiryFrames) {
                 toRemove.add(id)
-                logger.d(TAG, "Expiring candidate $id: not seen for $framesSinceLastSeen frames")
+                if (config.enableVerboseLogging) {
+                    logger.d(TAG, "Expiring candidate $id: not seen for $framesSinceLastSeen frames")
+                }
                 telemetry?.event("scan.candidate_expired", TelemetrySeverity.DEBUG, mapOf(
                     "candidate_id" to id,
                     "age_frames" to candidate.seenCount.toString()
@@ -394,7 +437,9 @@ class ObjectTracker(
      * @param scanMode Optional scan mode to log with session start event
      */
     fun reset(scanMode: String? = null) {
-        logger.i(TAG, "Resetting tracker: clearing ${candidates.size} candidates")
+        if (config.enableVerboseLogging) {
+            logger.i(TAG, "Resetting tracker: clearing ${candidates.size} candidates")
+        }
 
         candidates.clear()
         confirmedIds.clear()
@@ -482,6 +527,9 @@ data class TrackerConfig(
 
     /** Fall back to linear scan under this candidate count */
     val linearScanThreshold: Int = 8,
+
+    /** Controls verbose logging (debug-only). */
+    val enableVerboseLogging: Boolean = false,
 )
 
 /**
