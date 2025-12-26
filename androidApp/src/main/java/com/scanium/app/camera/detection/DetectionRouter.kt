@@ -224,17 +224,57 @@ class DetectionRouter(
     }
 
     /**
-     * Process barcode detection results and emit event.
-     * Future: Will be implemented when barcode detector is integrated.
+     * Process barcode detection results with deduplication and emit event.
+     * Filters out barcodes that have been seen within the dedupe window.
+     *
+     * @param items Detected barcode items from BarcodeDetectorClient
+     * @return DetectionEvent with deduplicated items, and a list of unique items to add
      */
-    fun processBarcodeResults(items: List<ScannedItem>): DetectionEvent.BarcodeDetected {
+    fun processBarcodeResults(items: List<ScannedItem>): Pair<DetectionEvent.BarcodeDetected, List<ScannedItem>> {
+        val timestampMs = System.currentTimeMillis()
+        val uniqueItems = mutableListOf<ScannedItem>()
+
+        for (item in items) {
+            val rawValue = item.barcodeValue
+            if (rawValue.isNullOrEmpty()) {
+                Log.w(TAG, "[BARCODE] Skipping item with empty rawValue: ${item.id}")
+                continue
+            }
+
+            // Get format code from category (QR_CODE = 256, others = barcode format)
+            val formatCode = if (item.category.name == "QR_CODE") 256 else 0
+
+            // Check deduplication
+            val isNew = dedupeHelper.checkAndRecordBarcode(
+                rawValue = rawValue,
+                format = formatCode,
+                itemId = item.id
+            )
+
+            if (isNew) {
+                uniqueItems.add(item)
+                Log.i(TAG, "[BARCODE_DETECTED] New barcode: value=$rawValue, category=${item.category}, format=${item.labelText}")
+            } else {
+                dedupedCounter.incrementAndGet()
+                Log.d(TAG, "[BARCODE_DEDUPE] Skipped duplicate: value=$rawValue")
+            }
+        }
+
+        val dedupedCount = items.size - uniqueItems.size
         val event = DetectionEvent.BarcodeDetected(
-            timestampMs = System.currentTimeMillis(),
+            timestampMs = timestampMs,
             source = DetectorType.BARCODE,
-            items = items
+            items = uniqueItems,
+            rawDetectionCount = items.size,
+            dedupedCount = dedupedCount
         )
         _lastEvent.value = event
-        return event
+
+        if (config.enableVerboseLogging) {
+            Log.d(TAG, "[RESULT] Barcode detection: ${items.size} raw -> ${uniqueItems.size} unique (${dedupedCount} deduped)")
+        }
+
+        return event to uniqueItems
     }
 
     /**

@@ -284,4 +284,151 @@ class DedupeHelperTest {
         // With high IoU threshold, moderate overlap should NOT be duplicate
         assertFalse(helper.isDuplicate(DetectorType.OBJECT, "shoe", box2, 1000L))
     }
+
+    // ==================== Barcode-Specific Deduplication Tests ====================
+
+    @Test
+    fun `isBarcodeDuplicate returns false for first barcode`() {
+        assertFalse(
+            helper.isBarcodeDuplicate(
+                rawValue = "1234567890123",
+                format = 32, // EAN-13
+                currentTimeMs = 0L
+            )
+        )
+    }
+
+    @Test
+    fun `isBarcodeDuplicate returns true for same barcode within expiry window`() {
+        helper.recordBarcodeSeen(
+            rawValue = "1234567890123",
+            format = 32,
+            currentTimeMs = 0L
+        )
+
+        assertTrue(
+            helper.isBarcodeDuplicate(
+                rawValue = "1234567890123",
+                format = 32,
+                currentTimeMs = 2000L
+            )
+        )
+    }
+
+    @Test
+    fun `isBarcodeDuplicate returns false after expiry window`() {
+        helper.recordBarcodeSeen(
+            rawValue = "1234567890123",
+            format = 32,
+            currentTimeMs = 0L
+        )
+
+        // Default BARCODE expiry is 5000ms
+        assertFalse(
+            helper.isBarcodeDuplicate(
+                rawValue = "1234567890123",
+                format = 32,
+                currentTimeMs = 6000L
+            )
+        )
+    }
+
+    @Test
+    fun `isBarcodeDuplicate returns false for different rawValue`() {
+        helper.recordBarcodeSeen(
+            rawValue = "1234567890123",
+            format = 32,
+            currentTimeMs = 0L
+        )
+
+        assertFalse(
+            helper.isBarcodeDuplicate(
+                rawValue = "9876543210987",
+                format = 32,
+                currentTimeMs = 1000L
+            )
+        )
+    }
+
+    @Test
+    fun `checkAndRecordBarcode returns true for new barcode and records it`() {
+        assertTrue(
+            helper.checkAndRecordBarcode(
+                rawValue = "1234567890123",
+                format = 32,
+                currentTimeMs = 0L
+            )
+        )
+
+        // Second call should return false (duplicate)
+        assertFalse(
+            helper.checkAndRecordBarcode(
+                rawValue = "1234567890123",
+                format = 32,
+                currentTimeMs = 1000L
+            )
+        )
+    }
+
+    @Test
+    fun `resetBarcodes clears barcode state`() {
+        helper.recordBarcodeSeen("1234567890123", 32, currentTimeMs = 0L)
+
+        helper.resetBarcodes()
+
+        assertFalse(
+            helper.isBarcodeDuplicate("1234567890123", 32, currentTimeMs = 100L)
+        )
+    }
+
+    @Test
+    fun `resetAll clears both barcode and spatial state`() {
+        val box = rect(0.1f, 0.1f, 0.3f, 0.3f)
+        helper.recordSeen(DetectorType.OBJECT, "shoe", box, 0L)
+        helper.recordBarcodeSeen("1234567890123", 32, currentTimeMs = 0L)
+
+        helper.resetAll()
+
+        assertFalse(helper.isDuplicate(DetectorType.OBJECT, "shoe", box, 100L))
+        assertFalse(helper.isBarcodeDuplicate("1234567890123", 32, 100L))
+    }
+
+    @Test
+    fun `getStats includes barcode count`() {
+        helper.recordBarcodeSeen("1234567890123", 32, currentTimeMs = 0L)
+        helper.recordBarcodeSeen("9876543210987", 32, currentTimeMs = 0L)
+
+        val stats = helper.getStats()
+
+        assertEquals(2, stats.trackedBarcodes)
+    }
+
+    @Test
+    fun `barcode dedupe works independently of spatial dedupe`() {
+        val box = rect(0.1f, 0.1f, 0.3f, 0.3f)
+
+        // Record spatial detection
+        helper.recordSeen(DetectorType.BARCODE, "barcode", box, 0L)
+
+        // Barcode value dedupe should still be new
+        assertTrue(
+            helper.checkAndRecordBarcode("1234567890123", 32, currentTimeMs = 0L)
+        )
+
+        // Spatial dedupe should still work
+        assertTrue(
+            helper.isDuplicate(DetectorType.BARCODE, "barcode", box, 1000L)
+        )
+    }
+
+    @Test
+    fun `QR code and barcode with same value are treated as same`() {
+        // QR code format = 256
+        helper.recordBarcodeSeen("https://example.com", 256, currentTimeMs = 0L)
+
+        // Same value scanned again should be duplicate (regardless of format change)
+        assertTrue(
+            helper.isBarcodeDuplicate("https://example.com", 256, currentTimeMs = 1000L)
+        )
+    }
 }

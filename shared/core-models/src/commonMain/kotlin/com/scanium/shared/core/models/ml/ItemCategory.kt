@@ -12,6 +12,8 @@ enum class ItemCategory(val displayName: String) {
     PLANT("Plant"),
     ELECTRONICS("Electronics"),
     DOCUMENT("Document"),
+    BARCODE("Barcode"),
+    QR_CODE("QR Code"),
     UNKNOWN("Unknown");
 
     companion object {
@@ -49,6 +51,18 @@ enum class ItemCategory(val displayName: String) {
                 normalized.contains("document") || normalized.contains("paper") -> DOCUMENT
                 else -> fromMlKitLabel(label)
             }
+        }
+
+        /**
+         * Determines ItemCategory from barcode format code.
+         * Uses ML Kit Barcode format constants.
+         *
+         * @param formatCode ML Kit Barcode.FORMAT_* constant
+         * @return BARCODE for linear barcodes, QR_CODE for QR codes
+         */
+        fun fromBarcodeFormat(formatCode: Int): ItemCategory {
+            // ML Kit Barcode.FORMAT_QR_CODE = 256
+            return if (formatCode == 256) QR_CODE else BARCODE
         }
     }
 }
