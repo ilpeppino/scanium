@@ -197,18 +197,7 @@ class TourViewModel(
                 spotlightShape = SpotlightShape.ROUNDED_RECT
             ),
 
-            // Step 2: Scan Mode Icons
-            TourStep(
-                key = TourStepKey.CAMERA_MODE_ICONS,
-                screen = TourScreen.CAMERA,
-                targetKey = "camera_mode_icons",
-                title = "Scan Modes",
-                description = "Switch between Object Detection, Barcode Scanning, and Document Text Recognition modes.",
-                requiresUserAction = false,
-                spotlightShape = SpotlightShape.ROUNDED_RECT
-            ),
-
-            // Step 3: Shutter Button
+            // Step 2: Shutter Button
             TourStep(
                 key = TourStepKey.CAMERA_SHUTTER,
                 screen = TourScreen.CAMERA,
@@ -219,7 +208,7 @@ class TourViewModel(
                 spotlightShape = SpotlightShape.CIRCLE
             ),
 
-            // Step 4: Items List Button (transition - requires user tap)
+            // Step 3: Items List Button (transition - requires user tap)
             TourStep(
                 key = TourStepKey.CAMERA_ITEMS_BUTTON,
                 screen = TourScreen.CAMERA,

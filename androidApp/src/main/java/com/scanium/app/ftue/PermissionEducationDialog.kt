@@ -13,8 +13,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -100,22 +98,6 @@ fun PermissionEducationDialog(
                     icon = Icons.Outlined.Category,
                     title = "Object Detection",
                     description = "Point at items to identify and catalog them"
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                EducationFeatureRow(
-                    icon = Icons.Outlined.QrCodeScanner,
-                    title = "Barcode Scanning",
-                    description = "Scan barcodes and QR codes for product info"
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                EducationFeatureRow(
-                    icon = Icons.Outlined.Description,
-                    title = "Document Text",
-                    description = "Extract text from documents and labels"
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
