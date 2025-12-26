@@ -46,6 +46,9 @@ class DeveloperOptionsViewModel(
     val allowScreenshots: StateFlow<Boolean> = settingsRepository.devAllowScreenshotsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val showFtueDebugBounds: StateFlow<Boolean> = settingsRepository.devShowFtueBoundsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     // Auto-refresh state
     private val _autoRefreshEnabled = MutableStateFlow(false)
     val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -140,6 +143,12 @@ class DeveloperOptionsViewModel(
     fun setAllowScreenshots(allowed: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDevAllowScreenshots(allowed)
+        }
+    }
+
+    fun setShowFtueDebugBounds(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevShowFtueBounds(enabled)
         }
     }
 

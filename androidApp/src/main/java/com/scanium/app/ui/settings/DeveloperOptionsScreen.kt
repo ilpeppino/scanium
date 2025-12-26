@@ -35,6 +35,7 @@ fun DeveloperOptionsScreen(
     val diagnosticsState by viewModel.diagnosticsState.collectAsState()
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
     val forceFtueTour by viewModel.forceFtueTour.collectAsState()
+    val showFtueDebugBounds by viewModel.showFtueDebugBounds.collectAsState()
     val autoRefreshEnabled by viewModel.autoRefreshEnabled.collectAsState()
     val copyResult by viewModel.copyResult.collectAsState()
     val allowScreenshots by viewModel.allowScreenshots.collectAsState()
@@ -132,6 +133,14 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.Info,
                 checked = forceFtueTour,
                 onCheckedChange = { viewModel.setForceFtueTour(it) }
+            )
+
+            SettingsSwitchItem(
+                title = "Show FTUE debug bounds",
+                subtitle = "Draw spotlight outlines and center line",
+                icon = Icons.Default.CenterFocusStrong,
+                checked = showFtueDebugBounds,
+                onCheckedChange = { viewModel.setShowFtueDebugBounds(it) }
             )
 
             SettingsItem(

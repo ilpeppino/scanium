@@ -49,6 +49,7 @@ class SettingsRepository(private val context: Context) {
 
         // Developer preferences
         private val DEV_ALLOW_SCREENSHOTS_KEY = booleanPreferencesKey("dev_allow_screenshots")
+        private val DEV_SHOW_FTUE_BOUNDS_KEY = booleanPreferencesKey("dev_show_ftue_bounds")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -300,6 +301,20 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDevAllowScreenshots(allowed: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_ALLOW_SCREENSHOTS_KEY] = allowed
+        }
+    }
+
+    /**
+     * Developer preference to show FTUE debug bounds.
+     * Default false to avoid visual clutter.
+     */
+    val devShowFtueBoundsFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_SHOW_FTUE_BOUNDS_KEY] ?: false
+    }
+
+    suspend fun setDevShowFtueBounds(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_SHOW_FTUE_BOUNDS_KEY] = enabled
         }
     }
 
