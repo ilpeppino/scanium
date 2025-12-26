@@ -72,6 +72,7 @@ import com.scanium.app.media.StorageHelper
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.PermissionEducationDialog
 import com.scanium.app.ftue.tourTarget
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -164,6 +165,10 @@ fun CameraScreen(
     val overlayTracks by itemsViewModel.overlayTracks.collectAsState()
     val latestQrUrl by itemsViewModel.latestQrUrl.collectAsState()
     val documentCandidateState by cameraManager.documentCandidateState.collectAsState()
+
+    // Document scan state
+    var documentScanState by remember { mutableStateOf<DocumentScanState>(DocumentScanState.Idle) }
+    var documentScanJob by remember { mutableStateOf<Job?>(null) }
     
     // Animation state for newly added items
     var lastAddedItem by remember { mutableStateOf<com.scanium.app.items.ScannedItem?>(null) }
@@ -456,6 +461,54 @@ fun CameraScreen(
                             .padding(bottom = 120.dp)
                     )
                 }
+
+                // Document scan overlay - show when document candidate is detected
+                DocumentScanOverlay(
+                    isVisible = documentCandidateState != null && cameraState != CameraState.SCANNING,
+                    scanState = documentScanState,
+                    onScanClick = {
+                        if (documentScanState is DocumentScanState.Idle) {
+                            documentScanState = DocumentScanState.Scanning
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+
+                            documentScanJob = scope.launch {
+                                when (val result = cameraManager.scanDocument()) {
+                                    is CameraXManager.DocumentScanResult.Success -> {
+                                        // Add the scanned document to items
+                                        itemsViewModel.addItem(result.item)
+                                        Toast.makeText(
+                                            context,
+                                            "Document scanned successfully",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                    is CameraXManager.DocumentScanResult.NoTextDetected -> {
+                                        Toast.makeText(
+                                            context,
+                                            "No text detected in document",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                    is CameraXManager.DocumentScanResult.Cancelled -> {
+                                        // User cancelled - do nothing
+                                    }
+                                    is CameraXManager.DocumentScanResult.Error -> {
+                                        Log.e("CameraScreen", "Document scan error: ${result.message}", result.exception)
+                                        Toast.makeText(
+                                            context,
+                                            "Scan failed: ${result.message}",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+                                documentScanState = DocumentScanState.Idle
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 160.dp)
+                )
 
                 // Overlay UI
                 CameraOverlay(

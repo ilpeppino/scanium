@@ -989,6 +989,92 @@ class CameraXManager(
     }
 
     /**
+     * Result of a document scan operation.
+     */
+    sealed class DocumentScanResult {
+        /** Scan completed successfully with a document item */
+        data class Success(val item: ScannedItem, val imageUri: Uri) : DocumentScanResult()
+
+        /** No text was detected in the document */
+        data object NoTextDetected : DocumentScanResult()
+
+        /** User cancelled the operation */
+        data object Cancelled : DocumentScanResult()
+
+        /** An error occurred during scanning */
+        data class Error(val message: String, val exception: Exception? = null) : DocumentScanResult()
+    }
+
+    /**
+     * Performs a heavy document scan by capturing a high-resolution image
+     * and running text recognition on it.
+     *
+     * This is an on-demand operation that only runs when explicitly triggered,
+     * not continuously during camera preview.
+     *
+     * @return DocumentScanResult containing the scanned item or error information
+     */
+    suspend fun scanDocument(): DocumentScanResult = withContext(Dispatchers.IO) {
+        Log.i(TAG, "scanDocument: Starting heavy document scan")
+
+        try {
+            // Step 1: Capture high-resolution image
+            val imageUri = captureHighResImage()
+            if (imageUri == null) {
+                Log.e(TAG, "scanDocument: Failed to capture high-res image")
+                return@withContext DocumentScanResult.Error("Failed to capture image")
+            }
+
+            Log.i(TAG, "scanDocument: Captured image at $imageUri")
+
+            // Step 2: Load the captured image as a bitmap for text recognition
+            val bitmap = try {
+                context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
+                    android.graphics.BitmapFactory.decodeStream(inputStream)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "scanDocument: Failed to load captured image", e)
+                return@withContext DocumentScanResult.Error("Failed to load image", e)
+            }
+
+            if (bitmap == null) {
+                Log.e(TAG, "scanDocument: Decoded bitmap is null")
+                return@withContext DocumentScanResult.Error("Failed to decode image")
+            }
+
+            Log.i(TAG, "scanDocument: Loaded bitmap ${bitmap.width}x${bitmap.height}")
+
+            // Step 3: Create InputImage for ML Kit
+            val inputImage = InputImage.fromBitmap(bitmap, 0)
+
+            // Step 4: Run text recognition
+            val items = textRecognizer.recognizeText(inputImage) { bitmap }
+
+            // Recycle the bitmap after processing
+            if (!bitmap.isRecycled) {
+                bitmap.recycle()
+            }
+
+            if (items.isEmpty()) {
+                Log.i(TAG, "scanDocument: No text detected in document")
+                return@withContext DocumentScanResult.NoTextDetected
+            }
+
+            // Step 5: Return the first item with the full image URI attached
+            val documentItem = items.first().copy(fullImageUri = imageUri)
+
+            Log.i(TAG, "scanDocument: Successfully scanned document with ${documentItem.recognizedText?.length ?: 0} characters")
+            DocumentScanResult.Success(documentItem, imageUri)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            Log.i(TAG, "scanDocument: Scan was cancelled")
+            DocumentScanResult.Cancelled
+        } catch (e: Exception) {
+            Log.e(TAG, "scanDocument: Error during document scan", e)
+            DocumentScanResult.Error(e.message ?: "Unknown error", e)
+        }
+    }
+
+    /**
      * Cleanup resources.
      */
     fun shutdown() {
