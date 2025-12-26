@@ -73,6 +73,7 @@ import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.PermissionEducationDialog
 import com.scanium.app.ftue.tourTarget
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 /**
@@ -237,14 +238,25 @@ fun CameraScreen(
         }
     }
 
-    LaunchedEffect(cameraPermissionState.status.isGranted) {
-            if (!cameraPermissionState.status.isGranted) {
-                cameraManager.stopScanning()
-                cameraState = CameraState.IDLE
-                cameraErrorState = null
-                itemsViewModel.updateOverlayDetections(emptyList())
+    LaunchedEffect(cameraPermissionState) {
+        snapshotFlow { cameraPermissionState.status.isGranted }
+            .distinctUntilChanged()
+            .collect { isGranted ->
+                cameraViewModel.onPermissionStateChanged(
+                    isGranted = isGranted,
+                    isScanning = cameraState == CameraState.SCANNING
+                )
             }
+    }
+
+    LaunchedEffect(cameraViewModel) {
+        cameraViewModel.stopScanningRequests.collect {
+            cameraManager.stopScanning()
+            cameraState = CameraState.IDLE
+            cameraErrorState = null
+            itemsViewModel.updateOverlayDetections(emptyList())
         }
+    }
 
     // Check if ML Kit model is downloaded (first launch requirement)
     LaunchedEffect(cameraPermissionState.status.isGranted) {
