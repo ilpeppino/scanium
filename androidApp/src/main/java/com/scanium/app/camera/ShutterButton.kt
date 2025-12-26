@@ -42,6 +42,7 @@ fun ShutterButton(
     onTap: () -> Unit,
     onLongPress: () -> Unit,
     onStopScanning: () -> Unit,
+    showHint: Boolean,
     modifier: Modifier = Modifier
 ) {
     val scope = rememberCoroutineScope()
@@ -75,6 +76,20 @@ fun ShutterButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        if (showHint && cameraState == CameraState.IDLE) {
+            Text(
+                text = "Tap to capture, hold to scan",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White,
+                modifier = Modifier
+                    .background(
+                        Color.Black.copy(alpha = 0.6f),
+                        shape = MaterialTheme.shapes.small
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
+
         // Scanning indicator text
         if (cameraState == CameraState.SCANNING) {
             Text(
