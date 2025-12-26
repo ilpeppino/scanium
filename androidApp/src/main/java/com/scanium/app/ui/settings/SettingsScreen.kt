@@ -1,5 +1,11 @@
 package com.scanium.app.ui.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.speech.SpeechRecognizer
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,42 +15,42 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.net.Uri
 import androidx.compose.ui.platform.LocalContext
-import com.scanium.app.media.StorageHelper
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import com.scanium.app.BuildConfig
-import com.scanium.app.model.user.UserEdition
+import com.scanium.app.media.StorageHelper
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
+import com.scanium.app.model.user.UserEdition
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,12 +93,28 @@ fun SettingsScreen(
     // Privacy Safe Mode
     val isPrivacySafeModeActive by viewModel.isPrivacySafeModeActive.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val speechAvailable = remember { SpeechRecognizer.isRecognitionAvailable(context) }
+
     val dirPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         uri?.let {
             StorageHelper.takePersistablePermissions(context, it)
             viewModel.setSaveDirectoryUri(it.toString())
+        }
+    }
+
+    val micPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            viewModel.setVoiceModeEnabled(true)
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar("Microphone permission denied")
+            }
         }
     }
 
@@ -106,7 +128,8 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -321,28 +344,46 @@ fun SettingsScreen(
                 SettingsSectionTitle("Voice Mode")
 
                 SettingsSwitchItem(
-                    title = "Enable Voice Mode",
-                    subtitle = "Use microphone for hands-free input",
+                    title = "Voice input (microphone)",
+                    subtitle = if (speechAvailable) {
+                        "Use the mic button for hands-free questions"
+                    } else {
+                        "Voice input unavailable on this device"
+                    },
                     icon = Icons.Default.Mic,
                     checked = voiceModeEnabled,
-                    onCheckedChange = { viewModel.setVoiceModeEnabled(it) }
+                    enabled = speechAvailable,
+                    onCheckedChange = { enabled ->
+                        if (enabled) {
+                            val hasPermission = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) {
+                                viewModel.setVoiceModeEnabled(true)
+                            } else {
+                                micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        } else {
+                            viewModel.setVoiceModeEnabled(false)
+                        }
+                    }
                 )
 
                 SettingsSwitchItem(
-                    title = "Speak Answers Aloud",
-                    subtitle = "Read assistant responses using text-to-speech",
+                    title = "Read assistant replies aloud",
+                    subtitle = "Speak final answers using on-device text-to-speech",
                     icon = Icons.Default.VolumeUp,
                     checked = speakAnswersEnabled,
-                    enabled = voiceModeEnabled,
                     onCheckedChange = { viewModel.setSpeakAnswersEnabled(it) }
                 )
 
                 SettingsSwitchItem(
-                    title = "Auto-send After Transcription",
-                    subtitle = "Automatically send message after voice input",
+                    title = "Auto-send after voice recognition",
+                    subtitle = "Send automatically when dictation finishes",
                     icon = Icons.Default.Send,
                     checked = autoSendTranscript,
-                    enabled = voiceModeEnabled,
+                    enabled = voiceModeEnabled && speechAvailable,
                     onCheckedChange = { viewModel.setAutoSendTranscript(it) }
                 )
 
@@ -358,9 +399,9 @@ fun SettingsScreen(
                     title = "Voice Language",
                     subtitle = "Language for speech recognition and TTS",
                     icon = Icons.Default.Language,
-                    selectedValue = voiceLanguage.ifEmpty { "Follow assistant ($assistantLanguage)" },
+                    selectedValue = voiceLanguage.takeIf { it.isNotEmpty() } ?: "",
                     options = listOf(
-                        "" to "Follow assistant language",
+                        "" to "Follow assistant language ($assistantLanguage)",
                         "EN" to "English",
                         "NL" to "Dutch",
                         "DE" to "German",

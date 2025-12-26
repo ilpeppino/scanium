@@ -10,6 +10,7 @@ import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import com.scanium.app.BuildConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,6 +54,8 @@ class AssistantVoiceController(context: Context) {
     companion object {
         private const val TAG = "AssistantVoice"
         private const val TTS_UTTERANCE_ID = "assistant-response"
+        private const val COULD_NOT_UNDERSTAND_MESSAGE = "Couldn't understand\u2014try again"
+        private const val VOICE_UNAVAILABLE_MESSAGE = "Voice input unavailable on this device"
     }
 
     private val appContext = context.applicationContext
@@ -63,15 +66,20 @@ class AssistantVoiceController(context: Context) {
     private var ttsReady = false
     private var currentLanguage: Locale = Locale.getDefault()
 
+    private inline fun logDebug(message: () -> String) {
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, message())
+        }
+    }
+
     // State management
-    private val _voiceState = MutableStateFlow(VoiceState.IDLE)
-    val voiceState: StateFlow<VoiceState> = _voiceState.asStateFlow()
+    private val stateMachine = VoiceStateMachine()
+    val voiceState: StateFlow<VoiceState> = stateMachine.state
 
     private val _partialTranscript = MutableStateFlow("")
     val partialTranscript: StateFlow<String> = _partialTranscript.asStateFlow()
 
-    private val _lastError = MutableStateFlow<String?>(null)
-    val lastError: StateFlow<String?> = _lastError.asStateFlow()
+    val lastError: StateFlow<String?> = stateMachine.error
 
     /** Whether speech recognition is available on this device */
     val isSpeechAvailable: Boolean = SpeechRecognizer.isRecognitionAvailable(appContext)
@@ -97,7 +105,7 @@ class AssistantVoiceController(context: Context) {
             else -> Locale.getDefault()
         }
         tts?.language = currentLanguage
-        Log.d(TAG, "Language set to: $currentLanguage")
+        logDebug { "Language set to: $currentLanguage" }
     }
 
     /**
@@ -116,25 +124,25 @@ class AssistantVoiceController(context: Context) {
                 tts?.language = currentLanguage
                 tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {
-                        _voiceState.value = VoiceState.SPEAKING
+                        stateMachine.onSpeaking()
                     }
 
                     override fun onDone(utteranceId: String?) {
-                        _voiceState.value = VoiceState.IDLE
+                        stateMachine.onIdle()
                     }
 
                     @Deprecated("Deprecated in API 21")
                     override fun onError(utteranceId: String?) {
-                        _voiceState.value = VoiceState.IDLE
+                        stateMachine.onIdle()
                         Log.e(TAG, "TTS error for utterance: $utteranceId")
                     }
 
                     override fun onError(utteranceId: String?, errorCode: Int) {
-                        _voiceState.value = VoiceState.IDLE
+                        stateMachine.onIdle()
                         Log.e(TAG, "TTS error code $errorCode for utterance: $utteranceId")
                     }
                 })
-                Log.d(TAG, "TTS initialized successfully")
+                logDebug { "TTS initialized successfully" }
                 onReady()
             } else {
                 Log.e(TAG, "TTS initialization failed with status: $status")
@@ -149,19 +157,19 @@ class AssistantVoiceController(context: Context) {
      */
     fun startListening(onResult: (VoiceResult) -> Unit) {
         if (!isSpeechAvailable) {
-            onResult(VoiceResult.Error("Speech recognition unavailable on this device", -1))
+            onResult(VoiceResult.Error(VOICE_UNAVAILABLE_MESSAGE, -1))
             return
         }
 
-        if (_voiceState.value == VoiceState.LISTENING) {
-            Log.w(TAG, "Already listening, ignoring start request")
+        if (voiceState.value == VoiceState.LISTENING) {
+            logDebug { "Already listening, ignoring start request" }
             return
         }
 
         onResultCallback = onResult
         _partialTranscript.value = ""
-        _lastError.value = null
-        _voiceState.value = VoiceState.LISTENING
+        stateMachine.clearError()
+        stateMachine.onStartListening()
 
         // Create recognizer on demand
         if (speechRecognizer == null) {
@@ -170,11 +178,11 @@ class AssistantVoiceController(context: Context) {
 
         speechRecognizer?.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {
-                Log.d(TAG, "Ready for speech")
+                logDebug { "Ready for speech" }
             }
 
             override fun onBeginningOfSpeech() {
-                Log.d(TAG, "Beginning of speech detected")
+                logDebug { "Beginning of speech detected" }
             }
 
             override fun onRmsChanged(rmsdB: Float) {
@@ -186,15 +194,14 @@ class AssistantVoiceController(context: Context) {
             }
 
             override fun onEndOfSpeech() {
-                Log.d(TAG, "End of speech")
-                _voiceState.value = VoiceState.TRANSCRIBING
+                logDebug { "End of speech" }
+                stateMachine.onTranscribing()
             }
 
             override fun onError(error: Int) {
                 val errorMessage = getErrorMessage(error)
                 Log.e(TAG, "Recognition error: $errorMessage (code: $error)")
-                _lastError.value = errorMessage
-                _voiceState.value = VoiceState.ERROR
+                stateMachine.onError(errorMessage)
 
                 onResultCallback?.invoke(VoiceResult.Error(errorMessage, error))
                 onResultCallback = null
@@ -208,13 +215,13 @@ class AssistantVoiceController(context: Context) {
                 val confidence = confidences?.firstOrNull() ?: 0.8f
 
                 if (transcript != null) {
-                    Log.d(TAG, "Recognition result: $transcript (confidence: $confidence)")
-                    _voiceState.value = VoiceState.IDLE
+                    logDebug { "Recognition result length=${transcript.length} (confidence: $confidence)" }
+                    stateMachine.onIdle()
                     onResultCallback?.invoke(VoiceResult.Success(transcript, confidence))
                 } else {
                     Log.w(TAG, "No speech recognized")
-                    _voiceState.value = VoiceState.IDLE
-                    onResultCallback?.invoke(VoiceResult.Error("No speech recognized", 0))
+                    stateMachine.onIdle()
+                    onResultCallback?.invoke(VoiceResult.Error(COULD_NOT_UNDERSTAND_MESSAGE, 0))
                 }
                 onResultCallback = null
             }
@@ -227,7 +234,7 @@ class AssistantVoiceController(context: Context) {
             }
 
             override fun onEvent(eventType: Int, params: Bundle?) {
-                Log.d(TAG, "Recognition event: $eventType")
+                logDebug { "Recognition event: $eventType" }
             }
         })
 
@@ -241,11 +248,10 @@ class AssistantVoiceController(context: Context) {
 
         try {
             speechRecognizer?.startListening(intent)
-            Log.d(TAG, "Started listening")
+            logDebug { "Started listening" }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start listening", e)
-            _voiceState.value = VoiceState.ERROR
-            _lastError.value = "Failed to start speech recognition"
+            stateMachine.onError("Failed to start speech recognition")
             onResultCallback?.invoke(VoiceResult.Error("Failed to start speech recognition", -2))
             onResultCallback = null
         }
@@ -255,13 +261,13 @@ class AssistantVoiceController(context: Context) {
      * Stop listening and cancel any pending recognition.
      */
     fun stopListening() {
-        if (_voiceState.value == VoiceState.LISTENING || _voiceState.value == VoiceState.TRANSCRIBING) {
+        if (voiceState.value == VoiceState.LISTENING || voiceState.value == VoiceState.TRANSCRIBING) {
             speechRecognizer?.stopListening()
             speechRecognizer?.cancel()
-            _voiceState.value = VoiceState.IDLE
+            stateMachine.onIdle()
             onResultCallback?.invoke(VoiceResult.Cancelled)
             onResultCallback = null
-            Log.d(TAG, "Stopped listening")
+            logDebug { "Stopped listening" }
         }
     }
 
@@ -306,18 +312,18 @@ class AssistantVoiceController(context: Context) {
         }
 
         tts?.speak(cleanedText, TextToSpeech.QUEUE_FLUSH, params, TTS_UTTERANCE_ID)
-        Log.d(TAG, "Speaking: ${cleanedText.take(50)}...")
+        logDebug { "Speaking ${cleanedText.length} chars" }
     }
 
     /**
      * Stop TTS playback.
      */
     fun stopSpeaking() {
-        if (_voiceState.value == VoiceState.SPEAKING) {
+        if (voiceState.value == VoiceState.SPEAKING) {
             tts?.stop()
-            _voiceState.value = VoiceState.IDLE
+            stateMachine.onIdle()
             audioManager.abandonAudioFocus(null)
-            Log.d(TAG, "Stopped speaking")
+            logDebug { "Stopped speaking" }
         }
     }
 
@@ -342,8 +348,8 @@ class AssistantVoiceController(context: Context) {
         tts = null
         ttsReady = false
 
-        _voiceState.value = VoiceState.IDLE
-        Log.d(TAG, "Voice controller shutdown")
+        stateMachine.onIdle()
+        logDebug { "Voice controller shutdown" }
     }
 
     /**
@@ -375,10 +381,10 @@ class AssistantVoiceController(context: Context) {
         return when (errorCode) {
             SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
             SpeechRecognizer.ERROR_CLIENT -> "Client-side error"
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission not granted"
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission denied"
             SpeechRecognizer.ERROR_NETWORK -> "Network error - check your connection"
             SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
-            SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized"
+            SpeechRecognizer.ERROR_NO_MATCH -> COULD_NOT_UNDERSTAND_MESSAGE
             SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
             SpeechRecognizer.ERROR_SERVER -> "Server error"
             SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech detected"
