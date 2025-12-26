@@ -12,6 +12,7 @@
 - Domain pack loading/category mapping: `core-domainpack/src/main/java/com/scanium/app/domain/` (+ `core-domainpack/src/main/res/raw/home_resale_domain_pack.json`).
 - Item state + orchestration: `androidApp/src/main/java/com/scanium/app/items/ItemsViewModel.kt`.
 - Selling/mock listing flow: `androidApp/src/main/java/com/scanium/app/selling/`.
+- Developer Options & System Health: `androidApp/src/main/java/com/scanium/app/diagnostics/DiagnosticsRepository.kt`, `ui/settings/DeveloperOptionsViewModel.kt`, `ui/settings/DeveloperOptionsScreen.kt`.
 - Camera/ML platform adapters: `android-platform-adapters/src/main/java/com/scanium/android/platform/adapters/` (Bitmap/ImageRef, Rect/NormalizedRect).
 - Platform ML/camera shells (namespaces only): `android-ml-mlkit`, `android-camera-camerax` (no sources expected).
 - Shared test utilities: `shared/test-utils` used by shared modules; Android tests in `androidApp/src/test` and `src/androidTest`.
@@ -47,7 +48,7 @@
 ## B) Module Table
 | Module | Responsibility | Inputs / Outputs | Do / Don’t | Key files |
 | --- | --- | --- | --- | --- |
-| androidApp | Compose UI, navigation, camera UX, ML wrappers, selling, persistence, cloud API, build config | Inputs: CameraX frames, ML Kit results, domain packs; Outputs: UI state, network calls | Do: keep platform logic here; Don’t: import from `android.*` into shared packages | `src/main/java/com/scanium/app/MainActivity.kt`, `navigation/NavGraph.kt`, `camera/CameraXManager.kt`, `ml/*`, `items/ItemsViewModel.kt`, `selling/*`, `data` |
+| androidApp | Compose UI, navigation, camera UX, ML wrappers, selling, persistence, cloud API, diagnostics, build config | Inputs: CameraX frames, ML Kit results, domain packs; Outputs: UI state, network calls | Do: keep platform logic here; Don't: import from `android.*` into shared packages | `src/main/java/com/scanium/app/MainActivity.kt`, `navigation/NavGraph.kt`, `camera/CameraXManager.kt`, `ml/*`, `items/ItemsViewModel.kt`, `selling/*`, `diagnostics/*`, `ui/settings/*`, `data` |
 | core-models | Android wrapper for shared models/typealiases | Inputs: shared models; Outputs: Android-friendly types | Do: stay Android-free aside from namespace; Don’t: add platform imports (portability check) | `src/main/java/com/scanium/app/model/*`, `src/main/java/com/scanium/app/items/ScannedItem.kt` |
 | core-tracking | Android wrapper exposing shared tracking | Inputs: shared tracking; Outputs: Android-consumable tracker/aggregator | Do: delegate to shared; Don’t: add android.* (portability check applies) | `src/main/java/com/scanium/app/tracking/*`, `src/main/java/com/scanium/app/aggregation/*` |
 | core-domainpack | Domain pack IO, repository, category engine | Inputs: JSON packs, labels/prompts; Outputs: ItemCategory, domain config | Do: keep Android IO minimal; Don’t: depend on camera/ML classes | `domain/DomainPackProvider.kt`, `domain/repository/LocalDomainPackRepository.kt`, `domain/category/*`, `src/main/res/raw/home_resale_domain_pack.json` |
@@ -86,6 +87,7 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Domain pack/category update: `core-domainpack/domain/category/*`, `domain/repository/LocalDomainPackRepository.kt`, raw JSON under `core-domainpack/src/main/res/raw/`.
 - Backend/cloud classification wiring: `androidApp/ml/CloudClassifierClient` (if present) and buildConfig fields in `androidApp/build.gradle.kts`.
 - Logging/monitoring/crash: `androidApp/ml/DetectionLogger.kt`, Sentry config via `BuildConfig.SENTRY_DSN`, general logs under respective modules.
+- Developer Options/System Health: `androidApp/diagnostics/DiagnosticsRepository.kt` (health checks), `ui/settings/DeveloperOptionsViewModel.kt` (state), `ui/settings/DeveloperOptionsScreen.kt` (UI); navigation route `Routes.DEVELOPER_OPTIONS` in `NavGraph.kt`.
 - Persistence (drafts/DataStore/Room): `androidApp/src/main/java/com/scanium/app/data/*`, Room entities/DAOs if added; selling cache in `selling/data/*`.
 - Platform adapters (Bitmap/Rect ↔ shared): `android-platform-adapters` extension functions.
 - Tests: fast shared logic → `shared:core-tracking` & `shared:core-models` JVM tests; Android features → `androidApp/src/test` or `src/androidTest`.

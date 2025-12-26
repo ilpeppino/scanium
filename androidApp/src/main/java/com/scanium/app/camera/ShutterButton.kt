@@ -13,6 +13,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -87,6 +91,15 @@ fun ShutterButton(
         Box(
             modifier = Modifier
                 .size(80.dp)
+                .semantics(mergeDescendants = true) {
+                    role = Role.Button
+                    contentDescription = when (cameraState) {
+                        CameraState.IDLE -> "Capture button. Double tap to take photo. Long press to scan continuously"
+                        CameraState.SCANNING -> "Stop scanning. Double tap to stop"
+                        CameraState.CAPTURING -> "Processing capture"
+                        CameraState.ERROR -> "Camera error"
+                    }
+                }
                 .pointerInput(cameraState) {
                     detectTapGestures(
                         onPress = {

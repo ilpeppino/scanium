@@ -52,6 +52,12 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -800,10 +806,15 @@ private fun ScanModeIconSelector(
                         },
                         shape = MaterialTheme.shapes.small
                     )
+                    .semantics {
+                        role = Role.RadioButton
+                        selected = isSelected
+                        this.contentDescription = "$contentDescription. ${if (isSelected) "Selected" else "Not selected"}"
+                    }
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = contentDescription,
+                    contentDescription = null,
                     tint = if (isSelected) {
                         Color.White
                     } else {
@@ -842,7 +853,8 @@ private fun BoxScope.CameraOverlay(
         modifier = Modifier
             .align(Alignment.TopCenter)
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .semantics { traversalIndex = 0f },
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Left slot: Hamburger menu (fixed width)
@@ -909,7 +921,7 @@ private fun BoxScope.CameraOverlay(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.scanium_logo),
-                    contentDescription = null,
+                    contentDescription = "Scanium logo",
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
                 )
@@ -922,7 +934,8 @@ private fun BoxScope.CameraOverlay(
         modifier = Modifier
             .align(Alignment.BottomCenter)
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(horizontal = 24.dp, vertical = 24.dp)
+            .semantics { traversalIndex = 1f },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -1131,7 +1144,7 @@ private fun PermissionDeniedContent(
         // Camera icon
         Icon(
             imageVector = Icons.Default.Camera,
-            contentDescription = null,
+            contentDescription = "Camera permission required",
             modifier = Modifier.size(72.dp),
             tint = MaterialTheme.colorScheme.primary
         )
@@ -1401,7 +1414,7 @@ private fun ConfigurationStatusBanner(
             ) {
                 Icon(
                     imageVector = Icons.Default.Info,
-                    contentDescription = null,
+                    contentDescription = "Configuration warning",
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp)
                 )

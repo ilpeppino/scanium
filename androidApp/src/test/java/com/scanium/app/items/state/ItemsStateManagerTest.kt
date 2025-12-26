@@ -3,11 +3,15 @@ package com.scanium.app.items.state
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.items.persistence.PersistenceError
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -261,6 +265,9 @@ class ItemsStateManagerTest {
  */
 class FakeScannedItemStore : ScannedItemStore {
     private val items = mutableListOf<ScannedItem>()
+    private val _errors = MutableSharedFlow<PersistenceError>(extraBufferCapacity = 1)
+    override val errors: SharedFlow<PersistenceError> = _errors.asSharedFlow()
+
     var loadAllCallCount = 0
         private set
     var upsertAllCallCount = 0

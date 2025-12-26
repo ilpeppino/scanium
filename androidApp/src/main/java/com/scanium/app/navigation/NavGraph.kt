@@ -2,6 +2,7 @@ package com.scanium.app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.net.Uri
 import androidx.navigation.NavHostController
@@ -25,6 +26,9 @@ import com.scanium.app.ui.settings.SettingsViewModel
 import com.scanium.app.ui.settings.DataUsageScreen
 import com.scanium.app.ui.settings.PrivacyPolicyScreen
 import com.scanium.app.ui.settings.TermsScreen
+import com.scanium.app.ui.settings.DeveloperOptionsScreen
+import com.scanium.app.ui.settings.DeveloperOptionsViewModel
+import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.billing.ui.PaywallScreen
 import com.scanium.app.billing.ui.PaywallViewModel
 
@@ -39,6 +43,7 @@ object Routes {
     const val POSTING_ASSIST = "posting_assist"
     const val ASSISTANT = "assistant"
     const val SETTINGS = "settings"
+    const val DEVELOPER_OPTIONS = "developer_options"
     const val DATA_USAGE = "data_usage"
     const val PRIVACY = "privacy"
     const val TERMS = "terms"
@@ -90,7 +95,27 @@ fun ScaniumNavGraph(
                 onNavigateToPrivacy = { navController.navigate(Routes.PRIVACY) },
                 onNavigateToTerms = { navController.navigate(Routes.TERMS) },
                 onNavigateToAbout = { navController.navigate(Routes.ABOUT) },
-                onNavigateToUpgrade = { navController.navigate(Routes.PAYWALL) }
+                onNavigateToUpgrade = { navController.navigate(Routes.PAYWALL) },
+                onNavigateToDeveloperOptions = { navController.navigate(Routes.DEVELOPER_OPTIONS) }
+            )
+        }
+
+        composable(Routes.DEVELOPER_OPTIONS) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val diagnosticsRepository = remember { DiagnosticsRepository(context) }
+            val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
+            val ftueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
+            val developerOptionsViewModel: DeveloperOptionsViewModel = viewModel(
+                factory = DeveloperOptionsViewModel.Factory(
+                    context.applicationContext as android.app.Application,
+                    settingsRepository,
+                    ftueRepository,
+                    diagnosticsRepository
+                )
+            )
+            DeveloperOptionsScreen(
+                viewModel = developerOptionsViewModel,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         

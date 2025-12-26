@@ -59,6 +59,7 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
   - Share exports via standard Android share sheet
 - **Privacy-First**: All processing happens on-device with no cloud calls
 - **Debug Logging**: Comprehensive detection statistics and threshold tuning in debug builds
+- **Developer Options (Debug)**: System Health diagnostics panel showing backend connectivity, network status, permissions, and device capabilities with auto-refresh and clipboard export
 
 ## Tech Stack
 
@@ -126,6 +127,7 @@ The Android app follows a **Simplified MVVM architecture** with feature-based pa
 ```
 androidApp/src/main/java/com/scanium/app/
 ├── camera/          # Camera functionality, CameraX, mode switching
+├── diagnostics/     # System health diagnostics (backend, network, permissions)
 ├── domain/          # Domain Pack system (config, repository, category engine)
 ├── items/           # Detected items management and display
 ├── ml/              # Object detection and pricing logic
@@ -135,6 +137,7 @@ androidApp/src/main/java/com/scanium/app/
 │   ├── domain/      # Listing models, status, conditions
 │   ├── ui/          # Marketplace screen, listing VM, debug settings
 │   └── util/        # Image preparation, draft mapping
+├── ui/settings/     # Settings and Developer Options screens
 └── navigation/      # Navigation graph setup
 ```
 
@@ -410,6 +413,8 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 - Adaptive tracking thresholds based on scene complexity
 
 ### Recently Implemented ✅
+- ✅ **Developer Options with System Health**: Debug-only diagnostics panel showing backend connectivity, network status, permissions, device capabilities, and app configuration with auto-refresh and clipboard export
+- ✅ **WCAG 2.1 Accessibility**: TalkBack support with proper semantics, 48dp touch targets, traversal order, and screen reader announcements
 - ✅ **Export-First Sharing (CSV/ZIP)**: Export selected items for spreadsheets, chat apps, or marketplaces
   - Multi-selection UI with long-press and tap gestures
   - CSV summaries + ZIP bundles with images
