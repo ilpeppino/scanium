@@ -49,12 +49,11 @@ android {
         versionName = versionNameEnv
 
         // Cloud classification API configuration
-        // Read from local.properties (dev) or environment variables (CI/production)
-        // Required keys in local.properties:
+        // Base URL read from local.properties (dev) or environment variables (CI/production)
+        // API keys are provisioned at runtime and stored in the Android Keystore.
+        // Required key in local.properties:
         //   scanium.api.base.url=https://your-backend.com/api/v1
-        //   scanium.api.key=your-dev-api-key
         val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
-        val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
         val sentryDsn = localPropertyOrEnv("scanium.sentry.dsn", "SCANIUM_SENTRY_DSN")
         val telemetryDataRegion = localPropertyOrEnv(
             "scanium.telemetry.data_region",
@@ -67,7 +66,6 @@ android {
         val otlpEnabled = localPropertyOrEnv("scanium.otlp.enabled", "SCANIUM_OTLP_ENABLED", "false")
 
         buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
-        buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
         buildConfigField("String", "OTLP_ENDPOINT", "\"$otlpEndpoint\"")
         buildConfigField("boolean", "OTLP_ENABLED", otlpEnabled)
@@ -75,7 +73,7 @@ android {
 
         // Legacy fields for backward compatibility (deprecated)
         buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")
-        buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"$apiKey\"")
+        buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -241,6 +239,7 @@ dependencies {
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.security:security-crypto:1.0.0")
 
     // CameraX
     val cameraxVersion = "1.3.1"

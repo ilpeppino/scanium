@@ -1,7 +1,9 @@
 package com.scanium.app.selling.assistant
 
+import android.content.Context
 import android.util.Log
 import com.scanium.app.BuildConfig
+import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantMessage
@@ -100,6 +102,7 @@ private class AssistantRepositoryLogger {
 }
 
 class AssistantRepositoryFactory(
+    private val context: Context,
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
@@ -107,7 +110,7 @@ class AssistantRepositoryFactory(
 ) {
     fun create(): AssistantRepository {
         val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.orEmpty()
-        val apiKey = BuildConfig.SCANIUM_API_KEY.takeIf { it.isNotBlank() }
+        val apiKey = SecureApiKeyStore(context).getApiKey()
         return CloudAssistantRepository(client, baseUrl, apiKey)
     }
 }
