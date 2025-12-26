@@ -18,7 +18,7 @@ class ThrottleHelper {
         /** Default throttle intervals per detector type (milliseconds) */
         val DEFAULT_INTERVALS = mapOf(
             DetectorType.OBJECT to 400L,    // Object detection is heavy, run ~2.5x per second max
-            DetectorType.BARCODE to 100L,   // Barcode is lighter, can run more frequently
+            DetectorType.BARCODE to 250L,   // Barcode runs 3-5x per second (lightweight but not spam)
             DetectorType.DOCUMENT to 500L   // Document detection is heavy
         )
     }
