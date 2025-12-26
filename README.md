@@ -59,6 +59,7 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
   - Share exports via standard Android share sheet
 - **Privacy-First**: All processing happens on-device with no cloud calls
 - **Debug Logging**: Comprehensive detection statistics and threshold tuning in debug builds
+- **Developer Options (Debug)**: System Health diagnostics panel showing backend connectivity, network status, permissions, and device capabilities with auto-refresh and clipboard export
 
 ***REMOVED******REMOVED*** Tech Stack
 
@@ -126,6 +127,7 @@ The Android app follows a **Simplified MVVM architecture** with feature-based pa
 ```
 androidApp/src/main/java/com/scanium/app/
 ├── camera/          ***REMOVED*** Camera functionality, CameraX, mode switching
+├── diagnostics/     ***REMOVED*** System health diagnostics (backend, network, permissions)
 ├── domain/          ***REMOVED*** Domain Pack system (config, repository, category engine)
 ├── items/           ***REMOVED*** Detected items management and display
 ├── ml/              ***REMOVED*** Object detection and pricing logic
@@ -135,6 +137,7 @@ androidApp/src/main/java/com/scanium/app/
 │   ├── domain/      ***REMOVED*** Listing models, status, conditions
 │   ├── ui/          ***REMOVED*** Marketplace screen, listing VM, debug settings
 │   └── util/        ***REMOVED*** Image preparation, draft mapping
+├── ui/settings/     ***REMOVED*** Settings and Developer Options screens
 └── navigation/      ***REMOVED*** Navigation graph setup
 ```
 
@@ -410,6 +413,8 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 - Adaptive tracking thresholds based on scene complexity
 
 ***REMOVED******REMOVED******REMOVED*** Recently Implemented ✅
+- ✅ **Developer Options with System Health**: Debug-only diagnostics panel showing backend connectivity, network status, permissions, device capabilities, and app configuration with auto-refresh and clipboard export
+- ✅ **WCAG 2.1 Accessibility**: TalkBack support with proper semantics, 48dp touch targets, traversal order, and screen reader announcements
 - ✅ **Export-First Sharing (CSV/ZIP)**: Export selected items for spreadsheets, chat apps, or marketplaces
   - Multi-selection UI with long-press and tap gestures
   - CSV summaries + ZIP bundles with images

@@ -40,6 +40,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import com.scanium.app.items.export.CsvExportWriter
@@ -579,6 +581,23 @@ private fun ItemRow(
             .onGloballyPositioned { coordinates ->
                 currentBounds = coordinates.boundsInWindow()
             }
+            .semantics(mergeDescendants = true) {
+                contentDescription = buildString {
+                    append(item.displayLabel)
+                    append(". ")
+                    append(item.formattedPriceRange)
+                    append(". ")
+                    append("Confidence: ${item.confidenceLevel.displayName}")
+                    when (item.classificationStatus) {
+                        "PENDING" -> append(". Classification in progress")
+                        "FAILED" -> append(". Classification failed")
+                        else -> {}
+                    }
+                    if (isSelected) {
+                        append(". Selected")
+                    }
+                }
+            }
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = { offset ->
@@ -707,11 +726,15 @@ private fun ItemRow(
                         TextButton(
                             onClick = onRetryClassification,
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            modifier = Modifier.height(28.dp)
+                            modifier = Modifier
+                                .sizeIn(minHeight = 48.dp)
+                                .semantics {
+                                    contentDescription = "Retry classification for this item"
+                                }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Retry",
+                                contentDescription = null,
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -741,11 +764,15 @@ private fun ItemRow(
                                     context.startActivity(intent)
                                 },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                modifier = Modifier.height(28.dp)
+                                modifier = Modifier
+                                    .sizeIn(minHeight = 48.dp)
+                                    .semantics {
+                                        contentDescription = "View listing on marketplace"
+                                    }
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.OpenInNew,
-                                    contentDescription = "View listing",
+                                    contentDescription = null,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
