@@ -131,7 +131,7 @@ class DiagnosticsRepository(
         .readTimeout(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 
-    private val configProvider = AndroidCloudConfigProvider()
+    private val configProvider = AndroidCloudConfigProvider(context)
 
     /**
      * Refresh all diagnostics checks.
