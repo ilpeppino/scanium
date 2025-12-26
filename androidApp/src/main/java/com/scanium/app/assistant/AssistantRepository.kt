@@ -54,6 +54,7 @@ class AssistantException(
  * - Device ID header for rate limiting (hashed for privacy)
  */
 class AssistantRepository(
+    private val apiKeyProvider: () -> String? = { null },
     private val getDeviceId: () -> String = { "" }
 ) {
     companion object {
@@ -92,7 +93,7 @@ class AssistantRepository(
                 )
             )
 
-        val apiKey = BuildConfig.SCANIUM_API_KEY.takeIf { it.isNotBlank() }
+        val apiKey = apiKeyProvider()?.takeIf { it.isNotBlank() }
             ?: return@withContext Result.failure(
                 AssistantException(
                     errorCode = "CONFIG_ERROR",

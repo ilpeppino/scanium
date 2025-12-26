@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.BuildConfig
+import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.model.config.RemoteConfig
 import com.scanium.app.network.security.RequestSigner
@@ -33,6 +34,7 @@ class AndroidRemoteConfigProvider(
 
     private val json = Json { ignoreUnknownKeys = true }
     private val client = OkHttpClient()
+    private val apiKeyStore = SecureApiKeyStore(context)
 
     private val CONFIG_JSON_KEY = stringPreferencesKey("config_json")
     private val DEVICE_HASH_KEY = stringPreferencesKey("device_hash_seed")
@@ -96,14 +98,17 @@ class AndroidRemoteConfigProvider(
             val deviceHash = getOrGenerateDeviceHash()
             val urlPath = "/v1/config"
             val url = BuildConfig.SCANIUM_API_BASE_URL + urlPath
-            val apiKey = BuildConfig.SCANIUM_API_KEY
+            val apiKey = apiKeyStore.getApiKey().orEmpty()
 
             val requestBuilder = Request.Builder()
                 .url(url)
                 .addHeader("X-Scanium-Device-Hash", deviceHash)
                 .addHeader("X-Scanium-Platform", "android")
                 .addHeader("X-Scanium-App-Version", BuildConfig.VERSION_NAME)
-                .addHeader("X-API-Key", apiKey)
+
+            if (apiKey.isNotBlank()) {
+                requestBuilder.addHeader("X-API-Key", apiKey)
+            }
 
             // Add HMAC signature for replay protection (SEC-004)
             if (apiKey.isNotBlank()) {

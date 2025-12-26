@@ -109,7 +109,7 @@ fun AssistantScreen(
     val context = LocalContext.current
     val profileRepository = remember { AssetExportProfileRepository(context) }
     val profilePreferences = remember { ExportProfilePreferences(context) }
-    val assistantRepository = remember { AssistantRepositoryFactory().create() }
+    val assistantRepository = remember { AssistantRepositoryFactory(context.applicationContext).create() }
     val localAssistantHelper = remember { LocalAssistantHelper() }
     val connectivityObserver = remember { ConnectivityObserver(context) }
     val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
