@@ -29,6 +29,7 @@ class AndroidFeatureFlagRepositoryTest {
 
     private val allowCloudFlow = MutableStateFlow(true)
     private val allowAssistantFlow = MutableStateFlow(false)
+    private val developerModeFlow = MutableStateFlow(false)
     private val remoteConfigFlow = MutableStateFlow(RemoteConfig())
     private val entitlementFlow = MutableStateFlow<EntitlementPolicy>(FreeEntitlements)
     private val connectivityFlow = MutableStateFlow(ConnectivityStatus.ONLINE)
@@ -36,6 +37,7 @@ class AndroidFeatureFlagRepositoryTest {
     private fun createRepository(): AndroidFeatureFlagRepository {
         every { settingsRepository.allowCloudClassificationFlow } returns allowCloudFlow
         every { settingsRepository.allowAssistantFlow } returns allowAssistantFlow
+        every { settingsRepository.developerModeFlow } returns developerModeFlow
         every { configProvider.config } returns remoteConfigFlow
         every { connectivityStatusProvider.statusFlow } returns connectivityFlow
         every { apiKeyStore.getApiKey() } returns "test-api-key"

@@ -77,9 +77,12 @@ class AndroidFeatureFlagRepository(
 
     override val isAssistantAvailable: Flow<Boolean> = combine(
         configProvider.config.map { it.featureFlags.enableAssistant },
-        entitlementPolicyFlow.map { it.canUseAssistant }
-    ) { remoteEnabled, entitled ->
-        remoteEnabled && entitled
+        entitlementPolicyFlow.map { it.canUseAssistant },
+        settingsRepository.developerModeFlow
+    ) { remoteEnabled, entitled, developerMode ->
+        // In DEBUG builds with developer mode, bypass subscription and remote config checks
+        val isDeveloperOverride = BuildConfig.DEBUG && developerMode
+        isDeveloperOverride || (remoteEnabled && entitled)
     }
 
     override val isAssistantEnabled: Flow<Boolean> = combine(
@@ -92,24 +95,28 @@ class AndroidFeatureFlagRepository(
     override val assistantPrerequisiteState: Flow<AssistantPrerequisiteState> = combine(
         entitlementPolicyFlow,
         configProvider.config,
-        connectivityStatusProvider.statusFlow
-    ) { entitlement, config, connectivity ->
+        connectivityStatusProvider.statusFlow,
+        settingsRepository.developerModeFlow
+    ) { entitlement, config, connectivity, developerMode ->
         val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
         val apiKey = apiKeyStore.getApiKey()
+
+        // In DEBUG builds with developer mode enabled, bypass subscription and remote flag checks
+        val isDeveloperOverride = BuildConfig.DEBUG && developerMode
 
         val prerequisites = listOf(
             AssistantPrerequisite(
                 id = "subscription",
                 displayName = "Pro or Developer subscription",
-                description = "Assistant requires a Pro or Developer subscription",
-                satisfied = entitlement.canUseAssistant,
+                description = if (isDeveloperOverride) "Bypassed (Developer Mode)" else "Assistant requires a Pro or Developer subscription",
+                satisfied = isDeveloperOverride || entitlement.canUseAssistant,
                 category = PrerequisiteCategory.SUBSCRIPTION
             ),
             AssistantPrerequisite(
                 id = "remote_flag",
                 displayName = "Feature enabled by server",
-                description = "Assistant feature must be enabled on the server",
-                satisfied = config.featureFlags.enableAssistant,
+                description = if (isDeveloperOverride) "Bypassed (Developer Mode)" else "Assistant feature must be enabled on the server",
+                satisfied = isDeveloperOverride || config.featureFlags.enableAssistant,
                 category = PrerequisiteCategory.REMOTE_CONFIG
             ),
             AssistantPrerequisite(
