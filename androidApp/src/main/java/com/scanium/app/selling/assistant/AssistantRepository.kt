@@ -60,8 +60,11 @@ interface AssistantRepository {
 
 enum class AssistantBackendErrorType {
     PROVIDER_UNAVAILABLE,
+    PROVIDER_NOT_CONFIGURED,
+    UNAUTHORIZED,
     RATE_LIMITED,
     NETWORK_TIMEOUT,
+    NETWORK_UNREACHABLE,
     VISION_UNAVAILABLE,
     VALIDATION_ERROR
 }
@@ -138,7 +141,7 @@ private class CloudAssistantRepository(
         if (baseUrl.isBlank()) {
             throw AssistantBackendException(
                 AssistantBackendFailure(
-                    type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
+                    type = AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED,
                     category = AssistantBackendErrorCategory.POLICY,
                     retryable = false,
                     message = "Assistant backend not configured"
@@ -189,10 +192,30 @@ private class CloudAssistantRepository(
                 ),
                 error
             )
+        } catch (error: java.net.UnknownHostException) {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.NETWORK_UNREACHABLE,
+                    category = AssistantBackendErrorCategory.TEMPORARY,
+                    retryable = true,
+                    message = "Unable to reach assistant server"
+                ),
+                error
+            )
+        } catch (error: java.net.ConnectException) {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.NETWORK_UNREACHABLE,
+                    category = AssistantBackendErrorCategory.TEMPORARY,
+                    retryable = true,
+                    message = "Could not connect to assistant server"
+                ),
+                error
+            )
         } catch (error: IOException) {
             throw AssistantBackendException(
                 AssistantBackendFailure(
-                    type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                    type = AssistantBackendErrorType.NETWORK_UNREACHABLE,
                     category = AssistantBackendErrorCategory.TEMPORARY,
                     retryable = true,
                     message = "Network error contacting assistant"
@@ -282,6 +305,18 @@ private class CloudAssistantRepository(
                 retryable = false,
                 message = "Assistant request invalid"
             )
+            401 -> AssistantBackendFailure(
+                type = AssistantBackendErrorType.UNAUTHORIZED,
+                category = AssistantBackendErrorCategory.POLICY,
+                retryable = false,
+                message = "Not authorized to use assistant"
+            )
+            403 -> AssistantBackendFailure(
+                type = AssistantBackendErrorType.UNAUTHORIZED,
+                category = AssistantBackendErrorCategory.POLICY,
+                retryable = false,
+                message = "Access to assistant denied"
+            )
             429 -> AssistantBackendFailure(
                 type = AssistantBackendErrorType.RATE_LIMITED,
                 category = AssistantBackendErrorCategory.POLICY,
@@ -293,6 +328,12 @@ private class CloudAssistantRepository(
                 category = AssistantBackendErrorCategory.TEMPORARY,
                 retryable = true,
                 message = "Assistant provider unavailable"
+            )
+            504 -> AssistantBackendFailure(
+                type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                category = AssistantBackendErrorCategory.TEMPORARY,
+                retryable = true,
+                message = "Assistant gateway timeout"
             )
             else -> AssistantBackendFailure(
                 type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
@@ -391,8 +432,11 @@ private data class AssistantErrorDto(
 
     private fun parseType(raw: String): AssistantBackendErrorType {
         return when (raw.lowercase()) {
+            "unauthorized" -> AssistantBackendErrorType.UNAUTHORIZED
+            "provider_not_configured" -> AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED
             "rate_limited" -> AssistantBackendErrorType.RATE_LIMITED
             "network_timeout" -> AssistantBackendErrorType.NETWORK_TIMEOUT
+            "network_unreachable" -> AssistantBackendErrorType.NETWORK_UNREACHABLE
             "vision_unavailable" -> AssistantBackendErrorType.VISION_UNAVAILABLE
             "validation_error" -> AssistantBackendErrorType.VALIDATION_ERROR
             else -> AssistantBackendErrorType.PROVIDER_UNAVAILABLE

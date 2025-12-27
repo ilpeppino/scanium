@@ -462,10 +462,37 @@ class AssistantViewModel(
                 assistantMode = resolveMode(current.isOnline, failure)
             )
         }
-        ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} type=${failure.type}")
-        _events.emit(
-            AssistantUiEvent.ShowSnackbar("Using limited offline assistance. Retry online when ready.")
-        )
+        val debugReason = AssistantErrorDisplay.getDebugReason(failure)
+        ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} $debugReason")
+
+        val snackbarMessage = buildFallbackSnackbarMessage(failure)
+        _events.emit(AssistantUiEvent.ShowSnackbar(snackbarMessage))
+    }
+
+    private fun buildFallbackSnackbarMessage(failure: AssistantBackendFailure): String {
+        val statusLabel = AssistantErrorDisplay.getStatusLabel(failure)
+        val base = "Switched to Local Helper"
+
+        return when (failure.type) {
+            AssistantBackendErrorType.UNAUTHORIZED ->
+                "$base: $statusLabel. Check your account."
+            AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->
+                "$base: $statusLabel. Contact support."
+            AssistantBackendErrorType.RATE_LIMITED -> {
+                val retryHint = failure.retryAfterSeconds?.let { " (wait ${it}s)" } ?: ""
+                "$base: $statusLabel$retryHint."
+            }
+            AssistantBackendErrorType.NETWORK_TIMEOUT ->
+                "$base: $statusLabel. Check your connection."
+            AssistantBackendErrorType.NETWORK_UNREACHABLE ->
+                "$base: $statusLabel. Connect to internet."
+            AssistantBackendErrorType.VISION_UNAVAILABLE ->
+                "$base: Image analysis unavailable."
+            AssistantBackendErrorType.VALIDATION_ERROR ->
+                "$base: Invalid request. Try rephrasing."
+            AssistantBackendErrorType.PROVIDER_UNAVAILABLE ->
+                "$base: Service temporarily unavailable."
+        }
     }
 
     private fun updateDraftFromPayload(draft: ListingDraft, payload: Map<String, String>): ListingDraft {
