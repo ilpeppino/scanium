@@ -3,6 +3,7 @@ package com.scanium.app.config
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import com.scanium.app.BuildConfig
 
 class SecureApiKeyStore(context: Context) {
     private val appContext = context.applicationContext
@@ -15,10 +16,29 @@ class SecureApiKeyStore(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    fun getApiKey(): String? = sharedPreferences
-        .getString(KEY_API_KEY, null)
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() }
+    fun getApiKey(): String? {
+        val storedKey = sharedPreferences
+            .getString(KEY_API_KEY, null)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+
+        if (storedKey != null) {
+            return storedKey
+        }
+
+        val buildConfigKey = BuildConfig.SCANIUM_API_KEY
+            .takeIf { it.isNotBlank() }
+            ?.trim()
+
+        if (buildConfigKey != null) {
+            // Seed encrypted storage so subsequent reads don't rely on BuildConfig.
+            sharedPreferences.edit()
+                .putString(KEY_API_KEY, buildConfigKey)
+                .apply()
+        }
+
+        return buildConfigKey
+    }
 
     fun setApiKey(apiKey: String?) {
         sharedPreferences.edit().apply {
