@@ -102,6 +102,25 @@ The redesigned Settings experience is organized into six categories (General, Ca
 
 See also `hooks/README.md` for pre-push validation setup.
 
+### Local CI (quota-free)
+
+Run GitHub Actions workflows locally to avoid CI quota limits:
+
+```bash
+./scripts/ci/local-ci.sh doctor    # Check prerequisites (Java 17, jq, etc.)
+./scripts/ci/local-ci.sh coverage  # Run tests + coverage verification
+./scripts/ci/local-ci.sh security  # Run OWASP CVE scan
+./scripts/ci/local-ci.sh all       # Run both
+```
+
+**Outputs:** `tmp/ci/coverage/` and `tmp/ci/security/` (gitignored)
+
+**Mirrors:**
+- `coverage.yml`: `./gradlew clean test koverVerify` + Jacoco report
+- `security-cve-scan.yml`: `./gradlew dependencyCheckAnalyze` + fail on HIGH/CRITICAL CVEs
+
+**Tip:** Set `NVD_API_KEY` for faster security scans (get key at https://nvd.nist.gov/developers/request-an-api-key)
+
 ### Codex container limitations (factual)
 - Android SDK/emulator are not available; JVM-only Gradle tasks are the safe path.
 - Networked device access (ADB) is unavailable; use CI artifacts for APKs.
