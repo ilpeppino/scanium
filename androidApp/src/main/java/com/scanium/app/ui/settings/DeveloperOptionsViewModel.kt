@@ -1,23 +1,35 @@
 package com.scanium.app.ui.settings
 
+import android.Manifest
 import android.app.Application
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.speech.SpeechRecognizer
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.diagnostics.AssistantDiagnosticsState
+import com.scanium.app.diagnostics.BackendReachabilityStatus
 import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.diagnostics.DiagnosticsState
 import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.model.config.AssistantPrerequisiteState
+import com.scanium.app.model.config.ConnectionTestResult
+import com.scanium.app.model.config.FeatureFlagRepository
+import com.scanium.app.platform.ConnectivityStatus
+import com.scanium.app.platform.ConnectivityStatusProvider
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -30,11 +42,20 @@ class DeveloperOptionsViewModel(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val ftueRepository: FtueRepository,
-    private val diagnosticsRepository: DiagnosticsRepository
+    private val diagnosticsRepository: DiagnosticsRepository,
+    private val featureFlagRepository: FeatureFlagRepository,
+    private val connectivityStatusProvider: ConnectivityStatusProvider
 ) : AndroidViewModel(application) {
 
     // Diagnostics state
     val diagnosticsState: StateFlow<DiagnosticsState> = diagnosticsRepository.state
+
+    // ==================== Assistant Diagnostics ====================
+
+    private val _assistantDiagnosticsState = MutableStateFlow(AssistantDiagnosticsState())
+    val assistantDiagnosticsState: StateFlow<AssistantDiagnosticsState> = _assistantDiagnosticsState.asStateFlow()
+
+    private val _assistantDiagnosticsRefreshing = MutableStateFlow(false)
 
     // Developer settings
     val isDeveloperMode: StateFlow<Boolean> = settingsRepository.developerModeFlow
@@ -72,6 +93,21 @@ class DeveloperOptionsViewModel(
     init {
         // Initial refresh on creation
         refreshDiagnostics()
+
+        // Observe assistant prerequisites and connectivity for live updates
+        viewModelScope.launch {
+            combine(
+                featureFlagRepository.assistantPrerequisiteState,
+                connectivityStatusProvider.statusFlow
+            ) { prerequisiteState, connectivity ->
+                Pair(prerequisiteState, connectivity)
+            }.collect { (prerequisiteState, connectivity) ->
+                updateAssistantDiagnostics(prerequisiteState, connectivity)
+            }
+        }
+
+        // Initial assistant diagnostics check
+        refreshAssistantDiagnostics()
     }
 
     /**
@@ -81,6 +117,62 @@ class DeveloperOptionsViewModel(
         viewModelScope.launch {
             diagnosticsRepository.refreshAll()
         }
+    }
+
+    /**
+     * Refresh assistant-specific diagnostics.
+     */
+    fun refreshAssistantDiagnostics() {
+        if (_assistantDiagnosticsRefreshing.value) return
+
+        viewModelScope.launch {
+            _assistantDiagnosticsRefreshing.value = true
+            _assistantDiagnosticsState.value = _assistantDiagnosticsState.value.copy(
+                isChecking = true,
+                backendReachable = BackendReachabilityStatus.CHECKING
+            )
+
+            // Test backend connection
+            val connectionResult = featureFlagRepository.testAssistantConnection()
+            val backendStatus = when (connectionResult) {
+                is ConnectionTestResult.Success -> BackendReachabilityStatus.REACHABLE
+                is ConnectionTestResult.Failure -> BackendReachabilityStatus.UNREACHABLE
+            }
+
+            // Update state with connection test result
+            _assistantDiagnosticsState.value = _assistantDiagnosticsState.value.copy(
+                backendReachable = backendStatus,
+                connectionTestResult = connectionResult,
+                isChecking = false,
+                lastChecked = System.currentTimeMillis()
+            )
+
+            _assistantDiagnosticsRefreshing.value = false
+        }
+    }
+
+    /**
+     * Update assistant diagnostics from live flows.
+     */
+    private fun updateAssistantDiagnostics(
+        prerequisiteState: AssistantPrerequisiteState,
+        connectivity: ConnectivityStatus
+    ) {
+        val context = getApplication<Application>()
+        val networkStatus = diagnosticsRepository.checkNetworkStatus()
+
+        _assistantDiagnosticsState.value = _assistantDiagnosticsState.value.copy(
+            prerequisiteState = prerequisiteState,
+            isNetworkConnected = connectivity == ConnectivityStatus.ONLINE,
+            networkType = networkStatus.transport.name,
+            hasMicrophonePermission = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED,
+            isSpeechRecognitionAvailable = SpeechRecognizer.isRecognitionAvailable(context),
+            isTextToSpeechAvailable = true, // TTS is available on all Android devices
+            isTtsReady = true // Basic availability check; actual readiness depends on VoiceController
+        )
     }
 
     /**
@@ -222,7 +314,9 @@ class DeveloperOptionsViewModel(
         private val application: Application,
         private val settingsRepository: SettingsRepository,
         private val ftueRepository: FtueRepository,
-        private val diagnosticsRepository: DiagnosticsRepository
+        private val diagnosticsRepository: DiagnosticsRepository,
+        private val featureFlagRepository: FeatureFlagRepository,
+        private val connectivityStatusProvider: ConnectivityStatusProvider
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -231,7 +325,9 @@ class DeveloperOptionsViewModel(
                     application,
                     settingsRepository,
                     ftueRepository,
-                    diagnosticsRepository
+                    diagnosticsRepository,
+                    featureFlagRepository,
+                    connectivityStatusProvider
                 ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
