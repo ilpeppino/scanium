@@ -51,11 +51,18 @@ docs/_archive/2025-12/
 ├── backend/       # Backend reference docs
 ├── features/      # Feature design docs
 ├── go-live/       # Production readiness (WIP)
-├── issues/        # Issue tracking docs
+├── issues/        # Issue tracking docs (DONE_*/WIP_* prefixed)
 ├── kmp-migration/ # KMP migration plans
+├── md/fixes/      # Fix documentation (implemented)
 ├── notes/         # Implemented feature docs (DONE_*)
 ├── parity/        # Platform parity plans
-├── pr/            # PR-related docs
+├── pr/            # PR-related docs (DONE_* prefixed)
 ├── release/       # Release checklists
 └── security/      # Security assessments
 ```
+
+### Active WIP (archived)
+These work-in-progress items are archived but still relevant for future work:
+- [WIP_008 - ScannedItemEntity schema drift](./_archive/2025-12/issues/WIP_008-add-missing-fields-to-scanneditem-entity.md) - Blocked by database activation decision
+- [WIP_013 - OnConflict REPLACE strategy](./_archive/2025-12/issues/WIP_013-onconflict-replace-strategy-risk.md) - Blocked by database activation decision
+- [WIP_015 - Accessibility features](./_archive/2025-12/issues/WIP_015-missing-accessibility-features.md) - TalkBack/a11y improvements
