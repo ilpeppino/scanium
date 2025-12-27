@@ -1,6 +1,8 @@
 package com.scanium.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
@@ -10,6 +12,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.compose.rememberNavController
+import com.scanium.app.audio.AndroidSoundManager
+import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.data.MockEbayApi
 import com.scanium.app.selling.data.MockEbayConfigManager
@@ -57,6 +61,12 @@ fun ScaniumApp() {
     val billingRepository = remember { BillingRepository(context) }
     val configProvider = remember { AndroidRemoteConfigProvider(context, scope) }
     val ftueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
+    val soundManager = remember {
+        AndroidSoundManager(
+            context = context,
+            soundsEnabledFlow = settingsRepository.soundsEnabledFlow
+        )
+    }
 
     // Choose billing provider based on build type
     val billingProvider = remember {
@@ -134,16 +144,23 @@ fun ScaniumApp() {
         EbayMarketplaceService(context, MockEbayApi(mockEbayConfig))
     }
 
-    ScaniumNavGraph(
-        navController = navController,
-        itemsViewModel = itemsViewModel,
-        classificationModeViewModel = classificationModeViewModel,
-        settingsViewModel = settingsViewModel,
-        paywallViewModel = paywallViewModel,
-        marketplaceService = marketplaceService,
-        draftStore = draftStore,
-        tourViewModel = tourViewModel
-    )
+    DisposableEffect(soundManager) {
+        soundManager.preload()
+        onDispose { soundManager.release() }
+    }
+
+    CompositionLocalProvider(LocalSoundManager provides soundManager) {
+        ScaniumNavGraph(
+            navController = navController,
+            itemsViewModel = itemsViewModel,
+            classificationModeViewModel = classificationModeViewModel,
+            settingsViewModel = settingsViewModel,
+            paywallViewModel = paywallViewModel,
+            marketplaceService = marketplaceService,
+            draftStore = draftStore,
+            tourViewModel = tourViewModel
+        )
+    }
 }
 
 // Backward compatibility alias

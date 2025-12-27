@@ -32,6 +32,7 @@ class SettingsRepository(private val context: Context) {
         private val AUTO_SAVE_ENABLED_KEY = booleanPreferencesKey("auto_save_enabled")
         private val SAVE_DIRECTORY_URI_KEY = stringPreferencesKey("save_directory_uri")
         private val ALLOW_ASSISTANT_IMAGES_KEY = booleanPreferencesKey("allow_assistant_images")
+        private val SOUNDS_ENABLED_KEY = booleanPreferencesKey("sounds_enabled")
 
         // Assistant personalization preferences
         private val ASSISTANT_LANGUAGE_KEY = stringPreferencesKey("assistant_language")
@@ -154,6 +155,20 @@ class SettingsRepository(private val context: Context) {
     suspend fun setAllowAssistantImages(allow: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[ALLOW_ASSISTANT_IMAGES_KEY] = allow
+        }
+    }
+
+    /**
+     * Whether app sounds are enabled.
+     * Default is ON for subtle feedback.
+     */
+    val soundsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[SOUNDS_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setSoundsEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[SOUNDS_ENABLED_KEY] = enabled
         }
     }
 
