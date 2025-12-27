@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,6 +22,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.diagnostics.*
+import com.scanium.app.model.config.ConnectionTestResult
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Developer Options screen with System Health diagnostics.
@@ -33,6 +38,7 @@ fun DeveloperOptionsScreen(
     onNavigateBack: () -> Unit
 ) {
     val diagnosticsState by viewModel.diagnosticsState.collectAsState()
+    val assistantDiagnosticsState by viewModel.assistantDiagnosticsState.collectAsState()
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
     val forceFtueTour by viewModel.forceFtueTour.collectAsState()
     val showFtueDebugBounds by viewModel.showFtueDebugBounds.collectAsState()
@@ -79,6 +85,14 @@ fun DeveloperOptionsScreen(
                 onRefresh = { viewModel.refreshDiagnostics() },
                 onCopyDiagnostics = { viewModel.copyDiagnosticsToClipboard() },
                 onAutoRefreshChange = { viewModel.setAutoRefreshEnabled(it) }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Assistant / AI Diagnostics Section
+            AssistantDiagnosticsSection(
+                state = assistantDiagnosticsState,
+                onRecheck = { viewModel.refreshAssistantDiagnostics() }
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -612,4 +626,353 @@ private fun StatusIndicator(status: HealthStatus) {
             fontWeight = FontWeight.Medium
         )
     }
+}
+
+// ==================== Assistant / AI Diagnostics Section ====================
+
+/**
+ * Assistant / AI Diagnostics section showing assistant prerequisites and capabilities.
+ * Developer-only, read-only diagnostics panel.
+ */
+@Composable
+private fun AssistantDiagnosticsSection(
+    state: AssistantDiagnosticsState,
+    onRecheck: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        // Header with recheck button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.SmartToy,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Assistant / AI Diagnostics",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // Recheck button
+            FilledTonalIconButton(
+                onClick = onRecheck,
+                enabled = !state.isChecking
+            ) {
+                if (state.isChecking) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Default.Refresh, contentDescription = "Recheck")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Overall status badge
+        AssistantOverallStatusBadge(readiness = state.overallReadiness)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Diagnostics card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                // Backend Reachability
+                AssistantDiagnosticRow(
+                    icon = Icons.Default.Cloud,
+                    label = "Backend Reachability",
+                    status = when (state.backendReachable) {
+                        BackendReachabilityStatus.REACHABLE -> DiagnosticStatus.OK
+                        BackendReachabilityStatus.UNREACHABLE -> DiagnosticStatus.ERROR
+                        BackendReachabilityStatus.DEGRADED -> DiagnosticStatus.WARNING
+                        BackendReachabilityStatus.CHECKING -> DiagnosticStatus.CHECKING
+                        BackendReachabilityStatus.UNKNOWN -> DiagnosticStatus.UNKNOWN
+                    },
+                    detail = when (val result = state.connectionTestResult) {
+                        is ConnectionTestResult.Success -> "Connected"
+                        is ConnectionTestResult.Failure -> result.message
+                        null -> if (state.isChecking) "Checking..." else "Not checked"
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Assistant Readiness (Prerequisites)
+                AssistantDiagnosticRow(
+                    icon = Icons.Default.CheckCircle,
+                    label = "Assistant Readiness",
+                    status = when {
+                        state.prerequisiteState.allSatisfied -> DiagnosticStatus.OK
+                        state.prerequisiteState.unsatisfiedCount > 0 -> DiagnosticStatus.WARNING
+                        else -> DiagnosticStatus.UNKNOWN
+                    },
+                    detail = if (state.prerequisiteState.allSatisfied) {
+                        "All ${state.prerequisiteState.prerequisites.size} prerequisites met"
+                    } else {
+                        "${state.prerequisiteState.unsatisfiedCount} prerequisites not met"
+                    }
+                )
+
+                // Show prerequisite details
+                if (state.prerequisiteState.prerequisites.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    state.prerequisiteState.prerequisites.forEach { prereq ->
+                        PrerequisiteDetailRow(prereq.displayName, prereq.satisfied)
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Network State
+                AssistantDiagnosticRow(
+                    icon = if (state.isNetworkConnected) Icons.Default.Wifi else Icons.Default.WifiOff,
+                    label = "Network State",
+                    status = if (state.isNetworkConnected) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
+                    detail = if (state.isNetworkConnected) {
+                        "Connected (${state.networkType})"
+                    } else {
+                        "Not connected"
+                    }
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Microphone Permission
+                AssistantDiagnosticRow(
+                    icon = Icons.Default.Mic,
+                    label = "Microphone Permission",
+                    status = if (state.hasMicrophonePermission) DiagnosticStatus.OK else DiagnosticStatus.WARNING,
+                    detail = if (state.hasMicrophonePermission) "Granted" else "Not granted"
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Speech Recognition Availability
+                AssistantDiagnosticRow(
+                    icon = Icons.Default.RecordVoiceOver,
+                    label = "Speech Recognition",
+                    status = if (state.isSpeechRecognitionAvailable) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
+                    detail = if (state.isSpeechRecognitionAvailable) "Available" else "Not available on this device"
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Text-to-Speech Availability
+                AssistantDiagnosticRow(
+                    icon = Icons.Default.VolumeUp,
+                    label = "Text-to-Speech",
+                    status = if (state.isTextToSpeechAvailable) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
+                    detail = if (state.isTextToSpeechAvailable) {
+                        if (state.isTtsReady) "Available and ready" else "Available"
+                    } else {
+                        "Not available"
+                    }
+                )
+
+                // Last checked timestamp
+                if (state.lastChecked > 0) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    Text(
+                        text = "Last checked: ${formatTimestamp(state.lastChecked)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Overall status badge for assistant readiness.
+ */
+@Composable
+private fun AssistantOverallStatusBadge(readiness: AssistantReadiness) {
+    val (color, text, icon) = when (readiness) {
+        AssistantReadiness.READY -> Triple(
+            Color(0xFF4CAF50),
+            "Assistant Ready",
+            Icons.Default.CheckCircle
+        )
+        AssistantReadiness.CHECKING -> Triple(
+            Color(0xFF2196F3),
+            "Checking...",
+            Icons.Default.Sync
+        )
+        AssistantReadiness.NO_NETWORK -> Triple(
+            Color(0xFFF44336),
+            "No Network Connection",
+            Icons.Default.WifiOff
+        )
+        AssistantReadiness.BACKEND_UNREACHABLE -> Triple(
+            Color(0xFFF44336),
+            "Backend Unreachable",
+            Icons.Default.CloudOff
+        )
+        AssistantReadiness.PREREQUISITES_NOT_MET -> Triple(
+            Color(0xFFFF9800),
+            "Prerequisites Not Met",
+            Icons.Default.Warning
+        )
+        AssistantReadiness.UNKNOWN -> Triple(
+            Color(0xFF9E9E9E),
+            "Unknown Status",
+            Icons.Default.Help
+        )
+    }
+
+    Surface(
+        color = color.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = color
+            )
+        }
+    }
+}
+
+/**
+ * Status enum for diagnostic rows.
+ */
+private enum class DiagnosticStatus {
+    OK, WARNING, ERROR, CHECKING, UNKNOWN
+}
+
+/**
+ * Single diagnostic row with icon, label, status indicator, and detail.
+ */
+@Composable
+private fun AssistantDiagnosticRow(
+    icon: ImageVector,
+    label: String,
+    status: DiagnosticStatus,
+    detail: String
+) {
+    val statusColor = when (status) {
+        DiagnosticStatus.OK -> Color(0xFF4CAF50)
+        DiagnosticStatus.WARNING -> Color(0xFFFF9800)
+        DiagnosticStatus.ERROR -> Color(0xFFF44336)
+        DiagnosticStatus.CHECKING -> Color(0xFF2196F3)
+        DiagnosticStatus.UNKNOWN -> Color(0xFF9E9E9E)
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(statusColor)
+                    )
+                }
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Small row showing prerequisite detail.
+ */
+@Composable
+private fun PrerequisiteDetailRow(name: String, satisfied: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 36.dp, top = 2.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            if (satisfied) Icons.Default.Check else Icons.Default.Close,
+            contentDescription = null,
+            tint = if (satisfied) Color(0xFF4CAF50) else Color(0xFFF44336),
+            modifier = Modifier.size(14.dp)
+        )
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (satisfied) {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            } else {
+                Color(0xFFF44336)
+            }
+        )
+    }
+}
+
+/**
+ * Format timestamp to readable time.
+ */
+private fun formatTimestamp(timestamp: Long): String {
+    return SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp))
 }
