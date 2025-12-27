@@ -64,7 +64,19 @@ run_coverage() {
     fi
     echo ""
 
-    echo -e "${BLUE}--- Step 2: Generate Jacoco HTML report (androidApp) ---${NC}"
+    echo -e "${BLUE}--- Step 2: Generate Kover HTML reports ---${NC}"
+    echo "Command: ./gradlew koverHtmlReport"
+    echo ""
+
+    # Generate Kover HTML reports
+    if "$REPO_ROOT/gradlew" -p "$REPO_ROOT" koverHtmlReport 2>&1 | tee -a "$LOG_FILE"; then
+        echo -e "${GREEN}[OK]${NC} Kover HTML reports generated"
+    else
+        echo -e "${YELLOW}[WARN]${NC} Kover HTML report generation failed (continuing)"
+    fi
+    echo ""
+
+    echo -e "${BLUE}--- Step 3: Generate Jacoco HTML report (androidApp) ---${NC}"
     echo "Command: ./gradlew jacocoTestReport"
     echo ""
 
