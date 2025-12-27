@@ -88,10 +88,15 @@ class CameraXManager(
         val error: Throwable? = null
     )
 
+    @Volatile
     private var cameraProvider: ProcessCameraProvider? = null
+    @Volatile
     private var camera: Camera? = null
+    @Volatile
     private var preview: Preview? = null
+    @Volatile
     private var imageAnalysis: ImageAnalysis? = null
+    @Volatile
     private var imageCapture: ImageCapture? = null
 
     private val objectDetector = ObjectDetectorClient()
@@ -150,15 +155,21 @@ class CameraXManager(
     }
 
     // State for scanning mode
+    // These variables are accessed from both Main thread (UI) and camera executor thread
+    @Volatile
     private var isScanning = false
     private var scanJob: Job? = null
+    @Volatile
     private var currentScanMode: ScanMode? = null
+    @Volatile
     private var targetRotation: Int? = null
 
     // Frame counter for periodic cleanup and stats logging
+    @Volatile
     private var frameCounter = 0
 
     // Model initialization flag
+    @Volatile
     private var modelInitialized = false
 
     // Performance metrics tracking
