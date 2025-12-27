@@ -41,7 +41,7 @@
 ***REMOVED******REMOVED******REMOVED*** Architecture Documentation
 - [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) - Full system architecture (Android + backend + observability).
 - [`docs/DEV_GUIDE.md`](DEV_GUIDE.md) - Development workflow and setup.
-- [`docs/DOMAIN_PACK_ARCHITECTURE.md`](DOMAIN_PACK_ARCHITECTURE.md) - Domain pack system (if present).
+- Domain pack architecture: see `docs/_archive/2025-12/md/architecture/DOMAIN_PACK_ARCHITECTURE.md` for historical reference.
 - [`README.md`](../README.md) - Project overview and quick start.
 - [`monitoring/README.md`](../monitoring/README.md) - Observability stack guide.
 
