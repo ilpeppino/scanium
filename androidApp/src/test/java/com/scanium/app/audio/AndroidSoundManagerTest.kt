@@ -1,6 +1,5 @@
 package com.scanium.app.audio
 
-import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +19,6 @@ class AndroidSoundManagerTest {
         val fakePlayer = FakeTonePlayer()
         val scope = TestScope(UnconfinedTestDispatcher())
         val manager = AndroidSoundManager(
-            context = ApplicationProvider.getApplicationContext(),
             soundsEnabledFlow = enabledFlow,
             deviceSoundPolicy = FakeDeviceSoundPolicy(),
             tonePlayer = fakePlayer,
