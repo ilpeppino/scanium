@@ -23,11 +23,13 @@ import com.scanium.app.items.persistence.ScannedItemDatabase
 import com.scanium.app.items.persistence.ScannedItemRepository
 import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.navigation.ScaniumNavGraph
+import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.data.AndroidFeatureFlagRepository
 import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.ml.classification.CloudClassifier
 import com.scanium.app.ml.classification.OnDeviceClassifier
 import com.scanium.app.ml.classification.StableItemCropper
+import com.scanium.app.platform.ConnectivityObserver
 import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.EntitlementManager
@@ -78,13 +80,17 @@ fun ScaniumApp() {
     }
     
     val entitlementManager = remember { EntitlementManager(settingsRepository, billingProvider) }
+    val connectivityObserver = remember { ConnectivityObserver(context) }
+    val apiKeyStore = remember { SecureApiKeyStore(context) }
 
     // Centralized feature flag repository (TECH-006 fix)
     val featureFlagRepository = remember {
         AndroidFeatureFlagRepository(
             settingsRepository = settingsRepository,
             configProvider = configProvider,
-            entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow
+            entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
+            connectivityStatusProvider = connectivityObserver,
+            apiKeyStore = apiKeyStore
         )
     }
 
