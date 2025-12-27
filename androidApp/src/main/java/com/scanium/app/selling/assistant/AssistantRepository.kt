@@ -3,6 +3,7 @@ package com.scanium.app.selling.assistant
 import android.content.Context
 import android.util.Log
 import com.scanium.app.BuildConfig
+import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
@@ -177,7 +178,7 @@ private class CloudAssistantRepository(
                     parsed.assistantError?.let { throw AssistantBackendException(it.toFailure()) }
                     return@withContext parsed.toModel()
                 }
-                logger.log("Assistant backend error: ${response.code} ${responseBody.orEmpty()}")
+                logger.log("Assistant backend error: ${response.code} ${ScaniumLog.sanitizeResponseBody(responseBody)}")
                 throw mapHttpFailure(response.code, responseBody)
             }
         } catch (error: AssistantBackendException) {
