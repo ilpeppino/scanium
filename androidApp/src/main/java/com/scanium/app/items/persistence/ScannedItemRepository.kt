@@ -73,13 +73,21 @@ class ScannedItemRepository(
     }
 
     private suspend fun recordHistory(entities: List<ScannedItemEntity>) {
-        val changedAt = System.currentTimeMillis()
+        if (entities.isEmpty()) return
 
-        for (entity in entities) {
+        val changedAt = System.currentTimeMillis()
+        val ids = entities.map { it.id }
+        val latestHashes = dao.getLatestHistoryHashes(ids).associate { it.itemId to it.snapshotHash }
+
+        val toInsert = entities.mapNotNull { entity ->
             val snapshotHash = snapshotHash(entity)
-            val latestHash = dao.getLatestHistoryHash(entity.id)
-            if (snapshotHash == latestHash) continue
-            dao.insertHistory(entity.toHistoryEntity(changedAt, snapshotHash))
+            if (snapshotHash != latestHashes[entity.id]) {
+                entity.toHistoryEntity(changedAt, snapshotHash)
+            } else null
+        }
+
+        if (toInsert.isNotEmpty()) {
+            dao.insertHistoryBatch(toInsert)
         }
     }
 
