@@ -6,6 +6,7 @@ import com.scanium.telemetry.TelemetryConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
@@ -181,5 +182,21 @@ class OtlpHttpExporter(
                 KeyValue("telemetry.sdk.version", AnyValue.string("1.0.0"))
             )
         )
+    }
+
+    /**
+     * Releases resources held by this exporter.
+     *
+     * This method should be called when the exporter is no longer needed to:
+     * - Cancel pending coroutines and prevent new exports
+     * - Shutdown the HTTP client's executor service
+     * - Evict all connections from the connection pool
+     *
+     * After calling close(), this exporter should not be used.
+     */
+    fun close() {
+        scope.cancel()
+        client.dispatcher.executorService.shutdown()
+        client.connectionPool.evictAll()
     }
 }
