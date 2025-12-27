@@ -65,7 +65,7 @@ object ScaniumLog {
             Regex("""\+?\d{1,3}[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}""") to "[PHONE]"
         )
 
-        var sanitized = responseBody
+        var sanitized = requireNotNull(responseBody)
         for ((pattern, replacement) in piiPatterns) {
             sanitized = sanitized.replace(pattern, replacement)
         }
