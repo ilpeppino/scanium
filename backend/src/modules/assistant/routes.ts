@@ -22,7 +22,14 @@ import {
   type SecurityReasonCode,
 } from './safety.js';
 import { DailyQuotaStore } from './quota-store.js';
-import { ItemImageMetadata, AssistantChatRequestWithVision, AssistantResponse, AssistantErrorPayload } from './types.js';
+import { assistantReadinessRegistry } from './readiness-registry.js';
+import {
+  ItemImageMetadata,
+  AssistantChatRequestWithVision,
+  AssistantResponse,
+  AssistantErrorPayload,
+  AssistantReasonCode,
+} from './types.js';
 import {
   VisionExtractor,
   MockVisionExtractor,
@@ -136,7 +143,14 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     cooldownMs: config.assistant.circuitBreakerCooldownSeconds * 1000,
     minimumRequests: config.assistant.circuitBreakerMinimumRequests,
   });
-  const service = new AssistantService(provider, { breaker, retries: 2 });
+  const service = new AssistantService(provider, {
+    breaker,
+    retries: 2,
+    providerType: config.assistant.provider,
+  });
+
+  // Register the service with the readiness registry for health checks
+  assistantReadinessRegistry.register(() => service.getReadiness());
 
   // Vision extraction setup
   const visionConfig = config.vision;
@@ -235,6 +249,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
   };
 
   fastify.addHook('onClose', async () => {
+    assistantReadinessRegistry.unregister();
     quotaStore.stop();
     visionCache.stop();
     responseCache.stop();
@@ -254,7 +269,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           message: 'Assistant is disabled',
           correlationId,
         },
-        assistantError: buildAssistantError('provider_unavailable', 'policy', false, undefined, 'Assistant disabled'),
+        assistantError: buildAssistantError('provider_unavailable', 'policy', false, 'PROVIDER_NOT_CONFIGURED', undefined, 'Assistant disabled'),
         safety: buildSafetyResponse(false, 'PROVIDER_NOT_CONFIGURED', requestId),
       });
     }
@@ -268,6 +283,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           message: 'Missing or invalid API key',
           correlationId,
         },
+        assistantError: buildAssistantError('unauthorized', 'auth', false, 'UNAUTHORIZED', undefined, 'Missing or invalid API key'),
         safety: buildSafetyResponse(true, null, requestId),
       });
     }
@@ -289,6 +305,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             'rate_limited',
             'policy',
             true,
+            'RATE_LIMITED',
             ipLimit.retryAfterSeconds,
             'Rate limit reached'
           ),
@@ -313,6 +330,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             'rate_limited',
             'policy',
             true,
+            'RATE_LIMITED',
             apiKeyLimit.retryAfterSeconds,
             'Rate limit reached'
           ),
@@ -339,6 +357,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
               'rate_limited',
               'policy',
               true,
+              'RATE_LIMITED',
               deviceLimit.retryAfterSeconds,
               'Rate limit reached'
             ),
@@ -369,6 +388,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             'rate_limited',
             'policy',
             true,
+            'QUOTA_EXCEEDED',
             resetIn,
             'Daily quota exceeded'
           ),
@@ -397,6 +417,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             'validation_error',
             'policy',
             false,
+            'VALIDATION_ERROR',
             undefined,
             multipartResult.error
           ),
@@ -424,6 +445,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           'validation_error',
           'policy',
           false,
+          'VALIDATION_ERROR',
           undefined,
           'Validation failed'
         ),
@@ -457,6 +479,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           'validation_error',
           'policy',
           false,
+          'VALIDATION_ERROR',
           undefined,
           validated.error
         ),
@@ -669,8 +692,8 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         error instanceof Error &&
         (error.name === 'AbortError' || error.message.toLowerCase().includes('timeout'));
       const fallbackError = isTimeout
-        ? buildAssistantError('network_timeout', 'temporary', true, undefined, 'Assistant request timed out')
-        : buildAssistantError('provider_unavailable', 'temporary', true, undefined, 'Assistant provider unavailable');
+        ? buildAssistantError('network_timeout', 'temporary', true, 'PROVIDER_UNAVAILABLE', undefined, 'Assistant request timed out')
+        : buildAssistantError('provider_unavailable', 'temporary', true, 'PROVIDER_UNAVAILABLE', undefined, 'Assistant provider unavailable');
 
       // Return graceful fallback instead of 503
       return reply.status(200).send({
@@ -715,7 +738,12 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     const apiKey = (request.headers['x-api-key'] as string | undefined)?.trim();
     if (!apiKey || !apiKeyManager.validateKey(apiKey)) {
       return reply.status(401).send({
-        error: { code: 'UNAUTHORIZED', message: 'Missing or invalid API key' },
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Missing or invalid API key',
+          correlationId: request.correlationId,
+        },
+        assistantError: buildAssistantError('unauthorized', 'auth', false, 'UNAUTHORIZED', undefined, 'Missing or invalid API key'),
       });
     }
 
@@ -896,6 +924,7 @@ function buildAssistantError(
   type: AssistantErrorPayload['type'],
   category: AssistantErrorPayload['category'],
   retryable: boolean,
+  reasonCode: AssistantReasonCode,
   retryAfterSeconds?: number,
   message?: string
 ): AssistantErrorPayload {
@@ -905,6 +934,7 @@ function buildAssistantError(
     retryable,
     retryAfterSeconds,
     message,
+    reasonCode,
   };
 }
 
@@ -922,6 +952,7 @@ function buildAssistantErrorIfNeeded(
       'vision_unavailable',
       'temporary',
       true,
+      'VISION_UNAVAILABLE',
       undefined,
       'Vision extraction unavailable'
     );

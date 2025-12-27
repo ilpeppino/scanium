@@ -1,6 +1,56 @@
 export type AssistantRole = 'USER' | 'ASSISTANT' | 'SYSTEM';
 
 // ============================================================================
+// Provider State Types
+// ============================================================================
+
+/**
+ * Provider configuration state for mobile app readiness detection.
+ * - ENABLED: Provider is configured and reachable
+ * - DISABLED: Provider is not configured (e.g., assistant.provider = 'disabled')
+ * - ERROR: Provider is configured but unreachable (circuit breaker open, timeout, etc.)
+ */
+export type ProviderState = 'ENABLED' | 'DISABLED' | 'ERROR';
+
+/**
+ * Assistant readiness status for health check responses.
+ */
+export type AssistantReadiness = {
+  /** Whether the assistant provider is configured (not 'disabled') */
+  providerConfigured: boolean;
+  /** Whether the provider is currently reachable (circuit breaker closed, no errors) */
+  providerReachable: boolean;
+  /** Current provider state */
+  state: ProviderState;
+  /** Provider type (mock, openai, disabled) */
+  providerType: string;
+  /** Timestamp of last successful provider call (ISO string, null if never) */
+  lastSuccessAt: string | null;
+  /** Timestamp of last provider error (ISO string, null if never) */
+  lastErrorAt: string | null;
+};
+
+// ============================================================================
+// Stable Error Reason Codes
+// ============================================================================
+
+/**
+ * Stable reason codes for assistant errors.
+ * These codes are used by the mobile app to determine appropriate UI responses.
+ */
+export type AssistantReasonCode =
+  | 'PROVIDER_NOT_CONFIGURED'    // assistant.provider = 'disabled'
+  | 'PROVIDER_UNAVAILABLE'       // Provider unreachable (circuit open, timeout)
+  | 'PROVIDER_ERROR'             // Provider returned an error
+  | 'RATE_LIMITED'               // Rate limit exceeded
+  | 'QUOTA_EXCEEDED'             // Daily quota exceeded
+  | 'VALIDATION_ERROR'           // Request validation failed
+  | 'UNAUTHORIZED'               // Missing or invalid API key
+  | 'VISION_UNAVAILABLE'         // Vision extraction failed
+  | 'SAFETY_BLOCKED'             // Request blocked by safety filters
+  | 'INTERNAL_ERROR';            // Unexpected internal error
+
+// ============================================================================
 // Personalization Preferences
 // ============================================================================
 
@@ -163,16 +213,26 @@ export type AssistantErrorType =
   | 'rate_limited'
   | 'network_timeout'
   | 'vision_unavailable'
-  | 'validation_error';
+  | 'validation_error'
+  | 'unauthorized'
+  | 'safety_blocked'
+  | 'internal_error';
 
-export type AssistantErrorCategory = 'temporary' | 'policy';
+export type AssistantErrorCategory = 'temporary' | 'policy' | 'auth';
 
 export type AssistantErrorPayload = {
+  /** Error type for categorization */
   type: AssistantErrorType;
+  /** Error category */
   category: AssistantErrorCategory;
+  /** Whether the request can be retried */
   retryable: boolean;
+  /** Seconds to wait before retrying (if retryable) */
   retryAfterSeconds?: number;
+  /** Human-readable error message */
   message?: string;
+  /** Stable reason code for mobile app UI decisions */
+  reasonCode: AssistantReasonCode;
 };
 
 export type ItemAttributeSnapshot = {
