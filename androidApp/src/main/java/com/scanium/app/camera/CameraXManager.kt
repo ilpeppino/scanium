@@ -169,8 +169,13 @@ class CameraXManager(
 
     // Motion-aware analysis interval
     private var lastMotionScore = DEFAULT_MOTION_SCORE
-    private var previousLumaSample: ByteArray? = null
-    private var reusableLumaSample: ByteArray? = null
+
+    // Double-buffered luma samples for motion detection
+    // Pre-allocated to avoid per-frame GC pressure (~14KB per buffer at 1280x720 with step=8)
+    private val lumaSampleBuffers = arrayOfNulls<ByteArray>(2)
+    private var currentLumaBufferIndex = 0
+    private var lumaBufferSize = 0
+    private var hasValidPreviousLumaSample = false
 
     // PHASE 5: Rate-limited logging
     private var viewportLoggedOnce = false
@@ -428,8 +433,9 @@ class CameraXManager(
         lastFpsReportTime = sessionStartTime
         framesInWindow = 0
         lastMotionScore = DEFAULT_MOTION_SCORE
-        previousLumaSample = null
-        reusableLumaSample = null
+        // Note: lumaSampleBuffers are intentionally NOT reset here to avoid
+        // per-session allocations. They are reused across sessions and only
+        // reallocated if the camera resolution changes.
 
         var lastAnalysisTime = 0L
         var isProcessing = false // Prevent overlapping processing
@@ -597,11 +603,22 @@ class CameraXManager(
         val sampleHeight = (height + LUMA_SAMPLE_STEP - 1) / LUMA_SAMPLE_STEP
         val sampleSize = sampleWidth * sampleHeight
 
-        var currentSample = reusableLumaSample
-        if (currentSample == null || currentSample.size != sampleSize) {
-            currentSample = ByteArray(sampleSize)
+        // Ensure buffers are allocated at the correct size
+        // Only reallocates if resolution changes (rare during a session)
+        if (lumaBufferSize != sampleSize) {
+            lumaSampleBuffers[0] = ByteArray(sampleSize)
+            lumaSampleBuffers[1] = ByteArray(sampleSize)
+            lumaBufferSize = sampleSize
+            currentLumaBufferIndex = 0
+            hasValidPreviousLumaSample = false
+            Log.d(TAG, "Allocated luma sample buffers: ${sampleSize} bytes each")
         }
 
+        // Get current buffer for writing and previous buffer for comparison
+        val currentSample = lumaSampleBuffers[currentLumaBufferIndex]!!
+        val previousSample = lumaSampleBuffers[1 - currentLumaBufferIndex]!!
+
+        // Sample luma values from the Y plane
         val buffer = plane.buffer
         val rowStride = plane.rowStride
         val pixelStride = plane.pixelStride
@@ -618,8 +635,9 @@ class CameraXManager(
             y += LUMA_SAMPLE_STEP
         }
 
-        val previousSample = previousLumaSample
-        val motionScore = if (previousSample != null && previousSample.size == sampleSize) {
+        // Compute motion score by comparing with previous frame
+        // Skip comparison on first frame when we don't have valid previous data
+        val motionScore = if (hasValidPreviousLumaSample) {
             var diffSum = 0L
             for (i in 0 until sampleIndex) {
                 diffSum += kotlin.math.abs(
@@ -631,8 +649,9 @@ class CameraXManager(
             lastMotionScore
         }
 
-        previousLumaSample = currentSample
-        reusableLumaSample = previousSample
+        // Swap buffer index for next frame and mark that we now have valid data
+        currentLumaBufferIndex = 1 - currentLumaBufferIndex
+        hasValidPreviousLumaSample = true
         lastMotionScore = motionScore
         return motionScore
     }
