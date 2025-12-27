@@ -55,6 +55,13 @@ interface FeatureFlagRepository {
     val isAssistantAvailable: Flow<Boolean>
 
     /**
+     * Flow of assistant prerequisite state.
+     * Emits the current state of all prerequisites needed for the assistant to work.
+     * This allows the UI to show exactly what's blocking the feature.
+     */
+    val assistantPrerequisiteState: Flow<AssistantPrerequisiteState>
+
+    /**
      * Enable or disable cloud classification preference.
      * This only affects the user preference, not remote config or entitlements.
      */
@@ -62,6 +69,13 @@ interface FeatureFlagRepository {
 
     /**
      * Enable or disable AI assistant preference.
+     * Returns true if the toggle was successfully changed, false if prerequisites aren't met.
      */
-    suspend fun setAssistantEnabled(enabled: Boolean)
+    suspend fun setAssistantEnabled(enabled: Boolean): Boolean
+
+    /**
+     * Test the backend connection for the assistant.
+     * Performs a health check to verify the backend is reachable and configured.
+     */
+    suspend fun testAssistantConnection(): ConnectionTestResult
 }

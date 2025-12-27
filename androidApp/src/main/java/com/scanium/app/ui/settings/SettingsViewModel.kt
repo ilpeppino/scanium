@@ -9,13 +9,17 @@ import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
 import com.scanium.app.model.user.UserEdition
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 import com.scanium.app.model.billing.EntitlementState
+import com.scanium.app.model.config.AssistantPrerequisiteState
 import com.scanium.app.model.config.ConfigProvider
+import com.scanium.app.model.config.ConnectionTestResult
 import com.scanium.app.model.config.FeatureFlagRepository
 import com.scanium.app.model.config.RemoteConfig
 import com.scanium.app.model.AssistantPrefs
@@ -116,6 +120,19 @@ class SettingsViewModel(
     val isPrivacySafeModeActive: StateFlow<Boolean> = settingsRepository.isPrivacySafeModeActiveFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    // Assistant Prerequisites
+    val assistantPrerequisiteState: StateFlow<AssistantPrerequisiteState> =
+        featureFlagRepository.assistantPrerequisiteState
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantPrerequisiteState.LOADING)
+
+    // Dialog state for showing prerequisites
+    private val _showPrerequisiteDialog = MutableStateFlow(false)
+    val showPrerequisiteDialog: StateFlow<Boolean> = _showPrerequisiteDialog.asStateFlow()
+
+    // Connection test state
+    private val _connectionTestState = MutableStateFlow<ConnectionTestState>(ConnectionTestState.Idle)
+    val connectionTestState: StateFlow<ConnectionTestState> = _connectionTestState.asStateFlow()
+
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
@@ -124,8 +141,41 @@ class SettingsViewModel(
         viewModelScope.launch { featureFlagRepository.setCloudClassificationEnabled(allow) }
     }
 
+    /**
+     * Attempts to enable/disable the assistant.
+     * If enabling and prerequisites aren't met, shows the prerequisite dialog.
+     */
     fun setAllowAssistant(allow: Boolean) {
-        viewModelScope.launch { featureFlagRepository.setAssistantEnabled(allow) }
+        viewModelScope.launch {
+            val success = featureFlagRepository.setAssistantEnabled(allow)
+            if (!success && allow) {
+                // Prerequisites not met, show the dialog
+                _showPrerequisiteDialog.value = true
+            }
+        }
+    }
+
+    fun dismissPrerequisiteDialog() {
+        _showPrerequisiteDialog.value = false
+    }
+
+    /**
+     * Tests the backend connection for the assistant.
+     * Updates connectionTestState with the result.
+     */
+    fun testAssistantConnection() {
+        viewModelScope.launch {
+            _connectionTestState.value = ConnectionTestState.Testing
+            val result = featureFlagRepository.testAssistantConnection()
+            _connectionTestState.value = when (result) {
+                is ConnectionTestResult.Success -> ConnectionTestState.Success
+                is ConnectionTestResult.Failure -> ConnectionTestState.Failed(result.message)
+            }
+        }
+    }
+
+    fun resetConnectionTestState() {
+        _connectionTestState.value = ConnectionTestState.Idle
     }
 
     fun setShareDiagnostics(share: Boolean) {
@@ -334,4 +384,14 @@ class SettingsViewModel(
             return SettingsViewModel(application, settingsRepository, entitlementManager, configProvider, featureFlagRepository, ftueRepository) as T
         }
     }
+}
+
+/**
+ * State for the connection test operation.
+ */
+sealed class ConnectionTestState {
+    object Idle : ConnectionTestState()
+    object Testing : ConnectionTestState()
+    object Success : ConnectionTestState()
+    data class Failed(val message: String) : ConnectionTestState()
 }

@@ -1,11 +1,14 @@
 package com.scanium.app.data
 
+import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.model.config.FeatureFlags
 import com.scanium.app.model.config.RemoteConfig
 import com.scanium.app.model.user.EntitlementPolicy
 import com.scanium.app.model.user.FreeEntitlements
 import com.scanium.app.model.user.ProEntitlements
+import com.scanium.app.platform.ConnectivityStatus
+import com.scanium.app.platform.ConnectivityStatusProvider
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.coVerify
@@ -21,21 +24,28 @@ class AndroidFeatureFlagRepositoryTest {
 
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val configProvider = mockk<ConfigProvider>(relaxed = true)
+    private val connectivityStatusProvider = mockk<ConnectivityStatusProvider>(relaxed = true)
+    private val apiKeyStore = mockk<SecureApiKeyStore>(relaxed = true)
 
     private val allowCloudFlow = MutableStateFlow(true)
     private val allowAssistantFlow = MutableStateFlow(false)
     private val remoteConfigFlow = MutableStateFlow(RemoteConfig())
     private val entitlementFlow = MutableStateFlow<EntitlementPolicy>(FreeEntitlements)
+    private val connectivityFlow = MutableStateFlow(ConnectivityStatus.ONLINE)
 
     private fun createRepository(): AndroidFeatureFlagRepository {
         every { settingsRepository.allowCloudClassificationFlow } returns allowCloudFlow
         every { settingsRepository.allowAssistantFlow } returns allowAssistantFlow
         every { configProvider.config } returns remoteConfigFlow
+        every { connectivityStatusProvider.statusFlow } returns connectivityFlow
+        every { apiKeyStore.getApiKey() } returns "test-api-key"
 
         return AndroidFeatureFlagRepository(
             settingsRepository = settingsRepository,
             configProvider = configProvider,
-            entitlementPolicyFlow = entitlementFlow
+            entitlementPolicyFlow = entitlementFlow,
+            connectivityStatusProvider = connectivityStatusProvider,
+            apiKeyStore = apiKeyStore
         )
     }
 
@@ -155,12 +165,44 @@ class AndroidFeatureFlagRepositoryTest {
     }
 
     @Test
-    fun `setAssistantEnabled delegates to settings repository`() = runTest {
+    fun `setAssistantEnabled delegates to settings repository when disabling`() = runTest {
         val repository = createRepository()
 
-        repository.setAssistantEnabled(true)
+        // Disabling should always work
+        val result = repository.setAssistantEnabled(false)
 
+        assertTrue(result)
+        coVerify { settingsRepository.setAllowAssistant(false) }
+    }
+
+    @Test
+    fun `setAssistantEnabled succeeds when all prerequisites met`() = runTest {
+        val repository = createRepository()
+
+        // Set up all prerequisites to be met
+        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+        entitlementFlow.value = ProEntitlements
+        connectivityFlow.value = ConnectivityStatus.ONLINE
+
+        val result = repository.setAssistantEnabled(true)
+
+        assertTrue(result)
         coVerify { settingsRepository.setAllowAssistant(true) }
+    }
+
+    @Test
+    fun `setAssistantEnabled fails when prerequisites not met`() = runTest {
+        val repository = createRepository()
+
+        // Prerequisites not met: free user
+        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+        entitlementFlow.value = FreeEntitlements
+        connectivityFlow.value = ConnectivityStatus.ONLINE
+
+        val result = repository.setAssistantEnabled(true)
+
+        assertFalse(result)
+        coVerify(exactly = 0) { settingsRepository.setAllowAssistant(true) }
     }
 
     // ==================== User Preference Flow Tests ====================
