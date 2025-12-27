@@ -102,9 +102,25 @@ fun ScaniumNavGraph(
 
         composable(Routes.DEVELOPER_OPTIONS) {
             val context = androidx.compose.ui.platform.LocalContext.current
+            val scope = androidx.compose.runtime.rememberCoroutineScope()
             val diagnosticsRepository = remember { DiagnosticsRepository(context) }
             val devSettingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
             val devFtueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
+            val billingRepository = remember { com.scanium.app.billing.BillingRepository(context) }
+            val billingProvider = remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
+            val entitlementManager = remember { com.scanium.app.data.EntitlementManager(devSettingsRepository, billingProvider) }
+            val configProvider = remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
+            val connectivityObserver = remember { com.scanium.app.platform.ConnectivityObserver(context) }
+            val apiKeyStore = remember { com.scanium.app.config.SecureApiKeyStore(context) }
+            val featureFlagRepository = remember {
+                com.scanium.app.data.AndroidFeatureFlagRepository(
+                    settingsRepository = devSettingsRepository,
+                    configProvider = configProvider,
+                    entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
+                    connectivityStatusProvider = connectivityObserver,
+                    apiKeyStore = apiKeyStore
+                )
+            }
             val developerOptionsViewModel: DeveloperOptionsViewModel = viewModel(
                 factory = DeveloperOptionsViewModel.Factory(
                     context.applicationContext as android.app.Application,
