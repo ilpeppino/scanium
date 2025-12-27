@@ -841,27 +841,56 @@ private fun AssistantModeIndicator(
     mode: AssistantMode,
     failure: AssistantBackendFailure? = null
 ) {
-    val statusLabel = failure?.let { AssistantErrorDisplay.getStatusLabel(it) }
+    val isOnline = mode == AssistantMode.ONLINE
 
-    val (label, color) = when {
-        statusLabel != null && mode != AssistantMode.ONLINE -> {
-            "Mode: $statusLabel (Local Fallback)" to when (failure?.category) {
-                AssistantBackendErrorCategory.POLICY -> MaterialTheme.colorScheme.error
-                else -> MaterialTheme.colorScheme.tertiary
-            }
-        }
-        mode == AssistantMode.ONLINE -> "Mode: Online" to MaterialTheme.colorScheme.primary
-        mode == AssistantMode.OFFLINE -> "Mode: Offline (Local Helper)" to MaterialTheme.colorScheme.error
-        mode == AssistantMode.LIMITED -> "Mode: Limited (Local Helper)" to MaterialTheme.colorScheme.tertiary
+    val (label, backgroundColor, contentColor) = when {
+        isOnline -> Triple(
+            "Online assistant",
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        mode == AssistantMode.OFFLINE -> Triple(
+            "Limited offline assistance",
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer
+        )
+        else -> Triple(
+            "Limited offline assistance",
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer
+        )
     }
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelMedium,
-        color = color,
+
+    Row(
         modifier = Modifier
             .padding(horizontal = 12.dp, vertical = 4.dp)
-            .semantics { traversalIndex = -1f }
-    )
+            .semantics { traversalIndex = -1f },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        // Status dot indicator
+        androidx.compose.foundation.Canvas(
+            modifier = Modifier.size(8.dp)
+        ) {
+            drawCircle(
+                color = if (isOnline) {
+                    androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                } else {
+                    androidx.compose.ui.graphics.Color(0xFFFF9800)
+                }
+            )
+        }
+        Card(
+            colors = CardDefaults.cardColors(containerColor = backgroundColor)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+    }
 }
 
 @Composable
@@ -876,15 +905,15 @@ private fun AssistantModeBanner(
 
     val title = when {
         errorInfo != null -> errorInfo.title
-        mode == AssistantMode.OFFLINE -> "Using limited offline assistance"
-        mode == AssistantMode.LIMITED -> "Using limited assistance"
-        else -> "Assistant online"
+        mode == AssistantMode.OFFLINE -> "Limited offline assistance"
+        mode == AssistantMode.LIMITED -> "Limited offline assistance"
+        else -> "Online assistant"
     }
 
     val detail = when {
         errorInfo != null -> errorInfo.explanation
-        mode == AssistantMode.OFFLINE -> "You're offline. Local helper suggestions are available until connectivity returns."
-        mode == AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Local helper suggestions are shown instead."
+        mode == AssistantMode.OFFLINE -> "You're offline. Only local suggestions based on your draft are available. No external lookups will be performed."
+        mode == AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Only local suggestions based on your draft are shown."
         else -> ""
     }
 
