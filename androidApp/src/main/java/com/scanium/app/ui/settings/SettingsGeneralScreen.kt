@@ -101,7 +101,7 @@ fun SettingsGeneralScreen(
                         }
                     }
                 },
-                leadingContent = { Icon(Icons.Filled.VerifiedUser, contentDescription = null) },
+                leadingContent = { Icon(Icons.Filled.VerifiedUser, contentDescription = stringResource(R.string.cd_edition_status)) },
                 trailingContent = trailingEditionAction
             )
 

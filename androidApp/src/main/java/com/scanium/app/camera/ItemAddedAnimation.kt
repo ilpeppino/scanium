@@ -22,8 +22,10 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.model.toImageBitmap
 import kotlinx.coroutines.launch
@@ -89,7 +91,7 @@ fun ItemAddedAnimation(
         ) {
             Image(
                 bitmap = thumbnailBitmap,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_item_thumbnail),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.matchParentSize()
             )

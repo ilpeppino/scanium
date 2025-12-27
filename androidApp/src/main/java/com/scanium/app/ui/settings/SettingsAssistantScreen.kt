@@ -358,7 +358,7 @@ private fun AssistantPrerequisiteDialog(
                     ) {
                         Icon(
                             imageVector = if (prerequisite.satisfied) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                            contentDescription = null,
+                            contentDescription = if (prerequisite.satisfied) stringResource(R.string.cd_prerequisite_satisfied) else stringResource(R.string.cd_prerequisite_not_satisfied),
                             tint = if (prerequisite.satisfied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                         )
                         Column {
@@ -386,7 +386,7 @@ private fun AssistantPrerequisiteDialog(
                     }
                     is ConnectionTestState.Success -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.CheckCircle, contentDescription = stringResource(R.string.cd_connection_success), tint = MaterialTheme.colorScheme.primary)
                             Text(
                                 text = stringResource(R.string.settings_assistant_connection_success),
                                 color = MaterialTheme.colorScheme.primary,
@@ -396,7 +396,7 @@ private fun AssistantPrerequisiteDialog(
                     }
                     is ConnectionTestState.Failed -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.cd_connection_failed), tint = MaterialTheme.colorScheme.error)
                             Text(
                                 text = connectionState.message,
                                 color = MaterialTheme.colorScheme.error,

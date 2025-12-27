@@ -28,12 +28,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
+import com.scanium.app.R
 
 @Composable
 fun SettingsSectionHeader(
@@ -72,7 +74,7 @@ fun SettingSwitchRow(
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(text = it) } },
-        leadingContent = icon?.let { { Icon(it, contentDescription = null) } },
+        leadingContent = icon?.let { { Icon(it, contentDescription = title) } },
         trailingContent = {
             Switch(
                 checked = checked,
@@ -108,9 +110,9 @@ fun SettingNavigationRow(
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
-        leadingContent = icon?.let { { Icon(it, contentDescription = null) } },
+        leadingContent = icon?.let { { Icon(it, contentDescription = title) } },
         trailingContent = if (showChevron && enabled) {
-            { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null) }
+            { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_navigate_forward)) }
         } else null,
         modifier = rowModifier
     )
@@ -139,7 +141,7 @@ fun SettingActionRow(
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
-        leadingContent = icon?.let { { Icon(it, contentDescription = null) } },
+        leadingContent = icon?.let { { Icon(it, contentDescription = title) } },
         modifier = rowModifier
     )
 }
@@ -225,8 +227,8 @@ fun SettingDropdownRow(
                         )
                     }
                 },
-                leadingContent = icon?.let { { Icon(it, contentDescription = null) } },
-                trailingContent = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                leadingContent = icon?.let { { Icon(it, contentDescription = title) } },
+                trailingContent = { Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.cd_expand_menu)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentWidth(Alignment.Start)
