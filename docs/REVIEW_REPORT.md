@@ -1055,4 +1055,297 @@ The Scanium codebase demonstrates **strong architectural foundations**, **excell
 
 ---
 
+## L) Addendum: 2025-12-27 Review Pass
+
+**Review Date**: 2025-12-27
+**Methodology**: Static code analysis, lint analysis, focused exploration of code quality, UI/UX, performance, and security
+**Build Status**: ✅ All 396 tests pass | ✅ Build succeeds | Lint: 4 errors, 57 warnings
+
+### L.1 New Findings Summary
+
+| Category | New Issues | Severity |
+|----------|------------|----------|
+| Code Quality | 8 | 2 HIGH, 4 MEDIUM, 2 LOW |
+| UI/UX | 6 | 2 HIGH, 3 MEDIUM, 1 LOW |
+| Performance | 8 | 3 HIGH, 4 MEDIUM, 1 LOW |
+| Security | 5 | 2 HIGH, 2 MEDIUM, 1 LOW |
+
+### L.2 Code Quality Findings
+
+#### CQ-001: OkHttpClient Not Closed in OtlpHttpExporter (HIGH)
+**File**: `androidApp/src/main/java/com/scanium/app/telemetry/otlp/OtlpHttpExporter.kt:47-51`
+**Issue**: OkHttpClient and CoroutineScope created but no cleanup method exists
+**Impact**: Resource leak on exporter disposal
+**Recommendation**: Add `close()` method calling `client.dispatcher.executorService.shutdown()` and `scope.cancel()`
+**Effort**: S
+
+#### CQ-002: Non-Volatile Mutable State in CameraXManager (HIGH)
+**File**: `androidApp/src/main/java/com/scanium/app/camera/CameraXManager.kt:89-93`
+**Issue**: Multiple instance variables (`cameraProvider`, `camera`, `preview`, `isScanning`, `frameCounter`) accessed from different threads without `@Volatile`
+**Impact**: Race conditions possible between Main thread and camera executor
+**Recommendation**: Add `@Volatile` modifier or use AtomicReference/AtomicBoolean
+**Effort**: S
+
+#### CQ-003: Silent Exception Swallowing with getOrNull() (MEDIUM)
+**Files**: Multiple files using `runCatching { ... }.getOrNull()` without logging
+- `SettingsRepository.kt` - ThemeMode parsing
+- `OnDeviceClassifier.kt` - Classification fallback
+- `ZipExportWriter.kt` - File operations
+**Impact**: Debugging difficult when operations fail silently
+**Recommendation**: Add telemetry/logging before returning null
+**Effort**: S
+
+#### CQ-004: Potential Resource Leak in MediaStoreSaver (MEDIUM)
+**File**: `androidApp/src/main/java/com/scanium/app/media/MediaStoreSaver.kt:120-166`
+**Issue**: If exception occurs after creating MediaStore entry but during write, cleanup may fail
+**Recommendation**: Use nested try-finally for robust cleanup
+**Effort**: S
+
+#### CQ-005: AssistantVoiceController Callback Memory Leak Risk (MEDIUM)
+**File**: `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantVoiceController.kt:91`
+**Issue**: `onResultCallback` stored as mutable property, not cleared in `shutdown()` if recognition active
+**Recommendation**: Clear callback in shutdown() regardless of state
+**Effort**: S
+
+#### CQ-006: Duplicate Bitmap Saving Logic (MEDIUM)
+**File**: `MediaStoreSaver.kt:120-166, 172-218`
+**Issue**: `saveFromUri()` and `saveSingleBitmap()` have nearly identical MediaStore entry creation logic
+**Recommendation**: Extract common helper method
+**Effort**: S
+
+#### CQ-007: @Volatile Missing in ObjectDetectorClient (LOW)
+**File**: `androidApp/src/main/java/com/scanium/app/ml/ObjectDetectorClient.kt:52-58`
+**Issue**: `lastEdgeDropLogTime` accessed from detection callbacks across threads but not volatile
+**Recommendation**: Add `@Volatile` modifier
+**Effort**: S
+
+#### CQ-008: Deprecated UtteranceProgressListener Override (LOW)
+**File**: `AssistantVoiceController.kt:134-138`
+**Issue**: Deprecated `onError(utteranceId: String?)` still overridden
+**Status**: Acceptable (backward compatibility), but new overload should be primary
+**Effort**: S
+
+### L.3 UI/UX Findings
+
+#### UX-007: Null Content Descriptions for Accessibility (HIGH)
+**Files**: 10+ files with 25+ instances of `contentDescription = null` on informative icons
+- `CameraSettingsOverlay.kt:295,332`
+- `SettingsScreen.kt:154,187,494,511,552,573`
+- `WelcomeOverlay.kt:158`
+- `DraftReviewScreen.kt:212`
+- `PostingAssistScreen.kt:199`
+**Impact**: Screen readers cannot describe icons to visually impaired users
+**Recommendation**: Add descriptive content descriptions to all informative icons
+**Effort**: M
+
+#### UX-008: Small Touch Targets Below 48dp (HIGH)
+**Files**: Multiple
+- `DeveloperOptionsScreen.kt:456,511` - 18dp icons
+- `VerticalThresholdSlider.kt:83` - 20dp width slider
+- `AssistantScreen.kt` - 24dp progress indicator
+**Impact**: WCAG 2.1 compliance failure, poor usability
+**Recommendation**: Ensure all interactive elements have 48dp minimum touch target
+**Effort**: S
+
+#### UX-009: 100+ Hardcoded Strings Not in strings.xml (MEDIUM)
+**Files**: `CameraSettingsOverlay.kt`, `DraftReviewScreen.kt`, `SettingsScreen.kt`, `WelcomeOverlay.kt`
+**Issue**: `strings.xml` contains only `app_name`, all UI text hardcoded
+**Impact**: Blocks localization, violates Android best practices
+**Recommendation**: Extract all user-visible strings to `strings.xml`
+**Effort**: L
+
+#### UX-010: Hardcoded Colors Not Theme-Aware (MEDIUM)
+**Files**:
+- `CameraSettingsOverlay.kt:78` - `Color.Black.copy(alpha = 0.35f)`
+- `WelcomeOverlay.kt:51` - `Color.Black.copy(alpha = 0.85f)`
+- `VerticalThresholdSlider.kt:65` - `Color.Black.copy(alpha = 0.6f)`
+**Impact**: Colors may not adapt properly to dark/light mode
+**Recommendation**: Use theme-aware colors from `Color.kt`
+**Effort**: S
+
+#### UX-011: Missing Loading States (MEDIUM)
+**Files**: `PostingAssistScreen.kt`, `DraftReviewScreen.kt`
+**Issue**: Limited visual feedback during async operations
+**Recommendation**: Add loading indicators for all async operations
+**Effort**: S
+
+#### UX-012: Insufficient Color Contrast (LOW)
+**File**: `SettingsScreen.kt:195-197`
+**Issue**: Disabled items use `.copy(alpha = 0.38f)` which may not meet WCAG AA 4.5:1 ratio
+**Recommendation**: Verify contrast ratios with accessibility tool
+**Effort**: S
+
+### L.4 Performance Findings
+
+#### PERF-005: ByteArray Allocations in Motion Detection (HIGH)
+**File**: `CameraXManager.kt:598-601`
+**Issue**: `ByteArray(sampleSize)` allocated every frame during motion score calculation
+**Impact**: ~14KB allocation at 30 FPS = 420KB/s garbage, causing GC pressure
+**Recommendation**: Implement object pooling or reusable buffer
+**Effort**: M
+
+#### PERF-006: Large Object Allocations in Image Conversion (HIGH)
+**File**: `CameraXManager.kt:902-908`
+**Issue**: NV21 ByteArray (~1.5MB for 1080p), ByteArrayOutputStream, and toByteArray() copy created per frame
+**Impact**: Heavy memory churn during capture
+**Recommendation**: Use buffer pooling for NV21 data
+**Effort**: M
+
+#### PERF-007: Hash Computation in Loop Without Caching (HIGH)
+**File**: `ScannedItemRepository.kt:75-84`
+**Issue**: SHA-256 hash computed for EVERY entity in loop, plus N database queries
+**Impact**: O(n) expensive operations per upsert batch
+**Recommendation**: Batch load all latest hashes in one query, then compare
+**Effort**: M
+
+#### PERF-008: Missing @Stable Annotations on Composable Parameters (MEDIUM)
+**Files**: `CameraScreen.kt:93-101`, `DetectionOverlay.kt:45-50`, `DraftReviewScreen.kt:72-79`
+**Issue**: Lambda and list parameters lack `@Stable` annotation, causing potential recomposition
+**Impact**: Unnecessary recompositions
+**Recommendation**: Add `@Stable` annotations to callback parameters
+**Effort**: S
+
+#### PERF-009: Camera Binding on Main Dispatcher (MEDIUM)
+**File**: `CameraXManager.kt:208-212`
+**Issue**: Heavy camera binding logic runs via `withContext(Dispatchers.Main)`
+**Impact**: ANR risk if camera provider slow to initialize
+**Recommendation**: Add timeout handling or move heavy work off main
+**Effort**: M
+
+#### PERF-010: Multiple Main Thread Context Switches Per Frame (MEDIUM)
+**File**: `CameraXManager.kt:365-367, 377-380, 495-497`
+**Issue**: Multiple `withContext(Dispatchers.Main)` calls during frame processing
+**Impact**: Context switch overhead at 30+ FPS
+**Recommendation**: Batch UI updates or use MainScope for callbacks
+**Effort**: M
+
+#### PERF-011: Missing Database Index on scanned_items.timestamp (MEDIUM)
+**File**: `ScannedItemDao.kt:10-11`
+**Issue**: `ORDER BY timestamp DESC` without index causes full table scan + sort
+**Recommendation**: Add `CREATE INDEX idx_scanned_items_timestamp ON scanned_items(timestamp DESC)`
+**Effort**: S
+
+#### PERF-012: IntArray Allocations in Sharpness Calculation (LOW)
+**File**: `ImageUtils.kt:191-215`
+**Issue**: Three separate IntArray allocations (pixels, grayPixels, laplacian) = ~195KB per call
+**Impact**: GC pressure during capture
+**Recommendation**: Consider reusable buffers if called frequently
+**Effort**: S
+
+### L.5 Security Findings
+
+#### SEC-009: Response Body Logging with Potential Credentials (HIGH)
+**Files**:
+- `AssistantRepository.kt:221` - `ScaniumLog.e(TAG, "Unexpected error: ${response.code} - $responseBody")`
+- `selling/AssistantRepository.kt:177` - Full response body logged
+**Impact**: Error responses may contain sensitive data in logs
+**Recommendation**: Sanitize or truncate response bodies before logging
+**Effort**: S
+
+#### SEC-010: Billing Debug Messages in Logs (HIGH)
+**File**: `AndroidBillingProvider.kt:56,117,240,261`
+**Issue**: `Log.e(TAG, "... ${billingResult.debugMessage}")` exposes billing internals
+**Impact**: Transaction data or internal billing errors may leak
+**Recommendation**: Remove debugMessage from production logs or redact
+**Effort**: S
+
+#### SEC-011: OTLP Default Endpoint Uses HTTP (MEDIUM)
+**File**: `OtlpConfiguration.kt:41,110`
+**Issue**: Default endpoint `http://localhost:4318` uses plain HTTP
+**Impact**: Telemetry data unencrypted if custom endpoint configured with HTTP
+**Recommendation**: Default to HTTPS, warn if HTTP used for non-localhost
+**Effort**: S
+
+#### SEC-012: Certificate Pinning Optional (MEDIUM)
+**File**: `CloudClassifier.kt:96-115`
+**Issue**: Certificate pinning only applied if `SCANIUM_API_CERTIFICATE_PIN` configured
+**Impact**: Production deployments without pinning vulnerable to MITM
+**Recommendation**: Make pinning mandatory for production builds
+**Effort**: S
+
+#### SEC-013: Device ID Fallback to Plaintext (LOW)
+**File**: `AssistantRepository.kt:250-257`
+**Issue**: If SHA-256 unavailable, falls back to unhashed device ID
+**Impact**: Low (SHA-256 always available on Android), but edge case exists
+**Recommendation**: Throw exception instead of fallback, or use alternative hash
+**Effort**: S
+
+### L.6 Lint Analysis Results
+
+**Build**: `./gradlew lintDebug`
+**Result**: 4 errors, 57 warnings
+
+#### Errors (4)
+| File | Issue | Description |
+|------|-------|-------------|
+| `CameraXManager.kt:351` | ExperimentalGetImage | Missing opt-in for `Image.getImage()` |
+| `CameraXManager.kt:449` | ExperimentalGetImage | Missing opt-in for `Image.getImage()` |
+| `CameraXManager.kt:888` | ExperimentalGetImage | Missing opt-in for `Image.getImage()` |
+| `CameraXManager.kt:408` | SuspiciousIndentation | Indentation suggests else branch |
+
+**Recommendation**: Add `@OptIn(ExperimentalGetImage::class)` annotation to methods using `imageProxy.image`
+
+#### Warnings Summary (57)
+| Category | Count | Priority |
+|----------|-------|----------|
+| GradleDependency (outdated deps) | 30+ | P2 |
+| UnclosedTrace | 5 | P2 |
+| UnusedResources | 8 | P3 |
+| ObsoleteSdkInt | 4 | P3 |
+| Other | 10 | P3 |
+
+### L.7 Updated Priority Backlog
+
+#### New P0 Items (Add to Existing)
+*None - existing P0 items still apply*
+
+#### New P1 Items
+| ID | Title | Category | Effort |
+|----|-------|----------|--------|
+| CQ-001 | OkHttpClient resource leak in OtlpHttpExporter | Code Quality | S |
+| CQ-002 | Non-volatile mutable state in CameraXManager | Code Quality | S |
+| SEC-009 | Response body logging with credentials | Security | S |
+| SEC-010 | Billing debug messages in logs | Security | S |
+| PERF-005 | ByteArray allocations in motion detection | Performance | M |
+| PERF-007 | Hash computation in loop | Performance | M |
+| UX-007 | Null content descriptions (25+ icons) | Accessibility | M |
+| UX-008 | Small touch targets (<48dp) | Accessibility | S |
+
+#### New P2 Items
+| ID | Title | Category | Effort |
+|----|-------|----------|--------|
+| PERF-006 | Large object allocations in image conversion | Performance | M |
+| PERF-008 | Missing @Stable annotations | Performance | S |
+| PERF-009 | Camera binding on Main dispatcher | Performance | M |
+| PERF-011 | Missing database index on timestamp | Performance | S |
+| SEC-011 | OTLP default endpoint uses HTTP | Security | S |
+| SEC-012 | Certificate pinning optional | Security | S |
+| UX-009 | 100+ hardcoded strings | Localization | L |
+| UX-010 | Hardcoded colors not theme-aware | UI | S |
+
+#### Lint Fixes (P2)
+| ID | Title | Effort |
+|----|-------|--------|
+| LINT-001 | Add @OptIn(ExperimentalGetImage::class) to CameraXManager | S |
+| LINT-002 | Fix SuspiciousIndentation at CameraXManager:408 | S |
+| LINT-003 | Update 30+ outdated Gradle dependencies | M |
+
+### L.8 Good Practices Observed
+
+✅ Proper use of `try-finally` blocks for imageProxy.close() in CameraXManager
+✅ DisposableEffect for soundManager cleanup in ScaniumApp
+✅ Lifecycle observer for camera shutdown
+✅ StateFlow for thread-safe state management
+✅ RequestSigner implements HMAC-SHA256 replay protection
+✅ Correlation IDs for request tracking
+✅ No WebView vulnerabilities (app doesn't use WebViews)
+✅ No dangerous reflection patterns
+
+---
+
+**Addendum Review Date**: 2025-12-27
+**Next Review**: After P0/P1 fixes from both reports (estimated 4-6 weeks)
+
+---
+
 END OF REPORT
