@@ -20,9 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scanium.app.R
 import com.scanium.app.model.billing.ProductDetails
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,7 +77,7 @@ fun PaywallScreen(
                 
                 Icon(
                     imageVector = Icons.Default.Star,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.cd_pro_upgrade),
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -146,7 +148,7 @@ fun FeatureRow(text: String) {
     ) {
         Icon(
             imageVector = Icons.Default.Check,
-            contentDescription = null,
+            contentDescription = stringResource(R.string.cd_feature_included),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )

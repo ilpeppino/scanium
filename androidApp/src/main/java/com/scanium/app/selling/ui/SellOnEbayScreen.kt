@@ -25,9 +25,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.R
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
@@ -123,7 +125,7 @@ private fun ListingDraftCard(
                 draftState.draft.originalItem.thumbnail?.toImageBitmap()?.let { bitmap ->
                     Image(
                         bitmap = bitmap,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_item_thumbnail),
                         modifier = Modifier
                             .size(96.dp)
                             .background(MaterialTheme.colorScheme.surfaceVariant),
@@ -200,8 +202,8 @@ private fun PostingStatusRow(draftState: ListingDraftState) {
         Text(text = "Status: ${draftState.status.name}")
         when (draftState.status) {
             PostingStatus.POSTING -> CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-            PostingStatus.SUCCESS -> Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            PostingStatus.FAILURE -> Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+            PostingStatus.SUCCESS -> Icon(Icons.Default.CheckCircle, contentDescription = stringResource(R.string.cd_posting_success), tint = MaterialTheme.colorScheme.primary)
+            PostingStatus.FAILURE -> Icon(Icons.Default.Error, contentDescription = stringResource(R.string.cd_posting_failed), tint = MaterialTheme.colorScheme.error)
             else -> {}
         }
     }

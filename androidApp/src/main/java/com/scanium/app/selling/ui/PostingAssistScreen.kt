@@ -55,8 +55,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.data.PostingTargetPreferences
 import com.scanium.app.items.ItemsViewModel
@@ -442,7 +444,7 @@ private fun ActionRow(
             Text("Copy All")
         }
         Button(onClick = onShare, modifier = Modifier.weight(1f)) {
-            Icon(imageVector = Icons.Default.Share, contentDescription = null)
+            Icon(imageVector = Icons.Default.Share, contentDescription = stringResource(R.string.cd_share))
             Spacer(modifier = Modifier.size(4.dp))
             Text("Share")
         }

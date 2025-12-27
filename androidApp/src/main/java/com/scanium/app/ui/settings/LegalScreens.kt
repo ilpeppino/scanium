@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
@@ -41,7 +42,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
         ) {
             Image(
                 painter = painterResource(id = R.drawable.scanium_logo),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_scanium_logo),
                 modifier = Modifier.size(120.dp)
             )
             
