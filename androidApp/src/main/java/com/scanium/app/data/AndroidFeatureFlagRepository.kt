@@ -175,7 +175,7 @@ class AndroidFeatureFlagRepository(
             )
         }
 
-        val healthEndpoint = "${baseUrl.trimEnd('/')}/v1/health"
+        val healthEndpoint = "${baseUrl.trimEnd('/')}/health"
 
         try {
             val request = Request.Builder()
