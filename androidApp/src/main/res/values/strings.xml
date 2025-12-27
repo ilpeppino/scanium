@@ -163,4 +163,45 @@
     <string name="settings_terms_subtitle">Usage terms and conditions</string>
     <string name="settings_about_title">About Scanium</string>
     <string name="settings_about_subtitle">Version, team, and acknowledgements</string>
+
+    <!-- Accessibility: Icon content descriptions -->
+    <string name="cd_navigate_forward">Navigate forward</string>
+    <string name="cd_expand_menu">Expand menu</string>
+    <string name="cd_feature_scan_items">Scan items feature</string>
+    <string name="cd_feature_view_items">View scanned items feature</string>
+    <string name="cd_feature_export_items">Export items feature</string>
+    <string name="cd_feature_ai_assistant">AI assistant feature</string>
+    <string name="cd_feature_settings">Settings feature</string>
+    <string name="cd_setup_complete">Setup complete</string>
+    <string name="cd_camera_permission">Camera permission</string>
+    <string name="cd_tap_gesture">Tap gesture</string>
+    <string name="cd_long_press_gesture">Long press gesture</string>
+    <string name="cd_object_detection">Object detection feature</string>
+    <string name="cd_pro_upgrade">Pro upgrade</string>
+    <string name="cd_feature_included">Feature included</string>
+    <string name="cd_no_draft_available">No draft available</string>
+    <string name="cd_share">Share</string>
+    <string name="cd_export_csv">Export as CSV</string>
+    <string name="cd_export_zip">Export as ZIP</string>
+    <string name="cd_classification_failed">Classification failed</string>
+    <string name="cd_retry">Retry</string>
+    <string name="cd_view_external">View external link</string>
+    <string name="cd_item_thumbnail">Item thumbnail</string>
+    <string name="cd_stop_speaking">Stop speaking</string>
+    <string name="cd_voice_unavailable">Voice input unavailable</string>
+    <string name="cd_open_settings">Open settings</string>
+    <string name="cd_edition_status">Edition status</string>
+    <string name="cd_data_section_icon">Data section icon</string>
+    <string name="cd_scanium_logo">Scanium logo</string>
+    <string name="cd_service_status">Service status</string>
+    <string name="cd_network_status">Network status</string>
+    <string name="cd_permission_status">Permission status</string>
+    <string name="cd_capability_status">Capability status</string>
+    <string name="cd_ai_model">AI model</string>
+    <string name="cd_prerequisite_satisfied">Prerequisite satisfied</string>
+    <string name="cd_prerequisite_not_satisfied">Prerequisite not satisfied</string>
+    <string name="cd_connection_success">Connection successful</string>
+    <string name="cd_connection_failed">Connection failed</string>
+    <string name="cd_posting_success">Posting successful</string>
+    <string name="cd_posting_failed">Posting failed</string>
 </resources>

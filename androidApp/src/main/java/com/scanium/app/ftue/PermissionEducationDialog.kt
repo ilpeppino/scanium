@@ -23,10 +23,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.scanium.app.R
 
 /**
  * Permission education dialog shown before requesting camera permission.
@@ -53,7 +55,7 @@ fun PermissionEducationDialog(
                 // Camera icon
                 Icon(
                     imageVector = Icons.Default.Camera,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.cd_camera_permission),
                     modifier = Modifier.size(56.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -122,7 +124,7 @@ fun PermissionEducationDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.TouchApp,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_tap_gesture),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -151,7 +153,7 @@ fun PermissionEducationDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.TouchApp,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.cd_long_press_gesture),
                         tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -213,7 +215,7 @@ private fun EducationFeatureRow(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = stringResource(R.string.cd_object_detection),
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .size(24.dp)

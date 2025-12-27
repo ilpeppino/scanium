@@ -68,6 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
@@ -75,6 +76,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.core.content.ContextCompat
@@ -285,7 +287,7 @@ fun AssistantScreen(
                                     .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                                     .semantics { contentDescription = "Stop reading aloud" }
                             ) {
-                                Icon(Icons.Default.Stop, contentDescription = null)
+                                Icon(Icons.Default.Stop, contentDescription = stringResource(R.string.cd_stop_speaking))
                             }
                         }
                     }
@@ -579,7 +581,7 @@ fun AssistantScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Send,
-                                contentDescription = null,
+                                contentDescription = "Send",
                                 tint = if (inputText.isNotBlank()) {
                                     MaterialTheme.colorScheme.primary
                                 } else {
@@ -1205,7 +1207,7 @@ private fun VoiceListeningIndicator(
             ) {
                 Icon(
                     imageVector = Icons.Default.Stop,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.cd_stop_speaking),
                     tint = when (state) {
                         VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
                         VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
@@ -1282,7 +1284,7 @@ private fun VoiceUnavailableBanner() {
         ) {
             Icon(
                 imageVector = Icons.Default.MicOff,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_voice_unavailable),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Column {
