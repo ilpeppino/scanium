@@ -89,6 +89,11 @@ The redesigned Settings experience is organized into six categories (General, Ca
 - ❌ Lint checks: `./gradlew lint`
 - ❌ Instrumented tests: `./gradlew connectedAndroidTest`
 
+***REMOVED******REMOVED******REMOVED*** Automated local test-fix loop
+- `./scripts/dev/run_tests.sh test` – run unit tests with JDK 17 enforced.
+- `./scripts/dev/autofix_tests.sh test` – run tests, extract failures, and invoke Codex for fixes.
+- Gradle always runs under JDK 17 via `scripts/dev/gradle17.sh`, even if other tooling uses JDK 21.
+
 **Mobile testing workflow (container-friendly):**
 1. Push changes to your branch
 2. GitHub Actions builds APK automatically (see `.github/workflows/android-debug-apk.yml`)

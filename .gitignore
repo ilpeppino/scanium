@@ -30,5 +30,5 @@ tombstone_*
 ***REMOVED*** Node
 node_modules
 
-***REMOVED*** Temporary working directory
-/tmp/
+***REMOVED*** Local test logs / automation outputs
+tmp/
