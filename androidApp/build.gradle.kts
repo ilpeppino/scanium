@@ -21,10 +21,25 @@ plugins {
 // Load local.properties for API configuration (not committed to git)
 private val localProperties by lazy(LazyThreadSafetyMode.NONE) {
     Properties().apply {
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localPropertiesFile.inputStream().use { load(it) }
+        findLocalPropertiesFile()?.let { propsFile ->
+            propsFile.inputStream().use { load(it) }
         }
+    }
+}
+
+/**
+ * Allow Android Studio to open either the repo root or the androidApp module directly.
+ * When androidApp is opened standalone, rootProject points to /androidApp so we fall
+ * back to the parent directory to locate the shared local.properties file.
+ */
+private fun findLocalPropertiesFile() = sequenceOf(
+    rootProject.file("local.properties"),
+    rootProject.projectDir.parentFile?.resolve("local.properties")
+).firstOrNull { file ->
+    file?.exists() == true
+}?.also { file ->
+    if (file.parentFile != rootProject.projectDir) {
+        logger.info("Loading local.properties from ${file.parentFile}")
     }
 }
 
@@ -54,6 +69,7 @@ android {
         // Required key in local.properties:
         //   scanium.api.base.url=https://your-backend.com/api/v1
         val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
         val sentryDsn = localPropertyOrEnv("scanium.sentry.dsn", "SCANIUM_SENTRY_DSN")
         val telemetryDataRegion = localPropertyOrEnv(
             "scanium.telemetry.data_region",
@@ -73,6 +89,7 @@ android {
         val certificatePin = localPropertyOrEnv("scanium.api.certificate.pin", "SCANIUM_API_CERTIFICATE_PIN", "")
 
         buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
+        buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
         buildConfigField("String", "SCANIUM_API_CERTIFICATE_PIN", "\"$certificatePin\"")
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
         buildConfigField("String", "OTLP_ENDPOINT", "\"$otlpEndpoint\"")
@@ -81,7 +98,7 @@ android {
 
         // Legacy fields for backward compatibility (deprecated)
         buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")
-        buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"\"")
+        buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"$apiKey\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
