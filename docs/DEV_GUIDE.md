@@ -50,6 +50,10 @@ Scanium uses cloud classification by default to identify items. To enable this f
 - Never commit API keys to version control
 - Release builds require API base URL; fail-fast if missing
 
+***REMOVED******REMOVED*** Settings Information Architecture
+
+The redesigned Settings experience is organized into six categories (General, Camera & Scanning, AI Assistant, Notifications & Feedback, Data & Privacy, and Developer Options). Each category lives on its own screen with grouped toggles and actions, ensuring every preference has a single home. Refer to `docs/SETTINGS_IA.md` for a full mapping of settings → DataStore keys → screen location, plus guidance on adding new entries to the Settings home.
+
 ***REMOVED******REMOVED*** Local build & test
 
 ***REMOVED******REMOVED******REMOVED*** With Android SDK (Workstation / Android Studio)

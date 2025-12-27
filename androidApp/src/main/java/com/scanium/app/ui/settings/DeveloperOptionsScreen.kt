@@ -35,6 +35,7 @@ import java.util.Locale
 @Composable
 fun DeveloperOptionsScreen(
     viewModel: DeveloperOptionsViewModel,
+    classificationViewModel: com.scanium.app.settings.ClassificationModeViewModel,
     onNavigateBack: () -> Unit
 ) {
     val diagnosticsState by viewModel.diagnosticsState.collectAsState()
@@ -49,6 +50,8 @@ fun DeveloperOptionsScreen(
     val documentDetectionEnabled by viewModel.documentDetectionEnabled.collectAsState()
     val adaptiveThrottlingEnabled by viewModel.adaptiveThrottlingEnabled.collectAsState()
     val scrollState = rememberScrollState()
+    val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
+    val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Show snackbar for copy result
@@ -97,9 +100,9 @@ fun DeveloperOptionsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            SettingsSectionTitle("Diagnostics & Security")
+            SettingsSectionHeader("Diagnostics & Security")
 
-            SettingsSwitchItem(
+            SettingSwitchRow(
                 title = "Allow screenshots",
                 subtitle = if (allowScreenshots) "Screenshots allowed" else "Screenshots blocked (FLAG_SECURE)",
                 icon = Icons.Default.ScreenLockPortrait,
@@ -110,9 +113,9 @@ fun DeveloperOptionsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Developer Settings Section
-            SettingsSectionTitle("Developer Settings")
+            SettingsSectionHeader("Developer Settings")
 
-            SettingsSwitchItem(
+            SettingSwitchRow(
                 title = "Developer Mode",
                 subtitle = "Unlock all features for testing",
                 icon = Icons.Default.BugReport,
@@ -123,9 +126,9 @@ fun DeveloperOptionsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Detection Settings Section (Performance & Low-Power Mode)
-            SettingsSectionTitle("Detection & Performance")
+            SettingsSectionHeader("Detection & Performance")
 
-            SettingsSwitchItem(
+            SettingSwitchRow(
                 title = "Barcode/QR Detection",
                 subtitle = if (barcodeDetectionEnabled) "Scanning for barcodes and QR codes" else "Barcode detection disabled",
                 icon = Icons.Default.CropFree,
@@ -133,7 +136,7 @@ fun DeveloperOptionsScreen(
                 onCheckedChange = { viewModel.setBarcodeDetectionEnabled(it) }
             )
 
-            SettingsSwitchItem(
+            SettingSwitchRow(
                 title = "Document Detection",
                 subtitle = if (documentDetectionEnabled) "Detecting document candidates" else "Document detection disabled",
                 icon = Icons.Default.Article,
@@ -141,7 +144,7 @@ fun DeveloperOptionsScreen(
                 onCheckedChange = { viewModel.setDocumentDetectionEnabled(it) }
             )
 
-            SettingsSwitchItem(
+            SettingSwitchRow(
                 title = "Adaptive Throttling",
                 subtitle = if (adaptiveThrottlingEnabled) "Low-power mode: auto-adjusts scan rate" else "Fixed scan rate (may drain battery)",
                 icon = Icons.Default.Speed,
@@ -149,19 +152,36 @@ fun DeveloperOptionsScreen(
                 onCheckedChange = { viewModel.setAdaptiveThrottlingEnabled(it) }
             )
 
+            SettingsSectionHeader("Classifier Diagnostics")
+            SettingSwitchRow(
+                title = "Save cloud crops",
+                subtitle = "Writes outgoing classifier crops to cache (cleared on uninstall)",
+                icon = Icons.Default.Cloud,
+                checked = saveCloudCrops,
+                onCheckedChange = classificationViewModel::updateSaveCloudCrops
+            )
+
+            SettingSwitchRow(
+                title = "Verbose classifier logging",
+                subtitle = "Adds extra classifier details to Logcat (debug builds only)",
+                icon = Icons.Default.Tune,
+                checked = verboseLogging,
+                onCheckedChange = classificationViewModel::updateVerboseLogging
+            )
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Testing Section
-            SettingsSectionTitle("Testing & Debug")
+            SettingsSectionHeader("Testing & Debug")
 
-            SettingsItem(
+            SettingActionRow(
                 title = "Test Crash Reporting",
                 subtitle = "Send test event to Sentry (handled exception)",
                 icon = Icons.Default.BugReport,
                 onClick = { viewModel.triggerCrashTest(throwCrash = false) }
             )
 
-            SettingsItem(
+            SettingActionRow(
                 title = "Test Diagnostics Bundle",
                 subtitle = "Capture exception with diagnostics.json attachment",
                 icon = Icons.Default.BugReport,
@@ -171,9 +191,9 @@ fun DeveloperOptionsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // First-Time Experience Section
-            SettingsSectionTitle("First-Time Experience")
+            SettingsSectionHeader("First-Time Experience")
 
-            SettingsSwitchItem(
+            SettingSwitchRow(
                 title = "Force First-Time Tour",
                 subtitle = "Always show tour on app launch (debug only)",
                 icon = Icons.Default.Info,
@@ -181,7 +201,7 @@ fun DeveloperOptionsScreen(
                 onCheckedChange = { viewModel.setForceFtueTour(it) }
             )
 
-            SettingsSwitchItem(
+            SettingSwitchRow(
                 title = "Show FTUE debug bounds",
                 subtitle = "Draw spotlight outlines and center line",
                 icon = Icons.Default.CenterFocusStrong,
@@ -189,7 +209,7 @@ fun DeveloperOptionsScreen(
                 onCheckedChange = { viewModel.setShowFtueDebugBounds(it) }
             )
 
-            SettingsItem(
+            SettingActionRow(
                 title = "Reset Tour Progress",
                 subtitle = "Clear tour completion flag",
                 icon = Icons.Default.Refresh,
