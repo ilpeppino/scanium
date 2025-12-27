@@ -87,7 +87,7 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Domain pack/category update: `core-domainpack/domain/category/*`, `domain/repository/LocalDomainPackRepository.kt`, raw JSON under `core-domainpack/src/main/res/raw/`.
 - Backend/cloud classification wiring: `androidApp/ml/CloudClassifierClient` (if present) and buildConfig fields in `androidApp/build.gradle.kts`.
 - Logging/monitoring/crash: `androidApp/ml/DetectionLogger.kt`, Sentry config via `BuildConfig.SENTRY_DSN`, general logs under respective modules.
-- Developer Options/System Health: `androidApp/diagnostics/DiagnosticsRepository.kt` (health checks), `ui/settings/DeveloperOptionsViewModel.kt` (state), `ui/settings/DeveloperOptionsScreen.kt` (UI); navigation route `Routes.DEVELOPER_OPTIONS` in `NavGraph.kt`.
+- Developer Options/System Health: `androidApp/diagnostics/DiagnosticsRepository.kt` (health checks), `ui/settings/DeveloperOptionsViewModel.kt` (state), `ui/settings/DeveloperOptionsScreen.kt` (UI); navigation route `Routes.SETTINGS_DEVELOPER` in `NavGraph.kt`.
 - Persistence (drafts/DataStore/Room): `androidApp/src/main/java/com/scanium/app/data/*`, Room entities/DAOs if added; selling cache in `selling/data/*`.
 - Platform adapters (Bitmap/Rect ↔ shared): `android-platform-adapters` extension functions.
 - Tests: fast shared logic → `shared:core-tracking` & `shared:core-models` JVM tests; Android features → `androidApp/src/test` or `src/androidTest`.

@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.scanium.app.camera.CameraScreen
+import com.scanium.app.camera.CameraViewModel
 import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.settings.ClassificationModeViewModel
@@ -21,7 +22,12 @@ import com.scanium.app.selling.ui.PostingAssistScreen
 import com.scanium.app.selling.ui.SellOnEbayScreen
 import com.scanium.app.selling.assistant.AssistantScreen
 
-import com.scanium.app.ui.settings.SettingsScreen
+import com.scanium.app.ui.settings.SettingsAssistantScreen
+import com.scanium.app.ui.settings.SettingsCameraScreen
+import com.scanium.app.ui.settings.SettingsFeedbackScreen
+import com.scanium.app.ui.settings.SettingsGeneralScreen
+import com.scanium.app.ui.settings.SettingsHomeScreen
+import com.scanium.app.ui.settings.SettingsPrivacyScreen
 import com.scanium.app.ui.settings.SettingsViewModel
 import com.scanium.app.ui.settings.DataUsageScreen
 import com.scanium.app.ui.settings.PrivacyPolicyScreen
@@ -42,8 +48,13 @@ object Routes {
     const val DRAFT_REVIEW = "draft_review"
     const val POSTING_ASSIST = "posting_assist"
     const val ASSISTANT = "assistant"
-    const val SETTINGS = "settings"
-    const val DEVELOPER_OPTIONS = "developer_options"
+    const val SETTINGS_HOME = "settings/home"
+    const val SETTINGS_GENERAL = "settings/general"
+    const val SETTINGS_CAMERA = "settings/camera"
+    const val SETTINGS_ASSISTANT = "settings/assistant"
+    const val SETTINGS_FEEDBACK = "settings/feedback"
+    const val SETTINGS_PRIVACY = "settings/privacy"
+    const val SETTINGS_DEVELOPER = "settings/developer"
     const val DATA_USAGE = "data_usage"
     const val PRIVACY = "privacy"
     const val TERMS = "terms"
@@ -79,7 +90,7 @@ fun ScaniumNavGraph(
                     navController.navigate(Routes.ITEMS_LIST)
                 },
                 onNavigateToSettings = {
-                    navController.navigate(Routes.SETTINGS)
+                    navController.navigate(Routes.SETTINGS_HOME)
                 },
                 itemsViewModel = itemsViewModel,
                 classificationModeViewModel = classificationModeViewModel,
@@ -87,20 +98,67 @@ fun ScaniumNavGraph(
             )
         }
 
-        composable(Routes.SETTINGS) {
-            SettingsScreen(
+        composable(Routes.SETTINGS_HOME) {
+            SettingsHomeScreen(
                 viewModel = settingsViewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToDataUsage = { navController.navigate(Routes.DATA_USAGE) },
-                onNavigateToPrivacy = { navController.navigate(Routes.PRIVACY) },
-                onNavigateToTerms = { navController.navigate(Routes.TERMS) },
-                onNavigateToAbout = { navController.navigate(Routes.ABOUT) },
-                onNavigateToUpgrade = { navController.navigate(Routes.PAYWALL) },
-                onNavigateToDeveloperOptions = { navController.navigate(Routes.DEVELOPER_OPTIONS) }
+                onGeneralClick = { navController.navigate(Routes.SETTINGS_GENERAL) },
+                onCameraClick = { navController.navigate(Routes.SETTINGS_CAMERA) },
+                onAssistantClick = { navController.navigate(Routes.SETTINGS_ASSISTANT) },
+                onFeedbackClick = { navController.navigate(Routes.SETTINGS_FEEDBACK) },
+                onPrivacyClick = { navController.navigate(Routes.SETTINGS_PRIVACY) },
+                onDeveloperClick = { navController.navigate(Routes.SETTINGS_DEVELOPER) }
             )
         }
 
-        composable(Routes.DEVELOPER_OPTIONS) {
+        composable(Routes.SETTINGS_GENERAL) {
+            SettingsGeneralScreen(
+                viewModel = settingsViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onUpgradeClick = { navController.navigate(Routes.PAYWALL) }
+            )
+        }
+
+        composable(Routes.SETTINGS_CAMERA) {
+            val cameraEntry = remember(navController) {
+                navController.getBackStackEntry(Routes.CAMERA)
+            }
+            val cameraViewModel: CameraViewModel = viewModel(cameraEntry)
+            SettingsCameraScreen(
+                settingsViewModel = settingsViewModel,
+                classificationViewModel = classificationModeViewModel,
+                itemsViewModel = itemsViewModel,
+                cameraViewModel = cameraViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.SETTINGS_ASSISTANT) {
+            SettingsAssistantScreen(
+                viewModel = settingsViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.SETTINGS_FEEDBACK) {
+            SettingsFeedbackScreen(
+                viewModel = settingsViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.SETTINGS_PRIVACY) {
+            SettingsPrivacyScreen(
+                viewModel = settingsViewModel,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDataUsage = { navController.navigate(Routes.DATA_USAGE) },
+                onNavigateToPrivacyPolicy = { navController.navigate(Routes.PRIVACY) },
+                onNavigateToTerms = { navController.navigate(Routes.TERMS) },
+                onNavigateToAbout = { navController.navigate(Routes.ABOUT) }
+            )
+        }
+
+        composable(Routes.SETTINGS_DEVELOPER) {
             val context = androidx.compose.ui.platform.LocalContext.current
             val scope = androidx.compose.runtime.rememberCoroutineScope()
             val diagnosticsRepository = remember { DiagnosticsRepository(context) }
@@ -133,6 +191,7 @@ fun ScaniumNavGraph(
             )
             DeveloperOptionsScreen(
                 viewModel = developerOptionsViewModel,
+                classificationViewModel = classificationModeViewModel,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

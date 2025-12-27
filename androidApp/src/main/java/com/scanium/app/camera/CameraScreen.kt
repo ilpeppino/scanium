@@ -13,7 +13,6 @@ import android.view.WindowManager
 import android.util.Log
 import android.util.Size
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.camera.core.CameraSelector
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
@@ -60,7 +59,6 @@ import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.data.SettingsRepository
-import com.scanium.app.data.ThemeMode
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.ml.DetectionResult
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -107,7 +105,6 @@ fun CameraScreen(
     val soundManager = LocalSoundManager.current
     val settingsRepository = remember { SettingsRepository(context) }
     val ftueRepository = remember { FtueRepository(context) }
-    val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
     val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
     val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
 
@@ -151,7 +148,6 @@ fun CameraScreen(
     var modelDownloadState by remember { mutableStateOf<ModelDownloadState>(ModelDownloadState.Checking) }
 
     // Settings overlay state
-    var isSettingsOpen by rememberSaveable { mutableStateOf(false) }
 
     // Items count from ViewModel
     val itemsCount by itemsViewModel.items.collectAsState()
@@ -319,9 +315,6 @@ fun CameraScreen(
     }
 
     // Close settings on system back when open
-    BackHandler(enabled = isSettingsOpen) {
-        isSettingsOpen = false
-    }
 
     // Cleanup on dispose
     DisposableEffect(Unit) {
@@ -551,7 +544,13 @@ fun CameraScreen(
                         }
                         onNavigateToItems()
                     },
-                    onOpenSettings = { isSettingsOpen = true },
+                    onOpenSettings = {
+                        // Tour may highlight settings button; honor step progression.
+                        if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.CAMERA_SETTINGS) {
+                            tourViewModel?.nextStep()
+                        }
+                        onNavigateToSettings()
+                    },
                     tourViewModel = tourViewModel,
                     showShutterHint = showShutterHint,
                     onShutterTap = {
@@ -698,31 +697,6 @@ fun CameraScreen(
                         }
                     },
                     isFlipEnabled = !isCameraBinding
-                )
-
-                CameraSettingsOverlay(
-                    visible = isSettingsOpen,
-                    onDismiss = { isSettingsOpen = false },
-                    themeMode = themeMode,
-                    onThemeModeChange = { mode ->
-                        scope.launch { settingsRepository.setThemeMode(mode) }
-                    },
-                    similarityThreshold = similarityThreshold,
-                    onThresholdChange = itemsViewModel::updateSimilarityThreshold,
-                    classificationMode = classificationMode,
-                    onProcessingModeChange = classificationModeViewModel::updateMode,
-                    captureResolution = captureResolution,
-                    onResolutionChange = cameraViewModel::updateCaptureResolution,
-                    saveCloudCropsEnabled = saveCloudCrops,
-                    onSaveCloudCropsChange = classificationModeViewModel::updateSaveCloudCrops,
-                    lowDataModeEnabled = lowDataMode,
-                    onLowDataModeChange = classificationModeViewModel::updateLowDataMode,
-                    verboseLoggingEnabled = verboseLogging,
-                    onVerboseLoggingChange = classificationModeViewModel::updateVerboseLogging,
-                    onNavigateToSettings = {
-                        isSettingsOpen = false
-                        onNavigateToSettings()
-                    }
                 )
 
                 // FTUE Tour Overlays

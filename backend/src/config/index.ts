@@ -276,7 +276,7 @@ export function loadConfig(): Config {
       provider: process.env.SCANIUM_ASSISTANT_PROVIDER,
       openaiApiKey: process.env.OPENAI_API_KEY,
       openaiModel: process.env.OPENAI_MODEL,
-      apiKeys: process.env.SCANIUM_ASSISTANT_API_KEYS,
+      apiKeys: process.env.SCANIUM_ASSISTANT_API_KEYS || process.env.SCANIUM_API_KEYS,
       rateLimitPerMinute: process.env.ASSIST_RATE_LIMIT_PER_MINUTE,
       ipRateLimitPerMinute: process.env.ASSIST_IP_RATE_LIMIT_PER_MINUTE,
       deviceRateLimitPerMinute: process.env.ASSIST_DEVICE_RATE_LIMIT_PER_MINUTE,
