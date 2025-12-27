@@ -323,7 +323,10 @@ fun AssistantScreen(
                     }
                 }
 
-                AssistantModeIndicator(mode = state.assistantMode)
+                AssistantModeIndicator(
+                    mode = state.assistantMode,
+                    failure = state.lastBackendFailure
+                )
 
                 LazyColumn(
                     modifier = Modifier
@@ -834,11 +837,22 @@ private fun RetryBanner(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun AssistantModeIndicator(mode: AssistantMode) {
-    val (label, color) = when (mode) {
-        AssistantMode.ONLINE -> "Mode: Online" to MaterialTheme.colorScheme.primary
-        AssistantMode.OFFLINE -> "Mode: Offline / Limited" to MaterialTheme.colorScheme.error
-        AssistantMode.LIMITED -> "Mode: Limited (Local)" to MaterialTheme.colorScheme.tertiary
+private fun AssistantModeIndicator(
+    mode: AssistantMode,
+    failure: AssistantBackendFailure? = null
+) {
+    val statusLabel = failure?.let { AssistantErrorDisplay.getStatusLabel(it) }
+
+    val (label, color) = when {
+        statusLabel != null && mode != AssistantMode.ONLINE -> {
+            "Mode: $statusLabel (Local Fallback)" to when (failure?.category) {
+                AssistantBackendErrorCategory.POLICY -> MaterialTheme.colorScheme.error
+                else -> MaterialTheme.colorScheme.tertiary
+            }
+        }
+        mode == AssistantMode.ONLINE -> "Mode: Online" to MaterialTheme.colorScheme.primary
+        mode == AssistantMode.OFFLINE -> "Mode: Offline (Local Helper)" to MaterialTheme.colorScheme.error
+        mode == AssistantMode.LIMITED -> "Mode: Limited (Local Helper)" to MaterialTheme.colorScheme.tertiary
     }
     Text(
         text = label,
@@ -857,56 +871,114 @@ private fun AssistantModeBanner(
     retryEnabled: Boolean,
     onRetry: () -> Unit
 ) {
-    val title = when (mode) {
-        AssistantMode.OFFLINE -> "Using limited offline assistance"
-        AssistantMode.LIMITED -> "Using limited assistance"
-        AssistantMode.ONLINE -> "Assistant online"
+    // Use explicit error info when available
+    val errorInfo = AssistantErrorDisplay.getErrorInfo(failure)
+
+    val title = when {
+        errorInfo != null -> errorInfo.title
+        mode == AssistantMode.OFFLINE -> "Using limited offline assistance"
+        mode == AssistantMode.LIMITED -> "Using limited assistance"
+        else -> "Assistant online"
     }
-    val detail = when (mode) {
-        AssistantMode.OFFLINE -> "You're offline. Local helper suggestions are available until connectivity returns."
-        AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Local helper suggestions are shown instead."
-        AssistantMode.ONLINE -> ""
+
+    val detail = when {
+        errorInfo != null -> errorInfo.explanation
+        mode == AssistantMode.OFFLINE -> "You're offline. Local helper suggestions are available until connectivity returns."
+        mode == AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Local helper suggestions are shown instead."
+        else -> ""
     }
+
+    val actionHint = errorInfo?.actionHint
+
+    // Determine container color based on error severity
+    val containerColor = when {
+        failure?.category == AssistantBackendErrorCategory.POLICY &&
+            failure.type in listOf(
+                AssistantBackendErrorType.UNAUTHORIZED,
+                AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED,
+                AssistantBackendErrorType.VALIDATION_ERROR
+            ) -> MaterialTheme.colorScheme.errorContainer
+        failure != null -> MaterialTheme.colorScheme.tertiaryContainer
+        mode == AssistantMode.OFFLINE -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.tertiaryContainer
+    }
+
+    val contentColor = when {
+        failure?.category == AssistantBackendErrorCategory.POLICY &&
+            failure.type in listOf(
+                AssistantBackendErrorType.UNAUTHORIZED,
+                AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED,
+                AssistantBackendErrorType.VALIDATION_ERROR
+            ) -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onTertiaryContainer
+    }
+
+    val showRetryButton = errorInfo?.showRetry ?: (mode != AssistantMode.ONLINE)
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        )
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
+            // Error type label for debugging
+            failure?.let {
+                Text(
+                    text = AssistantErrorDisplay.getStatusLabel(it),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+            }
+
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
+                color = contentColor
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = detail,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                color = contentColor.copy(alpha = 0.9f)
             )
-            failure?.message?.let { message ->
+
+            // Show action hint if available
+            actionHint?.let { hint ->
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = message,
+                    text = hint,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                    color = contentColor.copy(alpha = 0.8f)
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = onRetry,
-                enabled = retryEnabled,
-                modifier = Modifier.semantics { contentDescription = "Retry online" }
-            ) {
-                Text("Retry online")
+
+            // Show rate limit countdown if applicable
+            failure?.retryAfterSeconds?.let { seconds ->
+                if (seconds > 0 && failure.type == AssistantBackendErrorType.RATE_LIMITED) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Retry available in ${seconds}s",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            if (showRetryButton) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onRetry,
+                    enabled = retryEnabled,
+                    modifier = Modifier.semantics { contentDescription = "Retry online" }
+                ) {
+                    Text("Retry online")
+                }
             }
         }
     }
