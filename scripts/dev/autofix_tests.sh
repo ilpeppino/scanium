@@ -18,7 +18,7 @@ if ! command -v codex >/dev/null 2>&1; then
 fi
 
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
-  echo "\n=== Attempt $attempt of $MAX_ATTEMPTS ==="
+  printf "\n=== Attempt %s of %s ===\n" "$attempt" "$MAX_ATTEMPTS"
   if "$ROOT/scripts/dev/run_tests.sh" "${TASKS[@]}"; then
     echo "✅ Tests passed on attempt $attempt."
     exit 0
@@ -27,8 +27,7 @@ for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
   "$ROOT/scripts/dev/extract_failures.sh"
   FAILURE_PACKET="$(cat "$ROOT/tmp/test_failures.txt")"
 
-  {
-    cat <<EOF
+  PROMPT=$(cat <<EOF
 You are working in the Scanium repo. Fix the failing tests described below. Make minimal changes strictly related to the failures. Do not refactor unrelated code or reformat broadly.
 
 After each fix, run ./scripts/dev/run_tests.sh test locally if possible. If you cannot execute commands, still make best-effort fixes and explain what you changed.
@@ -36,7 +35,9 @@ After each fix, run ./scripts/dev/run_tests.sh test locally if possible. If you 
 Here are the failures:
 ${FAILURE_PACKET}
 EOF
-  } | codex
+)
+
+  codex exec --cd "$ROOT" --full-auto "$PROMPT"
 
 done
 
