@@ -31,4 +31,5 @@ tombstone_*
 node_modules
 
 ***REMOVED*** Local test logs / automation outputs
+***REMOVED*** Includes tmp/ci/ for local CI runner outputs (coverage, security reports)
 tmp/
