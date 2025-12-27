@@ -103,14 +103,16 @@ fun ScaniumNavGraph(
         composable(Routes.DEVELOPER_OPTIONS) {
             val context = androidx.compose.ui.platform.LocalContext.current
             val diagnosticsRepository = remember { DiagnosticsRepository(context) }
-            val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
-            val ftueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
+            val devSettingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
+            val devFtueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
             val developerOptionsViewModel: DeveloperOptionsViewModel = viewModel(
                 factory = DeveloperOptionsViewModel.Factory(
                     context.applicationContext as android.app.Application,
-                    settingsRepository,
-                    ftueRepository,
-                    diagnosticsRepository
+                    devSettingsRepository,
+                    devFtueRepository,
+                    diagnosticsRepository,
+                    featureFlagRepository,
+                    connectivityObserver
                 )
             )
             DeveloperOptionsScreen(
