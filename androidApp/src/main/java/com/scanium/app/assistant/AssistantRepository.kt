@@ -218,7 +218,7 @@ class AssistantRepository(
                     }
 
                     else -> {
-                        ScaniumLog.e(TAG, "Unexpected error: ${response.code} - $responseBody")
+                        ScaniumLog.e(TAG, "Unexpected error: ${response.code} - ${ScaniumLog.sanitizeResponseBody(responseBody)}")
                         Result.failure(
                             AssistantException(
                                 errorCode = "UNKNOWN_ERROR",
