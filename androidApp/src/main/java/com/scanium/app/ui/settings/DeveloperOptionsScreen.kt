@@ -18,9 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.app.diagnostics.*
 import com.scanium.app.model.config.ConnectionTestResult
 import java.text.SimpleDateFormat
@@ -370,7 +372,7 @@ private fun HealthCheckRow(
         ) {
             Icon(
                 icon,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_service_status),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
@@ -434,7 +436,7 @@ private fun NetworkStatusRow(networkStatus: NetworkStatus) {
                     NetworkTransport.VPN -> Icons.Default.VpnKey
                     else -> Icons.Default.SignalWifiOff
                 },
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_network_status),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
@@ -485,7 +487,7 @@ private fun PermissionRow(permission: PermissionStatus) {
         ) {
             Icon(
                 if (permission.name == "Camera") Icons.Default.CameraAlt else Icons.Default.Mic,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_permission_status),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
@@ -540,7 +542,7 @@ private fun CapabilityRow(capability: CapabilityStatus) {
                     "Camera Lenses" -> Icons.Default.CameraAlt
                     else -> Icons.Default.Settings
                 },
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_capability_status),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(18.dp)
             )
@@ -676,7 +678,7 @@ private fun AssistantDiagnosticsSection(
             ) {
                 Icon(
                     Icons.Default.SmartToy,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.cd_ai_model),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
@@ -876,7 +878,7 @@ private fun AssistantOverallStatusBadge(readiness: AssistantReadiness) {
         ) {
             Icon(
                 icon,
-                contentDescription = null,
+                contentDescription = text,
                 tint = color,
                 modifier = Modifier.size(24.dp)
             )
@@ -929,7 +931,7 @@ private fun AssistantDiagnosticRow(
         ) {
             Icon(
                 icon,
-                contentDescription = null,
+                contentDescription = label,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp)
             )
@@ -974,7 +976,7 @@ private fun PrerequisiteDetailRow(name: String, satisfied: Boolean) {
     ) {
         Icon(
             if (satisfied) Icons.Default.Check else Icons.Default.Close,
-            contentDescription = null,
+            contentDescription = if (satisfied) stringResource(R.string.cd_prerequisite_satisfied) else stringResource(R.string.cd_prerequisite_not_satisfied),
             tint = if (satisfied) Color(0xFF4CAF50) else Color(0xFFF44336),
             modifier = Modifier.size(14.dp)
         )

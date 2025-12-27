@@ -27,12 +27,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.scanium.app.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -198,7 +200,7 @@ fun AssistantScreen(
                                     .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                                     .semantics { contentDescription = "Stop reading aloud" }
                             ) {
-                                Icon(Icons.Default.Stop, contentDescription = null)
+                                Icon(Icons.Default.Stop, contentDescription = stringResource(R.string.cd_stop_speaking))
                             }
                         }
                     }
@@ -378,7 +380,11 @@ fun AssistantScreen(
                                     }
                                     Icon(
                                         imageVector = icon,
-                                        contentDescription = null,
+                                        contentDescription = when {
+                                            !speechAvailable -> stringResource(R.string.cd_voice_unavailable)
+                                            isActive -> stringResource(R.string.cd_stop_speaking)
+                                            else -> "Start voice input"
+                                        },
                                         tint = micColor
                                     )
                                 }
@@ -399,7 +405,7 @@ fun AssistantScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Send,
-                                    contentDescription = null,
+                                    contentDescription = "Send",
                                     tint = if (inputText.isNotBlank() && !uiState.isLoading) {
                                         MaterialTheme.colorScheme.primary
                                     } else {
@@ -562,7 +568,7 @@ private fun VoiceListeningIndicator(
             ) {
                 Icon(
                     imageVector = Icons.Default.Stop,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.cd_stop_speaking),
                     tint = when (state) {
                         VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
                         VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
@@ -639,7 +645,7 @@ private fun VoiceUnavailableBanner() {
         ) {
             Icon(
                 imageVector = Icons.Default.MicOff,
-                contentDescription = null,
+                contentDescription = stringResource(R.string.cd_voice_unavailable),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Column {

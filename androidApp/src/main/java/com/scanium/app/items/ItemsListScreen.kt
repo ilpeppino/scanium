@@ -44,10 +44,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.items.export.CsvExportWriter
@@ -543,7 +545,7 @@ fun ItemsListScreen(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = null
+                                contentDescription = stringResource(R.string.cd_share)
                             )
                         },
                         onClick = {
@@ -568,7 +570,7 @@ fun ItemsListScreen(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.Description,
-                                contentDescription = null
+                                contentDescription = stringResource(R.string.cd_export_csv)
                             )
                         },
                         onClick = {
@@ -606,7 +608,7 @@ fun ItemsListScreen(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.FolderZip,
-                                contentDescription = null
+                                contentDescription = stringResource(R.string.cd_export_zip)
                             )
                         },
                         onClick = {
@@ -846,7 +848,7 @@ private fun ItemRow(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ErrorOutline,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.cd_classification_failed),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(16.dp)
                         )
@@ -868,7 +870,7 @@ private fun ItemRow(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.cd_retry),
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -906,7 +908,7 @@ private fun ItemRow(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.OpenInNew,
-                                    contentDescription = null,
+                                    contentDescription = stringResource(R.string.cd_view_external),
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
