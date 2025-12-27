@@ -9,8 +9,8 @@ internal class SoundRateLimiter(
     fun canPlay(sound: AppSound): Boolean {
         val now = clock()
         val minInterval = minIntervalsMs[sound] ?: 0L
-        val last = lastPlayed[sound] ?: Long.MIN_VALUE
-        if (minInterval > 0 && now - last < minInterval) {
+        val last = lastPlayed[sound]
+        if (minInterval > 0 && last != null && now - last < minInterval) {
             return false
         }
         lastPlayed[sound] = now

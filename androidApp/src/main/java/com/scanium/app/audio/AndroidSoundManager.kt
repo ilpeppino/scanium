@@ -13,14 +13,24 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class AndroidSoundManager(
-    context: Context,
+class AndroidSoundManager internal constructor(
     soundsEnabledFlow: Flow<Boolean>,
-    private val deviceSoundPolicy: DeviceSoundPolicy = AndroidDeviceSoundPolicy(context),
-    private val tonePlayer: TonePlayer = ToneGeneratorPlayer(),
-    private val rateLimiter: SoundRateLimiter = SoundRateLimiter(DEFAULT_RATE_LIMITS, SystemClock::elapsedRealtime),
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val deviceSoundPolicy: DeviceSoundPolicy,
+    private val tonePlayer: TonePlayer,
+    private val rateLimiter: SoundRateLimiter,
+    private val scope: CoroutineScope
 ) : SoundManager {
+
+    constructor(
+        context: Context,
+        soundsEnabledFlow: Flow<Boolean>
+    ) : this(
+        soundsEnabledFlow = soundsEnabledFlow,
+        deviceSoundPolicy = AndroidDeviceSoundPolicy(context),
+        tonePlayer = ToneGeneratorPlayer(),
+        rateLimiter = SoundRateLimiter(DEFAULT_RATE_LIMITS, SystemClock::elapsedRealtime),
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    )
 
     private val soundsEnabled = SoundEnabledState()
 
@@ -57,8 +67,8 @@ class AndroidSoundManager(
         private const val DEFAULT_DURATION_MS = 80
         private val SOUND_TONES = mapOf(
             AppSound.CAPTURE to ToneGenerator.TONE_PROP_BEEP,
-            AppSound.ITEM_ADDED to ToneGenerator.TONE_PROP_CLICK,
-            AppSound.SELECT to ToneGenerator.TONE_PROP_CLICK,
+            AppSound.ITEM_ADDED to ToneGenerator.TONE_PROP_BEEP2,
+            AppSound.SELECT to ToneGenerator.TONE_PROP_BEEP2,
             AppSound.DELETE to ToneGenerator.TONE_PROP_NACK,
             AppSound.ERROR to ToneGenerator.TONE_SUP_ERROR,
             AppSound.SEND to ToneGenerator.TONE_PROP_ACK,
