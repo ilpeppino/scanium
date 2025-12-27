@@ -65,6 +65,9 @@ class SettingsViewModel(
     val allowAssistantImages: StateFlow<Boolean> = settingsRepository.allowAssistantImagesFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val soundsEnabled: StateFlow<Boolean> = settingsRepository.soundsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     val entitlements = entitlementManager.entitlementPolicyFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.scanium.app.model.user.FreeEntitlements)
 
@@ -143,6 +146,10 @@ class SettingsViewModel(
 
     fun setAllowAssistantImages(allow: Boolean) {
         viewModelScope.launch { settingsRepository.setAllowAssistantImages(allow) }
+    }
+
+    fun setSoundsEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setSoundsEnabled(enabled) }
     }
 
     fun setForceFtueTour(enabled: Boolean) {
