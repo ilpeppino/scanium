@@ -28,8 +28,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 
 /**
  * Full-screen welcome overlay shown at the start of the FTUE tour.
@@ -82,6 +84,7 @@ fun WelcomeOverlay(
                 // Feature bullets
                 FeatureBullet(
                     icon = Icons.Default.Camera,
+                    contentDescription = stringResource(R.string.cd_feature_scan_items),
                     text = "Scan items with object detection"
                 )
 
@@ -89,6 +92,7 @@ fun WelcomeOverlay(
 
                 FeatureBullet(
                     icon = Icons.Default.List,
+                    contentDescription = stringResource(R.string.cd_feature_view_items),
                     text = "View all your scanned items in an organized list"
                 )
 
@@ -96,6 +100,7 @@ fun WelcomeOverlay(
 
                 FeatureBullet(
                     icon = Icons.Default.ShoppingCart,
+                    contentDescription = stringResource(R.string.cd_feature_export_items),
                     text = "Select items and export them for other apps"
                 )
 
@@ -103,6 +108,7 @@ fun WelcomeOverlay(
 
                 FeatureBullet(
                     icon = Icons.Default.AutoAwesome,
+                    contentDescription = stringResource(R.string.cd_feature_ai_assistant),
                     text = "Get pricing and export help from the AI assistant"
                 )
 
@@ -110,6 +116,7 @@ fun WelcomeOverlay(
 
                 FeatureBullet(
                     icon = Icons.Default.Menu,
+                    contentDescription = stringResource(R.string.cd_feature_settings),
                     text = "Customize settings and preferences from the menu"
                 )
 
@@ -146,6 +153,7 @@ fun WelcomeOverlay(
 @Composable
 private fun FeatureBullet(
     icon: ImageVector,
+    contentDescription: String,
     text: String,
     modifier: Modifier = Modifier
 ) {
@@ -155,7 +163,7 @@ private fun FeatureBullet(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(end = 12.dp)
         )
