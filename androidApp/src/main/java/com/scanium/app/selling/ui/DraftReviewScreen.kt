@@ -55,9 +55,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Image
+import com.scanium.app.R
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.scanium.app.selling.util.ListingClipboardHelper
@@ -209,7 +211,7 @@ fun DraftReviewScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(imageVector = Icons.Default.Warning, contentDescription = null)
+                Icon(imageVector = Icons.Default.Warning, contentDescription = stringResource(R.string.cd_no_draft_available))
                 Text("No draft available for this item")
             }
             return@Scaffold
