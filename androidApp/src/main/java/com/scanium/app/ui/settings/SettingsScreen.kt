@@ -74,6 +74,7 @@ fun SettingsScreen(
     val autoSaveEnabled by viewModel.autoSaveEnabled.collectAsState()
     val saveDirectoryUri by viewModel.saveDirectoryUri.collectAsState()
     val allowAssistantImages by viewModel.allowAssistantImages.collectAsState()
+    val soundsEnabled by viewModel.soundsEnabled.collectAsState()
 
     // Assistant Personalization
     val assistantLanguage by viewModel.assistantLanguage.collectAsState()
@@ -196,6 +197,18 @@ fun SettingsScreen(
                         leadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                      )
                 } else ListItemDefaults.colors()
+            )
+
+            HorizontalDivider()
+
+            SettingsSectionTitle("Sounds")
+
+            SettingsSwitchItem(
+                title = "Enable sounds",
+                subtitle = "Play subtle sound cues for key actions",
+                icon = Icons.Default.VolumeUp,
+                checked = soundsEnabled,
+                onCheckedChange = { viewModel.setSoundsEnabled(it) }
             )
 
             HorizontalDivider()

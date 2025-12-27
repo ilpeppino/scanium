@@ -48,6 +48,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.scanium.app.audio.AppSound
+import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
 import com.scanium.shared.core.models.model.ImageRef
@@ -97,6 +99,7 @@ fun ItemsListScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val soundManager = LocalSoundManager.current
     val csvExportWriter = remember { CsvExportWriter() }
     val zipExportWriter = remember { ZipExportWriter() }
 
@@ -124,12 +127,14 @@ fun ItemsListScreen(
             selectedIds.add(item.id)
         }
         selectionMode = selectedIds.isNotEmpty()
+        soundManager.play(AppSound.SELECT)
     }
 
     fun deleteItem(item: ScannedItem) {
         val wasSelected = selectedIds.remove(item.id)
         selectionMode = selectedIds.isNotEmpty()
 
+        soundManager.play(AppSound.DELETE)
         itemsViewModel.removeItem(item.id)
         lastDeletedItem = item
         lastDeletedWasSelected = wasSelected
@@ -146,6 +151,7 @@ fun ItemsListScreen(
                         selectedIds.add(deleted.id)
                     }
                     selectionMode = selectedIds.isNotEmpty()
+                    soundManager.play(AppSound.ITEM_ADDED)
                 }
             } else {
                 lastDeletedItem = null
@@ -168,6 +174,7 @@ fun ItemsListScreen(
         }
         runCatching { context.startActivity(chooser) }
             .onFailure {
+                soundManager.play(AppSound.ERROR)
                 scope.launch {
                     snackbarHostState.showSnackbar("Unable to share CSV")
                 }
@@ -211,6 +218,7 @@ fun ItemsListScreen(
         }
         runCatching { context.startActivity(chooser) }
             .onFailure {
+                soundManager.play(AppSound.ERROR)
                 scope.launch {
                     snackbarHostState.showSnackbar("Unable to share ZIP")
                 }
@@ -311,6 +319,7 @@ fun ItemsListScreen(
 
         runCatching { context.startActivity(chooser) }
             .onFailure {
+                soundManager.play(AppSound.ERROR)
                 snackbarHostState.showSnackbar("Unable to share items")
             }
     }
@@ -541,6 +550,7 @@ fun ItemsListScreen(
                             showShareMenu = false
                             val selectedItems = items.filter { selectedIds.contains(it.id) }
                             scope.launch {
+                                soundManager.play(AppSound.EXPORT)
                                 isExporting = true
                                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                     shareItems(selectedItems)
@@ -569,6 +579,7 @@ fun ItemsListScreen(
                                 return@DropdownMenuItem
                             }
                             scope.launch {
+                                soundManager.play(AppSound.EXPORT)
                                 isExporting = true
                                 val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                     csvExportWriter.writeToCache(context, payload)
@@ -579,7 +590,10 @@ fun ItemsListScreen(
                                         shareCsv(file)
                                         "CSV ready to share"
                                     },
-                                    onFailure = { "Failed to export CSV" }
+                                    onFailure = {
+                                        soundManager.play(AppSound.ERROR)
+                                        "Failed to export CSV"
+                                    }
                                 )
                                 snackbarHostState.showSnackbar(message)
                             }
@@ -603,6 +617,7 @@ fun ItemsListScreen(
                                 return@DropdownMenuItem
                             }
                             scope.launch {
+                                soundManager.play(AppSound.EXPORT)
                                 isExporting = true
                                 val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                                     zipExportWriter.writeToCache(context, payload)
@@ -613,7 +628,10 @@ fun ItemsListScreen(
                                         shareZip(file)
                                         "ZIP ready to share"
                                     },
-                                    onFailure = { "Failed to export ZIP" }
+                                    onFailure = {
+                                        soundManager.play(AppSound.ERROR)
+                                        "Failed to export ZIP"
+                                    }
                                 )
                                 snackbarHostState.showSnackbar(message)
                             }
