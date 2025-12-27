@@ -116,7 +116,7 @@ Run GitHub Actions workflows locally to avoid CI quota limits:
 **Outputs:** `tmp/ci/coverage/` and `tmp/ci/security/` (gitignored)
 
 **Mirrors:**
-- `coverage.yml`: `./gradlew clean test koverVerify` + Jacoco report
+- `coverage.yml`: `./gradlew clean test koverVerify` + `koverHtmlReport` + `jacocoTestReport`
 - `security-cve-scan.yml`: `./gradlew dependencyCheckAnalyze` + fail on HIGH/CRITICAL CVEs
 
 **Tip:** Set `NVD_API_KEY` for faster security scans (get key at https://nvd.nist.gov/developers/request-an-api-key)

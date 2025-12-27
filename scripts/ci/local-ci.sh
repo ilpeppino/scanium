@@ -87,6 +87,7 @@ ${BLUE}Output:${NC}
 ${BLUE}Workflow Mapping:${NC}
   coverage.yml:
     - ./gradlew clean test koverVerify
+    - ./gradlew koverHtmlReport (generates HTML coverage reports)
     - ./gradlew jacocoTestReport
     - Reports: Kover HTML, Jacoco HTML
 
