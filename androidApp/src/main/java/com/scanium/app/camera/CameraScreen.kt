@@ -57,6 +57,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.BuildConfig
 import com.scanium.app.R
+import com.scanium.app.audio.AppSound
+import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
 import com.scanium.app.items.ItemsViewModel
@@ -102,6 +104,7 @@ fun CameraScreen(
     val view = LocalView.current
     val hapticFeedback = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
+    val soundManager = LocalSoundManager.current
     val settingsRepository = remember { SettingsRepository(context) }
     val ftueRepository = remember { FtueRepository(context) }
     val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
@@ -201,6 +204,12 @@ fun CameraScreen(
             delay(3000)
             showShutterHint = false
             ftueRepository.setShutterHintShown(true)
+        }
+    }
+
+    LaunchedEffect(itemsViewModel) {
+        itemsViewModel.itemAddedEvents.collect {
+            soundManager.play(AppSound.ITEM_ADDED)
         }
     }
 
@@ -557,10 +566,12 @@ fun CameraScreen(
                                     if (items.isEmpty()) {
                                         val message = "No objects detected. Try pointing at prominent items."
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        soundManager.play(AppSound.ERROR)
                                     } else {
                                         // Capture high-res image and update items with it
                                         scope.launch {
                                             val highResUri = cameraManager.captureHighResImage()
+                                            soundManager.play(AppSound.CAPTURE)
                                             
                                             if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
                                                 try {
