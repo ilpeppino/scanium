@@ -788,7 +788,7 @@ object Routes {
 }
 
 // In NavHost, add:
-composable(Routes.SETTINGS) {
+composable(Routes.SETTINGS_HOME) {
     SettingsScreen(
         onNavigateBack = { navController.popBackStack() }
     )
@@ -810,7 +810,7 @@ TopAppBar(
         }
     },
     actions = {
-        IconButton(onClick = { navController.navigate(Routes.SETTINGS) }) {
+        IconButton(onClick = { navController.navigate(Routes.SETTINGS_HOME) }) {
             Icon(Icons.Default.Settings, "Settings")
         }
     }
