@@ -79,6 +79,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.audio.AppSound
+import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.listing.ExportProfiles
@@ -129,9 +131,11 @@ fun AssistantScreen(
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val soundManager = LocalSoundManager.current
     var inputText by remember { mutableStateOf("") }
     val voiceController = remember { AssistantVoiceController(context) }
     var lastSpokenTimestamp by remember { mutableStateOf<Long?>(null) }
+    var lastSoundedAssistantTimestamp by remember { mutableStateOf<Long?>(null) }
     val hapticFeedback = LocalHapticFeedback.current
 
     // Voice mode settings
@@ -207,12 +211,27 @@ fun AssistantScreen(
         }
     }
 
+    LaunchedEffect(state.entries, inputText, voiceState) {
+        val lastAssistant = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
+        val timestamp = lastAssistant?.message?.timestamp
+        val shouldPlay = timestamp != null &&
+            timestamp != lastSoundedAssistantTimestamp &&
+            inputText.isBlank() &&
+            voiceState != VoiceState.LISTENING &&
+            voiceState != VoiceState.TRANSCRIBING
+        if (shouldPlay) {
+            soundManager.play(AppSound.RECEIVED)
+            lastSoundedAssistantTimestamp = timestamp
+        }
+    }
+
     // Handle voice recognition result callback
     val handleVoiceResult: (VoiceResult) -> Unit = { result ->
         when (result) {
             is VoiceResult.Success -> {
                 inputText = result.transcript
                 if (autoSendTranscript && result.transcript.isNotBlank()) {
+                    soundManager.play(AppSound.SEND)
                     viewModel.sendMessage(result.transcript)
                     inputText = ""
                 }
@@ -448,6 +467,7 @@ fun AssistantScreen(
                 },
                 onActionSelected = { actionText ->
                     inputText = actionText
+                    soundManager.play(AppSound.SEND)
                     viewModel.sendMessage(actionText)
                 }
             )
@@ -546,6 +566,7 @@ fun AssistantScreen(
                                 if (assistantHapticsEnabled) {
                                     hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 }
+                                soundManager.play(AppSound.SEND)
                                 viewModel.sendMessage(text)
                             },
                             enabled = inputText.isNotBlank(),
@@ -576,6 +597,7 @@ fun AssistantScreen(
                             if (assistantHapticsEnabled) {
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
+                            soundManager.play(AppSound.SEND)
                             viewModel.sendMessage(text)
                         }
                     }
