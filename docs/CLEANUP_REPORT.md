@@ -1,6 +1,45 @@
-# Cleanup & Docs Migration Report (2025-12-20)
+# Cleanup & Docs Migration Report
 
-## What changed (summary)
+## 2025-12-27 Cleanup
+
+### Summary
+- Expanded canonical doc set to 11 files (added CODEX_CONTEXT, SECURITY, MANUAL_GOLDEN_RUNBOOK, RELEASE_CHECKLIST).
+- Archived implemented feature docs with `DONE_` prefix.
+- Moved `/docs/release/` and `/docs/go-live/` folders to archive.
+- Updated INDEX.md with organized sections (Core Reference, Operations & Process, Decision Log & Reports).
+
+### Files moved to archive
+| Original Location | New Location | Reason |
+|-------------------|--------------|--------|
+| `docs/AI_GATEWAY.md` | `docs/_archive/2025-12/notes/DONE_AI_GATEWAY.md` | AI Gateway fully implemented |
+| `docs/ARCHITECTURE_MAP_FOR_TESTING.md` | `docs/_archive/2025-12/notes/DONE_ARCHITECTURE_MAP_FOR_TESTING.md` | Testing architecture documented |
+| `docs/FEATURES_COPY_SHARE.md` | `docs/_archive/2025-12/notes/DONE_FEATURES_COPY_SHARE.md` | Copy/Share feature implemented |
+| `docs/VOICE_MODE_VALIDATION.md` | `docs/_archive/2025-12/notes/DONE_VOICE_MODE_VALIDATION.md` | Voice mode fully implemented |
+| `docs/logcat-commands.md` | `docs/_archive/2025-12/notes/logcat-commands.md` | Reference notes |
+| `docs/release/` | `docs/_archive/2025-12/release/` | Detailed release checklists |
+| `docs/go-live/` | `docs/_archive/2025-12/go-live/` | Production readiness WIP |
+
+### Current canonical docs (11 files)
+| Doc | Audience | Purpose |
+|-----|----------|---------|
+| INDEX.md | All | Entry point, canonical list |
+| ARCHITECTURE.md | Engineers | System architecture |
+| CODEX_CONTEXT.md | AI Agents | Agent quickmap |
+| DEV_GUIDE.md | Developers | Setup and commands |
+| PRODUCT.md | PM/QA | App behavior |
+| SECURITY.md | Security | Privacy posture |
+| CI_CD.md | Maintainers | GitHub Actions |
+| RELEASE_CHECKLIST.md | Release Eng | Build/sign/distribute |
+| MANUAL_GOLDEN_RUNBOOK.md | QA | Test runbook |
+| DECISIONS.md | Architects | ADR decisions |
+| CLEANUP_REPORT.md | Maintainers | Doc migrations |
+| REVIEW_REPORT.md | Architects | Arch/security review |
+
+---
+
+## 2025-12-20 Cleanup
+
+### What changed (summary)
 - Centralized scripts under `scripts/` with a README; updated backend helpers to run from the correct working directory.
 - Reduced the canonical doc set to six files and archived legacy/duplicate content under `docs/_archive/2025-12/` with banner notes.
 - Refreshed core docs (INDEX, ARCHITECTURE, DEV_GUIDE, PRODUCT, DECISIONS) to match current Gradle versions, BuildConfig flags, and workflow behavior.
