@@ -311,8 +311,16 @@ fun ObjectaNavGraph(
     val billingProvider = androidx.compose.runtime.remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
     val entitlementManager = androidx.compose.runtime.remember { com.scanium.app.data.EntitlementManager(settingsRepository, billingProvider) }
     val configProvider = androidx.compose.runtime.remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
+    val connectivityObserver = androidx.compose.runtime.remember { com.scanium.app.platform.ConnectivityObserver(context) }
+    val apiKeyStore = androidx.compose.runtime.remember { com.scanium.app.config.SecureApiKeyStore(context) }
     val featureFlagRepository = androidx.compose.runtime.remember {
-        com.scanium.app.data.AndroidFeatureFlagRepository(settingsRepository, configProvider, entitlementManager.entitlementPolicyFlow)
+        com.scanium.app.data.AndroidFeatureFlagRepository(
+            settingsRepository = settingsRepository,
+            configProvider = configProvider,
+            entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
+            connectivityStatusProvider = connectivityObserver,
+            apiKeyStore = apiKeyStore
+        )
     }
     val ftueRepository = androidx.compose.runtime.remember { com.scanium.app.ftue.FtueRepository(context) }
     val settingsViewModel: SettingsViewModel = viewModel(

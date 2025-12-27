@@ -8,17 +8,22 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.NetworkCheck
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Save
@@ -28,6 +33,7 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
 import androidx.core.content.ContextCompat
 import androidx.compose.material.icons.filled.Vibration
 import com.scanium.app.BuildConfig
@@ -49,6 +57,8 @@ import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
+import com.scanium.app.model.config.AssistantPrerequisiteState
+import com.scanium.app.model.config.PrerequisiteCategory
 import com.scanium.app.model.user.UserEdition
 import kotlinx.coroutines.launch
 
@@ -92,6 +102,11 @@ fun SettingsScreen(
 
     // Privacy Safe Mode
     val isPrivacySafeModeActive by viewModel.isPrivacySafeModeActive.collectAsState()
+
+    // Assistant Prerequisites
+    val prerequisiteState by viewModel.assistantPrerequisiteState.collectAsState()
+    val showPrerequisiteDialog by viewModel.showPrerequisiteDialog.collectAsState()
+    val connectionTestState by viewModel.connectionTestState.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -264,14 +279,49 @@ fun SettingsScreen(
 
             SettingsSectionTitle("Features")
 
+            // Determine the subtitle based on prerequisites
+            val assistantSubtitle = when {
+                !prerequisiteState.allSatisfied && prerequisiteState.prerequisites.isNotEmpty() -> {
+                    val unsatisfied = prerequisiteState.unsatisfiedCount
+                    "Enable AI assistant ($unsatisfied prerequisite${if (unsatisfied != 1) "s" else ""} missing)"
+                }
+                else -> "Enable AI assistant (Experimental)"
+            }
+
             SettingsSwitchItem(
                 title = "Assistant Features",
-                subtitle = "Enable AI assistant (Experimental)",
+                subtitle = assistantSubtitle,
                 icon = Icons.Default.AutoAwesome,
                 checked = allowAssistant,
-                enabled = currentEdition != UserEdition.FREE, // Only for Pro/Dev
+                enabled = prerequisiteState.allSatisfied || allowAssistant, // Can toggle OFF, but only ON if prerequisites met
                 onCheckedChange = { viewModel.setAllowAssistant(it) }
             )
+
+            // Test Connection button (shown when assistant is not enabled and prerequisites exist)
+            if (!allowAssistant && prerequisiteState.prerequisites.isNotEmpty()) {
+                ListItem(
+                    headlineContent = { Text("Test Backend Connection") },
+                    supportingContent = {
+                        when (val state = connectionTestState) {
+                            is ConnectionTestState.Idle -> Text("Verify connectivity to assistant backend")
+                            is ConnectionTestState.Testing -> Text("Testing connection...")
+                            is ConnectionTestState.Success -> Text("Connection successful!", color = MaterialTheme.colorScheme.primary)
+                            is ConnectionTestState.Failed -> Text(state.message, color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    leadingContent = {
+                        when (connectionTestState) {
+                            is ConnectionTestState.Testing -> CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            is ConnectionTestState.Success -> Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary)
+                            is ConnectionTestState.Failed -> Icon(Icons.Default.Cancel, null, tint = MaterialTheme.colorScheme.error)
+                            else -> Icon(Icons.Default.NetworkCheck, null)
+                        }
+                    },
+                    modifier = Modifier.clickable(enabled = connectionTestState !is ConnectionTestState.Testing) {
+                        viewModel.testAssistantConnection()
+                    }
+                )
+            }
 
             SettingsSwitchItem(
                 title = "Send Images to Assistant",
@@ -469,6 +519,137 @@ fun SettingsScreen(
             )
         }
     }
+
+    // Prerequisite Dialog
+    if (showPrerequisiteDialog) {
+        AssistantPrerequisiteDialog(
+            prerequisiteState = prerequisiteState,
+            onDismiss = { viewModel.dismissPrerequisiteDialog() },
+            onTestConnection = { viewModel.testAssistantConnection() },
+            connectionTestState = connectionTestState
+        )
+    }
+}
+
+/**
+ * Dialog showing assistant prerequisites and their status.
+ */
+@Composable
+private fun AssistantPrerequisiteDialog(
+    prerequisiteState: AssistantPrerequisiteState,
+    onDismiss: () -> Unit,
+    onTestConnection: () -> Unit,
+    connectionTestState: ConnectionTestState
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Assistant Prerequisites") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "The following requirements must be met to enable the assistant:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                prerequisiteState.prerequisites.forEach { prerequisite ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (prerequisite.satisfied) {
+                                Icons.Default.CheckCircle
+                            } else {
+                                Icons.Default.Warning
+                            },
+                            contentDescription = null,
+                            tint = if (prerequisite.satisfied) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.error
+                            },
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = prerequisite.displayName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (prerequisite.satisfied) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.error
+                                }
+                            )
+                            if (!prerequisite.satisfied) {
+                                Text(
+                                    text = prerequisite.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Connection test result
+                if (connectionTestState != ConnectionTestState.Idle) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        when (connectionTestState) {
+                            is ConnectionTestState.Testing -> {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                                Text("Testing connection...")
+                            }
+                            is ConnectionTestState.Success -> {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text("Connection successful!", color = MaterialTheme.colorScheme.primary)
+                            }
+                            is ConnectionTestState.Failed -> {
+                                Icon(
+                                    Icons.Default.Cancel,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(connectionTestState.message, color = MaterialTheme.colorScheme.error)
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(
+                    onClick = onTestConnection,
+                    enabled = connectionTestState !is ConnectionTestState.Testing
+                ) {
+                    Text("Test Connection")
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+        }
+    )
 }
 
 @Composable
