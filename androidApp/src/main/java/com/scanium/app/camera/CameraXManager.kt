@@ -15,6 +15,7 @@ import android.util.Size
 import android.util.Rational
 import androidx.camera.core.*
 import androidx.camera.core.CameraUnavailableException
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -60,6 +61,7 @@ import kotlin.coroutines.resumeWithException
  * - Set up ImageAnalysis for object detection
  * - Handle single-shot capture and continuous scanning
  */
+@OptIn(ExperimentalGetImage::class)
 class CameraXManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
@@ -357,11 +359,11 @@ class CameraXManager(
             )
             imageProxy.setCropRect(cropRect)
 
-        detectionScope.launch {
-            try {
-                // Report actual frame dimensions (full image, not cropped)
-                // The overlay needs full image size for proper coordinate transformation
-                val frameSize = Size(imageProxy.width, imageProxy.height)
+            detectionScope.launch {
+                try {
+                    // Report actual frame dimensions (full image, not cropped)
+                    // The overlay needs full image size for proper coordinate transformation
+                    val frameSize = Size(imageProxy.width, imageProxy.height)
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
                     }
@@ -888,7 +890,6 @@ class CameraXManager(
     /**
      * Converts ImageProxy to Bitmap.
      */
-    @androidx.annotation.OptIn(ExperimentalGetImage::class)
     private fun ImageProxy.toBitmap(): Bitmap {
         val yBuffer = planes[0].buffer
         val uBuffer = planes[1].buffer
