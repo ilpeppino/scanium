@@ -23,8 +23,13 @@ Centralized entry points for repo automation. Run from the repo root unless note
 - `scripts/tools/create-github-issues.sh` – Converts Markdown issue templates under `docs/issues` into GitHub issues using `gh`.
 
 ### Termux (Android on-device builds)
+
+**Run these scripts from inside Termux on Android.** The shebang (`#!/usr/bin/env bash`) is portable, but storage paths like `$HOME/storage` only exist in Termux.
+
 - `scripts/termux/termux-storage-setup.sh` – One-time check/setup for Termux storage access.
 - `scripts/termux/build_debug_to_downloads.sh` – Build debug APK and copy to Downloads for installation.
+- `scripts/termux/remote_autofix_tests.sh` – Run autofix tests on remote Mac via Tailscale SSH.
+- `scripts/termux/remote_build_pull_apk.sh` – Build APK on remote Mac and pull to phone Downloads.
 
 ## Archive
 - Place deprecated or personal scripts under `scripts/_archive/YYYY-MM/` with a short README explaining the replacement.
