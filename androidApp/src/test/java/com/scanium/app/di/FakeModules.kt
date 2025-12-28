@@ -16,6 +16,7 @@ import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.facade.Telemetry
+import com.scanium.telemetry.TelemetryEvent
 import com.scanium.telemetry.ports.CrashPort
 import com.scanium.telemetry.ports.NoOpCrashPort
 import dagger.Module
@@ -71,9 +72,10 @@ object FakeAppModule {
     @Provides
     @Singleton
     fun provideDiagnosticsPort(): DiagnosticsPort = object : DiagnosticsPort {
-        override fun attach(event: String, data: Map<String, Any>) {}
+        override fun appendBreadcrumb(event: TelemetryEvent) {}
+        override fun buildDiagnosticsBundle(): ByteArray = ByteArray(0)
+        override fun clearBreadcrumbs() {}
         override fun breadcrumbCount(): Int = 0
-        override fun getAttachmentData(): ByteArray? = null
     }
 
     @Provides
@@ -124,8 +126,30 @@ object FakeAppModule {
     @Provides
     @Singleton
     fun provideConfigProvider(): ConfigProvider = object : ConfigProvider {
-        override val config: Flow<RemoteConfig> = flowOf(RemoteConfig())
+        private val defaultConfig = RemoteConfig()
+        override val config: Flow<RemoteConfig> = flowOf(defaultConfig)
         override suspend fun refresh(force: Boolean) {}
+        override fun getFlag(name: String, default: Boolean): Boolean = when (name) {
+            "enableCloud" -> defaultConfig.featureFlags.enableCloud
+            "enableAssistant" -> defaultConfig.featureFlags.enableAssistant
+            "enableProfiles" -> defaultConfig.featureFlags.enableProfiles
+            "enablePostingAssist" -> defaultConfig.featureFlags.enablePostingAssist
+            else -> default
+        }
+
+        override fun getLimit(name: String, default: Int): Int = when (name) {
+            "cloudDailyCap" -> defaultConfig.limits.cloudDailyCap
+            "assistDailyCap" -> defaultConfig.limits.assistDailyCap
+            "maxPhotosShare" -> defaultConfig.limits.maxPhotosShare
+            else -> default
+        }
+
+        override fun getLimit(name: String, default: Long): Long = when (name) {
+            "scanCloudCooldownMs" -> defaultConfig.limits.scanCloudCooldownMs
+            else -> default
+        }
+
+        override fun getExperimentVariant(id: String): String? = defaultConfig.experiments[id]?.variant
     }
 
     @Provides

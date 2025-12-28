@@ -4,12 +4,13 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.items.createAndroidTestItemsViewModel
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftBuilder
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.selling.persistence.ListingDraftStore
+import kotlinx.coroutines.Dispatchers
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,7 +34,10 @@ class AssistantScreenTest {
             title = ListingDraftBuilder.build(item).title.copy(value = "Vintage Lamp")
         )
         val draftStore = FakeDraftStore(mapOf(item.id to draft))
-        val itemsViewModel = ItemsViewModel()
+        val itemsViewModel = createAndroidTestItemsViewModel(
+            workerDispatcher = Dispatchers.Main.immediate,
+            mainDispatcher = Dispatchers.Main.immediate
+        )
 
         composeTestRule.setContent {
             AssistantScreen(

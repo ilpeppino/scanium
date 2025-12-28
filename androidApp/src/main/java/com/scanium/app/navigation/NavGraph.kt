@@ -1,16 +1,19 @@
 package com.scanium.app.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import android.net.Uri
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import androidx.navigation.NavType
+import com.scanium.app.ScaniumApplication
 import com.scanium.app.camera.CameraScreen
 import com.scanium.app.camera.CameraViewModel
 import com.scanium.app.items.ItemsListScreen
@@ -355,6 +358,7 @@ fun ObjectaNavGraph(
     }
     
     val context = androidx.compose.ui.platform.LocalContext.current
+    val application = context.applicationContext as ScaniumApplication
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val settingsRepository = androidx.compose.runtime.remember { com.scanium.app.data.SettingsRepository(context) }
     val billingRepository = androidx.compose.runtime.remember { com.scanium.app.billing.BillingRepository(context) }
@@ -374,14 +378,49 @@ fun ObjectaNavGraph(
     }
     val ftueRepository = androidx.compose.runtime.remember { com.scanium.app.ftue.FtueRepository(context) }
     val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(context.applicationContext as android.app.Application, settingsRepository, entitlementManager, configProvider, featureFlagRepository, ftueRepository)
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
+                    return SettingsViewModel(
+                        settingsRepository = settingsRepository,
+                        entitlementManager = entitlementManager,
+                        configProvider = configProvider,
+                        featureFlagRepository = featureFlagRepository,
+                        ftueRepository = ftueRepository,
+                        crashPort = application.crashPort,
+                        telemetry = application.telemetry,
+                        diagnosticsPort = application.diagnosticsPort
+                    ) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
     )
     val paywallViewModel: PaywallViewModel = viewModel(
-        factory = PaywallViewModel.Factory(billingProvider)
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(PaywallViewModel::class.java)) {
+                    return PaywallViewModel(billingProvider) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
     )
 
+    val tourViewModelFactory = androidx.compose.runtime.remember(ftueRepository) {
+        object : com.scanium.app.ftue.TourViewModel.Factory {
+            override fun create(itemsViewModel: ItemsViewModel): com.scanium.app.ftue.TourViewModel {
+                return com.scanium.app.ftue.TourViewModel(ftueRepository, itemsViewModel)
+            }
+        }
+    }
     val tourViewModel: com.scanium.app.ftue.TourViewModel = viewModel(
-        factory = com.scanium.app.ftue.TourViewModel.provideFactory(ftueRepository, itemsViewModel)
+        factory = com.scanium.app.ftue.TourViewModel.provideFactory(
+            assistedFactory = tourViewModelFactory,
+            itemsViewModel = itemsViewModel
+        )
     )
 
     ScaniumNavGraph(
