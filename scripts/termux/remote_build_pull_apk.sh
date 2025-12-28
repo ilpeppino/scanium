@@ -48,7 +48,7 @@ fi
 
 MAC_SSH="${MAC_SSH_USER}@${MAC_SSH_HOST}"
 MAC_REPO_DIR="${MAC_REPO_DIR:-~/dev/scanium}"
-PHONE_APK_DIR="${PHONE_APK_DIR:-~/storage/downloads/scanium-apk}"
+PHONE_APK_DIR="${PHONE_APK_DIR:-/storage/emulated/0/Download/scanium-apk}"
 DRY_RUN="${DRY_RUN:-0}"
 
 run_cmd() {
@@ -131,12 +131,51 @@ log_info "Locating APK..."
 FIND_APK_SCRIPT='
 cd '"$MAC_REPO_DIR"'
 
-***REMOVED*** Search for any APK under build/outputs/apk, sorted by mtime (newest first)
-APK_PATH=$(find . -path "*/build/outputs/apk/*.apk" -type f 2>/dev/null | \
-    xargs ls -t 2>/dev/null | head -1)
+***REMOVED*** Priority-based APK selection for arm64 devices (e.g., Samsung S24 Ultra):
+***REMOVED***   1. arm64-v8a debug APK (preferred for modern 64-bit phones)
+***REMOVED***   2. universal debug APK (if ever present)
+***REMOVED***   3. newest debug APK by mtime (fallback)
+
+APK_PATH=""
+APK_ABI=""
+
+***REMOVED*** Priority 1: arm64-v8a debug APK
+ARM64_APK=$(find . -path "*/build/outputs/apk/*" -type f -name "*arm64-v8a*debug*.apk" 2>/dev/null | head -1)
+if [[ -n "$ARM64_APK" ]]; then
+    APK_PATH="$ARM64_APK"
+    APK_ABI="arm64-v8a"
+fi
+
+***REMOVED*** Priority 2: universal debug APK
+if [[ -z "$APK_PATH" ]]; then
+    UNIVERSAL_APK=$(find . -path "*/build/outputs/apk/*" -type f -name "*universal*debug*.apk" 2>/dev/null | head -1)
+    if [[ -n "$UNIVERSAL_APK" ]]; then
+        APK_PATH="$UNIVERSAL_APK"
+        APK_ABI="universal"
+    fi
+fi
+
+***REMOVED*** Priority 3: newest debug APK by mtime
+if [[ -z "$APK_PATH" ]]; then
+    NEWEST_APK=$(find . -path "*/build/outputs/apk/*" -type f -name "*debug*.apk" 2>/dev/null | \
+        xargs ls -t 2>/dev/null | head -1)
+    if [[ -n "$NEWEST_APK" ]]; then
+        APK_PATH="$NEWEST_APK"
+        ***REMOVED*** Detect ABI from filename
+        case "$NEWEST_APK" in
+            *x86_64*)    APK_ABI="x86_64" ;;
+            *x86*)       APK_ABI="x86" ;;
+            *armeabi*)   APK_ABI="armeabi-v7a" ;;
+            *arm64*)     APK_ABI="arm64-v8a" ;;
+            *universal*) APK_ABI="universal" ;;
+            *)           APK_ABI="unknown" ;;
+        esac
+    fi
+fi
 
 if [[ -n "$APK_PATH" ]]; then
     echo "APK_FOUND:$APK_PATH"
+    echo "APK_ABI:$APK_ABI"
     exit 0
 fi
 
@@ -162,9 +201,15 @@ exit 1
 
 FIND_RESULT=$(run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$FIND_APK_SCRIPT" || true)
 
-if [[ "$FIND_RESULT" == APK_FOUND:* ]]; then
-    APK_PATH="${FIND_RESULT***REMOVED***APK_FOUND:}"
-    log_info "Found APK: $APK_PATH"
+if echo "$FIND_RESULT" | grep -q "^APK_FOUND:"; then
+    APK_PATH=$(echo "$FIND_RESULT" | grep "^APK_FOUND:" | head -1 | sed 's/^APK_FOUND://')
+    APK_ABI=$(echo "$FIND_RESULT" | grep "^APK_ABI:" | head -1 | sed 's/^APK_ABI://')
+    log_info "Found APK: $APK_PATH (ABI: $APK_ABI)"
+
+    ***REMOVED*** Warn if not arm64-v8a (may be incompatible with modern phones)
+    if [[ "$APK_ABI" != "arm64-v8a" && "$APK_ABI" != "universal" ]]; then
+        log_warn "Selected APK is $APK_ABI - may be incompatible with arm64 devices (e.g., Samsung S24)"
+    fi
 else
     log_error "No APK found on Mac"
     echo ""
