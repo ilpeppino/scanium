@@ -247,7 +247,7 @@ Could temporarily boost detection rate after no detections for N seconds, but th
     - High motion: 400ms (unchanged)
 - [x] Unit test for throttle logic
   - `MotionThrottleTest.kt` - Regression tests for interval values
-- [ ] Build and test validation
+- [x] Build and test validation (PR ***REMOVED***319 merged)
 
 ***REMOVED******REMOVED*** Code Changes Summary
 
