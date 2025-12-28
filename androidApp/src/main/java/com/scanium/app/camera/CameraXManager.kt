@@ -935,9 +935,29 @@ class CameraXManager(
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass")
 
-        // Process detections through tracker with timing
+        // Calculate sharpness score from bitmap (for center-weighted gating)
+        val frameSharpness = lazyBitmapProvider()?.let { bitmap ->
+            SharpnessCalculator.calculateSharpness(bitmap)
+        } ?: 0f
+
+        // Log sharpness if diagnostics enabled
+        val frameId = com.scanium.app.camera.detection.LiveScanDiagnostics.nextFrameId()
+        if (com.scanium.app.camera.detection.LiveScanDiagnostics.enabled) {
+            com.scanium.app.camera.detection.LiveScanDiagnostics.logSharpness(
+                frameId = frameId,
+                sharpnessScore = frameSharpness,
+                isBlurry = frameSharpness < SharpnessCalculator.DEFAULT_MIN_SHARPNESS,
+                threshold = SharpnessCalculator.DEFAULT_MIN_SHARPNESS
+            )
+        }
+
+        // Process detections through tracker with timing (pass sharpness for center-weighted gating)
         val trackingStartTime = SystemClock.elapsedRealtime()
-        val confirmedCandidates = objectTracker.processFrame(trackingResponse.detectionInfos, analyzerLatencyMs)
+        val confirmedCandidates = objectTracker.processFrame(
+            detections = trackingResponse.detectionInfos,
+            inferenceLatencyMs = analyzerLatencyMs,
+            frameSharpness = frameSharpness
+        )
         PerformanceMonitor.recordTimer(
             PerformanceMonitor.Metrics.TRACKING_LATENCY_MS,
             SystemClock.elapsedRealtime() - trackingStartTime,
@@ -1239,10 +1259,11 @@ class CameraXManager(
 
     /**
      * Enables or disables scanning diagnostics logging.
-     * When enabled, detailed ScanPipeline logs are emitted.
+     * When enabled, detailed ScanPipeline and LiveScan logs are emitted.
      */
     fun setScanningDiagnosticsEnabled(enabled: Boolean) {
         ScanPipelineDiagnostics.enabled = enabled
+        com.scanium.app.camera.detection.LiveScanDiagnostics.enabled = enabled
     }
 
     /**
