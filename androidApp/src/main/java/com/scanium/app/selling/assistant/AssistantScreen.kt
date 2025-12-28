@@ -83,7 +83,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
-import com.scanium.app.data.ExportProfilePreferences
+import com.scanium.app.di.AssistantViewModelFactoryEntryPoint
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraftBuilder
@@ -93,14 +93,19 @@ import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
-import com.scanium.app.selling.export.AssetExportProfileRepository
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
-import com.scanium.app.platform.ConnectivityObserver
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 
+/**
+ * Screen for AI-powered listing assistance.
+ *
+ * Part of ARCH-001/DX-003: Updated to use Hilt's assisted injection for ViewModel creation,
+ * reducing boilerplate by accessing the factory through EntryPoints.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AssistantScreen(
@@ -111,23 +116,18 @@ fun AssistantScreen(
     draftStore: ListingDraftStore
 ) {
     val context = LocalContext.current
-    val profileRepository = remember { AssetExportProfileRepository(context) }
-    val profilePreferences = remember { ExportProfilePreferences(context) }
-    val assistantRepository = remember { AssistantRepositoryFactory(context.applicationContext).create() }
-    val localAssistantHelper = remember { LocalAssistantHelper() }
-    val connectivityObserver = remember { ConnectivityObserver(context) }
     val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
+    val assistedFactory = remember(context) {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            AssistantViewModelFactoryEntryPoint::class.java
+        ).assistantViewModelFactory()
+    }
     val viewModel: AssistantViewModel = viewModel(
-        factory = AssistantViewModel.factory(
+        factory = AssistantViewModel.provideFactory(
+            assistedFactory = assistedFactory,
             itemIds = itemIds,
-            itemsViewModel = itemsViewModel,
-            draftStore = draftStore,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = assistantRepository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            connectivityStatusProvider = connectivityObserver
+            itemsViewModel = itemsViewModel
         )
     )
     val state by viewModel.uiState.collectAsState()

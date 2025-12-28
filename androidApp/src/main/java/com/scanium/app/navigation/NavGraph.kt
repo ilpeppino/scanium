@@ -3,6 +3,7 @@ package com.scanium.app.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.net.Uri
 import androidx.navigation.NavHostController
@@ -34,7 +35,6 @@ import com.scanium.app.ui.settings.PrivacyPolicyScreen
 import com.scanium.app.ui.settings.TermsScreen
 import com.scanium.app.ui.settings.DeveloperOptionsScreen
 import com.scanium.app.ui.settings.DeveloperOptionsViewModel
-import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.billing.ui.PaywallScreen
 import com.scanium.app.billing.ui.PaywallViewModel
 
@@ -158,37 +158,10 @@ fun ScaniumNavGraph(
             )
         }
 
+        // Part of ARCH-001/DX-003: Updated to use hiltViewModel() for DeveloperOptionsViewModel,
+        // eliminating the need for manual dependency creation and Factory instantiation.
         composable(Routes.SETTINGS_DEVELOPER) {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            val scope = androidx.compose.runtime.rememberCoroutineScope()
-            val diagnosticsRepository = remember { DiagnosticsRepository(context) }
-            val devSettingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
-            val devFtueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
-            val billingRepository = remember { com.scanium.app.billing.BillingRepository(context) }
-            val billingProvider = remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
-            val entitlementManager = remember { com.scanium.app.data.EntitlementManager(devSettingsRepository, billingProvider) }
-            val configProvider = remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
-            val connectivityObserver = remember { com.scanium.app.platform.ConnectivityObserver(context) }
-            val apiKeyStore = remember { com.scanium.app.config.SecureApiKeyStore(context) }
-            val featureFlagRepository = remember {
-                com.scanium.app.data.AndroidFeatureFlagRepository(
-                    settingsRepository = devSettingsRepository,
-                    configProvider = configProvider,
-                    entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
-                    connectivityStatusProvider = connectivityObserver,
-                    apiKeyStore = apiKeyStore
-                )
-            }
-            val developerOptionsViewModel: DeveloperOptionsViewModel = viewModel(
-                factory = DeveloperOptionsViewModel.Factory(
-                    context.applicationContext as android.app.Application,
-                    devSettingsRepository,
-                    devFtueRepository,
-                    diagnosticsRepository,
-                    featureFlagRepository,
-                    connectivityObserver
-                )
-            )
+            val developerOptionsViewModel: DeveloperOptionsViewModel = hiltViewModel()
             DeveloperOptionsScreen(
                 viewModel = developerOptionsViewModel,
                 classificationViewModel = classificationModeViewModel,

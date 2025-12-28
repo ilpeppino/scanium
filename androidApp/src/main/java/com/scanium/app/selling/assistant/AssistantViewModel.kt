@@ -9,6 +9,7 @@ import com.scanium.app.listing.DraftField
 import com.scanium.app.listing.DraftFieldKey
 import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.ExportProfileDefinition
+import com.scanium.app.listing.ExportProfileRepository
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftBuilder
@@ -26,6 +27,9 @@ import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,17 +94,36 @@ sealed class AssistantUiEvent {
     data class ShowSnackbar(val message: String) : AssistantUiEvent()
 }
 
-class AssistantViewModel(
-    private val itemIds: List<String>,
-    private val itemsViewModel: ItemsViewModel,
+/**
+ * ViewModel for the Assistant screen that manages AI-powered listing assistance.
+ *
+ * Part of ARCH-001/DX-003: Migrated to Hilt assisted injection to reduce boilerplate.
+ * Runtime parameters (itemIds, itemsViewModel) are passed via @Assisted annotation,
+ * while singleton dependencies are injected by Hilt.
+ */
+class AssistantViewModel @AssistedInject constructor(
+    @Assisted private val itemIds: List<String>,
+    @Assisted private val itemsViewModel: ItemsViewModel,
     private val draftStore: ListingDraftStore,
-    private val exportProfileRepository: com.scanium.app.listing.ExportProfileRepository,
+    private val exportProfileRepository: ExportProfileRepository,
     private val exportProfilePreferences: ExportProfilePreferences,
     private val assistantRepository: AssistantRepository,
     private val settingsRepository: SettingsRepository,
     private val localAssistantHelper: LocalAssistantHelper,
     private val connectivityStatusProvider: ConnectivityStatusProvider
 ) : ViewModel() {
+
+    /**
+     * Factory for creating AssistantViewModel instances with assisted injection.
+     * Part of ARCH-001/DX-003: Replaces verbose manual Factory class.
+     */
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            itemIds: List<String>,
+            itemsViewModel: ItemsViewModel
+        ): AssistantViewModel
+    }
     private val _uiState = MutableStateFlow(AssistantUiState(itemIds = itemIds))
     val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
 
@@ -535,30 +558,24 @@ class AssistantViewModel(
     companion object {
         private const val TAG = "Assistant"
 
-        fun factory(
+        /**
+         * Creates a ViewModelProvider.Factory for AssistantViewModel using Hilt's assisted factory.
+         * Part of ARCH-001/DX-003: Simplified factory creation with Hilt.
+         *
+         * @param assistedFactory The Hilt-generated assisted factory
+         * @param itemIds The list of item IDs to assist with
+         * @param itemsViewModel The shared ItemsViewModel instance
+         */
+        fun provideFactory(
+            assistedFactory: Factory,
             itemIds: List<String>,
-            itemsViewModel: ItemsViewModel,
-            draftStore: ListingDraftStore,
-            exportProfileRepository: com.scanium.app.listing.ExportProfileRepository,
-            exportProfilePreferences: ExportProfilePreferences,
-            assistantRepository: AssistantRepository,
-            settingsRepository: SettingsRepository,
-            localAssistantHelper: LocalAssistantHelper,
-            connectivityStatusProvider: ConnectivityStatusProvider
-        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return AssistantViewModel(
-                    itemIds = itemIds,
-                    itemsViewModel = itemsViewModel,
-                    draftStore = draftStore,
-                    exportProfileRepository = exportProfileRepository,
-                    exportProfilePreferences = exportProfilePreferences,
-                    assistantRepository = assistantRepository,
-                    settingsRepository = settingsRepository,
-                    localAssistantHelper = localAssistantHelper,
-                    connectivityStatusProvider = connectivityStatusProvider
-                ) as T
+            itemsViewModel: ItemsViewModel
+        ): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return assistedFactory.create(itemIds, itemsViewModel) as T
+                }
             }
         }
     }
