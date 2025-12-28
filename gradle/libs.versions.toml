@@ -1,0 +1,7 @@
+[versions]
+hilt = "2.51.1"
+ksp = "2.0.0-1.0.24"
+
+[plugins]
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

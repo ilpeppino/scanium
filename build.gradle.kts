@@ -8,8 +8,10 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.0.0" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0" apply false
     id("org.jetbrains.kotlinx.kover") version "0.7.4" apply false
-    // Hilt DI framework (ARCH-001)
-    id("com.google.dagger.hilt.android") version "2.51.1" apply false
+    // Hilt DI framework (ARCH-001) - version in gradle/libs.versions.toml
+    alias(libs.plugins.hilt.android) apply false
+    // KSP annotation processor - version in gradle/libs.versions.toml
+    alias(libs.plugins.ksp) apply false
     // ktlint for code style enforcement (DX-002)
     id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
 }
