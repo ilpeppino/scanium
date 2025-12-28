@@ -106,6 +106,8 @@ See also `hooks/README.md` for pre-push validation setup.
 
 Build debug APKs directly on your Android device using Termux. The APK is copied to Downloads for easy installation.
 
+**Important:** Run these scripts from inside Termux on Android. The shebang (`***REMOVED***!/usr/bin/env bash`) is portable across macOS and Termux, but storage paths like `$HOME/storage` only exist in Termux.
+
 **One-time setup:**
 ```bash
 ***REMOVED*** Grant Termux storage permission (required once)
@@ -134,6 +136,8 @@ termux-setup-storage
 ***REMOVED******REMOVED******REMOVED*** Termux: Run Tests via Tailscale SSH
 
 Run Gradle tests and autofix loops on your Mac from Termux over Tailscale SSH. Avoids Termux's JDK/toolchain limitations and works over mobile networks.
+
+**Important:** Run these scripts from inside Termux on Android. The shebang is portable, but storage paths require Termux.
 
 **One-time setup:**
 1. Install Tailscale on both Mac and Android phone
