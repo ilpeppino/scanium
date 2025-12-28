@@ -248,7 +248,12 @@ fun AssistantScreen(
 
                 if (uiState.isLoading) {
                     item {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        Box(
+                            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        }
                     }
                 }
 
