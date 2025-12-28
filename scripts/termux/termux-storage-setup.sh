@@ -4,6 +4,12 @@
 
 set -euo pipefail
 
+# Guard: must be run inside Termux after storage setup
+if [[ ! -d "$HOME/storage" ]]; then
+    echo "This script must be run inside Termux after running: termux-setup-storage"
+    exit 1
+fi
+
 DOWNLOADS_PATH="$HOME/storage/downloads"
 
 echo "=== Termux Storage Setup ==="
