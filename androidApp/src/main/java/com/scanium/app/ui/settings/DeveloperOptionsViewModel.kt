@@ -86,6 +86,9 @@ class DeveloperOptionsViewModel @Inject constructor(
     val adaptiveThrottlingEnabled: StateFlow<Boolean> = settingsRepository.devAdaptiveThrottlingEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val scanningDiagnosticsEnabled: StateFlow<Boolean> = settingsRepository.devScanningDiagnosticsEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     // Auto-refresh state
     private val _autoRefreshEnabled = MutableStateFlow(false)
     val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -276,6 +279,12 @@ class DeveloperOptionsViewModel @Inject constructor(
     fun setAdaptiveThrottlingEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDevAdaptiveThrottlingEnabled(enabled)
+        }
+    }
+
+    fun setScanningDiagnosticsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevScanningDiagnosticsEnabled(enabled)
         }
     }
 
