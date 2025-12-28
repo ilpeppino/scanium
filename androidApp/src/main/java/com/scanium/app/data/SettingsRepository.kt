@@ -56,6 +56,7 @@ class SettingsRepository(private val context: Context) {
         private val DEV_BARCODE_DETECTION_ENABLED_KEY = booleanPreferencesKey("dev_barcode_detection_enabled")
         private val DEV_DOCUMENT_DETECTION_ENABLED_KEY = booleanPreferencesKey("dev_document_detection_enabled")
         private val DEV_ADAPTIVE_THROTTLING_ENABLED_KEY = booleanPreferencesKey("dev_adaptive_throttling_enabled")
+        private val DEV_SCANNING_DIAGNOSTICS_ENABLED_KEY = booleanPreferencesKey("dev_scanning_diagnostics_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -395,6 +396,21 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDevAdaptiveThrottlingEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_ADAPTIVE_THROTTLING_ENABLED_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether scanning diagnostics logging is enabled.
+     * When enabled, detailed ScanPipeline logs are emitted for debugging.
+     * Default is OFF to reduce log noise.
+     */
+    val devScanningDiagnosticsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_SCANNING_DIAGNOSTICS_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setDevScanningDiagnosticsEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_SCANNING_DIAGNOSTICS_ENABLED_KEY] = enabled
         }
     }
 
