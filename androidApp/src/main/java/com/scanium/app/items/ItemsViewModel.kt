@@ -11,20 +11,16 @@ import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.items.classification.ItemClassificationCoordinator
 import com.scanium.app.items.listing.ListingStatusManager
 import com.scanium.app.items.overlay.OverlayTrackManager
-import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
-import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
-import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.core.export.ExportPayload
 import com.scanium.app.items.export.toExportPayload
-import com.scanium.shared.core.models.pricing.PriceEstimatorProvider
 import com.scanium.telemetry.facade.Telemetry
-import kotlinx.coroutines.CoroutineDispatcher
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -35,6 +31,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
+import javax.inject.Inject
+import javax.inject.Named
 
 /**
  * ViewModel for managing detected items across the app.
@@ -49,23 +47,27 @@ import java.util.Locale
  * This refactoring follows the Single Responsibility Principle by decomposing
  * the original 400+ line ViewModel into focused, testable components.
  *
+ * Part of ARCH-001: Migrated to Hilt dependency injection.
+ *
  * @see ItemsStateManager
  * @see ItemClassificationCoordinator
  * @see OverlayTrackManager
  * @see ListingStatusManager
  */
-class ItemsViewModel(
-    classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
-    cloudClassificationEnabled: StateFlow<Boolean>? = null,
-    onDeviceClassifier: ItemClassifier = NoopClassifier,
-    cloudClassifier: ItemClassifier = NoopClassifier,
-    private val itemsStore: ScannedItemStore = NoopScannedItemStore,
-    private val stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
-    private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-    priceEstimatorProvider: PriceEstimatorProvider? = null,
-    telemetry: Telemetry? = null
+@HiltViewModel
+class ItemsViewModel @Inject constructor(
+    classificationMode: StateFlow<ClassificationMode>,
+    @Named("cloudClassificationEnabled") cloudClassificationEnabled: StateFlow<Boolean>,
+    @Named("onDevice") onDeviceClassifier: ItemClassifier,
+    @Named("cloud") cloudClassifier: ItemClassifier,
+    private val itemsStore: ScannedItemStore,
+    private val stableItemCropper: ClassificationThumbnailProvider,
+    telemetry: Telemetry?
 ) : ViewModel() {
+
+    // Default dispatchers (not injected for simplicity)
+    private val workerDispatcher = Dispatchers.Default
+    private val mainDispatcher = Dispatchers.Main
     companion object {
         private const val TAG = "ItemsViewModel"
         private const val QR_URL_TTL_MS = 2000L
@@ -102,7 +104,7 @@ class ItemsViewModel(
         onDeviceClassifier = onDeviceClassifier,
         cloudClassifier = cloudClassifier,
         stableItemCropper = stableItemCropper,
-        priceEstimatorProvider = priceEstimatorProvider,
+        priceEstimatorProvider = null, // TODO: Add PriceEstimatorProvider to DI when needed
         telemetry = telemetry,
         workerDispatcher = workerDispatcher,
         mainDispatcher = mainDispatcher
