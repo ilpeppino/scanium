@@ -171,6 +171,8 @@ fun CameraScreen(
     val overlayTracks by itemsViewModel.overlayTracks.collectAsState()
     val latestQrUrl by itemsViewModel.latestQrUrl.collectAsState()
     val documentCandidateState by cameraManager.documentCandidateState.collectAsState()
+    val scanGuidanceState by cameraManager.scanGuidanceState.collectAsState()
+    val scanDiagnosticsEnabled by cameraManager.scanDiagnosticsEnabled.collectAsState()
 
     // Document scan state
     var documentScanState by remember { mutableStateOf<DocumentScanState>(DocumentScanState.Idle) }
@@ -419,6 +421,17 @@ fun CameraScreen(
                     ModelDownloadState.Ready -> {
                         // No overlay, camera fully functional
                     }
+                }
+
+                // Camera guidance overlay - scan zone and hints
+                // Show when scanning or idle (with different states)
+                if (cameraState == CameraState.SCANNING) {
+                    CameraGuidanceOverlay(
+                        guidanceState = scanGuidanceState,
+                        showDebugInfo = scanDiagnosticsEnabled
+                    )
+                } else if (cameraState == CameraState.IDLE) {
+                    CameraGuidanceOverlayIdle()
                 }
 
                 // Detection overlay - bounding boxes and labels

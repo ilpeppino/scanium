@@ -3,6 +3,7 @@ package com.scanium.core.tracking
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.core.models.scanning.ScanRoi
 import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.TelemetrySeverity
 import kotlinx.datetime.Clock
@@ -292,6 +293,235 @@ class ObjectTracker(
         } finally {
             span?.end()
         }
+    }
+
+    /**
+     * Process detections with ROI-based filtering.
+     *
+     * This version uses the provided ScanRoi to filter candidates,
+     * ensuring alignment between what the user sees and what gets detected.
+     *
+     * @param detections List of raw detections from ML Kit
+     * @param scanRoi The current scan ROI for filtering
+     * @param inferenceLatencyMs Time taken for ML inference in milliseconds
+     * @param frameSharpness Sharpness score for the current frame (0 = unknown)
+     * @return List of candidates that just reached confirmation threshold this frame
+     */
+    fun processFrameWithRoi(
+        detections: List<DetectionInfo>,
+        scanRoi: ScanRoi,
+        inferenceLatencyMs: Long = 0,
+        frameSharpness: Float = 0f
+    ): List<ObjectCandidate> {
+        val span = telemetry?.beginSpan("scan.process_frame_roi")
+        try {
+            if (inferenceLatencyMs > 0) {
+                telemetry?.timer("ml.inference_latency_ms", inferenceLatencyMs, mapOf("type" to "object_detection"))
+            }
+
+            currentFrame++
+            val currentTimeMs = Clock.System.now().toEpochMilliseconds()
+
+            if (config.enableVerboseLogging) {
+                logger.i(
+                    TAG,
+                    ">>> processFrameWithRoi START: frame=$currentFrame, detections=${detections.size}, " +
+                    "existingCandidates=${candidates.size}, sharpness=$frameSharpness, " +
+                    "roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}"
+                )
+            }
+
+            val newlyConfirmed = mutableListOf<ObjectCandidate>()
+            val matchedCandidates = mutableSetOf<String>()
+
+            // Use ROI-aware center-weighted selection
+            val detectionsToProcess: List<DetectionInfo>
+            var centerWeightedSelection: SelectionResult? = null
+
+            if (config.enableCenterWeightedSelection && detections.isNotEmpty()) {
+                // Use the new ROI-based selection method
+                centerWeightedSelection = centerWeightedSelector.selectBestCandidateWithRoi(
+                    detections = detections,
+                    scanRoi = scanRoi,
+                    frameSharpness = frameSharpness,
+                    currentTimeMs = currentTimeMs
+                )
+
+                if (config.enableVerboseLogging) {
+                    val sel = centerWeightedSelection.selectedCandidate
+                    logger.i(TAG, "    ROI_SELECTION: reason=${centerWeightedSelection.selectionReason}")
+                    if (sel != null) {
+                        logger.i(TAG, "    SELECTED: id=${sel.detection.trackingId}, " +
+                                "score=${sel.score}, centerDist=${sel.centerDistance}, " +
+                                "stable=${sel.isStable} (frames=${sel.consecutiveFrames})")
+                    }
+                    centerWeightedSelection.rejectedCandidates.take(2).forEach { rej ->
+                        logger.i(TAG, "    REJECTED: id=${rej.detection.trackingId}, " +
+                                "reason=${rej.reason}, centerDist=${rej.centerDistance}")
+                    }
+                }
+
+                detectionsToProcess = if (centerWeightedSelection.selectedCandidate?.isStable == true) {
+                    listOf(centerWeightedSelection.selectedCandidate.detection)
+                } else if (centerWeightedSelection.selectedCandidate != null) {
+                    listOf(centerWeightedSelection.selectedCandidate.detection)
+                } else {
+                    emptyList()
+                }
+            } else {
+                detectionsToProcess = detections
+            }
+
+            // Process each detection
+            for ((index, detection) in detectionsToProcess.withIndex()) {
+                if (config.enableVerboseLogging) {
+                    logger.i(
+                        TAG,
+                        "    Processing detection $index: trackingId=${detection.trackingId}, " +
+                        "category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}"
+                    )
+                }
+
+                // Skip if bounding box is too small (hard filter)
+                if (detection.normalizedBoxArea < config.minBoxArea) {
+                    if (config.enableVerboseLogging) {
+                        logger.i(
+                            TAG,
+                            "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})"
+                        )
+                    }
+                    continue
+                }
+
+                // Try to match with existing candidate
+                val matchedCandidate = findMatchingCandidate(detection)
+
+                if (matchedCandidate != null) {
+                    // Update existing candidate
+                    val wasConfirmed = isConfirmed(matchedCandidate)
+
+                    matchedCandidate.update(
+                        newBoundingBox = detection.boundingBox,
+                        frameNumber = currentFrame,
+                        confidence = detection.confidence,
+                        newCategory = detection.category,
+                        newLabelText = detection.labelText,
+                        newThumbnail = detection.thumbnail,
+                        boxArea = detection.normalizedBoxArea,
+                        newQualityScore = detection.qualityScore
+                    )
+                    matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
+                    spatialIndex.upsert(matchedCandidate.internalId, matchedCandidate.indexBoundingBox())
+
+                    matchedCandidates.add(matchedCandidate.internalId)
+
+                    if (config.enableVerboseLogging) {
+                        logger.i(
+                            TAG,
+                            "    MATCHED existing candidate ${matchedCandidate.internalId}: " +
+                            "seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}"
+                        )
+                    }
+
+                    // Check if it just became confirmed
+                    val stabilityOk = if (config.enableCenterWeightedSelection) {
+                        centerWeightedSelection?.selectedCandidate?.isStable == true
+                    } else {
+                        true
+                    }
+
+                    if (!wasConfirmed && isConfirmed(matchedCandidate) && stabilityOk) {
+                        if (!confirmedIds.contains(matchedCandidate.internalId)) {
+                            confirmedIds.add(matchedCandidate.internalId)
+                            newlyConfirmed.add(matchedCandidate)
+                            if (config.enableVerboseLogging) {
+                                logger.i(
+                                    TAG,
+                                    "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: " +
+                                    "${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames"
+                                )
+                            }
+                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
+                                "candidate_id" to matchedCandidate.internalId,
+                                "category" to matchedCandidate.category.name,
+                                "label" to matchedCandidate.labelText
+                            ))
+                        }
+                    } else if (!wasConfirmed && isConfirmed(matchedCandidate) && !stabilityOk) {
+                        if (config.enableVerboseLogging) {
+                            logger.i(TAG, "    PENDING_STABILITY: ${matchedCandidate.internalId} - waiting for stable selection")
+                        }
+                    }
+                } else {
+                    // Create new candidate
+                    enforceCandidateLimit()
+
+                    val newCandidate = createCandidate(detection)
+                    candidates[newCandidate.internalId] = newCandidate
+                    spatialIndex.upsert(newCandidate.internalId, newCandidate.indexBoundingBox())
+                    matchedCandidates.add(newCandidate.internalId)
+
+                    if (config.enableVerboseLogging) {
+                        logger.i(
+                            TAG,
+                            "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})"
+                        )
+                    }
+                    telemetry?.event("scan.candidate_created", TelemetrySeverity.DEBUG, mapOf(
+                        "candidate_id" to newCandidate.internalId,
+                        "category" to newCandidate.category.name,
+                        "top_label" to newCandidate.labelText,
+                        "confidence" to newCandidate.maxConfidence.toString()
+                    ))
+
+                    // Check for immediate confirmation
+                    val immediateStabilityOk = if (config.enableCenterWeightedSelection) {
+                        centerWeightedSelection?.selectedCandidate?.isStable == true
+                    } else {
+                        true
+                    }
+
+                    if (isConfirmed(newCandidate) && immediateStabilityOk) {
+                        if (!confirmedIds.contains(newCandidate.internalId)) {
+                            confirmedIds.add(newCandidate.internalId)
+                            newlyConfirmed.add(newCandidate)
+                            if (config.enableVerboseLogging) {
+                                logger.i(
+                                    TAG,
+                                    "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}"
+                                )
+                            }
+                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
+                                "candidate_id" to newCandidate.internalId,
+                                "category" to newCandidate.category.name,
+                                "label" to newCandidate.labelText
+                            ))
+                        }
+                    }
+                }
+            }
+
+            // Remove stale candidates
+            removeExpiredCandidates(matchedCandidates)
+
+            if (config.enableVerboseLogging) {
+                logger.i(TAG, ">>> processFrameWithRoi END: returning ${newlyConfirmed.size} newly confirmed candidates")
+            }
+            return newlyConfirmed
+        } catch (e: Exception) {
+            span?.recordError(e.message ?: "Unknown error")
+            throw e
+        } finally {
+            span?.end()
+        }
+    }
+
+    /**
+     * Get the last selection result for guidance state updates.
+     */
+    fun getLastSelectionResult(): SelectionResult? {
+        // The selector maintains its own state; return what we know
+        return null // This would need to be stored from the last processFrame call
     }
 
     /**

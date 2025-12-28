@@ -40,6 +40,11 @@ import com.scanium.app.camera.detection.DocumentCandidate
 import com.scanium.app.camera.detection.DocumentCandidateDetector
 import com.scanium.app.camera.detection.DocumentCandidateState
 import com.scanium.app.camera.detection.ScanPipelineDiagnostics
+import com.scanium.core.models.scanning.GuidanceState
+import com.scanium.core.models.scanning.ScanGuidanceState
+import com.scanium.core.models.scanning.ScanRoi
+import com.scanium.core.tracking.CandidateInfo
+import com.scanium.core.tracking.ScanGuidanceManager
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -117,9 +122,20 @@ class CameraXManager(
 
     private val documentCandidateDetector = DocumentCandidateDetector()
 
+    // Scan guidance manager for coordinated UX
+    private val scanGuidanceManager = ScanGuidanceManager()
+
     private val _analysisFps = MutableStateFlow(0.0)
     /** Real-time analysis FPS for performance monitoring */
     val analysisFps: StateFlow<Double> = _analysisFps.asStateFlow()
+
+    private val _scanGuidanceState = MutableStateFlow(ScanGuidanceState.initial())
+    /** Current scan guidance state for UI overlay */
+    val scanGuidanceState: StateFlow<ScanGuidanceState> = _scanGuidanceState.asStateFlow()
+
+    private val _scanDiagnosticsEnabled = MutableStateFlow(false)
+    /** Whether scan diagnostics overlay should be shown */
+    val scanDiagnosticsEnabled: StateFlow<Boolean> = _scanDiagnosticsEnabled.asStateFlow()
 
     private val _documentCandidateState = MutableStateFlow<DocumentCandidateState?>(null)
     val documentCandidateState: StateFlow<DocumentCandidateState?> = _documentCandidateState.asStateFlow()
@@ -426,10 +442,12 @@ class CameraXManager(
 
         Log.d(TAG, "startScanning: Starting continuous scanning mode with $scanMode")
 
-        // Reset tracker when starting a new scan session or switching modes
+        // Reset tracker and guidance when starting a new scan session or switching modes
         if (currentScanMode != scanMode || currentScanMode == null) {
             Log.i(TAG, "startScanning: Resetting tracker (mode change: $currentScanMode -> $scanMode)")
             objectTracker.reset(scanMode = scanMode.name)
+            scanGuidanceManager.reset()
+            _scanGuidanceState.value = ScanGuidanceState.initial()
             currentScanMode = scanMode
         }
 
@@ -731,6 +749,30 @@ class CameraXManager(
         objectTracker.stopSession("user_stopped")
         objectTracker.reset()
         currentScanMode = null
+        // Reset guidance state
+        scanGuidanceManager.reset()
+        _scanGuidanceState.value = ScanGuidanceState.initial()
+    }
+
+    /**
+     * Enable or disable scan diagnostics overlay.
+     */
+    fun setScanDiagnosticsEnabled(enabled: Boolean) {
+        _scanDiagnosticsEnabled.value = enabled
+    }
+
+    /**
+     * Notify that an item was added (for guidance lock release).
+     */
+    fun onItemAdded() {
+        scanGuidanceManager.onItemAdded()
+    }
+
+    /**
+     * Get the current scan ROI for external use.
+     */
+    fun getCurrentScanRoi(): ScanRoi {
+        return scanGuidanceManager.getCurrentRoi()
     }
 
     /**
@@ -951,10 +993,36 @@ class CameraXManager(
             )
         }
 
-        // Process detections through tracker with timing (pass sharpness for center-weighted gating)
+        // Get current scan ROI from guidance manager
+        val currentRoi = scanGuidanceManager.getCurrentRoi()
+
+        // Create candidate info for guidance state update (from best detection)
+        val bestCandidateInfo = trackingResponse.detectionInfos.maxByOrNull { it.confidence }?.let { detection ->
+            val boxCenterX = (detection.boundingBox.left + detection.boundingBox.right) / 2f
+            val boxCenterY = (detection.boundingBox.top + detection.boundingBox.bottom) / 2f
+            CandidateInfo(
+                trackingId = detection.trackingId,
+                boxCenterX = boxCenterX,
+                boxCenterY = boxCenterY,
+                boxArea = detection.normalizedBoxArea,
+                confidence = detection.confidence
+            )
+        }
+
+        // Update guidance state (uses the last motion score for motion detection)
+        val guidanceState = scanGuidanceManager.processFrame(
+            candidate = bestCandidateInfo,
+            motionScore = lastMotionScore.toFloat(),
+            sharpnessScore = frameSharpness,
+            currentTimeMs = System.currentTimeMillis()
+        )
+        _scanGuidanceState.value = guidanceState
+
+        // Process detections through tracker with ROI filtering
         val trackingStartTime = SystemClock.elapsedRealtime()
-        val confirmedCandidates = objectTracker.processFrame(
+        val confirmedCandidates = objectTracker.processFrameWithRoi(
             detections = trackingResponse.detectionInfos,
+            scanRoi = currentRoi,
             inferenceLatencyMs = analyzerLatencyMs,
             frameSharpness = frameSharpness
         )
