@@ -133,16 +133,93 @@ Enable "Scanning Diagnostics" in Developer Options to see:
 - Motion score
 - Current guidance state
 
+***REMOVED******REMOVED*** Settings
+
+***REMOVED******REMOVED******REMOVED*** User Settings
+- **Scanning Guidance** (ON by default) - Toggle visibility of the scan zone overlay and hints
+
+***REMOVED******REMOVED******REMOVED*** Developer Settings
+- **ROI Diagnostics** (OFF by default) - Show detailed numeric diagnostics:
+  - ROI size percentage
+  - Detected box area
+  - Sharpness score
+  - Center distance
+  - Lock state and stable frame count
+  - Motion score
+  - Current guidance state name
+
+***REMOVED******REMOVED*** Troubleshooting
+
+***REMOVED******REMOVED******REMOVED*** "Items not being detected"
+1. Ensure the object is within the scan zone
+2. Check if "Move closer" or "Move phone away" hints appear
+3. Hold the camera steady for 0.5-1 second
+4. Ensure good lighting conditions
+
+***REMOVED******REMOVED******REMOVED*** "Wrong object being scanned"
+1. Center the desired object in the scan zone
+2. Move other objects out of frame
+3. Wait for the green "LOCKED" state before moving
+
+***REMOVED******REMOVED******REMOVED*** "Detection feels laggy"
+1. The system intentionally waits for stability before adding items
+2. This prevents accidental background detections
+3. Hold steady for the green lock to appear
+
+***REMOVED******REMOVED******REMOVED*** "Scan zone keeps resizing"
+1. This is intentional feedback about distance
+2. Shrinking = move away; Expanding = move closer
+3. Zone stabilizes when object is at optimal distance
+
 ***REMOVED******REMOVED*** Files
 
 ***REMOVED******REMOVED******REMOVED*** Core Models (shared)
 - `ScanRoi.kt` - Scan region of interest data class
 - `GuidanceState.kt` - Guidance state enum and composite state
 - `ScanGuidanceManager.kt` - Central coordinator
+- `RoiCoordinateMapper.kt` - Coordinate mapping between preview and analyzer spaces
+
+***REMOVED******REMOVED******REMOVED*** Tracking (shared)
+- `ObjectTracker.kt` - Multi-frame candidate tracking
+- `CenterWeightedCandidateSelector.kt` - Center-weighted selection with ROI filtering
 
 ***REMOVED******REMOVED******REMOVED*** Android Implementation
 - `CameraGuidanceOverlay.kt` - Visual overlay composable
 - `CameraXManager.kt` - Integration with camera pipeline
+- `SharpnessCalculator.kt` - Laplacian-based sharpness scoring
+- `SettingsRepository.kt` - User/developer settings for guidance
+
+***REMOVED******REMOVED*** Architecture
+
+```
+┌─────────────────────┐
+│   CameraScreen      │
+│ (Jetpack Compose)   │
+└─────────┬───────────┘
+          │ collectAsState
+          ▼
+┌─────────────────────┐
+│  CameraXManager     │
+│  (ImageAnalysis)    │
+└─────────┬───────────┘
+          │ processFrame
+          ▼
+┌─────────────────────┐      ┌─────────────────────┐
+│ ScanGuidanceManager │◄─────│ CenterWeightedSelector │
+│  (state machine)    │      │ (ROI-based selection)  │
+└─────────┬───────────┘      └────────────────────────┘
+          │ ScanGuidanceState
+          ▼
+┌─────────────────────┐
+│ CameraGuidanceOverlay│
+│  (visual feedback)   │
+└─────────────────────┘
+
+Single Source of Truth:
+ScanRoi ────► UI Overlay (drawing)
+        └───► ObjectTracker (filtering)
+        └───► CenterWeightedSelector (gating)
+```
 
 ***REMOVED******REMOVED*** Related Documents
 

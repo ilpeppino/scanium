@@ -115,6 +115,10 @@ fun CameraScreen(
     val adaptiveThrottlingEnabled by settingsRepository.devAdaptiveThrottlingEnabledFlow.collectAsState(initial = true)
     val scanningDiagnosticsEnabled by settingsRepository.devScanningDiagnosticsEnabledFlow.collectAsState(initial = false)
 
+    // Scanning guidance settings
+    val scanningGuidanceEnabled by settingsRepository.scanningGuidanceEnabledFlow.collectAsState(initial = true)
+    val roiDiagnosticsEnabled by settingsRepository.devRoiDiagnosticsEnabledFlow.collectAsState(initial = false)
+
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
     var showPermissionEducationDialog by remember { mutableStateOf(false) }
@@ -424,14 +428,16 @@ fun CameraScreen(
                 }
 
                 // Camera guidance overlay - scan zone and hints
-                // Show when scanning or idle (with different states)
-                if (cameraState == CameraState.SCANNING) {
-                    CameraGuidanceOverlay(
-                        guidanceState = scanGuidanceState,
-                        showDebugInfo = scanDiagnosticsEnabled
-                    )
-                } else if (cameraState == CameraState.IDLE) {
-                    CameraGuidanceOverlayIdle()
+                // Show when scanning (or idle) if guidance is enabled
+                if (scanningGuidanceEnabled) {
+                    if (cameraState == CameraState.SCANNING) {
+                        CameraGuidanceOverlay(
+                            guidanceState = scanGuidanceState,
+                            showDebugInfo = roiDiagnosticsEnabled || scanDiagnosticsEnabled
+                        )
+                    } else if (cameraState == CameraState.IDLE) {
+                        CameraGuidanceOverlayIdle()
+                    }
                 }
 
                 // Detection overlay - bounding boxes and labels
