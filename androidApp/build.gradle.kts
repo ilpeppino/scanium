@@ -4,7 +4,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.devtools.ksp") version "2.0.0-1.0.24"
+    alias(libs.plugins.ksp)
     kotlin("plugin.serialization") version "2.0.0"
     // SEC-002: SBOM generation for supply chain security
     id("org.cyclonedx.bom") version "1.8.2"
@@ -16,8 +16,8 @@ plugins {
     id("org.owasp.dependencycheck") version "10.0.4"
     id("org.jetbrains.kotlinx.kover")
     jacoco
-    // ARCH-001: Hilt DI framework
-    id("com.google.dagger.hilt.android")
+    // ARCH-001: Hilt DI framework - version in gradle/libs.versions.toml
+    alias(libs.plugins.hilt.android)
 }
 
 // Load local.properties for API configuration (not committed to git)
