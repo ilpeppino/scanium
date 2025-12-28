@@ -1,11 +1,14 @@
 package com.scanium.app.ftue
 
-import android.net.Uri
 import androidx.compose.ui.geometry.Rect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.items.ItemsViewModel
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,14 +21,22 @@ import kotlinx.coroutines.launch
 
 /**
  * ViewModel managing the FTUE guided tour state and orchestration.
+ * Uses assisted injection because it depends on ItemsViewModel which is scoped to the composable.
  *
- * @param ftueRepository Repository for persisting FTUE state
- * @param itemsViewModel Shared ItemsViewModel for demo item management
+ * Part of ARCH-001: Migrated to Hilt dependency injection.
+ *
+ * @param ftueRepository Repository for persisting FTUE state (injected by Hilt)
+ * @param itemsViewModel Shared ItemsViewModel for demo item management (passed at creation time)
  */
-class TourViewModel(
+class TourViewModel @AssistedInject constructor(
     private val ftueRepository: FtueRepository,
-    private val itemsViewModel: ItemsViewModel
+    @Assisted private val itemsViewModel: ItemsViewModel
 ) : ViewModel() {
+
+    @AssistedFactory
+    interface Factory {
+        fun create(itemsViewModel: ItemsViewModel): TourViewModel
+    }
 
     // Current step index (-1 = not started)
     private val _currentStepIndex = MutableStateFlow(-1)
@@ -275,17 +286,19 @@ class TourViewModel(
         )
 
         /**
-         * Factory for creating TourViewModel instances.
+         * Factory for creating TourViewModel instances with assisted injection.
+         * @param assistedFactory The Hilt-generated assisted factory
+         * @param itemsViewModel The shared ItemsViewModel instance
          */
         fun provideFactory(
-            ftueRepository: FtueRepository,
+            assistedFactory: Factory,
             itemsViewModel: ItemsViewModel
         ): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     if (modelClass.isAssignableFrom(TourViewModel::class.java)) {
-                        return TourViewModel(ftueRepository, itemsViewModel) as T
+                        return assistedFactory.create(itemsViewModel) as T
                     }
                     throw IllegalArgumentException("Unknown ViewModel class")
                 }

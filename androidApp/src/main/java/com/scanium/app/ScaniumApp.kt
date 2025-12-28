@@ -5,144 +5,74 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.scanium.app.audio.AndroidSoundManager
 import com.scanium.app.audio.LocalSoundManager
+import com.scanium.app.billing.ui.PaywallViewModel
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.ftue.TourViewModel
+import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.navigation.ScaniumNavGraph
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.data.MockEbayApi
 import com.scanium.app.selling.data.MockEbayConfigManager
-import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.items.persistence.NoopScannedItemSyncer
-import com.scanium.app.items.persistence.ScannedItemDatabase
-import com.scanium.app.items.persistence.ScannedItemRepository
 import com.scanium.app.selling.persistence.ListingDraftRepository
-import com.scanium.app.navigation.ScaniumNavGraph
-import com.scanium.app.config.SecureApiKeyStore
-import com.scanium.app.data.AndroidFeatureFlagRepository
-import com.scanium.app.data.ClassificationPreferences
-import com.scanium.app.ml.classification.CloudClassifier
-import com.scanium.app.ml.classification.OnDeviceClassifier
-import com.scanium.app.ml.classification.StableItemCropper
-import com.scanium.app.platform.ConnectivityObserver
 import com.scanium.app.settings.ClassificationModeViewModel
-import com.scanium.app.data.SettingsRepository
-import com.scanium.app.data.EntitlementManager
 import com.scanium.app.ui.settings.SettingsViewModel
-import com.scanium.app.billing.BillingRepository
-import com.scanium.app.billing.AndroidBillingProvider
-import com.scanium.app.billing.FakeBillingProvider
-import com.scanium.app.billing.ui.PaywallViewModel
-import com.scanium.app.data.AndroidRemoteConfigProvider
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.stateIn
+import com.scanium.app.di.DraftStoreEntryPoint
+import com.scanium.app.di.SettingsRepositoryEntryPoint
+import com.scanium.app.di.TourViewModelFactoryEntryPoint
+import dagger.hilt.android.EntryPointAccessors
 
 /**
  * Root Composable for the Scanium app.
  *
  * Sets up:
  * - Navigation controller
- * - Shared ItemsViewModel
+ * - Shared ViewModels via Hilt
  * - Navigation graph
+ *
+ * Part of ARCH-001: Migrated to Hilt dependency injection.
+ * The manual DI setup has been replaced with hiltViewModel() calls,
+ * dramatically reducing boilerplate and improving testability.
  */
 @Composable
 fun ScaniumApp() {
     val navController = rememberNavController()
-    val scope = rememberCoroutineScope()
-
     val context = LocalContext.current.applicationContext
-    val classificationPreferences = remember { ClassificationPreferences(context) }
-    val database = remember { ScannedItemDatabase.getInstance(context) }
-    
-    val settingsRepository = remember { SettingsRepository(context) }
-    val billingRepository = remember { BillingRepository(context) }
-    val configProvider = remember { AndroidRemoteConfigProvider(context, scope) }
-    val ftueRepository = remember { com.scanium.app.ftue.FtueRepository(context) }
+
+    // All ViewModels are now injected via Hilt - no manual factory creation needed
+    val classificationModeViewModel: ClassificationModeViewModel = hiltViewModel()
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val paywallViewModel: PaywallViewModel = hiltViewModel()
+    val itemsViewModel: ItemsViewModel = hiltViewModel()
+
+    // TourViewModel uses assisted injection because it depends on ItemsViewModel
+    val tourViewModelFactory = EntryPointAccessors.fromApplication(
+        context,
+        TourViewModelFactoryEntryPoint::class.java
+    ).tourViewModelFactory()
+
+    val tourViewModel: TourViewModel = viewModel(
+        factory = TourViewModel.provideFactory(tourViewModelFactory, itemsViewModel)
+    )
+
+    // ListingDraftRepository and EbayMarketplaceService remain as remember blocks
+    // because they're not ViewModels (they're used directly in composables)
+    val draftStore: ListingDraftRepository = hiltEntryPoint<DraftStoreEntryPoint>(context).draftStore()
+
+    // Sound manager needs SettingsRepository for the enabled flow
+    val settingsRepository: SettingsRepository = hiltEntryPoint<SettingsRepositoryEntryPoint>(context).settingsRepository()
     val soundManager = remember {
         AndroidSoundManager(
             context = context,
             soundsEnabledFlow = settingsRepository.soundsEnabledFlow
         )
     }
-
-    // Choose billing provider based on build type
-    val billingProvider = remember {
-        if (BuildConfig.DEBUG) {
-            FakeBillingProvider(billingRepository)
-        } else {
-            AndroidBillingProvider(context, billingRepository, scope)
-        }
-    }
-    
-    val entitlementManager = remember { EntitlementManager(settingsRepository, billingProvider) }
-    val connectivityObserver = remember { ConnectivityObserver(context) }
-    val apiKeyStore = remember { SecureApiKeyStore(context) }
-
-    // Centralized feature flag repository (TECH-006 fix)
-    val featureFlagRepository = remember {
-        AndroidFeatureFlagRepository(
-            settingsRepository = settingsRepository,
-            configProvider = configProvider,
-            entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
-            connectivityStatusProvider = connectivityObserver,
-            apiKeyStore = apiKeyStore
-        )
-    }
-
-    // StateFlow for cloud classification enabled state (used by ItemsViewModel)
-    val cloudClassificationEnabled = remember(featureFlagRepository) {
-        featureFlagRepository.isCloudClassificationEnabled
-            .stateIn(scope, SharingStarted.Eagerly, true)
-    }
-
-    val classificationModeViewModel: ClassificationModeViewModel = viewModel(
-        factory = ClassificationModeViewModel.factory(classificationPreferences)
-    )
-
-    val settingsViewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(context as android.app.Application, settingsRepository, entitlementManager, configProvider, featureFlagRepository, ftueRepository)
-    )
-
-    val paywallViewModel: PaywallViewModel = viewModel(
-        factory = PaywallViewModel.Factory(billingProvider)
-    )
-
-    // Shared ViewModel across screens
-    val itemsViewModel: ItemsViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val itemsRepository = ScannedItemRepository(
-                    dao = database.scannedItemDao(),
-                    syncer = NoopScannedItemSyncer
-                )
-
-                // Get Telemetry facade from Application
-                val telemetry = (context as? com.scanium.app.ScaniumApplication)?.telemetry
-
-                return ItemsViewModel(
-                    classificationMode = classificationModeViewModel.classificationMode,
-                    cloudClassificationEnabled = cloudClassificationEnabled,
-                    onDeviceClassifier = OnDeviceClassifier(),
-                    cloudClassifier = CloudClassifier(context = context),
-                    itemsStore = itemsRepository,
-                    stableItemCropper = StableItemCropper(context),
-                    telemetry = telemetry
-                ) as T
-            }
-        }
-    )
-
-    val draftStore = remember { ListingDraftRepository(database.listingDraftDao()) }
-
-    val tourViewModel: com.scanium.app.ftue.TourViewModel = viewModel(
-        factory = com.scanium.app.ftue.TourViewModel.provideFactory(ftueRepository, itemsViewModel)
-    )
 
     // Use the config manager's current config for MockEbayApi
     val mockEbayConfig by MockEbayConfigManager.config.collectAsState()
@@ -167,6 +97,14 @@ fun ScaniumApp() {
             tourViewModel = tourViewModel
         )
     }
+}
+
+/**
+ * Helper function to access Hilt entry points.
+ */
+@Composable
+private inline fun <reified T : Any> hiltEntryPoint(context: android.content.Context): T {
+    return EntryPointAccessors.fromApplication(context, T::class.java)
 }
 
 // Backward compatibility alias
