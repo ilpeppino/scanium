@@ -1,20 +1,24 @@
 package com.scanium.app.ui.settings
 
-import android.app.Application
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.scanium.app.ScaniumApplication
 import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
+import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.model.user.UserEdition
+import com.scanium.diagnostics.DiagnosticsPort
+import com.scanium.telemetry.TelemetrySeverity
+import com.scanium.telemetry.facade.Telemetry
+import com.scanium.telemetry.ports.CrashPort
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 import com.scanium.app.model.billing.EntitlementState
 import com.scanium.app.model.config.AssistantPrerequisiteState
@@ -28,13 +32,20 @@ import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
 
-class SettingsViewModel(
-    private val application: Application,
+/**
+ * ViewModel for the main settings screen.
+ * Part of ARCH-001: Migrated to Hilt dependency injection.
+ */
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val entitlementManager: EntitlementManager,
     private val configProvider: ConfigProvider,
     private val featureFlagRepository: FeatureFlagRepository,
-    private val ftueRepository: com.scanium.app.ftue.FtueRepository
+    private val ftueRepository: FtueRepository,
+    private val crashPort: CrashPort,
+    private val telemetry: Telemetry?,
+    private val diagnosticsPort: DiagnosticsPort
 ) : ViewModel() {
 
     val themeMode: StateFlow<ThemeMode> = settingsRepository.themeModeFlow
@@ -284,13 +295,8 @@ class SettingsViewModel(
      * 3. Throw a RuntimeException (if throwCrash is true)
      */
     fun triggerCrashTest(throwCrash: Boolean = false) {
-        val scaniumApp = application as? ScaniumApplication
-        if (scaniumApp == null) {
-            throw IllegalStateException("Application is not ScaniumApplication")
-        }
-
         // Add a breadcrumb before the crash
-        scaniumApp.crashPort.addBreadcrumb(
+        crashPort.addBreadcrumb(
             message = "User triggered crash test",
             attributes = mapOf(
                 "test_type" to "manual_crash_test",
@@ -300,7 +306,7 @@ class SettingsViewModel(
 
         // Capture a handled exception first
         val testException = RuntimeException("🧪 Test crash from developer settings - this is intentional!")
-        scaniumApp.crashPort.captureException(
+        crashPort.captureException(
             throwable = testException,
             attributes = mapOf(
                 "crash_test" to "true",
@@ -327,39 +333,34 @@ class SettingsViewModel(
      * in the Sentry event in the Sentry dashboard.
      */
     fun triggerDiagnosticsTest() {
-        val scaniumApp = application as? ScaniumApplication
-        if (scaniumApp == null) {
-            throw IllegalStateException("Application is not ScaniumApplication")
-        }
-
         // Emit some test telemetry events to populate the diagnostics buffer
-        scaniumApp.telemetry.info("diagnostics_test.started", mapOf(
+        telemetry?.info("diagnostics_test.started", mapOf(
             "test_id" to "diag_${System.currentTimeMillis()}",
             "test_type" to "manual_diagnostics_test"
         ))
 
-        scaniumApp.telemetry.event("diagnostics_test.event_1", com.scanium.telemetry.TelemetrySeverity.DEBUG, mapOf(
+        telemetry?.event("diagnostics_test.event_1", TelemetrySeverity.DEBUG, mapOf(
             "step" to "1",
             "data" to "test_data_123"
         ))
 
-        scaniumApp.telemetry.event("diagnostics_test.event_2", com.scanium.telemetry.TelemetrySeverity.INFO, mapOf(
+        telemetry?.event("diagnostics_test.event_2", TelemetrySeverity.INFO, mapOf(
             "step" to "2",
             "data" to "test_data_456"
         ))
 
-        scaniumApp.telemetry.warn("diagnostics_test.warning", mapOf(
+        telemetry?.warn("diagnostics_test.warning", mapOf(
             "step" to "3",
             "warning_type" to "test_warning"
         ))
 
         // Check diagnostics buffer status
-        val breadcrumbCount = scaniumApp.diagnosticsPort.breadcrumbCount()
+        val breadcrumbCount = diagnosticsPort.breadcrumbCount()
         android.util.Log.i("DiagnosticsTest", "DiagnosticsBuffer has $breadcrumbCount events before capture")
 
         // Capture a test exception (will include diagnostics bundle as attachment)
         val testException = RuntimeException("🔬 Diagnostics bundle test - check for diagnostics.json attachment")
-        scaniumApp.crashPort.captureException(
+        crashPort.captureException(
             throwable = testException,
             attributes = mapOf(
                 "diagnostics_test" to "true",
@@ -369,20 +370,6 @@ class SettingsViewModel(
         )
 
         android.util.Log.i("DiagnosticsTest", "Captured exception with diagnostics bundle ($breadcrumbCount events). Check Sentry for attachment.")
-    }
-
-    class Factory(
-        private val application: Application,
-        private val settingsRepository: SettingsRepository,
-        private val entitlementManager: EntitlementManager,
-        private val configProvider: ConfigProvider,
-        private val featureFlagRepository: FeatureFlagRepository,
-        private val ftueRepository: com.scanium.app.ftue.FtueRepository
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return SettingsViewModel(application, settingsRepository, entitlementManager, configProvider, featureFlagRepository, ftueRepository) as T
-        }
     }
 }
 
