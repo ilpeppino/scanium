@@ -17,6 +17,20 @@ if ! command -v codex >/dev/null 2>&1; then
   exit 1
 fi
 
+run_sanity_check() {
+  local sanity_script="$ROOT/scripts/ci/gradle_sanity.sh"
+  if [ -x "$sanity_script" ]; then
+    echo "Running Gradle sanity check..."
+    "$sanity_script"
+    echo "Sanity check passed"
+  else
+    echo "Sanity check script not found at $sanity_script (skipping)"
+  fi
+}
+
+***REMOVED*** Run sanity check before starting test-fix loop
+run_sanity_check
+
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
   printf "\n=== Attempt %s of %s ===\n" "$attempt" "$MAX_ATTEMPTS"
   if "$ROOT/scripts/dev/run_tests.sh" "${TASKS[@]}"; then
@@ -38,6 +52,9 @@ EOF
 )
 
   codex exec --cd "$ROOT" --full-auto "$PROMPT"
+
+  ***REMOVED*** Re-run sanity check after codex fix attempt
+  run_sanity_check
 
 done
 
