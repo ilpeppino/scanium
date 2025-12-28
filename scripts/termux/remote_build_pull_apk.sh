@@ -125,27 +125,68 @@ if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$BUILD_SCRIPT"; then
     exit 1
 fi
 
-***REMOVED*** Find newest debug APK on Mac
-log_info "Locating debug APK..."
+***REMOVED*** Find newest APK on Mac (robust search across all variants/flavors)
+log_info "Locating APK..."
 
 FIND_APK_SCRIPT='
 cd '"$MAC_REPO_DIR"'
-find . -path "*/build/outputs/apk/**/debug/*.apk" -type f 2>/dev/null | \
-    xargs ls -t 2>/dev/null | \
-    head -1
-'
 
-APK_PATH=$(run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$FIND_APK_SCRIPT")
+***REMOVED*** Search for any APK under build/outputs/apk, sorted by mtime (newest first)
+APK_PATH=$(find . -path "*/build/outputs/apk/*.apk" -type f 2>/dev/null | \
+    xargs ls -t 2>/dev/null | head -1)
 
-if [[ -z "$APK_PATH" ]]; then
-    log_error "No debug APK found on Mac"
-    log_warn "Expected paths:"
-    log_warn "  androidApp/build/outputs/apk/**/debug/*.apk"
-    log_warn "  app/build/outputs/apk/**/debug/*.apk"
-    exit 1
+if [[ -n "$APK_PATH" ]]; then
+    echo "APK_FOUND:$APK_PATH"
+    exit 0
 fi
 
-log_info "Found APK: $APK_PATH"
+***REMOVED*** No APK found - gather diagnostics
+echo "APK_NOT_FOUND"
+
+***REMOVED*** Check for AAB files
+AAB_FILES=$(find . -path "*/build/outputs/bundle/*.aab" -type f 2>/dev/null)
+if [[ -n "$AAB_FILES" ]]; then
+    echo "AAB_FILES_FOUND:"
+    echo "$AAB_FILES"
+fi
+
+***REMOVED*** Show build/outputs directory structure for debugging
+echo "BUILD_OUTPUTS_SUMMARY:"
+find . -path "*/build/outputs" -type d 2>/dev/null | while read -r dir; do
+    echo "  $dir:"
+    find "$dir" -maxdepth 3 -type f -name "*.apk" -o -name "*.aab" 2>/dev/null | sed "s/^/    /"
+done
+
+exit 1
+'
+
+FIND_RESULT=$(run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$FIND_APK_SCRIPT" || true)
+
+if [[ "$FIND_RESULT" == APK_FOUND:* ]]; then
+    APK_PATH="${FIND_RESULT***REMOVED***APK_FOUND:}"
+    log_info "Found APK: $APK_PATH"
+else
+    log_error "No APK found on Mac"
+    echo ""
+
+    ***REMOVED*** Parse and display diagnostics from remote
+    if echo "$FIND_RESULT" | grep -q "AAB_FILES_FOUND:"; then
+        log_warn "Found AAB bundle(s) instead of APK:"
+        echo "$FIND_RESULT" | sed -n '/AAB_FILES_FOUND:/,/BUILD_OUTPUTS_SUMMARY:/p' | \
+            grep -v "AAB_FILES_FOUND:\|BUILD_OUTPUTS_SUMMARY:" | sed 's/^/  /'
+        echo ""
+        log_warn "The build produced AAB bundles, not APKs."
+        log_warn "Ensure Gradle task is assembleDebug, not bundleDebug."
+    fi
+
+    if echo "$FIND_RESULT" | grep -q "BUILD_OUTPUTS_SUMMARY:"; then
+        log_warn "Build outputs found on Mac:"
+        echo "$FIND_RESULT" | sed -n '/BUILD_OUTPUTS_SUMMARY:/,$p' | \
+            grep -v "BUILD_OUTPUTS_SUMMARY:" | head -20
+    fi
+
+    exit 1
+fi
 
 ***REMOVED*** Create APK directory on phone
 run_cmd mkdir -p "$PHONE_APK_DIR"
