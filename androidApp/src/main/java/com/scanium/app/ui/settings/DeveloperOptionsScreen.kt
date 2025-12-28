@@ -485,12 +485,17 @@ private fun PermissionRow(permission: PermissionStatus) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                if (permission.name == "Camera") Icons.Default.CameraAlt else Icons.Default.Mic,
-                contentDescription = stringResource(R.string.cd_permission_status),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
+            Box(
+                modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    if (permission.name == "Camera") Icons.Default.CameraAlt else Icons.Default.Mic,
+                    contentDescription = stringResource(R.string.cd_permission_status),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             Text(
                 text = permission.name,
                 style = MaterialTheme.typography.bodyMedium
@@ -535,17 +540,22 @@ private fun CapabilityRow(capability: CapabilityStatus) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                when (capability.name) {
-                    "Speech Recognition" -> Icons.Default.Mic
-                    "Text-to-Speech" -> Icons.Default.VolumeUp
-                    "Camera Lenses" -> Icons.Default.CameraAlt
-                    else -> Icons.Default.Settings
-                },
-                contentDescription = stringResource(R.string.cd_capability_status),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
-            )
+            Box(
+                modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    when (capability.name) {
+                        "Speech Recognition" -> Icons.Default.Mic
+                        "Text-to-Speech" -> Icons.Default.VolumeUp
+                        "Camera Lenses" -> Icons.Default.CameraAlt
+                        else -> Icons.Default.Settings
+                    },
+                    contentDescription = stringResource(R.string.cd_capability_status),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
             Column {
                 Text(
                     text = capability.name,
