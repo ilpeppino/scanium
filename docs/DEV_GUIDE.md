@@ -121,6 +121,16 @@ Run GitHub Actions workflows locally to avoid CI quota limits:
 
 **Tip:** Set `NVD_API_KEY` for faster security scans (get key at https://nvd.nist.gov/developers/request-an-api-key)
 
+### Gradle Configuration Sanity Check
+
+Fast Gradle configuration validation (quota-free, no network required):
+```bash
+./scripts/ci/gradle_sanity.sh       # Validate plugin resolution
+./scripts/dev/autofix_tests.sh test # Runs sanity check before tests
+```
+
+**Plugin versions centralized:** Hilt and KSP versions are managed in `gradle/libs.versions.toml`.
+
 ### Codex container limitations (factual)
 - Android SDK/emulator are not available; JVM-only Gradle tasks are the safe path.
 - Networked device access (ADB) is unavailable; use CI artifacts for APKs.
