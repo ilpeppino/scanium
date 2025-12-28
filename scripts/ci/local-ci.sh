@@ -32,6 +32,7 @@ NC='\033[0m'
 
 ***REMOVED*** Parse options
 USE_ACT=false
+NO_OPEN=false
 while [[ $***REMOVED*** -gt 0 ]]; do
     case "$1" in
         --act)
@@ -40,6 +41,10 @@ while [[ $***REMOVED*** -gt 0 ]]; do
             ;;
         --no-color)
             RED='' GREEN='' YELLOW='' BLUE='' BOLD='' NC=''
+            shift
+            ;;
+        --no-open)
+            NO_OPEN=true
             shift
             ;;
         -*)
@@ -71,6 +76,7 @@ ${BLUE}Commands:${NC}
 ${BLUE}Options:${NC}
   --act       Run via 'act' GitHub Actions emulator (requires Docker)
   --no-color  Disable colored output
+  --no-open   Don't auto-open HTML reports in browser (coverage only)
 
 ${BLUE}Examples:${NC}
   $0 doctor              ***REMOVED*** Verify prerequisites
@@ -120,7 +126,11 @@ run_coverage() {
 run_coverage_direct() {
     echo -e "${BLUE}${BOLD}=== Running Coverage (Direct Mode) ===${NC}"
     echo ""
-    "$SCRIPT_DIR/run_coverage.sh"
+    if [[ "$NO_OPEN" == true ]]; then
+        "$SCRIPT_DIR/run_coverage.sh" --no-open
+    else
+        "$SCRIPT_DIR/run_coverage.sh"
+    fi
 }
 
 run_coverage_act() {

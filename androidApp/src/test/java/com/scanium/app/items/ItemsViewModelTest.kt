@@ -42,7 +42,7 @@ class ItemsViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = ItemsViewModel(
+        viewModel = createTestItemsViewModel(
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher
         )
@@ -56,7 +56,7 @@ class ItemsViewModelTest {
     @Test
     fun whenViewModelCreated_thenItemsListIsEmpty() = runTest {
         // Act
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
 
         // Assert
         assertThat(items).isEmpty()
@@ -70,10 +70,9 @@ class ItemsViewModelTest {
 
         // Act
         viewModel.addItem(item)
-        testDispatcher.scheduler.advanceUntilIdle() // Wait for coroutine to complete
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
         assertThat(items[0].category).isEqualTo(ItemCategory.FASHION)
         assertThat(viewModel.getItemCount()).isEqualTo(1)
@@ -92,7 +91,7 @@ class ItemsViewModelTest {
         viewModel.addItems(items)
 
         // Assert
-        val resultItems = viewModel.items.first()
+        val resultItems = viewModel.awaitItems(testDispatcher)
         assertThat(resultItems).hasSize(3)
         assertThat(resultItems.map { it.category }).containsExactly(
             ItemCategory.FASHION,
@@ -113,7 +112,7 @@ class ItemsViewModelTest {
         viewModel.addItem(item2) // Should be ignored
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
         assertThat(items[0].category).isEqualTo(ItemCategory.FASHION) // Merged into one aggregate
     }
@@ -131,7 +130,7 @@ class ItemsViewModelTest {
         viewModel.addItems(items)
 
         // Assert
-        val resultItems = viewModel.items.first()
+        val resultItems = viewModel.awaitItems(testDispatcher)
         assertThat(resultItems).hasSize(2) // Only unique items
         assertThat(resultItems.map { it.category }).containsExactly(
             ItemCategory.FASHION,
@@ -146,11 +145,11 @@ class ItemsViewModelTest {
         viewModel.addItem(createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS))
 
         // Act
-        val currentItems = viewModel.items.first()
+        val currentItems = viewModel.awaitItems(testDispatcher)
         viewModel.removeItem(currentItems.first().id)
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
         assertThat(viewModel.getItemCount()).isEqualTo(1)
     }
@@ -164,7 +163,7 @@ class ItemsViewModelTest {
         viewModel.removeItem("non-existent-id")
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -178,7 +177,7 @@ class ItemsViewModelTest {
         viewModel.clearAllItems()
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).isEmpty()
         assertThat(viewModel.getItemCount()).isEqualTo(0)
     }
@@ -189,7 +188,7 @@ class ItemsViewModelTest {
         viewModel.clearAllItems()
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).isEmpty()
     }
 
@@ -203,7 +202,7 @@ class ItemsViewModelTest {
         viewModel.addItem(createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS))
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -212,14 +211,14 @@ class ItemsViewModelTest {
         // Arrange
         val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
         viewModel.addItem(item)
-        val aggregatedId = viewModel.items.first().first().id
+        val aggregatedId = viewModel.awaitItems(testDispatcher).first().id
         viewModel.removeItem(aggregatedId)
 
         // Act - Add same ID again
         viewModel.addItem(item)
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -231,7 +230,7 @@ class ItemsViewModelTest {
         viewModel.addItem(createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD))
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(3)
         assertThat(items.map { it.category }).containsExactly(
             ItemCategory.FASHION,
@@ -249,7 +248,7 @@ class ItemsViewModelTest {
         viewModel.addItems(emptyList())
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -268,7 +267,7 @@ class ItemsViewModelTest {
         )
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(3)
         assertThat(items.map { it.category }).containsAtLeastElementsIn(
             listOf(ItemCategory.FASHION, ItemCategory.HOME_GOOD, ItemCategory.PLANT)
@@ -288,7 +287,7 @@ class ItemsViewModelTest {
         viewModel.addItems(items)
 
         // Assert
-        val resultItems = viewModel.items.first()
+        val resultItems = viewModel.awaitItems(testDispatcher)
         assertThat(resultItems).hasSize(3)
         assertThat(resultItems[0].confidence).isWithin(0.01f).of(0.9f)
         assertThat(resultItems[1].confidence).isWithin(0.01f).of(0.5f)
@@ -308,7 +307,7 @@ class ItemsViewModelTest {
         assertThat(viewModel.getItemCount()).isEqualTo(2)
 
         // Remove item
-        val idToRemove = viewModel.items.first().first().id
+        val idToRemove = viewModel.awaitItems(testDispatcher).first().id
         viewModel.removeItem(idToRemove)
         assertThat(viewModel.getItemCount()).isEqualTo(1)
 
@@ -326,7 +325,7 @@ class ItemsViewModelTest {
                 createTestItem(id = "item-2", labelText = "Lamp")
             )
         )
-        val selectedId = viewModel.items.first().first().id
+        val selectedId = viewModel.awaitItems(testDispatcher).first().id
 
         // Act
         val payload = viewModel.createExportPayload(listOf(selectedId))
@@ -363,7 +362,7 @@ class ItemsViewModelTest {
         viewModel.addItem(item2)
 
         // Assert - Should only have one item (similar item rejected)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -388,7 +387,7 @@ class ItemsViewModelTest {
         viewModel.addItem(item2)
 
         // Assert - Should have both items
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(2)
     }
 
@@ -412,7 +411,7 @@ class ItemsViewModelTest {
         viewModel.addItem(item2)
 
         // Assert - Should have both items (safety check prevents false positive)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(2)
     }
 
@@ -451,7 +450,7 @@ class ItemsViewModelTest {
         viewModel.addItems(batch)
 
         // Assert - Should have 3 items (item-2 rejected as similar to item-1)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(3)
         assertThat(items.map { it.category }).containsExactly(
             ItemCategory.ELECTRONICS,
@@ -486,7 +485,7 @@ class ItemsViewModelTest {
         viewModel.addItems(batch)
 
         // Assert - Should only have first item (others rejected as similar)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -514,7 +513,7 @@ class ItemsViewModelTest {
         viewModel.addItem(item2)
 
         // Assert - Should have the new item (deduplicator was reset)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -528,7 +527,7 @@ class ItemsViewModelTest {
             thumbnailHeight = 200
         )
         viewModel.addItem(item1)
-        val aggregatedId = viewModel.items.first().first().id
+        val aggregatedId = viewModel.awaitItems(testDispatcher).first().id
         viewModel.removeItem(aggregatedId)
 
         // Act - Add similar item
@@ -541,7 +540,7 @@ class ItemsViewModelTest {
         viewModel.addItem(item2)
 
         // Assert - Should be added (item-1 was removed)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -568,7 +567,7 @@ class ItemsViewModelTest {
         viewModel.addItem(detection2)
 
         // Assert - Should only have one item (duplicate prevented)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -586,7 +585,7 @@ class ItemsViewModelTest {
         viewModel.addItems(items)
 
         // Assert - All items should be added (no false positives)
-        val resultItems = viewModel.items.first()
+        val resultItems = viewModel.awaitItems(testDispatcher)
         assertThat(resultItems).hasSize(4)
     }
 
@@ -620,7 +619,7 @@ class ItemsViewModelTest {
         )
 
         // Assert
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(2)
     }
 
@@ -799,7 +798,7 @@ class ItemsViewModelTest {
         viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
         viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 210, 210, boundingBox = shiftedBox))
 
-        val strictCount = viewModel.items.first().size
+        val strictCount = viewModel.awaitItems(testDispatcher).size
 
         // Clear and test with low threshold
         viewModel.clearAllItems()
@@ -807,7 +806,7 @@ class ItemsViewModelTest {
         viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
         viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 210, 210, boundingBox = shiftedBox))
 
-        val looseCount = viewModel.items.first().size
+        val looseCount = viewModel.awaitItems(testDispatcher).size
 
         // Assert - Lower threshold should result in fewer distinct items (more merging)
         assertThat(looseCount).isLessThan(strictCount)
@@ -824,7 +823,7 @@ class ItemsViewModelTest {
         viewModel.addItem(createItemWithThumbnail("item-1", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
         viewModel.addItem(createItemWithThumbnail("item-2", ItemCategory.FASHION, 220, 220, boundingBox = shiftedBox))
 
-        val looseCount = viewModel.items.first().size
+        val looseCount = viewModel.awaitItems(testDispatcher).size
 
         // Clear and test with high threshold
         viewModel.clearAllItems()
@@ -832,7 +831,7 @@ class ItemsViewModelTest {
         viewModel.addItem(createItemWithThumbnail("item-3", ItemCategory.FASHION, 200, 200, boundingBox = baseBox))
         viewModel.addItem(createItemWithThumbnail("item-4", ItemCategory.FASHION, 220, 220, boundingBox = shiftedBox))
 
-        val strictCount = viewModel.items.first().size
+        val strictCount = viewModel.awaitItems(testDispatcher).size
 
         // Assert - Higher threshold should result in more distinct items (less merging)
         assertThat(strictCount).isGreaterThan(looseCount)
@@ -860,7 +859,7 @@ class ItemsViewModelTest {
         )
 
         // Assert - With strict threshold, should have 2 items (not merged)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(2)
     }
 }

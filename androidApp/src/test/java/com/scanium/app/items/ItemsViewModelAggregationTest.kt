@@ -2,7 +2,6 @@ package com.scanium.app.items
 
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Assert.*
@@ -28,10 +27,9 @@ class ItemsViewModelAggregationTest {
 
     private lateinit var viewModel: ItemsViewModel
     private val dispatcher = UnconfinedTestDispatcher()
-
     @Before
     fun setup() {
-        viewModel = ItemsViewModel(
+        viewModel = createTestItemsViewModel(
             workerDispatcher = dispatcher,
             mainDispatcher = dispatcher
         )
@@ -57,7 +55,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item2)
 
         // Should have merged into a single aggregated item
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(dispatcher)
         assertEquals("Should have 1 aggregated item", 1, items.size)
 
         // IDs are preserved on aggregation; ensure we didn't duplicate
@@ -84,7 +82,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item2)
 
         // Should have 2 items in UI state
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(dispatcher)
         assertEquals("Should have 2 distinct items", 2, items.size)
     }
 
@@ -100,7 +98,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItems(items)
 
         // Should have 2 aggregated items (1 shirt, 1 phone)
-        val resultItems = viewModel.items.first()
+        val resultItems = viewModel.awaitItems(dispatcher)
         assertEquals("Should have 2 aggregated items", 2, resultItems.size)
     }
 
@@ -114,12 +112,12 @@ class ItemsViewModelAggregationTest {
         viewModel.addItems(items)
 
         // Should have 2 items
-        assertEquals("Should have 2 items", 2, viewModel.items.first().size)
+        assertEquals("Should have 2 items", 2, viewModel.awaitItems(dispatcher).size)
 
         viewModel.clearAllItems()
 
         // Should have 0 items
-        assertEquals("Should have 0 items after clear", 0, viewModel.items.first().size)
+        assertEquals("Should have 0 items after clear", 0, viewModel.awaitItems(dispatcher).size)
         assertEquals("Item count should be 0", 0, viewModel.getItemCount())
     }
 
@@ -130,7 +128,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item1)
 
         // Should have 1 item
-        val itemsBefore = viewModel.items.first()
+        val itemsBefore = viewModel.awaitItems(dispatcher)
         assertEquals("Should have 1 item", 1, itemsBefore.size)
 
         val aggregatedId = itemsBefore.first().id
@@ -138,7 +136,7 @@ class ItemsViewModelAggregationTest {
         viewModel.removeItem(aggregatedId)
 
         // Should have 0 items
-        assertEquals("Should have 0 items after removal", 0, viewModel.items.first().size)
+        assertEquals("Should have 0 items after removal", 0, viewModel.awaitItems(dispatcher).size)
     }
 
     @Test
@@ -151,6 +149,7 @@ class ItemsViewModelAggregationTest {
         )
 
         viewModel.addItems(items)
+        viewModel.awaitItems(dispatcher)
 
         assertEquals("Count should be 2", 2, viewModel.getItemCount())
     }
@@ -164,6 +163,7 @@ class ItemsViewModelAggregationTest {
         )
 
         viewModel.addItems(items)
+        viewModel.awaitItems(dispatcher)
 
         val stats = viewModel.getAggregationStats()
 
@@ -178,7 +178,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item)
 
         // Should have 1 item
-        assertEquals("Should have 1 item", 1, viewModel.items.first().size)
+        assertEquals("Should have 1 item", 1, viewModel.awaitItems(dispatcher).size)
 
         // Wait briefly
         Thread.sleep(100)
@@ -187,7 +187,7 @@ class ItemsViewModelAggregationTest {
         viewModel.removeStaleItems(maxAgeMs = 50)
 
         // Should have 0 items
-        assertEquals("Should have 0 items after stale removal", 0, viewModel.items.first().size)
+        assertEquals("Should have 0 items after stale removal", 0, viewModel.awaitItems(dispatcher).size)
     }
 
     @Test
@@ -197,7 +197,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item1)
 
         // Check initial state
-        var items = viewModel.items.first()
+        var items = viewModel.awaitItems(dispatcher)
         assertEquals("Should have 1 item", 1, items.size)
         assertEquals("Category should be FASHION", ItemCategory.FASHION, items.first().category)
 
@@ -206,7 +206,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item2)
 
         // Should still have 1 item (merged)
-        items = viewModel.items.first()
+        items = viewModel.awaitItems(dispatcher)
         assertEquals("Should still have 1 item after merge", 1, items.size)
     }
 
@@ -224,7 +224,7 @@ class ItemsViewModelAggregationTest {
         }
 
         // Should all merge into 1 item
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(dispatcher)
         assertEquals("Should have 1 aggregated item", 1, items.size)
     }
 
@@ -233,7 +233,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItems(emptyList())
 
         // Should have 0 items
-        assertEquals("Should have 0 items", 0, viewModel.items.first().size)
+        assertEquals("Should have 0 items", 0, viewModel.awaitItems(dispatcher).size)
     }
 
     @Test
@@ -257,7 +257,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item1)
         viewModel.addItem(item2)
 
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(dispatcher)
         assertEquals("Should have 1 item", 1, items.size)
 
         // Should use max confidence
@@ -275,7 +275,7 @@ class ItemsViewModelAggregationTest {
         viewModel.addItem(item1)
         viewModel.addItem(item2)
 
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(dispatcher)
 
         // Should use latest bounding box
         val resultBox = items.first().boundingBox

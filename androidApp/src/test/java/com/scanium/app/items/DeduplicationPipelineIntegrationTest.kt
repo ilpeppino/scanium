@@ -72,7 +72,7 @@ class DeduplicationPipelineIntegrationTest {
             )
         )
 
-        viewModel = ItemsViewModel(
+        viewModel = createTestItemsViewModel(
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher
         )
@@ -112,7 +112,7 @@ class DeduplicationPipelineIntegrationTest {
         viewModel.addItem(item)
 
         // Verify first item added
-        var items = viewModel.items.first()
+        var items = viewModel.awaitItems(testDispatcher)
         assertThat(items).isNotEmpty()
 
         // Reset tracker to simulate a new detection session (e.g., object left frame and returned)
@@ -139,7 +139,7 @@ class DeduplicationPipelineIntegrationTest {
         viewModel.addItem(item2)
 
         // Assert: Should still only have 1 item (session dedup caught the duplicate)
-        items = viewModel.items.first()
+        items = viewModel.awaitItems(testDispatcher)
         assertThat(items).isNotEmpty()
     }
 
@@ -177,7 +177,7 @@ class DeduplicationPipelineIntegrationTest {
         }
 
         // Assert: All objects should be added
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items.size).isAtLeast(3)
     }
 
@@ -227,7 +227,7 @@ class DeduplicationPipelineIntegrationTest {
         viewModel.addItem(item)
 
         // Assert: Item should be added
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -272,7 +272,7 @@ class DeduplicationPipelineIntegrationTest {
         viewModel.addItem(item)
 
         // Assert: One item added
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -299,7 +299,7 @@ class DeduplicationPipelineIntegrationTest {
         viewModel.addItem(item2)
 
         // Assert: Both items should be added
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(2)
     }
 
@@ -324,7 +324,7 @@ class DeduplicationPipelineIntegrationTest {
         viewModel.addItem(item2)
 
         // Assert: Both items should be added (size difference too large)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(2)
     }
 
@@ -344,7 +344,7 @@ class DeduplicationPipelineIntegrationTest {
         viewModel.addItem(item1)
 
         // Verify item was added
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -372,7 +372,7 @@ class DeduplicationPipelineIntegrationTest {
         }
 
         // Assert: ensure at least two items persisted after batch add
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items.size).isAtLeast(2)
     }
 
@@ -421,7 +421,7 @@ class DeduplicationPipelineIntegrationTest {
         }
 
         // Assert: Should have the new item (dedup was reset)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).hasSize(1)
     }
 
@@ -457,7 +457,7 @@ class DeduplicationPipelineIntegrationTest {
         }
 
         // Assert: All objects from the burst should be added (allowing minor drops if tracker thresholds filter)
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).isNotEmpty()
     }
 
@@ -479,7 +479,7 @@ class DeduplicationPipelineIntegrationTest {
         }
 
         // Assert: No items should be added
-        val items = viewModel.items.first()
+        val items = viewModel.awaitItems(testDispatcher)
         assertThat(items).isEmpty()
     }
 

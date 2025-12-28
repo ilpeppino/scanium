@@ -16,6 +16,16 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 OUTPUT_DIR="$REPO_ROOT/tmp/ci/coverage"
 LOG_FILE="$OUTPUT_DIR/gradle_coverage.log"
 
+***REMOVED*** Parse options
+OPEN_BROWSER=true
+for arg in "$@"; do
+    case "$arg" in
+        --no-open)
+            OPEN_BROWSER=false
+            ;;
+    esac
+done
+
 echo -e "${BLUE}=== Local Coverage Check ===${NC}"
 echo "Repo root: $REPO_ROOT"
 echo "Output: $OUTPUT_DIR"
@@ -91,20 +101,44 @@ run_coverage() {
     return $exit_code
 }
 
+***REMOVED*** Open file in browser (cross-platform)
+open_in_browser() {
+    local file="$1"
+    if [[ ! -f "$file" ]]; then
+        return 1
+    fi
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        open "$file"
+    elif command -v xdg-open &>/dev/null; then
+        xdg-open "$file"
+    elif command -v sensible-browser &>/dev/null; then
+        sensible-browser "$file"
+    else
+        echo -e "${YELLOW}Cannot auto-open browser. Open manually: $file${NC}"
+        return 1
+    fi
+}
+
 ***REMOVED*** Collect and display report locations
 show_reports() {
     echo -e "${BLUE}=== Coverage Reports ===${NC}"
     echo ""
 
+    local reports_to_open=()
+
     ***REMOVED*** Kover reports (shared modules)
     echo "Kover HTML reports (shared modules):"
-    find "$REPO_ROOT" -path "*/build/reports/kover/html/index.html" -type f 2>/dev/null | while read -r report; do
-        echo "  - $report"
-        ***REMOVED*** Copy to output dir
-        module=$(echo "$report" | sed "s|$REPO_ROOT/||" | cut -d'/' -f1-2 | tr '/' '_')
-        mkdir -p "$OUTPUT_DIR/kover_$module"
-        cp -r "$(dirname "$report")"/* "$OUTPUT_DIR/kover_$module/" 2>/dev/null || true
-    done
+    while IFS= read -r report; do
+        if [[ -n "$report" ]]; then
+            echo "  - $report"
+            ***REMOVED*** Copy to output dir
+            module=$(echo "$report" | sed "s|$REPO_ROOT/||" | cut -d'/' -f1-2 | tr '/' '_')
+            mkdir -p "$OUTPUT_DIR/kover_$module"
+            cp -r "$(dirname "$report")"/* "$OUTPUT_DIR/kover_$module/" 2>/dev/null || true
+            reports_to_open+=("$report")
+        fi
+    done < <(find "$REPO_ROOT" -path "*/build/reports/kover/html/index.html" -type f 2>/dev/null)
     echo ""
 
     ***REMOVED*** Jacoco report (androidApp)
@@ -114,6 +148,7 @@ show_reports() {
         echo "  - $JACOCO_REPORT"
         mkdir -p "$OUTPUT_DIR/jacoco"
         cp -r "$(dirname "$JACOCO_REPORT")"/* "$OUTPUT_DIR/jacoco/" 2>/dev/null || true
+        reports_to_open+=("$JACOCO_REPORT")
     else
         echo -e "${YELLOW}Jacoco report not found${NC}"
     fi
@@ -126,6 +161,57 @@ show_reports() {
     echo -e "${BLUE}Expected thresholds:${NC}"
     echo "  - Shared modules (core-models, core-tracking): >= 85%"
     echo "  - androidApp: >= 75%"
+
+    ***REMOVED*** Open reports in browser
+    if [[ "$OPEN_BROWSER" == true && ${***REMOVED***reports_to_open[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "${BLUE}Opening reports in browser...${NC}"
+        for report in "${reports_to_open[@]}"; do
+            open_in_browser "$report"
+            sleep 0.3  ***REMOVED*** Small delay to avoid overwhelming the browser
+        done
+    elif [[ ${***REMOVED***reports_to_open[@]} -gt 0 ]]; then
+        echo ""
+        echo -e "${BLUE}Tip:${NC} Run without --no-open to auto-open reports in browser"
+    fi
+}
+
+***REMOVED*** Print all HTML reports at the end
+print_all_reports() {
+    echo ""
+    echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║                         HTML COVERAGE REPORTS                             ║${NC}"
+    echo -e "${GREEN}╚═══════════════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+
+    ***REMOVED*** Find all Kover reports
+    echo -e "${BLUE}Kover Reports:${NC}"
+    local kover_found=false
+    while IFS= read -r report; do
+        if [[ -n "$report" ]]; then
+            kover_found=true
+            echo "  $report"
+        fi
+    done < <(find "$REPO_ROOT" -path "*/build/reports/kover/html/index.html" -type f 2>/dev/null | sort)
+    if [[ "$kover_found" == false ]]; then
+        echo -e "  ${YELLOW}(none found)${NC}"
+    fi
+    echo ""
+
+    ***REMOVED*** Find all Jacoco reports
+    echo -e "${BLUE}Jacoco Reports:${NC}"
+    local jacoco_found=false
+    while IFS= read -r report; do
+        if [[ -n "$report" ]]; then
+            jacoco_found=true
+            echo "  $report"
+        fi
+    done < <(find "$REPO_ROOT" -path "*/build/reports/jacoco/*/html/index.html" -type f 2>/dev/null | sort)
+    if [[ "$jacoco_found" == false ]]; then
+        echo -e "  ${YELLOW}(none found)${NC}"
+    fi
+    echo ""
+    echo -e "${GREEN}═══════════════════════════════════════════════════════════════════════════${NC}"
 }
 
 ***REMOVED*** Main
@@ -138,8 +224,6 @@ EXIT_CODE=$?
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
-show_reports
-
 echo ""
 echo -e "${BLUE}=== Summary ===${NC}"
 echo "Duration: ${DURATION}s"
@@ -149,5 +233,8 @@ if [[ $EXIT_CODE -eq 0 ]]; then
 else
     echo -e "${RED}Result: FAIL${NC}"
 fi
+
+***REMOVED*** Print all reports at the very end
+print_all_reports
 
 exit $EXIT_CODE

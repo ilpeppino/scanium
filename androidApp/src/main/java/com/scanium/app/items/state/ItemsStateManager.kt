@@ -51,8 +51,8 @@ import kotlinx.coroutines.withContext
 class ItemsStateManager(
     private val scope: CoroutineScope,
     private val itemsStore: ScannedItemStore = NoopScannedItemStore,
-    private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    initialWorkerDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    initialMainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     aggregationConfig: AggregationConfig = AggregationPresets.REALTIME
 ) {
     companion object {
@@ -60,6 +60,9 @@ class ItemsStateManager(
         private const val DEBUG_LOGGING = false
         private const val TELEMETRY_INTERVAL_MS = 5000L
     }
+
+    private var workerDispatcher: CoroutineDispatcher = initialWorkerDispatcher
+    private var mainDispatcher: CoroutineDispatcher = initialMainDispatcher
 
     // Real-time item aggregator for similarity-based deduplication
     private val itemAggregator = ItemAggregator(config = aggregationConfig)
@@ -88,6 +91,20 @@ class ItemsStateManager(
         itemAggregator.updateSimilarityThreshold(aggregationConfig.similarityThreshold)
         Log.i(TAG, "ItemsStateManager initialized with threshold: ${aggregationConfig.similarityThreshold}")
         loadPersistedItems()
+    }
+
+    /**
+     * Override coroutine dispatchers after construction.
+     *
+     * This is primarily used in tests where the ViewModel injects a TestDispatcher after
+     * the primary constructor (and init block) have run.
+     */
+    internal fun overrideDispatchers(
+        workerDispatcher: CoroutineDispatcher,
+        mainDispatcher: CoroutineDispatcher
+    ) {
+        this.workerDispatcher = workerDispatcher
+        this.mainDispatcher = mainDispatcher
     }
 
     /**
