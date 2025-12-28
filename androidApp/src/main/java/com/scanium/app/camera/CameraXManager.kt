@@ -39,6 +39,7 @@ import com.scanium.app.camera.detection.DetectorType
 import com.scanium.app.camera.detection.DocumentCandidate
 import com.scanium.app.camera.detection.DocumentCandidateDetector
 import com.scanium.app.camera.detection.DocumentCandidateState
+import com.scanium.app.camera.detection.ScanPipelineDiagnostics
 import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -438,6 +439,9 @@ class CameraXManager(
         // Start detection router session for metrics tracking
         detectionRouter.startSession()
 
+        // Start diagnostics session
+        ScanPipelineDiagnostics.startSession()
+
         // Initialize performance metrics
         sessionStartTime = SystemClock.elapsedRealtime()
         totalFramesProcessed = 0
@@ -476,9 +480,24 @@ class CameraXManager(
             val motionScore = computeMotionScore(imageProxy)
             val analysisIntervalMs = analysisIntervalMsForMotion(motionScore)
             val currentTime = System.currentTimeMillis()
+            val timeSinceLastAnalysis = currentTime - lastAnalysisTime
+            val willProcess = timeSinceLastAnalysis >= analysisIntervalMs && !isProcessing
+
+            // Log frame arrival with throttle decision
+            ScanPipelineDiagnostics.logFrameArrival(
+                motionScore = motionScore,
+                analysisIntervalMs = analysisIntervalMs,
+                timeSinceLastAnalysis = timeSinceLastAnalysis,
+                willProcess = willProcess,
+                dropReason = when {
+                    isProcessing -> "already_processing"
+                    timeSinceLastAnalysis < analysisIntervalMs -> "throttled_motion"
+                    else -> null
+                }
+            )
 
             // Only process if enough time has passed AND we're not already processing
-            if (currentTime - lastAnalysisTime >= analysisIntervalMs && !isProcessing) {
+            if (willProcess) {
                 lastAnalysisTime = currentTime
                 isProcessing = true
                 frameCounter++
@@ -526,6 +545,14 @@ class CameraXManager(
                         // Note: Currently just records invocation, does not change detection behavior
                         detectionRouter.routeDetection(scanMode, frameReceiveTime)
 
+                        // Log detection invocation
+                        ScanPipelineDiagnostics.logDetectionInvoked(
+                            mode = scanMode.name,
+                            imageWidth = imageProxy.width,
+                            imageHeight = imageProxy.height,
+                            rotationDegrees = imageProxy.imageInfo.rotationDegrees
+                        )
+
                         // Use SINGLE_IMAGE_MODE for object detection with tracking during continuous scanning
                         // CRITICAL: Use SINGLE_IMAGE_MODE to avoid blinking bounding boxes
                         // STREAM_MODE produces unstable tracking IDs from ML Kit that change between frames
@@ -536,15 +563,23 @@ class CameraXManager(
                             onDetectionEvent = onDetectionEvent
                         )
 
+                        // [METRICS] Calculate analyzer latency
+                        val analyzerLatencyMs = SystemClock.elapsedRealtime() - frameReceiveTime
+
+                        // Log detection result
+                        ScanPipelineDiagnostics.logDetectionResult(
+                            detectionCount = detections.size,
+                            topConfidence = detections.maxOfOrNull { it.confidence } ?: 0f,
+                            inferenceTimeMs = analyzerLatencyMs,
+                            itemsAdded = items.size
+                        )
+
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
                                 onResult(items)
                             }
                             onDetectionResult(detections)
                         }
-
-                        // [METRICS] Calculate analyzer latency
-                        val analyzerLatencyMs = SystemClock.elapsedRealtime() - frameReceiveTime
                         totalFramesProcessed++
                         framesInWindow++
 
@@ -582,10 +617,20 @@ class CameraXManager(
         }
     }
 
+    /**
+     * Compute analysis interval based on motion score.
+     *
+     * FIX: Previously used 2000ms for steady scenes (motion <= 0.1), which caused
+     * detection to feel unresponsive when camera is held still. Reduced to 600ms
+     * to ensure detection happens within a reasonable time while still providing
+     * battery savings compared to max rate.
+     *
+     * @see docs/SCAN_VS_PICTURE_ASSESSMENT.md for root cause analysis
+     */
     private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
-        motionScore <= 0.1 -> 2000L
-        motionScore <= 0.5 -> 800L
-        else -> 400L
+        motionScore <= 0.1 -> 600L   // Steady scene: was 2000ms, now 600ms (~1.7 fps)
+        motionScore <= 0.5 -> 500L   // Low motion: was 800ms, now 500ms (~2 fps)
+        else -> 400L                  // High motion: unchanged (~2.5 fps)
     }
 
     private fun updateDocumentCandidateState(candidate: DocumentCandidate?, timestampMs: Long) {
@@ -679,6 +724,8 @@ class CameraXManager(
         scanJob = null
         // Stop detection router session (logs stats)
         detectionRouter.stopSession()
+        // Stop diagnostics session (logs summary)
+        ScanPipelineDiagnostics.stopSession()
         _documentCandidateState.value = null
         // Reset tracker when stopping scan
         objectTracker.stopSession("user_stopped")
@@ -1189,6 +1236,24 @@ class CameraXManager(
      * Gets whether adaptive throttling is currently active.
      */
     val isAdaptiveThrottling: StateFlow<Boolean> = detectionRouter.isAdaptiveThrottling
+
+    /**
+     * Enables or disables scanning diagnostics logging.
+     * When enabled, detailed ScanPipeline logs are emitted.
+     */
+    fun setScanningDiagnosticsEnabled(enabled: Boolean) {
+        ScanPipelineDiagnostics.enabled = enabled
+    }
+
+    /**
+     * Checks if scanning diagnostics is enabled.
+     */
+    fun isScanningDiagnosticsEnabled(): Boolean = ScanPipelineDiagnostics.enabled
+
+    /**
+     * Gets the current scan pipeline metrics state flow for optional overlay display.
+     */
+    val scanMetricsState: StateFlow<com.scanium.app.camera.detection.ScanMetricsState> = ScanPipelineDiagnostics.metricsState
 
     /**
      * PHASE 3: Calculate the visible viewport rect based on PreviewView aspect ratio.
