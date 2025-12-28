@@ -10,23 +10,37 @@ GIT_HOOKS_DIR="$(git rev-parse --git-dir)/hooks"
 
 echo "Installing git hooks..."
 
+# Install pre-commit hook (ktlint - DX-002)
+if [ -f "$HOOK_TEMPLATE_DIR/pre-commit" ]; then
+    cp "$HOOK_TEMPLATE_DIR/pre-commit" "$GIT_HOOKS_DIR/pre-commit"
+    chmod +x "$GIT_HOOKS_DIR/pre-commit"
+    echo "Installed pre-commit hook (ktlint)"
+else
+    echo "pre-commit hook not found in $HOOK_TEMPLATE_DIR"
+    exit 1
+fi
+
 # Install pre-push hook
 if [ -f "$HOOK_TEMPLATE_DIR/pre-push" ]; then
     cp "$HOOK_TEMPLATE_DIR/pre-push" "$GIT_HOOKS_DIR/pre-push"
     chmod +x "$GIT_HOOKS_DIR/pre-push"
-    echo "✓ Installed pre-push hook"
+    echo "Installed pre-push hook (JVM checks)"
 else
-    echo "✗ pre-push hook not found in $HOOK_TEMPLATE_DIR"
+    echo "pre-push hook not found in $HOOK_TEMPLATE_DIR"
     exit 1
 fi
 
 echo ""
-echo "✅ Git hooks installed successfully!"
+echo "Git hooks installed successfully!"
 echo ""
-echo "The pre-push hook will run JVM-only validation before each push."
-echo "This includes:"
-echo "  - JVM tests for shared modules (no Android SDK required)"
-echo "  - Portability checks"
-echo "  - Legacy import checks"
+echo "Hooks installed:"
 echo ""
-echo "To bypass the hook (not recommended), use: git push --no-verify"
+echo "  pre-commit: Runs ktlint on staged Kotlin files"
+echo "    - Auto-fix: ./gradlew ktlintFormat"
+echo "    - Bypass: git commit --no-verify"
+echo ""
+echo "  pre-push: Runs JVM-only validation before push"
+echo "    - JVM tests for shared modules (no Android SDK required)"
+echo "    - Portability checks"
+echo "    - Legacy import checks"
+echo "    - Bypass: git push --no-verify"

@@ -10,13 +10,29 @@ plugins {
     id("org.jetbrains.kotlinx.kover") version "0.7.4" apply false
     // Hilt DI framework (ARCH-001)
     id("com.google.dagger.hilt.android") version "2.51.1" apply false
+    // ktlint for code style enforcement (DX-002)
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.2"
 }
 
 tasks.register("clean", Delete::class) {
     delete(rootProject.layout.buildDirectory)
 }
 
+// ktlint configuration (DX-002)
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    version.set("1.5.0")
+    android.set(true)
+    outputColorName.set("RED")
+    ignoreFailures.set(false)
+    filter {
+        exclude("**/generated/**")
+        exclude("**/build/**")
+    }
+}
+
 subprojects {
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
     if (path != ":androidApp") {
         configurations.configureEach {
             withDependencies {
