@@ -1,19 +1,25 @@
 package com.scanium.app.settings
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.BuildConfig
 import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassifierDebugFlags
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ClassificationModeViewModel(
+/**
+ * ViewModel for classification mode settings.
+ * Part of ARCH-001: Migrated to Hilt dependency injection.
+ */
+@HiltViewModel
+class ClassificationModeViewModel @Inject constructor(
     private val preferences: ClassificationPreferences
 ) : ViewModel() {
 
@@ -73,14 +79,4 @@ class ClassificationModeViewModel(
         }
     }
 
-    companion object {
-        fun factory(preferences: ClassificationPreferences): ViewModelProvider.Factory {
-            return object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return ClassificationModeViewModel(preferences) as T
-                }
-            }
-        }
-    }
 }

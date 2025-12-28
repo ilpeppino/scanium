@@ -16,6 +16,8 @@ plugins {
     id("org.owasp.dependencycheck") version "10.0.4"
     id("org.jetbrains.kotlinx.kover")
     jacoco
+    // ARCH-001: Hilt DI framework
+    id("com.google.dagger.hilt.android")
 }
 
 // Load local.properties for API configuration (not committed to git)
@@ -100,7 +102,8 @@ android {
         buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")
         buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"$apiKey\"")
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // ARCH-001: Use Hilt test runner for instrumented tests
+        testInstrumentationRunner = "com.scanium.app.HiltTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -336,6 +339,17 @@ dependencies {
 
     // Crash Reporting
     implementation("io.sentry:sentry-android:7.14.0")
+
+    // ARCH-001: Hilt Dependency Injection
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    // Hilt Testing
+    testImplementation("com.google.dagger:hilt-android-testing:2.51.1")
+    kspTest("com.google.dagger:hilt-android-compiler:2.51.1")
+    androidTestImplementation("com.google.dagger:hilt-android-testing:2.51.1")
+    kspAndroidTest("com.google.dagger:hilt-android-compiler:2.51.1")
 }
 
 koverReport {

@@ -8,6 +8,8 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.0.0" apply false
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0" apply false
     id("org.jetbrains.kotlinx.kover") version "0.7.4" apply false
+    // Hilt DI framework (ARCH-001)
+    id("com.google.dagger.hilt.android") version "2.51.1" apply false
 }
 
 tasks.register("clean", Delete::class) {

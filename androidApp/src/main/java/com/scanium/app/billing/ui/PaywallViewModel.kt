@@ -2,16 +2,22 @@ package com.scanium.app.billing.ui
 
 import android.app.Activity
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.billing.BillingSkus
 import com.scanium.app.model.billing.BillingProvider
 import com.scanium.app.model.billing.ProductDetails
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class PaywallViewModel(
+/**
+ * ViewModel for the paywall/subscription screen.
+ * Part of ARCH-001: Migrated to Hilt dependency injection.
+ */
+@HiltViewModel
+class PaywallViewModel @Inject constructor(
     private val billingProvider: BillingProvider
 ) : ViewModel() {
 
@@ -57,12 +63,5 @@ class PaywallViewModel(
     
     fun clearError() {
         _error.value = null
-    }
-
-    class Factory(private val billingProvider: BillingProvider) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return PaywallViewModel(billingProvider) as T
-        }
     }
 }
