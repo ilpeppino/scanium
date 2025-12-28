@@ -59,21 +59,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
-import com.scanium.app.data.ExportProfilePreferences
-import com.scanium.app.data.PostingTargetPreferences
+import com.scanium.app.di.PostingAssistViewModelFactoryEntryPoint
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraftFormatter
 import com.scanium.app.listing.PostingAssistPlanBuilder
 import com.scanium.app.listing.PostingStep
 import com.scanium.app.listing.PostingStepId
-import com.scanium.app.selling.export.AssetExportProfileRepository
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.posting.PostingTargetDefaults
 import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
 
+/**
+ * Screen for guided posting assistance.
+ *
+ * Part of ARCH-001/DX-003: Updated to use Hilt's assisted injection for ViewModel creation,
+ * reducing boilerplate by accessing the factory through EntryPoints.
+ */
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun PostingAssistScreen(
@@ -85,18 +90,18 @@ fun PostingAssistScreen(
     onOpenAssistant: (List<String>, Int) -> Unit
 ) {
     val context = LocalContext.current
-    val profileRepository = remember { AssetExportProfileRepository(context) }
-    val profilePreferences = remember { ExportProfilePreferences(context) }
-    val targetPreferences = remember { PostingTargetPreferences(context) }
+    val assistedFactory = remember(context) {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            PostingAssistViewModelFactoryEntryPoint::class.java
+        ).postingAssistViewModelFactory()
+    }
     val viewModel: PostingAssistViewModel = viewModel(
-        factory = PostingAssistViewModel.factory(
+        factory = PostingAssistViewModel.provideFactory(
+            assistedFactory = assistedFactory,
             itemIds = itemIds,
             startIndex = startIndex,
-            itemsViewModel = itemsViewModel,
-            draftStore = draftStore,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            postingTargetPreferences = targetPreferences
+            itemsViewModel = itemsViewModel
         )
     )
 

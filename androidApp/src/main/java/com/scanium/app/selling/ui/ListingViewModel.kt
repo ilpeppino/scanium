@@ -2,6 +2,7 @@ package com.scanium.app.selling.ui
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.items.ItemListingStatus
 import com.scanium.app.items.ItemsViewModel
@@ -13,6 +14,9 @@ import com.scanium.app.selling.domain.ListingCondition
 import com.scanium.app.selling.domain.ListingDraft
 import com.scanium.app.selling.domain.ListingError
 import com.scanium.app.selling.util.ListingDraftMapper
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,14 +37,54 @@ data class ListingUiState(
     val isPosting: Boolean = false
 )
 
-class ListingViewModel(
-    private val selectedItems: List<ScannedItem>,
-    private val marketplaceService: EbayMarketplaceService,
-    private val itemsViewModel: ItemsViewModel
+/**
+ * ViewModel for managing listing drafts and posting to eBay.
+ *
+ * Part of ARCH-001/DX-003: Migrated to Hilt assisted injection to reduce boilerplate.
+ * Runtime parameters (selectedItems, itemsViewModel) are passed via @Assisted annotation,
+ * while singleton dependencies are injected by Hilt.
+ */
+class ListingViewModel @AssistedInject constructor(
+    @Assisted private val selectedItems: List<ScannedItem>,
+    @Assisted private val itemsViewModel: ItemsViewModel,
+    private val marketplaceService: EbayMarketplaceService
 ) : ViewModel() {
+
+    /**
+     * Factory for creating ListingViewModel instances with assisted injection.
+     * Part of ARCH-001/DX-003: Replaces verbose manual Factory class.
+     */
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            selectedItems: List<ScannedItem>,
+            itemsViewModel: ItemsViewModel
+        ): ListingViewModel
+    }
 
     companion object {
         private const val TAG = "ListingViewModel"
+
+        /**
+         * Creates a ViewModelProvider.Factory for ListingViewModel using Hilt's assisted factory.
+         * Part of ARCH-001/DX-003: Simplified factory creation with Hilt.
+         *
+         * @param assistedFactory The Hilt-generated assisted factory
+         * @param selectedItems The list of items to create listings for
+         * @param itemsViewModel The shared ItemsViewModel instance
+         */
+        fun provideFactory(
+            assistedFactory: Factory,
+            selectedItems: List<ScannedItem>,
+            itemsViewModel: ItemsViewModel
+        ): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return assistedFactory.create(selectedItems, itemsViewModel) as T
+                }
+            }
+        }
     }
 
     private val _uiState = MutableStateFlow(

@@ -16,6 +16,9 @@ import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,13 +47,32 @@ data class DraftReviewItemState(
     val isDirty: Boolean
 )
 
-class DraftReviewViewModel(
-    private val itemIds: List<String>,
-    private val itemsViewModel: ItemsViewModel,
+/**
+ * ViewModel for the Draft Review screen that manages listing draft editing.
+ *
+ * Part of ARCH-001/DX-003: Migrated to Hilt assisted injection to reduce boilerplate.
+ * Runtime parameters (itemIds, itemsViewModel) are passed via @Assisted annotation,
+ * while singleton dependencies are injected by Hilt.
+ */
+class DraftReviewViewModel @AssistedInject constructor(
+    @Assisted private val itemIds: List<String>,
+    @Assisted private val itemsViewModel: ItemsViewModel,
     private val draftStore: ListingDraftStore,
     private val exportProfileRepository: ExportProfileRepository,
     private val exportProfilePreferences: ExportProfilePreferences
 ) : ViewModel() {
+
+    /**
+     * Factory for creating DraftReviewViewModel instances with assisted injection.
+     * Part of ARCH-001/DX-003: Replaces verbose manual Factory class.
+     */
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            itemIds: List<String>,
+            itemsViewModel: ItemsViewModel
+        ): DraftReviewViewModel
+    }
 
     private val draftCache = mutableMapOf<String, DraftReviewItemState>()
     private val _uiState = MutableStateFlow(
@@ -217,22 +239,24 @@ class DraftReviewViewModel(
     }
 
     companion object {
-        fun factory(
+        /**
+         * Creates a ViewModelProvider.Factory for DraftReviewViewModel using Hilt's assisted factory.
+         * Part of ARCH-001/DX-003: Simplified factory creation with Hilt.
+         *
+         * @param assistedFactory The Hilt-generated assisted factory
+         * @param itemIds The list of item IDs to review
+         * @param itemsViewModel The shared ItemsViewModel instance
+         */
+        fun provideFactory(
+            assistedFactory: Factory,
             itemIds: List<String>,
-            itemsViewModel: ItemsViewModel,
-            draftStore: ListingDraftStore,
-            exportProfileRepository: ExportProfileRepository,
-            exportProfilePreferences: ExportProfilePreferences
-        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return DraftReviewViewModel(
-                    itemIds = itemIds,
-                    itemsViewModel = itemsViewModel,
-                    draftStore = draftStore,
-                    exportProfileRepository = exportProfileRepository,
-                    exportProfilePreferences = exportProfilePreferences
-                ) as T
+            itemsViewModel: ItemsViewModel
+        ): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return assistedFactory.create(itemIds, itemsViewModel) as T
+                }
             }
         }
     }
