@@ -131,6 +131,51 @@ termux-setup-storage
 - Storage permission granted via `termux-setup-storage`
 - ~2GB free space for Gradle cache
 
+### Termux: Run Tests via Tailscale SSH
+
+Run Gradle tests and autofix loops on your Mac from Termux over Tailscale SSH. Avoids Termux's JDK/toolchain limitations and works over mobile networks.
+
+**One-time setup:**
+1. Install Tailscale on both Mac and Android phone
+2. Enable Remote Login on Mac: System Settings → General → Sharing → Remote Login
+3. Generate SSH key in Termux and add to Mac:
+   ```bash
+   ssh-keygen -t ed25519
+   cat ~/.ssh/id_ed25519.pub  # Copy this
+   # On Mac: append to ~/.ssh/authorized_keys
+   ```
+4. Grant Termux storage access:
+   ```bash
+   termux-setup-storage
+   ```
+5. Configure remote environment:
+   ```bash
+   cp scripts/termux/remote_env.example scripts/termux/remote_env
+   # Edit remote_env with your Mac's Tailscale IP (e.g., 100.x.x.x)
+   ```
+
+**Run autofix tests remotely:**
+```bash
+./scripts/termux/remote_autofix_tests.sh
+# Runs autofix_tests.sh on Mac, pulls logs to Downloads/scanium-ci/
+```
+
+**Build APK remotely:**
+```bash
+./scripts/termux/remote_build_pull_apk.sh
+# Builds debug APK on Mac, copies to Downloads/scanium-apk/
+```
+
+**Dry run (print commands without executing):**
+```bash
+DRY_RUN=1 ./scripts/termux/remote_autofix_tests.sh
+```
+
+**Troubleshooting:**
+- Check Tailscale status: `tailscale status`
+- Test SSH manually: `ssh user@100.x.x.x`
+- Ensure Mac is not sleeping (caffeinate or disable sleep)
+
 ### Local CI (quota-free)
 
 Run GitHub Actions workflows locally to avoid CI quota limits:
