@@ -35,6 +35,23 @@ object ScaniumLog {
     }
 
     /**
+     * Sanitizes a billing debug message for safe logging.
+     * In release builds, debug messages are completely redacted as they may contain
+     * transaction details or implementation-specific information.
+     *
+     * @param responseCode The billing response code (always logged)
+     * @param debugMessage The raw debug message from BillingResult (may be null)
+     * @return Sanitized string safe for logging
+     */
+    fun sanitizeBillingMessage(responseCode: Int, debugMessage: String?): String {
+        return if (BuildConfig.DEBUG) {
+            "code=$responseCode, debug=${debugMessage ?: "[none]"}"
+        } else {
+            "code=$responseCode"
+        }
+    }
+
+    /**
      * Sanitizes an HTTP response body for safe logging.
      * Truncates to a safe length and redacts common PII patterns.
      *
