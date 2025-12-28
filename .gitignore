@@ -33,3 +33,6 @@ node_modules
 ***REMOVED*** Local test logs / automation outputs
 ***REMOVED*** Includes tmp/ci/ for local CI runner outputs (coverage, security reports)
 tmp/
+
+***REMOVED*** Termux remote SSH config (contains personal SSH host/user)
+scripts/termux/remote_env
