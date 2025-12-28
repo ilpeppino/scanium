@@ -2,6 +2,55 @@
 
 This directory contains git hooks to help maintain code quality during development.
 
+***REMOVED******REMOVED*** Installation
+
+Run the installation script once after cloning the repository:
+
+```bash
+./scripts/dev/install-hooks.sh
+```
+
+This installs both the pre-commit (ktlint) and pre-push (JVM checks) hooks.
+
+---
+
+***REMOVED******REMOVED*** Pre-Commit Hook (DX-002)
+
+The pre-commit hook runs ktlint on staged Kotlin files to enforce consistent code style before commits.
+
+***REMOVED******REMOVED******REMOVED*** What It Checks
+
+- **Code Style** - Validates all staged `.kt` and `.kts` files against ktlint rules
+- Follows the official Kotlin coding conventions with Android-specific rules enabled
+
+***REMOVED******REMOVED******REMOVED*** Auto-Fixing Issues
+
+If ktlint reports style violations, you can auto-fix most issues:
+
+```bash
+./gradlew ktlintFormat
+```
+
+Then re-stage the fixed files and commit again.
+
+***REMOVED******REMOVED******REMOVED*** Manual Check
+
+Run ktlint manually without committing:
+
+```bash
+./gradlew ktlintCheck
+```
+
+***REMOVED******REMOVED******REMOVED*** Bypassing the Hook
+
+If you need to commit without running ktlint (not recommended):
+
+```bash
+git commit --no-verify
+```
+
+---
+
 ***REMOVED******REMOVED*** Pre-Push Hook
 
 The pre-push hook runs lightweight JVM-only validation before pushing to remote. This provides fast feedback without requiring a full Android SDK setup, making it ideal for:
@@ -20,14 +69,6 @@ The pre-push hook runs lightweight JVM-only validation before pushing to remote.
 2. **Portability Checks** - Ensures core modules don't import Android platform types
 
 3. **Legacy Import Checks** - Prevents usage of legacy `com.scanium.app.*` imports
-
-***REMOVED******REMOVED******REMOVED*** Installation
-
-Run the installation script once after cloning:
-
-```bash
-./scripts/dev/install-hooks.sh
-```
 
 ***REMOVED******REMOVED******REMOVED*** Manual Testing
 
