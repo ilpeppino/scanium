@@ -2,7 +2,11 @@ package com.scanium.app.di
 
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.TourViewModel
+import com.scanium.app.selling.assistant.AssistantViewModel
 import com.scanium.app.selling.persistence.ListingDraftRepository
+import com.scanium.app.selling.ui.DraftReviewViewModel
+import com.scanium.app.selling.ui.ListingViewModel
+import com.scanium.app.selling.ui.PostingAssistViewModel
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -35,4 +39,44 @@ interface DraftStoreEntryPoint {
 @InstallIn(SingletonComponent::class)
 interface SettingsRepositoryEntryPoint {
     fun settingsRepository(): SettingsRepository
+}
+
+/**
+ * Entry point for accessing AssistantViewModel's assisted factory.
+ * Part of ARCH-001/DX-003: Hilt DI migration to reduce ViewModel boilerplate.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface AssistantViewModelFactoryEntryPoint {
+    fun assistantViewModelFactory(): AssistantViewModel.Factory
+}
+
+/**
+ * Entry point for accessing DraftReviewViewModel's assisted factory.
+ * Part of ARCH-001/DX-003: Hilt DI migration to reduce ViewModel boilerplate.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface DraftReviewViewModelFactoryEntryPoint {
+    fun draftReviewViewModelFactory(): DraftReviewViewModel.Factory
+}
+
+/**
+ * Entry point for accessing PostingAssistViewModel's assisted factory.
+ * Part of ARCH-001/DX-003: Hilt DI migration to reduce ViewModel boilerplate.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface PostingAssistViewModelFactoryEntryPoint {
+    fun postingAssistViewModelFactory(): PostingAssistViewModel.Factory
+}
+
+/**
+ * Entry point for accessing ListingViewModel's assisted factory.
+ * Part of ARCH-001/DX-003: Hilt DI migration to reduce ViewModel boilerplate.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface ListingViewModelFactoryEntryPoint {
+    fun listingViewModelFactory(): ListingViewModel.Factory
 }

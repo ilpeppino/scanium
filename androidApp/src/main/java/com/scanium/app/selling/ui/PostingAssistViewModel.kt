@@ -21,6 +21,9 @@ import com.scanium.app.selling.posting.PostingTarget
 import com.scanium.app.selling.posting.PostingTargetDefaults
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,15 +49,35 @@ data class PostingAssistUiState(
         get() = itemIds.getOrNull(currentIndex)
 }
 
-class PostingAssistViewModel(
-    private val itemIds: List<String>,
-    startIndex: Int,
-    private val itemsViewModel: ItemsViewModel,
+/**
+ * ViewModel for the Posting Assist screen that guides users through listing completion.
+ *
+ * Part of ARCH-001/DX-003: Migrated to Hilt assisted injection to reduce boilerplate.
+ * Runtime parameters (itemIds, startIndex, itemsViewModel) are passed via @Assisted annotation,
+ * while singleton dependencies are injected by Hilt.
+ */
+class PostingAssistViewModel @AssistedInject constructor(
+    @Assisted private val itemIds: List<String>,
+    @Assisted private val startIndex: Int,
+    @Assisted private val itemsViewModel: ItemsViewModel,
     private val draftStore: ListingDraftStore,
     private val exportProfileRepository: ExportProfileRepository,
     private val exportProfilePreferences: ExportProfilePreferences,
     private val postingTargetPreferences: PostingTargetPreferences
 ) : ViewModel() {
+
+    /**
+     * Factory for creating PostingAssistViewModel instances with assisted injection.
+     * Part of ARCH-001/DX-003: Replaces verbose manual Factory class.
+     */
+    @AssistedFactory
+    interface Factory {
+        fun create(
+            itemIds: List<String>,
+            startIndex: Int,
+            itemsViewModel: ItemsViewModel
+        ): PostingAssistViewModel
+    }
 
     private val draftCache = mutableMapOf<String, ListingDraft>()
     private val _uiState = MutableStateFlow(
@@ -184,26 +207,26 @@ class PostingAssistViewModel(
     companion object {
         private const val TAG = "PostingAssist"
 
-        fun factory(
+        /**
+         * Creates a ViewModelProvider.Factory for PostingAssistViewModel using Hilt's assisted factory.
+         * Part of ARCH-001/DX-003: Simplified factory creation with Hilt.
+         *
+         * @param assistedFactory The Hilt-generated assisted factory
+         * @param itemIds The list of item IDs to assist with
+         * @param startIndex The initial index to display
+         * @param itemsViewModel The shared ItemsViewModel instance
+         */
+        fun provideFactory(
+            assistedFactory: Factory,
             itemIds: List<String>,
             startIndex: Int,
-            itemsViewModel: ItemsViewModel,
-            draftStore: ListingDraftStore,
-            exportProfileRepository: ExportProfileRepository,
-            exportProfilePreferences: ExportProfilePreferences,
-            postingTargetPreferences: PostingTargetPreferences
-        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return PostingAssistViewModel(
-                    itemIds = itemIds,
-                    startIndex = startIndex,
-                    itemsViewModel = itemsViewModel,
-                    draftStore = draftStore,
-                    exportProfileRepository = exportProfileRepository,
-                    exportProfilePreferences = exportProfilePreferences,
-                    postingTargetPreferences = postingTargetPreferences
-                ) as T
+            itemsViewModel: ItemsViewModel
+        ): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return assistedFactory.create(itemIds, startIndex, itemsViewModel) as T
+                }
             }
         }
     }
