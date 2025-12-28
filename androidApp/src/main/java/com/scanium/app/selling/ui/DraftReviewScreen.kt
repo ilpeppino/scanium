@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.di.DraftReviewViewModelFactoryEntryPoint
 import com.scanium.app.listing.DraftFieldKey
 import com.scanium.app.listing.DraftStatus
 import com.scanium.app.listing.ExportProfiles
@@ -50,6 +51,7 @@ import com.scanium.app.listing.ListingDraftFormatter
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.items.ItemsViewModel
+import dagger.hilt.android.EntryPointAccessors
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,9 +69,13 @@ import com.scanium.app.selling.util.ListingShareHelper
 import kotlinx.coroutines.launch
 import android.content.Intent
 import androidx.compose.foundation.layout.Box
-import com.scanium.app.data.ExportProfilePreferences
-import com.scanium.app.selling.export.AssetExportProfileRepository
 
+/**
+ * Screen for reviewing and editing listing drafts.
+ *
+ * Part of ARCH-001/DX-003: Updated to use Hilt's assisted injection for ViewModel creation,
+ * reducing boilerplate by accessing the factory through EntryPoints.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DraftReviewScreen(
@@ -81,15 +87,17 @@ fun DraftReviewScreen(
     onOpenAssistant: (List<String>) -> Unit
 ) {
     val context = LocalContext.current
-    val profileRepository = remember { AssetExportProfileRepository(context) }
-    val profilePreferences = remember { ExportProfilePreferences(context) }
+    val assistedFactory = remember(context) {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            DraftReviewViewModelFactoryEntryPoint::class.java
+        ).draftReviewViewModelFactory()
+    }
     val viewModel: DraftReviewViewModel = viewModel(
-        factory = DraftReviewViewModel.factory(
+        factory = DraftReviewViewModel.provideFactory(
+            assistedFactory = assistedFactory,
             itemIds = itemIds,
-            itemsViewModel = itemsViewModel,
-            draftStore = draftStore,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences
+            itemsViewModel = itemsViewModel
         )
     )
 

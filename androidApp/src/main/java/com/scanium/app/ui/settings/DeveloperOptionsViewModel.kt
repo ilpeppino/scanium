@@ -23,6 +23,7 @@ import com.scanium.app.model.config.ConnectionTestResult
 import com.scanium.app.model.config.FeatureFlagRepository
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,12 +34,17 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * ViewModel for Developer Options screen.
  * Manages diagnostics state and developer settings.
+ *
+ * Part of ARCH-001/DX-003: Migrated to Hilt injection to reduce boilerplate.
+ * All dependencies are now injected by Hilt, eliminating the need for a manual Factory class.
  */
-class DeveloperOptionsViewModel(
+@HiltViewModel
+class DeveloperOptionsViewModel @Inject constructor(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val ftueRepository: FtueRepository,
@@ -310,6 +316,14 @@ class DeveloperOptionsViewModel(
         stopAutoRefresh()
     }
 
+    /**
+     * @deprecated Use hiltViewModel() instead. This Factory is no longer needed.
+     * Part of ARCH-001/DX-003: Manual Factory replaced by @HiltViewModel.
+     */
+    @Deprecated(
+        message = "Use hiltViewModel() instead. This Factory is no longer needed with Hilt.",
+        replaceWith = ReplaceWith("hiltViewModel()", "androidx.hilt.navigation.compose.hiltViewModel")
+    )
     class Factory(
         private val application: Application,
         private val settingsRepository: SettingsRepository,
