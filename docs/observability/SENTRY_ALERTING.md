@@ -70,6 +70,118 @@ These tags are updated in real-time as user preferences change:
 - `cloud_allowed` - Updated when cloud classification permission changes
 - `session_id` - Set at startup; new sessions create new IDs
 
+## DSN Security (SEC-002)
+
+### Understanding DSN Exposure
+
+Sentry DSNs are intentionally "semi-public" by design. The DSN is embedded in the client application (APK) and can be extracted, but this is expected behavior:
+
+- **DSN identifies the project** - It tells Sentry where to send events
+- **DSN does not grant read access** - Attackers cannot view existing crash data
+- **Risk: Event pollution** - Attackers can send fake crash reports to pollute analytics
+
+Reference: [Sentry DSN Explainer](https://docs.sentry.io/concepts/key-concepts/dsn-explainer/)
+
+### Required Mitigations
+
+Configure these protections in Sentry to prevent abuse:
+
+#### 1. Rate Limiting (Quota Management)
+
+Limit events per period to prevent spam attacks:
+
+1. Go to **Settings → Subscription → Quota**
+2. Configure rate limits:
+   - **Per-project limit:** 10,000 events/hour (adjust based on user base)
+   - **Spike protection:** Enable to prevent sudden event floods
+   - **Per-key limit:** Consider separate DSNs for debug/release with different quotas
+
+**Recommended thresholds:**
+
+| User Base | Events/Hour | Events/Day |
+|-----------|-------------|------------|
+| < 1K DAU | 1,000 | 10,000 |
+| 1K-10K DAU | 10,000 | 100,000 |
+| > 10K DAU | 50,000 | 500,000 |
+
+#### 2. Inbound Filters
+
+Block known bad actors and suspicious traffic:
+
+1. Go to **Settings → Processing → Inbound Filters**
+2. Enable:
+   - [ ] **Filter localhost events** (blocks development pollution)
+   - [ ] **Filter known bots/crawlers**
+   - [ ] **Filter by release** (block events from unknown versions)
+
+3. Add custom IP filters if abuse patterns detected:
+   - Go to **Settings → Processing → Inbound Data Filters**
+   - Add suspicious IP ranges to blocklist
+
+#### 3. DSN Rotation Schedule
+
+Rotate the DSN monthly to invalidate any leaked or abused keys:
+
+**Rotation Procedure:**
+
+1. **Generate new DSN:**
+   - Go to **Settings → Client Keys (DSN)**
+   - Click "Generate New Key"
+
+2. **Update configuration:**
+   - Update `SCANIUM_SENTRY_DSN` in CI/CD secrets
+   - Update `local.properties` for local development
+
+3. **Deploy new app version:**
+   - Release app update with new DSN
+   - Allow 30-day grace period for user updates
+
+4. **Disable old DSN:**
+   - After grace period, disable old key in Sentry
+   - Monitor for any legitimate traffic on old key
+
+**Rotation Calendar:**
+
+| Month | Action |
+|-------|--------|
+| 1st | Generate new DSN, deploy app update |
+| 15th | Monitor adoption of new version |
+| 30th | Disable old DSN if adoption > 90% |
+
+#### 4. Monitoring for Abuse
+
+Set up alerts to detect DSN abuse:
+
+```yaml
+Name: Suspicious Event Volume
+Environment: prod
+
+Metric: count()
+Trigger: When count() increases by 500% in 1 hour
+
+Actions:
+  - Slack notification to #security-alerts
+  - Review event sources and consider DSN rotation
+```
+
+**Signs of abuse:**
+- Sudden spike in events from unknown releases
+- Events with invalid/garbage data
+- Events from unexpected geographic regions
+- Duplicate events with identical timestamps
+
+### Security Audit Checklist
+
+Review monthly:
+
+- [ ] Rate limits are configured and effective
+- [ ] Inbound filters are blocking unwanted traffic
+- [ ] DSN rotation is on schedule
+- [ ] No unusual event patterns in dashboard
+- [ ] PII scrubbing is enabled and tested
+
+---
+
 ## Sentry Project Settings Checklist
 
 Configure these settings in Sentry UI (Project Settings):
