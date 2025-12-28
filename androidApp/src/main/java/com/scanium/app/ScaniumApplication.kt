@@ -9,6 +9,7 @@ import com.scanium.diagnostics.DefaultDiagnosticsPort
 import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.ports.CrashPort
+import dagger.hilt.android.HiltAndroidApp
 import io.sentry.android.core.SentryAndroid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +18,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+/**
+ * Application class for Scanium.
+ * Annotated with @HiltAndroidApp to enable Hilt dependency injection (ARCH-001).
+ */
+@HiltAndroidApp
 class ScaniumApplication : Application() {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
