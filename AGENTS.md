@@ -12,7 +12,7 @@
 
 ## Build, Test, and Development Commands
 ```bash
-./scripts/build.sh assembleDebug      # Builds with auto-detected Java 17
+./scripts/build.sh assembleDebug      # Builds with auto-detected Java 21
 ./gradlew assembleDebug               # Build debug APK
 ./gradlew installDebug                # Deploy to connected device/emulator
 ./gradlew test                        # JVM unit tests
