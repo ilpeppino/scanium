@@ -19,13 +19,29 @@ fi
 
 run_sanity_check() {
   local sanity_script="$ROOT/scripts/ci/gradle_sanity.sh"
-  if [ -x "$sanity_script" ]; then
-    echo "Running Gradle sanity check..."
-    "$sanity_script"
-    echo "Sanity check passed"
-  else
+  local log_file="$ROOT/tmp/gradle_sanity.log"
+
+  if [ ! -x "$sanity_script" ]; then
     echo "Sanity check script not found at $sanity_script (skipping)"
+    return 0
   fi
+
+  mkdir -p "$ROOT/tmp"
+
+  echo "Running Gradle sanity check..."
+  # Capture output so failures are actionable even with `set -e`.
+  if "$sanity_script" >"$log_file" 2>&1; then
+    echo "Sanity check passed"
+    return 0
+  fi
+
+  echo "FAIL: Gradle configuration check failed"
+  echo "Log: $log_file"
+  echo "---- Last 120 lines ----"
+  tail -n 120 "$log_file" || true
+  echo "------------------------"
+  echo "Tip: run './gradlew :androidApp:tasks --stacktrace --info' to see full details."
+  return 1
 }
 
 # Run sanity check before starting test-fix loop
