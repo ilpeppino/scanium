@@ -72,6 +72,18 @@ android {
         //   scanium.api.base.url=https://your-backend.com/api/v1
         val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
         val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
+        // SEC-002: Sentry DSN Security Consideration
+        // The DSN is intentionally embedded in the APK as this is Sentry's designed behavior.
+        // Sentry DSNs are "semi-public" - they identify where to send events but do not
+        // grant access to read data. See: https://docs.sentry.io/concepts/key-concepts/dsn-explainer/
+        //
+        // Mitigations (configured in Sentry project settings):
+        //   1. Rate limiting - Enable quota management to cap events per period
+        //   2. IP filtering - Configure inbound filters to block suspicious sources
+        //   3. DSN rotation - Rotate monthly via Sentry project settings
+        //   4. Data scrubbing - Enable server-side PII scrubbing
+        //
+        // See: docs/observability/SENTRY_ALERTING.md for configuration details
         val sentryDsn = localPropertyOrEnv("scanium.sentry.dsn", "SCANIUM_SENTRY_DSN")
         val telemetryDataRegion = localPropertyOrEnv(
             "scanium.telemetry.data_region",
@@ -93,7 +105,7 @@ android {
         buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
         buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
         buildConfigField("String", "SCANIUM_API_CERTIFICATE_PIN", "\"$certificatePin\"")
-        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
+        buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"") // SEC-002: Semi-public by design
         buildConfigField("String", "OTLP_ENDPOINT", "\"$otlpEndpoint\"")
         buildConfigField("boolean", "OTLP_ENABLED", otlpEnabled)
         buildConfigField("String", "TELEMETRY_DATA_REGION", "\"$telemetryDataRegion\"")
