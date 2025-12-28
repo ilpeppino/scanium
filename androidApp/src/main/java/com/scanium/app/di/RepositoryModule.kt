@@ -1,0 +1,88 @@
+package com.scanium.app.di
+
+import android.content.Context
+import com.scanium.app.config.SecureApiKeyStore
+import com.scanium.app.data.AndroidFeatureFlagRepository
+import com.scanium.app.data.ClassificationPreferences
+import com.scanium.app.data.EntitlementManager
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.billing.BillingRepository
+import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.model.billing.BillingProvider
+import com.scanium.app.model.config.ConfigProvider
+import com.scanium.app.model.config.FeatureFlagRepository
+import com.scanium.app.platform.ConnectivityStatusProvider
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
+
+/**
+ * Hilt module providing repository dependencies.
+ * Part of ARCH-001: DI Framework Migration.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+object RepositoryModule {
+
+    @Provides
+    @Singleton
+    fun provideSettingsRepository(
+        @ApplicationContext context: Context
+    ): SettingsRepository {
+        return SettingsRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBillingRepository(
+        @ApplicationContext context: Context
+    ): BillingRepository {
+        return BillingRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFtueRepository(
+        @ApplicationContext context: Context
+    ): FtueRepository {
+        return FtueRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideClassificationPreferences(
+        @ApplicationContext context: Context
+    ): ClassificationPreferences {
+        return ClassificationPreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEntitlementManager(
+        settingsRepository: SettingsRepository,
+        billingProvider: BillingProvider
+    ): EntitlementManager {
+        return EntitlementManager(settingsRepository, billingProvider)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFeatureFlagRepository(
+        settingsRepository: SettingsRepository,
+        configProvider: ConfigProvider,
+        entitlementManager: EntitlementManager,
+        connectivityStatusProvider: ConnectivityStatusProvider,
+        apiKeyStore: SecureApiKeyStore
+    ): FeatureFlagRepository {
+        return AndroidFeatureFlagRepository(
+            settingsRepository = settingsRepository,
+            configProvider = configProvider,
+            entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
+            connectivityStatusProvider = connectivityStatusProvider,
+            apiKeyStore = apiKeyStore
+        )
+    }
+}
