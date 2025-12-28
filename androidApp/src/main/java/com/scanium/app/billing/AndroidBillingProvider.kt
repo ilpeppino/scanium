@@ -2,7 +2,6 @@ package com.scanium.app.billing
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
@@ -13,6 +12,7 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.model.billing.BillingProvider
 import com.scanium.app.model.billing.EntitlementSource
 import com.scanium.app.model.billing.EntitlementState
@@ -50,16 +50,16 @@ class AndroidBillingProvider(
             override fun onBillingSetupFinished(billingResult: BillingResult) {
                 if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                     isConnectionEstablished = true
-                    Log.i(TAG, "Billing connection established")
+                    ScaniumLog.i(TAG, "Billing connection established")
                     scope.launch { refreshEntitlements() }
                 } else {
-                    Log.e(TAG, "Billing connection failed: ${billingResult.debugMessage}")
+                    ScaniumLog.e(TAG, "Billing connection failed: ${ScaniumLog.sanitizeBillingMessage(billingResult.responseCode, billingResult.debugMessage)}")
                 }
             }
 
             override fun onBillingServiceDisconnected() {
                 isConnectionEstablished = false
-                Log.w(TAG, "Billing disconnected. Retrying...")
+                ScaniumLog.w(TAG, "Billing disconnected. Retrying...")
                 retryConnection()
             }
         })
@@ -114,7 +114,7 @@ class AndroidBillingProvider(
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     continuation.resume(purchases)
                 } else {
-                    Log.e(TAG, "Query purchases failed: ${result.debugMessage}")
+                    ScaniumLog.e(TAG, "Query purchases failed: ${ScaniumLog.sanitizeBillingMessage(result.responseCode, result.debugMessage)}")
                     continuation.resume(emptyList())
                 }
             }
@@ -190,11 +190,11 @@ class AndroidBillingProvider(
             .build()
 
         val result = billingClient.launchBillingFlow(activityContext, flowParams)
-        
+
         return if (result.responseCode == BillingClient.BillingResponseCode.OK) {
             Result.success(Unit)
         } else {
-            Result.failure(Exception(result.debugMessage))
+            Result.failure(Exception("Billing flow failed: ${ScaniumLog.sanitizeBillingMessage(result.responseCode, result.debugMessage)}"))
         }
     }
 
@@ -235,9 +235,9 @@ class AndroidBillingProvider(
                 handlePurchases(purchases)
             }
         } else if (billingResult.responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
-            Log.i(TAG, "User canceled purchase")
+            ScaniumLog.i(TAG, "User canceled purchase")
         } else {
-            Log.e(TAG, "Purchase update failed: ${billingResult.debugMessage}")
+            ScaniumLog.e(TAG, "Purchase update failed: ${ScaniumLog.sanitizeBillingMessage(billingResult.responseCode, billingResult.debugMessage)}")
         }
     }
 
@@ -258,7 +258,7 @@ class AndroidBillingProvider(
                     }
                     
                     if (ackResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                        Log.e(TAG, "Failed to acknowledge purchase: ${ackResult.debugMessage}")
+                        ScaniumLog.e(TAG, "Failed to acknowledge purchase: ${ScaniumLog.sanitizeBillingMessage(ackResult.responseCode, ackResult.debugMessage)}")
                     }
                 }
                 
