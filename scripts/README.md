@@ -22,5 +22,9 @@ Centralized entry points for repo automation. Run from the repo root unless note
 - `scripts/dev/install-hooks.sh` – Installs git hooks from `hooks/pre-push`.
 - `scripts/tools/create-github-issues.sh` – Converts Markdown issue templates under `docs/issues` into GitHub issues using `gh`.
 
+### Termux (Android on-device builds)
+- `scripts/termux/termux-storage-setup.sh` – One-time check/setup for Termux storage access.
+- `scripts/termux/build_debug_to_downloads.sh` – Build debug APK and copy to Downloads for installation.
+
 ## Archive
 - Place deprecated or personal scripts under `scripts/_archive/YYYY-MM/` with a short README explaining the replacement.
