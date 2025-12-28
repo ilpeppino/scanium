@@ -51,6 +51,7 @@ fun DeveloperOptionsScreen(
     val barcodeDetectionEnabled by viewModel.barcodeDetectionEnabled.collectAsState()
     val documentDetectionEnabled by viewModel.documentDetectionEnabled.collectAsState()
     val adaptiveThrottlingEnabled by viewModel.adaptiveThrottlingEnabled.collectAsState()
+    val liveScanDiagnosticsEnabled by viewModel.scanningDiagnosticsEnabled.collectAsState()
     val scrollState = rememberScrollState()
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
@@ -152,6 +153,14 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.Speed,
                 checked = adaptiveThrottlingEnabled,
                 onCheckedChange = { viewModel.setAdaptiveThrottlingEnabled(it) }
+            )
+
+            SettingSwitchRow(
+                title = "Live Scan Diagnostics",
+                subtitle = if (liveScanDiagnosticsEnabled) "Detailed LiveScan logs enabled (Logcat tag: LiveScan)" else "Diagnostic logging disabled",
+                icon = Icons.Default.Analytics,
+                checked = liveScanDiagnosticsEnabled,
+                onCheckedChange = { viewModel.setScanningDiagnosticsEnabled(it) }
             )
 
             SettingsSectionHeader("Classifier Diagnostics")
