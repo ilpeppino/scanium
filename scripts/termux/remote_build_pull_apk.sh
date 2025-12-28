@@ -76,13 +76,44 @@ fi
 log_info "Building debug APK on Mac..."
 echo ""
 
+GRADLE_LOG="tmp/termux_remote_gradle.log"
+
 BUILD_SCRIPT='
 cd '"$MAC_REPO_DIR"'
-if ./gradlew :androidApp:assembleDebug 2>/dev/null; then
+
+# Force JDK 17 (project requirement)
+export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Parse ANDROID_SDK_ROOT from local.properties
+if [[ -f "local.properties" ]]; then
+    SDK_DIR=$(grep "^sdk.dir=" local.properties | cut -d= -f2-)
+    if [[ -n "$SDK_DIR" ]]; then
+        export ANDROID_SDK_ROOT="$SDK_DIR"
+        export ANDROID_HOME="$SDK_DIR"
+    fi
+fi
+
+# Preflight: print environment info
+echo "=== Remote Environment Preflight ==="
+echo "JAVA_HOME=$JAVA_HOME"
+java -version 2>&1 | head -2
+echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-<not set>}"
+echo "===================================="
+
+# Ensure tmp dir exists for logs
+mkdir -p tmp
+
+# Build with logging
+if ./gradlew :androidApp:assembleDebug 2>&1 | tee '"$GRADLE_LOG"'; then
     echo "BUILD_SUCCESS"
-elif ./gradlew assembleDebug 2>/dev/null; then
+elif ./gradlew assembleDebug 2>&1 | tee '"$GRADLE_LOG"'; then
     echo "BUILD_SUCCESS"
 else
+    echo ""
+    echo "=== Last 200 lines of Gradle log ==="
+    tail -200 '"$GRADLE_LOG"'
+    echo "====================================="
     echo "BUILD_FAILED"
     exit 1
 fi
@@ -90,6 +121,7 @@ fi
 
 if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$BUILD_SCRIPT"; then
     log_error "APK build failed on Mac"
+    log_info "Full log available at: $MAC_REPO_DIR/$GRADLE_LOG"
     exit 1
 fi
 
