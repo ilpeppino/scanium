@@ -102,6 +102,35 @@ The redesigned Settings experience is organized into six categories (General, Ca
 
 See also `hooks/README.md` for pre-push validation setup.
 
+***REMOVED******REMOVED******REMOVED*** Termux: Build APK to Downloads
+
+Build debug APKs directly on your Android device using Termux. The APK is copied to Downloads for easy installation.
+
+**One-time setup:**
+```bash
+***REMOVED*** Grant Termux storage permission (required once)
+termux-setup-storage
+
+***REMOVED*** Verify storage access
+./scripts/termux/termux-storage-setup.sh
+```
+
+**Build and install:**
+```bash
+***REMOVED*** Build debug APK and copy to Downloads
+./scripts/termux/build_debug_to_downloads.sh
+
+***REMOVED*** Then:
+***REMOVED*** 1. Open Files app
+***REMOVED*** 2. Navigate to Downloads/scanium-apk/
+***REMOVED*** 3. Tap the APK to install
+```
+
+**Requirements:**
+- Termux with `git`, JDK 17, and Android SDK installed
+- Storage permission granted via `termux-setup-storage`
+- ~2GB free space for Gradle cache
+
 ***REMOVED******REMOVED******REMOVED*** Local CI (quota-free)
 
 Run GitHub Actions workflows locally to avoid CI quota limits:
