@@ -1,4 +1,4 @@
-***REMOVED***!/data/data/com.termux/files/usr/bin/bash
+***REMOVED***!/usr/bin/env bash
 ***REMOVED*** Build Scanium debug APK and copy to Android Downloads for easy installation.
 ***REMOVED*** Designed for Termux on Android devices.
 

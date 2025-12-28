@@ -1,4 +1,4 @@
-***REMOVED***!/data/data/com.termux/files/usr/bin/bash
+***REMOVED***!/usr/bin/env bash
 set -euo pipefail
 
 ***REMOVED*** Run autofix_tests.sh on remote Mac via SSH over Tailscale

@@ -1,4 +1,4 @@
-***REMOVED***!/data/data/com.termux/files/usr/bin/bash
+***REMOVED***!/usr/bin/env bash
 set -euo pipefail
 
 ***REMOVED*** Build debug APK on remote Mac via SSH, then pull to phone Downloads

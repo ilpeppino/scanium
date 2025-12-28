@@ -1,4 +1,4 @@
-***REMOVED***!/data/data/com.termux/files/usr/bin/bash
+***REMOVED***!/usr/bin/env bash
 ***REMOVED*** Termux storage setup helper for Scanium
 ***REMOVED*** Run this once after installing Termux to enable access to shared storage.
 
