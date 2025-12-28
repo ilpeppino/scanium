@@ -33,3 +33,6 @@ node_modules
 # Local test logs / automation outputs
 # Includes tmp/ci/ for local CI runner outputs (coverage, security reports)
 tmp/
+
+# Termux remote SSH config (contains personal SSH host/user)
+scripts/termux/remote_env
