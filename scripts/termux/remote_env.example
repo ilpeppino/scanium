@@ -1,0 +1,21 @@
+# Remote Mac configuration for Termux SSH scripts
+# Copy this file to remote_env and edit with your values:
+#   cp remote_env.example remote_env
+#
+# Prerequisites:
+#   - Tailscale on both Mac and Android
+#   - macOS Remote Login enabled (System Settings > General > Sharing > Remote Login)
+#   - SSH key generated in Termux: ssh-keygen -t ed25519
+#   - Public key added to Mac: ~/.ssh/authorized_keys
+
+# Mac SSH connection (Tailscale IP or MagicDNS hostname)
+MAC_SSH_HOST=
+MAC_SSH_USER=
+
+# Repo path on Mac
+MAC_REPO_DIR=~/dev/scanium
+
+# Phone storage paths (after running termux-setup-storage)
+PHONE_DOWNLOADS_DIR=~/storage/downloads
+PHONE_ARTIFACT_DIR=$PHONE_DOWNLOADS_DIR/scanium-ci
+PHONE_APK_DIR=$PHONE_DOWNLOADS_DIR/scanium-apk
