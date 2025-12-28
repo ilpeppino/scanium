@@ -1,6 +1,7 @@
 package com.scanium.core.tracking
 
 import com.scanium.core.models.geometry.NormalizedRect
+import com.scanium.core.models.scanning.ScanRoi
 import kotlin.math.sqrt
 
 /**
@@ -131,6 +132,187 @@ class CenterWeightedCandidateSelector(
             rejectedCandidates = rejectedList,
             selectionReason = if (stabilityResult.isStable) "stable_selection" else "pending_stability"
         )
+    }
+
+    /**
+     * Select the best candidate using a ScanRoi for filtering.
+     *
+     * This version uses the ROI boundaries instead of fixed center distance,
+     * ensuring alignment between what the user sees and what gets detected.
+     *
+     * @param detections List of raw detections from ML Kit
+     * @param scanRoi The current scan ROI for filtering
+     * @param frameSharpness Current frame sharpness score
+     * @param currentTimeMs Current timestamp for stability tracking
+     * @return SelectionResult with best candidate and rejection reasons
+     */
+    fun selectBestCandidateWithRoi(
+        detections: List<DetectionInfo>,
+        scanRoi: ScanRoi,
+        frameSharpness: Float,
+        currentTimeMs: Long
+    ): SelectionResult {
+        if (detections.isEmpty()) {
+            return SelectionResult(
+                selectedCandidate = null,
+                rejectedCandidates = emptyList(),
+                selectionReason = "no_detections"
+            )
+        }
+
+        // Score and filter candidates using ROI
+        val scoredCandidates = detections.map { detection ->
+            val boxCenterX = (detection.boundingBox.left + detection.boundingBox.right) / 2f
+            val boxCenterY = (detection.boundingBox.top + detection.boundingBox.bottom) / 2f
+            val centerDistance = calculateCenterDistance(detection.boundingBox)
+            val area = detection.normalizedBoxArea
+            val confidence = detection.confidence
+
+            // Calculate center score using ROI
+            val roiCenterScore = scanRoi.centerScore(boxCenterX, boxCenterY)
+
+            // Calculate score with ROI-aware center weighting
+            val score = calculateScoreWithRoi(confidence, area, roiCenterScore)
+
+            // Apply ROI-aware gating rules
+            val gatingResult = applyGatingRulesWithRoi(
+                detection = detection,
+                boxCenterX = boxCenterX,
+                boxCenterY = boxCenterY,
+                scanRoi = scanRoi,
+                area = area,
+                frameSharpness = frameSharpness
+            )
+
+            ScoredCandidate(
+                detection = detection,
+                score = score,
+                centerDistance = centerDistance,
+                gatingResult = gatingResult
+            )
+        }
+
+        // Filter out gated candidates
+        val passedGating = scoredCandidates.filter { it.gatingResult.passed }
+        val rejected = scoredCandidates.filter { !it.gatingResult.passed }
+
+        if (passedGating.isEmpty()) {
+            return SelectionResult(
+                selectedCandidate = null,
+                rejectedCandidates = rejected.map {
+                    RejectedCandidate(
+                        detection = it.detection,
+                        centerDistance = it.centerDistance,
+                        score = it.score,
+                        reason = it.gatingResult.reason ?: "gating_failed"
+                    )
+                },
+                selectionReason = "all_gated"
+            )
+        }
+
+        // Select highest scoring candidate
+        val bestCandidate = passedGating.maxByOrNull { it.score }!!
+
+        // Check stability requirement
+        val candidateId = bestCandidate.detection.trackingId ?: generateCandidateId(bestCandidate.detection)
+        val stabilityResult = checkStability(candidateId, currentTimeMs)
+
+        // Update stability state
+        updateStabilityState(candidateId, currentTimeMs)
+
+        // Build rejection list
+        val rejectedList = scoredCandidates
+            .filter { it != bestCandidate }
+            .map {
+                RejectedCandidate(
+                    detection = it.detection,
+                    centerDistance = it.centerDistance,
+                    score = it.score,
+                    reason = if (it.gatingResult.passed) "lower_score" else (it.gatingResult.reason ?: "gating_failed")
+                )
+            }
+
+        return SelectionResult(
+            selectedCandidate = SelectedCandidate(
+                detection = bestCandidate.detection,
+                score = bestCandidate.score,
+                centerDistance = bestCandidate.centerDistance,
+                isStable = stabilityResult.isStable,
+                consecutiveFrames = stabilityResult.consecutiveFrames,
+                stableTimeMs = stabilityResult.stableTimeMs
+            ),
+            rejectedCandidates = rejectedList,
+            selectionReason = if (stabilityResult.isStable) "stable_selection" else "pending_stability"
+        )
+    }
+
+    /**
+     * Calculate score with ROI-aware center weighting.
+     *
+     * Updated formula per Phase 5:
+     *   score = confidence * 0.5 + areaScore * 0.2 + centerScore * 0.3
+     */
+    private fun calculateScoreWithRoi(
+        confidence: Float,
+        area: Float,
+        roiCenterScore: Float
+    ): Float {
+        // Normalize area to 0-1 range (cap at 0.5 to avoid huge objects dominating)
+        val normalizedArea = (area / 0.5f).coerceIn(0f, 1f)
+
+        // Use Phase 5 scoring formula
+        return (confidence * 0.5f) +
+                (normalizedArea * 0.2f) +
+                (roiCenterScore * 0.3f)
+    }
+
+    /**
+     * Apply ROI-aware gating rules.
+     */
+    private fun applyGatingRulesWithRoi(
+        detection: DetectionInfo,
+        boxCenterX: Float,
+        boxCenterY: Float,
+        scanRoi: ScanRoi,
+        area: Float,
+        frameSharpness: Float
+    ): GatingResult {
+        // Rule 1: ROI containment gate
+        // Reject if center is outside ROI (unless very high confidence)
+        val isInsideRoi = scanRoi.containsBoxCenter(boxCenterX, boxCenterY)
+        if (!isInsideRoi && detection.confidence < config.highConfidenceOverride) {
+            return GatingResult(
+                passed = false,
+                reason = "outside_roi",
+                value = 0f,
+                threshold = 0f
+            )
+        }
+
+        // Rule 2: Minimum area gate
+        // Reject tiny distant objects
+        if (area < config.minArea) {
+            return GatingResult(
+                passed = false,
+                reason = "min_area",
+                value = area,
+                threshold = config.minArea
+            )
+        }
+
+        // Rule 3: Sharpness gate for small objects
+        // Small objects in blurry frames are likely background noise
+        if (frameSharpness < config.minSharpness && area < config.sharpnessAreaThreshold) {
+            return GatingResult(
+                passed = false,
+                reason = "sharpness_small_object",
+                value = frameSharpness,
+                threshold = config.minSharpness
+            )
+        }
+
+        return GatingResult(passed = true)
     }
 
     /**
