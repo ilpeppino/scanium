@@ -77,10 +77,10 @@ fun VerticalThresholdSlider(
             fontSize = 16.sp
         )
 
-        // Vertical slider track - slimmer and taller
+        // Vertical slider track - minimum 48dp touch target width per WCAG 2.1
         Box(
             modifier = Modifier
-                .width(20.dp) // Slimmer: reduced from 28.dp
+                .width(48.dp) // Touch target minimum, visual track is narrower
                 .height(280.dp) // Taller: increased from 200.dp
                 .pointerInput(Unit) {
                     awaitEachGesture {
