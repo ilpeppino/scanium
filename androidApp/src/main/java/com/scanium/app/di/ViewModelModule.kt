@@ -8,6 +8,9 @@ import com.scanium.app.listing.ExportProfileRepository
 import com.scanium.app.selling.assistant.AssistantRepository
 import com.scanium.app.selling.assistant.AssistantRepositoryFactory
 import com.scanium.app.selling.assistant.LocalAssistantHelper
+import com.scanium.app.selling.data.EbayApi
+import com.scanium.app.selling.data.EbayMarketplaceService
+import com.scanium.app.selling.data.MockEbayApi
 import com.scanium.app.selling.export.AssetExportProfileRepository
 import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -81,5 +84,20 @@ object ViewModelModule {
         @ApplicationContext context: Context
     ): DiagnosticsRepository {
         return DiagnosticsRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEbayApi(): EbayApi {
+        return MockEbayApi()
+    }
+
+    @Provides
+    @Singleton
+    fun provideEbayMarketplaceService(
+        @ApplicationContext context: Context,
+        ebayApi: EbayApi
+    ): EbayMarketplaceService {
+        return EbayMarketplaceService(context, ebayApi)
     }
 }

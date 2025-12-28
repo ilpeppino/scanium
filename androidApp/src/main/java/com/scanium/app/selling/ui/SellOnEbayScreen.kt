@@ -30,24 +30,42 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
+import com.scanium.app.di.ListingViewModelFactoryEntryPoint
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.domain.ListingCondition
+import dagger.hilt.android.EntryPointAccessors
 
+/**
+ * Screen for exporting items to eBay (mock implementation).
+ *
+ * Part of ARCH-001/DX-003: Updated to use Hilt's assisted injection for ViewModel creation,
+ * reducing boilerplate by accessing the factory through EntryPoints.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SellOnEbayScreen(
     onNavigateBack: () -> Unit,
     selectedItems: List<ScannedItem>,
     marketplaceService: EbayMarketplaceService,
-    itemsViewModel: com.scanium.app.items.ItemsViewModel,
-    viewModel: ListingViewModel = viewModel(
-        factory = ListingViewModelFactory(selectedItems, marketplaceService, itemsViewModel)
-    )
+    itemsViewModel: com.scanium.app.items.ItemsViewModel
 ) {
     val context = LocalContext.current
+    val assistedFactory = remember(context) {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            ListingViewModelFactoryEntryPoint::class.java
+        ).listingViewModelFactory()
+    }
+    val viewModel: ListingViewModel = viewModel(
+        factory = ListingViewModel.provideFactory(
+            assistedFactory = assistedFactory,
+            selectedItems = selectedItems,
+            itemsViewModel = itemsViewModel
+        )
+    )
     val uiState by viewModel.uiState.collectAsState()
 
     // SEC-010: Prevent screenshots of listing drafts (prices, item images)
