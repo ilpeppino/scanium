@@ -77,8 +77,49 @@ fi
 log_info "Running autofix_tests.sh on Mac..."
 echo ""
 
-if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "cd $MAC_REPO_DIR && ./scripts/dev/autofix_tests.sh test"; then
+GRADLE_LOG="tmp/termux_remote_gradle.log"
+
+AUTOFIX_SCRIPT='
+cd '"$MAC_REPO_DIR"'
+
+# Force JDK 17 (project requirement)
+export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# Parse ANDROID_SDK_ROOT from local.properties
+if [[ -f "local.properties" ]]; then
+    SDK_DIR=$(grep "^sdk.dir=" local.properties | cut -d= -f2-)
+    if [[ -n "$SDK_DIR" ]]; then
+        export ANDROID_SDK_ROOT="$SDK_DIR"
+        export ANDROID_HOME="$SDK_DIR"
+    fi
+fi
+
+# Preflight: print environment info
+echo "=== Remote Environment Preflight ==="
+echo "JAVA_HOME=$JAVA_HOME"
+java -version 2>&1 | head -2
+echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-<not set>}"
+echo "===================================="
+
+# Ensure tmp dir exists for logs
+mkdir -p tmp
+
+# Run autofix_tests.sh with logging
+if ./scripts/dev/autofix_tests.sh test 2>&1 | tee '"$GRADLE_LOG"'; then
+    echo "TESTS_COMPLETED"
+else
+    echo ""
+    echo "=== Last 200 lines of Gradle log ==="
+    tail -200 '"$GRADLE_LOG"'
+    echo "====================================="
+    exit 1
+fi
+'
+
+if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$AUTOFIX_SCRIPT"; then
     log_warn "autofix_tests.sh exited with non-zero status (tests may still be failing)"
+    log_info "Full log available at: $MAC_REPO_DIR/$GRADLE_LOG"
 fi
 
 # Create artifact directory on phone
