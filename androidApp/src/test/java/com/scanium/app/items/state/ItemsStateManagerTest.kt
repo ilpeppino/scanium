@@ -237,8 +237,8 @@ class ItemsStateManagerTest {
         return ItemsStateManager(
             scope = kotlinx.coroutines.CoroutineScope(testDispatcher),
             itemsStore = fakeStore,
-            workerDispatcher = testDispatcher,
-            mainDispatcher = testDispatcher
+            initialWorkerDispatcher = testDispatcher,
+            initialMainDispatcher = testDispatcher
         )
     }
 

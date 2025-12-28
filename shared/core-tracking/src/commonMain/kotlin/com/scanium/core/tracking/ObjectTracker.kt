@@ -859,7 +859,7 @@ data class TrackerConfig(
     // =========================================================================
 
     /** Enable center-weighted candidate selection */
-    val enableCenterWeightedSelection: Boolean = true,
+    val enableCenterWeightedSelection: Boolean = false,
 
     /** Weight for confidence in composite score (default 0.4) */
     val centerWeightConfidence: Float = 0.4f,

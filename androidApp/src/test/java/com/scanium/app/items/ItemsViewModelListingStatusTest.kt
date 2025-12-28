@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Before
 import org.junit.Test
@@ -31,7 +32,7 @@ class ItemsViewModelListingStatusTest {
     @Before
     fun setup() {
         Dispatchers.setMain(dispatcher)
-        viewModel = ItemsViewModel(
+        viewModel = createTestItemsViewModel(
             workerDispatcher = dispatcher,
             mainDispatcher = dispatcher
         )
@@ -43,10 +44,11 @@ class ItemsViewModelListingStatusTest {
     }
 
     @Test
-    fun `updateListingStatus changes item status`() {
+    fun `updateListingStatus changes item status`() = runTest {
         // Add an item
         val item = createTestItem(id = "item1")
         viewModel.addItem(item)
+        viewModel.awaitItems(dispatcher)
 
         // Update listing status
         viewModel.updateListingStatus(
@@ -65,10 +67,11 @@ class ItemsViewModelListingStatusTest {
     }
 
     @Test
-    fun `updateListingStatus only affects target item`() {
+    fun `updateListingStatus only affects target item`() = runTest {
         // Add multiple items
         viewModel.addItem(createTestItem(id = "item1"))
         viewModel.addItem(createTestItem(id = "item2"))
+        viewModel.awaitItems(dispatcher)
 
         // Update only one item
         viewModel.updateListingStatus(
@@ -85,9 +88,10 @@ class ItemsViewModelListingStatusTest {
     }
 
     @Test
-    fun `getListingStatus returns correct status`() {
+    fun `getListingStatus returns correct status`() = runTest {
         val item = createTestItem(id = "item1")
         viewModel.addItem(item)
+        viewModel.awaitItems(dispatcher)
 
         // Initial status
         assertThat(viewModel.getListingStatus("item1")).isEqualTo(ItemListingStatus.NOT_LISTED)
@@ -98,13 +102,13 @@ class ItemsViewModelListingStatusTest {
     }
 
     @Test
-    fun `getItem returns null for non-existent item`() {
+    fun `getItem returns null for non-existent item`() = runTest {
         val item = viewModel.getItem("non-existent")
         assertThat(item).isNull()
     }
 
     @Test
-    fun `getListingStatus returns null for non-existent item`() {
+    fun `getListingStatus returns null for non-existent item`() = runTest {
         val status = viewModel.getListingStatus("non-existent")
         assertThat(status).isNull()
     }

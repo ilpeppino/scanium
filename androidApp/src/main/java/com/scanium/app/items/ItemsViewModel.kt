@@ -21,6 +21,7 @@ import com.scanium.core.export.ExportPayload
 import com.scanium.app.items.export.toExportPayload
 import com.scanium.telemetry.facade.Telemetry
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Named
+import kotlin.jvm.JvmSuppressWildcards
 
 /**
  * ViewModel for managing detected items across the app.
@@ -56,7 +58,7 @@ import javax.inject.Named
  */
 @HiltViewModel
 class ItemsViewModel @Inject constructor(
-    classificationMode: StateFlow<ClassificationMode>,
+    private val classificationMode: StateFlow<@JvmSuppressWildcards ClassificationMode>,
     @Named("cloudClassificationEnabled") cloudClassificationEnabled: StateFlow<Boolean>,
     @Named("onDevice") onDeviceClassifier: ItemClassifier,
     @Named("cloud") cloudClassifier: ItemClassifier,
@@ -65,9 +67,33 @@ class ItemsViewModel @Inject constructor(
     telemetry: Telemetry?
 ) : ViewModel() {
 
-    // Default dispatchers (not injected for simplicity)
-    private val workerDispatcher = Dispatchers.Default
-    private val mainDispatcher = Dispatchers.Main
+    // Default dispatchers (override in tests if needed)
+    private var workerDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private var mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+
+    internal constructor(
+        classificationMode: StateFlow<ClassificationMode>,
+        cloudClassificationEnabled: StateFlow<Boolean>,
+        onDeviceClassifier: ItemClassifier,
+        cloudClassifier: ItemClassifier,
+        itemsStore: ScannedItemStore,
+        stableItemCropper: ClassificationThumbnailProvider,
+        telemetry: Telemetry?,
+        workerDispatcher: CoroutineDispatcher,
+        mainDispatcher: CoroutineDispatcher
+    ) : this(
+        classificationMode = classificationMode,
+        cloudClassificationEnabled = cloudClassificationEnabled,
+        onDeviceClassifier = onDeviceClassifier,
+        cloudClassifier = cloudClassifier,
+        itemsStore = itemsStore,
+        stableItemCropper = stableItemCropper,
+        telemetry = telemetry
+    ) {
+        this.workerDispatcher = workerDispatcher
+        this.mainDispatcher = mainDispatcher
+        stateManager.overrideDispatchers(workerDispatcher, mainDispatcher)
+    }
     companion object {
         private const val TAG = "ItemsViewModel"
         private const val QR_URL_TTL_MS = 2000L
@@ -81,8 +107,8 @@ class ItemsViewModel @Inject constructor(
     private val stateManager = ItemsStateManager(
         scope = viewModelScope,
         itemsStore = itemsStore,
-        workerDispatcher = workerDispatcher,
-        mainDispatcher = mainDispatcher,
+        initialWorkerDispatcher = workerDispatcher,
+        initialMainDispatcher = mainDispatcher,
         aggregationConfig = AggregationPresets.REALTIME
     )
 

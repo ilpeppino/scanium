@@ -406,23 +406,20 @@ class CenterWeightedCandidateSelector(
      */
     private fun checkStability(candidateId: String, currentTimeMs: Long): StabilityCheckResult {
         val state = stabilityTracker[candidateId]
-
-        if (state == null) {
-            // First time seeing this candidate
-            return StabilityCheckResult(
-                isStable = config.minStabilityFrames <= 1,
-                consecutiveFrames = 1,
-                stableTimeMs = 0
-            )
+        val isConsecutiveSelection = candidateId == lastSelectedId
+        val consecutiveFrames = when {
+            state == null -> 1
+            isConsecutiveSelection -> state.consecutiveFrames + 1
+            else -> 1
         }
-
-        val timeSinceFirstSeen = currentTimeMs - state.firstSeenTimeMs
-        val meetsFrameRequirement = state.consecutiveFrames >= config.minStabilityFrames
+        val firstSeenTime = state?.firstSeenTimeMs ?: currentTimeMs
+        val timeSinceFirstSeen = currentTimeMs - firstSeenTime
+        val meetsFrameRequirement = consecutiveFrames >= config.minStabilityFrames
         val meetsTimeRequirement = timeSinceFirstSeen >= config.minStabilityTimeMs
 
         return StabilityCheckResult(
             isStable = meetsFrameRequirement || meetsTimeRequirement,
-            consecutiveFrames = state.consecutiveFrames,
+            consecutiveFrames = consecutiveFrames,
             stableTimeMs = timeSinceFirstSeen
         )
     }

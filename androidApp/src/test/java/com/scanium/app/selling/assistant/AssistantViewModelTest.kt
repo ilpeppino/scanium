@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.items.createTestItemsViewModel
 import com.scanium.app.listing.DraftField
 import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.ExportProfileDefinition
@@ -47,7 +48,7 @@ class AssistantViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        itemsViewModel = ItemsViewModel(
+        itemsViewModel = createTestItemsViewModel(
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher
         )

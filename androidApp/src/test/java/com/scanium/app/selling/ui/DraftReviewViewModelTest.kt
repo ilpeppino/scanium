@@ -6,6 +6,8 @@ import com.google.common.truth.Truth.assertThat
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.items.awaitItems
+import com.scanium.app.items.createTestItemsViewModel
 import com.scanium.app.listing.ExportProfileDefinition
 import com.scanium.app.listing.ExportProfileId
 import com.scanium.app.listing.ExportProfileRepository
@@ -39,7 +41,7 @@ class DraftReviewViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        itemsViewModel = ItemsViewModel(
+        itemsViewModel = createTestItemsViewModel(
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher
         )
@@ -57,7 +59,7 @@ class DraftReviewViewModelTest {
             testItem(id = "item-2", label = "Chair")
         )
         itemsViewModel.addItems(items)
-        testDispatcher.scheduler.advanceUntilIdle()
+        itemsViewModel.awaitItems(testDispatcher)
 
         val store = FakeDraftStore()
         val profileRepository = FakeExportProfileRepository()
@@ -89,7 +91,7 @@ class DraftReviewViewModelTest {
             testItem(id = "item-2", label = "Chair")
         )
         itemsViewModel.addItems(items)
-        testDispatcher.scheduler.advanceUntilIdle()
+        itemsViewModel.awaitItems(testDispatcher)
 
         val store = FakeDraftStore()
         val profileRepository = FakeExportProfileRepository()

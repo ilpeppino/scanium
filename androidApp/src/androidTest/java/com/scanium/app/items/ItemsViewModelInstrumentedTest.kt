@@ -36,7 +36,7 @@ class ItemsViewModelInstrumentedTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         fakeStore = InstrumentedFakeScannedItemStore()
-        viewModel = ItemsViewModel(
+        viewModel = createAndroidTestItemsViewModel(
             itemsStore = fakeStore,
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher
@@ -103,7 +103,7 @@ class ItemsViewModelInstrumentedTest {
         fakeStore.seedItems(persistedItems)
 
         // Act - Create new ViewModel (should load persisted items)
-        val newViewModel = ItemsViewModel(
+        val newViewModel = createAndroidTestItemsViewModel(
             itemsStore = fakeStore,
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher
@@ -145,7 +145,7 @@ class ItemsViewModelInstrumentedTest {
         delay(100)
 
         // Act - Create new ViewModel
-        val newViewModel = ItemsViewModel(
+        val newViewModel = createAndroidTestItemsViewModel(
             itemsStore = fakeStore,
             workerDispatcher = testDispatcher,
             mainDispatcher = testDispatcher

@@ -9,6 +9,7 @@ import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.platform.ConnectivityObserver
 import com.scanium.app.platform.ConnectivityStatusProvider
 import com.scanium.diagnostics.DiagnosticsPort
+import com.scanium.telemetry.TelemetryEvent
 import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.ports.CrashPort
 import dagger.Module
@@ -111,9 +112,10 @@ object AppModule {
     ): DiagnosticsPort {
         return (application as? ScaniumApplication)?.diagnosticsPort
             ?: object : DiagnosticsPort {
-                override fun attach(event: String, data: Map<String, Any>) {}
+                override fun appendBreadcrumb(event: TelemetryEvent) {}
+                override fun buildDiagnosticsBundle(): ByteArray = ByteArray(0)
+                override fun clearBreadcrumbs() {}
                 override fun breadcrumbCount(): Int = 0
-                override fun getAttachmentData(): ByteArray? = null
             }
     }
 }
