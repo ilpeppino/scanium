@@ -57,6 +57,10 @@ class SettingsRepository(private val context: Context) {
         private val DEV_DOCUMENT_DETECTION_ENABLED_KEY = booleanPreferencesKey("dev_document_detection_enabled")
         private val DEV_ADAPTIVE_THROTTLING_ENABLED_KEY = booleanPreferencesKey("dev_adaptive_throttling_enabled")
         private val DEV_SCANNING_DIAGNOSTICS_ENABLED_KEY = booleanPreferencesKey("dev_scanning_diagnostics_enabled")
+
+        // Scanning guidance settings
+        private val SCANNING_GUIDANCE_ENABLED_KEY = booleanPreferencesKey("scanning_guidance_enabled")
+        private val DEV_ROI_DIAGNOSTICS_ENABLED_KEY = booleanPreferencesKey("dev_roi_diagnostics_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -411,6 +415,40 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDevScanningDiagnosticsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_SCANNING_DIAGNOSTICS_ENABLED_KEY] = enabled
+        }
+    }
+
+    // =========================================================================
+    // Scanning Guidance Settings
+    // =========================================================================
+
+    /**
+     * Whether the scanning guidance overlay is enabled.
+     * Shows the scan zone, hints, and visual feedback during live scanning.
+     * Default is ON for improved UX.
+     */
+    val scanningGuidanceEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[SCANNING_GUIDANCE_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setScanningGuidanceEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[SCANNING_GUIDANCE_ENABLED_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether ROI diagnostics overlay is enabled (developer toggle).
+     * Shows numeric values for ROI size, sharpness, center distance, lock state, etc.
+     * Default is OFF to avoid visual clutter in production.
+     */
+    val devRoiDiagnosticsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_ROI_DIAGNOSTICS_ENABLED_KEY] ?: false
+    }
+
+    suspend fun setDevRoiDiagnosticsEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_ROI_DIAGNOSTICS_ENABLED_KEY] = enabled
         }
     }
 
