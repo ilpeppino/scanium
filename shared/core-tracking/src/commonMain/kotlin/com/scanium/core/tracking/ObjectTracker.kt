@@ -40,6 +40,23 @@ class ObjectTracker(
     private val candidates = mutableMapOf<String, ObjectCandidate>()
     private val spatialIndex = SpatialGridIndex(config.gridCellSize)
 
+    // Center-weighted candidate selector for prioritizing centered objects
+    private val centerWeightedSelector = CenterWeightedCandidateSelector(
+        config = CenterWeightedConfig(
+            confidenceWeight = config.centerWeightConfidence,
+            areaWeight = config.centerWeightArea,
+            centerWeight = config.centerWeightCenter,
+            maxCenterDistance = config.maxCenterDistance,
+            minArea = config.centerWeightMinArea,
+            minSharpness = config.minSharpnessScore,
+            sharpnessAreaThreshold = config.sharpnessAreaThreshold,
+            highConfidenceOverride = config.highConfidenceOverride,
+            minStabilityFrames = config.minStabilityFrames,
+            minStabilityTimeMs = config.minStabilityTimeMs,
+            stabilityExpiryMs = config.stabilityExpiryMs
+        )
+    )
+
     // Frame counter for tracking temporal information
     private var currentFrame: Long = 0
     private var sessionStartTimeMs: Long = 0L
@@ -56,9 +73,14 @@ class ObjectTracker(
      *
      * @param detections List of raw detections from ML Kit
      * @param inferenceLatencyMs Time taken for ML inference in milliseconds
+     * @param frameSharpness Sharpness score for the current frame (0 = unknown)
      * @return List of candidates that just reached confirmation threshold this frame
      */
-    fun processFrame(detections: List<DetectionInfo>, inferenceLatencyMs: Long = 0): List<ObjectCandidate> {
+    fun processFrame(
+        detections: List<DetectionInfo>,
+        inferenceLatencyMs: Long = 0,
+        frameSharpness: Float = 0f
+    ): List<ObjectCandidate> {
         val span = telemetry?.beginSpan("scan.process_frame")
         try {
             if (inferenceLatencyMs > 0) {
@@ -66,18 +88,67 @@ class ObjectTracker(
             }
 
             currentFrame++
+            val currentTimeMs = Clock.System.now().toEpochMilliseconds()
+
             if (config.enableVerboseLogging) {
                 logger.i(
                     TAG,
-                    ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}"
+                    ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}, sharpness=$frameSharpness"
                 )
             }
 
             val newlyConfirmed = mutableListOf<ObjectCandidate>()
             val matchedCandidates = mutableSetOf<String>()
 
-            // Process each detection
-            for ((index, detection) in detections.withIndex()) {
+            // =========================================================================
+            // CENTER-WEIGHTED PRE-SELECTION
+            // When enabled, use center-weighted selection to prioritize centered objects
+            // and reject distant background items before the tracking loop.
+            // =========================================================================
+            val detectionsToProcess: List<DetectionInfo>
+            var centerWeightedSelection: SelectionResult? = null
+
+            if (config.enableCenterWeightedSelection && detections.isNotEmpty()) {
+                centerWeightedSelection = centerWeightedSelector.selectBestCandidate(
+                    detections = detections,
+                    frameSharpness = frameSharpness,
+                    currentTimeMs = currentTimeMs
+                )
+
+                if (config.enableVerboseLogging) {
+                    val sel = centerWeightedSelection.selectedCandidate
+                    logger.i(TAG, "    CENTER_WEIGHTED: reason=${centerWeightedSelection.selectionReason}")
+                    if (sel != null) {
+                        logger.i(TAG, "    SELECTED: id=${sel.detection.trackingId}, " +
+                                "score=${sel.score}, centerDist=${sel.centerDistance}, " +
+                                "stable=${sel.isStable} (frames=${sel.consecutiveFrames})")
+                    }
+                    centerWeightedSelection.rejectedCandidates.take(2).forEach { rej ->
+                        logger.i(TAG, "    REJECTED: id=${rej.detection.trackingId}, " +
+                                "reason=${rej.reason}, centerDist=${rej.centerDistance}")
+                    }
+                }
+
+                // If we have a stable selection, only process that candidate
+                // Otherwise, process all candidates that passed gating
+                detectionsToProcess = if (centerWeightedSelection.selectedCandidate?.isStable == true) {
+                    // Only process the stable selected candidate
+                    listOf(centerWeightedSelection.selectedCandidate.detection)
+                } else if (centerWeightedSelection.selectedCandidate != null) {
+                    // Selection exists but not yet stable - still process it for tracking
+                    // but don't confirm until stable
+                    listOf(centerWeightedSelection.selectedCandidate.detection)
+                } else {
+                    // No valid selection - skip all detections this frame
+                    emptyList()
+                }
+            } else {
+                // Center-weighted selection disabled - process all detections
+                detectionsToProcess = detections
+            }
+
+            // Process each detection (filtered by center-weighted selection if enabled)
+            for ((index, detection) in detectionsToProcess.withIndex()) {
                 if (config.enableVerboseLogging) {
                     logger.i(
                         TAG,
@@ -129,7 +200,14 @@ class ObjectTracker(
                     }
 
                     // Check if it just became confirmed
-                    if (!wasConfirmed && isConfirmed(matchedCandidate)) {
+                    // With center-weighted selection, also require stability
+                    val stabilityOk = if (config.enableCenterWeightedSelection) {
+                        centerWeightedSelection?.selectedCandidate?.isStable == true
+                    } else {
+                        true
+                    }
+
+                    if (!wasConfirmed && isConfirmed(matchedCandidate) && stabilityOk) {
                         if (!confirmedIds.contains(matchedCandidate.internalId)) {
                             confirmedIds.add(matchedCandidate.internalId)
                             newlyConfirmed.add(matchedCandidate)
@@ -144,6 +222,10 @@ class ObjectTracker(
                                 "category" to matchedCandidate.category.name,
                                 "label" to matchedCandidate.labelText
                             ))
+                        }
+                    } else if (!wasConfirmed && isConfirmed(matchedCandidate) && !stabilityOk) {
+                        if (config.enableVerboseLogging) {
+                            logger.i(TAG, "    PENDING_STABILITY: ${matchedCandidate.internalId} - waiting for stable selection")
                         }
                     }
                 } else {
@@ -169,7 +251,15 @@ class ObjectTracker(
                     ))
 
                     // Check if it's immediately confirmed (rare, but possible with minFramesToConfirm=1)
-                    if (isConfirmed(newCandidate)) {
+                    // With center-weighted selection, new candidates can't be immediately confirmed
+                    // (they need stability first)
+                    val immediateStabilityOk = if (config.enableCenterWeightedSelection) {
+                        centerWeightedSelection?.selectedCandidate?.isStable == true
+                    } else {
+                        true
+                    }
+
+                    if (isConfirmed(newCandidate) && immediateStabilityOk) {
                         if (!confirmedIds.contains(newCandidate.internalId)) {
                             confirmedIds.add(newCandidate.internalId)
                             newlyConfirmed.add(newCandidate)
@@ -447,6 +537,9 @@ class ObjectTracker(
         spatialIndex.clear()
         sessionStartTimeMs = Clock.System.now().toEpochMilliseconds()
 
+        // Reset center-weighted selector stability tracking
+        centerWeightedSelector.reset()
+
         if (scanMode != null) {
             telemetry?.event("scan.session_started", TelemetrySeverity.INFO, mapOf("scan_mode" to scanMode))
         }
@@ -530,6 +623,46 @@ data class TrackerConfig(
 
     /** Controls verbose logging (debug-only). */
     val enableVerboseLogging: Boolean = false,
+
+    // =========================================================================
+    // Center-weighted selection parameters (fixes distant background detection)
+    // =========================================================================
+
+    /** Enable center-weighted candidate selection */
+    val enableCenterWeightedSelection: Boolean = true,
+
+    /** Weight for confidence in composite score (default 0.4) */
+    val centerWeightConfidence: Float = 0.4f,
+
+    /** Weight for area in composite score (default 0.3) */
+    val centerWeightArea: Float = 0.3f,
+
+    /** Weight for center proximity in composite score (default 0.3) */
+    val centerWeightCenter: Float = 0.3f,
+
+    /** Maximum center distance before candidate is rejected (0.0-0.707) */
+    val maxCenterDistance: Float = 0.35f,
+
+    /** Minimum box area for center-weighted selection (default 3%) */
+    val centerWeightMinArea: Float = 0.03f,
+
+    /** Minimum sharpness score to accept small objects */
+    val minSharpnessScore: Float = 100f,
+
+    /** Area threshold below which sharpness is checked */
+    val sharpnessAreaThreshold: Float = 0.10f,
+
+    /** Confidence level that bypasses center distance gate */
+    val highConfidenceOverride: Float = 0.8f,
+
+    /** Minimum consecutive frames for stability (center-weighted) */
+    val minStabilityFrames: Int = 3,
+
+    /** Minimum time in ms for stability (center-weighted) */
+    val minStabilityTimeMs: Long = 400L,
+
+    /** Time after which stale stability tracking is cleared */
+    val stabilityExpiryMs: Long = 1000L,
 )
 
 /**
