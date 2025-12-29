@@ -1,5 +1,6 @@
 package com.scanium.core.tracking
 
+import com.scanium.core.models.scanning.DistanceConfidence
 import com.scanium.core.models.scanning.GuidanceState
 import com.scanium.core.models.scanning.ScanDiagnostics
 import com.scanium.core.models.scanning.ScanGuidanceState
@@ -16,12 +17,15 @@ import kotlin.math.abs
  * - Focus/stability state inference
  * - Center-lock mechanism for preventing background detections
  * - Guidance state transitions
+ * - PHASE 5: Scan confidence metrics tracking
  *
  * This is the single source of truth for scan guidance, used by both UI and analyzer.
  */
 class ScanGuidanceManager(
     private val config: ScanGuidanceConfig = ScanGuidanceConfig()
 ) {
+    // PHASE 5: Metrics tracking
+    val metrics = ScanConfidenceMetrics()
     // Current ROI state
     private var currentRoiSize: Float = config.roiConfig.initialSize
     private var targetRoiSize: Float = config.roiConfig.initialSize
@@ -97,6 +101,11 @@ class ScanGuidanceManager(
         // Check for lock eligibility
         checkLockEligibility(candidate, currentTimeMs)
 
+        // PHASE 5: Record frame metrics
+        val hasPreviewBbox = candidate != null
+        val isLocked = currentState == GuidanceState.LOCKED
+        metrics.recordFrame(hasPreviewBbox, isLocked)
+
         // Build output state
         return buildGuidanceState(candidate, currentTimeMs)
     }
@@ -166,16 +175,43 @@ class ScanGuidanceManager(
                 // Start lock
                 lockedCandidateId = lastCandidateId
                 lockStartTimeMs = currentTimeMs
+                // PHASE 5: Record successful lock
+                metrics.recordLockAchieved(currentTimeMs)
+            }
+            GuidanceState.GOOD -> {
+                // PHASE 5: Record lock attempt start
+                if (from != GuidanceState.LOCKED) {
+                    metrics.recordLockAttemptStart(currentTimeMs)
+                }
             }
             GuidanceState.SEARCHING -> {
                 // Reset all tracking
                 resetStabilityTracking()
+                // PHASE 5: Record unlock reason if leaving LOCKED
+                if (from == GuidanceState.LOCKED) {
+                    metrics.recordUnlock(UnlockReason.CANDIDATE_LOST)
+                }
                 breakLock()
+                // PHASE 5: Record lock attempt failure if in progress
+                metrics.recordLockAttemptFailed()
             }
             else -> {
                 // If leaving LOCKED, break the lock
                 if (from == GuidanceState.LOCKED) {
+                    // PHASE 5: Record unlock reason based on new state
+                    val reason = when (to) {
+                        GuidanceState.UNSTABLE -> UnlockReason.MOTION
+                        GuidanceState.FOCUSING -> UnlockReason.FOCUS
+                        GuidanceState.OFF_CENTER -> UnlockReason.OFF_CENTER
+                        GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR -> UnlockReason.LEFT_ROI
+                        else -> UnlockReason.CANDIDATE_LOST
+                    }
+                    metrics.recordUnlock(reason)
                     breakLock()
+                }
+                // PHASE 5: Record lock attempt failure if in progress
+                if (from == GuidanceState.GOOD) {
+                    metrics.recordLockAttemptFailed()
                 }
             }
         }
@@ -313,6 +349,7 @@ class ScanGuidanceManager(
         //    Instant motion catches sudden movements immediately
         if (lastInstantMotionScore > config.lockBreakMotionThreshold ||
             averageMotionScore > config.lockBreakMotionThreshold) {
+            // PHASE 5: Record motion unlock (will be recorded in onStateTransition)
             return true
         }
 
@@ -329,6 +366,8 @@ class ScanGuidanceManager(
         // 4. Lock timeout (optional, for cases where add doesn't happen)
         val lockDuration = currentTimeMs - lockStartTimeMs
         if (lockDuration > config.maxLockDurationMs) {
+            // PHASE 5: Record timeout unlock
+            metrics.recordUnlock(UnlockReason.TIMEOUT)
             return true
         }
 
@@ -376,6 +415,27 @@ class ScanGuidanceManager(
     }
 
     /**
+     * Calculate distance confidence based on bbox area and sharpness.
+     *
+     * This is used for subtle visual feedback on the scan zone border.
+     * The confidence indicates whether the object is at the right distance.
+     */
+    private fun calculateDistanceConfidence(candidate: CandidateInfo?): DistanceConfidence {
+        if (candidate == null) {
+            return DistanceConfidence.UNKNOWN
+        }
+
+        val boxArea = candidate.boxArea
+
+        // Check area thresholds (same as used for TOO_CLOSE/TOO_FAR states)
+        return when {
+            boxArea > config.roiConfig.tooCloseAreaThreshold -> DistanceConfidence.TOO_CLOSE
+            boxArea < config.roiConfig.tooFarAreaThreshold -> DistanceConfidence.TOO_FAR
+            else -> DistanceConfidence.OPTIMAL
+        }
+    }
+
+    /**
      * Build the full guidance state for UI consumption.
      */
     private fun buildGuidanceState(candidate: CandidateInfo?, currentTimeMs: Long): ScanGuidanceState {
@@ -391,6 +451,9 @@ class ScanGuidanceManager(
             lastHintChangeTimeMs = currentTimeMs
         }
 
+        // PHASE 2: Calculate distance confidence for visual feedback
+        val distanceConfidence = calculateDistanceConfidence(candidate)
+
         return ScanGuidanceState(
             state = currentState,
             scanRoi = roi,
@@ -402,46 +465,63 @@ class ScanGuidanceManager(
             motionScore = averageMotionScore,
             stateTimeMs = currentTimeMs - stateEnteredTimeMs,
             canAddItem = currentState == GuidanceState.LOCKED,
-            lockedCandidateId = lockedCandidateId
+            lockedCandidateId = lockedCandidateId,
+            distanceConfidence = distanceConfidence
         )
     }
 
     /**
-     * Get appropriate hint text for the current state.
+     * PHASE 6: Get appropriate hint text for the current state.
+     *
+     * Hints are:
+     * - Short and actionable
+     * - Never stacked (only one at a time)
+     * - Auto-dismissed (controlled by shouldShowHint)
+     * - Rate-limited (config.hintRateLimitMs between changes)
      */
     private fun getHintForState(state: GuidanceState, candidate: CandidateInfo?): String? {
         return when (state) {
-            GuidanceState.SEARCHING -> null  // No hint needed
-            GuidanceState.TOO_CLOSE -> "Move phone away"
-            GuidanceState.TOO_FAR -> "Move closer"
-            GuidanceState.OFF_CENTER -> "Center the object"
+            GuidanceState.SEARCHING -> null  // No hint needed - user exploring
+            GuidanceState.TOO_CLOSE -> "Move phone slightly away"
+            GuidanceState.TOO_FAR -> "Move closer to object"
+            GuidanceState.OFF_CENTER -> "Center object in scan zone"
             GuidanceState.UNSTABLE -> "Hold steady"
             GuidanceState.FOCUSING -> "Focusing..."
-            GuidanceState.GOOD -> "Hold still to scan"
-            GuidanceState.LOCKED -> null  // No hint - implicit success
+            GuidanceState.GOOD -> "Hold still..."  // Brief, anticipatory
+            GuidanceState.LOCKED -> "Ready to scan"  // Brief confirmation
         }
     }
 
     /**
-     * Determine if hint should be shown (rate limiting and state-based logic).
+     * PHASE 6: Determine if hint should be shown (rate limiting and state-based logic).
+     *
+     * Rules:
+     * - Never stack hints (only one at a time)
+     * - Auto-dismiss after brief display
+     * - Same hint not repeated within hintRateLimitMs (3s default)
      */
     private fun shouldShowHint(state: GuidanceState, currentTimeMs: Long): Boolean {
-        // Don't show hints for SEARCHING, LOCKED, or GOOD (after initial display)
-        if (state == GuidanceState.SEARCHING || state == GuidanceState.LOCKED) {
+        // Don't show hints for SEARCHING (user exploring)
+        if (state == GuidanceState.SEARCHING) {
             return false
         }
 
-        // Brief display for FOCUSING
+        // Brief display for FOCUSING (1 second)
         if (state == GuidanceState.FOCUSING) {
             return currentTimeMs - stateEnteredTimeMs < 1000
         }
 
-        // Brief display for GOOD
+        // Brief display for GOOD (1.5 seconds)
         if (state == GuidanceState.GOOD) {
             return currentTimeMs - stateEnteredTimeMs < 1500
         }
 
-        // Show for problem states
+        // Brief display for LOCKED (1 second - "Ready to scan" confirmation)
+        if (state == GuidanceState.LOCKED) {
+            return currentTimeMs - stateEnteredTimeMs < 1000
+        }
+
+        // Show for problem states (TOO_CLOSE, TOO_FAR, OFF_CENTER, UNSTABLE)
         return true
     }
 
@@ -521,6 +601,8 @@ class ScanGuidanceManager(
         averageSharpness = config.minSharpnessForGood
         lastHintChangeTimeMs = 0L
         currentHintText = null
+        // PHASE 5: Reset metrics for new session
+        metrics.reset()
     }
 }
 
@@ -587,6 +669,6 @@ data class ScanGuidanceConfig(
     /** Number of frames for sharpness averaging */
     val sharpnessAverageWindow: Int = 3,
 
-    /** Minimum time between hint changes (ms) */
-    val hintRateLimitMs: Long = 500L
+    /** PHASE 6: Minimum time between hint changes (ms) - prevents flicker while being responsive */
+    val hintRateLimitMs: Long = 1500L
 )

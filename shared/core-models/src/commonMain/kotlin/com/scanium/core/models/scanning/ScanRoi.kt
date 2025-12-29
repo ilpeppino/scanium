@@ -211,5 +211,78 @@ data class ScanRoiConfig(
     val sizeAdjustmentStep: Float = 0.02f,
 
     /** Animation duration for size changes (ms) */
-    val animationDurationMs: Int = 200
+    val animationDurationMs: Int = 200,
+
+    /** PHASE 4: Category-specific configurations (optional, for future tuning) */
+    val categoryConfigs: Map<ScanObjectCategory, CategoryRoiConfig> = emptyMap()
 )
+
+/**
+ * PHASE 4: Object category hints for ROI tuning.
+ *
+ * Internal category hints that allow category-specific ROI behavior.
+ * Default behavior uses UNKNOWN which applies generic settings.
+ */
+enum class ScanObjectCategory {
+    /** Mobile phone or tablet */
+    PHONE,
+    /** Toys, collectibles, small items */
+    TOY,
+    /** Documents, books, papers */
+    DOCUMENT,
+    /** Electronics (excluding phones) */
+    ELECTRONICS,
+    /** Furniture, large items */
+    FURNITURE,
+    /** Default/unknown - uses generic settings */
+    UNKNOWN
+}
+
+/**
+ * PHASE 4: Category-specific ROI configuration.
+ *
+ * Allows different area thresholds and lock durations per category.
+ * This enables future tuning without refactoring.
+ */
+data class CategoryRoiConfig(
+    /** Category this config applies to */
+    val category: ScanObjectCategory,
+
+    /** Ideal area range (min) - bbox area should be >= this */
+    val idealAreaMin: Float = ScanRoi.MIN_FAR_AREA,
+
+    /** Ideal area range (max) - bbox area should be <= this */
+    val idealAreaMax: Float = ScanRoi.MAX_CLOSE_AREA,
+
+    /** Minimum stable time for lock (ms) - may vary by category */
+    val minStableTimeForLockMs: Long = 400L,
+
+    /** Optional: preferred initial ROI size for this category */
+    val preferredRoiSize: Float? = null
+) {
+    companion object {
+        /** Default configuration for unknown/generic objects */
+        val DEFAULT = CategoryRoiConfig(
+            category = ScanObjectCategory.UNKNOWN,
+            idealAreaMin = ScanRoi.MIN_FAR_AREA,
+            idealAreaMax = ScanRoi.MAX_CLOSE_AREA,
+            minStableTimeForLockMs = 400L
+        )
+
+        /** Example: Phone-specific config (tighter area range, faster lock) */
+        val PHONE = CategoryRoiConfig(
+            category = ScanObjectCategory.PHONE,
+            idealAreaMin = 0.08f,  // Phones should fill more of frame
+            idealAreaMax = 0.25f,  // But not too close
+            minStableTimeForLockMs = 300L  // Faster lock for phones
+        )
+
+        /** Example: Document-specific config (larger area allowed) */
+        val DOCUMENT = CategoryRoiConfig(
+            category = ScanObjectCategory.DOCUMENT,
+            idealAreaMin = 0.15f,  // Documents should fill frame
+            idealAreaMax = 0.50f,  // Allow larger docs
+            minStableTimeForLockMs = 500L  // Slower lock for alignment
+        )
+    }
+}
