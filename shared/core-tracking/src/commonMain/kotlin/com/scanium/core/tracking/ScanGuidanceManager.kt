@@ -46,7 +46,10 @@ class ScanGuidanceManager(
     // Motion tracking
     private var recentMotionScores = mutableListOf<Float>()
     private var averageMotionScore: Float = 0f
+<<<<<<< HEAD
 
+=======
+>>>>>>> b81368a (Fix scan guidance logic)
     private var lastInstantMotionScore: Float = 0f
 
 

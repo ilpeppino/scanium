@@ -1,6 +1,5 @@
 package com.scanium.core.models.scanning
 
-import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -85,8 +84,8 @@ class RoiCoordinateMapperTest {
 
         // Direct mapping using ROI edges (same calculation as implementation)
         // ROI: left=0.175, right=0.825, top=0.175, bottom=0.825
-        val expectedWidth = (roi.right * 1280).roundToInt() - (roi.left * 1280).roundToInt()
-        val expectedHeight = (roi.bottom * 720).roundToInt() - (roi.top * 720).roundToInt()
+        val expectedWidth = (roi.right * 1280).toInt() - (roi.left * 1280).toInt()
+        val expectedHeight = (roi.bottom * 720).toInt() - (roi.top * 720).toInt()
         assertEquals(expectedWidth, result.width)
         assertEquals(expectedHeight, result.height)
     }
