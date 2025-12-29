@@ -472,7 +472,11 @@ class ScanGuidanceManager(
     }
 
     /**
-     * PHASE 6: Get appropriate hint text for the current state.
+     * Get appropriate hint text for the current state.
+     *
+     * Eye Mode vs Focus Mode hints:
+     * - Eye Mode (SEARCHING): No hint - user sees what Scanium sees
+     * - Focus Mode: Guide user to select and capture
      *
      * Hints are:
      * - Short and actionable
@@ -482,14 +486,14 @@ class ScanGuidanceManager(
      */
     private fun getHintForState(state: GuidanceState, candidate: CandidateInfo?): String? {
         return when (state) {
-            GuidanceState.SEARCHING -> null  // No hint needed - user exploring
-            GuidanceState.TOO_CLOSE -> "Move phone slightly away"
-            GuidanceState.TOO_FAR -> "Move closer to object"
-            GuidanceState.OFF_CENTER -> "Center object in scan zone"
+            GuidanceState.SEARCHING -> null  // Eye mode - no hint needed
+            GuidanceState.TOO_CLOSE -> "Move back slightly"
+            GuidanceState.TOO_FAR -> "Move closer"
+            GuidanceState.OFF_CENTER -> "Center to select"  // Focus mode - selection hint
             GuidanceState.UNSTABLE -> "Hold steady"
             GuidanceState.FOCUSING -> "Focusing..."
-            GuidanceState.GOOD -> "Hold still..."  // Brief, anticipatory
-            GuidanceState.LOCKED -> "Ready to scan"  // Brief confirmation
+            GuidanceState.GOOD -> "Hold to lock"  // Focus mode - anticipatory
+            GuidanceState.LOCKED -> "Ready"  // Focus mode - brief confirmation
         }
     }
 

@@ -1,424 +1,324 @@
 # Scanium Real-Life Scan Tests Runbook
 
-Manual instrumented test runbook for verifying live scanning and picture capture flows.
+Manual instrumented test runbook for verifying Eye Mode and Focus Mode scanning behavior.
 
 ---
 
-## 1. Architecture Evaluation
+## Eye Mode vs Focus Mode
 
-### 1.1 Live Scanning Pipeline
+### Mental Model
+- **Eye Mode** = "I see what Scanium sees" (global vision)
+- **Focus Mode** = "I choose what Scanium acts on" (user intent via ROI selection)
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          LIVE SCANNING FLOW                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
-│  │ ImageAnalysis│───▶│   Motion     │───▶│  Throttle    │                  │
-│  │  1280x720    │    │  Detection   │    │  400-600ms   │                  │
-│  │  YUV_420_888 │    │  (luma diff) │    │              │                  │
-│  └──────────────┘    └──────────────┘    └──────────────┘                  │
-│         │                                       │                           │
-│         ▼                                       ▼                           │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
-│  │   Viewport   │───▶│   ML Kit     │───▶│    ROI       │                  │
-│  │  Calculation │    │  ObjectDet   │    │   Filter     │                  │
-│  │  (crop adj)  │    │  STREAM_MODE │    │ (center in?) │                  │
-│  └──────────────┘    └──────────────┘    └──────────────┘                  │
-│                                                 │                           │
-│         ┌───────────────────────────────────────┘                           │
-│         ▼                                                                   │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
-│  │   Center-    │───▶│  Stability   │───▶│    Lock      │                  │
-│  │   Weighted   │    │   Gating     │    │  Mechanism   │                  │
-│  │   Selector   │    │ (3 frames/   │    │  (guidance)  │                  │
-│  │              │    │  400ms)      │    │              │                  │
-│  └──────────────┘    └──────────────┘    └──────────────┘                  │
-│                                                 │                           │
-│                                                 ▼                           │
-│                                          ┌──────────────┐                  │
-│                                          │  Item Add    │                  │
-│                                          │ (if LOCKED   │                  │
-│                                          │  & canAdd)   │                  │
-│                                          └──────────────┘                  │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Camera Input (ImageAnalysis)**
-- Resolution: 1280x720 target (YUV_420_888 format)
-- Strategy: KEEP_ONLY_LATEST (drops frames if processing is slow)
-- Location: `CameraXManager.kt:287-292`
-
-**Preprocessing**
-- Motion detection: Compares luma samples between consecutive frames
-- Throttling: 400-600ms based on motion score (high motion = slower processing)
-- Viewport calculation: Adjusts for aspect ratio differences via center-crop
-- Edge inset: 10% margin to filter partial objects at frame edges
-- Location: `CameraXManager.kt:computeMotionScore()`, `calculateVisibleViewport()`
-
-**Detection & BBox Preview**
-- ML Kit ObjectDetector in STREAM_MODE with tracking enabled
-- Multiple detection mode (up to 5 objects)
-- Detections filtered by ROI: only boxes with CENTER inside ROI are shown
-- Max 2 preview bboxes displayed at once
-- Location: `RoiDetectionFilter.kt`, `ObjectDetectorClient.kt`
-
-**Lock/Stability Gating**
-- Center-weighted scoring: 50% confidence + 20% area + 30% center score
-- Minimum area gate: 3% of frame (rejects tiny distant objects)
-- Stability requirement: 3 consecutive frames OR 400ms stable time
-- Lock breaks on: high motion (instant or averaged > 0.25), position shift, candidate lost, timeout
-- Location: `CenterWeightedCandidateSelector.kt`, `ScanGuidanceManager.kt`
-
-**Item Creation Path**
-- Only triggered when `guidanceState.canAddItem == true` AND state is LOCKED
-- Locked candidate ID must match detection ID
-- Item is created from the locked candidate's tracking data
-- Location: `CameraXManager.kt:1046-1078`
-
-### 1.2 Picture Capture Pipeline
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        PICTURE CAPTURE FLOW                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
-│  │ ImageCapture │───▶│   JPEG       │───▶│   Save to    │                  │
-│  │  720p/1080p/ │    │  Encoding    │    │   Cache      │                  │
-│  │  4K          │    │              │    │              │                  │
-│  └──────────────┘    └──────────────┘    └──────────────┘                  │
-│         │                                       │                           │
-│         ▼                                       ▼                           │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                  │
-│  │   Rotation   │───▶│   Manual     │───▶│ Classification│                  │
-│  │  Correction  │    │   Review     │    │  (on-device/ │                  │
-│  │  (EXIF)      │    │              │    │   cloud)     │                  │
-│  └──────────────┘    └──────────────┘    └──────────────┘                  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Camera Input (ImageCapture)**
-- Resolution options: 720p (LOW), 1080p (NORMAL), 4K (HIGH)
-- Format: JPEG output to cache directory
-- Location: `CameraXManager.kt:captureHighResImage()`
-
-**Preprocessing**
-- Rotation: Applied via EXIF metadata
-- No ROI crop applied (full frame captured)
-- No live detection filtering
-
-**Classification Path**
-- Manual trigger after capture
-- On-device classifier + optional cloud fallback
-- Location: `ClassificationOrchestrator.kt`
-
-### 1.3 Scan vs Picture Divergence Points
-
-| Aspect | Live Scan | Picture Capture |
-|--------|-----------|-----------------|
-| **Resolution** | 1280x720 | 720p - 4K |
-| **Rotation** | Real-time via matrix | EXIF metadata |
-| **ROI Crop** | Center inside ROI required | Full frame |
-| **Compression** | None (YUV frames) | JPEG encoding |
-| **Timing** | Continuous 2-3 FPS | Single capture |
-| **Detection** | Live ML Kit | Post-capture |
-| **Stability** | Required (lock) | Not applicable |
-
-### 1.4 Likely Failure Points
-
-| Failure Point | Code Location | Reason |
-|--------------|---------------|--------|
-| **ROI mapping mismatch** | `RoiCoordinateMapper.kt` | Aspect ratio differences between preview (phone UI) and analyzer (1280x720) can cause visible ROI to not match detection zone |
-| **Center priority bypass** | `CenterWeightedCandidateSelector.kt:284` | High-confidence (>0.8) detections bypass center distance gate, allowing background objects |
-| **Motion false-positive** | `ScanGuidanceManager.kt:313-314` | Both instant and average motion checked; hand tremor may break lock |
-| **Area threshold mismatch** | `ScanRoi.kt:144-147` | 4% min (too far) and 35% max (too close) may not match all object types |
-| **Stability timing** | `CenterWeightedConfig.kt:504-505` | 3 frames at 400ms throttle = 1.2s minimum lock time |
-| **Stale frame** | `ObjectTracker.kt:733-750` | Candidates expire after 10 frames if not re-detected |
+### Visual Language
+| State | Visual | Behavior |
+|-------|--------|----------|
+| `EYE` | Thin white stroke (35% alpha) | Detection anywhere in frame - global awareness |
+| `SELECTED` | Medium blue stroke | Detection center inside ROI - user intent |
+| `READY` | Medium-thick green stroke | Selected + stability conditions met |
+| `LOCKED` | Thick bright green + pulse | Ready to scan/capture |
 
 ---
 
-## 2. MUST-Pass Real-Life Test Criteria
+## 1. Architecture Overview
 
-### Criterion 1: Single Object Lock at Optimal Distance
-**Why it matters**: Core scanning flow must work reliably for the most common use case.
-**Code path validated**: `CenterWeightedCandidateSelector.selectBestCandidateWithRoi()` → `ObjectTracker.processFrameWithRoi()` → `ScanGuidanceManager.evaluateState()` → LOCKED
-**Failure indicates**: ROI filtering broken, stability gating too strict, or area thresholds misconfigured.
+### Detection Flow
+```
+ImageAnalysis (1280x720)
+    │
+    ▼
+ML Kit ObjectDetector
+    │
+    ▼
+ALL detections (Eye Mode - global vision)
+    │
+    ├────────────────────────────────────────────┐
+    ▼                                            ▼
+DetectionOverlay                          SelectionManager
+(renders ALL bboxes)                      (finds ROI-intersecting detection)
+    │                                            │
+    │                                            ▼
+    │                                    selectedDetection?
+    │                                            │
+    └────────────────────────────────────────────┘
+                        │
+                        ▼
+                Visual Highlighting
+                (SELECTED/READY/LOCKED)
+```
 
-### Criterion 2: Near Object Prioritized Over Background
-**Why it matters**: Users expect the centered object to be scanned, not items in the background.
-**Code path validated**: `CenterWeightedCandidateSelector.calculateScoreWithRoi()` (center weight 30%, area weight 20%)
-**Failure indicates**: Center-weighted scoring not working, or confidence override (>0.8) incorrectly applied.
+### Key Principle
+- **ROI is a SELECTION TOOL, not a detection filter**
+- All objects are detected and shown (Eye Mode)
+- Only the object centered in ROI can be selected/scanned (Focus Mode)
 
-### Criterion 3: Panning Does Not Add Background Items
-**Why it matters**: Moving camera should not trigger accidental item additions.
-**Code path validated**: `ScanGuidanceManager.shouldBreakLock()` (instant motion check + average motion check)
-**Failure indicates**: Motion detection thresholds too lenient, or lock not breaking on camera movement.
+---
 
-### Criterion 4: ROI Boundary Enforced
-**Why it matters**: Visual scan zone must match actual detection zone.
-**Code path validated**: `RoiDetectionFilter.filterByRoi()` → `scanRoi.containsBoxCenter()`
-**Failure indicates**: Coordinate mapping mismatch between preview and analyzer spaces.
+## 2. MUST-Pass Test Criteria
 
-### Criterion 5: Too Close/Too Far States Trigger
-**Why it matters**: User feedback must guide optimal distance.
-**Code path validated**: `ScanGuidanceManager.evaluateState()` → area thresholds (4% min, 35% max)
-**Failure indicates**: Area calculation wrong, or threshold values need adjustment for object types.
+### Criterion 1: Global Detection (Eye Mode)
+**Why it matters**: User must see what Scanium sees - all detected objects, anywhere in frame.
+**Code path**: ML Kit → ALL detections → DetectionOverlay (no ROI filtering)
+**Failure indicates**: ROI filtering still active; bboxes hidden outside ROI.
 
-### Criterion 6: Lock Persists Through Minor Tremor
-**Why it matters**: Human hand tremor should not break lock.
-**Code path validated**: Motion averaging (5-frame window) in `ScanGuidanceManager.updateMotionAverage()`
-**Failure indicates**: Motion threshold (0.25) too sensitive for hand-held use.
+### Criterion 2: Single Selection (Focus Mode)
+**Why it matters**: Only ONE object can be selected/scanned at a time.
+**Code path**: `OverlayTrackManager.selectBestCandidate()` → `selectedTrackingId`
+**Failure indicates**: Multiple objects selected; selection logic broken.
+
+### Criterion 3: Selection via ROI Intersection
+**Why it matters**: User controls selection by centering object in ROI.
+**Code path**: `RoiDetectionFilter.filterByRoi()` → `selectBestCandidate()`
+**Failure indicates**: Selection not tied to ROI; random object selected.
+
+### Criterion 4: Visual State Progression
+**Why it matters**: User must clearly see the state: EYE → SELECTED → READY → LOCKED.
+**Code path**: `mapOverlayTracks()` → `DetectionOverlay` rendering
+**Failure indicates**: Wrong colors/strokes; states not visually distinct.
+
+### Criterion 5: Only Selected Object Lockable
+**Why it matters**: No accidental adds from background objects.
+**Code path**: `ScanGuidanceManager.evaluateState()` with selected candidate only
+**Failure indicates**: Background object gets locked; unintentional adds.
 
 ---
 
 ## 3. Test Cases
 
-### TEST-001: Single Object Optimal Distance Lock
+### TEST-001: Global Detection - Bboxes Appear Everywhere
 
 **Test ID**: TEST-001
-**Title**: Single object achieves LOCKED state at optimal distance
+**Title**: Bboxes appear for ALL detected objects, anywhere in frame
 
-**Object Types**: Smartphone, TV remote, water bottle (choose one)
+**Object Types**: 3+ objects scattered across frame (smartphone, book, water bottle)
 
 **Setup**:
-- Indoor lighting (normal room light, no direct sunlight)
-- Plain background (table, floor, or wall - single color preferred)
+- Indoor lighting (normal room light)
+- Multiple objects placed at various positions (left, right, center, edges)
 - Phone held in portrait orientation
-- Object placed flat or upright on surface
 
 **Distances**:
-- Object-to-camera: **50 cm** (optimal range)
-- Object-to-object: N/A (single object test)
+- Objects spread across frame at 40-60 cm
+- Some objects intentionally OUTSIDE the ROI zone
 
 **Steps**:
 1. Launch Scanium app and navigate to camera screen
-2. Hold phone steady, pointed at the single object
-3. Center the object within the visible scan zone (ROI overlay)
-4. Wait 2-3 seconds while holding steady
-5. Observe guidance state transitions
+2. Point camera at scene with 3+ objects
+3. Observe bounding boxes for ALL detected objects
+4. Pan slowly across the scene
 
 **Expected Outcome**:
-- Bounding box appears around object within 1 second
-- State transitions: SEARCHING → GOOD → LOCKED
-- "Ready to scan" hint appears when LOCKED
-- Scan zone border turns solid green when LOCKED
-- If tapped, item is successfully added
+- Bboxes appear for ALL detected objects, not just those in ROI
+- Objects outside ROI have EYE style (thin, subtle white stroke)
+- Objects inside ROI have SELECTED style (thicker, blue stroke)
+- Bboxes update continuously as camera pans
 
 **Failure Clues**:
 | Symptom | Likely Cause |
 |---------|--------------|
-| No bbox appears | Object not detected by ML Kit; try different object or lighting |
-| Bbox appears but state stays SEARCHING | Center outside ROI; adjust position |
-| State reaches GOOD but never LOCKED | Stability not achieved; check for hand tremor or motion |
-| Bbox flickers on/off | Confidence too low; move closer or improve lighting |
-| "Too close" or "Too far" hint | Area thresholds; adjust distance |
+| Only ROI objects show bboxes | ROI filtering still active; check `OverlayTrackManager` |
+| Bboxes disappear when moving out of ROI | Same as above |
+| All bboxes same style | Box style logic not using `selectedTrackingId` |
 
 ---
 
-### TEST-002: Single Object Too Close Boundary
+### TEST-002: Selection via Centering
 
 **Test ID**: TEST-002
-**Title**: Too close detection triggers correctly at boundary distance
+**Title**: Object becomes SELECTED when centered in ROI
 
-**Object Types**: Smartphone, book cover (choose one)
+**Object Types**: Smartphone (to center), TV remote (off-center)
 
 **Setup**:
-- Indoor lighting (normal room light)
-- Plain background
+- Indoor lighting
+- Two objects on a surface
 - Phone held in portrait orientation
-- Object placed flat on surface
 
 **Distances**:
-- Object-to-camera: **15 cm** (too close boundary)
-- Object-to-object: N/A (single object test)
+- Object-to-camera: 50 cm
+- Object-to-object: 20 cm apart
 
 **Steps**:
-1. Launch Scanium app and navigate to camera screen
-2. Hold phone very close to the object (15 cm)
-3. Center the object within the scan zone
-4. Observe guidance state and hint text
-5. Slowly move phone away to 40 cm and observe state change
+1. Point camera so smartphone is centered in ROI, remote is outside
+2. Observe bbox styles
+3. Pan to center the remote in ROI
+4. Observe bbox styles change
 
 **Expected Outcome**:
-- At 15 cm: State shows TOO_CLOSE
-- Hint displays "Move phone slightly away"
-- Scan zone border shows orange/warning color
-- Bbox may appear but won't reach LOCKED state
-- At 40 cm: State transitions to GOOD → LOCKED
+- Smartphone: SELECTED style (blue) when centered
+- Remote: EYE style (white) when not centered
+- After pan: Remote becomes SELECTED, smartphone becomes EYE
+- Only ONE object is SELECTED at any time
 
 **Failure Clues**:
 | Symptom | Likely Cause |
 |---------|--------------|
-| No TOO_CLOSE state even at 10 cm | tooCloseAreaThreshold (35%) too high; object bbox not filling enough frame |
-| LOCKED achieved at 15 cm | Area threshold miscalculated; check `ScanRoi.MAX_CLOSE_AREA` |
-| State oscillates between TOO_CLOSE and GOOD | Object at threshold boundary; normal behavior |
+| Both objects SELECTED | Selection not limiting to one object |
+| Wrong object SELECTED | Center score calculation wrong |
+| No SELECTED objects | `selectBestCandidate` returning null |
 
 ---
 
-### TEST-003: Two Objects - Center Priority Selection
+### TEST-003: SELECTED to READY to LOCKED Progression
 
 **Test ID**: TEST-003
-**Title**: Centered object selected over off-center object
+**Title**: Visual state progression works correctly
 
-**Object Types**: TV remote (centered), smartphone (off-center)
+**Object Types**: Water bottle (single object)
 
 **Setup**:
-- Indoor lighting (normal room light)
-- Plain background
-- Phone held in portrait orientation
-- Two objects placed on surface with clear separation
+- Indoor lighting
+- Single object on plain background
+- Phone held steady
 
 **Distances**:
-- Object-to-camera: **45 cm**
-- Object-to-object: **15 cm** (close but separated)
+- Object-to-camera: 45 cm (optimal)
 
 **Steps**:
-1. Place TV remote in center of frame, smartphone to the side
-2. Launch Scanium app and navigate to camera screen
-3. Hold phone steady, ensuring TV remote is centered in ROI
-4. Wait for lock to achieve
-5. Observe which object gets the primary bbox
-6. Swap positions (smartphone centered) and repeat
+1. Center water bottle in ROI
+2. Observe bbox becomes SELECTED (blue)
+3. Hold phone steady for 1-2 seconds
+4. Observe bbox becomes READY (green)
+5. Continue holding steady
+6. Observe bbox becomes LOCKED (bright green with pulse)
 
 **Expected Outcome**:
-- Centered object (TV remote) gets bbox first
-- Off-center object (smartphone) either has no bbox or secondary bbox
-- LOCKED state achieved on the centered object
-- After swap, smartphone (now centered) is the locked target
+- State progression: EYE → SELECTED → READY → LOCKED
+- Each state visually distinct (color + stroke width)
+- "Hold to lock" hint appears during GOOD state
+- "Ready" hint appears when LOCKED
 
 **Failure Clues**:
 | Symptom | Likely Cause |
 |---------|--------------|
-| Both objects get bboxes equally | Max 2 preview boxes shown; normal if both inside ROI |
-| Off-center object gets LOCKED | Center scoring weight (30%) insufficient; smartphone may have higher confidence |
-| Neither object locks | Both may be at ROI boundary; adjust positions |
+| Stays SELECTED, never READY | `isGoodState` not propagated |
+| Stays READY, never LOCKED | Lock conditions not met; stability issue |
+| Colors wrong | `BboxColors` constants incorrect |
 
 ---
 
-### TEST-004: Slow Pan - No Background Adds
+### TEST-004: Pan Breaks Selection (No Background Adds)
 
 **Test ID**: TEST-004
-**Title**: Panning from object A to object B does not add background items
+**Title**: Panning camera changes selection, no accidental adds
 
-**Object Types**: Headphones case (Object A), water bottle (Object B)
+**Object Types**: Headphones case (A), Book (B)
 
 **Setup**:
-- Indoor lighting (normal room light)
-- Mixed background (table with some clutter is OK)
-- Phone held in portrait orientation
-- Two objects placed apart on surface
+- Indoor lighting
+- Two objects well separated
+- Mixed background acceptable
 
 **Distances**:
-- Object-to-camera: **50 cm**
-- Object-to-object: **40 cm** (well separated)
+- Object-to-camera: 50 cm
+- Object-to-object: 40 cm apart
 
 **Steps**:
-1. Place headphones case on the left, water bottle on the right
-2. Launch Scanium app and navigate to camera screen
-3. Point at headphones case, achieve LOCKED state
-4. **Without tapping to add**, slowly pan camera toward water bottle (2-3 seconds)
-5. Observe lock breaking and state transitions
-6. Continue panning until water bottle is centered
-7. Wait for new lock on water bottle
+1. Center headphones case (A), achieve LOCKED state
+2. **Without tapping**, slowly pan camera toward book (B)
+3. Observe: Lock breaks, state returns to SEARCHING
+4. Continue pan until book (B) centered
+5. Wait for book to achieve LOCKED state
 
 **Expected Outcome**:
-- Lock on headphones case breaks during pan (state → SEARCHING or UNSTABLE)
-- No items are automatically added during pan
-- Background items (if any) do not achieve LOCKED
-- Water bottle achieves LOCKED once pan stops and it's centered
-- Only one item (water bottle) can be added after pan completes
+- Pan motion breaks lock on A
+- During pan: All visible objects show EYE style
+- Selection transfers to B when centered
+- No items added automatically during pan
+- Only B can be scanned after pan completes
 
 **Failure Clues**:
 | Symptom | Likely Cause |
 |---------|--------------|
-| Lock doesn't break during pan | Motion threshold (0.25) too high; instant motion check not working |
-| Background item gets added during pan | Auto-add enabled (should require tap); or lock achieved during pan |
-| State stays LOCKED throughout pan | Motion not detected; check `computeMotionScore()` |
-| Water bottle never locks after pan | Stability timing too strict; wait longer |
+| Lock doesn't break during pan | Motion detection not working |
+| A stays SELECTED during pan | Selection not updating |
+| Item added during pan | Auto-add bug; should require tap |
 
 ---
 
-### TEST-005: Cluttered Background - ROI Strict Enforcement
+### TEST-005: Edge Detection Without Selection
 
 **Test ID**: TEST-005
-**Title**: Only centered target detected in cluttered scene
+**Title**: Objects at frame edges detected but not selectable
 
-**Object Types**: Small toy (e.g., LEGO minifig - target), various background items
+**Object Types**: Multiple objects across frame
 
 **Setup**:
-- Indoor lighting (normal room light)
-- **Cluttered background**: bookshelf, desk with multiple items, etc.
-- Phone held in portrait orientation
-- Small toy placed in center foreground, 30 cm from camera
+- Indoor lighting
+- Objects placed at center and edges of frame
+- ROI covers center ~65% of frame
 
 **Distances**:
-- Target object-to-camera: **30 cm** (foreground)
-- Background items: **80-150 cm** (varying distances)
-- Target to nearest background: N/A (foreground vs background)
+- Central object: 45 cm
+- Edge objects: 50 cm
 
 **Steps**:
-1. Set up cluttered scene with multiple potential detection targets in background
-2. Place small toy (LEGO minifig) in the center foreground
-3. Launch Scanium app and navigate to camera screen
-4. Hold phone steady, ensuring toy is centered in ROI
-5. Observe which objects get bboxes
-6. Wait for lock achievement
+1. Position camera so central object in ROI, edge objects visible but outside ROI
+2. Observe ALL objects have bboxes
+3. Verify edge objects show EYE style (not SELECTED)
+4. Try to achieve LOCKED on edge object by holding steady (should fail)
 
 **Expected Outcome**:
-- Toy in foreground gets bbox (inside ROI, large area due to proximity)
-- Background items may get ML Kit detections but should NOT show bboxes (outside ROI or filtered)
-- LOCKED state achieved on the toy only
-- No "competing" bboxes on background items
-- Debug overlay (if enabled) should show "Outside: X" count > 0
+- ALL objects detected and shown with bboxes
+- Edge objects: EYE style only (cannot be SELECTED)
+- Central object: SELECTED → READY → LOCKED
+- Edge objects never achieve READY or LOCKED
 
 **Failure Clues**:
 | Symptom | Likely Cause |
 |---------|--------------|
-| Background items show bboxes | ROI filter not working; check `RoiDetectionFilter.filterByRoi()` |
-| Toy not detected | Object too small (< 3% area); move closer |
-| Background item gets LOCKED | High confidence (>0.8) overriding center gate; or background item actually inside ROI |
-| Multiple items in ROI | ROI size (65%) too large; consider if background items are truly inside ROI |
+| Edge objects hidden | ROI filtering still active |
+| Edge object achieves SELECTED | ROI boundary check wrong |
+| Edge object locks | Selection not enforced in lock logic |
 
 ---
 
-## Appendix: Quick Reference
+## 4. Debug Mode Reference
 
-### Guidance States
-| State | Visual | Hint |
-|-------|--------|------|
-| SEARCHING | Blue outline | (none) |
-| TOO_CLOSE | Orange outline | "Move phone slightly away" |
-| TOO_FAR | Orange outline | "Move closer to object" |
-| OFF_CENTER | Orange outline | "Center object in scan zone" |
-| UNSTABLE | Blue outline | "Hold steady" |
-| FOCUSING | Blue outline | "Focusing..." |
-| GOOD | Green pulsing | "Hold still..." |
-| LOCKED | Solid green | "Ready to scan" |
+Enable debug overlay in Settings → Developer Options → "Show scan diagnostics":
 
-### Key Thresholds
-| Parameter | Value | File |
-|-----------|-------|------|
-| Min area (too far) | 4% | `ScanRoi.MIN_FAR_AREA` |
-| Max area (too close) | 35% | `ScanRoi.MAX_CLOSE_AREA` |
-| Min stability frames | 3 | `CenterWeightedConfig.minStabilityFrames` |
-| Min stability time | 400 ms | `CenterWeightedConfig.minStabilityTimeMs` |
-| Motion break threshold | 0.25 | `ScanGuidanceConfig.lockBreakMotionThreshold` |
-| ROI default size | 65% | `ScanRoi.DEFAULT` |
-| Max preview bboxes | 2 | `RoiDetectionFilter.MAX_PREVIEW_BOXES` |
-
-### Debug Mode
-Enable debug overlay in Settings → Developer Options → "Show scan diagnostics" to see:
-- Current guidance state
-- ROI size percentage
-- Box area percentage
-- Motion score
-- Sharpness score
-- Lock status
-- ROI filter stats (total/inside/outside)
+| Metric | Eye vs Focus Relevance |
+|--------|------------------------|
+| Detected count | Total objects seen (Eye mode) |
+| Selected ID | Which object is selected (Focus mode) |
+| Locked ID | Which object is locked |
+| ROI inside/outside | How many in/out of ROI |
 
 ---
 
-*Document generated: 2025-12-29*
-*Version: 1.0*
+## 5. Quick Reference
+
+### Guidance States & Hints
+| State | Hint | Visual |
+|-------|------|--------|
+| SEARCHING | (none) | All bboxes EYE style |
+| SELECTED | "Center to select" | One bbox SELECTED style |
+| TOO_CLOSE | "Move back slightly" | SELECTED bbox |
+| TOO_FAR | "Move closer" | SELECTED bbox |
+| UNSTABLE | "Hold steady" | SELECTED bbox |
+| GOOD | "Hold to lock" | READY style |
+| LOCKED | "Ready" | LOCKED style + pulse |
+
+### Box Style Stroke Widths
+| Style | Stroke Multiplier | Color |
+|-------|-------------------|-------|
+| EYE | 0.5x | White 35% |
+| SELECTED | 0.9x | Blue 85% |
+| READY | 1.1x | Green 85% |
+| LOCKED | 1.4x + pulse | Green 100% |
+
+---
+
+## 6. Success Criteria Summary
+
+1. **App opens** → Bboxes appear immediately for ALL detected objects
+2. **Panning** → Bboxes update continuously (never disappear outside ROI)
+3. **Object enters ROI** → Becomes SELECTED (visual change)
+4. **Hold steady** → SELECTED → READY → LOCKED progression
+5. **Shutter pressed** → Only SELECTED/LOCKED object captured
+6. **Multiple objects** → User controls selection via centering
+
+---
+
+*Document version: 2.0 (Eye vs Focus update)*
+*Updated: 2025-12-29*

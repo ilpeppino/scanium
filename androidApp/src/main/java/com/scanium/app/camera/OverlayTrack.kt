@@ -14,18 +14,25 @@ private const val DEFAULT_READY_THRESHOLD = 0.55f
  * Visual style for overlay bounding boxes.
  *
  * Each style represents a distinct scanning state with clear visual feedback:
- * - PREVIEW: Object detected but not yet ready for scanning
- * - READY: All scan conditions met, holding for lock
+ * - EYE: Object detected anywhere in frame (global vision, not selected)
+ * - SELECTED: Object's center is inside ROI (user intent to act)
+ * - READY: Selected + stability conditions met, holding for lock
  * - LOCKED: Stable lock achieved, scan-ready
  *
- * Visual progression: PREVIEW → READY → LOCKED
+ * Visual progression: EYE → SELECTED → READY → LOCKED
+ *
+ * Eye Mode vs Focus Mode:
+ * - Eye Mode: All detections shown as EYE (global awareness)
+ * - Focus Mode: One detection promoted to SELECTED/READY/LOCKED (user intent)
  */
 enum class OverlayBoxStyle {
-    /** Preview style: thin stroke, neutral color - immediate feedback when object detected */
-    PREVIEW,
-    /** Ready style: medium stroke, accent color - conditions met, holding steady */
+    /** Eye style: thin stroke, very subtle - detected anywhere in frame (global vision) */
+    EYE,
+    /** Selected style: medium stroke, accent color - object center inside ROI (user intent) */
+    SELECTED,
+    /** Ready style: medium-thick stroke, green - selected + conditions met, holding steady */
     READY,
-    /** Locked style: thick stroke, highlighted with pulse - stable lock achieved, scan-ready */
+    /** Locked style: thick stroke, bright green with pulse - stable lock achieved, scan-ready */
     LOCKED
 }
 
@@ -38,19 +45,24 @@ data class OverlayTrack(
     val priceEstimationStatus: PriceEstimationStatus,
     val aggregatedId: String? = null,
     val trackingId: String? = null,
-    /** Box style for visual distinction: PREVIEW (immediate) vs LOCKED (scan-ready) */
-    val boxStyle: OverlayBoxStyle = OverlayBoxStyle.PREVIEW
+    /** Box style for visual distinction: EYE (global) → SELECTED → READY → LOCKED */
+    val boxStyle: OverlayBoxStyle = OverlayBoxStyle.EYE
 )
 
 /**
  * Maps detection results and aggregated items to overlay tracks for rendering.
  *
- * @param detections Raw detection results from ML pipeline
+ * Eye Mode vs Focus Mode:
+ * - All detections are rendered (Eye mode = global vision)
+ * - Only the selected detection (center inside ROI) is highlighted (Focus mode)
+ *
+ * @param detections Raw detection results from ML pipeline (ALL detections, not filtered)
  * @param aggregatedItems Aggregated items with enhanced classification
  * @param readyConfidenceThreshold Confidence threshold for isReady flag
  * @param pendingLabel Label to show while classification is pending
+ * @param selectedTrackingId Tracking ID of the ROI-selected detection (SELECTED/READY style)
  * @param lockedTrackingId Tracking ID of the locked candidate (LOCKED style)
- * @param isGoodState True if guidance state is GOOD (shows READY style for eligible detections)
+ * @param isGoodState True if guidance state is GOOD (shows READY style for selected detection)
  */
 @Suppress("LongParameterList")
 fun mapOverlayTracks(
@@ -58,6 +70,8 @@ fun mapOverlayTracks(
     aggregatedItems: List<AggregatedItem>,
     readyConfidenceThreshold: Float = DEFAULT_READY_THRESHOLD,
     pendingLabel: String = "Scanning…",
+    /** Tracking ID of the ROI-selected detection (center inside ROI) */
+    selectedTrackingId: String? = null,
     /** Tracking ID of the locked candidate (if any) - used to set LOCKED box style */
     lockedTrackingId: String? = null,
     /** True if guidance state is GOOD (conditions met, waiting for lock) */
@@ -90,15 +104,23 @@ fun mapOverlayTracks(
             ?: matched?.priceRange?.let { PriceRange(Money(it.first), Money(it.second)).formatted() }
             ?: detection.formattedPriceRange
 
-        // Determine box style based on guidance state and lock status
-        // Visual progression: PREVIEW → READY → LOCKED
+        // Determine box style based on selection and lock status
+        // Visual progression: EYE → SELECTED → READY → LOCKED
+        //
+        // Eye Mode: Detection exists anywhere in frame (global vision)
+        // Focus Mode: Detection is selected (center inside ROI) and may lock
+        val isSelected = selectedTrackingId != null && detectionId == selectedTrackingId
+        val isLocked = lockedTrackingId != null && detectionId == lockedTrackingId
+
         val boxStyle = when {
-            // LOCKED: This detection is the locked candidate
-            lockedTrackingId != null && detectionId == lockedTrackingId -> OverlayBoxStyle.LOCKED
-            // READY: Guidance is in GOOD state and this is a viable candidate
-            isGoodState && isReady -> OverlayBoxStyle.READY
-            // PREVIEW: Default - object detected but not ready for scan
-            else -> OverlayBoxStyle.PREVIEW
+            // LOCKED: This detection is the locked candidate (scan-ready)
+            isLocked -> OverlayBoxStyle.LOCKED
+            // READY: Selected + guidance is GOOD + conditions met
+            isSelected && isGoodState && isReady -> OverlayBoxStyle.READY
+            // SELECTED: Object center is inside ROI (user intent)
+            isSelected -> OverlayBoxStyle.SELECTED
+            // EYE: Object detected but not inside ROI (global vision)
+            else -> OverlayBoxStyle.EYE
         }
 
         OverlayTrack(
