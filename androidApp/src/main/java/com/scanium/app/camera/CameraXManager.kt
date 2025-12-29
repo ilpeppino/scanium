@@ -175,6 +175,8 @@ class CameraXManager(
     // These variables are accessed from both Main thread (UI) and camera executor thread
     @Volatile
     private var isScanning = false
+    @Volatile
+    private var isPreviewDetectionActive = false
     private var scanJob: Job? = null
     @Volatile
     private var currentScanMode: ScanMode? = null
@@ -374,6 +376,11 @@ class CameraXManager(
         onFrameSize: (Size) -> Unit = {}
     ) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
+        // Stop preview detection if running (capture takes over temporarily)
+        if (isPreviewDetectionActive) {
+            Log.d(TAG, "captureSingleFrame: Stopping preview detection for capture")
+            isPreviewDetectionActive = false
+        }
         // Clear any previous analyzer to avoid mixing modes
         imageAnalysis?.clearAnalyzer()
         imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
@@ -439,6 +446,12 @@ class CameraXManager(
         if (isScanning) {
             Log.d(TAG, "startScanning: Already scanning, ignoring")
             return
+        }
+
+        // Stop preview detection if running (scanning takes over)
+        if (isPreviewDetectionActive) {
+            Log.d(TAG, "startScanning: Stopping preview detection before starting scan")
+            isPreviewDetectionActive = false
         }
 
         Log.d(TAG, "startScanning: Starting continuous scanning mode with $scanMode")
@@ -755,6 +768,115 @@ class CameraXManager(
         scanGuidanceManager.reset()
         _scanGuidanceState.value = ScanGuidanceState.initial()
     }
+
+    /**
+     * Starts lightweight preview detection mode.
+     * This shows bounding boxes on the camera preview without adding items to the list.
+     * Used to give users immediate visual feedback when the camera starts.
+     *
+     * @param onDetectionResult Callback for detection results (for overlay display)
+     * @param onFrameSize Callback for frame dimensions
+     */
+    fun startPreviewDetection(
+        onDetectionResult: (List<DetectionResult>) -> Unit = {},
+        onFrameSize: (Size) -> Unit = {}
+    ) {
+        // Don't start if already scanning or preview detection is active
+        if (isScanning || isPreviewDetectionActive) {
+            Log.d(TAG, "startPreviewDetection: Skipping - isScanning=$isScanning, isPreviewDetectionActive=$isPreviewDetectionActive")
+            return
+        }
+
+        Log.d(TAG, "startPreviewDetection: Starting preview-only detection mode")
+        isPreviewDetectionActive = true
+
+        var lastAnalysisTime = 0L
+        var isProcessing = false
+
+        // Use a longer interval for preview detection (less aggressive, battery-friendly)
+        val previewAnalysisIntervalMs = 400L
+
+        imageAnalysis?.clearAnalyzer()
+        imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
+            // Stop if scanning started or preview detection was stopped
+            if (isScanning || !isPreviewDetectionActive) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
+
+            val currentTime = System.currentTimeMillis()
+            val timeSinceLastAnalysis = currentTime - lastAnalysisTime
+
+            // Throttle analysis
+            if (timeSinceLastAnalysis < previewAnalysisIntervalMs || isProcessing) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
+
+            lastAnalysisTime = currentTime
+            isProcessing = true
+
+            val mediaImage = imageProxy.image
+            if (mediaImage == null) {
+                imageProxy.close()
+                isProcessing = false
+                return@setAnalyzer
+            }
+
+            val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+            val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
+
+            detectionScope.launch {
+                try {
+                    // Report frame size
+                    val frameSize = Size(imageProxy.width, imageProxy.height)
+                    withContext(Dispatchers.Main) {
+                        onFrameSize(frameSize)
+                    }
+
+                    // Run detection (preview only - no item creation)
+                    val imageBoundsForFiltering = android.graphics.Rect(0, 0, imageProxy.width, imageProxy.height)
+                    val response = objectDetector.detectObjects(
+                        image = inputImage,
+                        sourceBitmap = { null }, // No bitmap needed for preview-only
+                        useStreamMode = false,
+                        cropRect = imageBoundsForFiltering,
+                        edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
+                    )
+
+                    withContext(Dispatchers.Main) {
+                        onDetectionResult(response.detectionResults)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in preview detection", e)
+                } finally {
+                    imageProxy.close()
+                    isProcessing = false
+                }
+            }
+        }
+    }
+
+    /**
+     * Stops preview detection mode.
+     * Called when user starts scanning/capturing or when leaving the camera screen.
+     */
+    fun stopPreviewDetection() {
+        if (!isPreviewDetectionActive) {
+            return
+        }
+        Log.d(TAG, "stopPreviewDetection: Stopping preview detection mode")
+        isPreviewDetectionActive = false
+        // Only clear analyzer if not scanning (scanning manages its own analyzer)
+        if (!isScanning) {
+            imageAnalysis?.clearAnalyzer()
+        }
+    }
+
+    /**
+     * Check if preview detection is currently active.
+     */
+    fun isPreviewDetectionActive(): Boolean = isPreviewDetectionActive
 
     /**
      * Enable or disable scan diagnostics overlay.
