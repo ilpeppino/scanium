@@ -1,0 +1,55 @@
+# Node.js
+node_modules
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Build output (we build inside Docker)
+dist
+
+# Dev/test files
+*.test.ts
+*.spec.ts
+__tests__
+coverage
+.nyc_output
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+docs
+
+# Docker files (not needed in context)
+Dockerfile*
+docker-compose*
+.docker*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs
+
+# Temporary files
+tmp
+temp
+*.tmp
