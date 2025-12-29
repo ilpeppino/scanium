@@ -13,13 +13,19 @@ private const val DEFAULT_READY_THRESHOLD = 0.55f
 /**
  * Visual style for overlay bounding boxes.
  *
- * PREVIEW: Immediate detection feedback - thin, neutral style
- * LOCKED: Scan-ready detection - thicker, highlighted style
+ * Each style represents a distinct scanning state with clear visual feedback:
+ * - PREVIEW: Object detected but not yet ready for scanning
+ * - READY: All scan conditions met, holding for lock
+ * - LOCKED: Stable lock achieved, scan-ready
+ *
+ * Visual progression: PREVIEW → READY → LOCKED
  */
 enum class OverlayBoxStyle {
-    /** Preview style: thin stroke, neutral color - immediate feedback */
+    /** Preview style: thin stroke, neutral color - immediate feedback when object detected */
     PREVIEW,
-    /** Locked style: thicker stroke, highlighted - scan ready */
+    /** Ready style: medium stroke, accent color - conditions met, holding steady */
+    READY,
+    /** Locked style: thick stroke, highlighted with pulse - stable lock achieved, scan-ready */
     LOCKED
 }
 
@@ -36,6 +42,16 @@ data class OverlayTrack(
     val boxStyle: OverlayBoxStyle = OverlayBoxStyle.PREVIEW
 )
 
+/**
+ * Maps detection results and aggregated items to overlay tracks for rendering.
+ *
+ * @param detections Raw detection results from ML pipeline
+ * @param aggregatedItems Aggregated items with enhanced classification
+ * @param readyConfidenceThreshold Confidence threshold for isReady flag
+ * @param pendingLabel Label to show while classification is pending
+ * @param lockedTrackingId Tracking ID of the locked candidate (LOCKED style)
+ * @param isGoodState True if guidance state is GOOD (shows READY style for eligible detections)
+ */
 @Suppress("LongParameterList")
 fun mapOverlayTracks(
     detections: List<DetectionResult>,
@@ -43,7 +59,9 @@ fun mapOverlayTracks(
     readyConfidenceThreshold: Float = DEFAULT_READY_THRESHOLD,
     pendingLabel: String = "Scanning…",
     /** Tracking ID of the locked candidate (if any) - used to set LOCKED box style */
-    lockedTrackingId: String? = null
+    lockedTrackingId: String? = null,
+    /** True if guidance state is GOOD (conditions met, waiting for lock) */
+    isGoodState: Boolean = false
 ): List<OverlayTrack> {
     val aggregatedBySource = mutableMapOf<String, AggregatedItem>()
     aggregatedItems.forEach { item ->
@@ -72,11 +90,15 @@ fun mapOverlayTracks(
             ?: matched?.priceRange?.let { PriceRange(Money(it.first), Money(it.second)).formatted() }
             ?: detection.formattedPriceRange
 
-        // Determine box style: LOCKED if this detection matches the locked candidate
-        val boxStyle = if (lockedTrackingId != null && detectionId == lockedTrackingId) {
-            OverlayBoxStyle.LOCKED
-        } else {
-            OverlayBoxStyle.PREVIEW
+        // Determine box style based on guidance state and lock status
+        // Visual progression: PREVIEW → READY → LOCKED
+        val boxStyle = when {
+            // LOCKED: This detection is the locked candidate
+            lockedTrackingId != null && detectionId == lockedTrackingId -> OverlayBoxStyle.LOCKED
+            // READY: Guidance is in GOOD state and this is a viable candidate
+            isGoodState && isReady -> OverlayBoxStyle.READY
+            // PREVIEW: Default - object detected but not ready for scan
+            else -> OverlayBoxStyle.PREVIEW
         }
 
         OverlayTrack(

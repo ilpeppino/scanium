@@ -275,14 +275,16 @@ class ItemsViewModel @Inject constructor(
      * @param detections List of detection results from the ML pipeline
      * @param scanRoi Current scan ROI (detections outside are filtered out)
      * @param lockedTrackingId Tracking ID of locked candidate (if any) for visual distinction
+     * @param isGoodState True if guidance state is GOOD (conditions met, waiting for lock)
      * @see OverlayTrackManager.updateOverlayDetections
      */
     fun updateOverlayDetections(
         detections: List<DetectionResult>,
         scanRoi: ScanRoi = ScanRoi.DEFAULT,
-        lockedTrackingId: String? = null
+        lockedTrackingId: String? = null,
+        isGoodState: Boolean = false
     ) {
-        overlayManager.updateOverlayDetections(detections, scanRoi, lockedTrackingId)
+        overlayManager.updateOverlayDetections(detections, scanRoi, lockedTrackingId, isGoodState)
     }
 
     /**
