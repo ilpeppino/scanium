@@ -106,39 +106,65 @@ class ObjectDetectorClient {
         }
 
         /**
-         * CRITICAL FIX: Convert InputImage dimensions to sensor (original) dimensions.
+         * Converts sensor (bitmap) coordinates to InputImage (upright) coordinates.
          *
-         * ML Kit's InputImage.width/height are POST-ROTATION dimensions (the dimensions as
-         * if the image were already rotated to upright orientation). However, ML Kit returns
-         * bounding boxes in ORIGINAL (pre-rotation/sensor) coordinate space.
+         * ML Kit returns bounding boxes in InputImage coordinate space (upright, post-rotation).
+         * InputImage.width/height are the dimensions AFTER rotation metadata is applied.
          *
-         * For 90° or 270° rotation, the dimensions are swapped:
-         * - InputImage: 720x1280 (portrait, post-rotation)
-         * - Sensor/bbox: 1280x720 (landscape, original)
+         * When the bitmap is in sensor orientation (unrotated), we need to transform
+         * bbox coordinates from InputImage space to sensor space for cropping.
          *
-         * This function reverses the swap to get the actual sensor dimensions that match
-         * the coordinate space of ML Kit's bounding box output.
-         *
-         * @param inputImageWidth InputImage.width (post-rotation)
-         * @param inputImageHeight InputImage.height (post-rotation)
+         * @param uprightBbox Bounding box in InputImage/upright space
+         * @param inputImageWidth InputImage.width (upright dimensions)
+         * @param inputImageHeight InputImage.height (upright dimensions)
          * @param rotationDegrees Rotation passed to InputImage.fromMediaImage()
-         * @return Pair of (sensorWidth, sensorHeight) in original sensor coordinates
+         * @return Bounding box in sensor (unrotated bitmap) coordinates
          */
-        private fun getSensorDimensions(
+        private fun uprightBboxToSensorBbox(
+            uprightBbox: Rect,
             inputImageWidth: Int,
             inputImageHeight: Int,
             rotationDegrees: Int
-        ): Pair<Int, Int> {
-            return when (rotationDegrees) {
-                90, 270 -> {
-                    // Width and height are swapped in InputImage relative to sensor
-                    Pair(inputImageHeight, inputImageWidth)
-                }
-                else -> {
-                    // 0° and 180°: dimensions match sensor
-                    Pair(inputImageWidth, inputImageHeight)
-                }
+        ): Rect {
+            // Normalize in upright space first
+            val normLeft = uprightBbox.left.toFloat() / inputImageWidth
+            val normTop = uprightBbox.top.toFloat() / inputImageHeight
+            val normRight = uprightBbox.right.toFloat() / inputImageWidth
+            val normBottom = uprightBbox.bottom.toFloat() / inputImageHeight
+
+            // Calculate sensor dimensions
+            val (sensorW, sensorH) = when (rotationDegrees) {
+                90, 270 -> Pair(inputImageHeight, inputImageWidth)
+                else -> Pair(inputImageWidth, inputImageHeight)
             }
+
+            // Apply inverse rotation to get sensor-space normalized coordinates
+            val (sensorNormLeft, sensorNormTop, sensorNormRight, sensorNormBottom) = when (rotationDegrees) {
+                0 -> listOf(normLeft, normTop, normRight, normBottom)
+                90 -> {
+                    // Inverse of 90° clockwise rotation
+                    // Upright (x, y) -> Sensor (y, 1-x)
+                    listOf(normTop, 1f - normRight, normBottom, 1f - normLeft)
+                }
+                180 -> {
+                    // Inverse of 180° is 180°
+                    listOf(1f - normRight, 1f - normBottom, 1f - normLeft, 1f - normTop)
+                }
+                270 -> {
+                    // Inverse of 270° clockwise rotation
+                    // Upright (x, y) -> Sensor (1-y, x)
+                    listOf(1f - normBottom, normLeft, 1f - normTop, normRight)
+                }
+                else -> listOf(normLeft, normTop, normRight, normBottom)
+            }
+
+            // Convert back to pixel coordinates in sensor space
+            return Rect(
+                (sensorNormLeft * sensorW).toInt(),
+                (sensorNormTop * sensorH).toInt(),
+                (sensorNormRight * sensorW).toInt(),
+                (sensorNormBottom * sensorH).toInt()
+            )
         }
     }
 
@@ -222,15 +248,12 @@ class ObjectDetectorClient {
             val scannedItems = mutableListOf<ScannedItem>()
             val detectionResults = mutableListOf<DetectionResult>()
 
-            // CRITICAL FIX: Get SENSOR dimensions, not InputImage dimensions.
-            // InputImage.width/height are post-rotation dimensions, but ML Kit returns
-            // bounding boxes in ORIGINAL (pre-rotation/sensor) coordinates.
-            // For 90/270 rotation, we need to swap dimensions to get sensor dimensions.
-            val (sensorWidth, sensorHeight) = getSensorDimensions(
-                inputImageWidth = image.width,
-                inputImageHeight = image.height,
-                rotationDegrees = image.rotationDegrees
-            )
+            // COORDINATE FIX: ML Kit returns bboxes in InputImage coordinate space (upright).
+            // Use InputImage dimensions for normalization - these are the dimensions ML Kit
+            // "sees" after rotation metadata is applied.
+            // For thumbnail cropping, we convert upright bbox to sensor space separately.
+            val uprightWidth = image.width
+            val uprightHeight = image.height
 
             detectedObjects.forEach { obj ->
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
@@ -243,13 +266,13 @@ class ObjectDetectorClient {
                     detectedObject = obj,
                     sourceBitmap = bitmap,
                     imageRotationDegrees = image.rotationDegrees,
-                    fallbackWidth = sensorWidth,
-                    fallbackHeight = sensorHeight
+                    uprightWidth = uprightWidth,
+                    uprightHeight = uprightHeight
                 )
                 val detectionResult = convertToDetectionResult(
                     detectedObject = obj,
-                    imageWidth = bitmap?.width ?: sensorWidth,
-                    imageHeight = bitmap?.height ?: sensorHeight
+                    imageWidth = uprightWidth,
+                    imageHeight = uprightHeight
                 )
 
                 if (scannedItem != null) scannedItems.add(scannedItem)
@@ -436,13 +459,10 @@ class ObjectDetectorClient {
             val detectionInfos = mutableListOf<DetectionInfo>()
             val detectionResults = mutableListOf<DetectionResult>()
 
-            // CRITICAL FIX: Get SENSOR dimensions, not InputImage dimensions.
-            // (Same fix as in detectObjects - see getSensorDimensions documentation)
-            val (sensorWidth, sensorHeight) = getSensorDimensions(
-                inputImageWidth = image.width,
-                inputImageHeight = image.height,
-                rotationDegrees = image.rotationDegrees
-            )
+            // COORDINATE FIX: ML Kit returns bboxes in InputImage coordinate space (upright).
+            // Use InputImage dimensions for normalization.
+            val uprightWidth = image.width
+            val uprightHeight = image.height
 
             detectedObjects.forEach { obj ->
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
@@ -456,15 +476,15 @@ class ObjectDetectorClient {
                     detectedObject = obj,
                     sourceBitmap = bitmap,
                     imageRotationDegrees = image.rotationDegrees,
-                    fallbackWidth = sensorWidth,
-                    fallbackHeight = sensorHeight
+                    uprightWidth = uprightWidth,
+                    uprightHeight = uprightHeight
                 )
 
                 // Convert to DetectionResult for overlay
                 val detectionResult = convertToDetectionResult(
                     detectedObject = obj,
-                    imageWidth = bitmap?.width ?: sensorWidth,
-                    imageHeight = bitmap?.height ?: sensorHeight
+                    imageWidth = uprightWidth,
+                    imageHeight = uprightHeight
                 )
 
                 if (detectionInfo != null) detectionInfos.add(detectionInfo)
@@ -486,21 +506,27 @@ class ObjectDetectorClient {
 
     /**
      * Extracts DetectionInfo from a DetectedObject for tracking purposes.
+     *
+     * @param detectedObject ML Kit detected object with bbox in InputImage (upright) coordinates
+     * @param sourceBitmap Source bitmap in sensor orientation (unrotated)
+     * @param imageRotationDegrees Rotation from sensor to upright orientation
+     * @param uprightWidth InputImage width (upright dimensions)
+     * @param uprightHeight InputImage height (upright dimensions)
      */
     private fun extractDetectionInfo(
         detectedObject: DetectedObject,
         sourceBitmap: Bitmap?,
         imageRotationDegrees: Int,
-        fallbackWidth: Int,
-        fallbackHeight: Int,
+        uprightWidth: Int,
+        uprightHeight: Int,
         onRawDetection: (RawDetection) -> Unit = {}
     ): DetectionInfo? {
         return try {
             // Extract tracking ID (may be null)
             val trackingId = detectedObject.trackingId?.toString()
 
-            // Get bounding box and convert to normalized coordinates
-            val boundingBox = detectedObject.boundingBox
+            // Get bounding box (in InputImage/upright coordinate space)
+            val uprightBbox = detectedObject.boundingBox
 
             val labels = detectedObject.labels.mapIndexed { index, label ->
                 LabelWithConfidence(
@@ -534,8 +560,16 @@ class ObjectDetectorClient {
                 ItemCategory.UNKNOWN
             }
 
+            // For thumbnail cropping: convert upright bbox to sensor space
+            val sensorBbox = uprightBboxToSensorBbox(
+                uprightBbox = uprightBbox,
+                inputImageWidth = uprightWidth,
+                inputImageHeight = uprightHeight,
+                rotationDegrees = imageRotationDegrees
+            )
+
             // Crop thumbnail with rotation for correct display orientation
-            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
+            val thumbnail = sourceBitmap?.let { cropThumbnail(it, sensorBbox, imageRotationDegrees) }
             val thumbnailQuality = if (thumbnail != null) {
                 com.scanium.app.camera.ImageUtils.calculateSharpness(thumbnail).toFloat()
             } else {
@@ -543,9 +577,8 @@ class ObjectDetectorClient {
             }
             val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
-            val frameWidth = sourceBitmap?.width ?: fallbackWidth
-            val frameHeight = sourceBitmap?.height ?: fallbackHeight
-            val bboxNorm = boundingBox.toNormalizedRect(frameWidth, frameHeight)
+            // Normalize using upright dimensions (keeps bbox in upright coordinate space)
+            val bboxNorm = uprightBbox.toNormalizedRect(uprightWidth, uprightHeight)
 
             // Calculate normalized area
             val normalizedBoxArea = bboxNorm.area
@@ -579,26 +612,39 @@ class ObjectDetectorClient {
 
     /**
      * Converts a DetectedObject from ML Kit to a ScannedItem.
+     *
+     * @param detectedObject ML Kit detected object with bbox in InputImage (upright) coordinates
+     * @param sourceBitmap Source bitmap in sensor orientation (unrotated)
+     * @param imageRotationDegrees Rotation from sensor to upright orientation
+     * @param uprightWidth InputImage width (upright dimensions)
+     * @param uprightHeight InputImage height (upright dimensions)
      */
     private fun convertToScannedItem(
         detectedObject: DetectedObject,
         sourceBitmap: Bitmap?,
         imageRotationDegrees: Int,
-        fallbackWidth: Int,
-        fallbackHeight: Int
+        uprightWidth: Int,
+        uprightHeight: Int
     ): ScannedItem? {
         return try {
             // Extract tracking ID (null if not available)
             val trackingId = detectedObject.trackingId?.toString()
                 ?: java.util.UUID.randomUUID().toString()
 
-            // Get bounding box
-            val boundingBox = detectedObject.boundingBox
-            val frameWidth = sourceBitmap?.width ?: fallbackWidth
-            val frameHeight = sourceBitmap?.height ?: fallbackHeight
+            // Get bounding box (in InputImage/upright coordinate space)
+            val uprightBbox = detectedObject.boundingBox
 
-            // Crop thumbnail from source bitmap with rotation for correct display
-            val thumbnail = sourceBitmap?.let { cropThumbnail(it, boundingBox, imageRotationDegrees) }
+            // For thumbnail cropping: convert upright bbox to sensor space
+            // because sourceBitmap is in sensor orientation (unrotated)
+            val sensorBbox = uprightBboxToSensorBbox(
+                uprightBbox = uprightBbox,
+                inputImageWidth = uprightWidth,
+                inputImageHeight = uprightHeight,
+                rotationDegrees = imageRotationDegrees
+            )
+
+            // Crop thumbnail from source bitmap using sensor-space bbox, then rotate
+            val thumbnail = sourceBitmap?.let { cropThumbnail(it, sensorBbox, imageRotationDegrees) }
             val thumbnailQuality = if (thumbnail != null) {
                 com.scanium.app.camera.ImageUtils.calculateSharpness(thumbnail).toFloat()
             } else {
@@ -622,10 +668,9 @@ class ObjectDetectorClient {
                 }
             }
 
-            // Normalize bounding box to 0-1 coordinates for session deduplication
-            val imageWidth = (sourceBitmap?.width ?: fallbackWidth).toFloat()
-            val imageHeight = (sourceBitmap?.height ?: fallbackHeight).toFloat()
-            val normalizedBox = boundingBox.toNormalizedRect(imageWidth.toInt(), imageHeight.toInt())
+            // Normalize bounding box using upright dimensions
+            // This keeps bbox in upright coordinate space for overlay drawing
+            val normalizedBox = uprightBbox.toNormalizedRect(uprightWidth, uprightHeight)
 
             ScannedItem(
                 id = trackingId,
