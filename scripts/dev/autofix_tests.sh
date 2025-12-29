@@ -12,8 +12,43 @@ else
   TASKS=("$@")
 fi
 
-if ! command -v codex >/dev/null 2>&1; then
-  echo "Error: codex CLI not found. Install/enable Codex CLI so the 'codex' command is available." >&2
+# AI Selection Menu
+echo "╔════════════════════════════════════════╗"
+echo "║   Select AI Agent for Test Fixing      ║"
+echo "╠════════════════════════════════════════╣"
+echo "║  1) Claude                             ║"
+echo "║  2) Codex                              ║"
+echo "║  3) Gemini                             ║"
+echo "╚════════════════════════════════════════╝"
+echo ""
+read -p "Enter your choice [1-3]: " AI_CHOICE
+
+case "$AI_CHOICE" in
+  1)
+    AI_NAME="Claude"
+    AI_CMD="claude"
+    ;;
+  2)
+    AI_NAME="Codex"
+    AI_CMD="codex"
+    ;;
+  3)
+    AI_NAME="Gemini"
+    AI_CMD="gemini"
+    ;;
+  *)
+    echo "Invalid choice. Exiting." >&2
+    exit 1
+    ;;
+esac
+
+echo ""
+echo "Selected: $AI_NAME"
+echo ""
+
+# Check if selected AI CLI is available
+if ! command -v "$AI_CMD" >/dev/null 2>&1; then
+  echo "Error: $AI_NAME CLI ('$AI_CMD') not found. Please install it first." >&2
   exit 1
 fi
 
@@ -48,7 +83,7 @@ run_sanity_check() {
 run_sanity_check
 
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
-  printf "\n=== Attempt %s of %s ===\n" "$attempt" "$MAX_ATTEMPTS"
+  printf "\n=== Attempt %s of %s (using %s) ===\n" "$attempt" "$MAX_ATTEMPTS" "$AI_NAME"
   if "$ROOT/scripts/dev/run_tests.sh" "${TASKS[@]}"; then
     echo "✅ Tests passed on attempt $attempt."
     exit 0
@@ -67,12 +102,23 @@ ${FAILURE_PACKET}
 EOF
 )
 
-  codex exec --cd "$ROOT" --full-auto "$PROMPT"
+  # Execute AI-specific fix command
+  case "$AI_CMD" in
+    claude)
+      claude --dangerously-skip-permissions -p "$PROMPT"
+      ;;
+    codex)
+      codex exec --cd "$ROOT" --full-auto "$PROMPT"
+      ;;
+    gemini)
+      gemini -p "$PROMPT"
+      ;;
+  esac
 
-  # Re-run sanity check after codex fix attempt
+  # Re-run sanity check after AI fix attempt
   run_sanity_check
 
 done
 
-echo "❌ Tests still failing after $MAX_ATTEMPTS attempts. See tmp/test_failures.txt for the latest failure packet." >&2
+echo "❌ Tests still failing after $MAX_ATTEMPTS attempts using $AI_NAME. See tmp/test_failures.txt for the latest failure packet." >&2
 exit 1
