@@ -3,6 +3,7 @@ package com.scanium.app.camera
 import android.graphics.Rect
 import android.util.Size
 import com.google.common.truth.Truth.assertThat
+import com.scanium.core.models.geometry.NormalizedRect
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,13 +19,219 @@ import kotlin.math.abs
  * - Center point calculation for any annotations that use box centers
  * - Edge cases (small boxes, full-screen boxes, portrait/landscape)
  * - Scaling and offset calculations
+ * - Rotation transformations for portrait mode (new)
  *
  * Note: The DetectionOverlay now renders bounding boxes around detections,
  * so transform math must keep the boxes aligned with the underlying camera buffer.
  */
 @RunWith(RobolectricTestRunner::class)
-@Ignore("Requires updated overlay transform contract; skip for now.")
 class DetectionOverlayTransformTest {
+
+    // ==========================================
+    // NEW TESTS: Rotation-aware transformations
+    // ==========================================
+
+    @Test
+    fun `rotateNormalizedRect with 0 degrees returns unchanged rect`() {
+        val rect = NormalizedRect(0.1f, 0.2f, 0.3f, 0.4f)
+        val rotated = rotateNormalizedRect(rect, 0)
+
+        assertThat(rotated.left).isEqualTo(rect.left)
+        assertThat(rotated.top).isEqualTo(rect.top)
+        assertThat(rotated.right).isEqualTo(rect.right)
+        assertThat(rotated.bottom).isEqualTo(rect.bottom)
+    }
+
+    @Test
+    fun `rotateNormalizedRect with 90 degrees rotates clockwise`() {
+        // Original: top-left corner of landscape image (left=0, top=0, right=0.2, bottom=0.2)
+        // After 90° rotation: should be top-right corner in portrait
+        // (x, y) -> (y, 1-x)
+        val rect = NormalizedRect(0f, 0f, 0.2f, 0.2f)
+        val rotated = rotateNormalizedRect(rect, 90)
+
+        // left -> top (0 -> 0)
+        // top -> 1-right (0 -> 0.8)
+        // right -> bottom (0.2 -> 0.2)
+        // bottom -> 1-left (0.2 -> 1)
+        assertThat(rotated.left).isWithin(0.001f).of(0f)
+        assertThat(rotated.top).isWithin(0.001f).of(0.8f)
+        assertThat(rotated.right).isWithin(0.001f).of(0.2f)
+        assertThat(rotated.bottom).isWithin(0.001f).of(1f)
+    }
+
+    @Test
+    fun `rotateNormalizedRect with 180 degrees flips both axes`() {
+        // (x, y) -> (1-x, 1-y)
+        val rect = NormalizedRect(0.1f, 0.2f, 0.3f, 0.4f)
+        val rotated = rotateNormalizedRect(rect, 180)
+
+        assertThat(rotated.left).isWithin(0.001f).of(0.7f)   // 1 - 0.3
+        assertThat(rotated.top).isWithin(0.001f).of(0.6f)    // 1 - 0.4
+        assertThat(rotated.right).isWithin(0.001f).of(0.9f)  // 1 - 0.1
+        assertThat(rotated.bottom).isWithin(0.001f).of(0.8f) // 1 - 0.2
+    }
+
+    @Test
+    fun `rotateNormalizedRect with 270 degrees rotates counter-clockwise`() {
+        // (x, y) -> (1-y, x)
+        val rect = NormalizedRect(0f, 0f, 0.2f, 0.2f)
+        val rotated = rotateNormalizedRect(rect, 270)
+
+        // left -> 1-bottom (0 -> 0.8)
+        // top -> left (0 -> 0)
+        // right -> 1-top (0.2 -> 1)
+        // bottom -> right (0.2 -> 0.2)
+        assertThat(rotated.left).isWithin(0.001f).of(0.8f)
+        assertThat(rotated.top).isWithin(0.001f).of(0f)
+        assertThat(rotated.right).isWithin(0.001f).of(1f)
+        assertThat(rotated.bottom).isWithin(0.001f).of(0.2f)
+    }
+
+    @Test
+    fun `rotateNormalizedRect with center box stays centered`() {
+        // A centered box should stay centered after any rotation
+        val rect = NormalizedRect(0.4f, 0.4f, 0.6f, 0.6f)
+
+        for (degrees in listOf(0, 90, 180, 270)) {
+            val rotated = rotateNormalizedRect(rect, degrees)
+            val centerX = (rotated.left + rotated.right) / 2f
+            val centerY = (rotated.top + rotated.bottom) / 2f
+
+            assertThat(centerX).isWithin(0.001f).of(0.5f)
+            assertThat(centerY).isWithin(0.001f).of(0.5f)
+        }
+    }
+
+    @Test
+    fun `calculateTransformWithRotation swaps dimensions for 90 degree rotation`() {
+        // Sensor: 1280x720 landscape
+        // Preview: 1080x1920 portrait
+        // Rotation: 90 degrees (portrait mode)
+        val transform = calculateTransformWithRotation(
+            imageWidth = 1280,
+            imageHeight = 720,
+            previewWidth = 1080f,
+            previewHeight = 1920f,
+            rotationDegrees = 90,
+            scaleType = PreviewScaleType.FILL_CENTER
+        )
+
+        // Effective dimensions after rotation: 720x1280 (portrait)
+        assertThat(transform.effectiveImageWidth).isEqualTo(720)
+        assertThat(transform.effectiveImageHeight).isEqualTo(1280)
+        assertThat(transform.rotationDegrees).isEqualTo(90)
+    }
+
+    @Test
+    fun `calculateTransformWithRotation with FILL_CENTER uses larger scale`() {
+        val fillTransform = calculateTransformWithRotation(
+            imageWidth = 1280,
+            imageHeight = 720,
+            previewWidth = 1080f,
+            previewHeight = 1920f,
+            rotationDegrees = 90,
+            scaleType = PreviewScaleType.FILL_CENTER
+        )
+
+        val fitTransform = calculateTransformWithRotation(
+            imageWidth = 1280,
+            imageHeight = 720,
+            previewWidth = 1080f,
+            previewHeight = 1920f,
+            rotationDegrees = 90,
+            scaleType = PreviewScaleType.FIT_CENTER
+        )
+
+        // FILL_CENTER should have larger scale (fills the preview)
+        assertThat(fillTransform.scale).isGreaterThan(fitTransform.scale)
+    }
+
+    @Test
+    fun `calculateTransformWithRotation with 0 degrees does not swap dimensions`() {
+        val transform = calculateTransformWithRotation(
+            imageWidth = 1280,
+            imageHeight = 720,
+            previewWidth = 1920f,
+            previewHeight = 1080f,
+            rotationDegrees = 0,
+            scaleType = PreviewScaleType.FIT_CENTER
+        )
+
+        // Effective dimensions unchanged
+        assertThat(transform.effectiveImageWidth).isEqualTo(1280)
+        assertThat(transform.effectiveImageHeight).isEqualTo(720)
+    }
+
+    @Test
+    fun `mapBboxToPreview applies rotation and scale correctly in portrait mode`() {
+        // Simulate portrait mode: sensor 1280x720, rotation 90, preview 720x1280
+        val transform = calculateTransformWithRotation(
+            imageWidth = 1280,
+            imageHeight = 720,
+            previewWidth = 720f,
+            previewHeight = 1280f,
+            rotationDegrees = 90,
+            scaleType = PreviewScaleType.FILL_CENTER
+        )
+
+        // Object in top-right of sensor image (landscape coords)
+        // After 90° rotation should appear at top of portrait preview
+        val bboxNorm = NormalizedRect(
+            left = 0.8f,   // right side in landscape
+            top = 0f,      // top in landscape
+            right = 1f,
+            bottom = 0.2f
+        )
+
+        val result = mapBboxToPreview(bboxNorm, transform)
+
+        // After rotation: should be near top of portrait preview
+        // Check that top is in upper portion of preview
+        assertThat(result.top).isLessThan(transform.effectiveImageHeight * transform.scale * 0.3f + transform.offsetY)
+    }
+
+    @Test
+    fun `mapBboxToPreview full frame box maps to preview bounds`() {
+        // Test with FIT_CENTER to ensure full image maps to preview
+        val transform = calculateTransformWithRotation(
+            imageWidth = 1280,
+            imageHeight = 720,
+            previewWidth = 1280f,
+            previewHeight = 720f,
+            rotationDegrees = 0,
+            scaleType = PreviewScaleType.FIT_CENTER
+        )
+
+        // Full frame bbox
+        val fullFrameBbox = NormalizedRect(0f, 0f, 1f, 1f)
+        val result = mapBboxToPreview(fullFrameBbox, transform)
+
+        // Should map to approximately full preview
+        assertThat(result.left).isWithin(1f).of(0f)
+        assertThat(result.top).isWithin(1f).of(0f)
+        assertThat(result.right).isWithin(1f).of(1280f)
+        assertThat(result.bottom).isWithin(1f).of(720f)
+    }
+
+    @Test
+    fun `rotateNormalizedRect preserves area after rotation`() {
+        val rect = NormalizedRect(0.1f, 0.2f, 0.5f, 0.6f)
+        val originalArea = rect.width * rect.height
+
+        for (degrees in listOf(0, 90, 180, 270)) {
+            val rotated = rotateNormalizedRect(rect, degrees)
+            val rotatedArea = rotated.width * rotated.height
+
+            assertThat(rotatedArea).isWithin(0.001f).of(originalArea)
+        }
+    }
+
+    // ==========================================
+    // Legacy tests (kept for reference, some marked @Ignore)
+    // ==========================================
+
+    @Ignore("Requires updated overlay transform contract; skip for now.")
 
     @Test
     fun whenImageAndPreviewHaveSameAspectRatio_thenNoOffsetApplied() {

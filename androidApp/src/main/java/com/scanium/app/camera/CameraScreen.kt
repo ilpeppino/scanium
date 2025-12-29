@@ -196,6 +196,7 @@ fun CameraScreen(
 
     var imageSize by remember { mutableStateOf(Size(1280, 720)) }
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
+    var imageRotationDegrees by remember { mutableStateOf(90) }  // Default portrait
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
 
@@ -333,6 +334,9 @@ fun CameraScreen(
                 },
                 onFrameSize = { size ->
                     imageSize = size
+                },
+                onRotation = { rotation ->
+                    imageRotationDegrees = rotation
                 }
             )
         }
@@ -481,7 +485,8 @@ fun CameraScreen(
                     DetectionOverlay(
                         detections = overlayTracks,
                         imageSize = imageSize,
-                        previewSize = previewSize
+                        previewSize = previewSize,
+                        rotationDegrees = imageRotationDegrees
                     )
                 }
 
@@ -650,15 +655,15 @@ fun CameraScreen(
                                         scope.launch {
                                             val highResUri = cameraManager.captureHighResImage()
                                             soundManager.play(AppSound.CAPTURE)
-                                            
+
                                             if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
                                                 try {
                                                      context.contentResolver.openInputStream(highResUri)?.use { input ->
                                                          val savedUri = StorageHelper.saveToDirectory(
-                                                             context, 
-                                                             Uri.parse(saveDirectoryUri), 
-                                                             input, 
-                                                             "image/jpeg", 
+                                                             context,
+                                                             Uri.parse(saveDirectoryUri),
+                                                             input,
+                                                             "image/jpeg",
                                                              "Scanium"
                                                          )
                                                          if (savedUri == null) {
@@ -704,6 +709,9 @@ fun CameraScreen(
                                 },
                                 onFrameSize = { size ->
                                     imageSize = size
+                                },
+                                onRotation = { rotation ->
+                                    imageRotationDegrees = rotation
                                 }
                             )
                         }
@@ -767,6 +775,9 @@ fun CameraScreen(
                                 },
                                 onFrameSize = { size ->
                                     imageSize = size
+                                },
+                                onRotation = { rotation ->
+                                    imageRotationDegrees = rotation
                                 }
                             )
                         }
