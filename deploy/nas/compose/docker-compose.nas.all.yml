@@ -1,0 +1,108 @@
+# =============================================================================
+# Scanium Full Stack - NAS Deployment (Synology DS418play)
+# =============================================================================
+# Combined backend + monitoring stack for convenience.
+# For production, consider running them separately for easier maintenance.
+#
+# Prerequisites:
+#   1. Copy ../env/backend.env.example to ../env/backend.env
+#   2. Copy ../env/monitoring.env.example to ../env/monitoring.env
+#   3. Create data directories on NAS (see README.md)
+#
+# Usage:
+#   docker compose -f docker-compose.nas.all.yml \
+#     --env-file ../env/backend.env \
+#     --env-file ../env/monitoring.env \
+#     up -d
+# =============================================================================
+
+include:
+  - docker-compose.nas.monitoring.yml
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: scanium-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scanium}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-scanium}
+    volumes:
+      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/postgres:/var/lib/postgresql/data
+    networks:
+      - scanium-observability
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-scanium}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  # ---------------------------------------------------------------------------
+  # Scanium Backend API
+  # ---------------------------------------------------------------------------
+  api:
+    image: ${SCANIUM_API_IMAGE:-scanium-api:latest}
+    container_name: scanium-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 8080
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      SCANIUM_API_KEYS: ${SCANIUM_API_KEYS:?SCANIUM_API_KEYS is required}
+      SESSION_SIGNING_SECRET: ${SESSION_SIGNING_SECRET:?SESSION_SIGNING_SECRET is required}
+      CORS_ORIGINS: ${CORS_ORIGINS:-scanium://}
+      SCANIUM_CLASSIFIER_PROVIDER: ${SCANIUM_CLASSIFIER_PROVIDER:-mock}
+      VISION_FEATURE: ${VISION_FEATURE:-LABEL_DETECTION}
+      CLASSIFIER_RATE_LIMIT_PER_MINUTE: ${CLASSIFIER_RATE_LIMIT_PER_MINUTE:-30}
+      CLASSIFIER_CONCURRENCY_LIMIT: ${CLASSIFIER_CONCURRENCY_LIMIT:-1}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-5242880}
+      DOMAIN_PACK_ID: ${DOMAIN_PACK_ID:-home_resale}
+      DOMAIN_PACK_PATH: ${DOMAIN_PACK_PATH:-dist/modules/classifier/domain/home-resale.json}
+      CLASSIFIER_RETAIN_UPLOADS: ${CLASSIFIER_RETAIN_UPLOADS:-false}
+      CLASSIFIER_MOCK_SEED: ${CLASSIFIER_MOCK_SEED:-scanium-mock}
+      VISION_TIMEOUT_MS: ${VISION_TIMEOUT_MS:-10000}
+      VISION_MAX_RETRIES: ${VISION_MAX_RETRIES:-2}
+      EBAY_ENV: ${EBAY_ENV:-sandbox}
+      EBAY_CLIENT_ID: ${EBAY_CLIENT_ID:-}
+      EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET:-}
+      EBAY_TOKEN_ENCRYPTION_KEY: ${EBAY_TOKEN_ENCRYPTION_KEY:-}
+      EBAY_REDIRECT_PATH: ${EBAY_REDIRECT_PATH:-/auth/ebay/callback}
+      EBAY_SCOPES: ${EBAY_SCOPES:-}
+      SCANIUM_ASSISTANT_PROVIDER: ${SCANIUM_ASSISTANT_PROVIDER:-mock}
+      SCANIUM_ASSISTANT_API_KEYS: ${SCANIUM_ASSISTANT_API_KEYS:-}
+      ASSIST_RATE_LIMIT_PER_MINUTE: ${ASSIST_RATE_LIMIT_PER_MINUTE:-30}
+      ASSIST_DAILY_QUOTA: ${ASSIST_DAILY_QUOTA:-100}
+      # Connect to monitoring stack
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://scanium-alloy:4318
+    ports:
+      - "${API_HOST_PORT:-8080}:8080"
+    networks:
+      - scanium-observability
+    healthcheck:
+      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
