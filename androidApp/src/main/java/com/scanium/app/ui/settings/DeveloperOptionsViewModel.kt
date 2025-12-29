@@ -95,6 +95,9 @@ class DeveloperOptionsViewModel @Inject constructor(
     val correlationDebugEnabled: StateFlow<Boolean> = settingsRepository.devCorrelationDebugEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val cameraPipelineDebugEnabled: StateFlow<Boolean> = settingsRepository.devCameraPipelineDebugEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     // Auto-refresh state
     private val _autoRefreshEnabled = MutableStateFlow(false)
     val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -305,6 +308,12 @@ class DeveloperOptionsViewModel @Inject constructor(
             settingsRepository.setDevCorrelationDebugEnabled(enabled)
             // Enable/disable the correlation debug system
             com.scanium.app.camera.geom.CorrelationDebug.setEnabled(enabled)
+        }
+    }
+
+    fun setCameraPipelineDebugEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevCameraPipelineDebugEnabled(enabled)
         }
     }
 

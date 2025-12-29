@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -121,6 +122,10 @@ fun CameraScreen(
     val scanningGuidanceEnabled by settingsRepository.scanningGuidanceEnabledFlow.collectAsState(initial = true)
     val roiDiagnosticsEnabled by settingsRepository.devRoiDiagnosticsEnabledFlow.collectAsState(initial = false)
     val bboxMappingDebugEnabled by settingsRepository.devBboxMappingDebugEnabledFlow.collectAsState(initial = false)
+
+    // Camera pipeline lifecycle debug
+    val cameraPipelineDebugEnabled by settingsRepository.devCameraPipelineDebugEnabledFlow.collectAsState(initial = false)
+    val pipelineDiagnostics by cameraManager.pipelineDiagnostics.collectAsState()
 
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
@@ -247,19 +252,26 @@ fun CameraScreen(
 
     // Lifecycle observer to restart detection on resume
     // Fixes: frozen bboxes after backgrounding (Issue 2) or navigating away (Issue 1)
+    // CRITICAL FIX: Use session-based lifecycle management to ensure scope recreation
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
+            // Update diagnostics with lifecycle state
+            cameraManager.updateDiagnosticsLifecycleState(event.name)
+
             when (event) {
                 Lifecycle.Event.ON_RESUME -> {
+                    // Start new camera session - recreates coroutine scope
+                    cameraManager.startCameraSession()
                     // Increment to trigger preview detection restart via LaunchedEffect
                     lifecycleResumeCount++
-                    Log.d("CameraScreen", "ON_RESUME: incrementing lifecycleResumeCount to $lifecycleResumeCount")
+                    Log.d("CameraScreen", "ON_RESUME: started session, lifecycleResumeCount=$lifecycleResumeCount")
                 }
                 Lifecycle.Event.ON_PAUSE -> {
+                    // Stop camera session - cancels scope and clears analyzer
+                    cameraManager.stopCameraSession()
                     // Clear overlay to avoid stale bboxes when returning
-                    cameraManager.stopPreviewDetection()
                     itemsViewModel.updateOverlayDetections(emptyList())
-                    Log.d("CameraScreen", "ON_PAUSE: stopped preview detection, cleared overlays")
+                    Log.d("CameraScreen", "ON_PAUSE: stopped session, cleared overlays")
                 }
                 else -> { /* Other events handled elsewhere */ }
             }
@@ -267,6 +279,36 @@ fun CameraScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // ProcessLifecycleOwner observer for app-level background/foreground
+    // Some OEMs keep destination RESUMED across backgrounding - this is a safety guard
+    DisposableEffect(Unit) {
+        val processLifecycle = ProcessLifecycleOwner.get().lifecycle
+        val processObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> {
+                    // App going to background - ensure camera session is stopped
+                    Log.d("CameraScreen", "PROCESS_ON_STOP: app backgrounding, stopping session")
+                    cameraManager.stopCameraSession()
+                    itemsViewModel.updateOverlayDetections(emptyList())
+                }
+                Lifecycle.Event.ON_START -> {
+                    // App coming to foreground
+                    // Only restart if we're still the active screen (lifecycleOwner is RESUMED)
+                    if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                        Log.d("CameraScreen", "PROCESS_ON_START: app foregrounding, restarting session")
+                        cameraManager.startCameraSession()
+                        lifecycleResumeCount++
+                    }
+                }
+                else -> { /* Ignore other events */ }
+            }
+        }
+        processLifecycle.addObserver(processObserver)
+        onDispose {
+            processLifecycle.removeObserver(processObserver)
         }
     }
 
@@ -566,6 +608,16 @@ fun CameraScreen(
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(top = 90.dp, start = 16.dp)
+                    )
+                }
+
+                // Camera Pipeline Lifecycle Debug Overlay
+                if (cameraPipelineDebugEnabled) {
+                    CameraPipelineDebugOverlay(
+                        diagnostics = pipelineDiagnostics,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(top = if (verboseLogging) 250.dp else 90.dp, start = 16.dp)
                     )
                 }
 

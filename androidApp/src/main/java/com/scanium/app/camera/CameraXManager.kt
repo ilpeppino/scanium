@@ -158,8 +158,15 @@ class CameraXManager(
     // Executor for camera operations
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
-    // Coroutine scope for async detection
-    private val detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    // Coroutine scope for async detection - recreated on each session start
+    @Volatile
+    private var detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    // Session controller for lifecycle management and diagnostics
+    private val sessionController = CameraSessionController()
+
+    /** Exposed diagnostics for debug overlay */
+    val pipelineDiagnostics: StateFlow<CameraPipelineDiagnostics> = sessionController.diagnostics
 
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onDestroy(owner: LifecycleOwner) {
@@ -169,6 +176,81 @@ class CameraXManager(
 
     init {
         lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+    }
+
+    // =========================================================================
+    // Session Management - Key fix for frozen bboxes
+    // =========================================================================
+
+    /**
+     * Starts a new camera session.
+     *
+     * Call this when the camera screen becomes active (ON_RESUME).
+     * Creates a new detection scope and invalidates old callbacks.
+     *
+     * @return The new session ID for callback validation.
+     */
+    fun startCameraSession(): Int {
+        sessionController.logEvent("START_SESSION", "recreating scope")
+
+        // Cancel the old scope completely and create a fresh one
+        detectionScope.cancel()
+        detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+        val sessionId = sessionController.startSession()
+        sessionController.updateAnalysisRunning(true)
+
+        return sessionId
+    }
+
+    /**
+     * Stops the current camera session.
+     *
+     * Call this when the camera screen becomes inactive (ON_PAUSE, background).
+     * Cancels the detection scope and clears the analyzer.
+     */
+    fun stopCameraSession() {
+        sessionController.logEvent("STOP_SESSION", "isScanning=$isScanning, isPreviewDetectionActive=$isPreviewDetectionActive")
+
+        // Stop all detection modes
+        if (isScanning) {
+            stopScanning()
+        }
+        if (isPreviewDetectionActive) {
+            isPreviewDetectionActive = false
+        }
+
+        // Clear the analyzer to stop frame processing
+        imageAnalysis?.clearAnalyzer()
+
+        // Cancel the scope to stop any in-flight coroutines
+        detectionScope.cancel()
+
+        // Update session state
+        sessionController.stopSession()
+        sessionController.updateAnalysisRunning(false)
+    }
+
+    /**
+     * Check if the current session is still valid.
+     * Use this to ignore callbacks from stale sessions.
+     */
+    fun isCurrentSessionValid(sessionId: Int): Boolean = sessionController.isSessionValid(sessionId)
+
+    /**
+     * Get the current session ID.
+     */
+    fun getCurrentSessionId(): Int = sessionController.getCurrentSessionId()
+
+    /**
+     * Update diagnostics for debug overlay.
+     */
+    fun updateDiagnosticsLifecycleState(state: String) {
+        sessionController.updateLifecycleState(state)
+    }
+
+    fun updateDiagnosticsNavDestination(destination: String) {
+        sessionController.updateNavDestination(destination)
     }
 
     // State for scanning mode
@@ -353,6 +435,11 @@ class CameraXManager(
                 Log.i(TAG, "[CONFIG] ML Kit sees full frame for classification; geometry filtering applied after detection")
                 viewportLoggedOnce = true
             }
+
+            // Update diagnostics
+            sessionController.updateCameraBound(true)
+            sessionController.logEvent("CAMERA_BIND_SUCCESS", "lens=$resolvedLensFacing")
+
             CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
         } catch (e: CameraUnavailableException) {
             Log.e(TAG, "Camera unavailable during binding", e)
@@ -456,9 +543,19 @@ class CameraXManager(
         if (isPreviewDetectionActive) {
             Log.d(TAG, "startScanning: Stopping preview detection before starting scan")
             isPreviewDetectionActive = false
+            sessionController.updatePreviewDetectionActive(false)
         }
 
         Log.d(TAG, "startScanning: Starting continuous scanning mode with $scanMode")
+
+        // CRITICAL FIX: Ensure scope is ready before starting
+        if (!detectionScope.isActive) {
+            sessionController.logEvent("SCOPE_RECREATE", "detectionScope was inactive for scanning, recreating")
+            detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        }
+
+        sessionController.updateScanningActive(true)
+        sessionController.updateAnalysisRunning(true)
 
         // Reset tracker and guidance when starting a new scan session or switching modes
         if (currentScanMode != scanMode || currentScanMode == null) {
@@ -562,6 +659,10 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
+                        // Update frame timestamp for diagnostics
+                        val frameTimestamp = System.currentTimeMillis()
+                        sessionController.updateLastFrameTimestamp(frameTimestamp)
+
                         // CRITICAL FIX: Report FULL IMAGE dimensions, not cropRect.
                         // ML Kit's InputImage.fromMediaImage() does NOT honor cropRect - it processes
                         // the full MediaImage buffer and returns bounding boxes in full image coordinates.
@@ -613,6 +714,11 @@ class CameraXManager(
                             itemsAdded = items.size
                         )
 
+                        // Update bbox timestamp for diagnostics
+                        if (detections.isNotEmpty()) {
+                            sessionController.updateLastBboxTimestamp(System.currentTimeMillis(), detections.size)
+                        }
+
                         withContext(Dispatchers.Main) {
                             if (items.isNotEmpty()) {
                                 onResult(items)
@@ -631,6 +737,7 @@ class CameraXManager(
                         if (timeSinceLastReport >= 1000L) {
                             val fps = (framesInWindow * 1000.0) / timeSinceLastReport
                             _analysisFps.value = fps
+                            sessionController.updateAnalysisFps(fps)
                             lastFpsReportTime = now
                             framesInWindow = 0
 
@@ -757,8 +864,12 @@ class CameraXManager(
     fun stopScanning() {
         Log.d(TAG, "stopScanning: Stopping continuous scanning mode")
         isScanning = false
+        sessionController.updateScanningActive(false)
+
         detectionScope.coroutineContext.cancelChildren()
         imageAnalysis?.clearAnalyzer()
+        sessionController.updateAnalysisRunning(false)
+
         scanJob?.cancel()
         scanJob = null
         // Stop detection router session (logs stats)
@@ -795,7 +906,17 @@ class CameraXManager(
         }
 
         Log.d(TAG, "startPreviewDetection: Starting preview-only detection mode")
+
+        // CRITICAL FIX: Ensure scope is ready before starting
+        // If scope was cancelled, recreate it
+        if (!detectionScope.isActive) {
+            sessionController.logEvent("SCOPE_RECREATE", "detectionScope was inactive, recreating")
+            detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        }
+
         isPreviewDetectionActive = true
+        sessionController.updatePreviewDetectionActive(true)
+        sessionController.updateAnalysisRunning(true)
 
         var lastAnalysisTime = 0L
         var isProcessing = false
@@ -835,6 +956,10 @@ class CameraXManager(
 
             detectionScope.launch {
                 try {
+                    // Update frame timestamp for diagnostics
+                    val frameTimestamp = System.currentTimeMillis()
+                    sessionController.updateLastFrameTimestamp(frameTimestamp)
+
                     // Report frame size and rotation for correct overlay mapping
                     val frameSize = Size(imageProxy.width, imageProxy.height)
                     withContext(Dispatchers.Main) {
@@ -851,6 +976,11 @@ class CameraXManager(
                         cropRect = imageBoundsForFiltering,
                         edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
                     )
+
+                    // Update bbox timestamp for diagnostics
+                    if (response.detectionResults.isNotEmpty()) {
+                        sessionController.updateLastBboxTimestamp(System.currentTimeMillis(), response.detectionResults.size)
+                    }
 
                     withContext(Dispatchers.Main) {
                         onDetectionResult(response.detectionResults)
@@ -875,9 +1005,12 @@ class CameraXManager(
         }
         Log.d(TAG, "stopPreviewDetection: Stopping preview detection mode")
         isPreviewDetectionActive = false
+        sessionController.updatePreviewDetectionActive(false)
+
         // Only clear analyzer if not scanning (scanning manages its own analyzer)
         if (!isScanning) {
             imageAnalysis?.clearAnalyzer()
+            sessionController.updateAnalysisRunning(false)
         }
     }
 
