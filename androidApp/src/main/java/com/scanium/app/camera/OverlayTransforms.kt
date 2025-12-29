@@ -14,7 +14,13 @@ data class Transform(
 
 /**
  * Calculates the transformation needed to map image coordinates to preview coordinates.
- * Handles aspect ratio differences and scaling.
+ *
+ * Uses CENTER_CROP logic to match CameraX Preview behavior:
+ * - Scale uniformly to fill the preview (no letterboxing)
+ * - Center the scaled image (crop excess on edges)
+ *
+ * This ensures bounding boxes align correctly with the camera preview which uses
+ * FILL_CENTER (center-crop) mode.
  */
 fun calculateTransform(
     imageWidth: Int,
@@ -31,18 +37,22 @@ fun calculateTransform(
     val offsetX: Float
     val offsetY: Float
 
+    // CENTER_CROP: Scale to FILL preview, then center (crop excess)
+    // This matches CameraX Preview's FILL_CENTER behavior
     if (imageAspect > previewAspect) {
-        // Image is wider than preview - fit by width
-        scaleX = previewWidth / imageWidth
-        scaleY = scaleX
-        offsetX = 0f
-        offsetY = (previewHeight - imageHeight * scaleY) / 2f
-    } else {
-        // Image is taller than preview - fit by height
+        // Image is wider than preview - scale by height to fill, crop width
         scaleY = previewHeight / imageHeight
-        scaleX = scaleY
+        scaleX = scaleY  // Uniform scale
+        // Center horizontally - excess image width is cropped
         offsetX = (previewWidth - imageWidth * scaleX) / 2f
         offsetY = 0f
+    } else {
+        // Image is taller than preview - scale by width to fill, crop height
+        scaleX = previewWidth / imageWidth
+        scaleY = scaleX  // Uniform scale
+        // Center vertically - excess image height is cropped
+        offsetX = 0f
+        offsetY = (previewHeight - imageHeight * scaleY) / 2f
     }
 
     return Transform(scaleX, scaleY, offsetX, offsetY)
