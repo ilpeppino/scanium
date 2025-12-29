@@ -54,6 +54,7 @@ fun DeveloperOptionsScreen(
     val liveScanDiagnosticsEnabled by viewModel.scanningDiagnosticsEnabled.collectAsState()
     val bboxMappingDebugEnabled by viewModel.bboxMappingDebugEnabled.collectAsState()
     val correlationDebugEnabled by viewModel.correlationDebugEnabled.collectAsState()
+    val cameraPipelineDebugEnabled by viewModel.cameraPipelineDebugEnabled.collectAsState()
     val scrollState = rememberScrollState()
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
@@ -179,6 +180,14 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.Compare,
                 checked = correlationDebugEnabled,
                 onCheckedChange = { viewModel.setCorrelationDebugEnabled(it) }
+            )
+
+            SettingSwitchRow(
+                title = "Camera Pipeline Debug",
+                subtitle = if (cameraPipelineDebugEnabled) "Shows lifecycle/session overlay (Logcat tag: CAM_LIFE)" else "Pipeline debug disabled",
+                icon = Icons.Default.Videocam,
+                checked = cameraPipelineDebugEnabled,
+                onCheckedChange = { viewModel.setCameraPipelineDebugEnabled(it) }
             )
 
             SettingsSectionHeader("Classifier Diagnostics")

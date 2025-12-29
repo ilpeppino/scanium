@@ -65,6 +65,9 @@ class SettingsRepository(private val context: Context) {
         // Bbox mapping debug settings
         private val DEV_BBOX_MAPPING_DEBUG_KEY = booleanPreferencesKey("dev_bbox_mapping_debug_enabled")
         private val DEV_CORRELATION_DEBUG_KEY = booleanPreferencesKey("dev_correlation_debug_enabled")
+
+        // Camera pipeline lifecycle debug
+        private val DEV_CAMERA_PIPELINE_DEBUG_KEY = booleanPreferencesKey("dev_camera_pipeline_debug_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -483,6 +486,23 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDevCorrelationDebugEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_CORRELATION_DEBUG_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether camera pipeline lifecycle debug overlay is enabled (developer toggle).
+     * Shows isCameraBound, isAnalysisRunning, lastFrameTimestamp, lastBboxTimestamp,
+     * framesPerSecond, currentLifecycleState, and navDestination.
+     * Also enables CAM_LIFE log tag for lifecycle events.
+     * Default is OFF to avoid visual clutter.
+     */
+    val devCameraPipelineDebugEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_CAMERA_PIPELINE_DEBUG_KEY] ?: false
+    }
+
+    suspend fun setDevCameraPipelineDebugEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_CAMERA_PIPELINE_DEBUG_KEY] = enabled
         }
     }
 
