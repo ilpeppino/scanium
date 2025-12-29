@@ -394,10 +394,10 @@ class CameraXManager(
 
             detectionScope.launch {
                 try {
-                    // CRITICAL FIX: Report cropRect dimensions, NOT full image dimensions.
-                    // ML Kit bounding boxes are relative to the cropRect (visible viewport),
-                    // so the overlay must use matching dimensions for correct coordinate mapping.
-                    val frameSize = Size(cropRect.width(), cropRect.height())
+                    // CRITICAL FIX: Report FULL IMAGE dimensions, not cropRect.
+                    // ML Kit's InputImage.fromMediaImage() does NOT honor cropRect - it processes
+                    // the full MediaImage buffer and returns bounding boxes in full image coordinates.
+                    val frameSize = Size(imageProxy.width, imageProxy.height)
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
                     }
@@ -538,19 +538,18 @@ class CameraXManager(
                     rotationDegrees
                 )
                 
-                // IMPORTANT: Since ML Kit honors the MediaImage's cropRect (set by ViewPort),
-                // the resulting bounding boxes are relative to that cropRect.
-                // Therefore, for edge filtering, we must pass a relative Rect starting at (0,0).
-                val cropRect = imageProxy.cropRect
-                val imageBoundsForFiltering = android.graphics.Rect(0, 0, cropRect.width(), cropRect.height())
+                // CRITICAL: ML Kit does NOT honor the MediaImage's cropRect - it processes the
+                // full buffer and returns bounding boxes in full image coordinates.
+                // For edge filtering, use full image bounds.
+                val imageBoundsForFiltering = android.graphics.Rect(0, 0, imageProxy.width, imageProxy.height)
 
                 detectionScope.launch {
                     try {
-                        // CRITICAL FIX: Report cropRect dimensions, NOT full image dimensions.
-                        // ML Kit bounding boxes are relative to the cropRect (visible viewport),
-                        // so the overlay must use matching dimensions for correct coordinate mapping.
-                        // Using full image dimensions caused detection boxes to appear offset.
-                        val frameSize = Size(cropRect.width(), cropRect.height())
+                        // CRITICAL FIX: Report FULL IMAGE dimensions, not cropRect.
+                        // ML Kit's InputImage.fromMediaImage() does NOT honor cropRect - it processes
+                        // the full MediaImage buffer and returns bounding boxes in full image coordinates.
+                        // The overlay transform will handle the aspect ratio difference.
+                        val frameSize = Size(imageProxy.width, imageProxy.height)
                         withContext(Dispatchers.Main) {
                             onFrameSize(frameSize)
                         }
@@ -566,11 +565,11 @@ class CameraXManager(
                         // Note: Currently just records invocation, does not change detection behavior
                         detectionRouter.routeDetection(scanMode, frameReceiveTime)
 
-                        // Log detection invocation
+                        // Log detection invocation with full image dimensions
                         ScanPipelineDiagnostics.logDetectionInvoked(
                             mode = scanMode.name,
-                            imageWidth = cropRect.width(),
-                            imageHeight = cropRect.height(),
+                            imageWidth = imageProxy.width,
+                            imageHeight = imageProxy.height,
                             rotationDegrees = imageProxy.imageInfo.rotationDegrees
                         )
 
@@ -818,27 +817,19 @@ class CameraXManager(
             }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
-            // PHASE 3: Calculate visible viewport based on PreviewView aspect ratio
-            // Apply cropRect to ImageProxy so ML Kit ONLY analyzes the visible region
-            val cropRect = calculateVisibleViewport(
-                imageWidth = imageProxy.width,
-                imageHeight = imageProxy.height,
-                previewWidth = previewViewWidth,
-                previewHeight = previewViewHeight
-            )
-
-            // CRITICAL: Set cropRect on ImageProxy BEFORE creating InputImage
-            // This is metadata-only (zero-copy) and ensures ML Kit only sees the visible viewport
-            imageProxy.setCropRect(cropRect)
+            // NOTE: We previously applied cropRect here thinking ML Kit would honor it.
+            // However, InputImage.fromMediaImage() does NOT honor cropRect - it processes
+            // the full MediaImage buffer. ML Kit returns bounding boxes in full image coordinates.
+            // The cropRect is still calculated for reference but not applied to the ImageProxy.
 
             // PHASE 5: Rate-limited viewport logging
             val now = System.currentTimeMillis()
             if (now - lastCropRectLogTime >= cropRectLogIntervalMs) {
-                Log.i(TAG, "[VIEWPORT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees, appliedCrop=$cropRect")
+                Log.i(TAG, "[VIEWPORT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees")
                 lastCropRectLogTime = now
             }
 
-            // Build ML Kit image from camera buffer with applied cropRect
+            // Build ML Kit image from camera buffer (full frame)
             val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
 
             // OPTIMIZATION: Lazy bitmap provider - only creates bitmap when invoked
@@ -859,9 +850,9 @@ class CameraXManager(
                 cachedBitmap
             }
 
-            // ML Kit bounding boxes are relative to the cropRect coordinate space (origin at 0,0).
-            // Create bounds for edge filtering using cropRect dimensions (NOT full image dimensions).
-            val imageBoundsForFiltering = android.graphics.Rect(0, 0, cropRect.width(), cropRect.height())
+            // CRITICAL: ML Kit returns bounding boxes in full image coordinates.
+            // Use full image dimensions for edge filtering.
+            val imageBoundsForFiltering = android.graphics.Rect(0, 0, imageProxy.width, imageProxy.height)
 
             // Route to the appropriate scanner based on mode
             when (scanMode) {
@@ -1088,6 +1079,11 @@ class CameraXManager(
 
     /**
      * Converts ImageProxy to Bitmap.
+     *
+     * CRITICAL: Creates a FULL FRAME bitmap, not cropped to cropRect.
+     * ML Kit's InputImage.fromMediaImage() does NOT honor cropRect - it processes the
+     * full MediaImage buffer and returns bounding boxes in full frame coordinates.
+     * Therefore, the bitmap used for thumbnail cropping must also be full frame.
      */
     private fun ImageProxy.toBitmap(): Bitmap {
         val yBuffer = planes[0].buffer
@@ -1106,13 +1102,15 @@ class CameraXManager(
 
         val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
         val out = ByteArrayOutputStream()
-        // Use the proxy's cropRect to ensure the resulting bitmap matches the visible viewport
-        // and coordinate space used by ML Kit.
-        yuvImage.compressToJpeg(this.cropRect, 90, out)
+        // CRITICAL FIX: Use FULL FRAME rect, not cropRect.
+        // ML Kit returns bounding boxes in full image coordinates, so the bitmap
+        // used for thumbnail cropping must match those coordinates.
+        val fullFrameRect = android.graphics.Rect(0, 0, width, height)
+        yuvImage.compressToJpeg(fullFrameRect, 90, out)
         val jpegBytes = out.toByteArray()
 
         return android.graphics.BitmapFactory.decodeByteArray(jpegBytes, 0, jpegBytes.size)
-            ?: Bitmap.createBitmap(this.cropRect.width(), this.cropRect.height(), Bitmap.Config.ARGB_8888)
+            ?: Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
     }
 
     /**
