@@ -1,0 +1,55 @@
+***REMOVED*** Node.js
+node_modules
+npm-debug.log
+yarn-error.log
+.pnpm-debug.log
+
+***REMOVED*** TypeScript
+*.tsbuildinfo
+
+***REMOVED*** Build output (we build inside Docker)
+dist
+
+***REMOVED*** Dev/test files
+*.test.ts
+*.spec.ts
+__tests__
+coverage
+.nyc_output
+
+***REMOVED*** IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+***REMOVED*** Git
+.git
+.gitignore
+
+***REMOVED*** Environment files (secrets)
+.env
+.env.*
+!.env.example
+
+***REMOVED*** Documentation
+*.md
+docs
+
+***REMOVED*** Docker files (not needed in context)
+Dockerfile*
+docker-compose*
+.docker*
+
+***REMOVED*** OS files
+.DS_Store
+Thumbs.db
+
+***REMOVED*** Logs
+*.log
+logs
+
+***REMOVED*** Temporary files
+tmp
+temp
+*.tmp
