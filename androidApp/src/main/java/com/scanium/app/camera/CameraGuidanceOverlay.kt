@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.scanium.app.camera.detection.RoiFilterResult
 import com.scanium.app.ui.theme.CyanGlow
 import com.scanium.app.ui.theme.ScaniumBlue
+import com.scanium.core.models.scanning.DistanceConfidence
 import com.scanium.core.models.scanning.GuidanceState
 import com.scanium.core.models.scanning.ScanGuidanceState
 import com.scanium.core.models.scanning.ScanRoi
@@ -91,15 +92,35 @@ fun CameraGuidanceOverlay(
         label = "pulseAlpha"
     )
 
-    // Determine colors based on state
-    val (borderColor, glowColor, borderWidth) = remember(guidanceState.state) {
+    // PHASE 2: Distance confidence colors for subtle warning tints
+    val distanceWarningColor = Color(0xFFFF9800)  // Orange warning
+    val optimalColor = Color(0xFF1DB954)  // Green optimal
+
+    // Determine colors based on state and distance confidence
+    val (borderColor, glowColor, borderWidth) = remember(guidanceState.state, guidanceState.distanceConfidence) {
         when (guidanceState.state) {
             GuidanceState.SEARCHING -> Triple(ScaniumBlue.copy(alpha = 0.5f), CyanGlow.copy(alpha = 0.2f), 2f)
-            GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR -> Triple(Color(0xFFFF9800), Color(0xFFFF9800).copy(alpha = 0.3f), 2.5f)
-            GuidanceState.OFF_CENTER -> Triple(Color(0xFFFF9800), Color(0xFFFF9800).copy(alpha = 0.3f), 2.5f)
+            GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR -> Triple(distanceWarningColor, distanceWarningColor.copy(alpha = 0.3f), 2.5f)
+            GuidanceState.OFF_CENTER -> Triple(distanceWarningColor, distanceWarningColor.copy(alpha = 0.3f), 2.5f)
             GuidanceState.UNSTABLE, GuidanceState.FOCUSING -> Triple(ScaniumBlue.copy(alpha = 0.7f), CyanGlow.copy(alpha = 0.3f), 2f)
-            GuidanceState.GOOD -> Triple(Color(0xFF1DB954), Color(0xFF1DB954).copy(alpha = 0.4f), 3f)
-            GuidanceState.LOCKED -> Triple(Color(0xFF1DB954), Color(0xFF1DB954).copy(alpha = 0.5f), 4f)
+            GuidanceState.GOOD -> {
+                // PHASE 2: Subtle distance feedback in GOOD state
+                // Show slight warning tint if distance is not optimal
+                when (guidanceState.distanceConfidence) {
+                    DistanceConfidence.TOO_CLOSE -> Triple(
+                        Color(0xFF7CB342),  // Yellow-green (leaning toward warning)
+                        Color(0xFF7CB342).copy(alpha = 0.4f),
+                        3f
+                    )
+                    DistanceConfidence.TOO_FAR -> Triple(
+                        Color(0xFF7CB342),  // Yellow-green (leaning toward warning)
+                        Color(0xFF7CB342).copy(alpha = 0.4f),
+                        3f
+                    )
+                    else -> Triple(optimalColor, optimalColor.copy(alpha = 0.4f), 3f)
+                }
+            }
+            GuidanceState.LOCKED -> Triple(optimalColor, optimalColor.copy(alpha = 0.5f), 4f)
         }
     }
 

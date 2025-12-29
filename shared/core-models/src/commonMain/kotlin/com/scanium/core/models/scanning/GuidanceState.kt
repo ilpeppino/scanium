@@ -1,6 +1,23 @@
 package com.scanium.core.models.scanning
 
 /**
+ * Distance confidence level for scan feedback.
+ *
+ * Indicates how well the object distance matches the optimal scanning range.
+ * Used for subtle visual feedback on the scan zone border.
+ */
+enum class DistanceConfidence {
+    /** Object is too close to the camera */
+    TOO_CLOSE,
+    /** Object is at optimal scanning distance */
+    OPTIMAL,
+    /** Object is too far from the camera */
+    TOO_FAR,
+    /** No object detected or unable to determine */
+    UNKNOWN
+}
+
+/**
  * Guidance states for the camera scanning overlay.
  *
  * These states inform the user what action to take for optimal scanning.
@@ -98,7 +115,10 @@ data class ScanGuidanceState(
     val canAddItem: Boolean,
 
     /** ID of locked candidate (if in LOCKED state) */
-    val lockedCandidateId: String?
+    val lockedCandidateId: String?,
+
+    /** Distance confidence for visual feedback on scan zone */
+    val distanceConfidence: DistanceConfidence = DistanceConfidence.UNKNOWN
 ) {
     companion object {
         /** Initial state when scanning starts */
@@ -114,7 +134,8 @@ data class ScanGuidanceState(
                 motionScore = null,
                 stateTimeMs = 0L,
                 canAddItem = false,
-                lockedCandidateId = null
+                lockedCandidateId = null,
+                distanceConfidence = DistanceConfidence.UNKNOWN
             )
         }
     }
