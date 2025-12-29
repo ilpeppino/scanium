@@ -46,6 +46,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -148,6 +150,10 @@ fun CameraScreen(
     var isCameraBinding by remember { mutableStateOf(false) }
     var rebindAttempts by remember { mutableStateOf(0) }
 
+    // Lifecycle resume counter - incremented on each ON_RESUME to restart detection
+    // Fixes: frozen bboxes after backgrounding or navigating away
+    var lifecycleResumeCount by remember { mutableStateOf(0) }
+
     val currentScanMode = ScanMode.OBJECT_DETECTION
 
     // Model download state for first-launch experience
@@ -237,6 +243,31 @@ fun CameraScreen(
         }
     }
 
+    // Lifecycle observer to restart detection on resume
+    // Fixes: frozen bboxes after backgrounding (Issue 2) or navigating away (Issue 1)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    // Increment to trigger preview detection restart via LaunchedEffect
+                    lifecycleResumeCount++
+                    Log.d("CameraScreen", "ON_RESUME: incrementing lifecycleResumeCount to $lifecycleResumeCount")
+                }
+                Lifecycle.Event.ON_PAUSE -> {
+                    // Clear overlay to avoid stale bboxes when returning
+                    cameraManager.stopPreviewDetection()
+                    itemsViewModel.updateOverlayDetections(emptyList())
+                    Log.d("CameraScreen", "ON_PAUSE: stopped preview detection, cleared overlays")
+                }
+                else -> { /* Other events handled elsewhere */ }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     LaunchedEffect(targetRotation) {
         cameraManager.updateTargetRotation(targetRotation)
     }
@@ -318,9 +349,10 @@ fun CameraScreen(
     // Start preview detection when camera is ready (shows bounding boxes immediately)
     // IMPORTANT: Must wait for camera binding to complete (!isCameraBinding) before starting
     // preview detection, otherwise imageAnalysis won't be set up yet
-    LaunchedEffect(modelDownloadState, cameraState, isCameraBinding) {
+    // lifecycleResumeCount triggers restart after backgrounding or navigation return
+    LaunchedEffect(modelDownloadState, cameraState, isCameraBinding, lifecycleResumeCount) {
         if (modelDownloadState == ModelDownloadState.Ready && cameraState == CameraState.IDLE && !isCameraBinding) {
-            Log.d("CameraScreen", "Starting preview detection (camera idle, model ready, binding complete)")
+            Log.d("CameraScreen", "Starting preview detection (camera idle, model ready, binding complete, resumeCount=$lifecycleResumeCount)")
             cameraManager.startPreviewDetection(
                 onDetectionResult = { detections ->
                     // Update overlay with preview detections (no ROI filtering in preview mode)

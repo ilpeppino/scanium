@@ -56,6 +56,7 @@ import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
 import com.scanium.shared.core.models.model.ImageRef
+import com.scanium.app.model.resolveBytes
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.listing.ListingDraft
@@ -260,25 +261,13 @@ fun ItemsListScreen(
         val imageUris = mutableListOf<Uri>()
         selectedItems.forEachIndexed { index, item ->
             val imageRef = item.thumbnailRef ?: item.thumbnail
-            when (imageRef) {
-                is ImageRef.CacheKey -> {
-                    // Copy from cache to share directory
-                    val cacheFile = File(context.cacheDir, imageRef.key)
-                    if (cacheFile.exists()) {
-                        val shareFile = File(shareDir, "item_${index + 1}.jpg")
-                        cacheFile.copyTo(shareFile, overwrite = true)
-                        val uri = FileProvider.getUriForFile(context, authority, shareFile)
-                        imageUris.add(uri)
-                    }
-                }
-                is ImageRef.Bytes -> {
-                    // Write bytes to share file
-                    val shareFile = File(shareDir, "item_${index + 1}.jpg")
-                    shareFile.writeBytes(imageRef.bytes)
-                    val uri = FileProvider.getUriForFile(context, authority, shareFile)
-                    imageUris.add(uri)
-                }
-                else -> { /* No image available */ }
+            // Use resolveBytes() to handle both CacheKey (in-memory) and Bytes types
+            val bytes = imageRef.resolveBytes()
+            if (bytes != null) {
+                val shareFile = File(shareDir, "item_${index + 1}.jpg")
+                shareFile.writeBytes(bytes.bytes)
+                val uri = FileProvider.getUriForFile(context, authority, shareFile)
+                imageUris.add(uri)
             }
         }
 
