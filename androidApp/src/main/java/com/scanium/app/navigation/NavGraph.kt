@@ -40,6 +40,7 @@ import com.scanium.app.ui.settings.DeveloperOptionsScreen
 import com.scanium.app.ui.settings.DeveloperOptionsViewModel
 import com.scanium.app.billing.ui.PaywallScreen
 import com.scanium.app.billing.ui.PaywallViewModel
+import com.scanium.app.BuildConfig
 
 /**
  * Navigation routes for the app.
@@ -163,7 +164,15 @@ fun ScaniumNavGraph(
 
         // Part of ARCH-001/DX-003: Updated to use hiltViewModel() for DeveloperOptionsViewModel,
         // eliminating the need for manual dependency creation and Factory instantiation.
+        // DEV_MODE_ENABLED gates access to this screen - beta builds navigate back immediately
         composable(Routes.SETTINGS_DEVELOPER) {
+            if (!BuildConfig.DEV_MODE_ENABLED) {
+                // Beta builds: block access to developer options via deep links
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+                return@composable
+            }
             val developerOptionsViewModel: DeveloperOptionsViewModel = hiltViewModel()
             DeveloperOptionsScreen(
                 viewModel = developerOptionsViewModel,
