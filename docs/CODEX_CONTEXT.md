@@ -46,9 +46,12 @@
 - [`monitoring/README.md`](../monitoring/README.md) - Observability stack guide.
 
 ## B) Module Table
-| Module | Responsibility | Inputs / Outputs | Do / Don’t | Key files |
+
+**Dependency Injection:** Dagger Hilt is used throughout `androidApp`. ViewModels use `@HiltViewModel` + `@Inject constructor()`; `MainActivity` is annotated with `@AndroidEntryPoint`. Test modules in `androidApp/src/test/java/com/scanium/app/di/FakeModules.kt`.
+
+| Module | Responsibility | Inputs / Outputs | Do / Don't | Key files |
 | --- | --- | --- | --- | --- |
-| androidApp | Compose UI, navigation, camera UX, ML wrappers, selling, persistence, cloud API, diagnostics, build config | Inputs: CameraX frames, ML Kit results, domain packs; Outputs: UI state, network calls | Do: keep platform logic here; Don't: import from `android.*` into shared packages | `src/main/java/com/scanium/app/MainActivity.kt`, `navigation/NavGraph.kt`, `camera/CameraXManager.kt`, `ml/*`, `items/ItemsViewModel.kt`, `selling/*`, `diagnostics/*`, `ui/settings/*`, `data` |
+| androidApp | Compose UI, navigation, camera UX, ML wrappers, selling, persistence, cloud API, diagnostics, build config, Hilt DI | Inputs: CameraX frames, ML Kit results, domain packs; Outputs: UI state, network calls | Do: keep platform logic here; Don't: import from `android.*` into shared packages | `src/main/java/com/scanium/app/MainActivity.kt`, `navigation/NavGraph.kt`, `camera/CameraXManager.kt`, `ml/*`, `items/ItemsViewModel.kt`, `selling/*`, `diagnostics/*`, `ui/settings/*`, `data`, `di/` |
 | core-models | Android wrapper for shared models/typealiases | Inputs: shared models; Outputs: Android-friendly types | Do: stay Android-free aside from namespace; Don’t: add platform imports (portability check) | `src/main/java/com/scanium/app/model/*`, `src/main/java/com/scanium/app/items/ScannedItem.kt` |
 | core-tracking | Android wrapper exposing shared tracking | Inputs: shared tracking; Outputs: Android-consumable tracker/aggregator | Do: delegate to shared; Don’t: add android.* (portability check applies) | `src/main/java/com/scanium/app/tracking/*`, `src/main/java/com/scanium/app/aggregation/*` |
 | core-domainpack | Domain pack IO, repository, category engine | Inputs: JSON packs, labels/prompts; Outputs: ItemCategory, domain config | Do: keep Android IO minimal; Don’t: depend on camera/ML classes | `domain/DomainPackProvider.kt`, `domain/repository/LocalDomainPackRepository.kt`, `domain/category/*`, `src/main/res/raw/home_resale_domain_pack.json` |
