@@ -92,6 +92,9 @@ class DeveloperOptionsViewModel @Inject constructor(
     val bboxMappingDebugEnabled: StateFlow<Boolean> = settingsRepository.devBboxMappingDebugEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val correlationDebugEnabled: StateFlow<Boolean> = settingsRepository.devCorrelationDebugEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     // Auto-refresh state
     private val _autoRefreshEnabled = MutableStateFlow(false)
     val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -294,6 +297,14 @@ class DeveloperOptionsViewModel @Inject constructor(
     fun setBboxMappingDebugEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDevBboxMappingDebugEnabled(enabled)
+        }
+    }
+
+    fun setCorrelationDebugEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevCorrelationDebugEnabled(enabled)
+            // Enable/disable the correlation debug system
+            com.scanium.app.camera.geom.CorrelationDebug.setEnabled(enabled)
         }
     }
 
