@@ -47,11 +47,6 @@ class ScanGuidanceManager(
     private var recentMotionScores = mutableListOf<Float>()
     private var averageMotionScore: Float = 0f
 
-    private var lastMotionScore: Float = 0f
-
-    private var lastInstantMotionScore: Float = 0f
-
-
     private var lastInstantMotionScore: Float = 0f
 
 
@@ -315,23 +310,10 @@ class ScanGuidanceManager(
      */
     private fun shouldBreakLock(candidate: CandidateInfo?, currentTimeMs: Long): Boolean {
         // Break lock if:
-<<<<<<< HEAD
-<<<<<<< HEAD
-        // 1. High motion detected (panning)
-        if (lastMotionScore > config.lockBreakMotionThreshold ||
-            averageMotionScore > config.lockBreakMotionThreshold
-        ) {
-=======
-=======
->>>>>>> 71971f1 (scan guidance)
         // 1. High motion detected (panning) - check both instant and average
         //    Instant motion catches sudden movements immediately
         if (lastInstantMotionScore > config.lockBreakMotionThreshold ||
             averageMotionScore > config.lockBreakMotionThreshold) {
-<<<<<<< HEAD
->>>>>>> 71971f1 (scan guidance)
-=======
->>>>>>> 71971f1 (scan guidance)
             return true
         }
 
@@ -366,15 +348,7 @@ class ScanGuidanceManager(
      * Update motion score running average.
      */
     private fun updateMotionAverage(motionScore: Float) {
-<<<<<<< HEAD
-<<<<<<< HEAD
-        lastMotionScore = motionScore
-=======
         lastInstantMotionScore = motionScore
->>>>>>> 71971f1 (scan guidance)
-=======
-        lastInstantMotionScore = motionScore
->>>>>>> 71971f1 (scan guidance)
         recentMotionScores.add(motionScore)
         if (recentMotionScores.size > config.motionAverageWindow) {
             recentMotionScores.removeAt(0)
