@@ -29,7 +29,6 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.scanium.app.perf.PerformanceMonitor
-import com.scanium.app.platform.toRectF
 import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.CyanGlow
 import com.scanium.app.ui.theme.ScaniumBlue
@@ -41,8 +40,9 @@ import kotlin.math.max
  * camera believes is being scanned.
  *
  * @param detections List of detection results to render
- * @param imageSize Size of the analyzed image (from ML Kit)
+ * @param imageSize Size of the analyzed image (from ML Kit) - raw sensor dimensions
  * @param previewSize Size of the preview view on screen
+ * @param rotationDegrees Image rotation from ImageProxy (0, 90, 180, 270) for coordinate mapping
  */
 /**
  * Visual colors for bounding box states.
@@ -76,6 +76,7 @@ fun DetectionOverlay(
     detections: List<OverlayTrack>,
     imageSize: Size,
     previewSize: Size,
+    rotationDegrees: Int = 90,  // Default to portrait mode (most common on phones)
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()
@@ -123,12 +124,16 @@ fun DetectionOverlay(
         val canvasWidth = size.width
         val canvasHeight = size.height
 
-        // Calculate transformation parameters
-        val transform = calculateTransform(
+        // Calculate rotation-aware transformation parameters
+        // This handles: (1) rotation of bbox coordinates for portrait/landscape
+        //               (2) FILL_CENTER scaling (center-crop) used by PreviewView
+        val transform = calculateTransformWithRotation(
             imageWidth = imageSize.width,
             imageHeight = imageSize.height,
             previewWidth = canvasWidth,
-            previewHeight = canvasHeight
+            previewHeight = canvasHeight,
+            rotationDegrees = rotationDegrees,
+            scaleType = PreviewScaleType.FILL_CENTER
         )
 
         // Bounding box appearance constants
@@ -195,10 +200,12 @@ fun DetectionOverlay(
             val innerStrokeWidth = (minInnerStrokeWidth +
                 (maxInnerStrokeWidth - minInnerStrokeWidth) * clampedConfidence) * strokeMultiplier
 
-            // Convert normalized bbox to image space coordinates
-            val imageSpaceRect = detection.bboxNorm.toRectF(imageSize.width, imageSize.height)
-            // Transform bounding box from image coordinates to preview coordinates
-            val transformedBox = transformBoundingBox(imageSpaceRect, transform)
+            // Map normalized bbox to preview coordinates with rotation handling
+            // This correctly handles portrait mode where sensor coords need 90° rotation
+            val transformedBox = mapBboxToPreview(detection.bboxNorm, transform)
+
+            // Debug logging (rate-limited to once per second)
+            logBboxMappingDebug(detection.bboxNorm, transform, transformedBox)
 
             val topLeft = Offset(transformedBox.left, transformedBox.top)
             val boxSize = ComposeSize(transformedBox.width(), transformedBox.height())
