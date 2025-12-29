@@ -446,7 +446,8 @@ class ScanGuidanceManager(
         val shouldShowHint = shouldShowHint(currentState, currentTimeMs)
 
         // Update hint if changed and rate limit passed
-        if (hintText != currentHintText && currentTimeMs - lastHintChangeTimeMs > config.hintRateLimitMs) {
+        // We allow the first hint (when currentHintText is null) to be set immediately
+        if (hintText != currentHintText && (currentHintText == null || currentTimeMs - lastHintChangeTimeMs >= config.hintRateLimitMs)) {
             currentHintText = hintText
             lastHintChangeTimeMs = currentTimeMs
         }

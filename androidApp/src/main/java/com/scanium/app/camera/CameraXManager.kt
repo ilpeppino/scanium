@@ -1051,7 +1051,7 @@ class CameraXManager(
         val itemsToAdd = if (canAddItems && isLocked) {
             // Guidance allows add - verify candidates are inside ROI (debug assertion)
             confirmedCandidates.mapNotNull { candidate ->
-                val bbox = candidate.boundingBoxNorm
+                val bbox = candidate.boundingBoxNorm ?: return@mapNotNull null
                 val centerX = (bbox.left + bbox.right) / 2f
                 val centerY = (bbox.top + bbox.bottom) / 2f
 
