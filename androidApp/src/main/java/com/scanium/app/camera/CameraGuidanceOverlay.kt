@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import com.scanium.app.camera.detection.RoiFilterResult
 import com.scanium.app.ui.theme.CyanGlow
 import com.scanium.app.ui.theme.ScaniumBlue
 import com.scanium.core.models.scanning.GuidanceState
@@ -58,7 +59,11 @@ import com.scanium.core.models.scanning.ScanRoi
 fun CameraGuidanceOverlay(
     guidanceState: ScanGuidanceState,
     modifier: Modifier = Modifier,
-    showDebugInfo: Boolean = false
+    showDebugInfo: Boolean = false,
+    /** PHASE 6: ROI filter result for diagnostics display */
+    roiFilterResult: RoiFilterResult? = null,
+    /** PHASE 6: Current count of preview bboxes being displayed */
+    previewBboxCount: Int = 0
 ) {
     val roi = guidanceState.scanRoi
 
@@ -187,9 +192,12 @@ fun CameraGuidanceOverlay(
         }
 
         // Debug info overlay
+        // PHASE 6: Enhanced with ROI filter diagnostics
         if (showDebugInfo) {
             ScanDebugInfo(
                 guidanceState = guidanceState,
+                roiFilterResult = roiFilterResult,
+                previewBboxCount = previewBboxCount,
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .padding(16.dp)
@@ -350,15 +358,37 @@ private fun GuidanceHintChip(
 
 /**
  * Debug info overlay showing scan diagnostics.
+ *
+ * PHASE 6: Enhanced with ROI filter diagnostics showing:
+ * - Total detections from ML Kit
+ * - ROI-eligible detections (shown as bboxes)
+ * - Outside ROI count (filtered out)
+ * - Lock state
  */
 @Composable
 private fun ScanDebugInfo(
     guidanceState: ScanGuidanceState,
+    roiFilterResult: RoiFilterResult? = null,
+    previewBboxCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val debugText = buildString {
         appendLine("State: ${guidanceState.state}")
         appendLine("ROI: ${(guidanceState.scanRoi.widthNorm * 100).toInt()}%")
+
+        // PHASE 6: ROI filter diagnostics
+        if (roiFilterResult != null) {
+            appendLine("─── ROI Filter ───")
+            appendLine("Total: ${roiFilterResult.totalDetections}")
+            appendLine("In ROI: ${roiFilterResult.eligibleCount}")
+            appendLine("Outside: ${roiFilterResult.outsideCount}")
+            appendLine("Preview: $previewBboxCount")
+            if (roiFilterResult.hasDetectionsOutsideRoiOnly) {
+                appendLine("⚠ OUTSIDE ROI ONLY")
+            }
+        }
+
+        appendLine("─── Quality ───")
         guidanceState.detectedBoxArea?.let {
             appendLine("Box: ${(it * 100).toInt()}%")
         }
@@ -371,8 +401,12 @@ private fun ScanDebugInfo(
         guidanceState.centerDistance?.let {
             appendLine("Center: ${String.format("%.2f", it)}")
         }
+        appendLine("─── Lock ───")
+        if (guidanceState.lockedCandidateId != null) {
+            appendLine("Locked: ${guidanceState.lockedCandidateId!!.take(8)}...")
+        }
         if (guidanceState.canAddItem) {
-            appendLine("CAN ADD")
+            appendLine("✓ CAN ADD")
         }
     }
 
@@ -415,6 +449,37 @@ fun CameraGuidanceOverlayIdle(
             size = Size(zoneWidth, zoneHeight),
             cornerRadius = CornerRadius(cornerRadius),
             style = Stroke(width = 1.5.dp.toPx())
+        )
+    }
+}
+
+/**
+ * PHASE 4: Hint shown when detections exist but none are inside ROI.
+ *
+ * This teaches users to center objects in the scan zone.
+ * Rate-limited to avoid flashing.
+ */
+@Composable
+fun RoiCenteringHint(
+    modifier: Modifier = Modifier
+) {
+    // Rate-limit hint display with simple animation
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(animationSpec = tween(300)),
+        exit = fadeOut(animationSpec = tween(300)),
+        modifier = modifier.padding(top = 100.dp)
+    ) {
+        Text(
+            text = "Center the object in the scan zone",
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.White,
+            modifier = Modifier
+                .background(
+                    color = Color(0xFFFF9800).copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
 }
