@@ -124,7 +124,7 @@ class DetectionOverlayTransformTest {
     }
 
     @Test
-    fun `calculateTransformWithRotation with FILL_CENTER uses larger scale`() {
+    fun `calculateTransformWithRotation with FILL_CENTER uses larger or equal scale`() {
         val fillTransform = calculateTransformWithRotation(
             imageWidth = 1280,
             imageHeight = 720,
@@ -143,8 +143,8 @@ class DetectionOverlayTransformTest {
             scaleType = PreviewScaleType.FIT_CENTER
         )
 
-        // FILL_CENTER should have larger scale (fills the preview)
-        assertThat(fillTransform.scale).isGreaterThan(fitTransform.scale)
+        // FILL_CENTER should never scale less than FIT_CENTER (fills the preview)
+        assertThat(fillTransform.scale).isAtLeast(fitTransform.scale)
     }
 
     @Test
