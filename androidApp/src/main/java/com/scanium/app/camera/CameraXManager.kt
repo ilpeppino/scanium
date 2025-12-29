@@ -394,9 +394,10 @@ class CameraXManager(
 
             detectionScope.launch {
                 try {
-                    // Report actual frame dimensions (full image, not cropped)
-                    // The overlay needs full image size for proper coordinate transformation
-                    val frameSize = Size(imageProxy.width, imageProxy.height)
+                    // CRITICAL FIX: Report cropRect dimensions, NOT full image dimensions.
+                    // ML Kit bounding boxes are relative to the cropRect (visible viewport),
+                    // so the overlay must use matching dimensions for correct coordinate mapping.
+                    val frameSize = Size(cropRect.width(), cropRect.height())
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
                     }
@@ -545,9 +546,11 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
-                        // Report actual frame dimensions (full image, not cropped)
-                        // The overlay needs full image size for proper coordinate transformation
-                        val frameSize = Size(imageProxy.width, imageProxy.height)
+                        // CRITICAL FIX: Report cropRect dimensions, NOT full image dimensions.
+                        // ML Kit bounding boxes are relative to the cropRect (visible viewport),
+                        // so the overlay must use matching dimensions for correct coordinate mapping.
+                        // Using full image dimensions caused detection boxes to appear offset.
+                        val frameSize = Size(cropRect.width(), cropRect.height())
                         withContext(Dispatchers.Main) {
                             onFrameSize(frameSize)
                         }
@@ -566,8 +569,8 @@ class CameraXManager(
                         // Log detection invocation
                         ScanPipelineDiagnostics.logDetectionInvoked(
                             mode = scanMode.name,
-                            imageWidth = imageProxy.width,
-                            imageHeight = imageProxy.height,
+                            imageWidth = cropRect.width(),
+                            imageHeight = cropRect.height(),
                             rotationDegrees = imageProxy.imageInfo.rotationDegrees
                         )
 
@@ -856,8 +859,8 @@ class CameraXManager(
                 cachedBitmap
             }
 
-            // Since ImageProxy is already cropped to visible viewport via setCropRect(),
-            // pass full image bounds for edge inset filtering (filters detections too close to edges)
+            // ML Kit bounding boxes are relative to the cropRect coordinate space (origin at 0,0).
+            // Create bounds for edge filtering using cropRect dimensions (NOT full image dimensions).
             val imageBoundsForFiltering = android.graphics.Rect(0, 0, cropRect.width(), cropRect.height())
 
             // Route to the appropriate scanner based on mode
