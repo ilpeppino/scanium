@@ -52,6 +52,7 @@ fun DeveloperOptionsScreen(
     val documentDetectionEnabled by viewModel.documentDetectionEnabled.collectAsState()
     val adaptiveThrottlingEnabled by viewModel.adaptiveThrottlingEnabled.collectAsState()
     val liveScanDiagnosticsEnabled by viewModel.scanningDiagnosticsEnabled.collectAsState()
+    val bboxMappingDebugEnabled by viewModel.bboxMappingDebugEnabled.collectAsState()
     val scrollState = rememberScrollState()
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
@@ -161,6 +162,14 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.Analytics,
                 checked = liveScanDiagnosticsEnabled,
                 onCheckedChange = { viewModel.setScanningDiagnosticsEnabled(it) }
+            )
+
+            SettingSwitchRow(
+                title = "Geometry Debug Overlay",
+                subtitle = if (bboxMappingDebugEnabled) "Shows bbox mapping info: rotation, scale, dimensions (Logcat tag: GeomMap)" else "Geometry debug disabled",
+                icon = Icons.Default.GridOn,
+                checked = bboxMappingDebugEnabled,
+                onCheckedChange = { viewModel.setBboxMappingDebugEnabled(it) }
             )
 
             SettingsSectionHeader("Classifier Diagnostics")

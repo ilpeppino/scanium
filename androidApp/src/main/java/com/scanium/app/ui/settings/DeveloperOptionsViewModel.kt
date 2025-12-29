@@ -89,6 +89,9 @@ class DeveloperOptionsViewModel @Inject constructor(
     val scanningDiagnosticsEnabled: StateFlow<Boolean> = settingsRepository.devScanningDiagnosticsEnabledFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val bboxMappingDebugEnabled: StateFlow<Boolean> = settingsRepository.devBboxMappingDebugEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     // Auto-refresh state
     private val _autoRefreshEnabled = MutableStateFlow(false)
     val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -285,6 +288,12 @@ class DeveloperOptionsViewModel @Inject constructor(
     fun setScanningDiagnosticsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setDevScanningDiagnosticsEnabled(enabled)
+        }
+    }
+
+    fun setBboxMappingDebugEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDevBboxMappingDebugEnabled(enabled)
         }
     }
 
