@@ -52,7 +52,9 @@ fun SettingsHomeScreen(
     onDeveloperClick: () -> Unit
 ) {
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
-    val showDeveloper = BuildConfig.DEBUG || isDeveloperMode
+    // DEV_MODE_ENABLED is false in beta builds, completely hiding Developer Options
+    // In dev builds, it's shown if either DEBUG build type or user enabled developer mode
+    val showDeveloper = BuildConfig.DEV_MODE_ENABLED && (BuildConfig.DEBUG || isDeveloperMode)
 
     val categories = listOf(
         SettingsCategory(
