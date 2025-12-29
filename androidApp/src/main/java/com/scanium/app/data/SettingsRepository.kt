@@ -64,6 +64,7 @@ class SettingsRepository(private val context: Context) {
 
         // Bbox mapping debug settings
         private val DEV_BBOX_MAPPING_DEBUG_KEY = booleanPreferencesKey("dev_bbox_mapping_debug_enabled")
+        private val DEV_CORRELATION_DEBUG_KEY = booleanPreferencesKey("dev_correlation_debug_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -467,6 +468,21 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDevBboxMappingDebugEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_BBOX_MAPPING_DEBUG_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether bbox↔snapshot correlation debug is enabled (developer toggle).
+     * Shows aspect ratio validation, logs once per second with tag CORR.
+     * Default is OFF to avoid performance impact.
+     */
+    val devCorrelationDebugEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_CORRELATION_DEBUG_KEY] ?: false
+    }
+
+    suspend fun setDevCorrelationDebugEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_CORRELATION_DEBUG_KEY] = enabled
         }
     }
 
