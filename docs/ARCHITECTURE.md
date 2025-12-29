@@ -75,6 +75,7 @@ Single source of truth for how Scanium is structured and how we evolve it. Scani
 
 ## Android Application Architecture (Current State)
 - **Build/tooling:** Java 17 toolchain; AGP 8.5.0; Kotlin 2.0.0 + Compose compiler 2.0.0; Compose BOM 2024.05.00 in `androidApp`; KSP 2.0.0-1.0.24. `./gradlew assembleDebug` is the main gate; SBOM + OWASP checks in `androidApp`.
+- **Dependency Injection:** Dagger Hilt for DI (`@HiltViewModel`, `@AndroidEntryPoint`, `@Inject`). ViewModels use `@HiltViewModel` for automatic injection; `MainActivity` annotated with `@AndroidEntryPoint`.
 - **Modules:**
   - Platform UI: `androidApp/` (Compose, navigation, view models).
   - Platform scanning: `android-camera-camerax` (CameraX), `android-ml-mlkit` (ML Kit analyzers), `android-platform-adapters` (Bitmap/Rect adapters).
