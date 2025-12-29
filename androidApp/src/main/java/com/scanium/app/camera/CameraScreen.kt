@@ -315,6 +315,27 @@ fun CameraScreen(
         }
     }
 
+    // Start preview detection when camera is ready (shows bounding boxes immediately)
+    LaunchedEffect(modelDownloadState, cameraState) {
+        if (modelDownloadState == ModelDownloadState.Ready && cameraState == CameraState.IDLE) {
+            Log.d("CameraScreen", "Starting preview detection (camera idle, model ready)")
+            cameraManager.startPreviewDetection(
+                onDetectionResult = { detections ->
+                    // Update overlay with preview detections (no ROI filtering in preview mode)
+                    itemsViewModel.updateOverlayDetections(
+                        detections = detections,
+                        scanRoi = scanGuidanceState.scanRoi,
+                        lockedTrackingId = null,
+                        isGoodState = false
+                    )
+                },
+                onFrameSize = { size ->
+                    imageSize = size
+                }
+            )
+        }
+    }
+
     LaunchedEffect(classificationMode) {
         val previousMode = previousClassificationMode
         if (previousMode != null && previousMode != classificationMode) {
@@ -332,6 +353,7 @@ fun CameraScreen(
     // Cleanup on dispose
     DisposableEffect(Unit) {
         onDispose {
+            cameraManager.stopPreviewDetection()
             cameraManager.shutdown()
         }
     }
@@ -753,6 +775,7 @@ fun CameraScreen(
                                 cameraState = CameraState.IDLE
                                 hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 cameraManager.stopScanning()
+                                // Clear current detections, preview detection will restart via LaunchedEffect
                                 itemsViewModel.updateOverlayDetections(emptyList())
                             }
                         },
