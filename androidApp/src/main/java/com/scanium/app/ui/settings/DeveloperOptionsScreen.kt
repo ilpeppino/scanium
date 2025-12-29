@@ -53,6 +53,7 @@ fun DeveloperOptionsScreen(
     val adaptiveThrottlingEnabled by viewModel.adaptiveThrottlingEnabled.collectAsState()
     val liveScanDiagnosticsEnabled by viewModel.scanningDiagnosticsEnabled.collectAsState()
     val bboxMappingDebugEnabled by viewModel.bboxMappingDebugEnabled.collectAsState()
+    val correlationDebugEnabled by viewModel.correlationDebugEnabled.collectAsState()
     val scrollState = rememberScrollState()
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
@@ -170,6 +171,14 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.GridOn,
                 checked = bboxMappingDebugEnabled,
                 onCheckedChange = { viewModel.setBboxMappingDebugEnabled(it) }
+            )
+
+            SettingSwitchRow(
+                title = "Bbox↔Snapshot Correlation",
+                subtitle = if (correlationDebugEnabled) "Validates bbox AR matches crop AR (Logcat tag: CORR)" else "Correlation validation disabled",
+                icon = Icons.Default.Compare,
+                checked = correlationDebugEnabled,
+                onCheckedChange = { viewModel.setCorrelationDebugEnabled(it) }
             )
 
             SettingsSectionHeader("Classifier Diagnostics")
