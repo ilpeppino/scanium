@@ -3,6 +3,7 @@ package com.scanium.app.camera
 import android.os.SystemClock
 import android.os.Trace
 import android.util.Size
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -13,6 +14,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +44,23 @@ import kotlin.math.max
  * @param imageSize Size of the analyzed image (from ML Kit)
  * @param previewSize Size of the preview view on screen
  */
+/**
+ * Visual colors for bounding box states.
+ */
+private object BboxColors {
+    /** Preview state: neutral blue - object detected */
+    val PreviewOutline = ScaniumBlue.copy(alpha = 0.6f)
+    val PreviewGlow = CyanGlow.copy(alpha = 0.2f)
+
+    /** Ready state: accent color - conditions met, hold steady */
+    val ReadyOutline = Color(0xFF1DB954).copy(alpha = 0.85f)
+    val ReadyGlow = Color(0xFF1DB954).copy(alpha = 0.4f)
+
+    /** Locked state: bright accent - scan ready */
+    val LockedOutline = Color(0xFF1DB954)
+    val LockedGlow = Color(0xFF1DB954).copy(alpha = 0.5f)
+}
+
 @Composable
 fun DetectionOverlay(
     detections: List<OverlayTrack>,
@@ -53,6 +72,7 @@ fun DetectionOverlay(
     val labelTextStyle = MaterialTheme.typography.labelMedium.copy(color = Color.White)
     val readyColor = Color(0xFF1DB954)
     val hasEstimating = detections.any { it.priceEstimationStatus is PriceEstimationStatus.Estimating }
+    val hasLocked = detections.any { it.boxStyle == OverlayBoxStyle.LOCKED }
 
     // Pulse animation for price estimation - only animate when actually estimating
     val infiniteTransition = rememberInfiniteTransition(label = "pricePulse")
@@ -65,6 +85,23 @@ fun DetectionOverlay(
         ),
         label = "pricePulseValue"
     )
+
+    // Single pulse animation for LOCKED state transition (once)
+    // This creates a brief "pop" effect when lock is achieved
+    val lockedPulseScale = remember { Animatable(1f) }
+    LaunchedEffect(hasLocked) {
+        if (hasLocked) {
+            // Brief pulse: scale up slightly then back to normal
+            lockedPulseScale.animateTo(
+                targetValue = 1.15f,
+                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+            )
+            lockedPulseScale.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+            )
+        }
+    }
 
     // Use animated alpha when estimating, otherwise full opacity
     val pulseAlpha = if (hasEstimating) animatedPulseAlpha else 1f
@@ -102,7 +139,7 @@ fun DetectionOverlay(
             val status = detection.priceEstimationStatus
             val isReady = detection.isReady
             val isEstimating = status is PriceEstimationStatus.Estimating
-            val isLocked = detection.boxStyle == OverlayBoxStyle.LOCKED
+            val boxStyle = detection.boxStyle
 
             // Bounding boxes are always fully visible (no pulsing)
             val boxAlpha = 1f
@@ -111,24 +148,26 @@ fun DetectionOverlay(
             val shouldPulseLabel = !isReady || isEstimating
             val labelAlpha = if (shouldPulseLabel) pulseAlpha else 1f
 
-            // PHASE 3: Visual distinction between PREVIEW and LOCKED styles
-            // PREVIEW: thin, neutral/semi-transparent (immediate feedback)
-            // LOCKED: thicker, highlighted (scan ready)
-            val (outlineColor, glowColor, strokeMultiplier) = when {
-                isLocked -> Triple(
-                    readyColor,  // Green for locked
-                    readyColor.copy(alpha = 0.5f),
-                    1.3f  // Thicker stroke for locked
+            // PHASE 1: Explicit visual states for bbox
+            // Visual progression: PREVIEW → READY → LOCKED
+            // - PREVIEW: thin stroke, neutral color (detected but not ready)
+            // - READY: medium stroke, accent color (conditions met, holding)
+            // - LOCKED: thick stroke, bright accent with pulse (scan-ready)
+            val (outlineColor, glowColor, strokeMultiplier) = when (boxStyle) {
+                OverlayBoxStyle.LOCKED -> Triple(
+                    BboxColors.LockedOutline,
+                    BboxColors.LockedGlow,
+                    1.4f * lockedPulseScale.value  // Thick stroke with pulse effect
                 )
-                isReady -> Triple(
-                    readyColor.copy(alpha = 0.8f),
-                    readyColor.copy(alpha = 0.35f),
-                    1.0f
+                OverlayBoxStyle.READY -> Triple(
+                    BboxColors.ReadyOutline,
+                    BboxColors.ReadyGlow,
+                    1.1f  // Medium stroke for ready
                 )
-                else -> Triple(
-                    ScaniumBlue.copy(alpha = 0.7f),  // More transparent for preview
-                    CyanGlow.copy(alpha = 0.25f),
-                    0.8f  // Thinner stroke for preview
+                OverlayBoxStyle.PREVIEW -> Triple(
+                    BboxColors.PreviewOutline,
+                    BboxColors.PreviewGlow,
+                    0.75f  // Thin stroke for preview
                 )
             }
 
