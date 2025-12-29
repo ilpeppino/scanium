@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.view.WindowManager
+import com.scanium.app.data.SettingsRepository
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -111,14 +112,25 @@ fun ItemsListScreen(
     val targetBounds by tourViewModel?.targetBounds?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
 
     // SEC-010: Prevent screenshots of sensitive item data (prices, images)
-    DisposableEffect(Unit) {
+    // Respects developer mode setting to allow screenshots when enabled
+    val settingsRepository = remember { SettingsRepository(context) }
+    val allowScreenshots by settingsRepository.devAllowScreenshotsFlow.collectAsState(initial = false)
+
+    DisposableEffect(allowScreenshots) {
         val window = (context as? Activity)?.window
-        window?.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        )
-        onDispose {
+        if (!allowScreenshots) {
+            window?.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } else {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose {
+            // Only clear if we set it
+            if (!allowScreenshots) {
+                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
         }
     }
 

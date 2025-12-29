@@ -2,6 +2,7 @@ package com.scanium.app.selling.ui
 
 import android.app.Activity
 import android.view.WindowManager
+import com.scanium.app.data.SettingsRepository
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -69,14 +70,25 @@ fun SellOnEbayScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     // SEC-010: Prevent screenshots of listing drafts (prices, item images)
-    DisposableEffect(Unit) {
+    // Respects developer mode setting to allow screenshots when enabled
+    val settingsRepository = remember { SettingsRepository(context) }
+    val allowScreenshots by settingsRepository.devAllowScreenshotsFlow.collectAsState(initial = false)
+
+    DisposableEffect(allowScreenshots) {
         val window = (context as? Activity)?.window
-        window?.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        )
-        onDispose {
+        if (!allowScreenshots) {
+            window?.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } else {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        onDispose {
+            // Only clear if we set it
+            if (!allowScreenshots) {
+                window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
         }
     }
 
