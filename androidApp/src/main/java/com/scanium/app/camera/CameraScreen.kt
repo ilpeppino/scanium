@@ -316,9 +316,11 @@ fun CameraScreen(
     }
 
     // Start preview detection when camera is ready (shows bounding boxes immediately)
-    LaunchedEffect(modelDownloadState, cameraState) {
-        if (modelDownloadState == ModelDownloadState.Ready && cameraState == CameraState.IDLE) {
-            Log.d("CameraScreen", "Starting preview detection (camera idle, model ready)")
+    // IMPORTANT: Must wait for camera binding to complete (!isCameraBinding) before starting
+    // preview detection, otherwise imageAnalysis won't be set up yet
+    LaunchedEffect(modelDownloadState, cameraState, isCameraBinding) {
+        if (modelDownloadState == ModelDownloadState.Ready && cameraState == CameraState.IDLE && !isCameraBinding) {
+            Log.d("CameraScreen", "Starting preview detection (camera idle, model ready, binding complete)")
             cameraManager.startPreviewDetection(
                 onDetectionResult = { detections ->
                     // Update overlay with preview detections (no ROI filtering in preview mode)
