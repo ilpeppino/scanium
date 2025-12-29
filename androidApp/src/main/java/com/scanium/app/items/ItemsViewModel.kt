@@ -18,6 +18,7 @@ import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.core.export.ExportPayload
+import com.scanium.core.models.scanning.ScanRoi
 import com.scanium.app.items.export.toExportPayload
 import com.scanium.telemetry.facade.Telemetry
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -267,11 +268,33 @@ class ItemsViewModel @Inject constructor(
 
     /**
      * Updates overlay with new detections from the camera.
+     *
+     * PHASE 2: ROI enforcement - detections are filtered by ROI BEFORE rendering.
+     * Only detections with center inside ROI are shown as bounding boxes.
+     *
+     * @param detections List of detection results from the ML pipeline
+     * @param scanRoi Current scan ROI (detections outside are filtered out)
+     * @param lockedTrackingId Tracking ID of locked candidate (if any) for visual distinction
      * @see OverlayTrackManager.updateOverlayDetections
      */
-    fun updateOverlayDetections(detections: List<DetectionResult>) {
-        overlayManager.updateOverlayDetections(detections)
+    fun updateOverlayDetections(
+        detections: List<DetectionResult>,
+        scanRoi: ScanRoi = ScanRoi.DEFAULT,
+        lockedTrackingId: String? = null
+    ) {
+        overlayManager.updateOverlayDetections(detections, scanRoi, lockedTrackingId)
     }
+
+    /**
+     * Check if detections exist but none are inside ROI.
+     * Used for showing "Center the object" hint in UI.
+     */
+    fun hasDetectionsOutsideRoiOnly(): Boolean {
+        return overlayManager.hasDetectionsOutsideRoiOnly()
+    }
+
+    /** Current ROI filter result for diagnostics */
+    val lastRoiFilterResult = overlayManager.lastRoiFilterResult
 
     /**
      * Update QR URL overlay state based on detection router events.
