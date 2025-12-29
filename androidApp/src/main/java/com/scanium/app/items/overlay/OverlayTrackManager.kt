@@ -2,10 +2,13 @@ package com.scanium.app.items.overlay
 
 import android.util.Log
 import com.scanium.app.camera.OverlayTrack
+import com.scanium.app.camera.detection.RoiDetectionFilter
+import com.scanium.app.camera.detection.RoiFilterResult
 import com.scanium.app.camera.mapOverlayTracks
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.ml.DetectionResult
+import com.scanium.core.models.scanning.ScanRoi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,9 +19,16 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
  * This class is responsible for:
  * - Maintaining overlay track state
+ * - ROI-filtering detections before visualization
  * - Mapping detections to overlay tracks
  * - Tracking overlay ready states
  * - Caching resolution mappings
+ *
+ * ***REMOVED******REMOVED*** ROI Enforcement (Phase 2)
+ * Detections are filtered by ROI BEFORE being rendered:
+ * - Only detections with center inside ROI are shown
+ * - This teaches users to center objects in the scan zone
+ * - Visualization matches what the scan pipeline considers eligible
  *
  * ***REMOVED******REMOVED*** Thread Safety
  * This class is designed to be called from the main thread.
@@ -41,31 +51,48 @@ class OverlayTrackManager(
     private val _overlayTracks = MutableStateFlow<List<OverlayTrack>>(CopyOnWriteArrayList())
     val overlayTracks: StateFlow<List<OverlayTrack>> = _overlayTracks.asStateFlow()
 
+    // ROI filter result - tracks what was filtered for diagnostics and hints
+    private val _lastRoiFilterResult = MutableStateFlow<RoiFilterResult?>(null)
+    val lastRoiFilterResult: StateFlow<RoiFilterResult?> = _lastRoiFilterResult.asStateFlow()
+
     // Internal caches
     private val overlayReadyStates = mutableMapOf<String, Boolean>()
     private val overlayResolutionCache = mutableMapOf<String, String?>()
     private var lastOverlayDetections: List<DetectionResult> = emptyList()
+    private var lastScanRoi: ScanRoi = ScanRoi.DEFAULT
+    private var lastLockedTrackingId: String? = null
 
     /**
      * Update overlay with new detections from the camera.
      *
+     * PHASE 2: ROI enforcement - detections are filtered by ROI BEFORE rendering.
+     * Only detections with center inside ROI are shown as bounding boxes.
+     *
      * @param detections List of detection results from the ML pipeline
+     * @param scanRoi Current scan ROI (detections outside are filtered out)
+     * @param lockedTrackingId Tracking ID of locked candidate (if any) for visual distinction
      */
-    fun updateOverlayDetections(detections: List<DetectionResult>) {
+    fun updateOverlayDetections(
+        detections: List<DetectionResult>,
+        scanRoi: ScanRoi = ScanRoi.DEFAULT,
+        lockedTrackingId: String? = null
+    ) {
         if (DEBUG_LOGGING) {
-            ScaniumLog.d(TAG, "[OVERLAY] updateOverlayDetections: ${detections.size} detections")
+            ScaniumLog.d(TAG, "[OVERLAY] updateOverlayDetections: ${detections.size} detections, roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}")
         }
         lastOverlayDetections = detections
-        renderOverlayTracks(detections)
+        lastScanRoi = scanRoi
+        lastLockedTrackingId = lockedTrackingId
+        renderOverlayTracks(detections, scanRoi, lockedTrackingId)
     }
 
     /**
-     * Refresh overlay tracks using the last known detections.
+     * Refresh overlay tracks using the last known detections and ROI.
      * Called after classification results are updated.
      */
     fun refreshOverlayTracks() {
         if (lastOverlayDetections.isNotEmpty()) {
-            renderOverlayTracks(lastOverlayDetections)
+            renderOverlayTracks(lastOverlayDetections, lastScanRoi, lastLockedTrackingId)
         }
     }
 
@@ -74,9 +101,12 @@ class OverlayTrackManager(
      */
     fun clear() {
         _overlayTracks.value = CopyOnWriteArrayList()
+        _lastRoiFilterResult.value = null
         overlayReadyStates.clear()
         overlayResolutionCache.clear()
         lastOverlayDetections = emptyList()
+        lastScanRoi = ScanRoi.DEFAULT
+        lastLockedTrackingId = null
     }
 
     /**
@@ -91,14 +121,38 @@ class OverlayTrackManager(
         return overlayReadyStates[aggregatedId] ?: false
     }
 
+    /**
+     * Check if detections exist but none are inside ROI.
+     * Used for showing "Center the object" hint.
+     */
+    fun hasDetectionsOutsideRoiOnly(): Boolean {
+        return _lastRoiFilterResult.value?.hasDetectionsOutsideRoiOnly ?: false
+    }
+
     // ==================== Internal Methods ====================
 
-    private fun renderOverlayTracks(detections: List<DetectionResult>) {
+    private fun renderOverlayTracks(
+        detections: List<DetectionResult>,
+        scanRoi: ScanRoi,
+        lockedTrackingId: String?
+    ) {
+        // PHASE 2: ROI filtering - only show detections inside ROI
+        val filterResult = RoiDetectionFilter.filterByRoi(detections, scanRoi)
+        _lastRoiFilterResult.value = filterResult
+
+        if (DEBUG_LOGGING) {
+            ScaniumLog.d(TAG, "[OVERLAY] ROI filter: ${filterResult.eligibleCount} eligible, ${filterResult.outsideCount} outside")
+        }
+
+        // Only render ROI-eligible detections
+        val roiEligibleDetections = filterResult.roiEligible
+
         val aggregatedItems = stateManager.getAggregatedItems()
         val mapped = mapOverlayTracks(
-            detections = detections,
+            detections = roiEligibleDetections,
             aggregatedItems = aggregatedItems,
-            readyConfidenceThreshold = readyConfidenceThreshold
+            readyConfidenceThreshold = readyConfidenceThreshold,
+            lockedTrackingId = lockedTrackingId
         )
 
         // Log when overlay tracks change
