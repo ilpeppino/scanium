@@ -182,7 +182,7 @@ class ScanGuidanceManagerTest {
             currentTimeMs = 1000L
         )
 
-        assertEquals("Move phone slightly away", state.hintText)
+        assertEquals("Move back slightly", state.hintText)
     }
 
     @Test
@@ -206,7 +206,7 @@ class ScanGuidanceManagerTest {
             currentTimeMs = 1000L
         )
 
-        assertEquals("Move closer to object", state.hintText)
+        assertEquals("Move closer", state.hintText)
     }
 
     // ===========================================
@@ -251,7 +251,7 @@ class ScanGuidanceManagerTest {
             currentTimeMs = 1000L
         )
 
-        assertEquals("Center object in scan zone", state.hintText)
+        assertEquals("Center to select", state.hintText)
     }
 
     // ===========================================
@@ -279,7 +279,7 @@ class ScanGuidanceManagerTest {
             currentTimeMs = 1000L
         )
 
-        assertEquals("Hold still...", state.hintText)
+        assertEquals("Hold to lock", state.hintText)
     }
 
     // ===========================================
