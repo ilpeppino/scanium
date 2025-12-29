@@ -176,11 +176,11 @@ For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/featu
 ***REMOVED******REMOVED******REMOVED*** Key Architectural Decisions
 
 - **Multi-module structure** - Android app plus shared core libraries for models, tracking, and domain packs
-- **No DI framework** - Manual constructor injection for simplicity
+- **Hilt DI** - Dagger Hilt for dependency injection (`@HiltViewModel`, `@AndroidEntryPoint`)
 - **Camera-first UX** - App opens directly to camera screen
-- **On-device ML** - Privacy-focused with no network calls
+- **On-device ML by default** - Privacy-focused with optional cloud classification when API keys configured
 - **Reactive state management** - StateFlow for UI state updates
-- **Mocked pricing** - Local price estimation (ready for API integration)
+- **Backend integration** - Node.js backend with PostgreSQL for persistence and marketplace features
 
 ***REMOVED******REMOVED*** Prerequisites
 
@@ -361,10 +361,9 @@ The app requires the following permission:
 
 ***REMOVED******REMOVED*** Current Limitations
 
-- **Mocked pricing data** - Prices are generated locally based on category
-- **Local-only persistence** - Items are stored on-device; no cloud sync yet
-- **ML Kit categories** - Object detection limited to 5 coarse categories (Fashion, Food, Home goods, Places, Plants)
-- **No backend** - All processing is local
+- **Mocked pricing data** - Prices are generated locally based on category (API integration ready)
+- **Local-only sync** - Items stored on-device; backend sync available but cloud sync not yet enabled
+- **Marketplace disabled** - eBay integration implemented but temporarily disabled in UI (export-first flow active)
 
 ***REMOVED******REMOVED*** Test Coverage
 
@@ -404,15 +403,15 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 - Color-based object matching for improved tracking
 
 ***REMOVED******REMOVED******REMOVED*** Technical Improvements
-- Multi-module architecture
-- Dependency injection (Hilt)
-- Enhanced test coverage
-- CI/CD pipeline
-- Backend service integration
-- Cloud-based ML models
+- iOS client using shared KMP modules
+- Cloud-based ML models for enhanced classification
 - Adaptive tracking thresholds based on scene complexity
+- End-to-end telemetry from Android app to Grafana
+- Production deployment configuration (Kubernetes/Cloud Run)
 
 ***REMOVED******REMOVED******REMOVED*** Recently Implemented ✅
+- ✅ **Hilt Dependency Injection**: Full DI setup with @HiltViewModel, @AndroidEntryPoint for testability and modularity
+- ✅ **Backend Services**: Node.js + TypeScript + Prisma + PostgreSQL with LGTM observability stack
 - ✅ **Developer Options with System Health**: Debug-only diagnostics panel showing backend connectivity, network status, permissions, device capabilities, and app configuration with auto-refresh and clipboard export
 - ✅ **WCAG 2.1 Accessibility**: TalkBack support with proper semantics, 48dp touch targets, traversal order, and screen reader announcements
 - ✅ **Export-First Sharing (CSV/ZIP)**: Export selected items for spreadsheets, chat apps, or marketplaces
