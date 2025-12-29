@@ -83,14 +83,14 @@ object RoiCoordinateMapper {
         if (previewAspectRatio == null) {
             val left = (roi.left * analyzerWidth).toInt()
             val top = (roi.top * analyzerHeight).toInt()
-            val width = (roi.clampedWidth * analyzerWidth).toInt()
-            val height = (roi.clampedHeight * analyzerHeight).toInt()
+            val right = (roi.right * analyzerWidth).toInt()
+            val bottom = (roi.bottom * analyzerHeight).toInt()
 
             return RoiPixelRect(
                 left = left,
                 top = top,
-                right = (left + width).coerceAtMost(analyzerWidth),
-                bottom = (top + height).coerceAtMost(analyzerHeight)
+                right = right.coerceIn(left, analyzerWidth),
+                bottom = bottom.coerceIn(top, analyzerHeight)
             )
         }
 
