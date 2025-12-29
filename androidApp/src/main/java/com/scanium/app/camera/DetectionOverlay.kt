@@ -1,5 +1,6 @@
 package com.scanium.app.camera
 
+import android.graphics.RectF
 import android.os.SystemClock
 import android.os.Trace
 import android.util.Size
@@ -24,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -77,6 +79,7 @@ fun DetectionOverlay(
     imageSize: Size,
     previewSize: Size,
     rotationDegrees: Int = 90,  // Default to portrait mode (most common on phones)
+    showGeometryDebug: Boolean = false,  // Developer toggle for geometry debug overlay
     modifier: Modifier = Modifier
 ) {
     val textMeasurer = rememberTextMeasurer()
@@ -287,6 +290,100 @@ fun DetectionOverlay(
                         y = labelTop + labelVerticalPadding
                     )
                 )
+            }
+        }
+
+        // Geometry debug overlay (developer toggle)
+        if (showGeometryDebug) {
+            val debugPaint = android.graphics.Paint().apply {
+                color = android.graphics.Color.YELLOW
+                textSize = 32f
+                isAntiAlias = true
+            }
+            val debugBgPaint = android.graphics.Paint().apply {
+                color = android.graphics.Color.argb(180, 0, 0, 0)
+                style = android.graphics.Paint.Style.FILL
+            }
+
+            val context = DetectionGeometryMapper.GeometryContext(
+                sensorWidth = imageSize.width,
+                sensorHeight = imageSize.height,
+                rotationDegrees = rotationDegrees,
+                previewWidth = canvasWidth,
+                previewHeight = canvasHeight,
+                scaleType = PreviewScaleType.FILL_CENTER
+            )
+
+            // Get top detection info if available
+            val topDetection = detections.firstOrNull()
+            val topDetectionScreen = topDetection?.let {
+                mapBboxToPreview(it.bboxNorm, transform)
+            }
+
+            // Log debug info (rate-limited)
+            DetectionGeometryMapper.logDebug(
+                context = context,
+                detectionCount = detections.size,
+                topDetectionNorm = topDetection?.bboxNorm,
+                topDetectionScreen = topDetectionScreen
+            )
+
+            // Draw debug info on canvas
+            drawContext.canvas.nativeCanvas.apply {
+                val lines = listOf(
+                    "Preview: ${canvasWidth.toInt()}x${canvasHeight.toInt()}",
+                    "Sensor: ${imageSize.width}x${imageSize.height}",
+                    "Rotation: ${rotationDegrees}°",
+                    "Effective: ${transform.effectiveImageWidth}x${transform.effectiveImageHeight}",
+                    "Scale: ${String.format("%.3f", transform.scale)}",
+                    "Offset: (${transform.offsetX.toInt()}, ${transform.offsetY.toInt()})",
+                    "ScaleType: ${transform.scaleType}",
+                    "Detections: ${detections.size}",
+                    topDetection?.let {
+                        "Top bbox (norm): (${String.format("%.2f", it.bboxNorm.left)}, " +
+                            "${String.format("%.2f", it.bboxNorm.top)}) - " +
+                            "(${String.format("%.2f", it.bboxNorm.right)}, " +
+                            "${String.format("%.2f", it.bboxNorm.bottom)})"
+                    } ?: "Top bbox: N/A",
+                    topDetectionScreen?.let {
+                        "Top screen: (${it.left.toInt()}, ${it.top.toInt()}) - " +
+                            "(${it.right.toInt()}, ${it.bottom.toInt()})"
+                    } ?: "Top screen: N/A"
+                )
+
+                val padding = 12f
+                val lineHeight = 36f
+                val boxHeight = lines.size * lineHeight + padding * 2
+                val boxWidth = 420f
+
+                // Draw background
+                drawRect(
+                    padding, padding,
+                    padding + boxWidth, padding + boxHeight,
+                    debugBgPaint
+                )
+
+                // Draw text lines
+                lines.forEachIndexed { index, line ->
+                    drawText(
+                        line,
+                        padding * 2,
+                        padding + lineHeight * (index + 1),
+                        debugPaint
+                    )
+                }
+
+                // Draw effective content rect outline (magenta)
+                val effectivePaint = android.graphics.Paint().apply {
+                    color = android.graphics.Color.MAGENTA
+                    style = android.graphics.Paint.Style.STROKE
+                    strokeWidth = 3f
+                }
+                val effectiveLeft = transform.offsetX
+                val effectiveTop = transform.offsetY
+                val effectiveRight = transform.offsetX + transform.effectiveImageWidth * transform.scale
+                val effectiveBottom = transform.offsetY + transform.effectiveImageHeight * transform.scale
+                drawRect(effectiveLeft, effectiveTop, effectiveRight, effectiveBottom, effectivePaint)
             }
         }
 
