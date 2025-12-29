@@ -75,6 +75,7 @@ class CameraXManager(
 ) {
     companion object {
         private const val TAG = "CameraXManager"
+        private const val CAM_FRAME_TAG = "CAM_FRAME"
         private const val DEFAULT_MOTION_SCORE = 0.2
         private const val LUMA_SAMPLE_STEP = 8
         private const val DOCUMENT_CANDIDATE_TTL_MS = 800L
@@ -86,6 +87,11 @@ class CameraXManager(
         // Range: 0.0 (no margin) to 0.5 (very aggressive filtering)
         // Default: 0.10 (10% inset from each edge)
         private const val EDGE_INSET_MARGIN_RATIO = 0.10f
+
+        // NO_FRAMES watchdog timeouts
+        private const val WATCHDOG_INITIAL_DELAY_MS = 600L
+        private const val WATCHDOG_RETRY_DELAY_MS = 800L
+        private const val MAX_RECOVERY_ATTEMPTS = 2
     }
 
     data class CameraBindResult(
@@ -168,6 +174,27 @@ class CameraXManager(
     /** Exposed diagnostics for debug overlay */
     val pipelineDiagnostics: StateFlow<CameraPipelineDiagnostics> = sessionController.diagnostics
 
+    // NO_FRAMES watchdog state
+    @Volatile
+    private var watchdogJob: Job? = null
+    @Volatile
+    private var recoveryAttempts = 0
+
+    // Track first frame received in current session for analysisFlowing
+    @Volatile
+    private var hasReceivedFirstFrame = false
+
+    // Pending preview detection callback - set when startPreviewDetection() is called before camera bind
+    @Volatile
+    private var pendingPreviewDetectionCallback: PreviewDetectionCallback? = null
+
+    // Callback holder for preview detection
+    private data class PreviewDetectionCallback(
+        val onDetectionResult: (List<DetectionResult>) -> Unit,
+        val onFrameSize: (Size) -> Unit,
+        val onRotation: (Int) -> Unit
+    )
+
     private val lifecycleObserver = object : DefaultLifecycleObserver {
         override fun onDestroy(owner: LifecycleOwner) {
             shutdown()
@@ -193,12 +220,25 @@ class CameraXManager(
     fun startCameraSession(): Int {
         sessionController.logEvent("START_SESSION", "recreating scope")
 
+        // Cancel watchdog from previous session
+        watchdogJob?.cancel()
+        watchdogJob = null
+
         // Cancel the old scope completely and create a fresh one
         detectionScope.cancel()
         detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
+        // Reset session-level state
+        hasReceivedFirstFrame = false
+        recoveryAttempts = 0
+
         val sessionId = sessionController.startSession()
-        sessionController.updateAnalysisRunning(true)
+
+        // Update diagnostic states
+        sessionController.updateAnalysisAttached(false)
+        sessionController.updateAnalysisFlowing(false)
+        sessionController.updateStallReason(StallReason.NONE)
+        sessionController.updateRecoveryAttempts(0)
 
         return sessionId
     }
@@ -212,6 +252,10 @@ class CameraXManager(
     fun stopCameraSession() {
         sessionController.logEvent("STOP_SESSION", "isScanning=$isScanning, isPreviewDetectionActive=$isPreviewDetectionActive")
 
+        // Cancel watchdog
+        watchdogJob?.cancel()
+        watchdogJob = null
+
         // Stop all detection modes
         if (isScanning) {
             stopScanning()
@@ -220,15 +264,25 @@ class CameraXManager(
             isPreviewDetectionActive = false
         }
 
+        // Clear any pending callbacks
+        pendingPreviewDetectionCallback = null
+
         // Clear the analyzer to stop frame processing
         imageAnalysis?.clearAnalyzer()
 
         // Cancel the scope to stop any in-flight coroutines
         detectionScope.cancel()
 
+        // Reset session-level state
+        hasReceivedFirstFrame = false
+        recoveryAttempts = 0
+
         // Update session state
         sessionController.stopSession()
         sessionController.updateAnalysisRunning(false)
+        sessionController.updateAnalysisAttached(false)
+        sessionController.updateAnalysisFlowing(false)
+        sessionController.updateStallReason(StallReason.NONE)
     }
 
     /**
@@ -440,6 +494,21 @@ class CameraXManager(
             sessionController.updateCameraBound(true)
             sessionController.logEvent("CAMERA_BIND_SUCCESS", "lens=$resolvedLensFacing")
 
+            // CRITICAL FIX: Apply any pending preview detection callback AFTER camera bind
+            // This ensures the analyzer is set on the newly created imageAnalysis instance
+            pendingPreviewDetectionCallback?.let { callback ->
+                Log.i(CAM_FRAME_TAG, "Applying pending preview detection callback after camera bind")
+                pendingPreviewDetectionCallback = null
+                applyPreviewDetectionAnalyzer(
+                    onDetectionResult = callback.onDetectionResult,
+                    onFrameSize = callback.onFrameSize,
+                    onRotation = callback.onRotation
+                )
+            }
+
+            // Start NO_FRAMES watchdog to detect analyzer stalls
+            startNoFramesWatchdog()
+
             CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
         } catch (e: CameraUnavailableException) {
             Log.e(TAG, "Camera unavailable during binding", e)
@@ -556,6 +625,11 @@ class CameraXManager(
 
         sessionController.updateScanningActive(true)
         sessionController.updateAnalysisRunning(true)
+        sessionController.updateAnalysisAttached(true)
+        sessionController.updateAnalysisFlowing(false) // Will be set true on first frame
+
+        // Reset first frame flag for this scanning session
+        hasReceivedFirstFrame = false
 
         // Reset tracker and guidance when starting a new scan session or switching modes
         if (currentScanMode != scanMode || currentScanMode == null) {
@@ -659,6 +733,14 @@ class CameraXManager(
 
                 detectionScope.launch {
                     try {
+                        // CRITICAL: Mark first frame received for analysisFlowing
+                        if (!hasReceivedFirstFrame) {
+                            hasReceivedFirstFrame = true
+                            sessionController.updateAnalysisFlowing(true)
+                            sessionController.updateStallReason(StallReason.NONE)
+                            Log.i(CAM_FRAME_TAG, "FIRST_FRAME: Scanning received first frame")
+                        }
+
                         // Update frame timestamp for diagnostics
                         val frameTimestamp = System.currentTimeMillis()
                         sessionController.updateLastFrameTimestamp(frameTimestamp)
@@ -869,6 +951,8 @@ class CameraXManager(
         detectionScope.coroutineContext.cancelChildren()
         imageAnalysis?.clearAnalyzer()
         sessionController.updateAnalysisRunning(false)
+        sessionController.updateAnalysisAttached(false)
+        sessionController.updateAnalysisFlowing(false)
 
         scanJob?.cancel()
         scanJob = null
@@ -891,6 +975,10 @@ class CameraXManager(
      * This shows bounding boxes on the camera preview without adding items to the list.
      * Used to give users immediate visual feedback when the camera starts.
      *
+     * CRITICAL FIX: This function now handles the race condition where it may be called
+     * BEFORE camera binding completes. If imageAnalysis is null or camera is not bound,
+     * the callback is stored and applied after binding completes in startCamera().
+     *
      * @param onDetectionResult Callback for detection results (for overlay display)
      * @param onFrameSize Callback for frame dimensions
      */
@@ -899,24 +987,65 @@ class CameraXManager(
         onFrameSize: (Size) -> Unit = {},
         onRotation: (Int) -> Unit = {}
     ) {
-        // Don't start if already scanning or preview detection is active
-        if (isScanning || isPreviewDetectionActive) {
-            Log.d(TAG, "startPreviewDetection: Skipping - isScanning=$isScanning, isPreviewDetectionActive=$isPreviewDetectionActive")
+        // Don't start if already scanning (scanning takes priority)
+        if (isScanning) {
+            Log.d(TAG, "startPreviewDetection: Skipping - scanning is active")
             return
         }
 
-        Log.d(TAG, "startPreviewDetection: Starting preview-only detection mode")
+        Log.i(CAM_FRAME_TAG, "startPreviewDetection: Called, imageAnalysis=${imageAnalysis != null}, cameraBound=${cameraProvider != null}")
 
         // CRITICAL FIX: Ensure scope is ready before starting
-        // If scope was cancelled, recreate it
         if (!detectionScope.isActive) {
             sessionController.logEvent("SCOPE_RECREATE", "detectionScope was inactive, recreating")
             detectionScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         }
 
+        // Mark preview detection as active regardless of camera state
         isPreviewDetectionActive = true
         sessionController.updatePreviewDetectionActive(true)
+
+        // CRITICAL FIX: If imageAnalysis is null (camera not yet bound), store the callback
+        // to be applied after camera binding completes
+        if (imageAnalysis == null) {
+            Log.i(CAM_FRAME_TAG, "startPreviewDetection: Camera not bound yet, storing callback for later")
+            pendingPreviewDetectionCallback = PreviewDetectionCallback(
+                onDetectionResult = onDetectionResult,
+                onFrameSize = onFrameSize,
+                onRotation = onRotation
+            )
+            return
+        }
+
+        // Camera is bound, apply analyzer directly
+        applyPreviewDetectionAnalyzer(
+            onDetectionResult = onDetectionResult,
+            onFrameSize = onFrameSize,
+            onRotation = onRotation
+        )
+    }
+
+    /**
+     * Internal function to apply the preview detection analyzer to imageAnalysis.
+     * This is called either directly from startPreviewDetection() or from startCamera()
+     * when the pending callback is applied after binding.
+     */
+    private fun applyPreviewDetectionAnalyzer(
+        onDetectionResult: (List<DetectionResult>) -> Unit,
+        onFrameSize: (Size) -> Unit,
+        onRotation: (Int) -> Unit
+    ) {
+        Log.i(CAM_FRAME_TAG, "applyPreviewDetectionAnalyzer: Setting analyzer on imageAnalysis")
+
+        val analysis = imageAnalysis
+        if (analysis == null) {
+            Log.e(CAM_FRAME_TAG, "applyPreviewDetectionAnalyzer: imageAnalysis is null, cannot set analyzer!")
+            return
+        }
+
         sessionController.updateAnalysisRunning(true)
+        sessionController.updateAnalysisAttached(true)
+        sessionController.updateAnalysisFlowing(false) // Will be set true on first frame
 
         var lastAnalysisTime = 0L
         var isProcessing = false
@@ -924,8 +1053,17 @@ class CameraXManager(
         // Use a longer interval for preview detection (less aggressive, battery-friendly)
         val previewAnalysisIntervalMs = 400L
 
-        imageAnalysis?.clearAnalyzer()
-        imageAnalysis?.setAnalyzer(cameraExecutor) { imageProxy ->
+        // Capture session ID at analyzer setup time for callback validation
+        val sessionIdAtSetup = sessionController.getCurrentSessionId()
+
+        analysis.clearAnalyzer()
+        analysis.setAnalyzer(cameraExecutor) { imageProxy ->
+            // CRITICAL: Validate session to ignore callbacks from stale analyzers
+            if (!sessionController.isSessionValid(sessionIdAtSetup)) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
+
             // Stop if scanning started or preview detection was stopped
             if (isScanning || !isPreviewDetectionActive) {
                 imageProxy.close()
@@ -956,6 +1094,14 @@ class CameraXManager(
 
             detectionScope.launch {
                 try {
+                    // CRITICAL: Mark first frame received
+                    if (!hasReceivedFirstFrame) {
+                        hasReceivedFirstFrame = true
+                        sessionController.updateAnalysisFlowing(true)
+                        sessionController.updateStallReason(StallReason.NONE)
+                        Log.i(CAM_FRAME_TAG, "FIRST_FRAME: Preview detection received first frame")
+                    }
+
                     // Update frame timestamp for diagnostics
                     val frameTimestamp = System.currentTimeMillis()
                     sessionController.updateLastFrameTimestamp(frameTimestamp)
@@ -993,6 +1139,8 @@ class CameraXManager(
                 }
             }
         }
+
+        Log.i(CAM_FRAME_TAG, "applyPreviewDetectionAnalyzer: Analyzer set successfully")
     }
 
     /**
@@ -1007,10 +1155,15 @@ class CameraXManager(
         isPreviewDetectionActive = false
         sessionController.updatePreviewDetectionActive(false)
 
+        // Clear pending callback
+        pendingPreviewDetectionCallback = null
+
         // Only clear analyzer if not scanning (scanning manages its own analyzer)
         if (!isScanning) {
             imageAnalysis?.clearAnalyzer()
             sessionController.updateAnalysisRunning(false)
+            sessionController.updateAnalysisAttached(false)
+            sessionController.updateAnalysisFlowing(false)
         }
     }
 
@@ -1018,6 +1171,127 @@ class CameraXManager(
      * Check if preview detection is currently active.
      */
     fun isPreviewDetectionActive(): Boolean = isPreviewDetectionActive
+
+    // =========================================================================
+    // NO_FRAMES Watchdog - Self-heal for analyzer stalls
+    // =========================================================================
+
+    /**
+     * Starts the NO_FRAMES watchdog coroutine.
+     * This monitors for the case where analyzer is attached but no frames flow.
+     *
+     * Called after camera binding completes.
+     */
+    private fun startNoFramesWatchdog() {
+        watchdogJob?.cancel()
+        watchdogJob = detectionScope.launch {
+            Log.i(CAM_FRAME_TAG, "WATCHDOG: Started, waiting ${WATCHDOG_INITIAL_DELAY_MS}ms for first frame")
+            delay(WATCHDOG_INITIAL_DELAY_MS)
+
+            // Check if we've received frames
+            if (hasReceivedFirstFrame) {
+                Log.i(CAM_FRAME_TAG, "WATCHDOG: First frame already received, no stall detected")
+                return@launch
+            }
+
+            // Check if camera is still active and analyzer is attached
+            val diagnostics = sessionController.diagnostics.value
+            if (!diagnostics.isCameraBound || !diagnostics.isAnalysisAttached) {
+                Log.i(CAM_FRAME_TAG, "WATCHDOG: Camera not bound or analyzer not attached, skipping recovery")
+                return@launch
+            }
+
+            // STALL DETECTED: Analyzer attached but no frames
+            Log.w(CAM_FRAME_TAG, "WATCHDOG: STALL_NO_FRAMES detected! cameraBound=${diagnostics.isCameraBound}, analysisAttached=${diagnostics.isAnalysisAttached}, analysisFlowing=${diagnostics.isAnalysisFlowing}")
+            sessionController.updateStallReason(StallReason.NO_FRAMES)
+
+            // Attempt recovery
+            while (recoveryAttempts < MAX_RECOVERY_ATTEMPTS && !hasReceivedFirstFrame) {
+                recoveryAttempts++
+                sessionController.updateRecoveryAttempts(recoveryAttempts)
+                sessionController.updateStallReason(StallReason.RECOVERING)
+                Log.i(CAM_FRAME_TAG, "WATCHDOG: Recovery attempt $recoveryAttempts/$MAX_RECOVERY_ATTEMPTS")
+
+                // Re-apply the analyzer on the current imageAnalysis
+                rebindAnalysisPipeline()
+
+                // Wait for frames
+                delay(WATCHDOG_RETRY_DELAY_MS)
+
+                if (hasReceivedFirstFrame) {
+                    Log.i(CAM_FRAME_TAG, "WATCHDOG: Recovery successful on attempt $recoveryAttempts")
+                    sessionController.updateStallReason(StallReason.NONE)
+                    return@launch
+                }
+            }
+
+            // Recovery failed
+            if (!hasReceivedFirstFrame) {
+                Log.e(CAM_FRAME_TAG, "WATCHDOG: Recovery FAILED after $MAX_RECOVERY_ATTEMPTS attempts")
+                sessionController.updateStallReason(StallReason.FAILED)
+            }
+        }
+    }
+
+    /**
+     * Rebinds the analysis pipeline to recover from stall.
+     *
+     * This is a lightweight rebind that only clears and re-sets the analyzer,
+     * without fully recreating all use cases.
+     *
+     * If there's a pending preview detection callback, it will be applied.
+     * Otherwise, a simple pass-through analyzer is set to verify frame flow.
+     */
+    private fun rebindAnalysisPipeline() {
+        Log.i(CAM_FRAME_TAG, "rebindAnalysisPipeline: Starting lightweight rebind")
+
+        val analysis = imageAnalysis
+        if (analysis == null) {
+            Log.e(CAM_FRAME_TAG, "rebindAnalysisPipeline: imageAnalysis is null, cannot rebind")
+            return
+        }
+
+        // Clear the existing analyzer
+        analysis.clearAnalyzer()
+        sessionController.updateAnalysisAttached(false)
+
+        // Reset the first frame flag to detect new frames
+        hasReceivedFirstFrame = false
+
+        // Check if we have a pending callback to apply
+        val pendingCallback = pendingPreviewDetectionCallback
+        if (pendingCallback != null) {
+            Log.i(CAM_FRAME_TAG, "rebindAnalysisPipeline: Applying pending preview detection callback")
+            applyPreviewDetectionAnalyzer(
+                onDetectionResult = pendingCallback.onDetectionResult,
+                onFrameSize = pendingCallback.onFrameSize,
+                onRotation = pendingCallback.onRotation
+            )
+        } else if (isPreviewDetectionActive) {
+            // No pending callback but preview detection is active
+            // This shouldn't happen normally, but set a minimal analyzer to verify frame flow
+            Log.i(CAM_FRAME_TAG, "rebindAnalysisPipeline: Setting minimal verification analyzer")
+            sessionController.updateAnalysisAttached(true)
+
+            val sessionIdAtSetup = sessionController.getCurrentSessionId()
+            analysis.setAnalyzer(cameraExecutor) { imageProxy ->
+                if (!sessionController.isSessionValid(sessionIdAtSetup)) {
+                    imageProxy.close()
+                    return@setAnalyzer
+                }
+
+                // Mark first frame received
+                if (!hasReceivedFirstFrame) {
+                    hasReceivedFirstFrame = true
+                    sessionController.updateAnalysisFlowing(true)
+                    sessionController.updateLastFrameTimestamp(System.currentTimeMillis())
+                    Log.i(CAM_FRAME_TAG, "rebindAnalysisPipeline: Minimal analyzer received first frame")
+                }
+
+                imageProxy.close()
+            }
+        }
+    }
 
     /**
      * Enable or disable scan diagnostics overlay.
