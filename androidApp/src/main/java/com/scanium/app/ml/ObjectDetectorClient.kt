@@ -47,7 +47,8 @@ class ObjectDetectorClient {
         private const val TAG = "ObjectDetectorClient"
         private const val CONFIDENCE_THRESHOLD = 0.3f // Category assignment threshold
         private const val MAX_THUMBNAIL_DIMENSION_PX = 512
-        private const val BOUNDING_BOX_TIGHTEN_RATIO = 0.12f
+        // Reduced from 0.12f - previous value was too aggressive and cropped into objects
+        private const val BOUNDING_BOX_TIGHTEN_RATIO = 0.04f
 
         // Flag to track if model download has been checked
         @Volatile
@@ -769,14 +770,16 @@ private fun Rect.tighten(insetRatio: Float, frameWidth: Int, frameHeight: Int): 
     val widthRatio = currentWidth.toFloat() / frameWidth.toFloat()
     val heightRatio = currentHeight.toFloat() / frameHeight.toFloat()
     val dominantRatio = maxOf(widthRatio, heightRatio)
+    // Reduced adaptive boost values - previous values were too aggressive
     val adaptiveBoost = when {
-        dominantRatio > 0.65f -> 0.08f
-        dominantRatio > 0.45f -> 0.05f
-        dominantRatio > 0.30f -> 0.03f
-        dominantRatio < 0.12f -> -0.04f
+        dominantRatio > 0.65f -> 0.04f  // Large objects: was 0.08f
+        dominantRatio > 0.45f -> 0.02f  // Medium objects: was 0.05f
+        dominantRatio > 0.30f -> 0.01f  // Small objects: was 0.03f
+        dominantRatio < 0.12f -> -0.02f // Very small: was -0.04f
         else -> 0f
     }
-    val effectiveRatio = (insetRatio + adaptiveBoost).coerceIn(0f, 0.35f)
+    // Max effective ratio reduced from 0.35 to 0.15 to prevent over-cropping
+    val effectiveRatio = (insetRatio + adaptiveBoost).coerceIn(0f, 0.15f)
 
     val insetX = (currentWidth * effectiveRatio / 2f).roundToInt().coerceAtMost(currentWidth / 2 - 1)
     val insetY = (currentHeight * effectiveRatio / 2f).roundToInt().coerceAtMost(currentHeight / 2 - 1)
