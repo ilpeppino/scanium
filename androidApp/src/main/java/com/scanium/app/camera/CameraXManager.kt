@@ -1041,18 +1041,49 @@ class CameraXManager(
         val stats = objectTracker.getStats()
         Log.i(TAG, ">>> Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
 
-        // Convert confirmed candidates to ScannedItems
-        val items = confirmedCandidates.map { candidate ->
-            objectDetector.candidateToScannedItem(candidate)
+        // PHASE 5: Assertions for ROI enforcement and LOCKED state gating
+        // Items can ONLY be added when guidance state allows it (LOCKED state)
+        val canAddItems = guidanceState.canAddItem
+        val isLocked = guidanceState.state == GuidanceState.LOCKED
+
+        // Assert: If we have confirmed candidates but guidance doesn't allow add, don't return them
+        // This ensures visual preview (bbox) != item add (requires LOCKED state)
+        val itemsToAdd = if (canAddItems && isLocked) {
+            // Guidance allows add - verify candidates are inside ROI (debug assertion)
+            confirmedCandidates.mapNotNull { candidate ->
+                val bbox = candidate.boundingBoxNorm
+                val centerX = (bbox.left + bbox.right) / 2f
+                val centerY = (bbox.top + bbox.bottom) / 2f
+
+                // Debug assertion: candidate should be inside ROI
+                val isInsideRoi = currentRoi.containsBoxCenter(centerX, centerY)
+                if (!isInsideRoi) {
+                    Log.e(TAG, "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (center=$centerX,$centerY, roi=${currentRoi})")
+                    // In debug builds, this could be a hard failure
+                    // In release, we skip the item to maintain UX
+                    if (com.scanium.app.BuildConfig.DEBUG) {
+                        throw IllegalStateException("Confirmed candidate outside ROI - this should never happen")
+                    }
+                    null
+                } else {
+                    objectDetector.candidateToScannedItem(candidate)
+                }
+            }
+        } else {
+            // Guidance doesn't allow add (not LOCKED) - don't add items even if tracker confirmed them
+            if (confirmedCandidates.isNotEmpty()) {
+                Log.d(TAG, ">>> Not adding ${confirmedCandidates.size} confirmed candidates: canAddItem=$canAddItems, isLocked=$isLocked")
+            }
+            emptyList()
         }
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${items.size} ScannedItems")
-        items.forEachIndexed { index, item ->
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${itemsToAdd.size} ScannedItems (gated by LOCKED=${isLocked})")
+        itemsToAdd.forEachIndexed { index, item ->
             Log.i(TAG, "    ScannedItem $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
         }
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: RETURNING ${items.size} items and ${trackingResponse.detectionResults.size} detection results")
-        return Pair(items, trackingResponse.detectionResults)
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: RETURNING ${itemsToAdd.size} items and ${trackingResponse.detectionResults.size} detection results")
+        return Pair(itemsToAdd, trackingResponse.detectionResults)
     }
 
     /**

@@ -10,6 +10,19 @@ import com.scanium.shared.core.models.pricing.PriceRange
 
 private const val DEFAULT_READY_THRESHOLD = 0.55f
 
+/**
+ * Visual style for overlay bounding boxes.
+ *
+ * PREVIEW: Immediate detection feedback - thin, neutral style
+ * LOCKED: Scan-ready detection - thicker, highlighted style
+ */
+enum class OverlayBoxStyle {
+    /** Preview style: thin stroke, neutral color - immediate feedback */
+    PREVIEW,
+    /** Locked style: thicker stroke, highlighted - scan ready */
+    LOCKED
+}
+
 data class OverlayTrack(
     val bboxNorm: NormalizedRect,
     val label: String,
@@ -18,7 +31,9 @@ data class OverlayTrack(
     val isReady: Boolean,
     val priceEstimationStatus: PriceEstimationStatus,
     val aggregatedId: String? = null,
-    val trackingId: String? = null
+    val trackingId: String? = null,
+    /** Box style for visual distinction: PREVIEW (immediate) vs LOCKED (scan-ready) */
+    val boxStyle: OverlayBoxStyle = OverlayBoxStyle.PREVIEW
 )
 
 @Suppress("LongParameterList")
@@ -26,7 +41,9 @@ fun mapOverlayTracks(
     detections: List<DetectionResult>,
     aggregatedItems: List<AggregatedItem>,
     readyConfidenceThreshold: Float = DEFAULT_READY_THRESHOLD,
-    pendingLabel: String = "Scanning…"
+    pendingLabel: String = "Scanning…",
+    /** Tracking ID of the locked candidate (if any) - used to set LOCKED box style */
+    lockedTrackingId: String? = null
 ): List<OverlayTrack> {
     val aggregatedBySource = mutableMapOf<String, AggregatedItem>()
     aggregatedItems.forEach { item ->
@@ -55,6 +72,13 @@ fun mapOverlayTracks(
             ?: matched?.priceRange?.let { PriceRange(Money(it.first), Money(it.second)).formatted() }
             ?: detection.formattedPriceRange
 
+        // Determine box style: LOCKED if this detection matches the locked candidate
+        val boxStyle = if (lockedTrackingId != null && detectionId == lockedTrackingId) {
+            OverlayBoxStyle.LOCKED
+        } else {
+            OverlayBoxStyle.PREVIEW
+        }
+
         OverlayTrack(
             bboxNorm = detection.bboxNorm,
             label = label,
@@ -63,7 +87,8 @@ fun mapOverlayTracks(
             isReady = isReady,
             priceEstimationStatus = matched?.priceEstimationStatus ?: detection.priceEstimationStatus,
             aggregatedId = matched?.aggregatedId,
-            trackingId = detectionId
+            trackingId = detectionId,
+            boxStyle = boxStyle
         )
     }
 }

@@ -102,6 +102,7 @@ fun DetectionOverlay(
             val status = detection.priceEstimationStatus
             val isReady = detection.isReady
             val isEstimating = status is PriceEstimationStatus.Estimating
+            val isLocked = detection.boxStyle == OverlayBoxStyle.LOCKED
 
             // Bounding boxes are always fully visible (no pulsing)
             val boxAlpha = 1f
@@ -110,15 +111,34 @@ fun DetectionOverlay(
             val shouldPulseLabel = !isReady || isEstimating
             val labelAlpha = if (shouldPulseLabel) pulseAlpha else 1f
 
-            val outlineColor = if (isReady) readyColor else ScaniumBlue
-            val glowColor = if (isReady) readyColor.copy(alpha = 0.45f) else CyanGlow.copy(alpha = 0.35f)
+            // PHASE 3: Visual distinction between PREVIEW and LOCKED styles
+            // PREVIEW: thin, neutral/semi-transparent (immediate feedback)
+            // LOCKED: thicker, highlighted (scan ready)
+            val (outlineColor, glowColor, strokeMultiplier) = when {
+                isLocked -> Triple(
+                    readyColor,  // Green for locked
+                    readyColor.copy(alpha = 0.5f),
+                    1.3f  // Thicker stroke for locked
+                )
+                isReady -> Triple(
+                    readyColor.copy(alpha = 0.8f),
+                    readyColor.copy(alpha = 0.35f),
+                    1.0f
+                )
+                else -> Triple(
+                    ScaniumBlue.copy(alpha = 0.7f),  // More transparent for preview
+                    CyanGlow.copy(alpha = 0.25f),
+                    0.8f  // Thinner stroke for preview
+                )
+            }
+
             val clampedConfidence = detection.confidence.coerceIn(0f, 1f)
-            val boxStrokeWidth = minBoxStrokeWidth +
-                (maxBoxStrokeWidth - minBoxStrokeWidth) * clampedConfidence
-            val glowStrokeWidth = minGlowStrokeWidth +
-                (maxGlowStrokeWidth - minGlowStrokeWidth) * clampedConfidence
-            val innerStrokeWidth = minInnerStrokeWidth +
-                (maxInnerStrokeWidth - minInnerStrokeWidth) * clampedConfidence
+            val boxStrokeWidth = (minBoxStrokeWidth +
+                (maxBoxStrokeWidth - minBoxStrokeWidth) * clampedConfidence) * strokeMultiplier
+            val glowStrokeWidth = (minGlowStrokeWidth +
+                (maxGlowStrokeWidth - minGlowStrokeWidth) * clampedConfidence) * strokeMultiplier
+            val innerStrokeWidth = (minInnerStrokeWidth +
+                (maxInnerStrokeWidth - minInnerStrokeWidth) * clampedConfidence) * strokeMultiplier
 
             // Convert normalized bbox to image space coordinates
             val imageSpaceRect = detection.bboxNorm.toRectF(imageSize.width, imageSize.height)
