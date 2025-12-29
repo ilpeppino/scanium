@@ -373,7 +373,8 @@ class CameraXManager(
         onResult: (List<ScannedItem>) -> Unit,
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
         onDetectionEvent: (DetectionEvent) -> Unit = {},
-        onFrameSize: (Size) -> Unit = {}
+        onFrameSize: (Size) -> Unit = {},
+        onRotation: (Int) -> Unit = {}
     ) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
         // Stop preview detection if running (capture takes over temporarily)
@@ -405,8 +406,10 @@ class CameraXManager(
                     // ML Kit's InputImage.fromMediaImage() does NOT honor cropRect - it processes
                     // the full MediaImage buffer and returns bounding boxes in full image coordinates.
                     val frameSize = Size(imageProxy.width, imageProxy.height)
+                    val rotationDegrees = imageProxy.imageInfo.rotationDegrees
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
+                        onRotation(rotationDegrees)
                     }
 
                     // Single-frame capture uses direct detection (no candidate tracking)
@@ -441,7 +444,8 @@ class CameraXManager(
         onResult: (List<ScannedItem>) -> Unit,
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
         onDetectionEvent: (DetectionEvent) -> Unit = {},
-        onFrameSize: (Size) -> Unit = {}
+        onFrameSize: (Size) -> Unit = {},
+        onRotation: (Int) -> Unit = {}
     ) {
         if (isScanning) {
             Log.d(TAG, "startScanning: Already scanning, ignoring")
@@ -563,8 +567,10 @@ class CameraXManager(
                         // the full MediaImage buffer and returns bounding boxes in full image coordinates.
                         // The overlay transform will handle the aspect ratio difference.
                         val frameSize = Size(imageProxy.width, imageProxy.height)
+                        val frameRotation = imageProxy.imageInfo.rotationDegrees
                         withContext(Dispatchers.Main) {
                             onFrameSize(frameSize)
+                            onRotation(frameRotation)
                         }
 
                         val documentCandidate = if (detectionRouter.tryInvokeDocumentDetection(frameReceiveTime)) {
@@ -779,7 +785,8 @@ class CameraXManager(
      */
     fun startPreviewDetection(
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
-        onFrameSize: (Size) -> Unit = {}
+        onFrameSize: (Size) -> Unit = {},
+        onRotation: (Int) -> Unit = {}
     ) {
         // Don't start if already scanning or preview detection is active
         if (isScanning || isPreviewDetectionActive) {
@@ -828,10 +835,11 @@ class CameraXManager(
 
             detectionScope.launch {
                 try {
-                    // Report frame size
+                    // Report frame size and rotation for correct overlay mapping
                     val frameSize = Size(imageProxy.width, imageProxy.height)
                     withContext(Dispatchers.Main) {
                         onFrameSize(frameSize)
+                        onRotation(rotationDegrees)
                     }
 
                     // Run detection (preview only - no item creation)

@@ -61,6 +61,9 @@ class SettingsRepository(private val context: Context) {
         // Scanning guidance settings
         private val SCANNING_GUIDANCE_ENABLED_KEY = booleanPreferencesKey("scanning_guidance_enabled")
         private val DEV_ROI_DIAGNOSTICS_ENABLED_KEY = booleanPreferencesKey("dev_roi_diagnostics_enabled")
+
+        // Bbox mapping debug settings
+        private val DEV_BBOX_MAPPING_DEBUG_KEY = booleanPreferencesKey("dev_bbox_mapping_debug_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -449,6 +452,21 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDevRoiDiagnosticsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_ROI_DIAGNOSTICS_ENABLED_KEY] = enabled
+        }
+    }
+
+    /**
+     * Whether bbox mapping debug overlay is enabled (developer toggle).
+     * Shows rotation, scale, offset, and effective dimensions for portrait/landscape debugging.
+     * Default is OFF to avoid visual clutter in production.
+     */
+    val devBboxMappingDebugEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_BBOX_MAPPING_DEBUG_KEY] ?: false
+    }
+
+    suspend fun setDevBboxMappingDebugEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_BBOX_MAPPING_DEBUG_KEY] = enabled
         }
     }
 
