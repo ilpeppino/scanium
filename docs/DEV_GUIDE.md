@@ -56,9 +56,42 @@ The redesigned Settings experience is organized into six categories (General, Ca
 
 ## Local build & test
 
+### Build Variants (Flavors)
+
+Scanium uses two product flavors to control Developer Mode availability:
+
+| Flavor | App ID Suffix | Developer Options | Use Case |
+|--------|---------------|-------------------|----------|
+| **dev** | `.dev` | Available (DEBUG) or togglable (RELEASE) | Internal development |
+| **beta** | `.beta` | Completely hidden | External beta testers |
+
+**Build commands:**
+
+```bash
+# Dev builds (Developer Options accessible)
+./gradlew :androidApp:assembleDevDebug      # Dev debug APK
+./gradlew :androidApp:assembleDevRelease    # Dev release APK
+
+# Beta builds (Developer Options hidden)
+./gradlew :androidApp:assembleBetaDebug     # Beta debug APK
+./gradlew :androidApp:assembleBetaRelease   # Beta release APK
+```
+
+**APK output locations:**
+- `androidApp/build/outputs/apk/dev/debug/` - Dev debug APKs
+- `androidApp/build/outputs/apk/dev/release/` - Dev release APKs
+- `androidApp/build/outputs/apk/beta/debug/` - Beta debug APKs
+- `androidApp/build/outputs/apk/beta/release/` - Beta release APKs
+
+**Technical implementation:**
+- `BuildConfig.DEV_MODE_ENABLED`: `true` for dev, `false` for beta
+- Settings home hides Developer Options when `DEV_MODE_ENABLED = false`
+- Navigation to `/settings/developer` redirects back in beta builds
+- All dev-only UI and features are gated behind this flag
+
 ### With Android SDK (Workstation / Android Studio)
-- `./scripts/build.sh assembleDebug` or `./gradlew assembleDebug` – build APK.
-- `./gradlew installDebug` – install on a connected device/emulator.
+- `./scripts/build.sh assembleDebug` or `./gradlew assembleDevDebug` – build dev debug APK.
+- `./gradlew installDevDebug` – install dev build on a connected device/emulator.
 - `./gradlew test` – JVM unit tests (fast path).
 - `./gradlew connectedAndroidTest` – instrumented/Compose UI tests (device required).
 - `./gradlew lint` – static checks.
@@ -266,15 +299,19 @@ Fast Gradle configuration validation (quota-free, no network required):
 
 ---
 
-## Developer Options (Debug Builds)
+## Developer Options (Dev Flavor Only)
 
 Developer Options provides runtime diagnostics for troubleshooting connectivity, permissions, and device capabilities.
 
+> **Note:** Developer Options are only available in **dev** flavor builds. Beta builds (`assembleBetaDebug`, `assembleBetaRelease`) completely hide this feature to prevent external testers from accessing internal debugging tools.
+
 ### Accessing Developer Options
 
-1. Launch the app (debug build)
+1. Launch the app (**dev** flavor build)
 2. Navigate to **Settings** (gear icon on camera screen)
 3. Tap **Developer Options** in the developer section
+
+For dev debug builds, Developer Options is always visible. For dev release builds, the user must first enable "Developer Mode" toggle (requires access via a debug build first).
 
 ### System Health Panel
 

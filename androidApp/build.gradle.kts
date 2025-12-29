@@ -133,6 +133,25 @@ android {
         }
     }
 
+    // Product flavors for internal development vs beta testing
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("dev") {
+            dimension = "distribution"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            // Developer Mode available - enables access to Developer Options screen
+            buildConfigField("boolean", "DEV_MODE_ENABLED", "true")
+        }
+        create("beta") {
+            dimension = "distribution"
+            applicationIdSuffix = ".beta"
+            versionNameSuffix = "-beta"
+            // Developer Mode disabled - hides Developer Options for external testers
+            buildConfigField("boolean", "DEV_MODE_ENABLED", "false")
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", saveClassifierCropsDebug.toString())
@@ -146,7 +165,7 @@ android {
                 "proguard-rules.pro"
             )
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
-            
+
             // Only sign if we have a valid configuration
             if (signingConfigs.getByName("release").storeFile != null) {
                 signingConfig = signingConfigs.getByName("release")
