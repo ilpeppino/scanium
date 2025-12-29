@@ -46,6 +46,7 @@ class ScanGuidanceManager(
     // Motion tracking
     private var recentMotionScores = mutableListOf<Float>()
     private var averageMotionScore: Float = 0f
+    private var lastMotionScore: Float = 0f
 
     // Sharpness tracking
     private var recentSharpnessScores = mutableListOf<Float>()
@@ -308,7 +309,9 @@ class ScanGuidanceManager(
     private fun shouldBreakLock(candidate: CandidateInfo?, currentTimeMs: Long): Boolean {
         // Break lock if:
         // 1. High motion detected (panning)
-        if (averageMotionScore > config.lockBreakMotionThreshold) {
+        if (lastMotionScore > config.lockBreakMotionThreshold ||
+            averageMotionScore > config.lockBreakMotionThreshold
+        ) {
             return true
         }
 
@@ -343,6 +346,7 @@ class ScanGuidanceManager(
      * Update motion score running average.
      */
     private fun updateMotionAverage(motionScore: Float) {
+        lastMotionScore = motionScore
         recentMotionScores.add(motionScore)
         if (recentMotionScores.size > config.motionAverageWindow) {
             recentMotionScores.removeAt(0)
