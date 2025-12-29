@@ -177,6 +177,7 @@ fun CameraScreen(
     val documentCandidateState by cameraManager.documentCandidateState.collectAsState()
     val scanGuidanceState by cameraManager.scanGuidanceState.collectAsState()
     val scanDiagnosticsEnabled by cameraManager.scanDiagnosticsEnabled.collectAsState()
+    val lastRoiFilterResult by itemsViewModel.lastRoiFilterResult.collectAsState()
 
     // Document scan state
     var documentScanState by remember { mutableStateOf<DocumentScanState>(DocumentScanState.Idle) }
@@ -433,11 +434,22 @@ fun CameraScreen(
                     if (cameraState == CameraState.SCANNING) {
                         CameraGuidanceOverlay(
                             guidanceState = scanGuidanceState,
-                            showDebugInfo = roiDiagnosticsEnabled || scanDiagnosticsEnabled
+                            showDebugInfo = roiDiagnosticsEnabled || scanDiagnosticsEnabled,
+                            // PHASE 6: Pass ROI filter diagnostics
+                            roiFilterResult = lastRoiFilterResult,
+                            previewBboxCount = overlayTracks.size
                         )
                     } else if (cameraState == CameraState.IDLE) {
                         CameraGuidanceOverlayIdle()
                     }
+                }
+
+                // PHASE 4: ROI centering hint
+                // Show when detections exist but none are inside ROI
+                if (cameraState == CameraState.SCANNING && lastRoiFilterResult?.hasDetectionsOutsideRoiOnly == true) {
+                    RoiCenteringHint(
+                        modifier = Modifier.align(Alignment.TopCenter)
+                    )
                 }
 
                 // Detection overlay - bounding boxes and labels
@@ -636,7 +648,13 @@ fun CameraScreen(
                                     }
                                 },
                                 onDetectionResult = { detections ->
-                                    itemsViewModel.updateOverlayDetections(detections)
+                                    // PHASE 2: Pass ROI to filter detections before rendering
+                                    // Single-shot capture uses default ROI (not actively scanning)
+                                    itemsViewModel.updateOverlayDetections(
+                                        detections = detections,
+                                        scanRoi = scanGuidanceState.scanRoi,
+                                        lockedTrackingId = scanGuidanceState.lockedCandidateId
+                                    )
                                 },
                                 onDetectionEvent = { event ->
                                     itemsViewModel.onDetectionEvent(event)
@@ -664,10 +682,10 @@ fun CameraScreen(
                                                 try {
                                                      context.contentResolver.openInputStream(highResUri)?.use { input ->
                                                          val savedUri = StorageHelper.saveToDirectory(
-                                                             context, 
-                                                             Uri.parse(saveDirectoryUri), 
-                                                             input, 
-                                                             "image/jpeg", 
+                                                             context,
+                                                             Uri.parse(saveDirectoryUri),
+                                                             input,
+                                                             "image/jpeg",
                                                              "Scanium"
                                                          )
                                                          if (savedUri == null) {
@@ -691,7 +709,13 @@ fun CameraScreen(
                                     }
                                 },
                                 onDetectionResult = { detections ->
-                                    itemsViewModel.updateOverlayDetections(detections)
+                                    // PHASE 2: Pass ROI and locked ID to filter detections
+                                    // This ensures only ROI-eligible detections are shown
+                                    itemsViewModel.updateOverlayDetections(
+                                        detections = detections,
+                                        scanRoi = scanGuidanceState.scanRoi,
+                                        lockedTrackingId = scanGuidanceState.lockedCandidateId
+                                    )
                                 },
                                 onDetectionEvent = { event ->
                                     itemsViewModel.onDetectionEvent(event)
