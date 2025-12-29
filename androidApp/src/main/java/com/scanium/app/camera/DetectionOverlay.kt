@@ -30,6 +30,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import com.scanium.app.camera.geom.CorrelationDebug
+import com.scanium.app.camera.geom.GeometryMapper
 import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.CyanGlow
@@ -397,6 +399,25 @@ fun DetectionOverlay(
                 val effectiveBottom = transform.offsetY + transform.effectiveImageHeight * transform.scale
                 drawRect(effectiveLeft, effectiveTop, effectiveRight, effectiveBottom, effectivePaint)
             }
+        }
+
+        // Correlation debug recording (for CORR tag logging)
+        if (CorrelationDebug.enabled && detections.isNotEmpty()) {
+            val topDetection = detections.first()
+            CorrelationDebug.recordCorrelation(
+                normalizedBbox = topDetection.bboxNorm,
+                rotationDegrees = rotationDegrees,
+                proxyWidth = imageSize.width,
+                proxyHeight = imageSize.height,
+                inputImageWidth = transform.effectiveImageWidth,
+                inputImageHeight = transform.effectiveImageHeight,
+                previewWidth = canvasWidth.toInt(),
+                previewHeight = canvasHeight.toInt(),
+                // Bitmap dimensions for snapshot will be similar to capture resolution
+                // Use effective image dimensions as proxy since we don't have actual bitmap here
+                bitmapWidth = transform.effectiveImageWidth,
+                bitmapHeight = transform.effectiveImageHeight
+            )
         }
 
         // Record overlay draw timing
