@@ -330,25 +330,37 @@ fun DetectionOverlay(
 
             // Draw debug info on canvas
             drawContext.canvas.nativeCanvas.apply {
+                // Calculate bbox aspect ratio (height/width - tall objects should be > 1)
+                val bboxAspectRatio = topDetection?.let {
+                    val width = it.bboxNorm.right - it.bboxNorm.left
+                    val height = it.bboxNorm.bottom - it.bboxNorm.top
+                    if (width > 0) height / width else 0f
+                }
+                val screenAspectRatio = topDetectionScreen?.let {
+                    if (it.width() > 0) it.height() / it.width() else 0f
+                }
+
                 val lines = listOf(
+                    "UPRIGHT COORDS (fixed)",
                     "Preview: ${canvasWidth.toInt()}x${canvasHeight.toInt()}",
                     "Sensor: ${imageSize.width}x${imageSize.height}",
                     "Rotation: ${rotationDegrees}°",
                     "Effective: ${transform.effectiveImageWidth}x${transform.effectiveImageHeight}",
                     "Scale: ${String.format("%.3f", transform.scale)}",
                     "Offset: (${transform.offsetX.toInt()}, ${transform.offsetY.toInt()})",
-                    "ScaleType: ${transform.scaleType}",
                     "Detections: ${detections.size}",
                     topDetection?.let {
-                        "Top bbox (norm): (${String.format("%.2f", it.bboxNorm.left)}, " +
+                        "Bbox (norm): (${String.format("%.2f", it.bboxNorm.left)}, " +
                             "${String.format("%.2f", it.bboxNorm.top)}) - " +
                             "(${String.format("%.2f", it.bboxNorm.right)}, " +
                             "${String.format("%.2f", it.bboxNorm.bottom)})"
-                    } ?: "Top bbox: N/A",
+                    } ?: "Bbox: N/A",
+                    "Bbox aspect (h/w): ${bboxAspectRatio?.let { String.format("%.2f", it) } ?: "N/A"} ${if ((bboxAspectRatio ?: 0f) > 1f) "(TALL)" else "(wide)"}",
                     topDetectionScreen?.let {
-                        "Top screen: (${it.left.toInt()}, ${it.top.toInt()}) - " +
+                        "Screen: (${it.left.toInt()}, ${it.top.toInt()}) - " +
                             "(${it.right.toInt()}, ${it.bottom.toInt()})"
-                    } ?: "Top screen: N/A"
+                    } ?: "Screen: N/A",
+                    "Screen aspect: ${screenAspectRatio?.let { String.format("%.2f", it) } ?: "N/A"}"
                 )
 
                 val padding = 12f

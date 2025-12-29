@@ -89,12 +89,16 @@ fun calculateTransform(
 }
 
 /**
- * Calculates the transformation needed to map ML Kit detector coordinates to preview coordinates.
+ * Calculates the transformation needed to map upright bbox coordinates to preview coordinates.
+ *
+ * IMPORTANT COORDINATE CONTRACT:
+ * - ML Kit returns bboxes in InputImage coordinate space (upright, post-rotation)
+ * - Bboxes are stored and processed in upright normalized coordinates
+ * - This function calculates scale/offset for mapping upright coords to preview
  *
  * This function handles:
- * 1. Rotation: ML Kit returns bbox in sensor coordinates (unrotated). When device is in portrait
- *    mode (rotationDegrees=90/270), the coordinates need to be rotated to match the preview.
- * 2. Scale type: CameraX PreviewView defaults to FILL_CENTER (center-crop), not FIT_CENTER.
+ * 1. Effective dimensions: For portrait (90/270°), effective dims are swapped sensor dims
+ * 2. Scale type: CameraX PreviewView defaults to FILL_CENTER (center-crop), not FIT_CENTER
  *
  * @param imageWidth Raw sensor image width (before rotation)
  * @param imageHeight Raw sensor image height (before rotation)
@@ -167,15 +171,18 @@ fun calculateTransformWithRotation(
 }
 
 /**
- * Maps a normalized bounding box from detector coordinates to preview display coordinates.
+ * Maps a normalized bounding box from upright coordinates to preview display coordinates.
  *
  * The coordinate transformation pipeline:
- * 1. Start with normalized bbox (0-1 range) in sensor coordinate space
- * 2. Rotate coordinates based on rotationDegrees to match display orientation
- * 3. Scale to preview dimensions with appropriate scale type (FILL/FIT)
- * 4. Apply offset for centering
+ * 1. Start with normalized bbox (0-1 range) ALREADY in upright coordinate space
+ *    (ML Kit returns bboxes in InputImage space when rotation metadata is provided)
+ * 2. Scale to preview dimensions with appropriate scale type (FILL/FIT)
+ * 3. Apply offset for centering
  *
- * @param bboxNorm Normalized bounding box from detector (in sensor coordinate space)
+ * NOTE: No rotation is applied here because bbox is already in upright space.
+ * The rotation was handled when InputImage was created with rotation metadata.
+ *
+ * @param bboxNorm Normalized bounding box in upright coordinate space
  * @param transform Transformation parameters from calculateTransformWithRotation
  * @return RectF in preview pixel coordinates, ready for drawing
  */
@@ -183,17 +190,16 @@ fun mapBboxToPreview(
     bboxNorm: NormalizedRect,
     transform: BboxMappingTransform
 ): RectF {
-    // Step 1: Rotate normalized coordinates based on rotationDegrees
-    // ML Kit bbox is in sensor coordinates; we need to rotate to display orientation
-    val rotatedNorm = rotateNormalizedRect(bboxNorm, transform.rotationDegrees)
+    // NO ROTATION: bbox is already in upright coordinate space
+    // ML Kit returns bboxes that match InputImage dimensions (post-rotation)
 
-    // Step 2: Convert to pixel coordinates in the effective (post-rotation) image space
-    val pixelLeft = rotatedNorm.left * transform.effectiveImageWidth
-    val pixelTop = rotatedNorm.top * transform.effectiveImageHeight
-    val pixelRight = rotatedNorm.right * transform.effectiveImageWidth
-    val pixelBottom = rotatedNorm.bottom * transform.effectiveImageHeight
+    // Step 1: Convert normalized coords to pixel coordinates in effective (upright) space
+    val pixelLeft = bboxNorm.left * transform.effectiveImageWidth
+    val pixelTop = bboxNorm.top * transform.effectiveImageHeight
+    val pixelRight = bboxNorm.right * transform.effectiveImageWidth
+    val pixelBottom = bboxNorm.bottom * transform.effectiveImageHeight
 
-    // Step 3: Apply scale and offset to get preview coordinates
+    // Step 2: Apply scale and offset to get preview coordinates
     val previewLeft = pixelLeft * transform.scale + transform.offsetX
     val previewTop = pixelTop * transform.scale + transform.offsetY
     val previewRight = pixelRight * transform.scale + transform.offsetX

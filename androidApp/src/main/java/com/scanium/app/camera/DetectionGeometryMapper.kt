@@ -17,10 +17,15 @@ private const val TAG = "GeomMap"
  * 1. Overlay display (live bounding boxes)
  * 2. Thumbnail cropping (item previews)
  *
+ * COORDINATE CONTRACT (as of portrait bbox fix):
+ * - ML Kit returns bboxes in InputImage coordinate space (upright, post-rotation)
+ * - When using InputImage.fromMediaImage(image, rotationDegrees), ML Kit applies
+ *   the rotation internally and returns bboxes that match InputImage.width/height
+ * - All normalized bboxes are stored in UPRIGHT coordinate space
+ *
  * Key coordinate spaces:
- * - ML Kit space: Coordinates returned by ML Kit (may be rotated based on InputImage creation)
- * - Sensor space: Raw sensor coordinates (1280x720 landscape typical)
- * - Upright space: Display-oriented coordinates (720x1280 in portrait)
+ * - Upright space: Display-oriented coordinates (720x1280 in portrait) - PRIMARY
+ * - Sensor space: Raw sensor coordinates (1280x720 landscape typical) - for bitmap cropping only
  * - Preview space: Screen pixel coordinates in the preview composable
  */
 object DetectionGeometryMapper {
@@ -63,23 +68,15 @@ object DetectionGeometryMapper {
     )
 
     /**
-     * Converts a bounding box from ML Kit's coordinate space to sensor (unrotated) coordinate space.
-     *
-     * ML Kit with InputImage.fromMediaImage(image, rotationDegrees) returns bboxes in the
-     * coordinate system as if the image were already rotated. This function reverses that
-     * rotation to get coordinates in the raw sensor space.
-     *
-     * Use this BEFORE normalizing and storing bbox coordinates, so all stored bboxes are in
-     * a consistent sensor-space coordinate system.
-     *
-     * @param mlKitBbox Bounding box from ML Kit in rotated space
-     * @param rotationDegrees The rotation that was passed to InputImage
-     * @param mlKitImageWidth Width of the image as ML Kit sees it (post-rotation)
-     * @param mlKitImageHeight Height of the image as ML Kit sees it (post-rotation)
-     * @param sensorWidth Raw sensor width (pre-rotation)
-     * @param sensorHeight Raw sensor height (pre-rotation)
-     * @return Bounding box in sensor (unrotated) coordinate space
+     * @deprecated This function was based on the incorrect assumption that ML Kit returns
+     * bboxes in sensor space. ML Kit actually returns bboxes in InputImage (upright) space.
+     * Use ObjectDetectorClient.uprightBboxToSensorBbox() for converting upright bboxes
+     * to sensor space for bitmap cropping.
      */
+    @Deprecated(
+        message = "ML Kit returns upright bboxes, not sensor bboxes. Use uprightBboxToSensorBbox in ObjectDetectorClient.",
+        level = DeprecationLevel.WARNING
+    )
     fun mlKitBboxToSensorSpace(
         mlKitBbox: Rect,
         rotationDegrees: Int,
@@ -88,7 +85,7 @@ object DetectionGeometryMapper {
         sensorWidth: Int,
         sensorHeight: Int
     ): Rect {
-        // First normalize in ML Kit's coordinate space
+        // First normalize in ML Kit's coordinate space (which is upright)
         val normLeft = mlKitBbox.left.toFloat() / mlKitImageWidth
         val normTop = mlKitBbox.top.toFloat() / mlKitImageHeight
         val normRight = mlKitBbox.right.toFloat() / mlKitImageWidth
@@ -98,18 +95,15 @@ object DetectionGeometryMapper {
         val (sensorNormLeft, sensorNormTop, sensorNormRight, sensorNormBottom) = when (rotationDegrees) {
             0 -> listOf(normLeft, normTop, normRight, normBottom)
             90 -> {
-                // Inverse of 90° clockwise: 90° counter-clockwise (270°)
-                // (x, y) -> (1-y, x) in normalized space
+                // Inverse of 90° clockwise rotation
                 listOf(normTop, 1f - normRight, normBottom, 1f - normLeft)
             }
             180 -> {
                 // Inverse of 180° is 180°
-                // (x, y) -> (1-x, 1-y)
                 listOf(1f - normRight, 1f - normBottom, 1f - normLeft, 1f - normTop)
             }
             270 -> {
-                // Inverse of 270° counter-clockwise: 270° clockwise (90°)
-                // (x, y) -> (y, 1-x) in normalized space
+                // Inverse of 270° clockwise rotation
                 listOf(1f - normBottom, normLeft, 1f - normTop, normRight)
             }
             else -> {
