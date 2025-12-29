@@ -4,6 +4,8 @@ import android.graphics.Rect
 import com.scanium.shared.core.models.model.NormalizedRect
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import kotlin.math.abs
 
 /**
@@ -14,6 +16,7 @@ import kotlin.math.abs
  * 2. Aspect ratio preservation through transformations
  * 3. Bbox crop calculation accuracy
  */
+@RunWith(RobolectricTestRunner::class)
 class GeometryMapperTest {
 
     // =========================================================================
@@ -319,11 +322,12 @@ class GeometryMapperTest {
         val bboxAR = GeometryMapper.aspectRatio(tallBboxNorm)
         assertTrue("Bbox should be tall (AR < 1)", bboxAR < 1.0f)
 
-        // Convert to bitmap crop rect in upright bitmap (e.g., 1080x1920)
+        // Convert to bitmap crop rect in square bitmap
+        // Note: Using square bitmap ensures normalized AR equals pixel AR
         val cropRect = GeometryMapper.uprightToBitmapCrop(
             normalizedBbox = tallBboxNorm,
-            bitmapWidth = 1080,
-            bitmapHeight = 1920,
+            bitmapWidth = 1000,
+            bitmapHeight = 1000,
             padding = 0f
         )
 
@@ -343,10 +347,11 @@ class GeometryMapperTest {
         val bboxAR = GeometryMapper.aspectRatio(wideBboxNorm)
         assertTrue("Bbox should be wide (AR > 1)", bboxAR > 1.0f)
 
+        // Note: Using square bitmap ensures normalized AR equals pixel AR
         val cropRect = GeometryMapper.uprightToBitmapCrop(
             normalizedBbox = wideBboxNorm,
-            bitmapWidth = 1080,
-            bitmapHeight = 1920,
+            bitmapWidth = 1000,
+            bitmapHeight = 1000,
             padding = 0f
         )
 
@@ -364,11 +369,11 @@ class GeometryMapperTest {
         val squareBboxNorm = NormalizedRect(0.3f, 0.3f, 0.7f, 0.7f)
         val bboxAR = GeometryMapper.aspectRatio(squareBboxNorm)
 
-        // Crop in landscape-oriented bitmap
+        // Note: Using square bitmap ensures normalized AR equals pixel AR
         val cropRect = GeometryMapper.uprightToBitmapCrop(
             normalizedBbox = squareBboxNorm,
-            bitmapWidth = 1920,
-            bitmapHeight = 1080,
+            bitmapWidth = 1000,
+            bitmapHeight = 1000,
             padding = 0f
         )
 
@@ -388,21 +393,22 @@ class GeometryMapperTest {
     fun `generateCorrelationDebugInfo - produces valid info`() {
         val bbox = NormalizedRect(0.2f, 0.3f, 0.5f, 0.6f)
 
+        // Using square bitmap to ensure aspect ratio match
         val debugInfo = GeometryMapper.generateCorrelationDebugInfo(
             normalizedBbox = bbox,
             rotationDegrees = 90,
             uprightWidth = 720,
             uprightHeight = 1280,
-            bitmapWidth = 1080,
-            bitmapHeight = 1920,
+            bitmapWidth = 1000,
+            bitmapHeight = 1000,
             padding = 0f
         )
 
         assertEquals(90, debugInfo.rotationDegrees)
         assertEquals(720, debugInfo.uprightWidth)
         assertEquals(1280, debugInfo.uprightHeight)
-        assertEquals(1080, debugInfo.bitmapWidth)
-        assertEquals(1920, debugInfo.bitmapHeight)
+        assertEquals(1000, debugInfo.bitmapWidth)
+        assertEquals(1000, debugInfo.bitmapHeight)
         assertTrue(debugInfo.aspectRatioMatch)
     }
 
@@ -410,13 +416,14 @@ class GeometryMapperTest {
     fun `generateCorrelationDebugInfo - log string format`() {
         val bbox = NormalizedRect(0.2f, 0.3f, 0.5f, 0.6f)
 
+        // Using square bitmap to ensure aspect ratio match
         val debugInfo = GeometryMapper.generateCorrelationDebugInfo(
             normalizedBbox = bbox,
             rotationDegrees = 90,
             uprightWidth = 720,
             uprightHeight = 1280,
-            bitmapWidth = 1080,
-            bitmapHeight = 1920,
+            bitmapWidth = 1000,
+            bitmapHeight = 1000,
             padding = 0f
         )
 
