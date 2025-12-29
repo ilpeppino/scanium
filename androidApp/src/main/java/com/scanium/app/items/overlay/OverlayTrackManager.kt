@@ -61,6 +61,7 @@ class OverlayTrackManager(
     private var lastOverlayDetections: List<DetectionResult> = emptyList()
     private var lastScanRoi: ScanRoi = ScanRoi.DEFAULT
     private var lastLockedTrackingId: String? = null
+    private var lastIsGoodState: Boolean = false
 
     /**
      * Update overlay with new detections from the camera.
@@ -71,19 +72,22 @@ class OverlayTrackManager(
      * @param detections List of detection results from the ML pipeline
      * @param scanRoi Current scan ROI (detections outside are filtered out)
      * @param lockedTrackingId Tracking ID of locked candidate (if any) for visual distinction
+     * @param isGoodState True if guidance state is GOOD (conditions met, waiting for lock)
      */
     fun updateOverlayDetections(
         detections: List<DetectionResult>,
         scanRoi: ScanRoi = ScanRoi.DEFAULT,
-        lockedTrackingId: String? = null
+        lockedTrackingId: String? = null,
+        isGoodState: Boolean = false
     ) {
         if (DEBUG_LOGGING) {
-            ScaniumLog.d(TAG, "[OVERLAY] updateOverlayDetections: ${detections.size} detections, roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}")
+            ScaniumLog.d(TAG, "[OVERLAY] updateOverlayDetections: ${detections.size} detections, roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}, isGoodState=$isGoodState")
         }
         lastOverlayDetections = detections
         lastScanRoi = scanRoi
         lastLockedTrackingId = lockedTrackingId
-        renderOverlayTracks(detections, scanRoi, lockedTrackingId)
+        lastIsGoodState = isGoodState
+        renderOverlayTracks(detections, scanRoi, lockedTrackingId, isGoodState)
     }
 
     /**
@@ -92,7 +96,7 @@ class OverlayTrackManager(
      */
     fun refreshOverlayTracks() {
         if (lastOverlayDetections.isNotEmpty()) {
-            renderOverlayTracks(lastOverlayDetections, lastScanRoi, lastLockedTrackingId)
+            renderOverlayTracks(lastOverlayDetections, lastScanRoi, lastLockedTrackingId, lastIsGoodState)
         }
     }
 
@@ -107,6 +111,7 @@ class OverlayTrackManager(
         lastOverlayDetections = emptyList()
         lastScanRoi = ScanRoi.DEFAULT
         lastLockedTrackingId = null
+        lastIsGoodState = false
     }
 
     /**
@@ -134,7 +139,8 @@ class OverlayTrackManager(
     private fun renderOverlayTracks(
         detections: List<DetectionResult>,
         scanRoi: ScanRoi,
-        lockedTrackingId: String?
+        lockedTrackingId: String?,
+        isGoodState: Boolean
     ) {
         // PHASE 2: ROI filtering - only show detections inside ROI
         val filterResult = RoiDetectionFilter.filterByRoi(detections, scanRoi)
@@ -152,7 +158,8 @@ class OverlayTrackManager(
             detections = roiEligibleDetections,
             aggregatedItems = aggregatedItems,
             readyConfidenceThreshold = readyConfidenceThreshold,
-            lockedTrackingId = lockedTrackingId
+            lockedTrackingId = lockedTrackingId,
+            isGoodState = isGoodState
         )
 
         // Log when overlay tracks change

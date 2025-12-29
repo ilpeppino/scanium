@@ -593,6 +593,19 @@ fun CameraScreen(
                     onShutterTap = {
                         // Single tap: capture one frame
                         if (cameraState == CameraState.IDLE) {
+                            // PHASE 3: Check ROI eligibility before capture for better feedback
+                            val hasEligibleBbox = overlayTracks.isNotEmpty()
+                            val hasOutsideRoiOnly = lastRoiFilterResult?.hasDetectionsOutsideRoiOnly == true
+
+                            // Show hint if capturing without eligible bbox but allow capture anyway
+                            if (!hasEligibleBbox && hasOutsideRoiOnly) {
+                                Toast.makeText(
+                                    context,
+                                    "Center object in scan zone for better accuracy",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
                             cameraState = CameraState.CAPTURING
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             cameraManager.captureSingleFrame(
@@ -600,7 +613,12 @@ fun CameraScreen(
                                 onResult = { items ->
                                     cameraState = CameraState.IDLE
                                     if (items.isEmpty()) {
-                                        val message = "No objects detected. Try pointing at prominent items."
+                                        // PHASE 3: More specific message based on what we detected
+                                        val message = if (hasOutsideRoiOnly) {
+                                            "Object detected outside scan zone. Center it for better results."
+                                        } else {
+                                            "No objects detected. Try pointing at prominent items."
+                                        }
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                         soundManager.play(AppSound.ERROR)
                                     } else {
@@ -653,7 +671,8 @@ fun CameraScreen(
                                     itemsViewModel.updateOverlayDetections(
                                         detections = detections,
                                         scanRoi = scanGuidanceState.scanRoi,
-                                        lockedTrackingId = scanGuidanceState.lockedCandidateId
+                                        lockedTrackingId = scanGuidanceState.lockedCandidateId,
+                                        isGoodState = scanGuidanceState.state == com.scanium.core.models.scanning.GuidanceState.GOOD
                                     )
                                 },
                                 onDetectionEvent = { event ->
@@ -711,10 +730,12 @@ fun CameraScreen(
                                 onDetectionResult = { detections ->
                                     // PHASE 2: Pass ROI and locked ID to filter detections
                                     // This ensures only ROI-eligible detections are shown
+                                    // PHASE 1: Pass isGoodState to show READY visual state
                                     itemsViewModel.updateOverlayDetections(
                                         detections = detections,
                                         scanRoi = scanGuidanceState.scanRoi,
-                                        lockedTrackingId = scanGuidanceState.lockedCandidateId
+                                        lockedTrackingId = scanGuidanceState.lockedCandidateId,
+                                        isGoodState = scanGuidanceState.state == com.scanium.core.models.scanning.GuidanceState.GOOD
                                     )
                                 },
                                 onDetectionEvent = { event ->

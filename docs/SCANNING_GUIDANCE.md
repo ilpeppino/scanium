@@ -10,6 +10,9 @@ The scanning guidance system provides visual and textual feedback to help users 
 2. **Guidance Hints** - Contextual text hints (e.g., "Move closer", "Hold steady")
 3. **State Transitions** - Visual feedback as scanning progresses
 4. **Lock Mechanism** - Stability lock to prevent background detections
+5. **Visual State Clarity** - Distinct bbox styles for PREVIEW → READY → LOCKED progression
+6. **Distance Confidence** - Subtle visual feedback for optimal distance
+7. **Scan Confidence Metrics** - Telemetry for debugging and beta testing
 
 ***REMOVED******REMOVED*** Key Concept: Single Source of Truth
 
@@ -90,6 +93,62 @@ All conditions are good - object centered, focused, stable.
 Locked onto a candidate - stable detection achieved.
 - **Visual**: Solid green outline with inner highlight
 - **Action**: Item will be added from this candidate only
+- **Hint**: "Ready to scan" (brief, 1 second)
+
+***REMOVED******REMOVED*** Bounding Box Visual States
+
+Bounding boxes have three distinct visual styles that progress from detection to scan-ready:
+
+***REMOVED******REMOVED******REMOVED*** 1. PREVIEW State
+Object detected but not yet ready for scanning.
+- **Stroke**: Thin (0.75x)
+- **Color**: Blue (neutral)
+- **Alpha**: 0.6
+- **Label**: Small "Detected" (optional)
+
+***REMOVED******REMOVED******REMOVED*** 2. READY State
+Scan conditions met, waiting for lock.
+- **Stroke**: Medium (1.1x)
+- **Color**: Green (accent, 0.85 alpha)
+- **Alpha**: 0.85
+- **Label**: Optional
+
+***REMOVED******REMOVED******REMOVED*** 3. LOCKED State
+Stable lock achieved, scan-ready.
+- **Stroke**: Thick (1.4x) with brief pulse animation
+- **Color**: Bright green
+- **Alpha**: 1.0
+- **Animation**: One-time scale pulse (1.0 → 1.15 → 1.0) over 350ms
+
+**Transition Rules:**
+- PREVIEW → READY: When guidance state is GOOD and detection is eligible
+- READY → LOCKED: When stability lock criteria are met (400ms stable)
+- Any state → PREVIEW: When conditions degrade (motion, off-center, blur)
+
+***REMOVED******REMOVED*** Distance Confidence Indicator
+
+The scan zone border color subtly indicates distance quality:
+
+| Distance | Zone Border | Meaning |
+|----------|-------------|---------|
+| Too close | Yellow-green (***REMOVED***7CB342) | Object too close to camera |
+| Optimal | Green (***REMOVED***1DB954) | Perfect scanning distance |
+| Too far | Yellow-green (***REMOVED***7CB342) | Object too far from camera |
+
+This is determined by comparing detected bbox area to thresholds:
+- TOO_CLOSE: area > 35% of frame
+- OPTIMAL: area between 4% and 35%
+- TOO_FAR: area < 4% of frame
+
+***REMOVED******REMOVED*** Picture Mode Alignment
+
+Single-shot capture (shutter tap) shares the same ROI as live scanning:
+
+1. **Same ROI**: Picture mode uses `scanGuidanceState.scanRoi`
+2. **Pre-capture hint**: If no eligible bbox, shows "Center object in scan zone for better accuracy"
+3. **Result feedback**: Explains when objects were outside scan zone
+
+This ensures consistent behavior between live scan and picture capture.
 
 ***REMOVED******REMOVED*** Lock Behavior
 
@@ -221,7 +280,61 @@ ScanRoi ────► UI Overlay (drawing)
         └───► CenterWeightedSelector (gating)
 ```
 
+***REMOVED******REMOVED*** User Hints (Micro-copy)
+
+Hints are short, actionable messages:
+
+| State | Hint Text |
+|-------|-----------|
+| SEARCHING | (none) |
+| TOO_CLOSE | "Move phone slightly away" |
+| TOO_FAR | "Move closer to object" |
+| OFF_CENTER | "Center object in scan zone" |
+| UNSTABLE | "Hold steady" |
+| FOCUSING | "Focusing..." |
+| GOOD | "Hold still..." |
+| LOCKED | "Ready to scan" |
+
+**Hint Rules:**
+- Never stacked (only one at a time)
+- Auto-dismiss after state-specific duration (1-1.5s for transient states)
+- Rate-limited: 1.5s minimum between hint changes
+
+***REMOVED******REMOVED*** Scan Confidence Metrics
+
+For debugging and beta testing, `ScanConfidenceMetrics` tracks (aggregated, no images):
+
+- **% frames with preview bbox**: How often objects are detected
+- **% frames reaching lock**: Lock success rate
+- **Avg time-to-lock**: Responsiveness metric
+- **% shutter taps without eligible bbox**: User expectation mismatch
+- **Unlock reasons**: MOTION, FOCUS, OFF_CENTER, LEFT_ROI, TIMEOUT, CANDIDATE_LOST
+
+Access via:
+- `ScanGuidanceManager.metrics.liveMetrics` (StateFlow)
+- `ScanGuidanceManager.metrics.toDebugString()` (for logs)
+
+***REMOVED******REMOVED*** Category-Aware ROI (Foundation)
+
+The system supports category-specific ROI tuning (for future improvements):
+
+```kotlin
+enum class ScanObjectCategory {
+    PHONE, TOY, DOCUMENT, ELECTRONICS, FURNITURE, UNKNOWN
+}
+
+data class CategoryRoiConfig(
+    val category: ScanObjectCategory,
+    val idealAreaMin: Float,
+    val idealAreaMax: Float,
+    val minStableTimeForLockMs: Long
+)
+```
+
+Currently uses UNKNOWN/generic settings. Category hints can be passed to enable per-category behavior.
+
 ***REMOVED******REMOVED*** Related Documents
 
 - [SCAN_VS_PICTURE_ASSESSMENT.md](./SCAN_VS_PICTURE_ASSESSMENT.md) - Analysis of scanning behavior
 - [LIVE_SCAN_CENTERING_BUG.md](./LIVE_SCAN_CENTERING_BUG.md) - Previous centering improvements
+- [BETA_VALIDATION.md](./BETA_VALIDATION.md) - Test scenarios and exit criteria
