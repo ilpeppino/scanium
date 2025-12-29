@@ -7,12 +7,27 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
+ * Stall reason for NO_FRAMES watchdog.
+ */
+enum class StallReason {
+    NONE,
+    NO_FRAMES,
+    RECOVERING,
+    FAILED
+}
+
+/**
  * Diagnostics state for camera pipeline debugging.
  * Exposed via StateFlow for debug overlay rendering.
  */
 data class CameraPipelineDiagnostics(
     val sessionId: Int = 0,
     val isCameraBound: Boolean = false,
+    /** True if we called setAnalyzer() on ImageAnalysis */
+    val isAnalysisAttached: Boolean = false,
+    /** True if we have received at least 1 frame in current session */
+    val isAnalysisFlowing: Boolean = false,
+    /** Legacy - now derived from isAnalysisAttached */
     val isAnalysisRunning: Boolean = false,
     val isPreviewDetectionActive: Boolean = false,
     val isScanningActive: Boolean = false,
@@ -21,7 +36,11 @@ data class CameraPipelineDiagnostics(
     val analysisFramesPerSecond: Double = 0.0,
     val lifecycleState: String = "UNKNOWN",
     val navDestination: String = "",
-    val bboxCount: Int = 0
+    val bboxCount: Int = 0,
+    /** Current stall reason from NO_FRAMES watchdog */
+    val stallReason: StallReason = StallReason.NONE,
+    /** Number of recovery attempts made by watchdog */
+    val recoveryAttempts: Int = 0
 ) {
     companion object {
         fun initial() = CameraPipelineDiagnostics()
@@ -106,9 +125,13 @@ class CameraSessionController {
         updateDiagnostics {
             it.copy(
                 isAnalysisRunning = false,
+                isAnalysisAttached = false,
+                isAnalysisFlowing = false,
                 isPreviewDetectionActive = false,
                 isScanningActive = false,
-                bboxCount = 0
+                bboxCount = 0,
+                stallReason = StallReason.NONE,
+                recoveryAttempts = 0
             )
         }
     }
@@ -141,6 +164,25 @@ class CameraSessionController {
     fun updateAnalysisRunning(running: Boolean) {
         logIfChanged("ANALYSIS_RUNNING", running.toString())
         updateDiagnostics { it.copy(isAnalysisRunning = running) }
+    }
+
+    fun updateAnalysisAttached(attached: Boolean) {
+        logIfChanged("ANALYSIS_ATTACHED", attached.toString())
+        updateDiagnostics { it.copy(isAnalysisAttached = attached) }
+    }
+
+    fun updateAnalysisFlowing(flowing: Boolean) {
+        logIfChanged("ANALYSIS_FLOWING", flowing.toString())
+        updateDiagnostics { it.copy(isAnalysisFlowing = flowing) }
+    }
+
+    fun updateStallReason(reason: StallReason) {
+        logIfChanged("STALL_REASON", reason.name)
+        updateDiagnostics { it.copy(stallReason = reason) }
+    }
+
+    fun updateRecoveryAttempts(attempts: Int) {
+        updateDiagnostics { it.copy(recoveryAttempts = attempts) }
     }
 
     fun updatePreviewDetectionActive(active: Boolean) {

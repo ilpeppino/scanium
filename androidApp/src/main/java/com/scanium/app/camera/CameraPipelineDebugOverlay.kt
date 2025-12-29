@@ -67,8 +67,12 @@ fun CameraPipelineDebugOverlay(
 
     // Determine pipeline status based on diagnostics
     val pipelineStatus = when {
+        diagnostics.stallReason == StallReason.RECOVERING -> "RECOVERING"
+        diagnostics.stallReason == StallReason.FAILED -> "STALL_FAILED"
+        diagnostics.stallReason == StallReason.NO_FRAMES -> "STALL_NO_FRAMES"
         !diagnostics.isCameraBound -> "CAMERA NOT BOUND"
-        !diagnostics.isAnalysisRunning && !diagnostics.isPreviewDetectionActive && !diagnostics.isScanningActive -> "ANALYZER NOT RUNNING"
+        !diagnostics.isAnalysisAttached -> "ANALYZER NOT ATTACHED"
+        diagnostics.isAnalysisAttached && !diagnostics.isAnalysisFlowing && frameAgo < 0 -> "WAITING FOR FRAMES"
         frameAgo > 2000 -> "FRAMES STALE (${frameAgo}ms)"
         bboxAgo > 2000 && diagnostics.bboxCount == 0 -> "NO BBOXES"
         else -> "OK"
@@ -76,6 +80,8 @@ fun CameraPipelineDebugOverlay(
 
     val statusColor = when {
         pipelineStatus == "OK" -> Color.Green
+        pipelineStatus == "RECOVERING" -> Color.Yellow
+        pipelineStatus == "WAITING FOR FRAMES" -> Color.Yellow
         pipelineStatus.startsWith("FRAMES STALE") -> Color.Yellow
         pipelineStatus == "NO BBOXES" -> Color.Yellow
         else -> Color.Red
@@ -129,8 +135,15 @@ fun CameraPipelineDebugOverlay(
         )
 
         Text(
-            text = "AnalysisRunning: ${diagnostics.isAnalysisRunning}",
-            color = if (diagnostics.isAnalysisRunning) Color.Green else Color.Red,
+            text = "AnalysisAttached: ${diagnostics.isAnalysisAttached}",
+            color = if (diagnostics.isAnalysisAttached) Color.Green else Color.Red,
+            fontSize = 9.sp,
+            style = MaterialTheme.typography.labelSmall
+        )
+
+        Text(
+            text = "AnalysisFlowing: ${diagnostics.isAnalysisFlowing}",
+            color = if (diagnostics.isAnalysisFlowing) Color.Green else Color.Red,
             fontSize = 9.sp,
             style = MaterialTheme.typography.labelSmall
         )
@@ -195,6 +208,29 @@ fun CameraPipelineDebugOverlay(
                 fontSize = 9.sp,
                 style = MaterialTheme.typography.labelSmall
             )
+        }
+
+        // Stall reason and recovery attempts
+        if (diagnostics.stallReason != StallReason.NONE) {
+            Text(
+                text = "StallReason: ${diagnostics.stallReason.name}",
+                color = when (diagnostics.stallReason) {
+                    StallReason.RECOVERING -> Color.Yellow
+                    StallReason.FAILED -> Color.Red
+                    StallReason.NO_FRAMES -> Color.Red
+                    else -> Color.Gray
+                },
+                fontSize = 9.sp,
+                style = MaterialTheme.typography.labelSmall
+            )
+            if (diagnostics.recoveryAttempts > 0) {
+                Text(
+                    text = "RecoveryAttempts: ${diagnostics.recoveryAttempts}",
+                    color = Color.Yellow,
+                    fontSize = 9.sp,
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
     }
 }
