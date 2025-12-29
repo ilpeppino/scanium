@@ -46,17 +46,27 @@ import kotlin.math.max
  */
 /**
  * Visual colors for bounding box states.
+ *
+ * Eye Mode vs Focus Mode visual hierarchy:
+ * - EYE: Very subtle, global awareness (detections anywhere)
+ * - SELECTED: Highlighted, user intent (detection inside ROI)
+ * - READY: Accent green, conditions met
+ * - LOCKED: Bright green, scan-ready
  */
 private object BboxColors {
-    /** Preview state: neutral blue - object detected */
-    val PreviewOutline = ScaniumBlue.copy(alpha = 0.6f)
-    val PreviewGlow = CyanGlow.copy(alpha = 0.2f)
+    /** Eye state: very subtle - global detection anywhere in frame */
+    val EyeOutline = Color.White.copy(alpha = 0.35f)
+    val EyeGlow = Color.White.copy(alpha = 0.1f)
 
-    /** Ready state: accent color - conditions met, hold steady */
+    /** Selected state: accent blue - object center inside ROI (user intent) */
+    val SelectedOutline = ScaniumBlue.copy(alpha = 0.85f)
+    val SelectedGlow = CyanGlow.copy(alpha = 0.4f)
+
+    /** Ready state: accent green - conditions met, hold steady */
     val ReadyOutline = Color(0xFF1DB954).copy(alpha = 0.85f)
     val ReadyGlow = Color(0xFF1DB954).copy(alpha = 0.4f)
 
-    /** Locked state: bright accent - scan ready */
+    /** Locked state: bright green - scan ready */
     val LockedOutline = Color(0xFF1DB954)
     val LockedGlow = Color(0xFF1DB954).copy(alpha = 0.5f)
 }
@@ -148,11 +158,12 @@ fun DetectionOverlay(
             val shouldPulseLabel = !isReady || isEstimating
             val labelAlpha = if (shouldPulseLabel) pulseAlpha else 1f
 
-            // PHASE 1: Explicit visual states for bbox
-            // Visual progression: PREVIEW → READY → LOCKED
-            // - PREVIEW: thin stroke, neutral color (detected but not ready)
-            // - READY: medium stroke, accent color (conditions met, holding)
-            // - LOCKED: thick stroke, bright accent with pulse (scan-ready)
+            // Eye Mode vs Focus Mode visual states
+            // Visual progression: EYE → SELECTED → READY → LOCKED
+            // - EYE: very thin, subtle (global vision - detected anywhere)
+            // - SELECTED: medium stroke, accent (user intent - inside ROI)
+            // - READY: medium-thick, green (conditions met, holding)
+            // - LOCKED: thick, bright green with pulse (scan-ready)
             val (outlineColor, glowColor, strokeMultiplier) = when (boxStyle) {
                 OverlayBoxStyle.LOCKED -> Triple(
                     BboxColors.LockedOutline,
@@ -162,12 +173,17 @@ fun DetectionOverlay(
                 OverlayBoxStyle.READY -> Triple(
                     BboxColors.ReadyOutline,
                     BboxColors.ReadyGlow,
-                    1.1f  // Medium stroke for ready
+                    1.1f  // Medium-thick stroke for ready
                 )
-                OverlayBoxStyle.PREVIEW -> Triple(
-                    BboxColors.PreviewOutline,
-                    BboxColors.PreviewGlow,
-                    0.75f  // Thin stroke for preview
+                OverlayBoxStyle.SELECTED -> Triple(
+                    BboxColors.SelectedOutline,
+                    BboxColors.SelectedGlow,
+                    0.9f  // Medium stroke for selected
+                )
+                OverlayBoxStyle.EYE -> Triple(
+                    BboxColors.EyeOutline,
+                    BboxColors.EyeGlow,
+                    0.5f  // Very thin stroke for eye mode
                 )
             }
 

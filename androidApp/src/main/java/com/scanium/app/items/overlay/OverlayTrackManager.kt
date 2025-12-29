@@ -19,16 +19,19 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
  * This class is responsible for:
  * - Maintaining overlay track state
- * - ROI-filtering detections before visualization
- * - Mapping detections to overlay tracks
+ * - Selecting which detection is inside ROI (user intent)
+ * - Mapping detections to overlay tracks with appropriate visual states
  * - Tracking overlay ready states
  * - Caching resolution mappings
  *
- * ***REMOVED******REMOVED*** ROI Enforcement (Phase 2)
- * Detections are filtered by ROI BEFORE being rendered:
- * - Only detections with center inside ROI are shown
- * - This teaches users to center objects in the scan zone
- * - Visualization matches what the scan pipeline considers eligible
+ * ***REMOVED******REMOVED*** Eye Mode vs Focus Mode
+ * ALL detections are rendered (Eye mode = global vision):
+ * - Detections outside ROI: EYE style (subtle, global awareness)
+ * - Detection inside ROI: SELECTED/READY/LOCKED style (user intent)
+ *
+ * ROI is a SELECTION TOOL, not a detection filter:
+ * - User centers object in ROI to select it
+ * - Only selected object can be scanned/captured
  *
  * ***REMOVED******REMOVED*** Thread Safety
  * This class is designed to be called from the main thread.
@@ -55,6 +58,10 @@ class OverlayTrackManager(
     private val _lastRoiFilterResult = MutableStateFlow<RoiFilterResult?>(null)
     val lastRoiFilterResult: StateFlow<RoiFilterResult?> = _lastRoiFilterResult.asStateFlow()
 
+    // Selected detection - the ONE detection inside ROI (Focus mode target)
+    private val _selectedTrackingId = MutableStateFlow<String?>(null)
+    val selectedTrackingId: StateFlow<String?> = _selectedTrackingId.asStateFlow()
+
     // Internal caches
     private val overlayReadyStates = mutableMapOf<String, Boolean>()
     private val overlayResolutionCache = mutableMapOf<String, String?>()
@@ -66,11 +73,12 @@ class OverlayTrackManager(
     /**
      * Update overlay with new detections from the camera.
      *
-     * PHASE 2: ROI enforcement - detections are filtered by ROI BEFORE rendering.
-     * Only detections with center inside ROI are shown as bounding boxes.
+     * Eye Mode vs Focus Mode:
+     * - ALL detections are rendered (Eye mode = global vision)
+     * - Only the selected detection (center inside ROI) is highlighted (Focus mode)
      *
-     * @param detections List of detection results from the ML pipeline
-     * @param scanRoi Current scan ROI (detections outside are filtered out)
+     * @param detections List of detection results from the ML pipeline (ALL detections)
+     * @param scanRoi Current scan ROI (used for selection, not filtering)
      * @param lockedTrackingId Tracking ID of locked candidate (if any) for visual distinction
      * @param isGoodState True if guidance state is GOOD (conditions met, waiting for lock)
      */
@@ -106,6 +114,7 @@ class OverlayTrackManager(
     fun clear() {
         _overlayTracks.value = CopyOnWriteArrayList()
         _lastRoiFilterResult.value = null
+        _selectedTrackingId.value = null
         overlayReadyStates.clear()
         overlayResolutionCache.clear()
         lastOverlayDetections = emptyList()
@@ -142,22 +151,27 @@ class OverlayTrackManager(
         lockedTrackingId: String?,
         isGoodState: Boolean
     ) {
-        // PHASE 2: ROI filtering - only show detections inside ROI
+        // Eye Mode vs Focus Mode:
+        // - Use ROI for SELECTION, not filtering
+        // - All detections are rendered (Eye mode = global vision)
+        // - Selected detection (center inside ROI) gets highlighted (Focus mode)
         val filterResult = RoiDetectionFilter.filterByRoi(detections, scanRoi)
         _lastRoiFilterResult.value = filterResult
 
         if (DEBUG_LOGGING) {
-            ScaniumLog.d(TAG, "[OVERLAY] ROI filter: ${filterResult.eligibleCount} eligible, ${filterResult.outsideCount} outside")
+            ScaniumLog.d(TAG, "[OVERLAY] ROI selection: ${filterResult.eligibleCount} inside ROI, ${filterResult.outsideCount} outside, total=${detections.size}")
         }
 
-        // Only render ROI-eligible detections
-        val roiEligibleDetections = filterResult.roiEligible
+        // Determine selected detection: closest to ROI center among those inside ROI
+        val selectedTrackingId = selectBestCandidate(filterResult.roiEligible, scanRoi)
 
+        // Render ALL detections (Eye mode) with selection highlighting (Focus mode)
         val aggregatedItems = stateManager.getAggregatedItems()
         val mapped = mapOverlayTracks(
-            detections = roiEligibleDetections,
+            detections = detections,  // ALL detections, not filtered
             aggregatedItems = aggregatedItems,
             readyConfidenceThreshold = readyConfidenceThreshold,
+            selectedTrackingId = selectedTrackingId,  // Which one is selected
             lockedTrackingId = lockedTrackingId,
             isGoodState = isGoodState
         )
@@ -204,5 +218,42 @@ class OverlayTrackManager(
         }
 
         _overlayTracks.value = CopyOnWriteArrayList(mapped)
+
+        // Update selected tracking ID state
+        _selectedTrackingId.value = selectedTrackingId
+    }
+
+    /**
+     * Select the best candidate from detections inside ROI.
+     *
+     * Selection criteria (in order of priority):
+     * 1. Center of detection must be inside ROI
+     * 2. Closest to ROI center (user intent = centering)
+     * 3. Higher confidence as tiebreaker
+     *
+     * @param roiEligibleDetections Detections with center inside ROI
+     * @param scanRoi Current scan ROI
+     * @return Tracking ID of the selected detection, or null if none eligible
+     */
+    private fun selectBestCandidate(
+        roiEligibleDetections: List<DetectionResult>,
+        scanRoi: ScanRoi
+    ): String? {
+        if (roiEligibleDetections.isEmpty()) return null
+
+        // Score each detection by distance to ROI center (closer = better)
+        val scored = roiEligibleDetections.mapNotNull { detection ->
+            val trackingId = detection.trackingId?.toString() ?: return@mapNotNull null
+            val bbox = detection.bboxNorm
+            val centerX = (bbox.left + bbox.right) / 2f
+            val centerY = (bbox.top + bbox.bottom) / 2f
+            val centerScore = scanRoi.centerScore(centerX, centerY)
+            // Combined score: 70% center proximity, 30% confidence
+            val score = centerScore * 0.7f + detection.confidence * 0.3f
+            Triple(trackingId, score, detection)
+        }
+
+        // Return the detection with highest score (closest to center)
+        return scored.maxByOrNull { it.second }?.first
     }
 }
