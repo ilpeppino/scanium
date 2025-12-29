@@ -120,6 +120,7 @@ fun CameraScreen(
     // Scanning guidance settings
     val scanningGuidanceEnabled by settingsRepository.scanningGuidanceEnabledFlow.collectAsState(initial = true)
     val roiDiagnosticsEnabled by settingsRepository.devRoiDiagnosticsEnabledFlow.collectAsState(initial = false)
+    val bboxMappingDebugEnabled by settingsRepository.devBboxMappingDebugEnabledFlow.collectAsState(initial = false)
 
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
@@ -518,7 +519,8 @@ fun CameraScreen(
                         detections = overlayTracks,
                         imageSize = imageSize,
                         previewSize = previewSize,
-                        rotationDegrees = imageRotationDegrees
+                        rotationDegrees = imageRotationDegrees,
+                        showGeometryDebug = bboxMappingDebugEnabled
                     )
                 }
 

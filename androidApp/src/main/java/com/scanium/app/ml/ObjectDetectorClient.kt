@@ -104,6 +104,42 @@ class ObjectDetectorClient {
 
             return isInside
         }
+
+        /**
+         * CRITICAL FIX: Convert InputImage dimensions to sensor (original) dimensions.
+         *
+         * ML Kit's InputImage.width/height are POST-ROTATION dimensions (the dimensions as
+         * if the image were already rotated to upright orientation). However, ML Kit returns
+         * bounding boxes in ORIGINAL (pre-rotation/sensor) coordinate space.
+         *
+         * For 90° or 270° rotation, the dimensions are swapped:
+         * - InputImage: 720x1280 (portrait, post-rotation)
+         * - Sensor/bbox: 1280x720 (landscape, original)
+         *
+         * This function reverses the swap to get the actual sensor dimensions that match
+         * the coordinate space of ML Kit's bounding box output.
+         *
+         * @param inputImageWidth InputImage.width (post-rotation)
+         * @param inputImageHeight InputImage.height (post-rotation)
+         * @param rotationDegrees Rotation passed to InputImage.fromMediaImage()
+         * @return Pair of (sensorWidth, sensorHeight) in original sensor coordinates
+         */
+        private fun getSensorDimensions(
+            inputImageWidth: Int,
+            inputImageHeight: Int,
+            rotationDegrees: Int
+        ): Pair<Int, Int> {
+            return when (rotationDegrees) {
+                90, 270 -> {
+                    // Width and height are swapped in InputImage relative to sensor
+                    Pair(inputImageHeight, inputImageWidth)
+                }
+                else -> {
+                    // 0° and 180°: dimensions match sensor
+                    Pair(inputImageWidth, inputImageHeight)
+                }
+            }
+        }
     }
 
     // ML Kit object detector configured for single image mode (more accurate)
@@ -186,6 +222,16 @@ class ObjectDetectorClient {
             val scannedItems = mutableListOf<ScannedItem>()
             val detectionResults = mutableListOf<DetectionResult>()
 
+            // CRITICAL FIX: Get SENSOR dimensions, not InputImage dimensions.
+            // InputImage.width/height are post-rotation dimensions, but ML Kit returns
+            // bounding boxes in ORIGINAL (pre-rotation/sensor) coordinates.
+            // For 90/270 rotation, we need to swap dimensions to get sensor dimensions.
+            val (sensorWidth, sensorHeight) = getSensorDimensions(
+                inputImageWidth = image.width,
+                inputImageHeight = image.height,
+                rotationDegrees = image.rotationDegrees
+            )
+
             detectedObjects.forEach { obj ->
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
                 if (!isDetectionInsideSafeZone(obj.boundingBox, cropRect, edgeInsetRatio)) {
@@ -197,13 +243,13 @@ class ObjectDetectorClient {
                     detectedObject = obj,
                     sourceBitmap = bitmap,
                     imageRotationDegrees = image.rotationDegrees,
-                    fallbackWidth = image.width,
-                    fallbackHeight = image.height
+                    fallbackWidth = sensorWidth,
+                    fallbackHeight = sensorHeight
                 )
                 val detectionResult = convertToDetectionResult(
                     detectedObject = obj,
-                    imageWidth = bitmap?.width ?: image.width,
-                    imageHeight = bitmap?.height ?: image.height
+                    imageWidth = bitmap?.width ?: sensorWidth,
+                    imageHeight = bitmap?.height ?: sensorHeight
                 )
 
                 if (scannedItem != null) scannedItems.add(scannedItem)
@@ -390,6 +436,14 @@ class ObjectDetectorClient {
             val detectionInfos = mutableListOf<DetectionInfo>()
             val detectionResults = mutableListOf<DetectionResult>()
 
+            // CRITICAL FIX: Get SENSOR dimensions, not InputImage dimensions.
+            // (Same fix as in detectObjects - see getSensorDimensions documentation)
+            val (sensorWidth, sensorHeight) = getSensorDimensions(
+                inputImageWidth = image.width,
+                inputImageHeight = image.height,
+                rotationDegrees = image.rotationDegrees
+            )
+
             detectedObjects.forEach { obj ->
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
                 if (!isDetectionInsideSafeZone(obj.boundingBox, cropRect, edgeInsetRatio)) {
@@ -402,15 +456,15 @@ class ObjectDetectorClient {
                     detectedObject = obj,
                     sourceBitmap = bitmap,
                     imageRotationDegrees = image.rotationDegrees,
-                    fallbackWidth = image.width,
-                    fallbackHeight = image.height
+                    fallbackWidth = sensorWidth,
+                    fallbackHeight = sensorHeight
                 )
 
                 // Convert to DetectionResult for overlay
                 val detectionResult = convertToDetectionResult(
                     detectedObject = obj,
-                    imageWidth = bitmap?.width ?: image.width,
-                    imageHeight = bitmap?.height ?: image.height
+                    imageWidth = bitmap?.width ?: sensorWidth,
+                    imageHeight = bitmap?.height ?: sensorHeight
                 )
 
                 if (detectionInfo != null) detectionInfos.add(detectionInfo)
