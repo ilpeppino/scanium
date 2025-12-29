@@ -1,0 +1,218 @@
+***REMOVED*** =============================================================================
+***REMOVED*** Scanium Monitoring Stack - NAS Deployment (Synology DS418play)
+***REMOVED*** =============================================================================
+***REMOVED*** LGTM Stack: Loki (logs), Grafana (visualization), Tempo (traces), Mimir (metrics)
+***REMOVED*** Plus Alloy for OTLP telemetry collection.
+***REMOVED***
+***REMOVED*** Optimized for low-resource NAS (2-core Celeron, 6GB RAM).
+***REMOVED*** Total memory allocation: ~1.2GB
+***REMOVED***
+***REMOVED*** Prerequisites:
+***REMOVED***   1. Copy ../env/monitoring.env.example to ../env/monitoring.env and fill in values
+***REMOVED***   2. Create data directories on NAS (see README.md)
+***REMOVED***   3. Copy monitoring configs from repo monitoring/ folder
+***REMOVED***
+***REMOVED*** Usage:
+***REMOVED***   docker compose -f docker-compose.nas.monitoring.yml --env-file ../env/monitoring.env up -d
+***REMOVED*** =============================================================================
+
+services:
+  ***REMOVED*** ---------------------------------------------------------------------------
+  ***REMOVED*** Grafana Alloy - OTLP Receiver & Telemetry Router
+  ***REMOVED*** ---------------------------------------------------------------------------
+  alloy:
+    image: grafana/alloy:v1.0.0
+    container_name: scanium-alloy
+    restart: unless-stopped
+    ports:
+      ***REMOVED*** OTLP endpoints - expose to LAN for app telemetry
+      - "${ALLOY_OTLP_GRPC_PORT:-4317}:4317"
+      - "${ALLOY_OTLP_HTTP_PORT:-4318}:4318"
+      ***REMOVED*** Alloy UI - localhost only for debugging
+      - "127.0.0.1:12345:12345"
+    volumes:
+      ***REMOVED*** Config file (from repo or custom)
+      - ${NAS_CONFIG_PATH:-/volume1/docker/scanium}/monitoring/alloy/alloy.hcl:/etc/alloy/config.alloy:ro
+      ***REMOVED*** Alloy data directory
+      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/monitoring/alloy:/var/lib/alloy/data
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+    networks:
+      - scanium-observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 64M
+
+  ***REMOVED*** ---------------------------------------------------------------------------
+  ***REMOVED*** Loki - Log Aggregation
+  ***REMOVED*** ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: scanium-loki
+    restart: unless-stopped
+    user: "0"  ***REMOVED*** Run as root for NAS volume permissions
+    ports:
+      ***REMOVED*** Internal only - other containers connect via network
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ${NAS_CONFIG_PATH:-/volume1/docker/scanium}/monitoring/loki/loki.yaml:/etc/loki/config.yaml:ro
+      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/monitoring/loki:/loki
+    command: -config.file=/etc/loki/config.yaml
+    networks:
+      - scanium-observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+
+  ***REMOVED*** ---------------------------------------------------------------------------
+  ***REMOVED*** Tempo - Distributed Tracing
+  ***REMOVED*** ---------------------------------------------------------------------------
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: scanium-tempo
+    restart: unless-stopped
+    user: "0"  ***REMOVED*** Run as root for NAS volume permissions
+    ports:
+      ***REMOVED*** Internal only
+      - "127.0.0.1:3200:3200"
+    volumes:
+      - ${NAS_CONFIG_PATH:-/volume1/docker/scanium}/monitoring/tempo/tempo.yaml:/etc/tempo/config.yaml:ro
+      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/monitoring/tempo:/var/tempo
+    command: -config.file=/etc/tempo/config.yaml
+    networks:
+      - scanium-observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3200/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+
+  ***REMOVED*** ---------------------------------------------------------------------------
+  ***REMOVED*** Mimir - Metrics Storage (Prometheus-compatible)
+  ***REMOVED*** ---------------------------------------------------------------------------
+  mimir:
+    image: grafana/mimir:2.11.0
+    container_name: scanium-mimir
+    restart: unless-stopped
+    user: "0"  ***REMOVED*** Run as root for NAS volume permissions
+    ports:
+      ***REMOVED*** Internal only
+      - "127.0.0.1:9009:9009"
+    volumes:
+      - ${NAS_CONFIG_PATH:-/volume1/docker/scanium}/monitoring/mimir/mimir.yaml:/etc/mimir/config.yaml:ro
+      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/monitoring/mimir:/data
+    command:
+      - -config.file=/etc/mimir/config.yaml
+      - -target=all
+    networks:
+      - scanium-observability
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9009/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+
+  ***REMOVED*** ---------------------------------------------------------------------------
+  ***REMOVED*** Grafana - Visualization & Dashboards
+  ***REMOVED*** ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: scanium-grafana
+    restart: unless-stopped
+    user: "0"  ***REMOVED*** Run as root for NAS volume permissions
+    ports:
+      ***REMOVED*** Expose to LAN for dashboard access
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      ***REMOVED*** Security - require login for production
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD is required}
+      - GF_AUTH_ANONYMOUS_ENABLED=${GF_AUTH_ANONYMOUS_ENABLED:-false}
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=${GF_AUTH_ANONYMOUS_ORG_ROLE:-Viewer}
+      - GF_AUTH_DISABLE_LOGIN_FORM=${GF_AUTH_DISABLE_LOGIN_FORM:-false}
+
+      ***REMOVED*** Paths
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_PATHS_DATA=/var/lib/grafana
+
+      ***REMOVED*** Server
+      - GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL:-http://localhost:3000}
+
+      ***REMOVED*** Disable telemetry
+      - GF_ANALYTICS_REPORTING_ENABLED=${GF_ANALYTICS_REPORTING_ENABLED:-false}
+      - GF_ANALYTICS_CHECK_FOR_UPDATES=${GF_ANALYTICS_CHECK_FOR_UPDATES:-false}
+
+      ***REMOVED*** Features
+      - GF_FEATURE_TOGGLES_ENABLE=${GF_FEATURE_TOGGLES_ENABLE:-traceqlEditor}
+    volumes:
+      - ${NAS_CONFIG_PATH:-/volume1/docker/scanium}/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${NAS_CONFIG_PATH:-/volume1/docker/scanium}/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/monitoring/grafana:/var/lib/grafana
+    networks:
+      - scanium-observability
+    depends_on:
+      loki:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+      mimir:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+
+networks:
+  scanium-observability:
+    name: scanium-observability
+    driver: bridge
+
+***REMOVED*** No named volumes - using bind mounts for easy NAS backup

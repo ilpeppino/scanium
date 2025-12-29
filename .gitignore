@@ -36,3 +36,18 @@ tmp/
 
 ***REMOVED*** Termux remote SSH config (contains personal SSH host/user)
 scripts/termux/remote_env
+
+***REMOVED*** Backend environment files (secrets)
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+***REMOVED*** NAS deployment environment files (secrets)
+deploy/nas/env/*.env
+!deploy/nas/env/*.env.example
+
+***REMOVED*** Docker images
+*.tar.gz
+
+***REMOVED*** Monitoring data directories (local dev)
+monitoring/data/
