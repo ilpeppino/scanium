@@ -37,9 +37,9 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-***REMOVED*** Uploads and cache
+***REMOVED*** Uploads and cache (runtime directories, not source code)
 uploads/
-cache/
+/cache/
 temp/
 
 ***REMOVED*** Prisma
