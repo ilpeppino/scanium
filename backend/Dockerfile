@@ -2,7 +2,7 @@
 # Node 20 LTS
 
 # Stage 1: Production dependencies + Prisma generate
-FROM node:20-alpine AS prod-deps
+FROM node:20-alpine3.19 AS prod-deps
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY prisma ./prisma
 RUN npx prisma generate
 
 # Stage 2: Builder
-FROM node:20-alpine AS builder
+FROM node:20-alpine3.19 AS builder
 
 WORKDIR /app
 
@@ -40,7 +40,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Stage 3: Runner
-FROM node:20-alpine AS runner
+FROM node:20-alpine3.19 AS runner
 
 WORKDIR /app
 
