@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Config } from '../../config/index.js';
 import { ApiKeyManager } from '../classifier/api-key-manager.js';
 import { AssistantService } from './service.js';
-import { MockAssistantProvider, GroundedMockAssistantProvider } from './provider.js';
+import { GroundedMockAssistantProvider } from './provider.js';
 import {
   RedisClient,
   SlidingWindowRateLimiter,
@@ -43,12 +43,9 @@ import {
   UnifiedCache,
   buildAssistantCacheKey,
   buildItemSnapshotHash,
-  normalizeQuestion,
 } from '../../infra/cache/unified-cache.js';
 import {
   StagedRequestManager,
-  buildVisionPreview,
-  StagedRequestStatus,
 } from './staged-request.js';
 
 type RouteOpts = { config: Config };
