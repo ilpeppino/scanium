@@ -13,8 +13,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.scanium.app.testing.TestSemantics
 import kotlinx.coroutines.delay
 
 /**
@@ -87,8 +89,14 @@ fun CameraPipelineDebugOverlay(
         else -> Color.Red
     }
 
+    // Store computed values for test access
+    val frameAgoText = if (frameAgo >= 0) "${frameAgo}ms ago" else "never"
+    val bboxAgoText = if (bboxAgo >= 0) "${bboxAgo}ms ago" else "never"
+    val fpsText = "%.1f".format(diagnostics.analysisFramesPerSecond)
+
     Column(
         modifier = modifier
+            .testTag(TestSemantics.CAM_PIPELINE_DEBUG)
             .background(Color.Black.copy(alpha = 0.75f), shape = MaterialTheme.shapes.small)
             .padding(8.dp)
     ) {
@@ -103,14 +111,16 @@ fun CameraPipelineDebugOverlay(
             text = "Status: $pipelineStatus",
             color = statusColor,
             fontSize = 10.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.testTag(TestSemantics.CAM_STATUS)
         )
 
         Text(
             text = "SessionID: ${diagnostics.sessionId}",
             color = Color.White,
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.testTag(TestSemantics.CAM_SESSION_ID)
         )
 
         Text(
@@ -145,11 +155,12 @@ fun CameraPipelineDebugOverlay(
             text = "AnalysisFlowing: ${diagnostics.isAnalysisFlowing}",
             color = if (diagnostics.isAnalysisFlowing) Color.Green else Color.Red,
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.testTag(TestSemantics.CAM_ANALYSIS_FLOWING)
         )
 
         Text(
-            text = "LastFrame: ${if (frameAgo >= 0) "${frameAgo}ms ago" else "never"}",
+            text = "LastFrame: $frameAgoText",
             color = when {
                 frameAgo < 0 -> Color.Gray
                 frameAgo < 500 -> Color.Green
@@ -157,11 +168,12 @@ fun CameraPipelineDebugOverlay(
                 else -> Color.Red
             },
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.testTag(TestSemantics.CAM_LAST_FRAME)
         )
 
         Text(
-            text = "LastBbox: ${if (bboxAgo >= 0) "${bboxAgo}ms ago" else "never"}",
+            text = "LastBbox: $bboxAgoText",
             color = when {
                 bboxAgo < 0 -> Color.Gray
                 bboxAgo < 500 -> Color.Green
@@ -169,7 +181,8 @@ fun CameraPipelineDebugOverlay(
                 else -> Color.Red
             },
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.testTag(TestSemantics.CAM_LAST_BBOX)
         )
 
         Text(
@@ -180,14 +193,15 @@ fun CameraPipelineDebugOverlay(
         )
 
         Text(
-            text = "FPS: ${"%.1f".format(diagnostics.analysisFramesPerSecond)}",
+            text = "FPS: $fpsText",
             color = when {
                 diagnostics.analysisFramesPerSecond >= 1.5 -> Color.Green
                 diagnostics.analysisFramesPerSecond >= 0.5 -> Color.Yellow
                 else -> Color.Red
             },
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.testTag(TestSemantics.CAM_FPS)
         )
 
         Text(
