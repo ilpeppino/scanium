@@ -1,0 +1,527 @@
+{
+  "uid": "scanium-logs-explorer",
+  "title": "Scanium - Logs Explorer",
+  "description": "Log exploration: error/warn rate, top errors, log volume, pattern analysis",
+  "tags": ["scanium", "logs", "loki", "explorer"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "source",
+        "label": "Source",
+        "type": "query",
+        "datasource": { "type": "loki", "uid": "LOKI" },
+        "query": "label_values(source)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "dev,stage,prod",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "dev", "value": "dev", "selected": false },
+          { "text": "stage", "value": "stage", "selected": false },
+          { "text": "prod", "value": "prod", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "level",
+        "label": "Log Level",
+        "type": "custom",
+        "query": "debug,info,warn,error,fatal",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "debug", "value": "debug", "selected": false },
+          { "text": "info", "value": "info", "selected": false },
+          { "text": "warn", "value": "warn", "selected": false },
+          { "text": "error", "value": "error", "selected": false },
+          { "text": "fatal", "value": "fatal", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "search",
+        "label": "Search",
+        "type": "textbox",
+        "current": { "text": "", "value": "" },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Log Overview",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "Total Logs (1h)",
+      "description": "Total log entries in last hour",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} [1h]))",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Errors (1h)",
+      "description": "Error level logs",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [1h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Warnings (1h)",
+      "description": "Warning level logs",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"warn\" [1h])) or vector(0)",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "orange", "value": 200 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Error Rate (%)",
+      "description": "Percentage of logs that are errors",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [1h])) / sum(count_over_time({source=~\"$source\", env=~\"$env\"} [1h])) * 100) or vector(0)",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Log Volume by Level",
+      "description": "Log distribution by severity level",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 5, "w": 16, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"debug\" [5m]))",
+          "legendFormat": "debug"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"info\" [5m]))",
+          "legendFormat": "info"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"warn\" [5m]))",
+          "legendFormat": "warn"
+        },
+        {
+          "refId": "D",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [5m]))",
+          "legendFormat": "error/fatal"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": { "mode": "normal" }
+          }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "debug" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "light-blue" } }] },
+          { "matcher": { "id": "byName", "options": "info" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "warn" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "error/fatal" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum", "mean"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Level Distribution",
+      "description": "Proportion of log levels",
+      "type": "piechart",
+      "gridPos": { "x": 16, "y": 5, "w": 8, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (level) (count_over_time({source=~\"$source\", env=~\"$env\"} | json [1h]))",
+          "instant": true,
+          "legendFormat": "{{level}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "debug" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "light-blue" } }] },
+          { "matcher": { "id": "byName", "options": "info" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "warn" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "error" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "fatal" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-red" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut"
+      }
+    },
+    {
+      "id": 8,
+      "title": "Error Analysis",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 9,
+      "title": "Error Rate Over Time",
+      "description": "Error and warning log trends",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [5m]))",
+          "legendFormat": "Errors"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"warn\" [5m]))",
+          "legendFormat": "Warnings"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Errors" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "Warnings" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Top Error Types",
+      "description": "Most frequent error event types",
+      "type": "barchart",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (event_name) (count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [1h])))",
+          "legendFormat": "{{event_name}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "red" }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Log Volume by Source",
+      "description": "Log distribution across sources",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (source) (count_over_time({source=~\"$source\", env=~\"$env\"} [5m]))",
+          "legendFormat": "{{source}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "stacking": { "mode": "normal" }
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum", "mean"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Unique Error Messages",
+      "description": "Distinct error message patterns",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(20, sum by (error_message, source) (count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" | error_message!=\"\" [1h])))",
+          "instant": true,
+          "legendFormat": "{{error_message}}"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": { "reducers": ["last"], "labelsToFields": true }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "renameByName": {
+              "error_message": "Error Message",
+              "source": "Source",
+              "Value": "Count"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Count" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 5 },
+                    { "color": "red", "value": 20 }
+                  ]
+                }
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 13,
+      "title": "Log Stream",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 30, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 14,
+      "title": "Live Log Stream",
+      "description": "Real-time log entries (filtered by variables)",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 12 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{source=~\"$source\", env=~\"$env\"} | json | level=~\"$level\" |~ \"$search\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 15,
+      "title": "Pattern Analysis",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 43, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 16,
+      "title": "Log Rate Anomaly Detection",
+      "description": "Current rate vs moving average to detect anomalies",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 44, "w": 24, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} [5m]))",
+          "legendFormat": "Current Rate"
+        },
+        {
+          "refId": "B",
+          "expr": "avg_over_time(sum(count_over_time({source=~\"$source\", env=~\"$env\"} [5m]))[1h:])",
+          "legendFormat": "1h Moving Average"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Current Rate" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] },
+          {
+            "matcher": { "id": "byName", "options": "1h Moving Average" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 10] } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    }
+  ]
+}

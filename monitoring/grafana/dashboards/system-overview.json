@@ -1,0 +1,520 @@
+{
+  "uid": "scanium-system-overview",
+  "title": "Scanium - System Overview (RED)",
+  "description": "Rate, Errors, Duration overview across all services with saturation indicators",
+  "tags": ["scanium", "red", "overview", "backend"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "query": "label_values(http_server_request_duration_seconds_bucket, service_name)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "dev,stage,prod",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "dev", "value": "dev", "selected": false },
+          { "text": "stage", "value": "stage", "selected": false },
+          { "text": "prod", "value": "prod", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "route",
+        "label": "Route",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "query": "label_values(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}, http_route)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "annotations": {
+    "list": [
+      {
+        "name": "Deployments",
+        "datasource": { "type": "loki", "uid": "LOKI" },
+        "enable": true,
+        "expr": "{source=\"scanium-backend\"} |= `deployment`",
+        "iconColor": "blue",
+        "tagKeys": "service_name",
+        "textFormat": "Deployment: {{service_name}}"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "RED Overview",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "Request Rate (req/s)",
+      "description": "Total HTTP request rate across all services",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m]))",
+          "legendFormat": "req/s"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Error Rate (%)",
+      "description": "Percentage of requests returning 5xx errors",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m])) * 100 or vector(0)",
+          "legendFormat": "5xx %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Latency p95 (ms)",
+      "description": "95th percentile request latency",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m]))) * 1000",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red", "value": 500 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Active Requests",
+      "description": "Currently in-flight requests (saturation indicator)",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(http_server_active_requests{service_name=~\"$service\", deployment_environment=~\"$env\"}) or vector(0)",
+          "legendFormat": "active"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Request Rate Over Time",
+      "description": "HTTP request rate by service",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m]))",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2,
+            "stacking": { "mode": "none" }
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Error Rate Over Time",
+      "description": "5xx error percentage by service",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[5m])) / sum by (service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m])) * 100",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Latency Percentiles Over Time",
+      "description": "Request latency p50, p95, p99",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m]))) * 1000",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m]))) * 1000",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m]))) * 1000",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Active Requests Over Time",
+      "description": "In-flight requests indicating saturation",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 13, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service_name) (http_server_active_requests{service_name=~\"$service\", deployment_environment=~\"$env\"}) or vector(0)",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Service Breakdown",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 21, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 11,
+      "title": "Requests by Service",
+      "description": "Request distribution across services",
+      "type": "piechart",
+      "gridPos": { "x": 0, "y": 22, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service_name) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\"}[1h]))",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut"
+      }
+    },
+    {
+      "id": 12,
+      "title": "Status Code Distribution",
+      "description": "HTTP response status codes",
+      "type": "piechart",
+      "gridPos": { "x": 8, "y": 22, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_response_status_code) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\"}[1h]))",
+          "legendFormat": "{{http_response_status_code}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "2.." },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "4.." },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "5.." },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut"
+      }
+    },
+    {
+      "id": 13,
+      "title": "Top Routes by Request Count",
+      "description": "Most frequently accessed routes",
+      "type": "barchart",
+      "gridPos": { "x": 16, "y": 22, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (http_route) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[1h])))",
+          "legendFormat": "{{http_route}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "xTickLabelRotation": 0,
+        "showValue": "always"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Apdex Score (500ms/2s)",
+      "description": "Application Performance Index: Satisfied <500ms, Tolerating <2s, Frustrated >2s",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 30, "w": 8, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(\n  sum(rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", le=\"0.5\"}[5m]))\n  + sum(rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", le=\"2\"}[5m])) / 2\n) / sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\"}[5m]))",
+          "legendFormat": "Apdex"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "light-green", "value": 0.75 },
+              { "color": "green", "value": 0.9 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "id": 15,
+      "title": "Request/Error Correlation",
+      "description": "Request rate vs error count for anomaly detection",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 30, "w": 16, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m]))",
+          "legendFormat": "Total Requests/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[5m])) * 10",
+          "legendFormat": "Errors/s (x10)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Errors/s (x10)" },
+            "properties": [
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } },
+              { "id": "custom.axisPlacement", "value": "right" }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    }
+  ]
+}
