@@ -1,164 +1,46 @@
-***REMOVED*** =============================================================================
-***REMOVED*** Scanium Backend - NAS Deployment (Synology DS418play)
-***REMOVED*** =============================================================================
-***REMOVED*** This compose file is optimized for low-resource NAS deployment.
-***REMOVED***
-***REMOVED*** Prerequisites:
-***REMOVED***   1. Copy ../env/backend.env.example to ../env/backend.env and fill in values
-***REMOVED***   2. Build the backend image OR pull from registry (see README.md)
-***REMOVED***   3. Create data directories on NAS (see README.md)
-***REMOVED***
-***REMOVED*** Usage:
-***REMOVED***   docker compose -f docker-compose.nas.backend.yml --env-file ../env/backend.env up -d
-***REMOVED*** =============================================================================
-
 services:
-  ***REMOVED*** ---------------------------------------------------------------------------
-  ***REMOVED*** PostgreSQL Database
-  ***REMOVED*** ---------------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
     container_name: scanium-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-scanium}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
-      POSTGRES_DB: ${POSTGRES_DB:-scanium}
+      POSTGRES_DB: scanium
+      POSTGRES_USER: scanium
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      ***REMOVED*** Bind mount to NAS storage (adjust path for your NAS)
-      ***REMOVED*** Synology default: /volume1/docker/scanium/postgres
-      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/postgres:/var/lib/postgresql/data
-    networks:
-      - scanium-backend
+      ***REMOVED*** Synology bind mount (persist DB data)
+      - /volume1/docker/scanium/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-scanium}']
+      test: ["CMD-SHELL", "pg_isready -U scanium -d scanium"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 10s
-    ***REMOVED*** Resource limits (conservative for NAS)
-    ***REMOVED*** Note: Synology Container Manager may ignore some fields
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 128M
+      retries: 10
+    networks:
+      - scanium_net
 
-  ***REMOVED*** ---------------------------------------------------------------------------
-  ***REMOVED*** Scanium Backend API
-  ***REMOVED*** ---------------------------------------------------------------------------
-  api:
-    ***REMOVED*** Option 1: Build locally (slower, uses NAS CPU)
-    ***REMOVED*** build:
-    ***REMOVED***   context: ../../../backend
-    ***REMOVED***   dockerfile: Dockerfile
-
-    ***REMOVED*** Option 2: Use pre-built image (recommended)
-    ***REMOVED*** Build on a faster machine, push to registry, pull here
-    image: ${SCANIUM_API_IMAGE:-scanium-api:latest}
-    container_name: scanium-api
+  backend:
+    ***REMOVED*** If backend/Dockerfile exists, we build it. If not, next step will add it.
+    build:
+      context: ./backend
+    container_name: scanium-backend
     restart: unless-stopped
+    env_file:
+      - ../env/backend.env
+    env_file:
+      - ../env/backend.env
     depends_on:
       postgres:
         condition: service_healthy
-    environment:
-      NODE_ENV: ${NODE_ENV:-production}
-      PORT: 8080
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?PUBLIC_BASE_URL is required}
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-
-      ***REMOVED*** API Security
-      SCANIUM_API_KEYS: ${SCANIUM_API_KEYS:?SCANIUM_API_KEYS is required}
-      SESSION_SIGNING_SECRET: ${SESSION_SIGNING_SECRET:?SESSION_SIGNING_SECRET is required}
-      CORS_ORIGINS: ${CORS_ORIGINS:-scanium://}
-
-      ***REMOVED*** Classifier
-      SCANIUM_CLASSIFIER_PROVIDER: ${SCANIUM_CLASSIFIER_PROVIDER:-mock}
-      VISION_FEATURE: ${VISION_FEATURE:-LABEL_DETECTION}
-      CLASSIFIER_RATE_LIMIT_PER_MINUTE: ${CLASSIFIER_RATE_LIMIT_PER_MINUTE:-30}
-      CLASSIFIER_CONCURRENCY_LIMIT: ${CLASSIFIER_CONCURRENCY_LIMIT:-1}
-      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-5242880}
-      DOMAIN_PACK_ID: ${DOMAIN_PACK_ID:-home_resale}
-      DOMAIN_PACK_PATH: ${DOMAIN_PACK_PATH:-dist/modules/classifier/domain/home-resale.json}
-      CLASSIFIER_RETAIN_UPLOADS: ${CLASSIFIER_RETAIN_UPLOADS:-false}
-      CLASSIFIER_MOCK_SEED: ${CLASSIFIER_MOCK_SEED:-scanium-mock}
-      VISION_TIMEOUT_MS: ${VISION_TIMEOUT_MS:-10000}
-      VISION_MAX_RETRIES: ${VISION_MAX_RETRIES:-2}
-
-      ***REMOVED*** eBay OAuth
-      EBAY_ENV: ${EBAY_ENV:-sandbox}
-      EBAY_CLIENT_ID: ${EBAY_CLIENT_ID:-}
-      EBAY_CLIENT_SECRET: ${EBAY_CLIENT_SECRET:-}
-      EBAY_TOKEN_ENCRYPTION_KEY: ${EBAY_TOKEN_ENCRYPTION_KEY:-}
-      EBAY_REDIRECT_PATH: ${EBAY_REDIRECT_PATH:-/auth/ebay/callback}
-      EBAY_SCOPES: ${EBAY_SCOPES:-}
-
-      ***REMOVED*** AI Assistant
-      SCANIUM_ASSISTANT_PROVIDER: ${SCANIUM_ASSISTANT_PROVIDER:-mock}
-      SCANIUM_ASSISTANT_API_KEYS: ${SCANIUM_ASSISTANT_API_KEYS:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
-      ASSIST_RATE_LIMIT_PER_MINUTE: ${ASSIST_RATE_LIMIT_PER_MINUTE:-30}
-      ASSIST_DAILY_QUOTA: ${ASSIST_DAILY_QUOTA:-100}
-
-      ***REMOVED*** OpenTelemetry (optional, for monitoring integration)
-      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
-    volumes:
-      ***REMOVED*** Optional: Mount Google credentials for Vision API
-      ***REMOVED*** - ${NAS_DATA_PATH:-/volume1/docker/scanium}/secrets/vision-sa.json:/secrets/vision-sa.json:ro
     ports:
-      ***REMOVED*** Expose on LAN (adjust if needed)
-      - "${API_HOST_PORT:-8080}:8080"
-    networks:
-      - scanium-backend
-      ***REMOVED*** Join monitoring network if running monitoring stack
-      - scanium-observability
+      - "8080:8080"
     healthcheck:
-      test: ['CMD', 'node', '-e', "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
       timeout: 5s
-      start_period: 30s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 128M
-
-  ***REMOVED*** ---------------------------------------------------------------------------
-  ***REMOVED*** Cloudflare Tunnel (Optional - for secure external access)
-  ***REMOVED*** ---------------------------------------------------------------------------
-  ***REMOVED*** Uncomment this section if you have a Cloudflare Tunnel configured.
-  ***REMOVED*** This provides secure HTTPS access without port forwarding.
-  ***REMOVED***
-  ***REMOVED*** cloudflared:
-  ***REMOVED***   image: cloudflare/cloudflared:latest
-  ***REMOVED***   container_name: scanium-cloudflared
-  ***REMOVED***   restart: unless-stopped
-  ***REMOVED***   depends_on:
-  ***REMOVED***     api:
-  ***REMOVED***       condition: service_healthy
-  ***REMOVED***   environment:
-  ***REMOVED***     TUNNEL_TOKEN: ${CLOUDFLARED_TOKEN:?CLOUDFLARED_TOKEN is required}
-  ***REMOVED***   command: tunnel --no-autoupdate run
-  ***REMOVED***   networks:
-  ***REMOVED***     - scanium-backend
-  ***REMOVED***   deploy:
-  ***REMOVED***     resources:
-  ***REMOVED***       limits:
-  ***REMOVED***         memory: 128M
+      retries: 10
+    networks:
+      - scanium_net
 
 networks:
-  scanium-backend:
-    name: scanium-backend
+  scanium_net:
     driver: bridge
-  ***REMOVED*** External network for monitoring integration
-  ***REMOVED*** Create with: docker network create scanium-observability
-  scanium-observability:
-    name: scanium-observability
-    external: true
-
-***REMOVED*** No named volumes - using bind mounts for easy NAS backup

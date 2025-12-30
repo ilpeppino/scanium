@@ -51,3 +51,7 @@ deploy/nas/env/*.env
 
 ***REMOVED*** Monitoring data directories (local dev)
 monitoring/data/
+
+***REMOVED*** NAS deploy env files (real secrets live here)
+deploy/nas/env/backend.env
+deploy/nas/env/monitoring.env
