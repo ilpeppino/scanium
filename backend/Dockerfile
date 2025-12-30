@@ -44,8 +44,8 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-***REMOVED*** Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+***REMOVED*** Install dumb-init for proper signal handling and OpenSSL 1.1 compatibility for Prisma engines
+RUN apk add --no-cache dumb-init openssl1.1-compat
 
 ***REMOVED*** Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
