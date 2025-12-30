@@ -1,17 +1,23 @@
 ***REMOVED*** Multi-stage build for Scanium Backend
 ***REMOVED*** Node 20 LTS
 
-***REMOVED*** Stage 1: Dependencies
-FROM node:20-alpine AS deps
+***REMOVED*** Stage 1: Production dependencies + Prisma generate
+FROM node:20-alpine AS prod-deps
 
 WORKDIR /app
 
 ***REMOVED*** Copy package files
 COPY package.json package-lock.json* ./
 
-***REMOVED*** Install dependencies
+***REMOVED*** Install production dependencies
 RUN npm ci --only=production && \
     npm cache clean --force
+
+***REMOVED*** Prisma schema is needed for generate
+COPY prisma ./prisma
+
+***REMOVED*** Generate Prisma client into production node_modules
+RUN npx prisma generate
 
 ***REMOVED*** Stage 2: Builder
 FROM node:20-alpine AS builder
@@ -46,7 +52,7 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
 
 ***REMOVED*** Copy production dependencies
-COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 ***REMOVED*** Copy built application
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
