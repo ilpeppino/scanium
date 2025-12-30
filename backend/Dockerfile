@@ -2,7 +2,7 @@
 ***REMOVED*** Node 20 LTS
 
 ***REMOVED*** Stage 1: Production dependencies + Prisma generate
-FROM node:20-alpine3.19 AS prod-deps
+FROM node:20-bookworm-slim AS prod-deps
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY prisma ./prisma
 RUN npx prisma generate
 
 ***REMOVED*** Stage 2: Builder
-FROM node:20-alpine3.19 AS builder
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -40,12 +40,14 @@ RUN npx prisma generate
 RUN npm run build
 
 ***REMOVED*** Stage 3: Runner
-FROM node:20-alpine3.19 AS runner
+FROM node:20-bookworm-slim AS runner
 
 WORKDIR /app
 
-***REMOVED*** Install dumb-init for proper signal handling and OpenSSL 1.1 compatibility for Prisma engines
-RUN apk add --no-cache dumb-init openssl1.1-compat
+***REMOVED*** Install dumb-init for proper signal handling and OpenSSL for Prisma engines
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends dumb-init openssl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 ***REMOVED*** Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
