@@ -43,6 +43,7 @@ import {
   UnifiedCache,
   buildAssistantCacheKey,
   buildItemSnapshotHash,
+  type CacheUsageEvent,
 } from '../../infra/cache/unified-cache.js';
 import {
   StagedRequestManager,
@@ -178,7 +179,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
   });
 
   // Usage accounting callback
-  responseCache.setUsageCallback((event) => {
+  responseCache.setUsageCallback((event: CacheUsageEvent) => {
     fastify.log.debug(
       {
         cacheEvent: event.type,
