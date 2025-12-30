@@ -11,41 +11,7 @@
  * - Rate limited to prevent abuse
  */
 
-type UnifiedCacheOptions = {
-  ttlMs: number;
-  maxEntries: number;
-  name?: string;
-  enableDedup?: boolean;
-};
-
-class UnifiedCache<T> {
-  private readonly ttlMs: number;
-  private readonly maxEntries: number;
-  private readonly store = new Map<string, { value: T; expiresAt: number }>();
-
-  constructor(options: UnifiedCacheOptions) {
-    this.ttlMs = options.ttlMs;
-    this.maxEntries = options.maxEntries;
-  }
-
-  get(key: string): T | undefined {
-    const entry = this.store.get(key);
-    if (!entry) return undefined;
-    if (Date.now() > entry.expiresAt) {
-      this.store.delete(key);
-      return undefined;
-    }
-    return entry.value;
-  }
-
-  set(key: string, value: T): void {
-    if (this.maxEntries > 0 && this.store.size >= this.maxEntries && !this.store.has(key)) {
-      const oldestKey = this.store.keys().next().value as string | undefined;
-      if (oldestKey) this.store.delete(oldestKey);
-    }
-    this.store.set(key, { value, expiresAt: Date.now() + this.ttlMs });
-  }
-}
+import { UnifiedCache } from '../../infra/cache/unified-cache.js';
 
 
 /**
