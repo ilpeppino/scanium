@@ -378,6 +378,118 @@ Dashboard will be auto-provisioned on Grafana restart.
 
 ---
 
+## Telemetry Inventory Script
+
+The `scripts/monitoring/inventory-telemetry.sh` script discovers what telemetry actually exists in your running LGTM stack and generates an inventory report.
+
+### Running the Inventory Script
+
+```bash
+# Basic usage (requires monitoring stack to be running)
+./scripts/monitoring/inventory-telemetry.sh
+
+# With custom Grafana URL
+./scripts/monitoring/inventory-telemetry.sh --grafana-url http://localhost:3000
+
+# With API token (if anonymous auth is disabled)
+./scripts/monitoring/inventory-telemetry.sh --token "your-grafana-api-token"
+```
+
+### What It Discovers
+
+1. **Datasources:** Lists all configured datasources with UIDs (Loki, Tempo, Mimir)
+2. **Metrics (Mimir):** Sample metric names and their labels
+3. **Logs (Loki):** Label keys and sample label values
+4. **Traces (Tempo):** Service names and trace attributes (if available)
+5. **Dashboards:** Currently provisioned dashboards
+
+### Output Files
+
+- `monitoring/grafana/telemetry-inventory.json` - Machine-readable inventory
+- `monitoring/grafana/telemetry-inventory.md` - Human-readable summary
+
+### Safety Measures
+
+The script is designed to be safe for production use:
+- Uses small time ranges (last 15m) to avoid heavy queries
+- Limits label value queries to prevent cardinality explosions
+- Timeouts prevent hung requests
+- Read-only operations (no modifications to the stack)
+
+---
+
+## Regenerating Dashboards
+
+### When to Regenerate
+
+Regenerate dashboards when:
+- Metric or label names change
+- New telemetry sources are added
+- Dashboard queries need updating
+
+### Workflow
+
+1. **Discover current telemetry:**
+   ```bash
+   ./scripts/monitoring/inventory-telemetry.sh
+   ```
+
+2. **Review the inventory:**
+   ```bash
+   cat monitoring/grafana/telemetry-inventory.md
+   ```
+
+3. **Update dashboard JSON files** based on discovered metrics/labels
+
+4. **Restart Grafana** to reload dashboards:
+   ```bash
+   docker compose -p scanium-monitoring restart grafana
+   ```
+
+5. **Verify dashboards** via Grafana UI or API:
+   ```bash
+   curl -s localhost:3000/api/search | jq '.[].title'
+   ```
+
+---
+
+## Validation Checklist
+
+After making changes to dashboards, verify:
+
+### Stack Health
+- [ ] All services are running: `docker compose -p scanium-monitoring ps`
+- [ ] Grafana is healthy: `curl localhost:3000/api/health`
+- [ ] Datasources are configured: `curl localhost:3000/api/datasources`
+
+### Dashboard Loading
+- [ ] Dashboards appear in Grafana UI
+- [ ] No "dashboard not found" errors
+- [ ] Dashboard JSON is valid (no parse errors)
+
+### Data Presence
+- [ ] **LGTM Stack Health:** Shows UP status for all services
+- [ ] **System Overview:** Shows request rate (requires backend traffic)
+- [ ] **Logs Explorer:** Shows log volume (requires log ingestion)
+- [ ] **Traces Drilldown:** Shows traces (requires trace ingestion)
+
+### Panel Functionality
+- [ ] Variables populate correctly
+- [ ] Panels show data or appropriate "No data" message
+- [ ] Cross-datasource links work (logs→traces, metrics→traces)
+
+### No Data Troubleshooting
+
+If dashboards show "No data":
+
+1. **Check time range:** Ensure it covers when data was generated
+2. **Check variables:** Variables may need to be refreshed
+3. **Check datasource:** Verify datasource UID matches (LOKI, TEMPO, MIMIR)
+4. **Check query syntax:** Use Explore to test queries manually
+5. **Check data exists:** Query backends directly to confirm data presence
+
+---
+
 ## References
 
 - [OpenTelemetry HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/)
