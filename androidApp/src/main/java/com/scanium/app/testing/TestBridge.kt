@@ -157,7 +157,7 @@ object TestBridge {
         categoryRotation: List<ItemCategory> = listOf(
             ItemCategory.FASHION,
             ItemCategory.ELECTRONICS,
-            ItemCategory.HOME
+            ItemCategory.HOME_GOOD
         )
     ): List<ScannedItem> {
         if (!BuildConfig.DEBUG) return emptyList()
