@@ -125,7 +125,6 @@ fun CameraScreen(
 
     // Camera pipeline lifecycle debug
     val cameraPipelineDebugEnabled by settingsRepository.devCameraPipelineDebugEnabledFlow.collectAsState(initial = false)
-    val pipelineDiagnostics by cameraManager.pipelineDiagnostics.collectAsState()
 
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
@@ -145,6 +144,8 @@ fun CameraScreen(
         CameraXManager(context, lifecycleOwner, app?.telemetry)
     }
 
+    // Pipeline diagnostics (must be after cameraManager initialization)
+    val pipelineDiagnostics by cameraManager.pipelineDiagnostics.collectAsState()
 
     // Camera state machine
     var cameraState by remember { mutableStateOf(CameraState.IDLE) }
