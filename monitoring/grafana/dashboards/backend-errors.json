@@ -1,0 +1,562 @@
+{
+  "uid": "scanium-backend-errors",
+  "title": "Scanium - Backend Errors",
+  "description": "Error analysis: 4xx vs 5xx, top error routes, error messages from logs, trace correlation",
+  "tags": ["scanium", "backend", "errors", "debugging"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "query": "label_values(http_server_request_duration_seconds_bucket, service_name)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "dev,stage,prod",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "dev", "value": "dev", "selected": false },
+          { "text": "stage", "value": "stage", "selected": false },
+          { "text": "prod", "value": "prod", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "route",
+        "label": "Route",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "query": "label_values(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}, http_route)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "status_code",
+        "label": "Status Code",
+        "type": "custom",
+        "query": "4..,5..",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "4xx", "value": "4..", "selected": false },
+          { "text": "5xx", "value": "5..", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Error Summary",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "Total Errors (1h)",
+      "description": "Total 4xx + 5xx errors in the last hour",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h]))",
+          "legendFormat": "errors"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 3,
+      "title": "4xx Client Errors (1h)",
+      "description": "Client-side errors (bad request, unauthorized, not found)",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"4..\"}[1h])) or vector(0)",
+          "legendFormat": "4xx"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "orange", "value": 200 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 4,
+      "title": "5xx Server Errors (1h)",
+      "description": "Server-side errors (internal error, service unavailable)",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[1h])) or vector(0)",
+          "legendFormat": "5xx"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 5,
+      "title": "Error Rate (%)",
+      "description": "Percentage of all requests returning errors",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m])) * 100 or vector(0)",
+          "legendFormat": "error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Error Rate Over Time (4xx vs 5xx)",
+      "description": "Error trends separated by client vs server errors",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"4..\"}[5m]))",
+          "legendFormat": "4xx (Client Errors)"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[5m]))",
+          "legendFormat": "5xx (Server Errors)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "4xx (Client Errors)" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "5xx (Server Errors)" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max", "sum"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Error Breakdown",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 8,
+      "title": "Errors by Status Code",
+      "description": "Distribution of error status codes",
+      "type": "piechart",
+      "gridPos": { "x": 0, "y": 14, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_response_status_code) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h]))",
+          "legendFormat": "{{http_response_status_code}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "400" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "401" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "403" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "404" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "light-yellow" } }] },
+          { "matcher": { "id": "byName", "options": "500" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "502" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-red" } }] },
+          { "matcher": { "id": "byName", "options": "503" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-red" } }] },
+          { "matcher": { "id": "byName", "options": "504" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-red" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut"
+      }
+    },
+    {
+      "id": 9,
+      "title": "Top Error Routes",
+      "description": "Routes with the most errors",
+      "type": "barchart",
+      "gridPos": { "x": 8, "y": 14, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (http_route) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h])))",
+          "legendFormat": "{{http_route}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Errors by Service",
+      "description": "Error distribution across services",
+      "type": "barchart",
+      "gridPos": { "x": 16, "y": 14, "w": 8, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (service_name) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_response_status_code=~\"$status_code\"}[1h]))",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Error Details",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 12,
+      "title": "Error Rate by Route (Table)",
+      "description": "Detailed error rate per route with drill-down links",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 23, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_route, service_name, http_response_status_code) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h])) > 0",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "renameByName": {
+              "http_route": "Route",
+              "service_name": "Service",
+              "http_response_status_code": "Status Code",
+              "Value": "Error Count"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": { "sort": [{ "field": "Error Count", "desc": true }] }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto" },
+          "links": [
+            {
+              "title": "View Traces",
+              "url": "/explore?orgId=1&left=%7B%22datasource%22:%22TEMPO%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22queryType%22:%22traceql%22,%22query%22:%22%7Bstatus.code%20%3D%20error%20%26%26%20resource.service.name%20%3D%20%5C%22${__data.fields.Service}%5C%22%7D%22%7D%5D%7D",
+              "targetBlank": true
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Status Code" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "yellow", "value": null },
+                    { "color": "red", "value": 500 }
+                  ]
+                }
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-text" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Error Count" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 10 },
+                    { "color": "red", "value": 50 }
+                  ]
+                }
+              },
+              { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 13,
+      "title": "Error Logs & Traces",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 14,
+      "title": "Top Error Messages (from Logs)",
+      "description": "Most frequent error messages extracted from logs",
+      "type": "barchart",
+      "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (error_message) (count_over_time({source=\"scanium-backend\", env=~\"$env\"} | json | level=~\"error|fatal\" | error_message!=\"\" [1h])))",
+          "legendFormat": "{{error_message}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "red" }
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Error Log Volume Over Time",
+      "description": "Error and warning log rate",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=\"scanium-backend\", env=~\"$env\"} | json | level=\"error\" [5m]))",
+          "legendFormat": "Errors"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({source=\"scanium-backend\", env=~\"$env\"} | json | level=\"warn\" [5m]))",
+          "legendFormat": "Warnings"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "lineWidth": 2
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Errors" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Warnings" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 16,
+      "title": "Recent Error Logs",
+      "description": "Latest error log entries with trace links",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 10 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{source=\"scanium-backend\", env=~\"$env\"} | json | level=~\"error|fatal\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 17,
+      "title": "Error Traces",
+      "description": "Recent traces with error status",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 50, "w": 24, "h": 8 },
+      "datasource": { "type": "tempo", "uid": "TEMPO" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceqlSearch",
+          "query": "{status.code = error && resource.service.name =~ \".*\"}",
+          "limit": 20
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "View Trace",
+              "url": "/explore?orgId=1&left=%7B%22datasource%22:%22TEMPO%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22queryType%22:%22traceql%22,%22query%22:%22%7BtraceID%3D%5C%22${__data.fields.traceID}%5C%22%7D%22%7D%5D%7D",
+              "targetBlank": true
+            }
+          ]
+        }
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ]
+}

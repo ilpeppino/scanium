@@ -1,0 +1,485 @@
+{
+  "uid": "scanium-traces-drilldown",
+  "title": "Scanium - Traces Drilldown",
+  "description": "Distributed tracing analysis: slow traces, top spans, latency breakdown, error traces",
+  "tags": ["scanium", "traces", "tempo", "performance"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "query": "label_values(traces_spanmetrics_latency_bucket, service)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "env",
+        "label": "Environment",
+        "type": "custom",
+        "query": "dev,stage,prod",
+        "current": { "text": "All", "value": "$__all" },
+        "options": [
+          { "text": "All", "value": "$__all", "selected": true },
+          { "text": "dev", "value": "dev", "selected": false },
+          { "text": "stage", "value": "stage", "selected": false },
+          { "text": "prod", "value": "prod", "selected": false }
+        ],
+        "includeAll": true,
+        "multi": true
+      },
+      {
+        "name": "span_name",
+        "label": "Span Name",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "MIMIR" },
+        "query": "label_values(traces_spanmetrics_latency_bucket{service=~\"$service\"}, span_name)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "min_duration",
+        "label": "Min Duration (ms)",
+        "type": "textbox",
+        "current": { "text": "100", "value": "100" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Trace Overview",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "Trace Count (5m)",
+      "description": "Number of traces in last 5 minutes",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(traces_spanmetrics_calls_total{service=~\"$service\", span_kind=\"SPAN_KIND_SERVER\"}[5m])) or vector(0)",
+          "legendFormat": "traces"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 3,
+      "title": "Error Traces (5m)",
+      "description": "Traces with error status",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m])) or vector(0)",
+          "legendFormat": "errors"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Avg Span Duration",
+      "description": "Average span latency across all services",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[5m])) / sum(rate(traces_spanmetrics_latency_count{service=~\"$service\"}[5m])) * 1000 or vector(0)",
+          "legendFormat": "avg"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 5,
+      "title": "p99 Span Duration",
+      "description": "99th percentile span latency",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m]))) * 1000",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 1000 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "colorMode": "background"
+      }
+    },
+    {
+      "id": 6,
+      "title": "Span Latency Over Time",
+      "description": "Latency percentiles p50, p95, p99",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m]))) * 1000",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m]))) * 1000",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m]))) * 1000",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Span Analysis",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 13, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 8,
+      "title": "Slowest Spans (p99)",
+      "description": "Top 10 slowest span names by p99 latency",
+      "type": "barchart",
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[15m])))) * 1000",
+          "legendFormat": "{{span_name}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Most Called Spans",
+      "description": "Top 10 spans by call count",
+      "type": "barchart",
+      "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum by (span_name) (increase(traces_spanmetrics_calls_total{service=~\"$service\"}[1h])))",
+          "legendFormat": "{{span_name}}"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "palette-classic" }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Span Duration by Service",
+      "description": "p95 latency breakdown by service",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(5, histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m])))) * 1000",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Error Rate by Span",
+      "description": "Spans with highest error rates",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(5, sum by (span_name) (rate(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum by (span_name) (rate(traces_spanmetrics_calls_total{service=~\"$service\"}[5m])) * 100)",
+          "legendFormat": "{{span_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "lineWidth": 2
+          }
+        }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] },
+        "tooltip": { "mode": "multi" }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Trace Explorer",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 30, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 13,
+      "title": "Slow Traces (>${min_duration}ms)",
+      "description": "Traces exceeding the minimum duration threshold",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 8 },
+      "datasource": { "type": "tempo", "uid": "TEMPO" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceqlSearch",
+          "query": "{resource.service.name =~ \".*\" && duration > ${min_duration}ms}",
+          "limit": 20
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "View Trace",
+              "url": "/explore?orgId=1&left=%7B%22datasource%22:%22TEMPO%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22queryType%22:%22traceql%22,%22query%22:%22%7BtraceID%3D%5C%22${__data.fields.traceID}%5C%22%7D%22%7D%5D%7D",
+              "targetBlank": true
+            }
+          ]
+        }
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 14,
+      "title": "Error Traces",
+      "description": "Recent traces with error status",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 39, "w": 24, "h": 8 },
+      "datasource": { "type": "tempo", "uid": "TEMPO" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceqlSearch",
+          "query": "{status.code = error}",
+          "limit": 20
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "links": [
+            {
+              "title": "View Trace",
+              "url": "/explore?orgId=1&left=%7B%22datasource%22:%22TEMPO%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22queryType%22:%22traceql%22,%22query%22:%22%7BtraceID%3D%5C%22${__data.fields.traceID}%5C%22%7D%22%7D%5D%7D",
+              "targetBlank": true
+            }
+          ]
+        }
+      },
+      "options": {
+        "showHeader": true
+      }
+    },
+    {
+      "id": 15,
+      "title": "Service Map",
+      "type": "row",
+      "gridPos": { "x": 0, "y": 47, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 16,
+      "title": "Service Dependency Graph",
+      "description": "Visual representation of service dependencies from traces",
+      "type": "nodeGraph",
+      "gridPos": { "x": 0, "y": 48, "w": 24, "h": 10 },
+      "datasource": { "type": "tempo", "uid": "TEMPO" },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "serviceMap"
+        }
+      ],
+      "options": {
+        "nodes": {
+          "mainStatUnit": "ms"
+        },
+        "edges": {
+          "mainStatUnit": "ms"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "title": "Span Latency Heatmap",
+      "description": "Distribution of span latencies over time",
+      "type": "heatmap",
+      "gridPos": { "x": 0, "y": 58, "w": 24, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[$__rate_interval])) by (le)",
+          "format": "heatmap",
+          "legendFormat": "{{le}}"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "cellGap": 1,
+        "color": {
+          "scheme": "Spectral",
+          "mode": "scheme",
+          "reverse": true
+        },
+        "yAxis": {
+          "unit": "s"
+        },
+        "tooltip": {
+          "show": true
+        },
+        "legend": {
+          "show": true
+        }
+      }
+    }
+  ]
+}
