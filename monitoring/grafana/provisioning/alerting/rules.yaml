@@ -898,3 +898,300 @@ groups:
           severity: warning
           component: alloy
           type: backpressure
+
+  # ============================================================================
+  # Backend API Alerts (HTTP-based)
+  # ============================================================================
+  # Monitors backend API health using OpenTelemetry HTTP semantic conventions
+  - orgId: 1
+    name: Scanium - Backend API
+    folder: Scanium Alerts
+    interval: 1m
+    rules:
+      # Backend 5xx Error Rate Spike - Production
+      - uid: backend-5xx-error-rate-prod
+        title: "Backend 5xx Error Rate Spike (prod)"
+        condition: C
+        data:
+          # Query A: Calculate 5xx error rate percentage
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: MIMIR
+            model:
+              expr: |
+                sum(rate(http_server_request_duration_seconds_count{deployment_environment="prod", http_response_status_code=~"5.."}[5m]))
+                / sum(rate(http_server_request_duration_seconds_count{deployment_environment="prod"}[5m]))
+                * 100 or vector(0)
+              queryType: instant
+              refId: A
+          # Query B: Reduce to single value
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          # Query C: Threshold check (> 5% error rate = alert)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 5  # Threshold: > 5% 5xx error rate
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "High 5xx error rate in production backend"
+          description: "Backend API 5xx error rate exceeded 5% over the last 5 minutes. Check backend logs and traces for root cause."
+          runbook_url: "https://github.com/ilpeppino/scanium/wiki/runbooks/backend-5xx-spike"
+          dashboard_url: "/d/scanium-backend-errors"
+        labels:
+          severity: critical
+          env: prod
+          component: backend
+          type: availability
+
+      # Backend 5xx Error Rate Spike - Staging
+      - uid: backend-5xx-error-rate-stage
+        title: "Backend 5xx Error Rate Spike (stage)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: MIMIR
+            model:
+              expr: |
+                sum(rate(http_server_request_duration_seconds_count{deployment_environment="stage", http_response_status_code=~"5.."}[5m]))
+                / sum(rate(http_server_request_duration_seconds_count{deployment_environment="stage"}[5m]))
+                * 100 or vector(0)
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 10  # Higher threshold for staging
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "High 5xx error rate in staging backend"
+          description: "Backend API 5xx error rate exceeded 10% over the last 10 minutes."
+          dashboard_url: "/d/scanium-backend-errors"
+        labels:
+          severity: warning
+          env: stage
+          component: backend
+          type: availability
+
+      # Backend Sustained High Latency (p95) - Production
+      - uid: backend-high-latency-prod
+        title: "Backend High Latency (prod)"
+        condition: C
+        data:
+          # Query A: Calculate p95 latency in milliseconds
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: MIMIR
+            model:
+              expr: |
+                histogram_quantile(0.95,
+                  sum by (le) (
+                    rate(http_server_request_duration_seconds_bucket{deployment_environment="prod"}[10m])
+                  )
+                ) * 1000
+              queryType: instant
+              refId: A
+          # Query B: Reduce
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          # Query C: Alert if p95 > 500ms
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 500  # Threshold: p95 > 500ms
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 10m
+        annotations:
+          summary: "Sustained high latency in production backend"
+          description: "Backend API p95 latency exceeded 500ms for over 10 minutes. Performance may be degraded."
+          runbook_url: "https://github.com/ilpeppino/scanium/wiki/runbooks/backend-latency"
+          dashboard_url: "/d/scanium-backend-api-perf"
+        labels:
+          severity: warning
+          env: prod
+          component: backend
+          type: latency
+
+      # Backend Sustained High Latency (p95) - Staging
+      - uid: backend-high-latency-stage
+        title: "Backend High Latency (stage)"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: MIMIR
+            model:
+              expr: |
+                histogram_quantile(0.95,
+                  sum by (le) (
+                    rate(http_server_request_duration_seconds_bucket{deployment_environment="stage"}[10m])
+                  )
+                ) * 1000
+              queryType: instant
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 1000  # Higher threshold for staging: 1s
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 15m
+        annotations:
+          summary: "Sustained high latency in staging backend"
+          description: "Backend API p95 latency exceeded 1000ms for over 15 minutes."
+          dashboard_url: "/d/scanium-backend-api-perf"
+        labels:
+          severity: info
+          env: stage
+          component: backend
+          type: latency
+
+      # Backend Error Rate Spike (from logs) - Production
+      - uid: backend-log-error-spike-prod
+        title: "Backend Log Error Spike (prod)"
+        condition: C
+        data:
+          # Query A: Count error logs over 10m
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: LOKI
+            model:
+              expr: |
+                sum(count_over_time({source="scanium-backend", env="prod"} | json | level=~"error|fatal" [10m]))
+              queryType: instant
+              refId: A
+          # Query B: Reduce to single value
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              reducer: last
+              refId: B
+          # Query C: Threshold check (> 100 errors in 10m = alert)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              conditions:
+                - evaluator:
+                    type: gt
+                    params:
+                      - 100  # Threshold: > 100 errors/10min
+                  operator:
+                    type: and
+                  reducer:
+                    type: last
+              refId: C
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          summary: "High error log volume in production backend"
+          description: "Backend error logs exceeded 100 in the last 10 minutes. Check logs for details."
+          dashboard_url: "/d/scanium-logs-explorer"
+        labels:
+          severity: warning
+          env: prod
+          component: backend
+          signal: logs
