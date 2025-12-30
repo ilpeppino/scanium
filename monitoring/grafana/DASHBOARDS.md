@@ -378,6 +378,118 @@ Dashboard will be auto-provisioned on Grafana restart.
 
 ---
 
+***REMOVED******REMOVED*** Telemetry Inventory Script
+
+The `scripts/monitoring/inventory-telemetry.sh` script discovers what telemetry actually exists in your running LGTM stack and generates an inventory report.
+
+***REMOVED******REMOVED******REMOVED*** Running the Inventory Script
+
+```bash
+***REMOVED*** Basic usage (requires monitoring stack to be running)
+./scripts/monitoring/inventory-telemetry.sh
+
+***REMOVED*** With custom Grafana URL
+./scripts/monitoring/inventory-telemetry.sh --grafana-url http://localhost:3000
+
+***REMOVED*** With API token (if anonymous auth is disabled)
+./scripts/monitoring/inventory-telemetry.sh --token "your-grafana-api-token"
+```
+
+***REMOVED******REMOVED******REMOVED*** What It Discovers
+
+1. **Datasources:** Lists all configured datasources with UIDs (Loki, Tempo, Mimir)
+2. **Metrics (Mimir):** Sample metric names and their labels
+3. **Logs (Loki):** Label keys and sample label values
+4. **Traces (Tempo):** Service names and trace attributes (if available)
+5. **Dashboards:** Currently provisioned dashboards
+
+***REMOVED******REMOVED******REMOVED*** Output Files
+
+- `monitoring/grafana/telemetry-inventory.json` - Machine-readable inventory
+- `monitoring/grafana/telemetry-inventory.md` - Human-readable summary
+
+***REMOVED******REMOVED******REMOVED*** Safety Measures
+
+The script is designed to be safe for production use:
+- Uses small time ranges (last 15m) to avoid heavy queries
+- Limits label value queries to prevent cardinality explosions
+- Timeouts prevent hung requests
+- Read-only operations (no modifications to the stack)
+
+---
+
+***REMOVED******REMOVED*** Regenerating Dashboards
+
+***REMOVED******REMOVED******REMOVED*** When to Regenerate
+
+Regenerate dashboards when:
+- Metric or label names change
+- New telemetry sources are added
+- Dashboard queries need updating
+
+***REMOVED******REMOVED******REMOVED*** Workflow
+
+1. **Discover current telemetry:**
+   ```bash
+   ./scripts/monitoring/inventory-telemetry.sh
+   ```
+
+2. **Review the inventory:**
+   ```bash
+   cat monitoring/grafana/telemetry-inventory.md
+   ```
+
+3. **Update dashboard JSON files** based on discovered metrics/labels
+
+4. **Restart Grafana** to reload dashboards:
+   ```bash
+   docker compose -p scanium-monitoring restart grafana
+   ```
+
+5. **Verify dashboards** via Grafana UI or API:
+   ```bash
+   curl -s localhost:3000/api/search | jq '.[].title'
+   ```
+
+---
+
+***REMOVED******REMOVED*** Validation Checklist
+
+After making changes to dashboards, verify:
+
+***REMOVED******REMOVED******REMOVED*** Stack Health
+- [ ] All services are running: `docker compose -p scanium-monitoring ps`
+- [ ] Grafana is healthy: `curl localhost:3000/api/health`
+- [ ] Datasources are configured: `curl localhost:3000/api/datasources`
+
+***REMOVED******REMOVED******REMOVED*** Dashboard Loading
+- [ ] Dashboards appear in Grafana UI
+- [ ] No "dashboard not found" errors
+- [ ] Dashboard JSON is valid (no parse errors)
+
+***REMOVED******REMOVED******REMOVED*** Data Presence
+- [ ] **LGTM Stack Health:** Shows UP status for all services
+- [ ] **System Overview:** Shows request rate (requires backend traffic)
+- [ ] **Logs Explorer:** Shows log volume (requires log ingestion)
+- [ ] **Traces Drilldown:** Shows traces (requires trace ingestion)
+
+***REMOVED******REMOVED******REMOVED*** Panel Functionality
+- [ ] Variables populate correctly
+- [ ] Panels show data or appropriate "No data" message
+- [ ] Cross-datasource links work (logs→traces, metrics→traces)
+
+***REMOVED******REMOVED******REMOVED*** No Data Troubleshooting
+
+If dashboards show "No data":
+
+1. **Check time range:** Ensure it covers when data was generated
+2. **Check variables:** Variables may need to be refreshed
+3. **Check datasource:** Verify datasource UID matches (LOKI, TEMPO, MIMIR)
+4. **Check query syntax:** Use Explore to test queries manually
+5. **Check data exists:** Query backends directly to confirm data presence
+
+---
+
 ***REMOVED******REMOVED*** References
 
 - [OpenTelemetry HTTP Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/)
