@@ -76,6 +76,8 @@ import com.scanium.app.media.StorageHelper
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.PermissionEducationDialog
 import com.scanium.app.ftue.tourTarget
+import com.scanium.app.ui.motion.MotionConfig
+import com.scanium.app.ui.motion.MotionEnhancedOverlay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -125,6 +127,14 @@ fun CameraScreen(
 
     // Camera pipeline lifecycle debug
     val cameraPipelineDebugEnabled by settingsRepository.devCameraPipelineDebugEnabledFlow.collectAsState(initial = false)
+
+    // Motion overlays (scan frame appear, lightning pulse)
+    val motionOverlaysEnabled by settingsRepository.devMotionOverlaysEnabledFlow.collectAsState(initial = true)
+
+    // Sync motion overlays setting with MotionConfig
+    LaunchedEffect(motionOverlaysEnabled) {
+        MotionConfig.setMotionOverlaysEnabled(motionOverlaysEnabled)
+    }
 
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
@@ -556,9 +566,10 @@ fun CameraScreen(
                     )
                 }
 
-                // Detection overlay - bounding boxes and labels
-                if (overlayTracks.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
-                    DetectionOverlay(
+                // Detection overlay - bounding boxes, labels, and motion animations
+                // Uses MotionEnhancedOverlay for scan frame appear + lightning pulse
+                if (previewSize.width > 0 && previewSize.height > 0) {
+                    MotionEnhancedOverlay(
                         detections = overlayTracks,
                         imageSize = imageSize,
                         previewSize = previewSize,
