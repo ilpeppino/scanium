@@ -1,8 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Base Scanium theme with splash screen support for pre-Android 12 -->
+    <!--
+    Scanium Splash Theme using AndroidX SplashScreen compatibility library.
+    Works on all Android versions (pre-12 uses compat shim, 12+ uses native API).
+
+    Splash Requirements:
+    - Background: White (#FFFFFF) in light mode, dark slate (#0F172A) in dark mode
+    - Icon: Centered "S" mark (Scan Beam symbol) with proper safe zone padding
+    - Transition: Fast (<= 600ms), no delay on camera start
+    -->
+    <style name="Theme.Scanium.Splash" parent="Theme.SplashScreen">
+        <!-- Splash background color (theme-aware via values-night) -->
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Centered S mark icon, sized within splash safe zone -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <!-- Post-splash theme: the main app theme -->
+        <item name="postSplashScreenTheme">@style/Theme.Scanium</item>
+    </style>
+
+    <!-- Main Scanium app theme (applied after splash) -->
     <style name="Theme.Scanium" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- Splash screen background for Android < 12 -->
-        <item name="android:windowBackground">@drawable/splash_background</item>
+        <!-- Standard window background for app content -->
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
 </resources>

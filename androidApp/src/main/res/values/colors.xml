@@ -6,8 +6,10 @@
     <color name="cyan_glow">#00D4FF</color>
     <color name="support_purple">#A259FF</color>
 
-    <!-- Splash screen background (pure white) -->
+    <!-- Splash screen backgrounds -->
+    <color name="splash_background">#FFFFFF</color>
     <color name="splash_background_white">#FFFFFF</color>
+    <color name="splash_background_dark">#0F172A</color>
 
     <!-- Launcher icon background -->
     <color name="ic_launcher_background">#1F4BFF</color>
