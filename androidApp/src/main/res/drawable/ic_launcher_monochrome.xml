@@ -11,11 +11,11 @@
         android:translateY="179.2">
         <path
             android:pathData="M 272 112 H 752 A 160 160 0 0 1 912 272 V 752 A 160 160 0 0 1 752 912 H 272 A 160 160 0 0 1 112 752 V 272 A 160 160 0 0 1 272 112 Z"
-            android:strokeColor="***REMOVED***FFFFFF"
+            android:strokeColor="***REMOVED***FFFFFFFF"
             android:strokeWidth="60"
             android:fillColor="***REMOVED***00000000"/>
         <path
             android:pathData="M 720 220 L 320 220 L 600 512 L 424 512 L 704 804 L 304 804 L 304 704 L 528 704 L 352 512 L 528 512 L 320 320 L 720 320 Z"
-            android:fillColor="***REMOVED***FFD400"/>
+            android:fillColor="***REMOVED***FFFFFFFF"/>
     </group>
 </vector>
