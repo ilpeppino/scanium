@@ -133,11 +133,11 @@
       "label": "Home Electronics",
       "itemCategoryName": "ELECTRONICS",
       "priority": 8,
+      "priorityTier": 2,
       "tokens": [
         "router",
         "modem",
         "wifi router",
-        "speaker",
         "streaming device",
         "game console",
         "console",

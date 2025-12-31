@@ -52,9 +52,11 @@ export class VisualFactsCache {
     this.options = { ...DEFAULT_OPTIONS, ...options };
 
     // Periodic cleanup to remove expired entries
+    // Guard against NaN/undefined by using default
+    const ttlMs = Number.isFinite(this.options.ttlMs) ? this.options.ttlMs : DEFAULT_OPTIONS.ttlMs;
     this.cleanupTimer = setInterval(() => {
       this.cleanup();
-    }, Math.min(this.options.ttlMs / 2, 300000)); // Every half TTL or 5 min max
+    }, Math.min(ttlMs / 2, 300000)); // Every half TTL or 5 min max
   }
 
   /**
