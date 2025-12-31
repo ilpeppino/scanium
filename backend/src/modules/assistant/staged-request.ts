@@ -112,7 +112,13 @@ export class StagedRequestManager {
   };
 
   constructor(options: Partial<StagedRequestManagerOptions> = {}) {
-    this.options = { ...DEFAULT_OPTIONS, ...options };
+    // Merge with defaults, ensuring finite numbers (guards against undefined/NaN)
+    this.options = {
+      timeoutMs: Number.isFinite(options.timeoutMs) ? options.timeoutMs : DEFAULT_OPTIONS.timeoutMs,
+      maxConcurrent: Number.isFinite(options.maxConcurrent) ? options.maxConcurrent : DEFAULT_OPTIONS.maxConcurrent,
+      cleanupIntervalMs: Number.isFinite(options.cleanupIntervalMs) ? options.cleanupIntervalMs : DEFAULT_OPTIONS.cleanupIntervalMs,
+      resultRetentionMs: Number.isFinite(options.resultRetentionMs) ? options.resultRetentionMs : DEFAULT_OPTIONS.resultRetentionMs,
+    };
 
     this.cleanupTimer = setInterval(() => {
       this.cleanup();
