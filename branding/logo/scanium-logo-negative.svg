@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Scanium Negative Logo: White frame, Yellow lightning S, Blue background -->
+
+  <!-- Blue background -->
+  <rect width="1024" height="1024" fill="#1F4BFF"/>
+
+  <!-- Camera frame (rounded square) -->
+  <rect
+    x="172" y="172"
+    width="680" height="680"
+    rx="110" ry="110"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="70"/>
+
+  <!-- Lightning S (bold, angular, readable at small sizes) -->
+  <path
+    d="M 700 240
+       L 340 240
+       L 340 330
+       L 540 330
+       L 340 480
+       L 340 544
+       L 540 544
+       L 340 694
+       L 340 784
+       L 700 784
+       L 700 694
+       L 500 694
+       L 700 544
+       L 700 480
+       L 500 480
+       L 700 330
+       L 700 240 Z"
+    fill="#FFD400"/>
+</svg>
