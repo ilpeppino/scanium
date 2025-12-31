@@ -51,7 +51,14 @@ function getClientIp(request: { headers: Record<string, string | string[] | unde
 
 export const adminRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, opts) => {
   const { config } = opts;
-  const apiKeyManager = new ApiKeyManager(config.classifier.apiKeys);
+
+  // Use assistant API keys for debug/auth endpoint validation (matches /v1/assist/chat)
+  // Fall back to classifier keys for backward compatibility
+  const debugApiKeys =
+    config.assistant?.apiKeys?.length
+      ? config.assistant.apiKeys
+      : config.classifier.apiKeys;
+  const apiKeyManager = new ApiKeyManager(debugApiKeys);
 
   fastify.get('/usage', async (request, reply) => {
     if (!config.admin.enabled) {
