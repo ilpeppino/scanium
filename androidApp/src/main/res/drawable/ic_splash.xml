@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Splash screen icon for Scanium.
+Uses only the "S" mark (Scan Beam symbol) centered for splash display.
+
+Android 12+ SplashScreen sizing:
+- Icon displayed at 288dp total area
+- Circular mask takes inner 240dp (2/3 of area)
+- Content should fit within center ~160dp to be safe on all devices
+
+This vector uses 108x108dp viewport with content scaled to fit safely
+within the masked area. The icon itself stays within the center 66dp
+safe zone to prevent any cropping.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Center the icon content within the safe zone (66% of 108 = ~71dp centered) -->
+    <!-- Translate to center: (108 - 71) / 2 = 18.5, scale to fit 71dp area -->
+    <group
+        android:translateX="18"
+        android:translateY="18"
+        android:scaleX="0.66"
+        android:scaleY="0.66"
+        android:pivotX="0"
+        android:pivotY="0">
+
+        <!-- Camera frame (rounded square) - Blue for light mode -->
+        <path
+            android:pathData="M 27.5 11 H 80.5 A 16.5 16.5 0 0 1 97 27.5 V 80.5 A 16.5 16.5 0 0 1 80.5 97 H 27.5 A 16.5 16.5 0 0 1 11 80.5 V 27.5 A 16.5 16.5 0 0 1 27.5 11 Z"
+            android:strokeColor="***REMOVED***1F4BFF"
+            android:strokeWidth="6.5"
+            android:fillColor="***REMOVED***00000000"/>
+
+        <!-- S Symbol: Smooth curved S with rounded ends - Lightning Yellow accent -->
+        <path
+            android:pathData="M 66.1 28.8 C 66.1 28.8 61.4 23.9 54 23.9 C 45 23.9 38.7 28.8 38.7 35.6 C 38.7 42.4 45 46.3 54 48.2 C 63 50.2 69.3 54 69.3 61.8 C 69.3 69.6 63 75.4 54 75.4 C 46.4 75.4 41.7 70.5 41.7 70.5"
+            android:strokeColor="***REMOVED***FFD400"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:fillColor="***REMOVED***00000000"/>
+
+    </group>
+</vector>
