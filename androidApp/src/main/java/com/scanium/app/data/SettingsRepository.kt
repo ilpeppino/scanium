@@ -68,6 +68,9 @@ class SettingsRepository(private val context: Context) {
 
         // Camera pipeline lifecycle debug
         private val DEV_CAMERA_PIPELINE_DEBUG_KEY = booleanPreferencesKey("dev_camera_pipeline_debug_enabled")
+
+        // Motion overlays toggle
+        private val DEV_MOTION_OVERLAYS_ENABLED_KEY = booleanPreferencesKey("dev_motion_overlays_enabled")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
@@ -560,6 +563,25 @@ class SettingsRepository(private val context: Context) {
             preferences[SPEAK_ANSWERS_KEY] = false
             preferences[AUTO_SEND_TRANSCRIPT_KEY] = false
             preferences[SHARE_DIAGNOSTICS_KEY] = false
+        }
+    }
+
+    // =========================================================================
+    // Motion Overlays Settings
+    // =========================================================================
+
+    /**
+     * Whether motion overlays (scan frame appear, lightning pulse) are enabled.
+     * Part of Scanium motion language system.
+     * Default is ON for enhanced visual feedback.
+     */
+    val devMotionOverlaysEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
+        preferences[DEV_MOTION_OVERLAYS_ENABLED_KEY] ?: true
+    }
+
+    suspend fun setDevMotionOverlaysEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_MOTION_OVERLAYS_ENABLED_KEY] = enabled
         }
     }
 }
