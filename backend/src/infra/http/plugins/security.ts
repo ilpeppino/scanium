@@ -3,6 +3,20 @@ import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { Config } from '../../../config/index.js';
 
 /**
+ * Paths exempt from HTTPS enforcement (for Docker healthchecks).
+ */
+const HTTPS_EXEMPT_PATHS = ['/health', '/healthz', '/readyz'];
+
+/**
+ * Check if a request path is exempt from HTTPS enforcement.
+ */
+function isHttpsExempt(url: string): boolean {
+  // Extract path without query string
+  const path = url.split('?')[0];
+  return HTTPS_EXEMPT_PATHS.includes(path);
+}
+
+/**
  * Detect if request is over HTTPS via proxy headers.
  * Supports x-forwarded-proto and Cloudflare's cf-visitor header.
  */
@@ -43,6 +57,11 @@ const securityPluginImpl: FastifyPluginAsync<{ config: Config }> = async (
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
     // Only enforce in production when enabled
     if (isProduction && config.security.enforceHttps) {
+      // Skip enforcement for health check endpoints (Docker healthchecks)
+      if (isHttpsExempt(request.url)) {
+        return;
+      }
+
       if (!isHttps(request)) {
         request.log.warn(
           {
