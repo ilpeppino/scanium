@@ -1,6 +1,7 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
         <g transform="translate(179.2, 179.2) scale(0.65)">
             <rect x="112" y="112" width="800" height="800" rx="160" ry="160" fill="none" stroke="***REMOVED***000000" stroke-width="60" />
-            <path d="M 720 220 L 320 220 L 600 512 L 424 512 L 704 804 L 304 804 L 304 704 L 528 704 L 352 512 L 528 512 L 320 320 L 720 320 Z" fill="***REMOVED***000000"/>
+            <!-- S Symbol: Smooth curved S -->
+            <path d="M 628 295 C 628 295 580 245 512 245 C 420 245 355 295 355 365 C 355 435 420 475 512 495 C 604 515 669 555 669 635 C 669 715 604 775 512 775 C 444 775 396 725 396 725" fill="none" stroke="***REMOVED***000000" stroke-width="90" stroke-linecap="round" stroke-linejoin="round"/>
         </g>
     </svg>
