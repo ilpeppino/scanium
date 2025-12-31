@@ -179,7 +179,7 @@ describe('Security Plugin', () => {
   });
 
   describe('HTTPS Enforcement', () => {
-    it('should reject HTTP requests when enforceHttps is enabled', async () => {
+    it('should allow HTTP requests to /health when enforceHttps is enabled', async () => {
       const config = createTestConfig({
         nodeEnv: 'production',
         security: {
@@ -195,6 +195,84 @@ describe('Security Plugin', () => {
       const response = await app.inject({
         method: 'GET',
         url: '/health',
+        headers: {
+          'x-forwarded-proto': 'http',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+
+      await app.close();
+    });
+
+    it('should allow HTTP requests to /healthz when enforceHttps is enabled', async () => {
+      const config = createTestConfig({
+        nodeEnv: 'production',
+        security: {
+          enforceHttps: true,
+          enableHsts: true,
+          apiKeyRotationEnabled: true,
+          apiKeyExpirationDays: 90,
+          logApiKeyUsage: true,
+        },
+      });
+      const app = await buildApp(config);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/healthz',
+        headers: {
+          'x-forwarded-proto': 'http',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+
+      await app.close();
+    });
+
+    it('should allow HTTP requests to /readyz when enforceHttps is enabled', async () => {
+      const config = createTestConfig({
+        nodeEnv: 'production',
+        security: {
+          enforceHttps: true,
+          enableHsts: true,
+          apiKeyRotationEnabled: true,
+          apiKeyExpirationDays: 90,
+          logApiKeyUsage: true,
+        },
+      });
+      const app = await buildApp(config);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/readyz',
+        headers: {
+          'x-forwarded-proto': 'http',
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+
+      await app.close();
+    });
+
+    it('should reject HTTP requests to protected endpoints when enforceHttps is enabled', async () => {
+      const config = createTestConfig({
+        nodeEnv: 'production',
+        security: {
+          enforceHttps: true,
+          enableHsts: true,
+          apiKeyRotationEnabled: true,
+          apiKeyExpirationDays: 90,
+          logApiKeyUsage: true,
+        },
+      });
+      const app = await buildApp(config);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/assist/chat',
         headers: {
           'x-forwarded-proto': 'http',
         },
