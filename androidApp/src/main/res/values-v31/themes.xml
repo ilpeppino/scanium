@@ -1,15 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Scanium splash screen theme for Android 12+ -->
-    <style name="Theme.Scanium" parent="android:Theme.Material.Light.NoActionBar">
-        <!-- Use clean white background for splash screen -->
-        <item name="android:windowSplashScreenBackground">@color/splash_background_white</item>
-        <!-- Use padded splash logo drawable directly to prevent cropping.
-             The splash_logo_padded drawable has 35% internal padding to ensure
-             the logo displays fully without cropping on all device sizes. -->
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_logo_padded</item>
+    <!--
+    Scanium Splash Theme for Android 12+ (API 31+).
+    Extends the base splash theme with Android 12+ specific attributes.
+
+    The SplashScreen compat library handles the native Android 12 splash API,
+    but we can specify additional native attributes here for fine-tuning.
+    -->
+    <style name="Theme.Scanium.Splash" parent="Theme.SplashScreen">
+        <!-- Splash background color (theme-aware via values-night) -->
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Centered S mark icon, sized within splash safe zone -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
+        <!-- Post-splash theme: the main app theme -->
+        <item name="postSplashScreenTheme">@style/Theme.Scanium</item>
+
+        <!-- Android 12+ native splash attributes -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash</item>
         <item name="android:windowSplashScreenAnimationDuration">500</item>
-        <!-- Keep icon centered and properly sized -->
-        <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    </style>
+
+    <!-- Main Scanium app theme (applied after splash) -->
+    <style name="Theme.Scanium" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- Standard window background for app content -->
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
 </resources>
