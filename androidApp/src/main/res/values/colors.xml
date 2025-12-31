@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Scanium Brand Colors -->
-    <color name="scanium_blue">#1F7BFF</color>
+    <color name="scanium_blue">#1F4BFF</color>
     <color name="deep_navy">#050B18</color>
     <color name="cyan_glow">#00D4FF</color>
     <color name="support_purple">#A259FF</color>
@@ -10,5 +10,6 @@
     <color name="splash_background_white">#FFFFFF</color>
 
     <!-- Launcher icon background -->
-    <color name="ic_launcher_background">#050B18</color>
+    <color name="ic_launcher_background">#1F4BFF</color>
+    <color name="scanium_yellow">#FFD400</color>
 </resources>
