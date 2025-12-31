@@ -86,10 +86,11 @@ export class UnifiedCache<T> {
   private usageCallback?: UsageCallback;
 
   constructor(private readonly options: UnifiedCacheOptions) {
-    // Periodic cleanup
+    // Periodic cleanup - ensure valid interval (default 5 min if NaN)
+    const ttlMs = Number.isFinite(this.options.ttlMs) ? this.options.ttlMs : 600000;
     this.cleanupTimer = setInterval(() => {
       this.cleanup();
-    }, Math.min(this.options.ttlMs / 2, 300000));
+    }, Math.min(ttlMs / 2, 300000));
   }
 
   /**
