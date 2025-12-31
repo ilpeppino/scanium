@@ -14,24 +14,18 @@
     stroke="#FFFFFF"
     stroke-width="70"/>
 
-  <!-- Lightning S (bold, angular, readable at small sizes) - yellow -->
+  <!-- S Symbol: Smooth curved S with subtle energy inflections - yellow -->
   <path
-    d="M 700 240
-       L 340 240
-       L 340 330
-       L 540 330
-       L 340 480
-       L 340 544
-       L 540 544
-       L 340 694
-       L 340 784
-       L 700 784
-       L 700 694
-       L 500 694
-       L 700 544
-       L 700 480
-       L 500 480
-       L 700 330
-       L 700 240 Z"
-    fill="#FFD400"/>
+    d="M 628 295
+       C 628 295 580 245 512 245
+       C 420 245 355 295 355 365
+       C 355 435 420 475 512 495
+       C 604 515 669 555 669 635
+       C 669 715 604 775 512 775
+       C 444 775 396 725 396 725"
+    fill="none"
+    stroke="#FFD400"
+    stroke-width="90"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
 </svg>
