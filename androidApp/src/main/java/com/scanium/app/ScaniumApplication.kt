@@ -136,6 +136,14 @@ class ScaniumApplication : Application() {
             crashPort = com.scanium.telemetry.ports.NoOpCrashPort
         }
 
+        // Clear stale dev config overrides on startup (debug only)
+        if (BuildConfig.DEBUG) {
+            applicationScope.launch {
+                val devConfig = com.scanium.app.config.DevConfigOverride(this@ScaniumApplication)
+                devConfig.clearStaleOverrides()
+            }
+        }
+
         // Initialize OTLP telemetry ports
         initializeTelemetry()
     }
