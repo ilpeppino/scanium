@@ -420,6 +420,102 @@ koverReport {
     }
 }
 
+// ============================================================================
+// Backend Configuration Validation
+// ============================================================================
+// Validates and prints backend URL configuration at build time.
+// Fails devDebug builds if SCANIUM_API_BASE_URL_DEBUG is blank.
+
+/**
+ * Masks sensitive values for safe printing (shows first 8 chars only).
+ */
+fun maskSecret(value: String): String = when {
+    value.isEmpty() -> "(not set)"
+    value.length <= 8 -> "***"
+    else -> "${value.take(8)}..."
+}
+
+// Create validation task for backend configuration
+tasks.register("validateBackendConfig") {
+    group = "verification"
+    description = "Validates backend API URL configuration and prints resolved values"
+
+    doLast {
+        val debugUrl = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", "")
+        val releaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val effectiveDebugUrl = debugUrl.ifEmpty { releaseUrl }
+        val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
+
+        println("")
+        println("┌─────────────────────────────────────────────────────────────┐")
+        println("│  Scanium Backend Configuration                             │")
+        println("├─────────────────────────────────────────────────────────────┤")
+        println("│  Debug URL (effective):  ${effectiveDebugUrl.padEnd(36)}│")
+        println("│  Release URL:            ${releaseUrl.ifEmpty { "(not set)" }.padEnd(36)}│")
+        println("│  API Key:                ${maskSecret(apiKey).padEnd(36)}│")
+        println("└─────────────────────────────────────────────────────────────┘")
+        println("")
+
+        // Validation warnings
+        if (releaseUrl.isEmpty()) {
+            logger.warn("⚠️  WARNING: scanium.api.base.url is not set. Release builds will have no backend URL.")
+        }
+        if (effectiveDebugUrl.isEmpty()) {
+            logger.warn("⚠️  WARNING: No backend URL configured for debug builds.")
+        }
+        if (apiKey.isEmpty()) {
+            logger.warn("⚠️  WARNING: scanium.api.key is not set. API authentication will fail.")
+        }
+    }
+}
+
+// Task to validate devDebug configuration and fail if URL is missing
+tasks.register("validateDevDebugBackendConfig") {
+    group = "verification"
+    description = "Validates backend URL is configured for devDebug builds"
+
+    doLast {
+        val debugUrl = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", "")
+        val releaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val effectiveDebugUrl = debugUrl.ifEmpty { releaseUrl }
+
+        if (effectiveDebugUrl.isEmpty()) {
+            throw GradleException(
+                """
+                |
+                |╔═══════════════════════════════════════════════════════════════════════╗
+                |║  ERROR: Backend URL not configured for devDebug build                 ║
+                |╠═══════════════════════════════════════════════════════════════════════╣
+                |║                                                                       ║
+                |║  Cloud features require a backend URL. Please configure one of:       ║
+                |║                                                                       ║
+                |║  Option 1: In local.properties (recommended for development)          ║
+                |║    scanium.api.base.url.debug=http://192.168.1.100:3000               ║
+                |║    ***REMOVED*** or                                                               ║
+                |║    scanium.api.base.url=https://your-backend.example.com              ║
+                |║                                                                       ║
+                |║  Option 2: Via environment variables                                  ║
+                |║    export SCANIUM_API_BASE_URL_DEBUG=http://192.168.1.100:3000        ║
+                |║    ***REMOVED*** or                                                               ║
+                |║    export SCANIUM_API_BASE_URL=https://your-backend.example.com       ║
+                |║                                                                       ║
+                |║  Run: scripts/android-configure-backend-dev.sh for guided setup       ║
+                |║  See: docs/DEV_BACKEND_CONNECTIVITY.md for detailed instructions      ║
+                |║                                                                       ║
+                |╚═══════════════════════════════════════════════════════════════════════╝
+                """.trimMargin()
+            )
+        }
+
+        println("✓ Backend URL validated: $effectiveDebugUrl")
+    }
+}
+
+// Hook validation into devDebug builds
+tasks.matching { it.name == "assembleDevDebug" || it.name == "installDevDebug" }.configureEach {
+    dependsOn("validateDevDebugBackendConfig")
+}
+
 // Jacoco HTML report for androidApp unit tests
 tasks.register<JacocoReport>("jacocoTestReport") {
     dependsOn("testDebugUnitTest")
