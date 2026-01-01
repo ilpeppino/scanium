@@ -149,6 +149,45 @@ cloudflared tunnel run scanium-backend
 
 **Note:** Debug builds allow HTTP (cleartext) for LAN development. Release builds require HTTPS.
 
+## Runtime URL Resolution (Debug Builds)
+
+In debug builds, the base URL is resolved in this order:
+
+1. **DevConfigOverride** (if explicitly set and not stale) - Stored in DataStore
+2. **BuildConfig.SCANIUM_API_BASE_URL** - From `local.properties` at build time
+
+### Override Behavior
+
+- **Stale overrides** are automatically cleared on app startup (after 30 days or app version change)
+- **Release builds** ignore all overrides and always use BuildConfig
+- **Developer Options** shows whether an override is active and provides a reset button
+
+### Viewing Override Status
+
+In Developer Options → App Configuration:
+- `Base URL` - Shows the current effective URL
+- `Base URL (OVERRIDE)` - Shown when override is active (red text indicates potential issue)
+- `BuildConfig URL` - Shows the original BuildConfig value when overridden
+
+### Clearing Overrides via ADB
+
+```bash
+# View override (debug builds)
+adb shell "run-as com.scanium.app.dev cat /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
+
+# Clear override
+adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
+
+# Force app restart
+adb shell am force-stop com.scanium.app.dev
+```
+
+### Reset via Developer Options
+
+1. Open Settings → Developer Options
+2. Find "App Configuration" section
+3. If "Base URL (OVERRIDE)" is shown, click "Reset to BuildConfig default"
+
 ## Build Validation
 
 The build system validates backend configuration:
@@ -244,6 +283,28 @@ Gradle may cache configuration. Try:
 ./gradlew --stop
 ./gradlew :androidApp:assembleDevDebug
 ```
+
+### Developer Options shows wrong/old URL
+
+This can happen if a runtime override was set previously (e.g., old ngrok URL):
+
+1. **Check if override is active**: Look for "Base URL (OVERRIDE)" in Developer Options
+
+2. **Reset via UI**: Click "Reset to BuildConfig default" button
+
+3. **Reset via ADB**:
+   ```bash
+   # Clear override DataStore
+   adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
+   # Force restart
+   adb shell am force-stop com.scanium.app.dev
+   ```
+
+4. **Full reinstall** (if still issues):
+   ```bash
+   adb uninstall com.scanium.app.dev
+   ./gradlew :androidApp:installDevDebug
+   ```
 
 ## Security Notes
 

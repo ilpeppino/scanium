@@ -218,7 +218,7 @@ The resolved URLs are injected as `BuildConfig` constants:
 
 ```kotlin
 BuildConfig.SCANIUM_API_BASE_URL  // e.g., "http://192.168.1.100:3000" (debug) or "https://scanium.yourdomain.com" (release)
-BuildConfig.CLOUD_CLASSIFIER_URL  // e.g., "${SCANIUM_API_BASE_URL}/classify"
+BuildConfig.CLOUD_CLASSIFIER_URL  // e.g., "${SCANIUM_API_BASE_URL}/v1/classify"
 BuildConfig.SCANIUM_API_KEY       // e.g., "your-api-key"
 ```
 

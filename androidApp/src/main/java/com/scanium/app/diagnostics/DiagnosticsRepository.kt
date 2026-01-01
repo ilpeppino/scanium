@@ -90,6 +90,15 @@ data class CapabilityStatus(
 )
 
 /**
+ * Base URL source indicator.
+ */
+enum class BaseUrlSource {
+    BUILD_CONFIG,
+    DEV_OVERRIDE,
+    DEV_OVERRIDE_STALE,
+}
+
+/**
  * App configuration snapshot (safe, non-sensitive).
  */
 data class AppConfigSnapshot(
@@ -97,11 +106,20 @@ data class AppConfigSnapshot(
     val versionCode: Int,
     val buildType: String,
     val baseUrl: String,
+    val buildConfigBaseUrl: String,
+    val baseUrlSource: BaseUrlSource,
     val isDebugBuild: Boolean,
     val deviceModel: String,
     val androidVersion: String,
     val sdkInt: Int,
-)
+) {
+    val isBaseUrlOverridden: Boolean
+        get() = baseUrlSource != BaseUrlSource.BUILD_CONFIG
+
+    val hasBaseUrlWarning: Boolean
+        get() = baseUrlSource == BaseUrlSource.DEV_OVERRIDE_STALE ||
+            (isBaseUrlOverridden && baseUrl != buildConfigBaseUrl)
+}
 
 /**
  * Complete diagnostics state.
@@ -365,12 +383,27 @@ class DiagnosticsRepository(
      */
     fun getAppConfigSnapshot(): AppConfigSnapshot {
         val config = configProvider.current()
+        val buildConfigUrl = BuildConfig.SCANIUM_API_BASE_URL.orEmpty()
+
+        // Determine base URL source
+        val devOverride = configProvider.devOverride()
+        val baseUrlSource = when {
+            !BuildConfig.DEBUG -> BaseUrlSource.BUILD_CONFIG
+            devOverride == null -> BaseUrlSource.BUILD_CONFIG
+            !devOverride.isBaseUrlOverridden() -> BaseUrlSource.BUILD_CONFIG
+            else -> {
+                // Check if override is stale (could expand this logic)
+                BaseUrlSource.DEV_OVERRIDE
+            }
+        }
 
         return AppConfigSnapshot(
             versionName = BuildConfig.VERSION_NAME,
             versionCode = BuildConfig.VERSION_CODE,
             buildType = if (BuildConfig.DEBUG) "debug" else "release",
             baseUrl = config.baseUrl.ifBlank { "(not configured)" },
+            buildConfigBaseUrl = buildConfigUrl.ifBlank { "(not configured)" },
+            baseUrlSource = baseUrlSource,
             isDebugBuild = BuildConfig.DEBUG,
             deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
             androidVersion = Build.VERSION.RELEASE,
@@ -403,6 +436,11 @@ class DiagnosticsRepository(
             state.backendHealth.detail?.let { appendLine("Detail: $it") }
             state.backendHealth.latencyMs?.let { appendLine("Latency: ${it}ms") }
             appendLine("Base URL: ${appConfig.baseUrl}")
+            appendLine("URL Source: ${appConfig.baseUrlSource}")
+            if (appConfig.isBaseUrlOverridden) {
+                appendLine("BuildConfig URL: ${appConfig.buildConfigBaseUrl}")
+                appendLine("WARNING: Override active!")
+            }
             appendLine("Last checked: ${state.backendHealth.lastCheckedFormatted}")
             appendLine()
 

@@ -171,7 +171,7 @@ android {
                 localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
             }
             buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$effectiveDebugUrl\"")
-            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$effectiveDebugUrl/classify\"")
+            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$effectiveDebugUrl/v1/classify\"")
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", saveClassifierCropsDebug.toString())
         }
         release {
@@ -185,7 +185,7 @@ android {
             // Release builds always use the main (remote) base URL
             val releaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
             buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$releaseUrl\"")
-            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$releaseUrl/classify\"")
+            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$releaseUrl/v1/classify\"")
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
 
             // Only sign if we have a valid configuration

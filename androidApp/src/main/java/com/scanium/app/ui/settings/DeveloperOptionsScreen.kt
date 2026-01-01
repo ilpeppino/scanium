@@ -94,6 +94,7 @@ fun DeveloperOptionsScreen(
                 onRefresh = { viewModel.refreshDiagnostics() },
                 onCopyDiagnostics = { viewModel.copyDiagnosticsToClipboard() },
                 onAutoRefreshChange = { viewModel.setAutoRefreshEnabled(it) },
+                onResetBaseUrl = { viewModel.resetBaseUrlOverride() },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -266,6 +267,7 @@ private fun SystemHealthSection(
     onRefresh: () -> Unit,
     onCopyDiagnostics: () -> Unit,
     onAutoRefreshChange: (Boolean) -> Unit,
+    onResetBaseUrl: () -> Unit,
 ) {
     Column(
         modifier =
@@ -381,7 +383,14 @@ private fun SystemHealthSection(
 
                 // App Config
                 diagnosticsState.appConfig?.let { config ->
-                    AppConfigSection(config = config)
+                    AppConfigSection(
+                        config = config,
+                        onResetBaseUrl = if (config.isBaseUrlOverridden) {
+                            onResetBaseUrl
+                        } else {
+                            null
+                        },
+                    )
                 }
             }
         }
@@ -637,7 +646,10 @@ private fun CapabilityRow(capability: CapabilityStatus) {
 }
 
 @Composable
-private fun AppConfigSection(config: AppConfigSnapshot) {
+private fun AppConfigSection(
+    config: AppConfigSnapshot,
+    onResetBaseUrl: (() -> Unit)? = null,
+) {
     Column {
         Text(
             text = "App Configuration",
@@ -650,7 +662,36 @@ private fun AppConfigSection(config: AppConfigSnapshot) {
         ConfigRow("Build", config.buildType)
         ConfigRow("Device", config.deviceModel)
         ConfigRow("Android", "${config.androidVersion} (SDK ${config.sdkInt})")
-        ConfigRow("Base URL", config.baseUrl)
+
+        // Base URL with override indicator
+        val baseUrlLabel = when {
+            config.isBaseUrlOverridden -> "Base URL (OVERRIDE)"
+            else -> "Base URL"
+        }
+        ConfigRow(
+            label = baseUrlLabel,
+            value = config.baseUrl,
+            isWarning = config.hasBaseUrlWarning,
+        )
+
+        // Show BuildConfig URL if overridden
+        if (config.isBaseUrlOverridden) {
+            ConfigRow(
+                label = "BuildConfig URL",
+                value = config.buildConfigBaseUrl,
+                isSecondary = true,
+            )
+
+            // Reset button
+            if (onResetBaseUrl != null) {
+                TextButton(
+                    onClick = onResetBaseUrl,
+                    modifier = Modifier.padding(top = 4.dp),
+                ) {
+                    Text("Reset to BuildConfig default")
+                }
+            }
+        }
     }
 }
 
@@ -658,6 +699,8 @@ private fun AppConfigSection(config: AppConfigSnapshot) {
 private fun ConfigRow(
     label: String,
     value: String,
+    isWarning: Boolean = false,
+    isSecondary: Boolean = false,
 ) {
     Row(
         modifier =
@@ -669,12 +712,21 @@ private fun ConfigRow(
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = when {
+                isWarning -> MaterialTheme.colorScheme.error
+                isSecondary -> MaterialTheme.colorScheme.outline
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            },
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
+            color = when {
+                isWarning -> MaterialTheme.colorScheme.error
+                isSecondary -> MaterialTheme.colorScheme.outline
+                else -> MaterialTheme.colorScheme.onSurface
+            },
         )
     }
 }
