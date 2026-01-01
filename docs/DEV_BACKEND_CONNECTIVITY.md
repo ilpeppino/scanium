@@ -2,7 +2,31 @@
 
 This guide explains how to configure the Scanium Android app to connect to your backend server during development.
 
-## Quick Start
+## Connect App to NAS Backend via Cloudflare
+
+Quick checklist for connecting to the NAS-hosted backend at `https://scanium.gtemp1.com`:
+
+```bash
+# Step 1: Set your API key
+export SCANIUM_API_KEY="your-api-key-here"
+
+# Step 2: Configure local.properties for Cloudflare backend
+./scripts/android/set-backend-cloudflare-dev.sh
+
+# Step 3: Build, install, and test connectivity
+./scripts/android/build-install-devdebug.sh
+
+# Step 4: Verify from device (optional)
+adb shell curl -s https://scanium.gtemp1.com/health
+```
+
+The scripts will:
+- Write `scanium.api.base.url.debug=https://scanium.gtemp1.com` to `local.properties`
+- Write `scanium.api.key` if `SCANIUM_API_KEY` is set
+- Build and install the devDebug APK
+- Run a connectivity smoke test from the device
+
+## Quick Start (Generic)
 
 ```bash
 # 1. Configure backend URL and API key
@@ -232,7 +256,9 @@ Gradle may cache configuration. Try:
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/android-configure-backend-dev.sh` | Configure backend URL and API key |
+| `scripts/android/set-backend-cloudflare-dev.sh` | Configure for Cloudflare NAS backend |
+| `scripts/android/build-install-devdebug.sh` | Build, install, and smoke test |
+| `scripts/android-configure-backend-dev.sh` | Configure backend URL and API key (generic) |
 | `scripts/android-build-install-dev.sh` | Build and install devDebug |
 | `scripts/dev/verify-backend-config.sh` | Verify configuration and connectivity |
 
