@@ -27,8 +27,9 @@ fun Bitmap.toImageRefJpeg(quality: Int = 85): ImageRef.Bytes {
 }
 
 suspend fun ImageRef.Bytes.toBitmap(): Bitmap {
-    val bitmap = withContext(Dispatchers.Default) {
-        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-    }
+    val bitmap =
+        withContext(Dispatchers.Default) {
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        }
     return requireNotNull(bitmap) { "Failed to decode Bitmap from ImageRef bytes" }
 }

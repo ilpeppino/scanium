@@ -1,6 +1,5 @@
 package com.scanium.app.assistant
 
-import android.provider.Settings
 import com.scanium.app.BuildConfig
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
@@ -26,14 +25,14 @@ import java.util.concurrent.atomic.AtomicLong
  */
 @Serializable
 private data class GatewayErrorResponse(
-    val error: GatewayError? = null
+    val error: GatewayError? = null,
 )
 
 @Serializable
 private data class GatewayError(
     val code: String,
     val message: String,
-    val correlationId: String? = null
+    val correlationId: String? = null,
 )
 
 /**
@@ -42,7 +41,7 @@ private data class GatewayError(
 class AssistantException(
     val errorCode: String,
     val userMessage: String,
-    val retryAfterSeconds: Int? = null
+    val retryAfterSeconds: Int? = null,
 ) : Exception(userMessage)
 
 /**
@@ -55,7 +54,7 @@ class AssistantException(
  */
 class AssistantRepository(
     private val apiKeyProvider: () -> String? = { null },
-    private val getDeviceId: () -> String = { "" }
+    private val getDeviceId: () -> String = { "" },
 ) {
     companion object {
         private const val TAG = "AssistantRepository"
@@ -63,17 +62,19 @@ class AssistantRepository(
         private const val MIN_REQUEST_INTERVAL_MS = 1000L // 1 second minimum between requests
     }
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .build()
+    private val client =
+        OkHttpClient.Builder()
+            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-        isLenient = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            isLenient = true
+        }
 
     // Client-side throttling
     private val lastRequestTime = AtomicLong(0)
@@ -84,168 +85,174 @@ class AssistantRepository(
      * @param request The request containing context and user message
      * @return Result with the assistant response or failure with AssistantException
      */
-    suspend fun sendMessage(request: AssistantPromptRequest): Result<AssistantResponse> = withContext(Dispatchers.IO) {
-        val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                AssistantException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "Assistant is not configured. Please check app settings."
+    suspend fun sendMessage(request: AssistantPromptRequest): Result<AssistantResponse> =
+        withContext(Dispatchers.IO) {
+            val baseUrl =
+                BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(
+                        AssistantException(
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "Assistant is not configured. Please check app settings.",
+                        ),
+                    )
+
+            val apiKey =
+                apiKeyProvider()?.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure(
+                        AssistantException(
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "API key is missing. Please check app settings.",
+                        ),
+                    )
+
+            // Client-side throttling
+            val now = System.currentTimeMillis()
+            val lastTime = lastRequestTime.get()
+            if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
+                return@withContext Result.failure(
+                    AssistantException(
+                        errorCode = "THROTTLED",
+                        userMessage = "Please wait a moment before sending another message.",
+                    ),
                 )
-            )
-
-        val apiKey = apiKeyProvider()?.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                AssistantException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "API key is missing. Please check app settings."
-                )
-            )
-
-        // Client-side throttling
-        val now = System.currentTimeMillis()
-        val lastTime = lastRequestTime.get()
-        if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
-            return@withContext Result.failure(
-                AssistantException(
-                    errorCode = "THROTTLED",
-                    userMessage = "Please wait a moment before sending another message."
-                )
-            )
-        }
-        lastRequestTime.set(now)
-
-        val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
-        val correlationId = CorrelationIds.currentClassificationSessionId()
-
-        try {
-            val requestBodyJson = json.encodeToString(request)
-            val requestBody = requestBodyJson.toRequestBody("application/json".toMediaType())
-
-            val httpRequestBuilder = Request.Builder()
-                .url(endpoint)
-                .post(requestBody)
-                .header("X-API-Key", apiKey)
-                .header("X-Scanium-Correlation-Id", correlationId)
-                .header("X-Client", "Scanium-Android")
-                .header("X-App-Version", BuildConfig.VERSION_NAME)
-
-            // Add HMAC signature for replay protection (SEC-004)
-            RequestSigner.addSignatureHeaders(
-                builder = httpRequestBuilder,
-                apiKey = apiKey,
-                requestBody = requestBodyJson
-            )
-
-            // Add device ID for rate limiting (hashed for privacy)
-            val deviceId = getDeviceId()
-            if (deviceId.isNotBlank()) {
-                httpRequestBuilder.header("X-Scanium-Device-Id", hashDeviceId(deviceId))
             }
+            lastRequestTime.set(now)
 
-            val httpRequest = httpRequestBuilder.build()
+            val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
+            val correlationId = CorrelationIds.currentClassificationSessionId()
 
-            client.newCall(httpRequest).execute().use { response ->
-                val responseBody = response.body?.string()
+            try {
+                val requestBodyJson = json.encodeToString(request)
+                val requestBody = requestBodyJson.toRequestBody("application/json".toMediaType())
 
-                when {
-                    response.isSuccessful -> {
-                        if (responseBody == null) {
-                            return@use Result.failure(
-                                AssistantException(
-                                    errorCode = "EMPTY_RESPONSE",
-                                    userMessage = "No response received. Please try again."
+                val httpRequestBuilder =
+                    Request.Builder()
+                        .url(endpoint)
+                        .post(requestBody)
+                        .header("X-API-Key", apiKey)
+                        .header("X-Scanium-Correlation-Id", correlationId)
+                        .header("X-Client", "Scanium-Android")
+                        .header("X-App-Version", BuildConfig.VERSION_NAME)
+
+                // Add HMAC signature for replay protection (SEC-004)
+                RequestSigner.addSignatureHeaders(
+                    builder = httpRequestBuilder,
+                    apiKey = apiKey,
+                    requestBody = requestBodyJson,
+                )
+
+                // Add device ID for rate limiting (hashed for privacy)
+                val deviceId = getDeviceId()
+                if (deviceId.isNotBlank()) {
+                    httpRequestBuilder.header("X-Scanium-Device-Id", hashDeviceId(deviceId))
+                }
+
+                val httpRequest = httpRequestBuilder.build()
+
+                client.newCall(httpRequest).execute().use { response ->
+                    val responseBody = response.body?.string()
+
+                    when {
+                        response.isSuccessful -> {
+                            if (responseBody == null) {
+                                return@use Result.failure(
+                                    AssistantException(
+                                        errorCode = "EMPTY_RESPONSE",
+                                        userMessage = "No response received. Please try again.",
+                                    ),
                                 )
+                            }
+
+                            val assistantResponse = json.decodeFromString<AssistantResponse>(responseBody)
+
+                            // Check if response was blocked by safety filters
+                            val safety = assistantResponse.safety
+                            if (safety?.blocked == true) {
+                                ScaniumLog.w(TAG, "Response blocked: ${safety.reasonCode}")
+                            }
+
+                            Result.success(assistantResponse)
+                        }
+
+                        response.code == 401 -> {
+                            Result.failure(
+                                AssistantException(
+                                    errorCode = "UNAUTHORIZED",
+                                    userMessage = "Authentication failed. Please restart the app.",
+                                ),
                             )
                         }
 
-                        val assistantResponse = json.decodeFromString<AssistantResponse>(responseBody)
+                        response.code == 429 -> {
+                            val retryAfter = response.header("Retry-After")?.toIntOrNull()
+                            val errorResponse =
+                                responseBody?.let {
+                                    runCatching { json.decodeFromString<GatewayErrorResponse>(it) }.getOrNull()
+                                }
 
-                        // Check if response was blocked by safety filters
-                        val safety = assistantResponse.safety
-                        if (safety?.blocked == true) {
-                            ScaniumLog.w(TAG, "Response blocked: ${safety.reasonCode}")
+                            val userMessage =
+                                when (errorResponse?.error?.code) {
+                                    "QUOTA_EXCEEDED" -> "Daily message limit reached. Try again tomorrow."
+                                    "RATE_LIMITED" -> "Please wait before sending another message."
+                                    else -> "Too many requests. Please wait a moment."
+                                }
+
+                            Result.failure(
+                                AssistantException(
+                                    errorCode = errorResponse?.error?.code ?: "RATE_LIMITED",
+                                    userMessage = userMessage,
+                                    retryAfterSeconds = retryAfter,
+                                ),
+                            )
                         }
 
-                        Result.success(assistantResponse)
-                    }
-
-                    response.code == 401 -> {
-                        Result.failure(
-                            AssistantException(
-                                errorCode = "UNAUTHORIZED",
-                                userMessage = "Authentication failed. Please restart the app."
+                        response.code == 400 -> {
+                            Result.failure(
+                                AssistantException(
+                                    errorCode = "VALIDATION_ERROR",
+                                    userMessage = "Message could not be processed. Please try a shorter message.",
+                                ),
                             )
-                        )
-                    }
-
-                    response.code == 429 -> {
-                        val retryAfter = response.header("Retry-After")?.toIntOrNull()
-                        val errorResponse = responseBody?.let {
-                            runCatching { json.decodeFromString<GatewayErrorResponse>(it) }.getOrNull()
                         }
 
-                        val userMessage = when (errorResponse?.error?.code) {
-                            "QUOTA_EXCEEDED" -> "Daily message limit reached. Try again tomorrow."
-                            "RATE_LIMITED" -> "Please wait before sending another message."
-                            else -> "Too many requests. Please wait a moment."
+                        response.code == 503 -> {
+                            Result.failure(
+                                AssistantException(
+                                    errorCode = "SERVICE_UNAVAILABLE",
+                                    userMessage = "Assistant is temporarily unavailable. Please try again later.",
+                                ),
+                            )
                         }
 
-                        Result.failure(
-                            AssistantException(
-                                errorCode = errorResponse?.error?.code ?: "RATE_LIMITED",
-                                userMessage = userMessage,
-                                retryAfterSeconds = retryAfter
+                        else -> {
+                            ScaniumLog.e(TAG, "Unexpected error: ${response.code} - ${ScaniumLog.sanitizeResponseBody(responseBody)}")
+                            Result.failure(
+                                AssistantException(
+                                    errorCode = "UNKNOWN_ERROR",
+                                    userMessage = "Something went wrong. Please try again.",
+                                ),
                             )
-                        )
-                    }
-
-                    response.code == 400 -> {
-                        Result.failure(
-                            AssistantException(
-                                errorCode = "VALIDATION_ERROR",
-                                userMessage = "Message could not be processed. Please try a shorter message."
-                            )
-                        )
-                    }
-
-                    response.code == 503 -> {
-                        Result.failure(
-                            AssistantException(
-                                errorCode = "SERVICE_UNAVAILABLE",
-                                userMessage = "Assistant is temporarily unavailable. Please try again later."
-                            )
-                        )
-                    }
-
-                    else -> {
-                        ScaniumLog.e(TAG, "Unexpected error: ${response.code} - ${ScaniumLog.sanitizeResponseBody(responseBody)}")
-                        Result.failure(
-                            AssistantException(
-                                errorCode = "UNKNOWN_ERROR",
-                                userMessage = "Something went wrong. Please try again."
-                            )
-                        )
+                        }
                     }
                 }
+            } catch (e: IOException) {
+                ScaniumLog.e(TAG, "Network error", e)
+                Result.failure(
+                    AssistantException(
+                        errorCode = "NETWORK_ERROR",
+                        userMessage = "Network error. Please check your connection and try again.",
+                    ),
+                )
+            } catch (e: Exception) {
+                ScaniumLog.e(TAG, "Failed to send assistant message", e)
+                Result.failure(
+                    AssistantException(
+                        errorCode = "UNKNOWN_ERROR",
+                        userMessage = "Something went wrong. Please try again.",
+                    ),
+                )
             }
-        } catch (e: IOException) {
-            ScaniumLog.e(TAG, "Network error", e)
-            Result.failure(
-                AssistantException(
-                    errorCode = "NETWORK_ERROR",
-                    userMessage = "Network error. Please check your connection and try again."
-                )
-            )
-        } catch (e: Exception) {
-            ScaniumLog.e(TAG, "Failed to send assistant message", e)
-            Result.failure(
-                AssistantException(
-                    errorCode = "UNKNOWN_ERROR",
-                    userMessage = "Something went wrong. Please try again."
-                )
-            )
         }
-    }
 
     private fun hashDeviceId(deviceId: String): String {
         return try {

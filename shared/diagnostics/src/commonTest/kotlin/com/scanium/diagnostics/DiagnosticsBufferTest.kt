@@ -8,13 +8,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class DiagnosticsBufferTest {
-
-    private fun createTestEvent(name: String, attributes: Map<String, String> = emptyMap()): TelemetryEvent {
+    private fun createTestEvent(
+        name: String,
+        attributes: Map<String, String> = emptyMap(),
+    ): TelemetryEvent {
         return TelemetryEvent(
             name = name,
             severity = TelemetrySeverity.INFO,
             timestamp = Clock.System.now(),
-            attributes = attributes
+            attributes = attributes,
         )
     }
 
@@ -40,8 +42,8 @@ class DiagnosticsBufferTest {
         buffer.append(createTestEvent("event1"))
         buffer.append(createTestEvent("event2"))
         buffer.append(createTestEvent("event3"))
-        buffer.append(createTestEvent("event4"))  // Should evict event1
-        buffer.append(createTestEvent("event5"))  // Should evict event2
+        buffer.append(createTestEvent("event4")) // Should evict event1
+        buffer.append(createTestEvent("event5")) // Should evict event2
 
         val snapshot = buffer.snapshot()
         assertEquals(3, snapshot.size)
@@ -55,11 +57,12 @@ class DiagnosticsBufferTest {
         // Use a very small byte limit to force evictions
         val buffer = DiagnosticsBuffer(maxEvents = 100, maxBytes = 500)
 
-        val largeAttributes = mapOf(
-            "key1" to "value1_with_some_padding",
-            "key2" to "value2_with_some_padding",
-            "key3" to "value3_with_some_padding"
-        )
+        val largeAttributes =
+            mapOf(
+                "key1" to "value1_with_some_padding",
+                "key2" to "value2_with_some_padding",
+                "key3" to "value3_with_some_padding",
+            )
 
         buffer.append(createTestEvent("event1", largeAttributes))
         buffer.append(createTestEvent("event2", largeAttributes))
@@ -127,11 +130,14 @@ class DiagnosticsBufferTest {
 
     @Test
     fun `buffer drops single event larger than maxBytes`() {
-        val buffer = DiagnosticsBuffer(maxEvents = 10, maxBytes = 100)  // Very small limit
+        // Very small limit
+        val buffer = DiagnosticsBuffer(maxEvents = 10, maxBytes = 100)
 
-        val hugeAttributes = mapOf(
-            "huge_key" to "x".repeat(1000)  // This event will be much larger than 100 bytes
-        )
+        val hugeAttributes =
+            mapOf(
+                // This event will be much larger than 100 bytes
+                "huge_key" to "x".repeat(1000),
+            )
 
         buffer.append(createTestEvent("huge_event", hugeAttributes))
 
@@ -170,8 +176,8 @@ class DiagnosticsBufferTest {
         }
 
         val snapshot = buffer.snapshot()
-        assertEquals(50, snapshot.size)  // Should keep only last 50
-        assertEquals("event51", snapshot[0].name)  // First in buffer should be event51
-        assertEquals("event100", snapshot[49].name)  // Last should be event100
+        assertEquals(50, snapshot.size) // Should keep only last 50
+        assertEquals("event51", snapshot[0].name) // First in buffer should be event51
+        assertEquals("event100", snapshot[49].name) // Last should be event100
     }
 }

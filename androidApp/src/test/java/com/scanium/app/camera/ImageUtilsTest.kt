@@ -10,7 +10,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ImageUtilsTest {
-
     @Test
     fun `rotateBitmap returns same bitmap when rotation is 0`() {
         val original = Bitmap.createBitmap(100, 200, Bitmap.Config.ARGB_8888)

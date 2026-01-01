@@ -11,13 +11,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class DiagnosticsBundleBuilderTest {
-
     private fun createTestEvent(name: String): TelemetryEvent {
         return TelemetryEvent(
             name = name,
             severity = TelemetrySeverity.INFO,
             timestamp = Clock.System.now(),
-            attributes = mapOf("test_key" to "test_value")
+            attributes = mapOf("test_key" to "test_value"),
         )
     }
 
@@ -25,16 +24,18 @@ class DiagnosticsBundleBuilderTest {
     fun `buildJsonString creates valid JSON`() {
         val builder = DiagnosticsBundleBuilder()
 
-        val context = mapOf(
-            "platform" to "android",
-            "app_version" to "1.0.0",
-            "build" to "42"
-        )
+        val context =
+            mapOf(
+                "platform" to "android",
+                "app_version" to "1.0.0",
+                "build" to "42",
+            )
 
-        val events = listOf(
-            createTestEvent("event1"),
-            createTestEvent("event2")
-        )
+        val events =
+            listOf(
+                createTestEvent("event1"),
+                createTestEvent("event2"),
+            )
 
         val jsonString = builder.buildJsonString(context, events)
 
@@ -49,13 +50,14 @@ class DiagnosticsBundleBuilderTest {
     fun `buildJsonString includes all context fields`() {
         val builder = DiagnosticsBundleBuilder()
 
-        val context = mapOf(
-            "platform" to "android",
-            "app_version" to "1.0.0",
-            "build" to "42",
-            "env" to "prod",
-            "session_id" to "session-123"
-        )
+        val context =
+            mapOf(
+                "platform" to "android",
+                "app_version" to "1.0.0",
+                "build" to "42",
+                "env" to "prod",
+                "session_id" to "session-123",
+            )
 
         val events = emptyList<TelemetryEvent>()
 
@@ -76,10 +78,11 @@ class DiagnosticsBundleBuilderTest {
 
         val context = mapOf("platform" to "android")
 
-        val events = listOf(
-            createTestEvent("scan.started"),
-            createTestEvent("scan.completed")
-        )
+        val events =
+            listOf(
+                createTestEvent("scan.started"),
+                createTestEvent("scan.completed"),
+            )
 
         val jsonString = builder.buildJsonString(context, events)
         val json = Json.parseToJsonElement(jsonString)
@@ -182,10 +185,11 @@ class DiagnosticsBundleBuilderTest {
         val builder = DiagnosticsBundleBuilder()
 
         val context = mapOf("platform" to "android")
-        val events = listOf(
-            createTestEvent("event1"),
-            createTestEvent("event2")
-        )
+        val events =
+            listOf(
+                createTestEvent("event1"),
+                createTestEvent("event2"),
+            )
 
         val jsonString = builder.buildJsonStringCapped(context, events, maxEvents = 100)
 
@@ -198,17 +202,19 @@ class DiagnosticsBundleBuilderTest {
     fun `buildJsonString produces deterministic output for same input`() {
         val builder = DiagnosticsBundleBuilder()
 
-        val context = mapOf(
-            "platform" to "android",
-            "app_version" to "1.0.0"
-        )
+        val context =
+            mapOf(
+                "platform" to "android",
+                "app_version" to "1.0.0",
+            )
 
-        val event1 = TelemetryEvent(
-            name = "test.event",
-            severity = TelemetrySeverity.INFO,
-            timestamp = kotlinx.datetime.Instant.parse("2025-01-01T00:00:00Z"),
-            attributes = mapOf("key" to "value")
-        )
+        val event1 =
+            TelemetryEvent(
+                name = "test.event",
+                severity = TelemetrySeverity.INFO,
+                timestamp = kotlinx.datetime.Instant.parse("2025-01-01T00:00:00Z"),
+                attributes = mapOf("key" to "value"),
+            )
 
         val events = listOf(event1)
 
@@ -232,15 +238,17 @@ class DiagnosticsBundleBuilderTest {
 
         val context = mapOf("platform" to "android")
 
-        val event = TelemetryEvent(
-            name = "test.event",
-            severity = TelemetrySeverity.INFO,
-            timestamp = Clock.System.now(),
-            attributes = mapOf(
-                "message" to "Error: \"file not found\"",
-                "path" to "/foo/bar\\baz"
+        val event =
+            TelemetryEvent(
+                name = "test.event",
+                severity = TelemetrySeverity.INFO,
+                timestamp = Clock.System.now(),
+                attributes =
+                    mapOf(
+                        "message" to "Error: \"file not found\"",
+                        "path" to "/foo/bar\\baz",
+                    ),
             )
-        )
 
         val jsonString = builder.buildJsonString(context, listOf(event))
 

@@ -1,8 +1,8 @@
 package com.scanium.app.items.export
 
 import android.content.Context
-import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toBitmap
+import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.core.export.ExportPayload
 import com.scanium.shared.core.models.model.ImageRef
@@ -19,7 +19,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class ZipExportWriter(
-    private val csvSerializer: CsvExportSerializer = CsvExportSerializer()
+    private val csvSerializer: CsvExportSerializer = CsvExportSerializer(),
 ) {
     private companion object {
         const val EXPORTS_DIR = "exports"
@@ -28,44 +28,49 @@ class ZipExportWriter(
         const val JPG_MIME = "image/jpg"
     }
 
-    suspend fun writeToCache(context: Context, payload: ExportPayload): Result<File> = withContext(Dispatchers.IO) {
-        runCatching {
-            val timestamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
-            val fileName = "scanium-export-$timestamp.zip"
-            val outputDir = File(context.cacheDir, EXPORTS_DIR).apply { mkdirs() }
-            val file = File(outputDir, fileName)
-            val imageFilenames = mutableMapOf<String, String>()
+    suspend fun writeToCache(
+        context: Context,
+        payload: ExportPayload,
+    ): Result<File> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val timestamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
+                val fileName = "scanium-export-$timestamp.zip"
+                val outputDir = File(context.cacheDir, EXPORTS_DIR).apply { mkdirs() }
+                val file = File(outputDir, fileName)
+                val imageFilenames = mutableMapOf<String, String>()
 
-            ZipOutputStream(BufferedOutputStream(FileOutputStream(file))).use { zip ->
-                payload.items.forEach { item ->
-                    val imageBytes = resolveImageBytes(item.imageRef)?.let { ensureJpegBytes(it) }
-                    if (imageBytes != null) {
-                        val entryName = imageEntryName(item.id)
-                        zip.putNextEntry(ZipEntry(entryName))
-                        zip.write(imageBytes)
-                        zip.closeEntry()
-                        imageFilenames[item.id] = entryName
+                ZipOutputStream(BufferedOutputStream(FileOutputStream(file))).use { zip ->
+                    payload.items.forEach { item ->
+                        val imageBytes = resolveImageBytes(item.imageRef)?.let { ensureJpegBytes(it) }
+                        if (imageBytes != null) {
+                            val entryName = imageEntryName(item.id)
+                            zip.putNextEntry(ZipEntry(entryName))
+                            zip.write(imageBytes)
+                            zip.closeEntry()
+                            imageFilenames[item.id] = entryName
+                        }
                     }
+
+                    zip.putNextEntry(ZipEntry("items.csv"))
+                    val writer = OutputStreamWriter(zip, Charsets.UTF_8)
+                    csvSerializer.writeTo(writer, payload.items) { item ->
+                        imageFilenames[item.id].orEmpty()
+                    }
+                    writer.flush()
+                    zip.closeEntry()
                 }
 
-                zip.putNextEntry(ZipEntry("items.csv"))
-                val writer = OutputStreamWriter(zip, Charsets.UTF_8)
-                csvSerializer.writeTo(writer, payload.items) { item ->
-                    imageFilenames[item.id].orEmpty()
-                }
-                writer.flush()
-                zip.closeEntry()
+                file
             }
-
-            file
         }
-    }
 
-    private fun resolveImageBytes(imageRef: ImageRef?): ImageRef.Bytes? = when (imageRef) {
-        is ImageRef.CacheKey -> ThumbnailCache.get(imageRef.key)
-        is ImageRef.Bytes -> imageRef
-        else -> null
-    }
+    private fun resolveImageBytes(imageRef: ImageRef?): ImageRef.Bytes? =
+        when (imageRef) {
+            is ImageRef.CacheKey -> ThumbnailCache.get(imageRef.key)
+            is ImageRef.Bytes -> imageRef
+            else -> null
+        }
 
     private suspend fun ensureJpegBytes(imageRef: ImageRef.Bytes): ByteArray? {
         if (imageRef.mimeType.equals(JPEG_MIME, ignoreCase = true) ||

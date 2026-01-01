@@ -1,0 +1,18 @@
+[*.{kt,kts}]
+***REMOVED*** ktlint configuration for Scanium project
+***REMOVED*** Supports PascalCase for Composables and allowed wildcard imports
+
+***REMOVED*** Standard ktlint rules
+indent_size = 4
+max_line_length = 140
+
+***REMOVED*** Custom rules
+***REMOVED*** Disable wildcard import check as they are used extensively in tests and UI
+ij_kotlin_imports_layout = *,java.**,javax.**,kotlin.**,^
+no-wildcard-imports = disabled
+
+***REMOVED*** Disable function naming check for Composables (PascalCase)
+***REMOVED*** Try multiple possible property names for compatibility
+ktlint_function_naming_ignore_when_annotated_with = Composable
+ktlint_standard_function-naming_ignore-when-annotated-with = Composable
+function_naming_ignore_when_annotated_with = Composable

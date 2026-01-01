@@ -11,20 +11,20 @@ import java.io.IOException
  */
 sealed class AppError(
     open val message: String,
-    open val cause: Throwable? = null
+    open val cause: Throwable? = null,
 ) {
     /**
      * Database-related errors (Room operations).
      */
     data class DatabaseError(
         override val message: String,
-        override val cause: Throwable? = null
+        override val cause: Throwable? = null,
     ) : AppError(message, cause) {
         companion object {
             fun fromException(e: Exception): DatabaseError {
                 return DatabaseError(
                     message = "Database operation failed: ${e.localizedMessage}",
-                    cause = e
+                    cause = e,
                 )
             }
         }
@@ -35,13 +35,13 @@ sealed class AppError(
      */
     data class IOError(
         override val message: String,
-        override val cause: Throwable? = null
+        override val cause: Throwable? = null,
     ) : AppError(message, cause) {
         companion object {
             fun fromException(e: IOException): IOError {
                 return IOError(
                     message = "I/O operation failed: ${e.localizedMessage}",
-                    cause = e
+                    cause = e,
                 )
             }
         }
@@ -52,7 +52,7 @@ sealed class AppError(
      */
     data class ValidationError(
         override val message: String,
-        override val cause: Throwable? = null
+        override val cause: Throwable? = null,
     ) : AppError(message, cause)
 
     /**
@@ -60,13 +60,13 @@ sealed class AppError(
      */
     data class UnknownError(
         override val message: String,
-        override val cause: Throwable? = null
+        override val cause: Throwable? = null,
     ) : AppError(message, cause) {
         companion object {
             fun fromException(e: Exception): UnknownError {
                 return UnknownError(
                     message = "An unexpected error occurred: ${e.localizedMessage}",
-                    cause = e
+                    cause = e,
                 )
             }
         }

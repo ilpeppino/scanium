@@ -11,6 +11,7 @@ import com.scanium.shared.core.models.model.ImageRef
  */
 object DetectionLogger {
     private const val TAG = "DetectionLogger"
+
     // Check if Log.d is loggable to determine debug mode
     private val isDebug = Log.isLoggable(TAG, Log.DEBUG)
 
@@ -21,29 +22,30 @@ object DetectionLogger {
         frameNumber: Int,
         detection: RawDetection,
         imageWidth: Int,
-        imageHeight: Int
+        imageHeight: Int,
     ) {
         if (!isDebug) return
 
         val bestLabel = detection.bestLabel
         val normalizedArea = detection.getNormalizedArea(imageWidth, imageHeight)
         val box = detection.bboxNorm
-        val thumbnail = when (val ref = detection.thumbnailRef) {
-            is ImageRef.Bytes -> ref.toBitmap()
-            else -> null
-        }
+        val thumbnail =
+            when (val ref = detection.thumbnailRef) {
+                is ImageRef.Bytes -> ref.toBitmap()
+                else -> null
+            }
         val thumbInfo = thumbnail?.let { "${it.width}x${it.height}" } ?: "none"
 
         Log.d(
             TAG,
             "Frame ***REMOVED***$frameNumber | Detection: " +
-                    "id=${detection.trackingId.take(8)}, " +
-                    "category=${detection.category.displayName}, " +
-                    "label=${bestLabel?.text ?: "none"}, " +
-                    "conf=${formatConfidence(bestLabel?.confidence)}, " +
-                    "box=${formatBox(box)}, " +
-                    "area=${formatArea(normalizedArea)}, " +
-                    "thumb=$thumbInfo"
+                "id=${detection.trackingId.take(8)}, " +
+                "category=${detection.category.displayName}, " +
+                "label=${bestLabel?.text ?: "none"}, " +
+                "conf=${formatConfidence(bestLabel?.confidence)}, " +
+                "box=${formatBox(box)}, " +
+                "area=${formatArea(normalizedArea)}, " +
+                "thumb=$thumbInfo",
         )
 
         // Log all labels if there are multiple
@@ -51,7 +53,7 @@ object DetectionLogger {
             detection.labels.forEach { label ->
                 Log.v(
                     TAG,
-                    "  └─ Label: ${label.text} (${formatConfidence(label.confidence)})"
+                    "  └─ Label: ${label.text} (${formatConfidence(label.confidence)})",
                 )
             }
         }
@@ -65,7 +67,7 @@ object DetectionLogger {
         seenCount: Int,
         maxConfidence: Float,
         category: ItemCategory,
-        isPromoted: Boolean
+        isPromoted: Boolean,
     ) {
         if (!isDebug) return
 
@@ -73,10 +75,10 @@ object DetectionLogger {
         Log.d(
             TAG,
             "$status | Candidate: " +
-                    "id=${trackingId.take(8)}, " +
-                    "seen=$seenCount, " +
-                    "maxConf=${formatConfidence(maxConfidence)}, " +
-                    "category=${category.displayName}"
+                "id=${trackingId.take(8)}, " +
+                "seen=$seenCount, " +
+                "maxConf=${formatConfidence(maxConfidence)}, " +
+                "category=${category.displayName}",
         )
     }
 
@@ -87,17 +89,17 @@ object DetectionLogger {
         trackingId: String,
         seenCount: Int,
         maxConfidence: Float,
-        ageMs: Long
+        ageMs: Long,
     ) {
         if (!isDebug) return
 
         Log.d(
             TAG,
             "EXPIRED | Candidate: " +
-                    "id=${trackingId.take(8)}, " +
-                    "seen=$seenCount, " +
-                    "maxConf=${formatConfidence(maxConfidence)}, " +
-                    "age=${ageMs}ms"
+                "id=${trackingId.take(8)}, " +
+                "seen=$seenCount, " +
+                "maxConf=${formatConfidence(maxConfidence)}, " +
+                "age=${ageMs}ms",
         )
     }
 
@@ -110,18 +112,18 @@ object DetectionLogger {
         validDetections: Int,
         promotedItems: Int,
         activeCandidates: Int,
-        processingTimeMs: Long
+        processingTimeMs: Long,
     ) {
         if (!isDebug) return
 
         Log.i(
             TAG,
             "Frame ***REMOVED***$frameNumber | Summary: " +
-                    "raw=$rawDetections, " +
-                    "valid=$validDetections, " +
-                    "promoted=$promotedItems, " +
-                    "active=$activeCandidates, " +
-                    "time=${processingTimeMs}ms"
+                "raw=$rawDetections, " +
+                "valid=$validDetections, " +
+                "promoted=$promotedItems, " +
+                "active=$activeCandidates, " +
+                "time=${processingTimeMs}ms",
         )
     }
 
@@ -134,9 +136,9 @@ object DetectionLogger {
         Log.i(
             TAG,
             "Tracker Stats | " +
-                    "active=${stats.activeCandidates}, " +
-                    "confirmed=${stats.confirmedCandidates}, " +
-                    "frame=${stats.currentFrame}"
+                "active=${stats.activeCandidates}, " +
+                "confirmed=${stats.confirmedCandidates}, " +
+                "frame=${stats.currentFrame}",
         )
     }
 
@@ -147,17 +149,17 @@ object DetectionLogger {
         minSeenCount: Int,
         minConfidence: Float,
         candidateTimeoutMs: Long,
-        analysisIntervalMs: Long
+        analysisIntervalMs: Long,
     ) {
         if (!isDebug) return
 
         Log.i(
             TAG,
             "Configuration | " +
-                    "minSeen=$minSeenCount, " +
-                    "minConf=${formatConfidence(minConfidence)}, " +
-                    "timeout=${candidateTimeoutMs}ms, " +
-                    "interval=${analysisIntervalMs}ms"
+                "minSeen=$minSeenCount, " +
+                "minConf=${formatConfidence(minConfidence)}, " +
+                "timeout=${candidateTimeoutMs}ms, " +
+                "interval=${analysisIntervalMs}ms",
         )
     }
 
@@ -168,15 +170,16 @@ object DetectionLogger {
         trackingId: String,
         reason: String,
         seenCount: Int? = null,
-        confidence: Float? = null
+        confidence: Float? = null,
     ) {
         if (!isDebug) return
 
-        val details = buildString {
-            append("id=${trackingId.take(8)}, reason=$reason")
-            seenCount?.let { append(", seen=$it") }
-            confidence?.let { append(", conf=${formatConfidence(it)}") }
-        }
+        val details =
+            buildString {
+                append("id=${trackingId.take(8)}, reason=$reason")
+                seenCount?.let { append(", seen=$it") }
+                confidence?.let { append(", conf=${formatConfidence(it)}") }
+            }
 
         Log.d(TAG, "REJECTED | $details")
     }

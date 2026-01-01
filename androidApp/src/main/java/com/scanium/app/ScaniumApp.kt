@@ -14,6 +14,9 @@ import com.scanium.app.audio.AndroidSoundManager
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.di.DraftStoreEntryPoint
+import com.scanium.app.di.SettingsRepositoryEntryPoint
+import com.scanium.app.di.TourViewModelFactoryEntryPoint
 import com.scanium.app.ftue.TourViewModel
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.navigation.ScaniumNavGraph
@@ -23,9 +26,6 @@ import com.scanium.app.selling.data.MockEbayConfigManager
 import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.settings.ClassificationModeViewModel
 import com.scanium.app.ui.settings.SettingsViewModel
-import com.scanium.app.di.DraftStoreEntryPoint
-import com.scanium.app.di.SettingsRepositoryEntryPoint
-import com.scanium.app.di.TourViewModelFactoryEntryPoint
 import dagger.hilt.android.EntryPointAccessors
 
 /**
@@ -52,14 +52,16 @@ fun ScaniumApp() {
     val itemsViewModel: ItemsViewModel = hiltViewModel()
 
     // TourViewModel uses assisted injection because it depends on ItemsViewModel
-    val tourViewModelFactory = EntryPointAccessors.fromApplication(
-        context,
-        TourViewModelFactoryEntryPoint::class.java
-    ).tourViewModelFactory()
+    val tourViewModelFactory =
+        EntryPointAccessors.fromApplication(
+            context,
+            TourViewModelFactoryEntryPoint::class.java,
+        ).tourViewModelFactory()
 
-    val tourViewModel: TourViewModel = viewModel(
-        factory = TourViewModel.provideFactory(tourViewModelFactory, itemsViewModel)
-    )
+    val tourViewModel: TourViewModel =
+        viewModel(
+            factory = TourViewModel.provideFactory(tourViewModelFactory, itemsViewModel),
+        )
 
     // ListingDraftRepository and EbayMarketplaceService remain as remember blocks
     // because they're not ViewModels (they're used directly in composables)
@@ -67,18 +69,20 @@ fun ScaniumApp() {
 
     // Sound manager needs SettingsRepository for the enabled flow
     val settingsRepository: SettingsRepository = hiltEntryPoint<SettingsRepositoryEntryPoint>(context).settingsRepository()
-    val soundManager = remember {
-        AndroidSoundManager(
-            context = context,
-            soundsEnabledFlow = settingsRepository.soundsEnabledFlow
-        )
-    }
+    val soundManager =
+        remember {
+            AndroidSoundManager(
+                context = context,
+                soundsEnabledFlow = settingsRepository.soundsEnabledFlow,
+            )
+        }
 
     // Use the config manager's current config for MockEbayApi
     val mockEbayConfig by MockEbayConfigManager.config.collectAsState()
-    val marketplaceService = remember(mockEbayConfig) {
-        EbayMarketplaceService(context, MockEbayApi(mockEbayConfig))
-    }
+    val marketplaceService =
+        remember(mockEbayConfig) {
+            EbayMarketplaceService(context, MockEbayApi(mockEbayConfig))
+        }
 
     DisposableEffect(soundManager) {
         soundManager.preload()
@@ -94,7 +98,7 @@ fun ScaniumApp() {
             paywallViewModel = paywallViewModel,
             marketplaceService = marketplaceService,
             draftStore = draftStore,
-            tourViewModel = tourViewModel
+            tourViewModel = tourViewModel,
         )
     }
 }

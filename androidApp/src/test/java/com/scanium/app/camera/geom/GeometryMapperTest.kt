@@ -6,7 +6,6 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.math.abs
 
 /**
  * Unit tests for GeometryMapper coordinate transformations.
@@ -18,7 +17,6 @@ import kotlin.math.abs
  */
 @RunWith(RobolectricTestRunner::class)
 class GeometryMapperTest {
-
     // =========================================================================
     // Aspect Ratio Tests
     // =========================================================================
@@ -63,24 +61,26 @@ class GeometryMapperTest {
     @Test
     fun `uprightToSensor - rotation 0 identity`() {
         val uprightBbox = Rect(100, 200, 300, 400)
-        val result = GeometryMapper.uprightToSensor(
-            uprightBbox = uprightBbox,
-            uprightWidth = 1280,
-            uprightHeight = 720,
-            rotationDegrees = 0
-        )
+        val result =
+            GeometryMapper.uprightToSensor(
+                uprightBbox = uprightBbox,
+                uprightWidth = 1280,
+                uprightHeight = 720,
+                rotationDegrees = 0,
+            )
         assertEquals(uprightBbox, result)
     }
 
     @Test
     fun `sensorToUpright - rotation 0 identity`() {
         val sensorBbox = Rect(100, 200, 300, 400)
-        val result = GeometryMapper.sensorToUpright(
-            sensorBbox = sensorBbox,
-            sensorWidth = 1280,
-            sensorHeight = 720,
-            rotationDegrees = 0
-        )
+        val result =
+            GeometryMapper.sensorToUpright(
+                sensorBbox = sensorBbox,
+                sensorWidth = 1280,
+                sensorHeight = 720,
+                rotationDegrees = 0,
+            )
         assertEquals(sensorBbox, result)
     }
 
@@ -93,12 +93,13 @@ class GeometryMapperTest {
         // Portrait mode: sensor is 1280x720, upright is 720x1280
         // A bbox at top-left in upright should map to top-right in sensor
         val uprightBbox = Rect(0, 0, 100, 200) // Left 100px, top 200px in 720x1280
-        val result = GeometryMapper.uprightToSensor(
-            uprightBbox = uprightBbox,
-            uprightWidth = 720,
-            uprightHeight = 1280,
-            rotationDegrees = 90
-        )
+        val result =
+            GeometryMapper.uprightToSensor(
+                uprightBbox = uprightBbox,
+                uprightWidth = 720,
+                uprightHeight = 1280,
+                rotationDegrees = 90,
+            )
 
         // After inverse 90° rotation to sensor space (1280x720):
         // Upright (x, y) -> Sensor (y, uprightWidth - x)
@@ -113,12 +114,13 @@ class GeometryMapperTest {
     fun `sensorToUpright - rotation 90 converts correctly`() {
         // Sensor 1280x720, rotation 90 → upright 720x1280
         val sensorBbox = Rect(0, 620, 200, 720) // Derived from previous test
-        val result = GeometryMapper.sensorToUpright(
-            sensorBbox = sensorBbox,
-            sensorWidth = 1280,
-            sensorHeight = 720,
-            rotationDegrees = 90
-        )
+        val result =
+            GeometryMapper.sensorToUpright(
+                sensorBbox = sensorBbox,
+                sensorWidth = 1280,
+                sensorHeight = 720,
+                rotationDegrees = 90,
+            )
 
         // Should reverse the transformation
         assertEquals(0, result.left)
@@ -134,22 +136,24 @@ class GeometryMapperTest {
         val uprightHeight = 1280
 
         // Convert to sensor
-        val sensor = GeometryMapper.uprightToSensor(
-            uprightBbox = original,
-            uprightWidth = uprightWidth,
-            uprightHeight = uprightHeight,
-            rotationDegrees = 90
-        )
+        val sensor =
+            GeometryMapper.uprightToSensor(
+                uprightBbox = original,
+                uprightWidth = uprightWidth,
+                uprightHeight = uprightHeight,
+                rotationDegrees = 90,
+            )
 
         // Convert back to upright (sensor dims are swapped)
         val sensorWidth = uprightHeight // 1280
         val sensorHeight = uprightWidth // 720
-        val recovered = GeometryMapper.sensorToUpright(
-            sensorBbox = sensor,
-            sensorWidth = sensorWidth,
-            sensorHeight = sensorHeight,
-            rotationDegrees = 90
-        )
+        val recovered =
+            GeometryMapper.sensorToUpright(
+                sensorBbox = sensor,
+                sensorWidth = sensorWidth,
+                sensorHeight = sensorHeight,
+                rotationDegrees = 90,
+            )
 
         assertEquals(original, recovered)
     }
@@ -165,22 +169,24 @@ class GeometryMapperTest {
         val uprightHeight = 1280
 
         // Convert to sensor
-        val sensor = GeometryMapper.uprightToSensor(
-            uprightBbox = original,
-            uprightWidth = uprightWidth,
-            uprightHeight = uprightHeight,
-            rotationDegrees = 270
-        )
+        val sensor =
+            GeometryMapper.uprightToSensor(
+                uprightBbox = original,
+                uprightWidth = uprightWidth,
+                uprightHeight = uprightHeight,
+                rotationDegrees = 270,
+            )
 
         // Convert back to upright
         val sensorWidth = uprightHeight
         val sensorHeight = uprightWidth
-        val recovered = GeometryMapper.sensorToUpright(
-            sensorBbox = sensor,
-            sensorWidth = sensorWidth,
-            sensorHeight = sensorHeight,
-            rotationDegrees = 270
-        )
+        val recovered =
+            GeometryMapper.sensorToUpright(
+                sensorBbox = sensor,
+                sensorWidth = sensorWidth,
+                sensorHeight = sensorHeight,
+                rotationDegrees = 270,
+            )
 
         assertEquals(original, recovered)
     }
@@ -196,20 +202,22 @@ class GeometryMapperTest {
         val uprightHeight = 720
 
         // Convert to sensor
-        val sensor = GeometryMapper.uprightToSensor(
-            uprightBbox = original,
-            uprightWidth = uprightWidth,
-            uprightHeight = uprightHeight,
-            rotationDegrees = 180
-        )
+        val sensor =
+            GeometryMapper.uprightToSensor(
+                uprightBbox = original,
+                uprightWidth = uprightWidth,
+                uprightHeight = uprightHeight,
+                rotationDegrees = 180,
+            )
 
         // Convert back to upright
-        val recovered = GeometryMapper.sensorToUpright(
-            sensorBbox = sensor,
-            sensorWidth = uprightWidth,
-            sensorHeight = uprightHeight,
-            rotationDegrees = 180
-        )
+        val recovered =
+            GeometryMapper.sensorToUpright(
+                sensorBbox = sensor,
+                sensorWidth = uprightWidth,
+                sensorHeight = uprightHeight,
+                rotationDegrees = 180,
+            )
 
         assertEquals(original, recovered)
     }
@@ -221,12 +229,13 @@ class GeometryMapperTest {
     @Test
     fun `uprightToBitmapCrop - no padding`() {
         val bbox = NormalizedRect(0.1f, 0.2f, 0.5f, 0.6f)
-        val result = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = bbox,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val result =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = bbox,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
 
         assertEquals(100, result.left)
         assertEquals(200, result.top)
@@ -237,14 +246,16 @@ class GeometryMapperTest {
     @Test
     fun `uprightToBitmapCrop - with padding`() {
         val bbox = NormalizedRect(0.2f, 0.2f, 0.4f, 0.4f) // 200x200 in 1000x1000
-        val result = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = bbox,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0.1f // 10% padding = 20px each side
-        )
+        val result =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = bbox,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0.1f,
+// 10% padding = 20px each side
+            )
 
-        assertEquals(180, result.left)  // 200 - 20
+        assertEquals(180, result.left) // 200 - 20
         assertEquals(180, result.top)
         assertEquals(420, result.right) // 400 + 20
         assertEquals(420, result.bottom)
@@ -254,12 +265,14 @@ class GeometryMapperTest {
     fun `uprightToBitmapCrop - padding clamped to bounds`() {
         // Bbox near edge - padding should be clamped
         val bbox = NormalizedRect(0.0f, 0.0f, 0.2f, 0.2f) // Top-left corner
-        val result = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = bbox,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0.5f // Large padding
-        )
+        val result =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = bbox,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0.5f,
+// Large padding
+            )
 
         // Left and top should be clamped to 0
         assertEquals(0, result.left)
@@ -273,36 +286,39 @@ class GeometryMapperTest {
     fun `uprightToBitmapCrop - aspect ratio preserved`() {
         // Square bbox
         val squareBbox = NormalizedRect(0.2f, 0.3f, 0.4f, 0.5f) // width=0.2, height=0.2
-        val squareCrop = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = squareBbox,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val squareCrop =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = squareBbox,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
         val squareBboxAR = GeometryMapper.aspectRatio(squareBbox)
         val squareCropAR = GeometryMapper.aspectRatio(squareCrop)
         assertTrue(GeometryMapper.validateAspectRatio(squareBboxAR, squareCropAR))
 
         // Tall bbox
         val tallBbox = NormalizedRect(0.3f, 0.1f, 0.5f, 0.6f) // width=0.2, height=0.5
-        val tallCrop = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = tallBbox,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val tallCrop =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = tallBbox,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
         val tallBboxAR = GeometryMapper.aspectRatio(tallBbox)
         val tallCropAR = GeometryMapper.aspectRatio(tallCrop)
         assertTrue(GeometryMapper.validateAspectRatio(tallBboxAR, tallCropAR))
 
         // Wide bbox
         val wideBbox = NormalizedRect(0.1f, 0.4f, 0.7f, 0.6f) // width=0.6, height=0.2
-        val wideCrop = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = wideBbox,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val wideCrop =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = wideBbox,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
         val wideBboxAR = GeometryMapper.aspectRatio(wideBbox)
         val wideCropAR = GeometryMapper.aspectRatio(wideCrop)
         assertTrue(GeometryMapper.validateAspectRatio(wideBboxAR, wideCropAR))
@@ -324,19 +340,20 @@ class GeometryMapperTest {
 
         // Convert to bitmap crop rect in square bitmap
         // Note: Using square bitmap ensures normalized AR equals pixel AR
-        val cropRect = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = tallBboxNorm,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val cropRect =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = tallBboxNorm,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
 
         val cropAR = GeometryMapper.aspectRatio(cropRect)
 
         // Verify aspect ratios match
         assertTrue(
             "Bbox AR ($bboxAR) should match crop AR ($cropAR)",
-            GeometryMapper.validateAspectRatio(bboxAR, cropAR)
+            GeometryMapper.validateAspectRatio(bboxAR, cropAR),
         )
     }
 
@@ -348,18 +365,19 @@ class GeometryMapperTest {
         assertTrue("Bbox should be wide (AR > 1)", bboxAR > 1.0f)
 
         // Note: Using square bitmap ensures normalized AR equals pixel AR
-        val cropRect = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = wideBboxNorm,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val cropRect =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = wideBboxNorm,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
 
         val cropAR = GeometryMapper.aspectRatio(cropRect)
 
         assertTrue(
             "Bbox AR ($bboxAR) should match crop AR ($cropAR)",
-            GeometryMapper.validateAspectRatio(bboxAR, cropAR)
+            GeometryMapper.validateAspectRatio(bboxAR, cropAR),
         )
     }
 
@@ -370,18 +388,19 @@ class GeometryMapperTest {
         val bboxAR = GeometryMapper.aspectRatio(squareBboxNorm)
 
         // Note: Using square bitmap ensures normalized AR equals pixel AR
-        val cropRect = GeometryMapper.uprightToBitmapCrop(
-            normalizedBbox = squareBboxNorm,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val cropRect =
+            GeometryMapper.uprightToBitmapCrop(
+                normalizedBbox = squareBboxNorm,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
 
         val cropAR = GeometryMapper.aspectRatio(cropRect)
 
         assertTrue(
             "Bbox AR ($bboxAR) should match crop AR ($cropAR)",
-            GeometryMapper.validateAspectRatio(bboxAR, cropAR)
+            GeometryMapper.validateAspectRatio(bboxAR, cropAR),
         )
     }
 
@@ -394,15 +413,16 @@ class GeometryMapperTest {
         val bbox = NormalizedRect(0.2f, 0.3f, 0.5f, 0.6f)
 
         // Using square bitmap to ensure aspect ratio match
-        val debugInfo = GeometryMapper.generateCorrelationDebugInfo(
-            normalizedBbox = bbox,
-            rotationDegrees = 90,
-            uprightWidth = 720,
-            uprightHeight = 1280,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val debugInfo =
+            GeometryMapper.generateCorrelationDebugInfo(
+                normalizedBbox = bbox,
+                rotationDegrees = 90,
+                uprightWidth = 720,
+                uprightHeight = 1280,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
 
         assertEquals(90, debugInfo.rotationDegrees)
         assertEquals(720, debugInfo.uprightWidth)
@@ -417,15 +437,16 @@ class GeometryMapperTest {
         val bbox = NormalizedRect(0.2f, 0.3f, 0.5f, 0.6f)
 
         // Using square bitmap to ensure aspect ratio match
-        val debugInfo = GeometryMapper.generateCorrelationDebugInfo(
-            normalizedBbox = bbox,
-            rotationDegrees = 90,
-            uprightWidth = 720,
-            uprightHeight = 1280,
-            bitmapWidth = 1000,
-            bitmapHeight = 1000,
-            padding = 0f
-        )
+        val debugInfo =
+            GeometryMapper.generateCorrelationDebugInfo(
+                normalizedBbox = bbox,
+                rotationDegrees = 90,
+                uprightWidth = 720,
+                uprightHeight = 1280,
+                bitmapWidth = 1000,
+                bitmapHeight = 1000,
+                padding = 0f,
+            )
 
         val logString = debugInfo.toLogString()
         assertTrue(logString.contains("CORR"))

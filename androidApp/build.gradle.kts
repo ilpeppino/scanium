@@ -34,19 +34,23 @@ private val localProperties by lazy(LazyThreadSafetyMode.NONE) {
  * When androidApp is opened standalone, rootProject points to /androidApp so we fall
  * back to the parent directory to locate the shared local.properties file.
  */
-private fun findLocalPropertiesFile() = sequenceOf(
-    rootProject.file("local.properties"),
-    rootProject.projectDir.parentFile?.resolve("local.properties")
-).firstOrNull { file ->
-    file?.exists() == true
-}?.also { file ->
-    if (file.parentFile != rootProject.projectDir) {
-        logger.info("Loading local.properties from ${file.parentFile}")
+private fun findLocalPropertiesFile() =
+    sequenceOf(
+        rootProject.file("local.properties"),
+        rootProject.projectDir.parentFile?.resolve("local.properties"),
+    ).firstOrNull { file ->
+        file?.exists() == true
+    }?.also { file ->
+        if (file.parentFile != rootProject.projectDir) {
+            logger.info("Loading local.properties from ${file.parentFile}")
+        }
     }
-}
 
-private fun localPropertyOrEnv(key: String, envKey: String, defaultValue: String = ""): String =
-    localProperties.getProperty(key) ?: System.getenv(envKey) ?: defaultValue
+private fun localPropertyOrEnv(
+    key: String,
+    envKey: String,
+    defaultValue: String = "",
+): String = localProperties.getProperty(key) ?: System.getenv(envKey) ?: defaultValue
 
 val saveClassifierCropsDebug = localPropertyOrEnv("scanium.classifier.save_crops.debug", envKey = "", defaultValue = "false").toBoolean()
 
@@ -58,10 +62,10 @@ android {
         applicationId = "com.scanium.app"
         minSdk = 24
         targetSdk = 34
-        
+
         val versionCodeEnv = localPropertyOrEnv("scanium.version.code", "SCANIUM_VERSION_CODE", "1").toInt()
         val versionNameEnv = localPropertyOrEnv("scanium.version.name", "SCANIUM_VERSION_NAME", "1.0")
-        
+
         versionCode = versionCodeEnv
         versionName = versionNameEnv
 
@@ -85,11 +89,12 @@ android {
         //
         // See: docs/observability/SENTRY_ALERTING.md for configuration details
         val sentryDsn = localPropertyOrEnv("scanium.sentry.dsn", "SCANIUM_SENTRY_DSN")
-        val telemetryDataRegion = localPropertyOrEnv(
-            "scanium.telemetry.data_region",
-            "SCANIUM_TELEMETRY_DATA_REGION",
-            "US"
-        )
+        val telemetryDataRegion =
+            localPropertyOrEnv(
+                "scanium.telemetry.data_region",
+                "SCANIUM_TELEMETRY_DATA_REGION",
+                "US",
+            )
 
         // OTLP (OpenTelemetry Protocol) configuration
         val otlpEndpoint = localPropertyOrEnv("scanium.otlp.endpoint", "SCANIUM_OTLP_ENDPOINT", "")
@@ -162,7 +167,7 @@ android {
             isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
 
@@ -415,6 +420,6 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     classDirectories.setFrom(
         fileTree("$buildDir/tmp/kotlin-classes/debug") {
             exclude("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
-        }
+        },
     )
 }

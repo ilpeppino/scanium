@@ -8,5 +8,5 @@ import kotlinx.datetime.Instant
 data class ExportPayload(
     val items: List<ExportItem>,
     val createdAt: Instant,
-    val appVersion: String? = null
+    val appVersion: String? = null,
 )

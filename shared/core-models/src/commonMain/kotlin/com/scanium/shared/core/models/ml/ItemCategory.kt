@@ -14,7 +14,8 @@ enum class ItemCategory(val displayName: String) {
     DOCUMENT("Document"),
     BARCODE("Barcode"),
     QR_CODE("QR Code"),
-    UNKNOWN("Unknown");
+    UNKNOWN("Unknown"),
+    ;
 
     companion object {
         /**

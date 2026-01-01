@@ -18,7 +18,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class KeyValue(
     val key: String,
-    val value: AnyValue
+    val value: AnyValue,
 )
 
 @Serializable
@@ -26,25 +26,28 @@ data class AnyValue(
     val stringValue: String? = null,
     val intValue: Long? = null,
     val doubleValue: Double? = null,
-    val boolValue: Boolean? = null
+    val boolValue: Boolean? = null,
 ) {
     companion object {
         fun string(value: String) = AnyValue(stringValue = value)
+
         fun int(value: Long) = AnyValue(intValue = value)
+
         fun double(value: Double) = AnyValue(doubleValue = value)
+
         fun bool(value: Boolean) = AnyValue(boolValue = value)
     }
 }
 
 @Serializable
 data class Resource(
-    val attributes: List<KeyValue>
+    val attributes: List<KeyValue>,
 )
 
 @Serializable
 data class InstrumentationScope(
     val name: String = "com.scanium.telemetry",
-    val version: String = "1.0.0"
+    val version: String = "1.0.0",
 )
 
 // ============================================================================
@@ -53,19 +56,19 @@ data class InstrumentationScope(
 
 @Serializable
 data class ExportLogsServiceRequest(
-    val resourceLogs: List<ResourceLogs>
+    val resourceLogs: List<ResourceLogs>,
 )
 
 @Serializable
 data class ResourceLogs(
     val resource: Resource,
-    val scopeLogs: List<ScopeLogs>
+    val scopeLogs: List<ScopeLogs>,
 )
 
 @Serializable
 data class ScopeLogs(
     val scope: InstrumentationScope,
-    val logRecords: List<LogRecord>
+    val logRecords: List<LogRecord>,
 )
 
 @Serializable
@@ -74,7 +77,7 @@ data class LogRecord(
     val severityNumber: Int,
     val severityText: String,
     val body: AnyValue,
-    val attributes: List<KeyValue> = emptyList()
+    val attributes: List<KeyValue> = emptyList(),
 ) {
     companion object {
         // OTLP severity numbers
@@ -92,19 +95,19 @@ data class LogRecord(
 
 @Serializable
 data class ExportMetricsServiceRequest(
-    val resourceMetrics: List<ResourceMetrics>
+    val resourceMetrics: List<ResourceMetrics>,
 )
 
 @Serializable
 data class ResourceMetrics(
     val resource: Resource,
-    val scopeMetrics: List<ScopeMetrics>
+    val scopeMetrics: List<ScopeMetrics>,
 )
 
 @Serializable
 data class ScopeMetrics(
     val scope: InstrumentationScope,
-    val metrics: List<Metric>
+    val metrics: List<Metric>,
 )
 
 @Serializable
@@ -113,19 +116,20 @@ data class Metric(
     val description: String = "",
     val unit: String = "",
     val sum: Sum? = null,
-    val gauge: Gauge? = null
+    val gauge: Gauge? = null,
 )
 
 @Serializable
 data class Sum(
     val dataPoints: List<NumberDataPoint>,
-    val aggregationTemporality: Int = 2, // CUMULATIVE
-    val isMonotonic: Boolean = true
+    val aggregationTemporality: Int = 2,
+// CUMULATIVE
+    val isMonotonic: Boolean = true,
 )
 
 @Serializable
 data class Gauge(
-    val dataPoints: List<NumberDataPoint>
+    val dataPoints: List<NumberDataPoint>,
 )
 
 @Serializable
@@ -133,7 +137,7 @@ data class NumberDataPoint(
     val timeUnixNano: String,
     val asInt: Long? = null,
     val asDouble: Double? = null,
-    val attributes: List<KeyValue> = emptyList()
+    val attributes: List<KeyValue> = emptyList(),
 )
 
 // ============================================================================
@@ -142,19 +146,19 @@ data class NumberDataPoint(
 
 @Serializable
 data class ExportTraceServiceRequest(
-    val resourceSpans: List<ResourceSpans>
+    val resourceSpans: List<ResourceSpans>,
 )
 
 @Serializable
 data class ResourceSpans(
     val resource: Resource,
-    val scopeSpans: List<ScopeSpans>
+    val scopeSpans: List<ScopeSpans>,
 )
 
 @Serializable
 data class ScopeSpans(
     val scope: InstrumentationScope,
-    val spans: List<Span>
+    val spans: List<Span>,
 )
 
 @Serializable
@@ -163,11 +167,12 @@ data class Span(
     val spanId: String,
     val parentSpanId: String? = null,
     val name: String,
-    val kind: Int = 1, // INTERNAL
+    val kind: Int = 1,
+// INTERNAL
     val startTimeUnixNano: String,
     val endTimeUnixNano: String,
     val attributes: List<KeyValue> = emptyList(),
-    val status: SpanStatus? = null
+    val status: SpanStatus? = null,
 ) {
     companion object {
         const val SPAN_KIND_INTERNAL = 1
@@ -178,8 +183,9 @@ data class Span(
 
 @Serializable
 data class SpanStatus(
-    val code: Int = 0, // UNSET
-    val message: String = ""
+    val code: Int = 0,
+// UNSET
+    val message: String = "",
 ) {
     companion object {
         const val STATUS_CODE_UNSET = 0

@@ -31,7 +31,6 @@ data class OtlpConfiguration(
      * When false, all port implementations become no-ops.
      */
     val enabled: Boolean = false,
-
     /**
      * OTLP HTTP endpoint base URL (without path).
      * Example: "http://localhost:4318" or "https://otlp.example.com:4318"
@@ -39,14 +38,12 @@ data class OtlpConfiguration(
      * Paths (/v1/logs, /v1/metrics, /v1/traces) are appended automatically.
      */
     val endpoint: String = "http://localhost:4318",
-
     /**
      * Deployment environment tag.
      * Included as resource attribute: deployment.environment
      * Common values: "dev", "staging", "prod"
      */
     val environment: String = "dev",
-
     /**
      * Trace sampling rate (0.0 to 1.0).
      * - 0.0 = no traces exported
@@ -56,41 +53,35 @@ data class OtlpConfiguration(
      * Logs and metrics are always exported when enabled.
      */
     val traceSamplingRate: Double = 0.1,
-
     /**
      * Service name for resource attributes.
      * Included as resource attribute: service.name
      */
     val serviceName: String = "scanium-mobile",
-
     /**
      * Service version (typically app version).
      * Included as resource attribute: service.version
      */
     val serviceVersion: String = "unknown",
-
     /**
      * Maximum batch size before forcing export.
      * Higher values reduce network overhead but increase memory usage.
      */
     val maxBatchSize: Int = 100,
-
     /**
      * Batch timeout in milliseconds.
      * Export batch even if not full after this duration.
      */
     val batchTimeoutMs: Long = 5000,
-
     /**
      * HTTP request timeout in milliseconds.
      */
     val httpTimeoutMs: Long = 10000,
-
     /**
      * Enable debug logging for OTLP export.
      * Logs export attempts and failures (no sensitive data).
      */
-    val debugLogging: Boolean = false
+    val debugLogging: Boolean = false,
 ) {
     companion object {
         /**
@@ -104,14 +95,15 @@ data class OtlpConfiguration(
          */
         fun localDev(
             serviceVersion: String = "dev",
-            traceSamplingRate: Double = 0.1
+            traceSamplingRate: Double = 0.1,
         ) = OtlpConfiguration(
             enabled = true,
-            endpoint = "http://10.0.2.2:4318", // Android emulator host
+            endpoint = "http://10.0.2.2:4318",
+// Android emulator host
             environment = "dev",
             serviceVersion = serviceVersion,
             traceSamplingRate = traceSamplingRate,
-            debugLogging = true
+            debugLogging = true,
         )
     }
 

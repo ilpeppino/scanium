@@ -19,7 +19,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class DetectionGeometryMapperTest {
-
     // ==========================================
     // ML Kit bbox to sensor space tests
     // ==========================================
@@ -30,14 +29,15 @@ class DetectionGeometryMapperTest {
         val sensorWidth = 1280
         val sensorHeight = 720
 
-        val result = DetectionGeometryMapper.mlKitBboxToSensorSpace(
-            mlKitBbox = mlKitBbox,
-            rotationDegrees = 0,
-            mlKitImageWidth = sensorWidth,
-            mlKitImageHeight = sensorHeight,
-            sensorWidth = sensorWidth,
-            sensorHeight = sensorHeight
-        )
+        val result =
+            DetectionGeometryMapper.mlKitBboxToSensorSpace(
+                mlKitBbox = mlKitBbox,
+                rotationDegrees = 0,
+                mlKitImageWidth = sensorWidth,
+                mlKitImageHeight = sensorHeight,
+                sensorWidth = sensorWidth,
+                sensorHeight = sensorHeight,
+            )
 
         assertThat(result.left).isEqualTo(mlKitBbox.left)
         assertThat(result.top).isEqualTo(mlKitBbox.top)
@@ -59,19 +59,20 @@ class DetectionGeometryMapperTest {
         // because 90° clockwise rotation of sensor gives portrait view
 
         val mlKitBbox = Rect(50, 50, 150, 200)
-        val mlKitImageWidth = 720   // post-rotation width
+        val mlKitImageWidth = 720 // post-rotation width
         val mlKitImageHeight = 1280 // post-rotation height
         val sensorWidth = 1280
         val sensorHeight = 720
 
-        val result = DetectionGeometryMapper.mlKitBboxToSensorSpace(
-            mlKitBbox = mlKitBbox,
-            rotationDegrees = 90,
-            mlKitImageWidth = mlKitImageWidth,
-            mlKitImageHeight = mlKitImageHeight,
-            sensorWidth = sensorWidth,
-            sensorHeight = sensorHeight
-        )
+        val result =
+            DetectionGeometryMapper.mlKitBboxToSensorSpace(
+                mlKitBbox = mlKitBbox,
+                rotationDegrees = 90,
+                mlKitImageWidth = mlKitImageWidth,
+                mlKitImageHeight = mlKitImageHeight,
+                sensorWidth = sensorWidth,
+                sensorHeight = sensorHeight,
+            )
 
         // Verify the result is in sensor space (1280x720)
         assertThat(result.left).isAtLeast(0)
@@ -90,19 +91,20 @@ class DetectionGeometryMapperTest {
     @Test
     fun `mlKitBboxToSensorSpace with 270 rotation inverts rotation correctly`() {
         val mlKitBbox = Rect(100, 100, 200, 300)
-        val mlKitImageWidth = 720   // post-rotation width (portrait)
+        val mlKitImageWidth = 720 // post-rotation width (portrait)
         val mlKitImageHeight = 1280 // post-rotation height
         val sensorWidth = 1280
         val sensorHeight = 720
 
-        val result = DetectionGeometryMapper.mlKitBboxToSensorSpace(
-            mlKitBbox = mlKitBbox,
-            rotationDegrees = 270,
-            mlKitImageWidth = mlKitImageWidth,
-            mlKitImageHeight = mlKitImageHeight,
-            sensorWidth = sensorWidth,
-            sensorHeight = sensorHeight
-        )
+        val result =
+            DetectionGeometryMapper.mlKitBboxToSensorSpace(
+                mlKitBbox = mlKitBbox,
+                rotationDegrees = 270,
+                mlKitImageWidth = mlKitImageWidth,
+                mlKitImageHeight = mlKitImageHeight,
+                sensorWidth = sensorWidth,
+                sensorHeight = sensorHeight,
+            )
 
         // Verify the result is in sensor space
         assertThat(result.left).isAtLeast(0)
@@ -117,14 +119,15 @@ class DetectionGeometryMapperTest {
         val width = 1280
         val height = 720
 
-        val result = DetectionGeometryMapper.mlKitBboxToSensorSpace(
-            mlKitBbox = mlKitBbox,
-            rotationDegrees = 180,
-            mlKitImageWidth = width,
-            mlKitImageHeight = height,
-            sensorWidth = width,
-            sensorHeight = height
-        )
+        val result =
+            DetectionGeometryMapper.mlKitBboxToSensorSpace(
+                mlKitBbox = mlKitBbox,
+                rotationDegrees = 180,
+                mlKitImageWidth = width,
+                mlKitImageHeight = height,
+                sensorWidth = width,
+                sensorHeight = height,
+            )
 
         // For 180°: (x, y) -> (1-x, 1-y) in normalized space
         // left=100/1280=0.078 -> 1-0.078=0.922 -> 0.922*1280=1180
@@ -142,21 +145,23 @@ class DetectionGeometryMapperTest {
         val sensorHeight = 720
 
         // Centered box in ML Kit 720x1280 space
-        val mlKitBbox = Rect(
-            (mlKitImageWidth * 0.4f).toInt(),
-            (mlKitImageHeight * 0.4f).toInt(),
-            (mlKitImageWidth * 0.6f).toInt(),
-            (mlKitImageHeight * 0.6f).toInt()
-        )
+        val mlKitBbox =
+            Rect(
+                (mlKitImageWidth * 0.4f).toInt(),
+                (mlKitImageHeight * 0.4f).toInt(),
+                (mlKitImageWidth * 0.6f).toInt(),
+                (mlKitImageHeight * 0.6f).toInt(),
+            )
 
-        val result = DetectionGeometryMapper.mlKitBboxToSensorSpace(
-            mlKitBbox = mlKitBbox,
-            rotationDegrees = 90,
-            mlKitImageWidth = mlKitImageWidth,
-            mlKitImageHeight = mlKitImageHeight,
-            sensorWidth = sensorWidth,
-            sensorHeight = sensorHeight
-        )
+        val result =
+            DetectionGeometryMapper.mlKitBboxToSensorSpace(
+                mlKitBbox = mlKitBbox,
+                rotationDegrees = 90,
+                mlKitImageWidth = mlKitImageWidth,
+                mlKitImageHeight = mlKitImageHeight,
+                sensorWidth = sensorWidth,
+                sensorHeight = sensorHeight,
+            )
 
         // Center of result should be near center of sensor space
         val resultCenterX = (result.left + result.right) / 2f
@@ -176,12 +181,13 @@ class DetectionGeometryMapperTest {
         val bitmapWidth = 1280
         val bitmapHeight = 720
 
-        val result = DetectionGeometryMapper.sensorBboxToBitmapCrop(
-            sensorBboxNorm = bboxNorm,
-            bitmapWidth = bitmapWidth,
-            bitmapHeight = bitmapHeight,
-            paddingRatio = 0.06f
-        )
+        val result =
+            DetectionGeometryMapper.sensorBboxToBitmapCrop(
+                sensorBboxNorm = bboxNorm,
+                bitmapWidth = bitmapWidth,
+                bitmapHeight = bitmapHeight,
+                paddingRatio = 0.06f,
+            )
 
         assertThat(result.left).isAtLeast(0)
         assertThat(result.top).isAtLeast(0)
@@ -197,19 +203,21 @@ class DetectionGeometryMapperTest {
         val bitmapWidth = 1000
         val bitmapHeight = 1000
 
-        val withoutPadding = DetectionGeometryMapper.sensorBboxToBitmapCrop(
-            sensorBboxNorm = bboxNorm,
-            bitmapWidth = bitmapWidth,
-            bitmapHeight = bitmapHeight,
-            paddingRatio = 0f
-        )
+        val withoutPadding =
+            DetectionGeometryMapper.sensorBboxToBitmapCrop(
+                sensorBboxNorm = bboxNorm,
+                bitmapWidth = bitmapWidth,
+                bitmapHeight = bitmapHeight,
+                paddingRatio = 0f,
+            )
 
-        val withPadding = DetectionGeometryMapper.sensorBboxToBitmapCrop(
-            sensorBboxNorm = bboxNorm,
-            bitmapWidth = bitmapWidth,
-            bitmapHeight = bitmapHeight,
-            paddingRatio = 0.1f
-        )
+        val withPadding =
+            DetectionGeometryMapper.sensorBboxToBitmapCrop(
+                sensorBboxNorm = bboxNorm,
+                bitmapWidth = bitmapWidth,
+                bitmapHeight = bitmapHeight,
+                paddingRatio = 0.1f,
+            )
 
         // With padding should be larger
         assertThat(withPadding.width()).isGreaterThan(withoutPadding.width())
@@ -223,12 +231,13 @@ class DetectionGeometryMapperTest {
         val bitmapWidth = 640
         val bitmapHeight = 480
 
-        val result = DetectionGeometryMapper.sensorBboxToBitmapCrop(
-            sensorBboxNorm = bboxNorm,
-            bitmapWidth = bitmapWidth,
-            bitmapHeight = bitmapHeight,
-            paddingRatio = 0f
-        )
+        val result =
+            DetectionGeometryMapper.sensorBboxToBitmapCrop(
+                sensorBboxNorm = bboxNorm,
+                bitmapWidth = bitmapWidth,
+                bitmapHeight = bitmapHeight,
+                paddingRatio = 0f,
+            )
 
         // Should be clamped to bitmap bounds
         assertThat(result.left).isEqualTo(0)
@@ -243,52 +252,56 @@ class DetectionGeometryMapperTest {
 
     @Test
     fun `GeometryContext isPortrait returns true for 90 rotation`() {
-        val context = DetectionGeometryMapper.GeometryContext(
-            sensorWidth = 1280,
-            sensorHeight = 720,
-            rotationDegrees = 90,
-            previewWidth = 1080f,
-            previewHeight = 1920f
-        )
+        val context =
+            DetectionGeometryMapper.GeometryContext(
+                sensorWidth = 1280,
+                sensorHeight = 720,
+                rotationDegrees = 90,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+            )
 
         assertThat(context.isPortrait).isTrue()
     }
 
     @Test
     fun `GeometryContext isPortrait returns true for 270 rotation`() {
-        val context = DetectionGeometryMapper.GeometryContext(
-            sensorWidth = 1280,
-            sensorHeight = 720,
-            rotationDegrees = 270,
-            previewWidth = 1080f,
-            previewHeight = 1920f
-        )
+        val context =
+            DetectionGeometryMapper.GeometryContext(
+                sensorWidth = 1280,
+                sensorHeight = 720,
+                rotationDegrees = 270,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+            )
 
         assertThat(context.isPortrait).isTrue()
     }
 
     @Test
     fun `GeometryContext isPortrait returns false for 0 rotation`() {
-        val context = DetectionGeometryMapper.GeometryContext(
-            sensorWidth = 1280,
-            sensorHeight = 720,
-            rotationDegrees = 0,
-            previewWidth = 1920f,
-            previewHeight = 1080f
-        )
+        val context =
+            DetectionGeometryMapper.GeometryContext(
+                sensorWidth = 1280,
+                sensorHeight = 720,
+                rotationDegrees = 0,
+                previewWidth = 1920f,
+                previewHeight = 1080f,
+            )
 
         assertThat(context.isPortrait).isFalse()
     }
 
     @Test
     fun `GeometryContext uprightWidth swaps for portrait`() {
-        val context = DetectionGeometryMapper.GeometryContext(
-            sensorWidth = 1280,
-            sensorHeight = 720,
-            rotationDegrees = 90,
-            previewWidth = 1080f,
-            previewHeight = 1920f
-        )
+        val context =
+            DetectionGeometryMapper.GeometryContext(
+                sensorWidth = 1280,
+                sensorHeight = 720,
+                rotationDegrees = 90,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+            )
 
         // For portrait (90°), upright dimensions should be swapped
         assertThat(context.uprightWidth).isEqualTo(720)
@@ -297,13 +310,14 @@ class DetectionGeometryMapperTest {
 
     @Test
     fun `GeometryContext uprightWidth unchanged for landscape`() {
-        val context = DetectionGeometryMapper.GeometryContext(
-            sensorWidth = 1280,
-            sensorHeight = 720,
-            rotationDegrees = 0,
-            previewWidth = 1920f,
-            previewHeight = 1080f
-        )
+        val context =
+            DetectionGeometryMapper.GeometryContext(
+                sensorWidth = 1280,
+                sensorHeight = 720,
+                rotationDegrees = 0,
+                previewWidth = 1920f,
+                previewHeight = 1080f,
+            )
 
         // For landscape (0°), upright dimensions match sensor
         assertThat(context.uprightWidth).isEqualTo(1280)
@@ -320,12 +334,13 @@ class DetectionGeometryMapperTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val result = DetectionGeometryMapper.validateMappedRect(
-            rect = rect,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            tolerance = 10f
-        )
+        val result =
+            DetectionGeometryMapper.validateMappedRect(
+                rect = rect,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                tolerance = 10f,
+            )
 
         assertThat(result).isTrue()
     }
@@ -336,12 +351,13 @@ class DetectionGeometryMapperTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val result = DetectionGeometryMapper.validateMappedRect(
-            rect = rect,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            tolerance = 10f
-        )
+        val result =
+            DetectionGeometryMapper.validateMappedRect(
+                rect = rect,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                tolerance = 10f,
+            )
 
         assertThat(result).isFalse()
     }
@@ -353,12 +369,13 @@ class DetectionGeometryMapperTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val result = DetectionGeometryMapper.validateMappedRect(
-            rect = rect,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            tolerance = 50f
-        )
+        val result =
+            DetectionGeometryMapper.validateMappedRect(
+                rect = rect,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                tolerance = 50f,
+            )
 
         assertThat(result).isTrue()
     }
@@ -369,12 +386,13 @@ class DetectionGeometryMapperTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val result = DetectionGeometryMapper.validateMappedRect(
-            rect = rect,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            tolerance = 50f
-        )
+        val result =
+            DetectionGeometryMapper.validateMappedRect(
+                rect = rect,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                tolerance = 50f,
+            )
 
         assertThat(result).isFalse()
     }

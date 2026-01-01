@@ -48,7 +48,6 @@ import kotlin.math.roundToInt
  * ```
  */
 object GeometryMapper {
-
     private const val TAG = "GeometryMapper"
 
     /**
@@ -69,9 +68,13 @@ object GeometryMapper {
      * @param uprightHeight Height of upright coordinate space (InputImage.height)
      * @return Normalized bbox in [0,1] range
      */
-    fun normalizeToUpright(bbox: Rect, uprightWidth: Int, uprightHeight: Int): NormalizedRect {
+    fun normalizeToUpright(
+        bbox: Rect,
+        uprightWidth: Int,
+        uprightHeight: Int,
+    ): NormalizedRect {
         if (uprightWidth <= 0 || uprightHeight <= 0) {
-            Log.w(TAG, "Invalid upright dimensions: ${uprightWidth}x${uprightHeight}")
+            Log.w(TAG, "Invalid upright dimensions: ${uprightWidth}x$uprightHeight")
             return NormalizedRect(0f, 0f, 0f, 0f)
         }
 
@@ -79,16 +82,20 @@ object GeometryMapper {
             left = bbox.left.toFloat() / uprightWidth,
             top = bbox.top.toFloat() / uprightHeight,
             right = bbox.right.toFloat() / uprightWidth,
-            bottom = bbox.bottom.toFloat() / uprightHeight
+            bottom = bbox.bottom.toFloat() / uprightHeight,
         ).clampToUnit()
     }
 
     /**
      * Normalizes a pixel bbox from upright space to [0,1] normalized space.
      */
-    fun normalizeToUpright(bbox: RectF, uprightWidth: Int, uprightHeight: Int): NormalizedRect {
+    fun normalizeToUpright(
+        bbox: RectF,
+        uprightWidth: Int,
+        uprightHeight: Int,
+    ): NormalizedRect {
         if (uprightWidth <= 0 || uprightHeight <= 0) {
-            Log.w(TAG, "Invalid upright dimensions: ${uprightWidth}x${uprightHeight}")
+            Log.w(TAG, "Invalid upright dimensions: ${uprightWidth}x$uprightHeight")
             return NormalizedRect(0f, 0f, 0f, 0f)
         }
 
@@ -96,20 +103,24 @@ object GeometryMapper {
             left = bbox.left / uprightWidth,
             top = bbox.top / uprightHeight,
             right = bbox.right / uprightWidth,
-            bottom = bbox.bottom / uprightHeight
+            bottom = bbox.bottom / uprightHeight,
         ).clampToUnit()
     }
 
     /**
      * Denormalizes a bbox to upright pixel coordinates.
      */
-    fun denormalizeToUpright(normalizedBbox: NormalizedRect, uprightWidth: Int, uprightHeight: Int): RectF {
+    fun denormalizeToUpright(
+        normalizedBbox: NormalizedRect,
+        uprightWidth: Int,
+        uprightHeight: Int,
+    ): RectF {
         val clamped = normalizedBbox.clampToUnit()
         return RectF(
             clamped.left * uprightWidth,
             clamped.top * uprightHeight,
             clamped.right * uprightWidth,
-            clamped.bottom * uprightHeight
+            clamped.bottom * uprightHeight,
         )
     }
 
@@ -133,7 +144,7 @@ object GeometryMapper {
         uprightBbox: Rect,
         uprightWidth: Int,
         uprightHeight: Int,
-        rotationDegrees: Int
+        rotationDegrees: Int,
     ): Rect {
         return when (rotationDegrees) {
             0 -> uprightBbox // No rotation needed
@@ -148,7 +159,7 @@ object GeometryMapper {
                     uprightBbox.top,
                     sensorHeight - uprightBbox.right,
                     uprightBbox.bottom,
-                    sensorHeight - uprightBbox.left
+                    sensorHeight - uprightBbox.left,
                 )
             }
 
@@ -158,7 +169,7 @@ object GeometryMapper {
                     uprightWidth - uprightBbox.right,
                     uprightHeight - uprightBbox.bottom,
                     uprightWidth - uprightBbox.left,
-                    uprightHeight - uprightBbox.top
+                    uprightHeight - uprightBbox.top,
                 )
             }
 
@@ -170,7 +181,7 @@ object GeometryMapper {
                     sensorWidth - uprightBbox.bottom,
                     uprightBbox.left,
                     sensorWidth - uprightBbox.top,
-                    uprightBbox.right
+                    uprightBbox.right,
                 )
             }
 
@@ -189,7 +200,7 @@ object GeometryMapper {
         sensorBbox: Rect,
         sensorWidth: Int,
         sensorHeight: Int,
-        rotationDegrees: Int
+        rotationDegrees: Int,
     ): Rect {
         return when (rotationDegrees) {
             0 -> sensorBbox
@@ -202,7 +213,7 @@ object GeometryMapper {
                     uprightWidth - sensorBbox.bottom,
                     sensorBbox.left,
                     uprightWidth - sensorBbox.top,
-                    sensorBbox.right
+                    sensorBbox.right,
                 )
             }
 
@@ -211,7 +222,7 @@ object GeometryMapper {
                     sensorWidth - sensorBbox.right,
                     sensorHeight - sensorBbox.bottom,
                     sensorWidth - sensorBbox.left,
-                    sensorHeight - sensorBbox.top
+                    sensorHeight - sensorBbox.top,
                 )
             }
 
@@ -222,7 +233,7 @@ object GeometryMapper {
                     sensorBbox.top,
                     uprightHeight - sensorBbox.right,
                     sensorBbox.bottom,
-                    uprightHeight - sensorBbox.left
+                    uprightHeight - sensorBbox.left,
                 )
             }
 
@@ -253,7 +264,7 @@ object GeometryMapper {
         normalizedBbox: NormalizedRect,
         bitmapWidth: Int,
         bitmapHeight: Int,
-        padding: Float = 0f
+        padding: Float = 0f,
     ): Rect {
         val clamped = normalizedBbox.clampToUnit()
 
@@ -274,7 +285,7 @@ object GeometryMapper {
             (left - padX).coerceAtLeast(0),
             (top - padY).coerceAtLeast(0),
             (right + padX).coerceAtMost(bitmapWidth),
-            (bottom + padY).coerceAtMost(bitmapHeight)
+            (bottom + padY).coerceAtMost(bitmapHeight),
         )
     }
 
@@ -294,25 +305,27 @@ object GeometryMapper {
         normalizedBbox: NormalizedRect,
         sensorBitmap: Bitmap,
         rotationDegrees: Int,
-        padding: Float = 0f
+        padding: Float = 0f,
     ): Rect {
         val sensorWidth = sensorBitmap.width
         val sensorHeight = sensorBitmap.height
 
         // Determine upright dimensions based on rotation
-        val (uprightWidth, uprightHeight) = when (rotationDegrees) {
-            90, 270 -> Pair(sensorHeight, sensorWidth)
-            else -> Pair(sensorWidth, sensorHeight)
-        }
+        val (uprightWidth, uprightHeight) =
+            when (rotationDegrees) {
+                90, 270 -> Pair(sensorHeight, sensorWidth)
+                else -> Pair(sensorWidth, sensorHeight)
+            }
 
         // Denormalize to upright pixel coordinates
         val clamped = normalizedBbox.clampToUnit()
-        val uprightRect = Rect(
-            (clamped.left * uprightWidth).roundToInt(),
-            (clamped.top * uprightHeight).roundToInt(),
-            (clamped.right * uprightWidth).roundToInt(),
-            (clamped.bottom * uprightHeight).roundToInt()
-        )
+        val uprightRect =
+            Rect(
+                (clamped.left * uprightWidth).roundToInt(),
+                (clamped.top * uprightHeight).roundToInt(),
+                (clamped.right * uprightWidth).roundToInt(),
+                (clamped.bottom * uprightHeight).roundToInt(),
+            )
 
         // Apply padding in upright space
         val width = uprightRect.width()
@@ -320,12 +333,13 @@ object GeometryMapper {
         val padX = (width * padding).roundToInt()
         val padY = (height * padding).roundToInt()
 
-        val paddedUpright = Rect(
-            (uprightRect.left - padX).coerceAtLeast(0),
-            (uprightRect.top - padY).coerceAtLeast(0),
-            (uprightRect.right + padX).coerceAtMost(uprightWidth),
-            (uprightRect.bottom + padY).coerceAtMost(uprightHeight)
-        )
+        val paddedUpright =
+            Rect(
+                (uprightRect.left - padX).coerceAtLeast(0),
+                (uprightRect.top - padY).coerceAtLeast(0),
+                (uprightRect.right + padX).coerceAtMost(uprightWidth),
+                (uprightRect.bottom + padY).coerceAtMost(uprightHeight),
+            )
 
         // Convert to sensor coordinates
         return uprightToSensor(paddedUpright, uprightWidth, uprightHeight, rotationDegrees)
@@ -346,16 +360,17 @@ object GeometryMapper {
         sensorBitmap: Bitmap,
         normalizedBbox: NormalizedRect,
         rotationDegrees: Int,
-        padding: Float = 0f
+        padding: Float = 0f,
     ): Bitmap? {
         return try {
             // Get sensor-space crop rect
-            val cropRect = uprightToSensorBitmapCrop(
-                normalizedBbox = normalizedBbox,
-                sensorBitmap = sensorBitmap,
-                rotationDegrees = rotationDegrees,
-                padding = padding
-            )
+            val cropRect =
+                uprightToSensorBitmapCrop(
+                    normalizedBbox = normalizedBbox,
+                    sensorBitmap = sensorBitmap,
+                    rotationDegrees = rotationDegrees,
+                    padding = padding,
+                )
 
             // Validate crop rect
             if (cropRect.width() <= 0 || cropRect.height() <= 0) {
@@ -364,26 +379,33 @@ object GeometryMapper {
             }
 
             // Crop from sensor bitmap
-            val cropped = Bitmap.createBitmap(
-                sensorBitmap,
-                cropRect.left.coerceIn(0, sensorBitmap.width - 1),
-                cropRect.top.coerceIn(0, sensorBitmap.height - 1),
-                cropRect.width().coerceAtMost(sensorBitmap.width - cropRect.left),
-                cropRect.height().coerceAtMost(sensorBitmap.height - cropRect.top)
-            )
+            val cropped =
+                Bitmap.createBitmap(
+                    sensorBitmap,
+                    cropRect.left.coerceIn(0, sensorBitmap.width - 1),
+                    cropRect.top.coerceIn(0, sensorBitmap.height - 1),
+                    cropRect.width().coerceAtMost(sensorBitmap.width - cropRect.left),
+                    cropRect.height().coerceAtMost(sensorBitmap.height - cropRect.top),
+                )
 
             // Rotate to upright orientation
             if (rotationDegrees == 0) {
                 cropped
             } else {
-                val matrix = Matrix().apply {
-                    postRotate(rotationDegrees.toFloat())
-                }
-                val rotated = Bitmap.createBitmap(
-                    cropped, 0, 0,
-                    cropped.width, cropped.height,
-                    matrix, true
-                )
+                val matrix =
+                    Matrix().apply {
+                        postRotate(rotationDegrees.toFloat())
+                    }
+                val rotated =
+                    Bitmap.createBitmap(
+                        cropped,
+                        0,
+                        0,
+                        cropped.width,
+                        cropped.height,
+                        matrix,
+                        true,
+                    )
                 if (rotated != cropped) {
                     cropped.recycle()
                 }
@@ -417,7 +439,11 @@ object GeometryMapper {
     /**
      * Validates that two aspect ratios are within tolerance.
      */
-    fun validateAspectRatio(bboxAR: Float, cropAR: Float, tolerance: Float = ASPECT_RATIO_TOLERANCE): Boolean {
+    fun validateAspectRatio(
+        bboxAR: Float,
+        cropAR: Float,
+        tolerance: Float = ASPECT_RATIO_TOLERANCE,
+    ): Boolean {
         val diff = abs(bboxAR - cropAR)
         val maxAR = maxOf(bboxAR, cropAR, 0.001f)
         return diff / maxAR <= tolerance
@@ -441,14 +467,14 @@ object GeometryMapper {
         val uprightWidth: Int,
         val uprightHeight: Int,
         val bitmapWidth: Int,
-        val bitmapHeight: Int
+        val bitmapHeight: Int,
     ) {
         fun toLogString(): String {
             return buildString {
                 append("[CORR] ")
                 append("rot=$rotationDegrees, ")
-                append("upright=${uprightWidth}x${uprightHeight}, ")
-                append("bitmap=${bitmapWidth}x${bitmapHeight}, ")
+                append("upright=${uprightWidth}x$uprightHeight, ")
+                append("bitmap=${bitmapWidth}x$bitmapHeight, ")
                 append("bboxAR=${"%.3f".format(bboxAspectRatio)}, ")
                 append("cropAR=${"%.3f".format(cropAspectRatio)}, ")
                 append("match=$aspectRatioMatch")
@@ -466,7 +492,7 @@ object GeometryMapper {
         uprightHeight: Int,
         bitmapWidth: Int,
         bitmapHeight: Int,
-        padding: Float = 0f
+        padding: Float = 0f,
     ): CorrelationDebugInfo {
         val uprightBboxPx = denormalizeToUpright(normalizedBbox, uprightWidth, uprightHeight)
         val cropRectPx = uprightToBitmapCrop(normalizedBbox, bitmapWidth, bitmapHeight, padding)
@@ -486,7 +512,7 @@ object GeometryMapper {
             uprightWidth = uprightWidth,
             uprightHeight = uprightHeight,
             bitmapWidth = bitmapWidth,
-            bitmapHeight = bitmapHeight
+            bitmapHeight = bitmapHeight,
         )
     }
 }

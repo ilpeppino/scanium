@@ -2,11 +2,10 @@ package com.scanium.core.models.scanning
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class RoiCoordinateMapperTest {
-
     // =========================================================================
     // toPreviewPixels tests
     // =========================================================================
@@ -94,12 +93,14 @@ class RoiCoordinateMapperTest {
     fun `toAnalyzerPixels adjusts for wider analyzer aspect ratio`() {
         val roi = ScanRoi.centered(0.5f)
         // Analyzer is 16:9, preview is 3:4 (wider analyzer than preview)
-        val result = RoiCoordinateMapper.toAnalyzerPixels(
-            roi = roi,
-            analyzerWidth = 1920,
-            analyzerHeight = 1080,
-            previewAspectRatio = 0.75f // 3:4 portrait
-        )
+        val result =
+            RoiCoordinateMapper.toAnalyzerPixels(
+                roi = roi,
+                analyzerWidth = 1920,
+                analyzerHeight = 1080,
+                previewAspectRatio = 0.75f,
+// 3:4 portrait
+            )
 
         // With wider analyzer, horizontal cropping applies
         // Visible width = 1080 * 0.75 = 810
@@ -112,12 +113,14 @@ class RoiCoordinateMapperTest {
     fun `toAnalyzerPixels adjusts for taller analyzer aspect ratio`() {
         val roi = ScanRoi.centered(0.5f)
         // Analyzer is 3:4, preview is 16:9 (taller analyzer than preview)
-        val result = RoiCoordinateMapper.toAnalyzerPixels(
-            roi = roi,
-            analyzerWidth = 1080,
-            analyzerHeight = 1440,
-            previewAspectRatio = 16f/9f // 16:9 landscape
-        )
+        val result =
+            RoiCoordinateMapper.toAnalyzerPixels(
+                roi = roi,
+                analyzerWidth = 1080,
+                analyzerHeight = 1440,
+                previewAspectRatio = 16f / 9f,
+// 16:9 landscape
+            )
 
         // With taller analyzer, vertical cropping applies
         assertTrue(result.top > 0)
@@ -130,15 +133,16 @@ class RoiCoordinateMapperTest {
 
     @Test
     fun `detectionToNormalized converts pixel box to normalized`() {
-        val result = RoiCoordinateMapper.detectionToNormalized(
-            boxLeft = 100,
-            boxTop = 100,
-            boxRight = 300,
-            boxBottom = 300,
-            analyzerWidth = 1000,
-            analyzerHeight = 1000,
-            previewAspectRatio = null
-        )
+        val result =
+            RoiCoordinateMapper.detectionToNormalized(
+                boxLeft = 100,
+                boxTop = 100,
+                boxRight = 300,
+                boxBottom = 300,
+                analyzerWidth = 1000,
+                analyzerHeight = 1000,
+                previewAspectRatio = null,
+            )
 
         assertEquals(0.1f, result.left, 0.01f)
         assertEquals(0.1f, result.top, 0.01f)
@@ -150,15 +154,16 @@ class RoiCoordinateMapperTest {
 
     @Test
     fun `detectionToNormalized handles zero dimensions`() {
-        val result = RoiCoordinateMapper.detectionToNormalized(
-            boxLeft = 100,
-            boxTop = 100,
-            boxRight = 300,
-            boxBottom = 300,
-            analyzerWidth = 0,
-            analyzerHeight = 0,
-            previewAspectRatio = null
-        )
+        val result =
+            RoiCoordinateMapper.detectionToNormalized(
+                boxLeft = 100,
+                boxTop = 100,
+                boxRight = 300,
+                boxBottom = 300,
+                analyzerWidth = 0,
+                analyzerHeight = 0,
+                previewAspectRatio = null,
+            )
 
         assertEquals(0f, result.left)
         assertEquals(0f, result.top)
@@ -168,15 +173,16 @@ class RoiCoordinateMapperTest {
 
     @Test
     fun `detectionToNormalized clamps values to 0-1 range`() {
-        val result = RoiCoordinateMapper.detectionToNormalized(
-            boxLeft = -100,
-            boxTop = -100,
-            boxRight = 1200,
-            boxBottom = 1200,
-            analyzerWidth = 1000,
-            analyzerHeight = 1000,
-            previewAspectRatio = 1.0f
-        )
+        val result =
+            RoiCoordinateMapper.detectionToNormalized(
+                boxLeft = -100,
+                boxTop = -100,
+                boxRight = 1200,
+                boxBottom = 1200,
+                analyzerWidth = 1000,
+                analyzerHeight = 1000,
+                previewAspectRatio = 1.0f,
+            )
 
         // With aspect ratio adjustment and clamping
         assertTrue(result.left >= 0f)
@@ -192,13 +198,14 @@ class RoiCoordinateMapperTest {
     @Test
     fun `isDetectionInsideRoi returns true for centered detection`() {
         val roi = ScanRoi.DEFAULT
-        val result = RoiCoordinateMapper.isDetectionInsideRoi(
-            detectionCenterX = 500,
-            detectionCenterY = 500,
-            roi = roi,
-            analyzerWidth = 1000,
-            analyzerHeight = 1000
-        )
+        val result =
+            RoiCoordinateMapper.isDetectionInsideRoi(
+                detectionCenterX = 500,
+                detectionCenterY = 500,
+                roi = roi,
+                analyzerWidth = 1000,
+                analyzerHeight = 1000,
+            )
 
         assertTrue(result)
     }
@@ -206,13 +213,14 @@ class RoiCoordinateMapperTest {
     @Test
     fun `isDetectionInsideRoi returns false for corner detection`() {
         val roi = ScanRoi.centered(0.5f) // 50% size centered
-        val result = RoiCoordinateMapper.isDetectionInsideRoi(
-            detectionCenterX = 50,
-            detectionCenterY = 50,
-            roi = roi,
-            analyzerWidth = 1000,
-            analyzerHeight = 1000
-        )
+        val result =
+            RoiCoordinateMapper.isDetectionInsideRoi(
+                detectionCenterX = 50,
+                detectionCenterY = 50,
+                roi = roi,
+                analyzerWidth = 1000,
+                analyzerHeight = 1000,
+            )
 
         assertFalse(result)
     }
@@ -220,13 +228,14 @@ class RoiCoordinateMapperTest {
     @Test
     fun `isDetectionInsideRoi returns false for zero dimensions`() {
         val roi = ScanRoi.DEFAULT
-        val result = RoiCoordinateMapper.isDetectionInsideRoi(
-            detectionCenterX = 500,
-            detectionCenterY = 500,
-            roi = roi,
-            analyzerWidth = 0,
-            analyzerHeight = 0
-        )
+        val result =
+            RoiCoordinateMapper.isDetectionInsideRoi(
+                detectionCenterX = 500,
+                detectionCenterY = 500,
+                roi = roi,
+                analyzerWidth = 0,
+                analyzerHeight = 0,
+            )
 
         assertFalse(result)
     }
@@ -238,13 +247,14 @@ class RoiCoordinateMapperTest {
     @Test
     fun `calculateCenterScore returns 1 for perfectly centered detection`() {
         val roi = ScanRoi.DEFAULT
-        val result = RoiCoordinateMapper.calculateCenterScore(
-            detectionCenterX = 500,
-            detectionCenterY = 500,
-            roi = roi,
-            analyzerWidth = 1000,
-            analyzerHeight = 1000
-        )
+        val result =
+            RoiCoordinateMapper.calculateCenterScore(
+                detectionCenterX = 500,
+                detectionCenterY = 500,
+                roi = roi,
+                analyzerWidth = 1000,
+                analyzerHeight = 1000,
+            )
 
         assertEquals(1f, result, 0.01f)
     }
@@ -252,13 +262,14 @@ class RoiCoordinateMapperTest {
     @Test
     fun `calculateCenterScore returns lower score for off-center detection`() {
         val roi = ScanRoi.DEFAULT
-        val result = RoiCoordinateMapper.calculateCenterScore(
-            detectionCenterX = 200,
-            detectionCenterY = 200,
-            roi = roi,
-            analyzerWidth = 1000,
-            analyzerHeight = 1000
-        )
+        val result =
+            RoiCoordinateMapper.calculateCenterScore(
+                detectionCenterX = 200,
+                detectionCenterY = 200,
+                roi = roi,
+                analyzerWidth = 1000,
+                analyzerHeight = 1000,
+            )
 
         assertTrue(result < 0.8f)
         assertTrue(result >= 0f)
@@ -267,13 +278,14 @@ class RoiCoordinateMapperTest {
     @Test
     fun `calculateCenterScore returns 0 for zero dimensions`() {
         val roi = ScanRoi.DEFAULT
-        val result = RoiCoordinateMapper.calculateCenterScore(
-            detectionCenterX = 500,
-            detectionCenterY = 500,
-            roi = roi,
-            analyzerWidth = 0,
-            analyzerHeight = 0
-        )
+        val result =
+            RoiCoordinateMapper.calculateCenterScore(
+                detectionCenterX = 500,
+                detectionCenterY = 500,
+                roi = roi,
+                analyzerWidth = 0,
+                analyzerHeight = 0,
+            )
 
         assertEquals(0f, result)
     }
@@ -284,12 +296,13 @@ class RoiCoordinateMapperTest {
 
     @Test
     fun `calculateVisibleViewport returns full frame when aspects match`() {
-        val result = RoiCoordinateMapper.calculateVisibleViewport(
-            analyzerWidth = 1920,
-            analyzerHeight = 1080,
-            previewWidth = 1920,
-            previewHeight = 1080
-        )
+        val result =
+            RoiCoordinateMapper.calculateVisibleViewport(
+                analyzerWidth = 1920,
+                analyzerHeight = 1080,
+                previewWidth = 1920,
+                previewHeight = 1080,
+            )
 
         assertEquals(0, result.left)
         assertEquals(0, result.top)
@@ -300,12 +313,13 @@ class RoiCoordinateMapperTest {
     @Test
     fun `calculateVisibleViewport crops horizontally for wider analyzer`() {
         // Analyzer 16:9, Preview 4:3
-        val result = RoiCoordinateMapper.calculateVisibleViewport(
-            analyzerWidth = 1920,
-            analyzerHeight = 1080,
-            previewWidth = 400,
-            previewHeight = 300
-        )
+        val result =
+            RoiCoordinateMapper.calculateVisibleViewport(
+                analyzerWidth = 1920,
+                analyzerHeight = 1080,
+                previewWidth = 400,
+                previewHeight = 300,
+            )
 
         // Preview aspect = 4/3 ≈ 1.33
         // Analyzer aspect = 16/9 ≈ 1.78
@@ -319,12 +333,13 @@ class RoiCoordinateMapperTest {
     @Test
     fun `calculateVisibleViewport crops vertically for taller analyzer`() {
         // Analyzer 3:4, Preview 16:9
-        val result = RoiCoordinateMapper.calculateVisibleViewport(
-            analyzerWidth = 1080,
-            analyzerHeight = 1440,
-            previewWidth = 1920,
-            previewHeight = 1080
-        )
+        val result =
+            RoiCoordinateMapper.calculateVisibleViewport(
+                analyzerWidth = 1080,
+                analyzerHeight = 1440,
+                previewWidth = 1920,
+                previewHeight = 1080,
+            )
 
         // Preview aspect = 16/9 ≈ 1.78
         // Analyzer aspect = 3/4 = 0.75
@@ -337,12 +352,13 @@ class RoiCoordinateMapperTest {
 
     @Test
     fun `calculateVisibleViewport handles zero preview dimensions`() {
-        val result = RoiCoordinateMapper.calculateVisibleViewport(
-            analyzerWidth = 1920,
-            analyzerHeight = 1080,
-            previewWidth = 0,
-            previewHeight = 0
-        )
+        val result =
+            RoiCoordinateMapper.calculateVisibleViewport(
+                analyzerWidth = 1920,
+                analyzerHeight = 1080,
+                previewWidth = 0,
+                previewHeight = 0,
+            )
 
         // Should return full analyzer frame as fallback
         assertEquals(0, result.left)

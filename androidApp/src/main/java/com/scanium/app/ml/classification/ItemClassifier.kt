@@ -27,5 +27,5 @@ object NoopClassifier : ItemClassifier {
 data class ClassificationInput(
     val aggregatedId: String,
     val bitmap: Bitmap,
-    val boundingBox: NormalizedRect? = null
+    val boundingBox: NormalizedRect? = null,
 )

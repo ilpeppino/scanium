@@ -9,8 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
@@ -32,7 +30,7 @@ import kotlinx.coroutines.launch
 class ListingStatusManager(
     private val scope: CoroutineScope,
     private val itemsStore: ScannedItemStore,
-    private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     companion object {
         private const val TAG = "ListingStatusManager"
@@ -68,21 +66,22 @@ class ListingStatusManager(
         itemId: String,
         status: ItemListingStatus,
         listingId: String? = null,
-        listingUrl: String? = null
+        listingUrl: String? = null,
     ): List<ScannedItem> {
         Log.i(TAG, "Updating listing status for item $itemId: $status")
 
-        val updatedItems = _items.value.map { item ->
-            if (item.id == itemId) {
-                item.copy(
-                    listingStatus = status,
-                    listingId = listingId,
-                    listingUrl = listingUrl
-                )
-            } else {
-                item
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        listingStatus = status,
+                        listingId = listingId,
+                        listingUrl = listingUrl,
+                    )
+                } else {
+                    item
+                }
             }
-        }
 
         _items.value = updatedItems
         persistItems(updatedItems)
@@ -138,13 +137,13 @@ class ListingStatusManager(
     fun markListingSuccess(
         itemId: String,
         listingId: String,
-        listingUrl: String? = null
+        listingUrl: String? = null,
     ): List<ScannedItem> {
         return updateListingStatus(
             itemId = itemId,
             status = ItemListingStatus.LISTED_ACTIVE,
             listingId = listingId,
-            listingUrl = listingUrl
+            listingUrl = listingUrl,
         )
     }
 

@@ -17,7 +17,7 @@ import kotlinx.serialization.json.Json
 data class DiagnosticsBundle(
     val generatedAt: String,
     val context: Map<String, String>,
-    val events: List<TelemetryEvent>
+    val events: List<TelemetryEvent>,
 )
 
 /**
@@ -75,10 +75,11 @@ data class DiagnosticsBundle(
  * ```
  */
 class DiagnosticsBundleBuilder {
-    private val json = Json {
-        prettyPrint = false
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            prettyPrint = false
+            encodeDefaults = true
+        }
 
     /**
      * Builds a diagnostics bundle as a JSON string.
@@ -89,13 +90,14 @@ class DiagnosticsBundleBuilder {
      */
     fun buildJsonString(
         context: Map<String, String>,
-        events: List<TelemetryEvent>
+        events: List<TelemetryEvent>,
     ): String {
-        val bundle = DiagnosticsBundle(
-            generatedAt = Clock.System.now().toString(),
-            context = context,
-            events = events
-        )
+        val bundle =
+            DiagnosticsBundle(
+                generatedAt = Clock.System.now().toString(),
+                context = context,
+                events = events,
+            )
 
         return json.encodeToString(bundle)
     }
@@ -109,7 +111,7 @@ class DiagnosticsBundleBuilder {
      */
     fun buildJsonBytes(
         context: Map<String, String>,
-        events: List<TelemetryEvent>
+        events: List<TelemetryEvent>,
     ): ByteArray {
         return buildJsonString(context, events).encodeToByteArray()
     }
@@ -127,13 +129,14 @@ class DiagnosticsBundleBuilder {
     fun buildJsonStringCapped(
         context: Map<String, String>,
         events: List<TelemetryEvent>,
-        maxEvents: Int = 100
+        maxEvents: Int = 100,
     ): String {
-        val cappedEvents = if (events.size > maxEvents) {
-            events.takeLast(maxEvents)
-        } else {
-            events
-        }
+        val cappedEvents =
+            if (events.size > maxEvents) {
+                events.takeLast(maxEvents)
+            } else {
+                events
+            }
 
         return buildJsonString(context, cappedEvents)
     }

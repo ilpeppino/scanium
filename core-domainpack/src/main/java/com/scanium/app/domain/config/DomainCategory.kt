@@ -46,5 +46,5 @@ data class DomainCategory(
     val itemCategoryName: String,
     val prompts: List<String>,
     val priority: Int? = null,
-    val enabled: Boolean
+    val enabled: Boolean,
 )

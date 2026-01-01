@@ -1,10 +1,10 @@
 package com.scanium.app.telemetry
 
 import android.util.Log
+import com.scanium.app.telemetry.otlp.*
 import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.ports.SpanContext
 import com.scanium.telemetry.ports.TracePort
-import com.scanium.app.telemetry.otlp.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,9 +42,8 @@ import kotlin.random.Random
  */
 class AndroidTracePortOtlp(
     private val telemetryConfig: TelemetryConfig,
-    private val otlpConfig: OtlpConfiguration
+    private val otlpConfig: OtlpConfiguration,
 ) : TracePort {
-
     private val tag = "AndroidTracePortOtlp"
     private val exporter = OtlpHttpExporter(otlpConfig, telemetryConfig)
     private val buffer = ArrayDeque<Span>()
@@ -66,7 +65,10 @@ class AndroidTracePortOtlp(
         }
     }
 
-    override fun beginSpan(name: String, attributes: Map<String, String>): SpanContext {
+    override fun beginSpan(
+        name: String,
+        attributes: Map<String, String>,
+    ): SpanContext {
         if (!otlpConfig.enabled) {
             return NoOpSpanContext
         }
@@ -87,7 +89,7 @@ class AndroidTracePortOtlp(
             name = name,
             startTimeNano = startTimeNano,
             attributes = attributes.toMutableMap(),
-            onEnd = { span -> onSpanEnd(span) }
+            onEnd = { span -> onSpanEnd(span) },
         )
     }
 
@@ -121,33 +123,38 @@ class AndroidTracePortOtlp(
      * Must be called within lock or from synchronized context.
      */
     private fun flush() {
-        val spans = lock.withLock {
-            val batch = mutableListOf<Span>()
-            while (batch.size < telemetryConfig.maxBatchSize && buffer.isNotEmpty()) {
-                batch.add(buffer.removeFirst())
+        val spans =
+            lock.withLock {
+                val batch = mutableListOf<Span>()
+                while (batch.size < telemetryConfig.maxBatchSize && buffer.isNotEmpty()) {
+                    batch.add(buffer.removeFirst())
+                }
+                batch
             }
-            batch
-        }
 
         if (spans.isEmpty()) return
 
         // Build OTLP request
-        val request = ExportTraceServiceRequest(
-            resourceSpans = listOf(
-                ResourceSpans(
-                    resource = exporter.buildResource(),
-                    scopeSpans = listOf(
-                        ScopeSpans(
-                            scope = InstrumentationScope(
-                                name = "com.scanium.telemetry",
-                                version = "1.0.0"
-                            ),
-                            spans = spans
-                        )
-                    )
-                )
+        val request =
+            ExportTraceServiceRequest(
+                resourceSpans =
+                    listOf(
+                        ResourceSpans(
+                            resource = exporter.buildResource(),
+                            scopeSpans =
+                                listOf(
+                                    ScopeSpans(
+                                        scope =
+                                            InstrumentationScope(
+                                                name = "com.scanium.telemetry",
+                                                version = "1.0.0",
+                                            ),
+                                        spans = spans,
+                                    ),
+                                ),
+                        ),
+                    ),
             )
-        )
 
         // Export (async, with retry and backoff)
         exporter.exportTraces(request)
@@ -180,9 +187,8 @@ class AndroidTracePortOtlp(
         private val name: String,
         private val startTimeNano: Long,
         private val attributes: MutableMap<String, String>,
-        private val onEnd: (Span) -> Unit
+        private val onEnd: (Span) -> Unit,
     ) : SpanContext {
-
         @Volatile
         private var ended = false
         private var errorMessage: String? = null
@@ -195,40 +201,49 @@ class AndroidTracePortOtlp(
 
             val endTimeNano = System.currentTimeMillis() * 1_000_000
 
-            val status = if (errorMessage != null) {
-                SpanStatus(
-                    code = SpanStatus.STATUS_CODE_ERROR,
-                    message = errorMessage!!
-                )
-            } else {
-                SpanStatus(
-                    code = SpanStatus.STATUS_CODE_OK
-                )
-            }
+            val status =
+                if (errorMessage != null) {
+                    SpanStatus(
+                        code = SpanStatus.STATUS_CODE_ERROR,
+                        message = errorMessage!!,
+                    )
+                } else {
+                    SpanStatus(
+                        code = SpanStatus.STATUS_CODE_OK,
+                    )
+                }
 
-            val span = Span(
-                traceId = traceId,
-                spanId = spanId,
-                name = name,
-                kind = Span.SPAN_KIND_INTERNAL,
-                startTimeUnixNano = startTimeNano.toString(),
-                endTimeUnixNano = endTimeNano.toString(),
-                attributes = attributes.map { (k, v) ->
-                    KeyValue(k, AnyValue.string(v))
-                },
-                status = status
-            )
+            val span =
+                Span(
+                    traceId = traceId,
+                    spanId = spanId,
+                    name = name,
+                    kind = Span.SPAN_KIND_INTERNAL,
+                    startTimeUnixNano = startTimeNano.toString(),
+                    endTimeUnixNano = endTimeNano.toString(),
+                    attributes =
+                        attributes.map { (k, v) ->
+                            KeyValue(k, AnyValue.string(v))
+                        },
+                    status = status,
+                )
 
             onEnd(span)
         }
 
-        override fun setAttribute(key: String, value: String) {
+        override fun setAttribute(
+            key: String,
+            value: String,
+        ) {
             if (!ended) {
                 attributes[key] = value
             }
         }
 
-        override fun recordError(error: String, attributes: Map<String, String>) {
+        override fun recordError(
+            error: String,
+            attributes: Map<String, String>,
+        ) {
             if (!ended) {
                 this.errorMessage = error
                 this.attributes.putAll(attributes)
@@ -238,7 +253,15 @@ class AndroidTracePortOtlp(
 
     private object NoOpSpanContext : SpanContext {
         override fun end(additionalAttributes: Map<String, String>) {}
-        override fun setAttribute(key: String, value: String) {}
-        override fun recordError(error: String, attributes: Map<String, String>) {}
+
+        override fun setAttribute(
+            key: String,
+            value: String,
+        ) {}
+
+        override fun recordError(
+            error: String,
+            attributes: Map<String, String>,
+        ) {}
     }
 }

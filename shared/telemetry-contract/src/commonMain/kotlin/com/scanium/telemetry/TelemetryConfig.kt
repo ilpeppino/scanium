@@ -51,7 +51,7 @@ data class TelemetryConfig(
     val dropPolicy: DropPolicy = DropPolicy.DROP_OLDEST,
     val maxRetries: Int = 3,
     val retryBackoffMs: Long = 1000,
-    val dataRegion: String = "US"
+    val dataRegion: String = "US",
 ) {
     init {
         require(traceSampleRate in 0.0..1.0) {
@@ -86,7 +86,7 @@ data class TelemetryConfig(
         DROP_OLDEST,
 
         /** Drop newest events when queue is full (preserves historical context) */
-        DROP_NEWEST
+        DROP_NEWEST,
     }
 
     companion object {
@@ -101,15 +101,16 @@ data class TelemetryConfig(
          * - 10% trace sampling
          * - Larger queue for debugging
          */
-        fun development() = TelemetryConfig(
-            enabled = true,
-            minSeverity = TelemetrySeverity.DEBUG,
-            traceSampleRate = 0.1,
-            maxQueueSize = 1000,
-            flushIntervalMs = 5000,
-            maxBatchSize = 100,
-            dataRegion = "US"
-        )
+        fun development() =
+            TelemetryConfig(
+                enabled = true,
+                minSeverity = TelemetrySeverity.DEBUG,
+                traceSampleRate = 0.1,
+                maxQueueSize = 1000,
+                flushIntervalMs = 5000,
+                maxBatchSize = 100,
+                dataRegion = "US",
+            )
 
         /**
          * Default configuration for production.
@@ -117,15 +118,16 @@ data class TelemetryConfig(
          * - 1% trace sampling (reduce overhead)
          * - Smaller queue to conserve memory
          */
-        fun production() = TelemetryConfig(
-            enabled = true,
-            minSeverity = TelemetrySeverity.INFO,
-            traceSampleRate = 0.01,
-            maxQueueSize = 500,
-            flushIntervalMs = 10000,
-            maxBatchSize = 100,
-            dataRegion = "US"
-        )
+        fun production() =
+            TelemetryConfig(
+                enabled = true,
+                minSeverity = TelemetrySeverity.INFO,
+                traceSampleRate = 0.01,
+                maxQueueSize = 500,
+                flushIntervalMs = 10000,
+                maxBatchSize = 100,
+                dataRegion = "US",
+            )
 
         /**
          * Default configuration for staging/testing.
@@ -133,14 +135,15 @@ data class TelemetryConfig(
          * - 5% trace sampling (balance between coverage and overhead)
          * - Medium queue size
          */
-        fun staging() = TelemetryConfig(
-            enabled = true,
-            minSeverity = TelemetrySeverity.INFO,
-            traceSampleRate = 0.05,
-            maxQueueSize = 750,
-            flushIntervalMs = 7500,
-            maxBatchSize = 100,
-            dataRegion = "US"
-        )
+        fun staging() =
+            TelemetryConfig(
+                enabled = true,
+                minSeverity = TelemetrySeverity.INFO,
+                traceSampleRate = 0.05,
+                maxQueueSize = 750,
+                flushIntervalMs = 7500,
+                maxBatchSize = 100,
+                dataRegion = "US",
+            )
     }
 }

@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class NormalizedRectTest {
-
     @Test
     fun widthHeightArea_forNormalizedRect() {
         val rect = NormalizedRect(left = 0.1f, top = 0.2f, right = 0.5f, bottom = 0.7f)

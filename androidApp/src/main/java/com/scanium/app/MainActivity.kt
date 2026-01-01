@@ -8,8 +8,8 @@ import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
@@ -20,9 +20,9 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
+import com.scanium.app.domain.DomainPackProvider
 import com.scanium.app.ui.theme.ScaniumTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -43,7 +43,6 @@ import javax.inject.Inject
  */
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
@@ -59,25 +58,31 @@ class MainActivity : ComponentActivity() {
             val fadeOutDuration = 100L
 
             // First: quick alpha pulse (flash effect)
-            val flashAnimator = ObjectAnimator.ofFloat(
-                splashScreenView.iconView,
-                View.ALPHA,
-                1f, 1.2f, 1f  // Subtle brightness pulse
-            ).apply {
-                duration = flashDuration
-                interpolator = AccelerateInterpolator()
-            }
+            val flashAnimator =
+                ObjectAnimator.ofFloat(
+                    splashScreenView.iconView,
+                    View.ALPHA,
+                    1f,
+                    1.2f,
+                    1f,
+// Subtle brightness pulse
+                ).apply {
+                    duration = flashDuration
+                    interpolator = AccelerateInterpolator()
+                }
 
             // Then: fade out the entire splash
-            val fadeOutAnimator = ObjectAnimator.ofFloat(
-                splashScreenView.view,
-                View.ALPHA,
-                1f, 0f
-            ).apply {
-                duration = fadeOutDuration
-                interpolator = AccelerateInterpolator()
-                doOnEnd { splashScreenView.remove() }
-            }
+            val fadeOutAnimator =
+                ObjectAnimator.ofFloat(
+                    splashScreenView.view,
+                    View.ALPHA,
+                    1f,
+                    0f,
+                ).apply {
+                    duration = fadeOutDuration
+                    interpolator = AccelerateInterpolator()
+                    doOnEnd { splashScreenView.remove() }
+                }
 
             // Chain animations: flash then fade
             flashAnimator.doOnEnd { fadeOutAnimator.start() }
@@ -112,16 +117,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val themeMode by settingsRepository.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
-            val useDarkTheme = when (themeMode) {
-                ThemeMode.SYSTEM -> isSystemInDarkTheme()
-                ThemeMode.LIGHT -> false
-                ThemeMode.DARK -> true
-            }
+            val useDarkTheme =
+                when (themeMode) {
+                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.DARK -> true
+                }
 
             ScaniumTheme(darkTheme = useDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     ScaniumApp()
                 }

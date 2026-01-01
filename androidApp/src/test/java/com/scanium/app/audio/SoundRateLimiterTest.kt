@@ -7,10 +7,11 @@ class SoundRateLimiterTest {
     @Test
     fun whenWithinMinInterval_thenBlocksPlayback() {
         var now = 0L
-        val limiter = SoundRateLimiter(
-            minIntervalsMs = mapOf(AppSound.ITEM_ADDED to 800L),
-            clock = { now }
-        )
+        val limiter =
+            SoundRateLimiter(
+                minIntervalsMs = mapOf(AppSound.ITEM_ADDED to 800L),
+                clock = { now },
+            )
 
         assertThat(limiter.canPlay(AppSound.ITEM_ADDED)).isTrue()
 

@@ -72,7 +72,10 @@ interface CrashPort {
      * @param key The tag key (e.g., "platform", "app_version")
      * @param value The tag value (e.g., "android", "1.0.0")
      */
-    fun setTag(key: String, value: String)
+    fun setTag(
+        key: String,
+        value: String,
+    )
 
     /**
      * Adds a breadcrumb that will be attached to crash reports.
@@ -89,7 +92,10 @@ interface CrashPort {
      * @param message A concise description of the event (e.g., "User started scan", "ML classification completed")
      * @param attributes Additional key-value context for the breadcrumb
      */
-    fun addBreadcrumb(message: String, attributes: Map<String, String> = emptyMap())
+    fun addBreadcrumb(
+        message: String,
+        attributes: Map<String, String> = emptyMap(),
+    )
 
     /**
      * Captures and reports an exception with optional context.
@@ -105,5 +111,8 @@ interface CrashPort {
      * @param throwable The exception to report
      * @param attributes Additional key-value context for the error report
      */
-    fun captureException(throwable: Throwable, attributes: Map<String, String> = emptyMap())
+    fun captureException(
+        throwable: Throwable,
+        attributes: Map<String, String> = emptyMap(),
+    )
 }

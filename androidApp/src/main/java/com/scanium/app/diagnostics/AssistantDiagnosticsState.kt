@@ -29,34 +29,36 @@ data class AssistantDiagnosticsState(
     /** Whether a check is in progress */
     val isChecking: Boolean = false,
     /** Last check timestamp */
-    val lastChecked: Long = 0L
+    val lastChecked: Long = 0L,
 ) {
     /**
      * Overall readiness status for the assistant.
      */
     val overallReadiness: AssistantReadiness
-        get() = when {
-            isChecking -> AssistantReadiness.CHECKING
-            prerequisiteState.allSatisfied &&
-                isNetworkConnected &&
-                backendReachable == BackendReachabilityStatus.REACHABLE -> AssistantReadiness.READY
-            !isNetworkConnected -> AssistantReadiness.NO_NETWORK
-            backendReachable == BackendReachabilityStatus.UNREACHABLE -> AssistantReadiness.BACKEND_UNREACHABLE
-            !prerequisiteState.allSatisfied -> AssistantReadiness.PREREQUISITES_NOT_MET
-            else -> AssistantReadiness.UNKNOWN
-        }
+        get() =
+            when {
+                isChecking -> AssistantReadiness.CHECKING
+                prerequisiteState.allSatisfied &&
+                    isNetworkConnected &&
+                    backendReachable == BackendReachabilityStatus.REACHABLE -> AssistantReadiness.READY
+                !isNetworkConnected -> AssistantReadiness.NO_NETWORK
+                backendReachable == BackendReachabilityStatus.UNREACHABLE -> AssistantReadiness.BACKEND_UNREACHABLE
+                !prerequisiteState.allSatisfied -> AssistantReadiness.PREREQUISITES_NOT_MET
+                else -> AssistantReadiness.UNKNOWN
+            }
 
     /**
      * Voice capability readiness.
      */
     val voiceReadiness: VoiceReadiness
-        get() = when {
-            !hasMicrophonePermission -> VoiceReadiness.NO_MIC_PERMISSION
-            !isSpeechRecognitionAvailable -> VoiceReadiness.STT_UNAVAILABLE
-            !isTextToSpeechAvailable -> VoiceReadiness.TTS_UNAVAILABLE
-            !isTtsReady -> VoiceReadiness.TTS_NOT_READY
-            else -> VoiceReadiness.READY
-        }
+        get() =
+            when {
+                !hasMicrophonePermission -> VoiceReadiness.NO_MIC_PERMISSION
+                !isSpeechRecognitionAvailable -> VoiceReadiness.STT_UNAVAILABLE
+                !isTextToSpeechAvailable -> VoiceReadiness.TTS_UNAVAILABLE
+                !isTtsReady -> VoiceReadiness.TTS_NOT_READY
+                else -> VoiceReadiness.READY
+            }
 }
 
 /**
@@ -67,7 +69,7 @@ enum class BackendReachabilityStatus {
     CHECKING,
     REACHABLE,
     UNREACHABLE,
-    DEGRADED
+    DEGRADED,
 }
 
 /**
@@ -79,7 +81,7 @@ enum class AssistantReadiness {
     READY,
     NO_NETWORK,
     BACKEND_UNREACHABLE,
-    PREREQUISITES_NOT_MET
+    PREREQUISITES_NOT_MET,
 }
 
 /**
@@ -90,5 +92,5 @@ enum class VoiceReadiness {
     NO_MIC_PERMISSION,
     STT_UNAVAILABLE,
     TTS_UNAVAILABLE,
-    TTS_NOT_READY
+    TTS_NOT_READY,
 }

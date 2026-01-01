@@ -8,15 +8,16 @@ import org.junit.Test
  * Unit tests for DomainPack data class and JSON serialization.
  */
 class DomainPackTest {
-
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
 
     @Test
     fun `DomainPack serialization and deserialization works correctly`() {
-        val jsonString = """
+        val jsonString =
+            """
             {
               "id": "test_pack",
               "name": "Test Pack",
@@ -43,7 +44,7 @@ class DomainPackTest {
                 }
               ]
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val pack = json.decodeFromString<DomainPack>(jsonString)
 
@@ -57,17 +58,19 @@ class DomainPackTest {
 
     @Test
     fun `getEnabledCategories returns only enabled categories`() {
-        val pack = DomainPack(
-            id = "test",
-            name = "Test",
-            version = "1.0.0",
-            categories = listOf(
-                createCategory(id = "cat1", enabled = true),
-                createCategory(id = "cat2", enabled = false),
-                createCategory(id = "cat3", enabled = true)
-            ),
-            attributes = emptyList()
-        )
+        val pack =
+            DomainPack(
+                id = "test",
+                name = "Test",
+                version = "1.0.0",
+                categories =
+                    listOf(
+                        createCategory(id = "cat1", enabled = true),
+                        createCategory(id = "cat2", enabled = false),
+                        createCategory(id = "cat3", enabled = true),
+                    ),
+                attributes = emptyList(),
+            )
 
         val enabled = pack.getEnabledCategories()
 
@@ -77,16 +80,18 @@ class DomainPackTest {
 
     @Test
     fun `getCategoryById finds category by ID`() {
-        val pack = DomainPack(
-            id = "test",
-            name = "Test",
-            version = "1.0.0",
-            categories = listOf(
-                createCategory(id = "cat1"),
-                createCategory(id = "cat2")
-            ),
-            attributes = emptyList()
-        )
+        val pack =
+            DomainPack(
+                id = "test",
+                name = "Test",
+                version = "1.0.0",
+                categories =
+                    listOf(
+                        createCategory(id = "cat1"),
+                        createCategory(id = "cat2"),
+                    ),
+                attributes = emptyList(),
+            )
 
         val category = pack.getCategoryById("cat2")
 
@@ -96,13 +101,14 @@ class DomainPackTest {
 
     @Test
     fun `getCategoryById returns null for non-existent ID`() {
-        val pack = DomainPack(
-            id = "test",
-            name = "Test",
-            version = "1.0.0",
-            categories = listOf(createCategory(id = "cat1")),
-            attributes = emptyList()
-        )
+        val pack =
+            DomainPack(
+                id = "test",
+                name = "Test",
+                version = "1.0.0",
+                categories = listOf(createCategory(id = "cat1")),
+                attributes = emptyList(),
+            )
 
         val category = pack.getCategoryById("non_existent")
 
@@ -111,18 +117,20 @@ class DomainPackTest {
 
     @Test
     fun `getCategoriesForItemCategory filters by itemCategoryName`() {
-        val pack = DomainPack(
-            id = "test",
-            name = "Test",
-            version = "1.0.0",
-            categories = listOf(
-                createCategory(id = "cat1", itemCategoryName = "ELECTRONICS", enabled = true),
-                createCategory(id = "cat2", itemCategoryName = "HOME_GOOD", enabled = true),
-                createCategory(id = "cat3", itemCategoryName = "ELECTRONICS", enabled = true),
-                createCategory(id = "cat4", itemCategoryName = "ELECTRONICS", enabled = false)
-            ),
-            attributes = emptyList()
-        )
+        val pack =
+            DomainPack(
+                id = "test",
+                name = "Test",
+                version = "1.0.0",
+                categories =
+                    listOf(
+                        createCategory(id = "cat1", itemCategoryName = "ELECTRONICS", enabled = true),
+                        createCategory(id = "cat2", itemCategoryName = "HOME_GOOD", enabled = true),
+                        createCategory(id = "cat3", itemCategoryName = "ELECTRONICS", enabled = true),
+                        createCategory(id = "cat4", itemCategoryName = "ELECTRONICS", enabled = false),
+                    ),
+                attributes = emptyList(),
+            )
 
         val electronics = pack.getCategoriesForItemCategory("ELECTRONICS")
 
@@ -132,17 +140,19 @@ class DomainPackTest {
 
     @Test
     fun `getAttributesForCategory returns applicable attributes`() {
-        val pack = DomainPack(
-            id = "test",
-            name = "Test",
-            version = "1.0.0",
-            categories = listOf(createCategory(id = "cat1")),
-            attributes = listOf(
-                createAttribute(name = "attr1", appliesToCategoryIds = listOf("cat1", "cat2")),
-                createAttribute(name = "attr2", appliesToCategoryIds = listOf("cat2")),
-                createAttribute(name = "attr3", appliesToCategoryIds = listOf("cat1"))
+        val pack =
+            DomainPack(
+                id = "test",
+                name = "Test",
+                version = "1.0.0",
+                categories = listOf(createCategory(id = "cat1")),
+                attributes =
+                    listOf(
+                        createAttribute(name = "attr1", appliesToCategoryIds = listOf("cat1", "cat2")),
+                        createAttribute(name = "attr2", appliesToCategoryIds = listOf("cat2")),
+                        createAttribute(name = "attr3", appliesToCategoryIds = listOf("cat1")),
+                    ),
             )
-        )
 
         val attributes = pack.getAttributesForCategory("cat1")
 
@@ -152,19 +162,22 @@ class DomainPackTest {
 
     @Test
     fun `getCategoriesByPriority sorts by priority descending`() {
-        val pack = DomainPack(
-            id = "test",
-            name = "Test",
-            version = "1.0.0",
-            categories = listOf(
-                createCategory(id = "cat1", priority = 5, enabled = true),
-                createCategory(id = "cat2", priority = 15, enabled = true),
-                createCategory(id = "cat3", priority = 10, enabled = true),
-                createCategory(id = "cat4", priority = null, enabled = true),
-                createCategory(id = "cat5", priority = 20, enabled = false) // disabled, should be excluded
-            ),
-            attributes = emptyList()
-        )
+        val pack =
+            DomainPack(
+                id = "test",
+                name = "Test",
+                version = "1.0.0",
+                categories =
+                    listOf(
+                        createCategory(id = "cat1", priority = 5, enabled = true),
+                        createCategory(id = "cat2", priority = 15, enabled = true),
+                        createCategory(id = "cat3", priority = 10, enabled = true),
+                        createCategory(id = "cat4", priority = null, enabled = true),
+                        createCategory(id = "cat5", priority = 20, enabled = false),
+// disabled, should be excluded
+                    ),
+                attributes = emptyList(),
+            )
 
         val sorted = pack.getCategoriesByPriority()
 
@@ -181,7 +194,7 @@ class DomainPackTest {
         itemCategoryName: String = "UNKNOWN",
         prompts: List<String> = listOf("test prompt"),
         priority: Int? = 10,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ) = DomainCategory(
         id = id,
         displayName = displayName,
@@ -189,7 +202,7 @@ class DomainPackTest {
         itemCategoryName = itemCategoryName,
         prompts = prompts,
         priority = priority,
-        enabled = enabled
+        enabled = enabled,
     )
 
     private fun createAttribute(
@@ -197,12 +210,12 @@ class DomainPackTest {
         type: AttributeType = AttributeType.STRING,
         extractionMethod: ExtractionMethod = ExtractionMethod.OCR,
         appliesToCategoryIds: List<String> = emptyList(),
-        required: Boolean = false
+        required: Boolean = false,
     ) = DomainAttribute(
         name = name,
         type = type,
         extractionMethod = extractionMethod,
         appliesToCategoryIds = appliesToCategoryIds,
-        required = required
+        required = required,
     )
 }
