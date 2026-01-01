@@ -6,26 +6,58 @@
 ***REMOVED*** Cloud Classification API Configuration
 ***REMOVED*** =============================================================================
 
-***REMOVED*** Backend API base URL (required for cloud classification)
+***REMOVED*** Backend API base URL (used by release builds, fallback for debug if debug URL not set)
 ***REMOVED*** Examples:
-***REMOVED***   Production: https://api.scanium.example.com/v1
-***REMOVED***   Staging:    https://staging-api.scanium.example.com/v1
-***REMOVED***   Local dev:  http://localhost:8080/api/v1
-scanium.api.base.url=
+***REMOVED***   Cloudflare:  https://scanium.gtemp1.com
+***REMOVED***   Production:  https://api.scanium.example.com
+***REMOVED***   Local dev:   http://localhost:3000
+scanium.api.base.url=https://scanium.gtemp1.com
+
+***REMOVED*** Debug-specific backend URL (takes precedence for debug builds)
+***REMOVED*** Set this to use a different backend for development/testing
+***REMOVED*** Examples:
+***REMOVED***   Cloudflare (same as prod): https://scanium.gtemp1.com
+***REMOVED***   LAN direct:                http://192.168.1.100:3000
+scanium.api.base.url.debug=https://scanium.gtemp1.com
 
 ***REMOVED*** API authentication key (required for cloud classification)
-***REMOVED*** Obtain from your backend team or developer portal
-***REMOVED*** Format: alphanumeric string, typically 32-64 characters
-scanium.api.key=
+***REMOVED*** Obtain from your backend configuration
+***REMOVED*** Can be comma-separated for multiple keys
+scanium.api.key=your-api-key-here
 
-***REMOVED*** Optional: enable DEBUG-only crop capture for troubleshooting classification
-***REMOVED*** Set to true to save each outgoing crop under app cache (/data/data/.../cache/classifier_crops)
+***REMOVED*** =============================================================================
+***REMOVED*** Optional: Debug Settings
+***REMOVED*** =============================================================================
+
+***REMOVED*** Enable DEBUG-only crop capture for troubleshooting classification
+***REMOVED*** Set to true to save each outgoing crop under app cache
 scanium.classifier.save_crops.debug=false
+
+***REMOVED*** =============================================================================
+***REMOVED*** Optional: Certificate Pinning (HTTPS only)
+***REMOVED*** =============================================================================
+
+***REMOVED*** SHA-256 pin for TLS certificate pinning (MITM protection)
+***REMOVED*** Generate with:
+***REMOVED***   openssl s_client -servername HOST -connect HOST:443 | \
+***REMOVED***     openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | \
+***REMOVED***     openssl dgst -sha256 -binary | openssl enc -base64
+***REMOVED*** scanium.api.certificate.pin=sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+***REMOVED*** =============================================================================
+***REMOVED*** Optional: Telemetry & Observability
+***REMOVED*** =============================================================================
+
+***REMOVED*** Sentry DSN for crash reporting
+***REMOVED*** scanium.sentry.dsn=https://xxx@xxx.ingest.sentry.io/xxx
+
+***REMOVED*** OpenTelemetry Protocol endpoint
+***REMOVED*** scanium.otlp.endpoint=http://localhost:4318
+***REMOVED*** scanium.otlp.enabled=false
 
 ***REMOVED*** =============================================================================
 ***REMOVED*** SDK Location (standard Android property)
 ***REMOVED*** =============================================================================
 
-***REMOVED*** Android SDK path
-***REMOVED*** Auto-detected by Android Studio, uncomment if needed:
+***REMOVED*** Android SDK path (auto-detected by Android Studio)
 ***REMOVED*** sdk.dir=/Users/yourname/Library/Android/sdk
