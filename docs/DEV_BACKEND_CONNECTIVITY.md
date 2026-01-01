@@ -234,6 +234,166 @@ adb logcat | grep -i scanium
 adb shell ping -c 3 scanium-api.your-domain.com
 ```
 
+## Diagnostics Status States
+
+The Developer Options → Assistant / AI Diagnostics section shows detailed backend status that distinguishes between different failure modes.
+
+### Status Classifications
+
+| Status | Color | Meaning | Action Required |
+|--------|-------|---------|-----------------|
+| **Assistant Ready** | 🟢 Green | Backend healthy, all prerequisites met | None |
+| **Backend Unreachable** | 🔴 Red | Network error (DNS, timeout, SSL, connection refused) | Check network, firewall, DNS, tunnel status |
+| **Backend Reachable — Invalid API Key** | 🟠 Orange | HTTP 401/403 - Backend IS reachable, but auth failed | Check/update API key |
+| **Backend Reachable — Server Error** | 🟠 Orange | HTTP 5xx - Backend IS reachable, but server having issues | Check backend logs, container health |
+| **Backend Reachable — Endpoint Not Found** | 🟠 Orange | HTTP 404 - Wrong URL or endpoint not deployed | Verify base URL and backend version |
+| **Backend Not Configured** | ⚪ Gray | No URL or API key configured | Configure in `local.properties` |
+| **No Network Connection** | 🔴 Red | Device not connected to internet | Enable WiFi/cellular |
+
+### Debug Details
+
+When there's an error, the diagnostics display shows:
+- The HTTP method and endpoint tested (e.g., `GET /health`)
+- The HTTP status code if available (e.g., `-> 401`)
+
+Example debug strings:
+- `GET /health -> 200` - Success
+- `GET /health -> 401` - Unauthorized
+- `GET /health -> 502` - Cloudflare/proxy error
+- `GET /health` (no status) - Network error before HTTP response
+
+### Endpoints Used by Scanium
+
+| Feature | Endpoint | Method | Auth Required |
+|---------|----------|--------|---------------|
+| Health check | `/health` | GET | Optional (API key improves diagnostics) |
+| Cloud classification | `/v1/classify` | POST | Yes |
+| AI Assistant | `/v1/assist/chat` | POST | Yes |
+
+### Common Diagnostic Scenarios
+
+#### ✅ Health 200, but Assistant shows "Invalid API Key"
+
+**Symptoms:**
+- Backend card shows "Healthy OK (200)"
+- Banner shows "Backend Reachable — Invalid API Key"
+- Debug: `GET /health -> 401`
+
+**Cause:** The `/health` endpoint accepts requests without authentication, but the app sends the API key for better diagnostics. If the key is invalid or missing, you get 401.
+
+**Fix:**
+1. Check API key is set in `local.properties`:
+   ```bash
+   grep scanium.api.key local.properties
+   ```
+2. Verify key is valid with curl:
+   ```bash
+   curl -H "X-API-Key: YOUR_KEY" https://scanium.gtemp1.com/health
+   ```
+3. Regenerate key if needed and update `local.properties`
+
+#### ✅ Health 200, but classifier returns 404
+
+**Symptoms:**
+- Health check works
+- Classification fails with 404
+
+**Cause:** Base URL points to wrong server or backend version missing `/v1/classify` endpoint.
+
+**Fix:**
+1. Verify base URL:
+   ```bash
+   grep scanium.api.base.url local.properties
+   ```
+2. Test classify endpoint:
+   ```bash
+   curl -X POST -H "X-API-Key: KEY" https://scanium.gtemp1.com/v1/classify
+   # Should return 400 (missing image) not 404
+   ```
+3. Check backend version supports classification
+
+#### ✅ Health returns 502/530 (Cloudflare errors)
+
+**Symptoms:**
+- Banner shows "Backend Reachable — Server Error"
+- Debug: `GET /health -> 502` or `-> 530`
+
+**Cause:** Cloudflare Tunnel is working but backend container is down or not responding.
+
+**Fix:**
+1. Check backend container:
+   ```bash
+   docker logs scanium-backend
+   docker ps | grep scanium
+   ```
+2. Check cloudflared tunnel:
+   ```bash
+   docker logs scanium-cloudflared
+   ```
+3. Restart if needed:
+   ```bash
+   docker compose restart scanium-backend
+   ```
+
+#### ✅ Complete network failure
+
+**Symptoms:**
+- Banner shows "Backend Unreachable"
+- Debug shows endpoint but no status code
+
+**Cause:** DNS failure, SSL error, connection refused, or timeout.
+
+**Fix:**
+1. Test from device:
+   ```bash
+   adb shell curl -v https://scanium.gtemp1.com/health
+   ```
+2. Check DNS resolution:
+   ```bash
+   adb shell nslookup scanium.gtemp1.com
+   ```
+3. Check SSL certificate:
+   ```bash
+   openssl s_client -connect scanium.gtemp1.com:443 -servername scanium.gtemp1.com
+   ```
+
+## Quick Verification Commands
+
+### From development machine
+
+```bash
+# Health check (no auth)
+curl -s https://scanium.gtemp1.com/health
+
+# Health check with API key
+curl -s -H "X-API-Key: YOUR_KEY" https://scanium.gtemp1.com/health
+
+# Test classify endpoint
+curl -s -X POST -H "X-API-Key: YOUR_KEY" \
+     -H "Content-Type: multipart/form-data" \
+     -F "image=@test.jpg" \
+     https://scanium.gtemp1.com/v1/classify
+
+# Check backend container logs
+docker logs scanium-backend --tail 50
+
+# Check cloudflared tunnel logs
+docker logs scanium-cloudflared --tail 50
+```
+
+### From Android device
+
+```bash
+# Test from device via adb
+adb shell curl -s https://scanium.gtemp1.com/health
+
+# View app networking logs
+adb logcat | grep -E "(DiagnosticsRepo|CloudClassifier|AssistantRepo|OkHttp)"
+
+# View full app logs
+adb logcat -s ScaniumApplication DiagnosticsRepository CloudClassifier AssistantRepository
+```
+
 ## Troubleshooting
 
 ### Build fails with "Backend URL not configured"
