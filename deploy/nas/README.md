@@ -308,6 +308,12 @@ sudo docker ps --format "table {{.Names}}\t{{.Status}}"
 Access Grafana at `http://YOUR_NAS_IP:3000`
 - Login with credentials from `monitoring.env`
 
+> **Important: Grafana Credential Persistence**
+> Grafana stores admin credentials in its SQLite database (`/var/lib/grafana/grafana.db`) on first startup. After initialization:
+> - Changing `GF_SECURITY_ADMIN_PASSWORD` in `monitoring.env` will NOT update the password
+> - To reset password: delete `${NAS_DATA_PATH}/monitoring/grafana/grafana.db` and restart Grafana
+> - Deleting the database also removes any manually created dashboards or users
+
 ---
 
 ***REMOVED******REMOVED*** Step 4: Deploy Backend Stack
@@ -680,6 +686,31 @@ free -h
 - Disable services not needed (e.g., Tempo if not using traces)
 - Add more RAM to NAS
 
+***REMOVED******REMOVED******REMOVED*** Grafana Login Invalid (Wrong Password)
+
+**Symptom:** "Invalid username or password" even with correct `monitoring.env` values
+
+**Cause:** Grafana persists credentials in its SQLite database after first startup. Changing env vars doesn't update stored credentials.
+
+```bash
+***REMOVED*** Check what user Grafana has stored
+sudo docker exec scanium-grafana sqlite3 /var/lib/grafana/grafana.db "SELECT login FROM user WHERE is_admin=1;"
+```
+
+**Solutions:**
+1. **Reset password via CLI (preserves data):**
+   ```bash
+   sudo docker exec scanium-grafana grafana-cli admin reset-admin-password YOUR_NEW_PASSWORD
+   sudo docker restart scanium-grafana
+   ```
+
+2. **Nuclear option (loses manual changes):**
+   ```bash
+   sudo docker compose -f docker-compose.nas.monitoring.yml down
+   sudo rm -f ${NAS_DATA_PATH}/monitoring/grafana/grafana.db
+   sudo docker compose -f docker-compose.nas.monitoring.yml --env-file monitoring.env up -d
+   ```
+
 ***REMOVED******REMOVED******REMOVED*** Grafana Can't Connect to Datasources
 
 **Symptom:** "Bad Gateway" errors in Grafana
@@ -696,6 +727,36 @@ sudo docker exec scanium-grafana wget -qO- http://loki:3100/ready
 - Ensure all monitoring services are on `scanium-observability` network
 - Wait for services to become healthy (can take 1-2 minutes)
 - Check datasource URLs use container names, not localhost
+
+***REMOVED******REMOVED******REMOVED*** Containers Healthy But No Data in Grafana
+
+**Symptom:** All containers show "healthy" but Grafana dashboards are empty
+
+**Troubleshooting steps:**
+
+1. **Check time range in Grafana:** Default is "Last 6 hours". Select "Last 5 minutes" if you just started sending data.
+
+2. **Verify OTLP ingestion:**
+   ```bash
+   ***REMOVED*** Check if Alloy is receiving data
+   curl -s http://localhost:12345/metrics | grep otelcol_receiver_accepted
+   ***REMOVED*** Should show non-zero values
+   ```
+
+3. **Check exporter health:**
+   ```bash
+   curl -s http://localhost:12345/metrics | grep otelcol_exporter_send_failed
+   ***REMOVED*** Should be 0
+   ```
+
+4. **Test from app device:**
+   ```bash
+   ***REMOVED*** From device network, test OTLP endpoint
+   curl -X POST http://NAS_IP:4318/v1/logs \
+     -H "Content-Type: application/json" \
+     -d '{"resourceLogs":[]}'
+   ***REMOVED*** Should return empty 200 response
+   ```
 
 ***REMOVED******REMOVED******REMOVED*** Container Health Check Failing
 
