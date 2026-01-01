@@ -72,9 +72,15 @@ android {
         // Cloud classification API configuration
         // Base URL read from local.properties (dev) or environment variables (CI/production)
         // API keys are provisioned at runtime and stored in the Android Keystore.
-        // Required key in local.properties:
-        //   scanium.api.base.url=https://your-backend.com/api/v1
+        //
+        // For dual-mode configuration (LAN + Remote):
+        //   scanium.api.base.url=https://your-public-backend.com  ***REMOVED*** Remote/production URL
+        //   scanium.api.base.url.debug=http://192.168.1.100:3000  ***REMOVED*** LAN URL for debug builds
+        //
+        // Debug builds will use .debug URL if set, otherwise fall back to main URL
+        // Release builds always use the main URL (scanium.api.base.url)
         val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val apiBaseUrlDebug = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", apiBaseUrl)
         val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
         // SEC-002: Sentry DSN Security Consideration
         // The DSN is intentionally embedded in the APK as this is Sentry's designed behavior.
@@ -107,7 +113,8 @@ android {
         //   openssl s_client -servername <host> -connect <host>:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
         val certificatePin = localPropertyOrEnv("scanium.api.certificate.pin", "SCANIUM_API_CERTIFICATE_PIN", "")
 
-        buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
+        // Note: SCANIUM_API_BASE_URL and CLOUD_CLASSIFIER_URL are set per-buildType (debug/release)
+        // to support different URLs for LAN (debug) vs Remote (release) modes
         buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
         buildConfigField("String", "SCANIUM_API_CERTIFICATE_PIN", "\"$certificatePin\"")
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"") // SEC-002: Semi-public by design
@@ -115,8 +122,7 @@ android {
         buildConfigField("boolean", "OTLP_ENABLED", otlpEnabled)
         buildConfigField("String", "TELEMETRY_DATA_REGION", "\"$telemetryDataRegion\"")
 
-        // Legacy fields for backward compatibility (deprecated)
-        buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")
+        // Legacy field for backward compatibility (deprecated)
         buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"$apiKey\"")
 
         // ARCH-001: Use Hilt test runner for instrumented tests
@@ -159,6 +165,13 @@ android {
 
     buildTypes {
         debug {
+            // Debug builds use LAN base URL if configured, otherwise fall back to remote URL
+            val debugUrl = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", "")
+            val effectiveDebugUrl = debugUrl.ifEmpty {
+                localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+            }
+            buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$effectiveDebugUrl\"")
+            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$effectiveDebugUrl/classify\"")
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", saveClassifierCropsDebug.toString())
         }
         release {
@@ -169,6 +182,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Release builds always use the main (remote) base URL
+            val releaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+            buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$releaseUrl\"")
+            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$releaseUrl/classify\"")
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
 
             // Only sign if we have a valid configuration
