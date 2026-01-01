@@ -82,10 +82,62 @@ run_sanity_check() {
 # Run sanity check before starting test-fix loop
 run_sanity_check
 
+build_and_deploy_apk() {
+  echo ""
+  echo "╔════════════════════════════════════════╗"
+  echo "║   Building and Deploying APK           ║"
+  echo "╚════════════════════════════════════════╝"
+
+  # Build dev debug APK
+  echo "Building devDebug APK..."
+  if ! ./gradlew :androidApp:assembleDevDebug --console=plain; then
+    echo "⚠️  Warning: APK build failed. Skipping deployment."
+    return 1
+  fi
+
+  # Find the built APK
+  local apk_dir="$ROOT/androidApp/build/outputs/apk/dev/debug"
+  local apk_file=$(find "$apk_dir" -name "*.apk" -type f | head -1)
+
+  if [ -z "$apk_file" ] || [ ! -f "$apk_file" ]; then
+    echo "⚠️  Warning: APK file not found in $apk_dir"
+    return 1
+  fi
+
+  echo "✓ APK built: $apk_file"
+
+  # Check if device is connected
+  if ! adb devices | grep -q "device$"; then
+    echo "⚠️  Warning: No Android device connected. APK will not be copied to device."
+    echo "   APK location: $apk_file"
+    return 0
+  fi
+
+  # Copy APK to device storage
+  local device_path="/sdcard/Download/scanium-dev-debug.apk"
+  echo "Copying APK to device storage: $device_path"
+
+  if adb push "$apk_file" "$device_path"; then
+    echo "✓ APK copied to device successfully"
+    echo "  Device path: $device_path"
+    echo "  You can install it from the device's Downloads folder"
+  else
+    echo "⚠️  Warning: Failed to copy APK to device"
+    echo "  You can manually install from: $apk_file"
+    return 1
+  fi
+
+  return 0
+}
+
 for ((attempt=1; attempt<=MAX_ATTEMPTS; attempt++)); do
   printf "\n=== Attempt %s of %s (using %s) ===\n" "$attempt" "$MAX_ATTEMPTS" "$AI_NAME"
   if "$ROOT/scripts/dev/run_tests.sh" "${TASKS[@]}"; then
     echo "✅ Tests passed on attempt $attempt."
+
+    # Build and deploy APK after successful tests
+    build_and_deploy_apk
+
     exit 0
   fi
 
