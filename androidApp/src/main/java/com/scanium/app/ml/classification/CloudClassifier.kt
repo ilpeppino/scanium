@@ -44,7 +44,7 @@ import kotlin.math.min
  * - No location or device information sent
  *
  * ***REMOVED******REMOVED*** API Contract
- * - Endpoint: POST {SCANIUM_API_BASE_URL}/classify
+ * - Endpoint: POST {SCANIUM_API_BASE_URL}/v1/classify
  * - Request: multipart/form-data
  *   - `image`: JPEG file (cropped item)
  *   - `domainPackId`: string (default: "home_resale")

@@ -149,6 +149,45 @@ cloudflared tunnel run scanium-backend
 
 **Note:** Debug builds allow HTTP (cleartext) for LAN development. Release builds require HTTPS.
 
+***REMOVED******REMOVED*** Runtime URL Resolution (Debug Builds)
+
+In debug builds, the base URL is resolved in this order:
+
+1. **DevConfigOverride** (if explicitly set and not stale) - Stored in DataStore
+2. **BuildConfig.SCANIUM_API_BASE_URL** - From `local.properties` at build time
+
+***REMOVED******REMOVED******REMOVED*** Override Behavior
+
+- **Stale overrides** are automatically cleared on app startup (after 30 days or app version change)
+- **Release builds** ignore all overrides and always use BuildConfig
+- **Developer Options** shows whether an override is active and provides a reset button
+
+***REMOVED******REMOVED******REMOVED*** Viewing Override Status
+
+In Developer Options → App Configuration:
+- `Base URL` - Shows the current effective URL
+- `Base URL (OVERRIDE)` - Shown when override is active (red text indicates potential issue)
+- `BuildConfig URL` - Shows the original BuildConfig value when overridden
+
+***REMOVED******REMOVED******REMOVED*** Clearing Overrides via ADB
+
+```bash
+***REMOVED*** View override (debug builds)
+adb shell "run-as com.scanium.app.dev cat /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
+
+***REMOVED*** Clear override
+adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
+
+***REMOVED*** Force app restart
+adb shell am force-stop com.scanium.app.dev
+```
+
+***REMOVED******REMOVED******REMOVED*** Reset via Developer Options
+
+1. Open Settings → Developer Options
+2. Find "App Configuration" section
+3. If "Base URL (OVERRIDE)" is shown, click "Reset to BuildConfig default"
+
 ***REMOVED******REMOVED*** Build Validation
 
 The build system validates backend configuration:
@@ -244,6 +283,28 @@ Gradle may cache configuration. Try:
 ./gradlew --stop
 ./gradlew :androidApp:assembleDevDebug
 ```
+
+***REMOVED******REMOVED******REMOVED*** Developer Options shows wrong/old URL
+
+This can happen if a runtime override was set previously (e.g., old ngrok URL):
+
+1. **Check if override is active**: Look for "Base URL (OVERRIDE)" in Developer Options
+
+2. **Reset via UI**: Click "Reset to BuildConfig default" button
+
+3. **Reset via ADB**:
+   ```bash
+   ***REMOVED*** Clear override DataStore
+   adb shell "run-as com.scanium.app.dev rm -rf /data/data/com.scanium.app.dev/files/datastore/dev_config_override.preferences_pb"
+   ***REMOVED*** Force restart
+   adb shell am force-stop com.scanium.app.dev
+   ```
+
+4. **Full reinstall** (if still issues):
+   ```bash
+   adb uninstall com.scanium.app.dev
+   ./gradlew :androidApp:installDevDebug
+   ```
 
 ***REMOVED******REMOVED*** Security Notes
 

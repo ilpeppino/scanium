@@ -287,6 +287,19 @@ class DeveloperOptionsViewModel
             }
         }
 
+        /**
+         * Reset base URL override to use BuildConfig default.
+         */
+        fun resetBaseUrlOverride() {
+            viewModelScope.launch {
+                val context = getApplication<Application>()
+                val devOverride = com.scanium.app.config.DevConfigOverride(context)
+                devOverride.clearBaseUrlOverride()
+                // Refresh diagnostics to update the displayed URL
+                diagnosticsRepository.refreshAll()
+            }
+        }
+
         fun setShowFtueDebugBounds(enabled: Boolean) {
             viewModelScope.launch {
                 settingsRepository.setDevShowFtueBounds(enabled)
