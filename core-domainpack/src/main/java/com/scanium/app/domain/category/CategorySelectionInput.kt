@@ -38,5 +38,5 @@ data class CategorySelectionInput(
     val mlKitLabel: String? = null,
     val mlKitConfidence: Float? = null,
     val clipCandidateLabel: String? = null,
-    val clipSimilarity: Float? = null
+    val clipSimilarity: Float? = null,
 )

@@ -1,6 +1,5 @@
 package com.scanium.core.tracking
 
-import com.scanium.core.models.scanning.GuidanceState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
  * - Logs (debug only)
  */
 class ScanConfidenceMetrics {
-
     // ==================== Frame Metrics ====================
 
     private var totalFramesAnalyzed: Long = 0
@@ -28,15 +26,21 @@ class ScanConfidenceMetrics {
 
     /** Percentage of frames with at least one preview bbox (0-100) */
     val previewBboxPercentage: Float
-        get() = if (totalFramesAnalyzed > 0) {
-            (framesWithPreviewBbox.toFloat() / totalFramesAnalyzed) * 100f
-        } else 0f
+        get() =
+            if (totalFramesAnalyzed > 0) {
+                (framesWithPreviewBbox.toFloat() / totalFramesAnalyzed) * 100f
+            } else {
+                0f
+            }
 
     /** Percentage of frames that reached LOCKED state (0-100) */
     val lockPercentage: Float
-        get() = if (totalFramesAnalyzed > 0) {
-            (framesReachingLock.toFloat() / totalFramesAnalyzed) * 100f
-        } else 0f
+        get() =
+            if (totalFramesAnalyzed > 0) {
+                (framesReachingLock.toFloat() / totalFramesAnalyzed) * 100f
+            } else {
+                0f
+            }
 
     // ==================== Lock Timing Metrics ====================
 
@@ -47,15 +51,21 @@ class ScanConfidenceMetrics {
 
     /** Average time to achieve lock in milliseconds */
     val avgTimeToLockMs: Float
-        get() = if (successfulLocks > 0) {
-            totalTimeToLockMs.toFloat() / successfulLocks
-        } else 0f
+        get() =
+            if (successfulLocks > 0) {
+                totalTimeToLockMs.toFloat() / successfulLocks
+            } else {
+                0f
+            }
 
     /** Success rate of lock attempts (0-100) */
     val lockSuccessRate: Float
-        get() = if (lockAttempts > 0) {
-            (successfulLocks.toFloat() / lockAttempts) * 100f
-        } else 0f
+        get() =
+            if (lockAttempts > 0) {
+                (successfulLocks.toFloat() / lockAttempts) * 100f
+            } else {
+                0f
+            }
 
     // ==================== Shutter Metrics ====================
 
@@ -64,9 +74,12 @@ class ScanConfidenceMetrics {
 
     /** Percentage of shutter taps without eligible bbox (0-100) */
     val shutterTapsWithoutBboxPercentage: Float
-        get() = if (shutterTapsTotal > 0) {
-            (shutterTapsWithoutEligibleBbox.toFloat() / shutterTapsTotal) * 100f
-        } else 0f
+        get() =
+            if (shutterTapsTotal > 0) {
+                (shutterTapsWithoutEligibleBbox.toFloat() / shutterTapsTotal) * 100f
+            } else {
+                0f
+            }
 
     // ==================== Unlock Reason Tracking ====================
 
@@ -93,7 +106,10 @@ class ScanConfidenceMetrics {
      * @param hasPreviewBbox True if at least one bbox was shown
      * @param isLocked True if guidance state is LOCKED
      */
-    fun recordFrame(hasPreviewBbox: Boolean, isLocked: Boolean) {
+    fun recordFrame(
+        hasPreviewBbox: Boolean,
+        isLocked: Boolean,
+    ) {
         totalFramesAnalyzed++
         if (hasPreviewBbox) framesWithPreviewBbox++
         if (isLocked) framesReachingLock++
@@ -184,7 +200,7 @@ class ScanConfidenceMetrics {
             avgTimeToLockMs = avgTimeToLockMs,
             lockSuccessRate = lockSuccessRate,
             shutterWithoutBboxPct = shutterTapsWithoutBboxPercentage,
-            unlockReasons = unlockReasons.toMap()
+            unlockReasons = unlockReasons.toMap(),
         )
     }
 
@@ -220,18 +236,24 @@ class ScanConfidenceMetrics {
 enum class UnlockReason {
     /** High motion detected (camera moved) */
     MOTION,
+
     /** Focus lost or blur detected */
     FOCUS,
+
     /** Object moved off-center */
     OFF_CENTER,
+
     /** Object left the ROI */
     LEFT_ROI,
+
     /** Lock timeout exceeded */
     TIMEOUT,
+
     /** Candidate lost (no detection) */
     CANDIDATE_LOST,
+
     /** User action (e.g., stopped scanning) */
-    USER_ACTION
+    USER_ACTION,
 }
 
 /**
@@ -244,12 +266,13 @@ data class ScanMetricsSnapshot(
     val avgTimeToLockMs: Float = 0f,
     val lockSuccessRate: Float = 0f,
     val shutterWithoutBboxPct: Float = 0f,
-    val unlockReasons: Map<UnlockReason, Int> = emptyMap()
+    val unlockReasons: Map<UnlockReason, Int> = emptyMap(),
 ) {
-    fun toDebugString(): String = buildString {
-        append("Frames:$totalFrames ")
-        append("Bbox:${String.format("%.0f", previewBboxPct)}% ")
-        append("Lock:${String.format("%.0f", lockPct)}% ")
-        append("TTL:${String.format("%.0f", avgTimeToLockMs)}ms ")
-    }
+    fun toDebugString(): String =
+        buildString {
+            append("Frames:$totalFrames ")
+            append("Bbox:${String.format("%.0f", previewBboxPct)}% ")
+            append("Lock:${String.format("%.0f", lockPct)}% ")
+            append("TTL:${String.format("%.0f", avgTimeToLockMs)}ms ")
+        }
 }

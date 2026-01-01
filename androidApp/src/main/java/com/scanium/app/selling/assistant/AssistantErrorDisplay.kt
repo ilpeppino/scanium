@@ -5,7 +5,6 @@ package com.scanium.app.selling.assistant
  * This provides explicit, debuggable error states for the Online AI Assistant.
  */
 object AssistantErrorDisplay {
-
     /**
      * Error display information for UI rendering.
      */
@@ -13,7 +12,7 @@ object AssistantErrorDisplay {
         val title: String,
         val explanation: String,
         val actionHint: String,
-        val showRetry: Boolean
+        val showRetry: Boolean,
     )
 
     /**
@@ -23,68 +22,83 @@ object AssistantErrorDisplay {
         if (failure == null) return null
 
         return when (failure.type) {
-            AssistantBackendErrorType.UNAUTHORIZED -> ErrorInfo(
-                title = "Authorization Required",
-                explanation = "Your session is not authorized to use the online assistant. " +
-                    "This may happen if your subscription has expired or credentials are invalid.",
-                actionHint = "Check your account status or sign in again.",
-                showRetry = false
-            )
+            AssistantBackendErrorType.UNAUTHORIZED ->
+                ErrorInfo(
+                    title = "Authorization Required",
+                    explanation =
+                        "Your session is not authorized to use the online assistant. " +
+                            "This may happen if your subscription has expired or credentials are invalid.",
+                    actionHint = "Check your account status or sign in again.",
+                    showRetry = false,
+                )
 
-            AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED -> ErrorInfo(
-                title = "Assistant Not Configured",
-                explanation = "The online assistant backend is not set up for this app build. " +
-                    "This is a configuration issue.",
-                actionHint = "Contact support or use a production build.",
-                showRetry = false
-            )
+            AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->
+                ErrorInfo(
+                    title = "Assistant Not Configured",
+                    explanation =
+                        "The online assistant backend is not set up for this app build. " +
+                            "This is a configuration issue.",
+                    actionHint = "Contact support or use a production build.",
+                    showRetry = false,
+                )
 
-            AssistantBackendErrorType.RATE_LIMITED -> ErrorInfo(
-                title = "Rate Limit Reached",
-                explanation = buildRateLimitExplanation(failure),
-                actionHint = "Wait a moment before sending another message.",
-                showRetry = true
-            )
+            AssistantBackendErrorType.RATE_LIMITED ->
+                ErrorInfo(
+                    title = "Rate Limit Reached",
+                    explanation = buildRateLimitExplanation(failure),
+                    actionHint = "Wait a moment before sending another message.",
+                    showRetry = true,
+                )
 
-            AssistantBackendErrorType.NETWORK_TIMEOUT -> ErrorInfo(
-                title = "Request Timed Out",
-                explanation = "The assistant server took too long to respond. " +
-                    "This may be due to high load or a slow connection.",
-                actionHint = "Try again or check your connection.",
-                showRetry = true
-            )
+            AssistantBackendErrorType.NETWORK_TIMEOUT ->
+                ErrorInfo(
+                    title = "Request Timed Out",
+                    explanation =
+                        "The assistant server took too long to respond. " +
+                            "This may be due to high load or a slow connection.",
+                    actionHint = "Try again or check your connection.",
+                    showRetry = true,
+                )
 
-            AssistantBackendErrorType.NETWORK_UNREACHABLE -> ErrorInfo(
-                title = "Cannot Reach Server",
-                explanation = "Unable to connect to the assistant server. " +
-                    "Check that you have an internet connection.",
-                actionHint = "Connect to the internet and retry.",
-                showRetry = true
-            )
+            AssistantBackendErrorType.NETWORK_UNREACHABLE ->
+                ErrorInfo(
+                    title = "Cannot Reach Server",
+                    explanation =
+                        "Unable to connect to the assistant server. " +
+                            "Check that you have an internet connection.",
+                    actionHint = "Connect to the internet and retry.",
+                    showRetry = true,
+                )
 
-            AssistantBackendErrorType.VISION_UNAVAILABLE -> ErrorInfo(
-                title = "Image Analysis Unavailable",
-                explanation = "The image analysis service is temporarily unavailable. " +
-                    "Text-based assistance is still working.",
-                actionHint = "Retry or continue with text questions.",
-                showRetry = true
-            )
+            AssistantBackendErrorType.VISION_UNAVAILABLE ->
+                ErrorInfo(
+                    title = "Image Analysis Unavailable",
+                    explanation =
+                        "The image analysis service is temporarily unavailable. " +
+                            "Text-based assistance is still working.",
+                    actionHint = "Retry or continue with text questions.",
+                    showRetry = true,
+                )
 
-            AssistantBackendErrorType.VALIDATION_ERROR -> ErrorInfo(
-                title = "Invalid Request",
-                explanation = "The request could not be processed. " +
-                    "This may be a bug in the app.",
-                actionHint = "Try rephrasing your question or restart the app.",
-                showRetry = false
-            )
+            AssistantBackendErrorType.VALIDATION_ERROR ->
+                ErrorInfo(
+                    title = "Invalid Request",
+                    explanation =
+                        "The request could not be processed. " +
+                            "This may be a bug in the app.",
+                    actionHint = "Try rephrasing your question or restart the app.",
+                    showRetry = false,
+                )
 
-            AssistantBackendErrorType.PROVIDER_UNAVAILABLE -> ErrorInfo(
-                title = "Assistant Temporarily Unavailable",
-                explanation = "The online assistant service is experiencing issues. " +
-                    "Using local helper in the meantime.",
-                actionHint = "Retry later or continue with local suggestions.",
-                showRetry = true
-            )
+            AssistantBackendErrorType.PROVIDER_UNAVAILABLE ->
+                ErrorInfo(
+                    title = "Assistant Temporarily Unavailable",
+                    explanation =
+                        "The online assistant service is experiencing issues. " +
+                            "Using local helper in the meantime.",
+                    actionHint = "Retry later or continue with local suggestions.",
+                    showRetry = true,
+                )
         }
     }
 

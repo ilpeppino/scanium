@@ -5,29 +5,22 @@ import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
 import android.view.WindowManager
-import com.scanium.app.data.SettingsRepository
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.Indication
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -35,33 +28,32 @@ import androidx.compose.material.icons.outlined.FolderZip
 import androidx.compose.material3.*
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
-import com.scanium.shared.core.models.model.ImageRef
+import com.scanium.app.listing.ListingDraft
 import com.scanium.app.model.resolveBytes
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
-import com.scanium.app.listing.ListingDraft
-import com.scanium.app.listing.ListingDraftBuilder
-import com.scanium.app.ftue.tourTarget
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
@@ -83,15 +75,15 @@ fun ItemsListScreen(
     onNavigateToAssistant: (List<String>) -> Unit,
     draftStore: ListingDraftStore,
     itemsViewModel: ItemsViewModel = viewModel(),
-    tourViewModel: com.scanium.app.ftue.TourViewModel? = null
+    tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val items by itemsViewModel.items.collectAsState()
     var previewDraft by remember { mutableStateOf<ListingDraft?>(null) }
-    
+
     // Press-and-hold preview state
     var previewItem by remember { mutableStateOf<ScannedItem?>(null) }
     var previewBounds by remember { mutableStateOf<Rect?>(null) }
-    
+
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectionMode by remember { mutableStateOf(false) }
     var lastDeletedItem by remember { mutableStateOf<ScannedItem?>(null) }
@@ -122,7 +114,7 @@ fun ItemsListScreen(
         if (!allowScreenshots) {
             window?.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
+                WindowManager.LayoutParams.FLAG_SECURE,
             )
         } else {
             window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -155,10 +147,11 @@ fun ItemsListScreen(
         lastDeletedWasSelected = wasSelected
 
         scope.launch {
-            val result = snackbarHostState.showSnackbar(
-                message = "Item deleted",
-                actionLabel = "Undo"
-            )
+            val result =
+                snackbarHostState.showSnackbar(
+                    message = "Item deleted",
+                    actionLabel = "Undo",
+                )
             if (result == SnackbarResult.ActionPerformed) {
                 lastDeletedItem?.let { deleted ->
                     itemsViewModel.restoreItem(deleted)
@@ -177,12 +170,13 @@ fun ItemsListScreen(
     fun shareCsv(file: File) {
         val authority = "${context.packageName}.fileprovider"
         val uri = FileProvider.getUriForFile(context, authority, file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/csv"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            clipData = ClipData.newUri(context.contentResolver, file.name, uri)
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newUri(context.contentResolver, file.name, uri)
+            }
         val chooser = Intent.createChooser(intent, "Share CSV")
         if (context !is Activity) {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -198,11 +192,12 @@ fun ItemsListScreen(
 
     LaunchedEffect(itemsViewModel) {
         itemsViewModel.cloudClassificationAlerts.collect { alert ->
-            val result = snackbarHostState.showSnackbar(
-                message = alert.message,
-                actionLabel = "Retry",
-                duration = SnackbarDuration.Long
-            )
+            val result =
+                snackbarHostState.showSnackbar(
+                    message = alert.message,
+                    actionLabel = "Retry",
+                    duration = SnackbarDuration.Long,
+                )
             if (result == SnackbarResult.ActionPerformed) {
                 itemsViewModel.retryClassification(alert.itemId)
             }
@@ -213,7 +208,7 @@ fun ItemsListScreen(
         itemsViewModel.persistenceAlerts.collect { alert ->
             snackbarHostState.showSnackbar(
                 message = alert.message,
-                duration = SnackbarDuration.Long
+                duration = SnackbarDuration.Long,
             )
         }
     }
@@ -221,12 +216,13 @@ fun ItemsListScreen(
     fun shareZip(file: File) {
         val authority = "${context.packageName}.fileprovider"
         val uri = FileProvider.getUriForFile(context, authority, file)
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/zip"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            clipData = ClipData.newUri(context.contentResolver, file.name, uri)
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "application/zip"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newUri(context.contentResolver, file.name, uri)
+            }
         val chooser = Intent.createChooser(intent, "Share ZIP")
         if (context !is Activity) {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -251,11 +247,12 @@ fun ItemsListScreen(
         }
 
         val authority = "${context.packageName}.fileprovider"
-        val shareDir = File(context.cacheDir, "share_items").apply {
-            if (!exists()) mkdirs()
-            // Clean old files
-            listFiles()?.forEach { it.delete() }
-        }
+        val shareDir =
+            File(context.cacheDir, "share_items").apply {
+                if (!exists()) mkdirs()
+                // Clean old files
+                listFiles()?.forEach { it.delete() }
+            }
 
         // Collect image URIs from items
         val imageUris = mutableListOf<Uri>()
@@ -272,48 +269,51 @@ fun ItemsListScreen(
         }
 
         // Build text summary
-        val textSummary = buildString {
-            appendLine("Scanium Items (${selectedItems.size})")
-            appendLine()
-            selectedItems.forEachIndexed { index, item ->
-                appendLine("${index + 1}. ${item.displayLabel}")
-                if (item.formattedPriceRange.isNotBlank()) {
-                    appendLine("   Price: ${item.formattedPriceRange}")
-                }
-                item.labelText?.let { label ->
-                    appendLine("   Category: $label")
+        val textSummary =
+            buildString {
+                appendLine("Scanium Items (${selectedItems.size})")
+                appendLine()
+                selectedItems.forEachIndexed { index, item ->
+                    appendLine("${index + 1}. ${item.displayLabel}")
+                    if (item.formattedPriceRange.isNotBlank()) {
+                        appendLine("   Price: ${item.formattedPriceRange}")
+                    }
+                    item.labelText?.let { label ->
+                        appendLine("   Category: $label")
+                    }
                 }
             }
-        }
 
-        val intent = if (imageUris.size > 1) {
-            // Multiple images: use ACTION_SEND_MULTIPLE
-            Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                type = "image/*"
-                putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(imageUris))
-                putExtra(Intent.EXTRA_TEXT, textSummary)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                // Grant permissions for all URIs
-                clipData = ClipData.newRawUri("", imageUris.first()).apply {
-                    imageUris.drop(1).forEach { addItem(ClipData.Item(it)) }
+        val intent =
+            if (imageUris.size > 1) {
+                // Multiple images: use ACTION_SEND_MULTIPLE
+                Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                    type = "image/*"
+                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, ArrayList(imageUris))
+                    putExtra(Intent.EXTRA_TEXT, textSummary)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    // Grant permissions for all URIs
+                    clipData =
+                        ClipData.newRawUri("", imageUris.first()).apply {
+                            imageUris.drop(1).forEach { addItem(ClipData.Item(it)) }
+                        }
+                }
+            } else if (imageUris.size == 1) {
+                // Single image: use ACTION_SEND
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    putExtra(Intent.EXTRA_STREAM, imageUris.first())
+                    putExtra(Intent.EXTRA_TEXT, textSummary)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    clipData = ClipData.newUri(context.contentResolver, "item", imageUris.first())
+                }
+            } else {
+                // No images: share text only
+                Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, textSummary)
                 }
             }
-        } else if (imageUris.size == 1) {
-            // Single image: use ACTION_SEND
-            Intent(Intent.ACTION_SEND).apply {
-                type = "image/*"
-                putExtra(Intent.EXTRA_STREAM, imageUris.first())
-                putExtra(Intent.EXTRA_TEXT, textSummary)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                clipData = ClipData.newUri(context.contentResolver, "item", imageUris.first())
-            }
-        } else {
-            // No images: share text only
-            Intent(Intent.ACTION_SEND).apply {
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, textSummary)
-            }
-        }
 
         val chooser = Intent.createChooser(intent, "Share items")
         if (context !is Activity) {
@@ -336,7 +336,7 @@ fun ItemsListScreen(
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = "Back",
                             )
                         }
                     },
@@ -352,19 +352,20 @@ fun ItemsListScreen(
                             IconButton(onClick = { itemsViewModel.clearAllItems() }) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Clear all"
+                                    contentDescription = "Clear all",
                                 )
                             }
                         }
-                    }
+                    },
                 )
             },
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+            snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { paddingValues ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
             ) {
                 when {
                     items.isEmpty() -> {
@@ -375,28 +376,30 @@ fun ItemsListScreen(
                         // Items list
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 16.dp,
-                                bottom = if (selectionMode && selectedIds.isNotEmpty()) 96.dp else 16.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            contentPadding =
+                                PaddingValues(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 16.dp,
+                                    bottom = if (selectionMode && selectedIds.isNotEmpty()) 96.dp else 16.dp,
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             items(
                                 items = items,
-                                key = { it.id }
+                                key = { it.id },
                             ) { item ->
-                                val dismissState = rememberSwipeToDismissBoxState(
-                                    confirmValueChange = { value ->
-                                        if (value == SwipeToDismissBoxValue.StartToEnd) {
-                                            deleteItem(item)
-                                            true
-                                        } else {
-                                            false
-                                        }
-                                    }
-                                )
+                                val dismissState =
+                                    rememberSwipeToDismissBoxState(
+                                        confirmValueChange = { value ->
+                                            if (value == SwipeToDismissBoxValue.StartToEnd) {
+                                                deleteItem(item)
+                                                true
+                                            } else {
+                                                false
+                                            }
+                                        },
+                                    )
 
                                 val isFirstItem = items.firstOrNull() == item
 
@@ -404,46 +407,51 @@ fun ItemsListScreen(
                                     state = dismissState,
                                     enableDismissFromStartToEnd = true,
                                     enableDismissFromEndToStart = false,
-                                    modifier = Modifier
-                                        .animateItemPlacement(
-                                            animationSpec = spring(
-                                                stiffness = 300f,
-                                                dampingRatio = 0.8f
+                                    modifier =
+                                        Modifier
+                                            .animateItemPlacement(
+                                                animationSpec =
+                                                    spring(
+                                                        stiffness = 300f,
+                                                        dampingRatio = 0.8f,
+                                                    ),
                                             )
-                                        )
-                                        .then(
-                                            if (tourViewModel != null && isFirstItem) {
-                                                Modifier.tourTarget("items_first_item", tourViewModel)
-                                            } else {
-                                                Modifier
-                                            }
-                                        ),
+                                            .then(
+                                                if (tourViewModel != null && isFirstItem) {
+                                                    Modifier.tourTarget("items_first_item", tourViewModel)
+                                                } else {
+                                                    Modifier
+                                                },
+                                            ),
                                     backgroundContent = {
                                         val isDismissing = dismissState.targetValue == SwipeToDismissBoxValue.StartToEnd
-                                        val containerColor = if (isDismissing) {
-                                            MaterialTheme.colorScheme.errorContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceVariant
-                                        }
-                                        val iconTint = if (isDismissing) {
-                                            MaterialTheme.colorScheme.onErrorContainer
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        }
+                                        val containerColor =
+                                            if (isDismissing) {
+                                                MaterialTheme.colorScheme.errorContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.surfaceVariant
+                                            }
+                                        val iconTint =
+                                            if (isDismissing) {
+                                                MaterialTheme.colorScheme.onErrorContainer
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            }
                                         Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .background(containerColor)
-                                                .padding(horizontal = 16.dp),
-                                            contentAlignment = Alignment.CenterStart
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxSize()
+                                                    .background(containerColor)
+                                                    .padding(horizontal = 16.dp),
+                                            contentAlignment = Alignment.CenterStart,
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
                                                 contentDescription = "Delete",
-                                                tint = iconTint
+                                                tint = iconTint,
                                             )
                                         }
-                                    }
+                                    },
                                 ) {
                                     ItemRow(
                                         item = item,
@@ -460,7 +468,7 @@ fun ItemsListScreen(
                                         },
                                         onRetryClassification = {
                                             itemsViewModel.retryClassification(item.id)
-                                        }
+                                        },
                                     )
                                 }
                             }
@@ -482,55 +490,57 @@ fun ItemsListScreen(
                         scope.launch { snackbarHostState.showSnackbar("Select items to ask about") }
                     }
                 },
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(16.dp)
-                    .then(
-                        if (tourViewModel != null) {
-                            Modifier.tourTarget("items_ai_assistant", tourViewModel)
-                        } else {
-                            Modifier
-                        }
-                    ),
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(16.dp)
+                        .then(
+                            if (tourViewModel != null) {
+                                Modifier.tourTarget("items_ai_assistant", tourViewModel)
+                            } else {
+                                Modifier
+                            },
+                        ),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
             ) {
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = "AI assistant"
+                    contentDescription = "AI assistant",
                 )
             }
 
             // Share button with dropdown menu - bottom-right
             Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(16.dp)
-                    .then(
-                        if (tourViewModel != null) {
-                            Modifier.tourTarget("items_action_fab", tourViewModel)
-                        } else {
-                            Modifier
-                        }
-                    )
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(16.dp)
+                        .then(
+                            if (tourViewModel != null) {
+                                Modifier.tourTarget("items_action_fab", tourViewModel)
+                            } else {
+                                Modifier
+                            },
+                        ),
             ) {
                 FloatingActionButton(
                     onClick = { showShareMenu = true },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ) {
                     if (isExporting) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share"
+                            contentDescription = "Share",
                         )
                     }
                 }
@@ -538,7 +548,7 @@ fun ItemsListScreen(
                 // Share menu dropdown
                 DropdownMenu(
                     expanded = showShareMenu,
-                    onDismissRequest = { showShareMenu = false }
+                    onDismissRequest = { showShareMenu = false },
                 ) {
                     // Share... (system share sheet)
                     DropdownMenuItem(
@@ -546,7 +556,7 @@ fun ItemsListScreen(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = stringResource(R.string.cd_share)
+                                contentDescription = stringResource(R.string.cd_share),
                             )
                         },
                         onClick = {
@@ -560,7 +570,7 @@ fun ItemsListScreen(
                                 }
                                 isExporting = false
                             }
-                        }
+                        },
                     )
 
                     HorizontalDivider()
@@ -571,7 +581,7 @@ fun ItemsListScreen(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.Description,
-                                contentDescription = stringResource(R.string.cd_export_csv)
+                                contentDescription = stringResource(R.string.cd_export_csv),
                             )
                         },
                         onClick = {
@@ -584,23 +594,25 @@ fun ItemsListScreen(
                             scope.launch {
                                 soundManager.play(AppSound.EXPORT)
                                 isExporting = true
-                                val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    csvExportWriter.writeToCache(context, payload)
-                                }
-                                isExporting = false
-                                val message = result.fold(
-                                    onSuccess = { file ->
-                                        shareCsv(file)
-                                        "CSV ready to share"
-                                    },
-                                    onFailure = {
-                                        soundManager.play(AppSound.ERROR)
-                                        "Failed to export CSV"
+                                val result =
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        csvExportWriter.writeToCache(context, payload)
                                     }
-                                )
+                                isExporting = false
+                                val message =
+                                    result.fold(
+                                        onSuccess = { file ->
+                                            shareCsv(file)
+                                            "CSV ready to share"
+                                        },
+                                        onFailure = {
+                                            soundManager.play(AppSound.ERROR)
+                                            "Failed to export CSV"
+                                        },
+                                    )
                                 snackbarHostState.showSnackbar(message)
                             }
-                        }
+                        },
                     )
 
                     // Export ZIP
@@ -609,7 +621,7 @@ fun ItemsListScreen(
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.FolderZip,
-                                contentDescription = stringResource(R.string.cd_export_zip)
+                                contentDescription = stringResource(R.string.cd_export_zip),
                             )
                         },
                         onClick = {
@@ -622,23 +634,25 @@ fun ItemsListScreen(
                             scope.launch {
                                 soundManager.play(AppSound.EXPORT)
                                 isExporting = true
-                                val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                                    zipExportWriter.writeToCache(context, payload)
-                                }
-                                isExporting = false
-                                val message = result.fold(
-                                    onSuccess = { file ->
-                                        shareZip(file)
-                                        "ZIP ready to share"
-                                    },
-                                    onFailure = {
-                                        soundManager.play(AppSound.ERROR)
-                                        "Failed to export ZIP"
+                                val result =
+                                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                        zipExportWriter.writeToCache(context, payload)
                                     }
-                                )
+                                isExporting = false
+                                val message =
+                                    result.fold(
+                                        onSuccess = { file ->
+                                            shareZip(file)
+                                            "ZIP ready to share"
+                                        },
+                                        onFailure = {
+                                            soundManager.play(AppSound.ERROR)
+                                            "Failed to export ZIP"
+                                        },
+                                    )
                                 snackbarHostState.showSnackbar(message)
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -648,7 +662,7 @@ fun ItemsListScreen(
         DraftPreviewOverlay(
             item = previewItem,
             sourceBounds = previewBounds,
-            isVisible = previewItem != null
+            isVisible = previewItem != null,
         )
 
         // FTUE Tour Overlays
@@ -657,7 +671,8 @@ fun ItemsListScreen(
                 com.scanium.app.ftue.TourStepKey.ITEMS_ACTION_FAB,
                 com.scanium.app.ftue.TourStepKey.ITEMS_AI_ASSISTANT,
                 com.scanium.app.ftue.TourStepKey.ITEMS_SWIPE_DELETE,
-                com.scanium.app.ftue.TourStepKey.ITEMS_SELECTION -> {
+                com.scanium.app.ftue.TourStepKey.ITEMS_SELECTION,
+                -> {
                     currentTourStep?.let { step ->
                         val bounds = step.targetKey?.let { targetBounds[it] }
                         if (bounds != null || step.targetKey == null) {
@@ -666,14 +681,14 @@ fun ItemsListScreen(
                                 targetBounds = bounds,
                                 onNext = { tourViewModel?.nextStep() },
                                 onBack = { tourViewModel?.previousStep() },
-                                onSkip = { tourViewModel?.skipTour() }
+                                onSkip = { tourViewModel?.skipTour() },
                             )
                         }
                     }
                 }
                 com.scanium.app.ftue.TourStepKey.COMPLETION -> {
                     com.scanium.app.ftue.CompletionOverlay(
-                        onDismiss = { tourViewModel?.completeTour() }
+                        onDismiss = { tourViewModel?.completeTour() },
                     )
                 }
                 else -> { /* Camera steps */ }
@@ -685,7 +700,7 @@ fun ItemsListScreen(
     previewDraft?.let { draft ->
         DraftPreviewDialog(
             draft = draft,
-            onDismiss = { previewDraft = null }
+            onDismiss = { previewDraft = null },
         )
     }
 }
@@ -701,68 +716,72 @@ private fun ItemRow(
     onClick: () -> Unit,
     onPreviewStart: (ScannedItem, Rect) -> Unit,
     onPreviewEnd: () -> Unit,
-    onRetryClassification: () -> Unit
+    onRetryClassification: () -> Unit,
 ) {
     var currentBounds by remember { mutableStateOf<Rect?>(null) }
     val interactionSource = remember { MutableInteractionSource() }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { coordinates ->
-                currentBounds = coordinates.boundsInWindow()
-            }
-            .semantics(mergeDescendants = true) {
-                contentDescription = buildString {
-                    append(item.displayLabel)
-                    append(". ")
-                    append(item.formattedPriceRange)
-                    append(". ")
-                    append("Confidence: ${item.confidenceLevel.displayName}")
-                    when (item.classificationStatus) {
-                        "PENDING" -> append(". Classification in progress")
-                        "FAILED" -> append(". Classification failed")
-                        else -> {}
-                    }
-                    if (isSelected) {
-                        append(". Selected")
-                    }
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coordinates ->
+                    currentBounds = coordinates.boundsInWindow()
                 }
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = { offset ->
-                        val press = PressInteraction.Press(offset)
-                        interactionSource.emit(press)
-                        val released = tryAwaitRelease()
-                        if (released) {
-                            interactionSource.emit(PressInteraction.Release(press))
-                        } else {
-                            interactionSource.emit(PressInteraction.Cancel(press))
+                .semantics(mergeDescendants = true) {
+                    contentDescription =
+                        buildString {
+                            append(item.displayLabel)
+                            append(". ")
+                            append(item.formattedPriceRange)
+                            append(". ")
+                            append("Confidence: ${item.confidenceLevel.displayName}")
+                            when (item.classificationStatus) {
+                                "PENDING" -> append(". Classification in progress")
+                                "FAILED" -> append(". Classification failed")
+                                else -> {}
+                            }
+                            if (isSelected) {
+                                append(". Selected")
+                            }
                         }
-                        // Always trigger preview end on release/cancel
-                        onPreviewEnd()
-                    },
-                    onLongPress = {
-                        currentBounds?.let { onPreviewStart(item, it) }
-                    },
-                    onTap = { 
-                        onClick() 
-                    }
-                )
+                }
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onPress = { offset ->
+                            val press = PressInteraction.Press(offset)
+                            interactionSource.emit(press)
+                            val released = tryAwaitRelease()
+                            if (released) {
+                                interactionSource.emit(PressInteraction.Release(press))
+                            } else {
+                                interactionSource.emit(PressInteraction.Cancel(press))
+                            }
+                            // Always trigger preview end on release/cancel
+                            onPreviewEnd()
+                        },
+                        onLongPress = {
+                            currentBounds?.let { onPreviewStart(item, it) }
+                        },
+                        onTap = {
+                            onClick()
+                        },
+                    )
+                },
+        colors =
+            if (isSelected) {
+                CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            } else {
+                CardDefaults.cardColors()
             },
-        colors = if (isSelected) {
-            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        } else {
-            CardDefaults.cardColors()
-        },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // Thumbnail
             val thumbnailBitmap = (item.thumbnailRef ?: item.thumbnail).toImageBitmap()
@@ -771,25 +790,27 @@ private fun ItemRow(
                 Image(
                     bitmap = bitmap,
                     contentDescription = "Item thumbnail",
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            shape = MaterialTheme.shapes.small
-                        )
-                        .clip(MaterialTheme.shapes.small),
-                    contentScale = ContentScale.Fit
+                    modifier =
+                        Modifier
+                            .size(80.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.small,
+                            )
+                            .clip(MaterialTheme.shapes.small),
+                    contentScale = ContentScale.Fit,
                 )
             } ?: run {
                 // Placeholder if no thumbnail
                 Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            shape = MaterialTheme.shapes.small
-                        ),
-                    contentAlignment = Alignment.Center
+                    modifier =
+                        Modifier
+                            .size(80.dp)
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.small,
+                            ),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text("?", style = MaterialTheme.typography.headlineMedium)
                 }
@@ -798,16 +819,16 @@ private fun ItemRow(
             // Item info
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 // Category with confidence badge and classification status
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = item.displayLabel,
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     ConfidenceBadge(confidenceLevel = item.confidenceLevel)
                     ClassificationStatusBadge(status = item.classificationStatus)
@@ -816,27 +837,27 @@ private fun ItemRow(
                 Text(
                     text = item.formattedPriceRange,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
 
                 // Timestamp and confidence percentage
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = formatTimestamp(item.timestamp),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = "•",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = item.formattedConfidence,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
@@ -845,39 +866,40 @@ private fun ItemRow(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.ErrorOutline,
                             contentDescription = stringResource(R.string.cd_classification_failed),
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(16.dp),
                         )
                         Text(
                             text = item.classificationErrorMessage ?: "Classification failed",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 1,
-                            modifier = Modifier.weight(1f, fill = false)
+                            modifier = Modifier.weight(1f, fill = false),
                         )
                         TextButton(
                             onClick = onRetryClassification,
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            modifier = Modifier
-                                .sizeIn(minHeight = 48.dp)
-                                .semantics {
-                                    contentDescription = "Retry classification for this item"
-                                }
+                            modifier =
+                                Modifier
+                                    .sizeIn(minHeight = 48.dp)
+                                    .semantics {
+                                        contentDescription = "Retry classification for this item"
+                                    },
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
                                 contentDescription = stringResource(R.string.cd_retry),
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(14.dp),
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Retry",
-                                style = MaterialTheme.typography.labelSmall
+                                style = MaterialTheme.typography.labelSmall,
                             )
                         }
                     }
@@ -888,7 +910,7 @@ private fun ItemRow(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 4.dp)
+                        modifier = Modifier.padding(top = 4.dp),
                     ) {
                         ListingStatusBadge(status = item.listingStatus)
 
@@ -901,21 +923,22 @@ private fun ItemRow(
                                     context.startActivity(intent)
                                 },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                                modifier = Modifier
-                                    .sizeIn(minHeight = 48.dp)
-                                    .semantics {
-                                        contentDescription = "View listing on marketplace"
-                                    }
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minHeight = 48.dp)
+                                        .semantics {
+                                            contentDescription = "View listing on marketplace"
+                                        },
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.OpenInNew,
                                     contentDescription = stringResource(R.string.cd_view_external),
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(14.dp),
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "View",
-                                    style = MaterialTheme.typography.labelSmall
+                                    style = MaterialTheme.typography.labelSmall,
                                 )
                             }
                         }
@@ -932,26 +955,27 @@ private fun ItemRow(
 @Composable
 private fun BoxScope.EmptyItemsContent() {
     Column(
-        modifier = Modifier
-            .align(Alignment.Center)
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = "No items detected yet",
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Use the camera to scan objects",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Export to spreadsheets, chat apps, or marketplaces.",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -961,21 +985,22 @@ private fun BoxScope.EmptyItemsContent() {
  */
 @Composable
 private fun ConfidenceBadge(confidenceLevel: ConfidenceLevel) {
-    val (backgroundColor, textColor) = when (confidenceLevel) {
-        ConfidenceLevel.HIGH -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-        ConfidenceLevel.MEDIUM -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-        ConfidenceLevel.LOW -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-    }
+    val (backgroundColor, textColor) =
+        when (confidenceLevel) {
+            ConfidenceLevel.HIGH -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+            ConfidenceLevel.MEDIUM -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+            ConfidenceLevel.LOW -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        }
 
     Surface(
         shape = MaterialTheme.shapes.extraSmall,
-        color = backgroundColor
+        color = backgroundColor,
     ) {
         Text(
             text = confidenceLevel.displayName,
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
         )
     }
 }
@@ -985,34 +1010,38 @@ private fun ConfidenceBadge(confidenceLevel: ConfidenceLevel) {
  */
 @Composable
 private fun ListingStatusBadge(status: ItemListingStatus) {
-    val (backgroundColor, textColor, text) = when (status) {
-        ItemListingStatus.LISTED_ACTIVE -> Triple(
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer,
-            status.displayName
-        )
-        ItemListingStatus.LISTING_IN_PROGRESS -> Triple(
-            MaterialTheme.colorScheme.secondaryContainer,
-            MaterialTheme.colorScheme.onSecondaryContainer,
-            status.displayName
-        )
-        ItemListingStatus.LISTING_FAILED -> Triple(
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer,
-            status.displayName
-        )
-        ItemListingStatus.NOT_LISTED -> return // Don't show badge for not listed
-    }
+    val (backgroundColor, textColor, text) =
+        when (status) {
+            ItemListingStatus.LISTED_ACTIVE ->
+                Triple(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                    status.displayName,
+                )
+            ItemListingStatus.LISTING_IN_PROGRESS ->
+                Triple(
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    MaterialTheme.colorScheme.onSecondaryContainer,
+                    status.displayName,
+                )
+            ItemListingStatus.LISTING_FAILED ->
+                Triple(
+                    MaterialTheme.colorScheme.errorContainer,
+                    MaterialTheme.colorScheme.onErrorContainer,
+                    status.displayName,
+                )
+            ItemListingStatus.NOT_LISTED -> return // Don't show badge for not listed
+        }
 
     Surface(
         shape = MaterialTheme.shapes.extraSmall,
-        color = backgroundColor
+        color = backgroundColor,
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
         )
     }
 }
@@ -1022,35 +1051,39 @@ private fun ListingStatusBadge(status: ItemListingStatus) {
  */
 @Composable
 private fun ClassificationStatusBadge(status: String) {
-    val (backgroundColor, textColor, text) = when (status) {
-        "PENDING" -> Triple(
-            MaterialTheme.colorScheme.secondaryContainer,
-            MaterialTheme.colorScheme.onSecondaryContainer,
-            "Classifying..."
-        )
-        "SUCCESS" -> Triple(
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer,
-            "Cloud"
-        )
-        "FAILED" -> Triple(
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer,
-            "Failed"
-        )
-        "NOT_STARTED" -> return // Don't show badge for not started
-        else -> return // Unknown status
-    }
+    val (backgroundColor, textColor, text) =
+        when (status) {
+            "PENDING" ->
+                Triple(
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    MaterialTheme.colorScheme.onSecondaryContainer,
+                    "Classifying...",
+                )
+            "SUCCESS" ->
+                Triple(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                    "Cloud",
+                )
+            "FAILED" ->
+                Triple(
+                    MaterialTheme.colorScheme.errorContainer,
+                    MaterialTheme.colorScheme.onErrorContainer,
+                    "Failed",
+                )
+            "NOT_STARTED" -> return // Don't show badge for not started
+            else -> return // Unknown status
+        }
 
     Surface(
         shape = MaterialTheme.shapes.extraSmall,
-        color = backgroundColor
+        color = backgroundColor,
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
         )
     }
 }
@@ -1066,7 +1099,7 @@ private fun formatTimestamp(timestamp: Long): String {
 @Composable
 private fun DraftPreviewDialog(
     draft: ListingDraft,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1084,7 +1117,7 @@ private fun DraftPreviewDialog(
                 Text("Condition: ${draft.fields[com.scanium.app.listing.DraftFieldKey.CONDITION]?.value.orEmpty()}")
                 Text("Status: ${draft.status.name.lowercase().replaceFirstChar { it.uppercase() }}")
             }
-        }
+        },
     )
 }
 

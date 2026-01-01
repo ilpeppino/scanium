@@ -2,8 +2,8 @@ package com.scanium.shared.core.models.classification
 
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
-import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.TelemetrySeverity
+import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -51,13 +51,14 @@ class ClassificationOrchestrator(
     private val maxConcurrency: Int = 2,
     private val maxRetries: Int = 3,
     private val delayProvider: suspend (Long) -> Unit = { delay(it) },
-    private val telemetry: Telemetry? = null
+    private val telemetry: Telemetry? = null,
 ) {
     companion object {
         private const val TAG = "ClassificationOrchestrator"
         private const val BASE_DELAY_MS = 2000L
         private const val MAX_DELAY_MS = 16000L
         private const val JITTER_FACTOR = 0.25 // ±25%
+
         // Default domain pack ID if not specified
         private const val DEFAULT_DOMAIN_PACK_ID = "default"
     }
@@ -113,7 +114,7 @@ class ClassificationOrchestrator(
         itemId: String,
         thumbnail: ImageRef,
         boundingBox: NormalizedRect? = null,
-        onResult: (String, ClassificationResult) -> Unit
+        onResult: (String, ClassificationResult) -> Unit,
     ) {
         if (!shouldClassify(itemId)) {
             logger.d(TAG, "Skipping classification for $itemId (already processed)")
@@ -137,7 +138,7 @@ class ClassificationOrchestrator(
         itemId: String,
         thumbnail: ImageRef,
         boundingBox: NormalizedRect? = null,
-        onResult: (String, ClassificationResult) -> Unit
+        onResult: (String, ClassificationResult) -> Unit,
     ) {
         logger.i(TAG, "Manual retry requested for $itemId")
         permanentlyFailedRequests.remove(itemId)
@@ -153,7 +154,7 @@ class ClassificationOrchestrator(
         itemId: String,
         thumbnail: ImageRef,
         boundingBox: NormalizedRect?,
-        onResult: (String, ClassificationResult) -> Unit
+        onResult: (String, ClassificationResult) -> Unit,
     ) {
         pendingRequests.add(itemId)
 
@@ -169,11 +170,12 @@ class ClassificationOrchestrator(
 
                 val mode = modeFlow.value
                 currentMode = mode
-                val classifier = when (mode) {
-                    ClassificationMode.CLOUD -> cloudClassifier
-                    ClassificationMode.ON_DEVICE -> onDeviceClassifier
-                    ClassificationMode.DISABLED -> null
-                }
+                val classifier =
+                    when (mode) {
+                        ClassificationMode.CLOUD -> cloudClassifier
+                        ClassificationMode.ON_DEVICE -> onDeviceClassifier
+                        ClassificationMode.DISABLED -> null
+                    }
 
                 if (classifier == null) {
                     logger.w(TAG, "Classification disabled for $itemId")
@@ -189,11 +191,15 @@ class ClassificationOrchestrator(
                 // [METRICS] Calculate classification turnaround
                 val turnaroundMs = Clock.System.now().toEpochMilliseconds() - classificationStartTime
                 logger.i(TAG, "[METRICS] Classification turnaround for $itemId: ${turnaroundMs}ms (mode=$mode, status=${result.status})")
-                
-                telemetry?.timer("ml.inference_latency_ms", turnaroundMs, mapOf(
-                    "type" to "classification",
-                    "mode" to mode.name.lowercase()
-                ))
+
+                telemetry?.timer(
+                    "ml.inference_latency_ms",
+                    turnaroundMs,
+                    mapOf(
+                        "type" to "classification",
+                        "mode" to mode.name.lowercase(),
+                    ),
+                )
 
                 when (result.status) {
                     ClassificationStatus.SUCCESS -> {
@@ -212,12 +218,16 @@ class ClassificationOrchestrator(
                             logger.e(TAG, "Classification permanently failed for $itemId: ${result.errorMessage}")
                             permanentlyFailedRequests.add(itemId)
                         }
-                        
-                        telemetry?.event("error.inference_failed", TelemetrySeverity.ERROR, mapOf(
-                            "error_type" to (result.errorMessage ?: "unknown"),
-                            "mode" to mode.name.lowercase()
-                        ))
-                        
+
+                        telemetry?.event(
+                            "error.inference_failed",
+                            TelemetrySeverity.ERROR,
+                            mapOf(
+                                "error_type" to (result.errorMessage ?: "unknown"),
+                                "mode" to mode.name.lowercase(),
+                            ),
+                        )
+
                         cache[itemId] = result
                         onResult(itemId, result)
                     }
@@ -234,11 +244,15 @@ class ClassificationOrchestrator(
                 // [METRICS] Log error turnaround
                 val turnaroundMs = Clock.System.now().toEpochMilliseconds() - classificationStartTime
                 logger.i(TAG, "[METRICS] Classification error turnaround for $itemId: ${turnaroundMs}ms (error)")
-                
-                telemetry?.event("error.inference_failed", TelemetrySeverity.ERROR, mapOf(
-                    "error_type" to (t.message ?: "exception"),
-                    "mode" to (currentMode?.name?.lowercase() ?: "unknown")
-                ))
+
+                telemetry?.event(
+                    "error.inference_failed",
+                    TelemetrySeverity.ERROR,
+                    mapOf(
+                        "error_type" to (t.message ?: "exception"),
+                        "mode" to (currentMode?.name?.lowercase() ?: "unknown"),
+                    ),
+                )
             } finally {
                 pendingRequests.remove(itemId)
                 concurrencySemaphore.release()
@@ -255,7 +269,7 @@ class ClassificationOrchestrator(
     private suspend fun classifyWithExponentialBackoff(
         itemId: String,
         thumbnail: ImageRef,
-        classifier: Classifier
+        classifier: Classifier,
     ): ClassificationResult {
         var attempt = retryAttempts[itemId] ?: 0
 
@@ -266,11 +280,12 @@ class ClassificationOrchestrator(
                 delayProvider(delayMs)
             }
 
-            val result = classifier.classify(
-                thumbnail = thumbnail,
-                hint = null,
-                domainPackId = DEFAULT_DOMAIN_PACK_ID
-            )
+            val result =
+                classifier.classify(
+                    thumbnail = thumbnail,
+                    hint = null,
+                    domainPackId = DEFAULT_DOMAIN_PACK_ID,
+                )
 
             when {
                 result.status == ClassificationStatus.SUCCESS -> {
@@ -307,7 +322,7 @@ class ClassificationOrchestrator(
             source = modeFlow.value.toSource(),
             label = null,
             status = ClassificationStatus.FAILED,
-            errorMessage = "Max retries exceeded"
+            errorMessage = "Max retries exceeded",
         )
     }
 
@@ -343,16 +358,17 @@ class ClassificationOrchestrator(
     private fun isRetryableError(result: ClassificationResult): Boolean {
         val errorMessage = result.errorMessage ?: return false
         return errorMessage.contains("Server error") ||
-               errorMessage.contains("timeout", ignoreCase = true) ||
-               errorMessage.contains("network", ignoreCase = true)
+            errorMessage.contains("timeout", ignoreCase = true) ||
+            errorMessage.contains("network", ignoreCase = true)
     }
 }
 
 /**
  * Convert ClassificationMode to ClassificationSource.
  */
-private fun ClassificationMode.toSource(): ClassificationSource = when (this) {
-    ClassificationMode.CLOUD -> ClassificationSource.CLOUD
-    ClassificationMode.ON_DEVICE -> ClassificationSource.ON_DEVICE
-    ClassificationMode.DISABLED -> ClassificationSource.FALLBACK
-}
+private fun ClassificationMode.toSource(): ClassificationSource =
+    when (this) {
+        ClassificationMode.CLOUD -> ClassificationSource.CLOUD
+        ClassificationMode.ON_DEVICE -> ClassificationSource.ON_DEVICE
+        ClassificationMode.DISABLED -> ClassificationSource.FALLBACK
+    }

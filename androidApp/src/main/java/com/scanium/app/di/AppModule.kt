@@ -37,7 +37,6 @@ annotation class ApplicationScope
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
     @Provides
     @Singleton
     @ApplicationScope
@@ -48,7 +47,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSecureApiKeyStore(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): SecureApiKeyStore {
         return SecureApiKeyStore(context)
     }
@@ -56,16 +55,14 @@ object AppModule {
     @Provides
     @Singleton
     fun provideConnectivityObserver(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ConnectivityObserver {
         return ConnectivityObserver(context)
     }
 
     @Provides
     @Singleton
-    fun provideConnectivityStatusProvider(
-        connectivityObserver: ConnectivityObserver
-    ): ConnectivityStatusProvider {
+    fun provideConnectivityStatusProvider(connectivityObserver: ConnectivityObserver): ConnectivityStatusProvider {
         return connectivityObserver
     }
 
@@ -73,7 +70,7 @@ object AppModule {
     @Singleton
     fun provideConfigProvider(
         @ApplicationContext context: Context,
-        @ApplicationScope scope: CoroutineScope
+        @ApplicationScope scope: CoroutineScope,
     ): ConfigProvider {
         return AndroidRemoteConfigProvider(context, scope)
     }
@@ -84,9 +81,7 @@ object AppModule {
      */
     @Provides
     @Singleton
-    fun provideTelemetry(
-        application: Application
-    ): Telemetry? {
+    fun provideTelemetry(application: Application): Telemetry? {
         return (application as? ScaniumApplication)?.telemetry
     }
 
@@ -95,9 +90,7 @@ object AppModule {
      */
     @Provides
     @Singleton
-    fun provideCrashPort(
-        application: Application
-    ): CrashPort {
+    fun provideCrashPort(application: Application): CrashPort {
         return (application as? ScaniumApplication)?.crashPort
             ?: com.scanium.telemetry.ports.NoOpCrashPort
     }
@@ -107,14 +100,15 @@ object AppModule {
      */
     @Provides
     @Singleton
-    fun provideDiagnosticsPort(
-        application: Application
-    ): DiagnosticsPort {
+    fun provideDiagnosticsPort(application: Application): DiagnosticsPort {
         return (application as? ScaniumApplication)?.diagnosticsPort
             ?: object : DiagnosticsPort {
                 override fun appendBreadcrumb(event: TelemetryEvent) {}
+
                 override fun buildDiagnosticsBundle(): ByteArray = ByteArray(0)
+
                 override fun clearBreadcrumbs() {}
+
                 override fun breadcrumbCount(): Int = 0
             }
     }

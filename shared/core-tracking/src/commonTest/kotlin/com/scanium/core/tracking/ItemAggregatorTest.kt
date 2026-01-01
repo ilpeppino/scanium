@@ -11,7 +11,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class ItemAggregatorTest {
-
     private lateinit var aggregator: ItemAggregator
 
     @BeforeTest
@@ -21,21 +20,23 @@ class ItemAggregatorTest {
 
     @Test
     fun similarDetectionsMergeIntoSingleItem() {
-        val detection1 = createDetection(
-            id = "det_1",
-            category = ItemCategory.FASHION,
-            labelText = "Shirt",
-            confidence = 0.8f,
-            boundingBox = TestFixtures.BoundingBoxes.center
-        )
+        val detection1 =
+            createDetection(
+                id = "det_1",
+                category = ItemCategory.FASHION,
+                labelText = "Shirt",
+                confidence = 0.8f,
+                boundingBox = TestFixtures.BoundingBoxes.center,
+            )
 
-        val detection2 = createDetection(
-            id = "det_2",
-            category = ItemCategory.FASHION,
-            labelText = "Shirt",
-            confidence = 0.85f,
-            boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f)
-        )
+        val detection2 =
+            createDetection(
+                id = "det_2",
+                category = ItemCategory.FASHION,
+                labelText = "Shirt",
+                confidence = 0.85f,
+                boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
+            )
 
         val item1 = aggregator.processDetection(detection1)
         val item2 = aggregator.processDetection(detection2)
@@ -47,20 +48,22 @@ class ItemAggregatorTest {
 
     @Test
     fun distinctDetectionsRemainSeparate() {
-        val detection1 = createDetection(
-            id = "det_1",
-            category = ItemCategory.FASHION,
-            labelText = "Shirt",
-            confidence = 0.8f,
-            boundingBox = TestFixtures.BoundingBoxes.topLeft
-        )
-        val detection2 = createDetection(
-            id = "det_2",
-            category = ItemCategory.HOME_GOOD,
-            labelText = "Chair",
-            confidence = 0.85f,
-            boundingBox = TestFixtures.BoundingBoxes.bottomRight
-        )
+        val detection1 =
+            createDetection(
+                id = "det_1",
+                category = ItemCategory.FASHION,
+                labelText = "Shirt",
+                confidence = 0.8f,
+                boundingBox = TestFixtures.BoundingBoxes.topLeft,
+            )
+        val detection2 =
+            createDetection(
+                id = "det_2",
+                category = ItemCategory.HOME_GOOD,
+                labelText = "Chair",
+                confidence = 0.85f,
+                boundingBox = TestFixtures.BoundingBoxes.bottomRight,
+            )
 
         val item1 = aggregator.processDetection(detection1)
         val item2 = aggregator.processDetection(detection2)
@@ -71,11 +74,24 @@ class ItemAggregatorTest {
 
     @Test
     fun trackingIdChangesStillMerge() {
-        val detections = listOf(
-            createDetection("mlkit_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.center),
-            createDetection("mlkit_2", ItemCategory.FASHION, "Shirt", 0.82f, TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f)),
-            createDetection("mlkit_3", ItemCategory.FASHION, "Shirt", 0.85f, TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, -0.01f))
-        )
+        val detections =
+            listOf(
+                createDetection("mlkit_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.center),
+                createDetection(
+                    "mlkit_2",
+                    ItemCategory.FASHION,
+                    "Shirt",
+                    0.82f,
+                    TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
+                ),
+                createDetection(
+                    "mlkit_3",
+                    ItemCategory.FASHION,
+                    "Shirt",
+                    0.85f,
+                    TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, -0.01f),
+                ),
+            )
 
         val aggregatedItems = detections.map { aggregator.processDetection(it) }
         val uniqueIds = aggregatedItems.map { it.aggregatedId }.toSet()
@@ -86,16 +102,17 @@ class ItemAggregatorTest {
 
     @Test
     fun boundingBoxJitterDoesNotCreateDuplicates() {
-        val detections = (0 until 8).map { index ->
-            val jitter = (index % 3 - 1) * 0.01f
-            createDetection(
-                id = "det_$index",
-                category = ItemCategory.ELECTRONICS,
-                labelText = "Phone",
-                confidence = 0.75f + index * 0.01f,
-                boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, jitter)
-            )
-        }
+        val detections =
+            (0 until 8).map { index ->
+                val jitter = (index % 3 - 1) * 0.01f
+                createDetection(
+                    id = "det_$index",
+                    category = ItemCategory.ELECTRONICS,
+                    labelText = "Phone",
+                    confidence = 0.75f + index * 0.01f,
+                    boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, jitter),
+                )
+            }
 
         val aggregated = detections.map { aggregator.processDetection(it) }
         assertEquals(1, aggregated.map { it.aggregatedId }.toSet().size)
@@ -105,20 +122,22 @@ class ItemAggregatorTest {
 
     @Test
     fun differentCategoriesRemainSeparateEvenIfClose() {
-        val detection1 = createDetection(
-            id = "det_1",
-            category = ItemCategory.FASHION,
-            labelText = "Shirt",
-            confidence = 0.8f,
-            boundingBox = TestFixtures.BoundingBoxes.center
-        )
-        val detection2 = createDetection(
-            id = "det_2",
-            category = ItemCategory.ELECTRONICS,
-            labelText = "Phone",
-            confidence = 0.85f,
-            boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f)
-        )
+        val detection1 =
+            createDetection(
+                id = "det_1",
+                category = ItemCategory.FASHION,
+                labelText = "Shirt",
+                confidence = 0.8f,
+                boundingBox = TestFixtures.BoundingBoxes.center,
+            )
+        val detection2 =
+            createDetection(
+                id = "det_2",
+                category = ItemCategory.ELECTRONICS,
+                labelText = "Phone",
+                confidence = 0.85f,
+                boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
+            )
 
         val item1 = aggregator.processDetection(detection1)
         val item2 = aggregator.processDetection(detection2)
@@ -130,7 +149,14 @@ class ItemAggregatorTest {
     @Test
     fun labelSimilarityMatchesRegardlessOfCase() {
         val detection1 = createDetection("det_1", ItemCategory.FASHION, "T-Shirt", 0.8f, TestFixtures.BoundingBoxes.center)
-        val detection2 = createDetection("det_2", ItemCategory.FASHION, "t-shirt", 0.82f, TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f))
+        val detection2 =
+            createDetection(
+                "det_2",
+                ItemCategory.FASHION,
+                "t-shirt",
+                0.82f,
+                TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
+            )
 
         val item1 = aggregator.processDetection(detection1)
         val item2 = aggregator.processDetection(detection2)
@@ -169,7 +195,14 @@ class ItemAggregatorTest {
     @Test
     fun confidenceUpdatesAcrossMerges() {
         val detection1 = createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.7f, TestFixtures.BoundingBoxes.center)
-        val detection2 = createDetection("det_2", ItemCategory.FASHION, "Shirt", 0.9f, TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f))
+        val detection2 =
+            createDetection(
+                "det_2",
+                ItemCategory.FASHION,
+                "Shirt",
+                0.9f,
+                TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
+            )
 
         val item = aggregator.processDetection(detection1)
         aggregator.processDetection(detection2)
@@ -190,10 +223,11 @@ class ItemAggregatorTest {
 
     @Test
     fun resetClearsAllItems() {
-        val detections = listOf(
-            createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.topLeft),
-            createDetection("det_2", ItemCategory.HOME_GOOD, "Chair", 0.85f, TestFixtures.BoundingBoxes.bottomRight)
-        )
+        val detections =
+            listOf(
+                createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.topLeft),
+                createDetection("det_2", ItemCategory.HOME_GOOD, "Chair", 0.85f, TestFixtures.BoundingBoxes.bottomRight),
+            )
         detections.forEach { aggregator.processDetection(it) }
 
         aggregator.reset()
@@ -202,11 +236,18 @@ class ItemAggregatorTest {
 
     @Test
     fun batchProcessingReturnsExpectedCounts() {
-        val detections = listOf(
-            createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.topLeft),
-            createDetection("det_2", ItemCategory.FASHION, "Shirt", 0.82f, TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.topLeft, 0.01f)),
-            createDetection("det_3", ItemCategory.ELECTRONICS, "Phone", 0.9f, TestFixtures.BoundingBoxes.bottomRight)
-        )
+        val detections =
+            listOf(
+                createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.topLeft),
+                createDetection(
+                    "det_2",
+                    ItemCategory.FASHION,
+                    "Shirt",
+                    0.82f,
+                    TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.topLeft, 0.01f),
+                ),
+                createDetection("det_3", ItemCategory.ELECTRONICS, "Phone", 0.9f, TestFixtures.BoundingBoxes.bottomRight),
+            )
 
         val results = aggregator.processDetections(detections)
         assertEquals(3, results.size)
@@ -215,11 +256,18 @@ class ItemAggregatorTest {
 
     @Test
     fun statisticsCalculatedCorrectly() {
-        val detections = listOf(
-            createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.center),
-            createDetection("det_2", ItemCategory.FASHION, "Shirt", 0.82f, TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f)),
-            createDetection("det_3", ItemCategory.ELECTRONICS, "Phone", 0.9f, TestFixtures.BoundingBoxes.bottomRight)
-        )
+        val detections =
+            listOf(
+                createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.8f, TestFixtures.BoundingBoxes.center),
+                createDetection(
+                    "det_2",
+                    ItemCategory.FASHION,
+                    "Shirt",
+                    0.82f,
+                    TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
+                ),
+                createDetection("det_3", ItemCategory.ELECTRONICS, "Phone", 0.9f, TestFixtures.BoundingBoxes.bottomRight),
+            )
         detections.forEach { aggregator.processDetection(it) }
 
         val stats = aggregator.getStats()
@@ -235,7 +283,12 @@ class ItemAggregatorTest {
         val scannedItems = aggregator.getScannedItems()
         assertEquals(1, scannedItems.size)
         assertTrue(scannedItems.first().aggregatedId.startsWith("agg_"))
-        assertItemMatches(scannedItems.first(), expectedCategory = ItemCategory.FASHION, expectedLabelText = "Shirt", expectedMergeCount = 1)
+        assertItemMatches(
+            scannedItems.first(),
+            expectedCategory = ItemCategory.FASHION,
+            expectedLabelText = "Shirt",
+            expectedMergeCount = 1,
+        )
     }
 
     private fun createDetection(
@@ -243,12 +296,12 @@ class ItemAggregatorTest {
         category: ItemCategory,
         labelText: String,
         confidence: Float,
-        boundingBox: com.scanium.core.models.geometry.NormalizedRect
+        boundingBox: com.scanium.core.models.geometry.NormalizedRect,
     ) = testScannedItem(
         id = id,
         category = category,
         labelText = labelText,
         confidence = confidence,
-        boundingBox = boundingBox
+        boundingBox = boundingBox,
     )
 }

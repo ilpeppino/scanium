@@ -46,7 +46,7 @@ import kotlin.math.roundToInt
 fun DraftPreviewOverlay(
     item: ScannedItem?,
     sourceBounds: Rect?,
-    isVisible: Boolean
+    isVisible: Boolean,
 ) {
     val density = LocalDensity.current
 
@@ -54,11 +54,12 @@ fun DraftPreviewOverlay(
     // We animate the "progress" of the expansion (0f = collapsed/at source, 1f = expanded)
     val expansionProgress by animateFloatAsState(
         targetValue = if (isVisible && item != null) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = 250,
-            easing = FastOutSlowInEasing
-        ),
-        label = "expansionProgress"
+        animationSpec =
+            tween(
+                durationMillis = 250,
+                easing = FastOutSlowInEasing,
+            ),
+        label = "expansionProgress",
     )
 
     if (expansionProgress > 0f && item != null && sourceBounds != null) {
@@ -67,21 +68,26 @@ fun DraftPreviewOverlay(
         val displayImage = remember(item) { (item.thumbnailRef ?: item.thumbnail).toImageBitmap() }
 
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.6f * expansionProgress)) // Dim background
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.6f * expansionProgress)),
+// Dim background
         ) {
             // Calculate interpolated bounds
             val targetWidth = with(density) { (LocalContext.current.resources.displayMetrics.widthPixels).toFloat() - 32.dp.toPx() }
             // Aspect ratio estimation (assume square or 4:3 if unknown, or use image ratio)
-            val imageRatio = if (displayImage != null) {
-                displayImage.width.toFloat() / displayImage.height.toFloat()
-            } else 1f
-            
+            val imageRatio =
+                if (displayImage != null) {
+                    displayImage.width.toFloat() / displayImage.height.toFloat()
+                } else {
+                    1f
+                }
+
             // Limit height to 60% of screen
             val screenHeight = with(density) { LocalContext.current.resources.displayMetrics.heightPixels.toFloat() }
             val targetHeight = (targetWidth / imageRatio).coerceAtMost(screenHeight * 0.6f)
-            
+
             val targetLeft = (with(density) { LocalContext.current.resources.displayMetrics.widthPixels.toFloat() } - targetWidth) / 2f
             val targetTop = (screenHeight - targetHeight) / 2f
 
@@ -92,15 +98,17 @@ fun DraftPreviewOverlay(
 
             // Card container
             Surface(
-                modifier = Modifier
-                    .offset { IntOffset(currentLeft.roundToInt(), currentTop.roundToInt()) }
-                    .size(
-                        width = with(density) { currentWidth.toDp() },
-                        height = with(density) { currentHeight.toDp() } // This controls the surface size
-                    ),
+                modifier =
+                    Modifier
+                        .offset { IntOffset(currentLeft.roundToInt(), currentTop.roundToInt()) }
+                        .size(
+                            width = with(density) { currentWidth.toDp() },
+                            height = with(density) { currentHeight.toDp() },
+// This controls the surface size
+                        ),
                 shape = RoundedCornerShape(lerp(8f, 16f, expansionProgress).dp),
                 shadowElevation = lerp(2f, 12f, expansionProgress).dp,
-                color = MaterialTheme.colorScheme.surface
+                color = MaterialTheme.colorScheme.surface,
             ) {
                 // We use a Box to layer image and text.
                 // The text fades in as we expand.
@@ -110,44 +118,46 @@ fun DraftPreviewOverlay(
                             bitmap = displayImage,
                             contentDescription = "Full size preview",
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Fit
+                            contentScale = ContentScale.Fit,
                         )
                     } else {
                         Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant),
                         )
                     }
-                    
+
                     // Info overlay (gradient + text)
                     if (expansionProgress > 0.5f) {
-                         Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .fillMaxWidth()
-                                .background(Color.Black.copy(alpha = 0.5f))
-                                .padding(16.dp)
-                                .alpha((expansionProgress - 0.5f) * 2f)
+                        Box(
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomStart)
+                                    .fillMaxWidth()
+                                    .background(Color.Black.copy(alpha = 0.5f))
+                                    .padding(16.dp)
+                                    .alpha((expansionProgress - 0.5f) * 2f),
                         ) {
                             Column {
                                 Text(
                                     text = item.displayLabel,
                                     style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White
+                                    color = Color.White,
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = item.formattedPriceRange,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    color = Color.White
+                                    color = Color.White,
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 // Additional details
                                 Text(
                                     text = "Confidence: ${item.formattedConfidence}",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    color = Color.White.copy(alpha = 0.8f),
                                 )
                             }
                         }
@@ -158,6 +168,10 @@ fun DraftPreviewOverlay(
     }
 }
 
-private fun lerp(start: Float, stop: Float, fraction: Float): Float {
+private fun lerp(
+    start: Float,
+    stop: Float,
+    fraction: Float,
+): Float {
     return (1 - fraction) * start + fraction * stop
 }

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.exportProfileDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "export_profile_preferences"
+    name = "export_profile_preferences",
 )
 
 class ExportProfilePreferences(private val context: Context) {
@@ -20,9 +20,10 @@ class ExportProfilePreferences(private val context: Context) {
     }
 
     suspend fun getLastProfileId(defaultId: ExportProfileId): ExportProfileId {
-        val raw = context.exportProfileDataStore.data
-            .map { preferences -> preferences[LAST_EXPORT_PROFILE_ID] }
-            .first()
+        val raw =
+            context.exportProfileDataStore.data
+                .map { preferences -> preferences[LAST_EXPORT_PROFILE_ID] }
+                .first()
         return raw?.takeIf { it.isNotBlank() }?.let { ExportProfileId(it) } ?: defaultId
     }
 

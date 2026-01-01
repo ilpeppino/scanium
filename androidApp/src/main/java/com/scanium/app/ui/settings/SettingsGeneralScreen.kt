@@ -32,42 +32,54 @@ import java.util.Date
 fun SettingsGeneralScreen(
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit,
-    onUpgradeClick: () -> Unit
+    onUpgradeClick: () -> Unit,
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
     val currentEdition by viewModel.currentEdition.collectAsState()
     val entitlementState by viewModel.entitlementState.collectAsState()
 
-    val editionLabel = when (currentEdition) {
-        UserEdition.FREE -> stringResource(R.string.settings_edition_free)
-        UserEdition.PRO -> stringResource(R.string.settings_edition_pro)
-        UserEdition.DEVELOPER -> stringResource(R.string.settings_edition_developer)
-    }
-
-    val expirationText = entitlementState.expiresAt?.let { expires ->
-        val formatted = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(expires))
-        stringResource(R.string.settings_edition_expires_on, formatted)
-    }
-
-    val trailingEditionAction: (@Composable () -> Unit)? = when (currentEdition) {
-        UserEdition.FREE -> {
-            { Button(onClick = onUpgradeClick) { Text(stringResource(R.string.settings_upgrade_cta)) } }
+    val editionLabel =
+        when (currentEdition) {
+            UserEdition.FREE -> stringResource(R.string.settings_edition_free)
+            UserEdition.PRO -> stringResource(R.string.settings_edition_pro)
+            UserEdition.DEVELOPER -> stringResource(R.string.settings_edition_developer)
         }
-        UserEdition.PRO -> {
-            {
-                TextButton(onClick = {}, enabled = false) {
-                    Text(stringResource(R.string.settings_manage_subscription))
+
+    val expirationText =
+        entitlementState.expiresAt?.let { expires ->
+            val formatted = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(expires))
+            stringResource(R.string.settings_edition_expires_on, formatted)
+        }
+
+    val trailingEditionAction: (@Composable () -> Unit)? =
+        when (currentEdition) {
+            UserEdition.FREE -> {
+                { Button(onClick = onUpgradeClick) { Text(stringResource(R.string.settings_upgrade_cta)) } }
+            }
+            UserEdition.PRO -> {
+                {
+                    TextButton(onClick = {}, enabled = false) {
+                        Text(stringResource(R.string.settings_manage_subscription))
+                    }
                 }
             }
+            UserEdition.DEVELOPER -> null
         }
-        UserEdition.DEVELOPER -> null
-    }
 
-    val themeOptions = listOf(
-        SegmentOption(ThemeMode.SYSTEM, stringResource(R.string.settings_theme_system), stringResource(R.string.settings_theme_system_desc)),
-        SegmentOption(ThemeMode.LIGHT, stringResource(R.string.settings_theme_light), stringResource(R.string.settings_theme_light_desc)),
-        SegmentOption(ThemeMode.DARK, stringResource(R.string.settings_theme_dark), stringResource(R.string.settings_theme_dark_desc))
-    )
+    val themeOptions =
+        listOf(
+            SegmentOption(
+                ThemeMode.SYSTEM,
+                stringResource(R.string.settings_theme_system),
+                stringResource(R.string.settings_theme_system_desc),
+            ),
+            SegmentOption(
+                ThemeMode.LIGHT,
+                stringResource(R.string.settings_theme_light),
+                stringResource(R.string.settings_theme_light_desc),
+            ),
+            SegmentOption(ThemeMode.DARK, stringResource(R.string.settings_theme_dark), stringResource(R.string.settings_theme_dark_desc)),
+        )
 
     Scaffold(
         topBar = {
@@ -77,14 +89,15 @@ fun SettingsGeneralScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             SettingsSectionHeader(title = stringResource(R.string.settings_section_account))
             ListItem(
@@ -96,13 +109,13 @@ fun SettingsGeneralScreen(
                             Text(
                                 text = it,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 },
                 leadingContent = { Icon(Icons.Filled.VerifiedUser, contentDescription = stringResource(R.string.cd_edition_status)) },
-                trailingContent = trailingEditionAction
+                trailingContent = trailingEditionAction,
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
@@ -111,7 +124,7 @@ fun SettingsGeneralScreen(
                 subtitle = stringResource(R.string.settings_theme_subtitle),
                 options = themeOptions,
                 selected = themeMode,
-                onSelect = viewModel::setThemeMode
+                onSelect = viewModel::setThemeMode,
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_language))
@@ -121,7 +134,7 @@ fun SettingsGeneralScreen(
                 icon = null,
                 onClick = {},
                 showChevron = false,
-                enabled = false
+                enabled = false,
             )
         }
     }

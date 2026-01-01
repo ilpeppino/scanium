@@ -13,7 +13,7 @@ enum class StallReason {
     NONE,
     NO_FRAMES,
     RECOVERING,
-    FAILED
+    FAILED,
 }
 
 /**
@@ -40,7 +40,7 @@ data class CameraPipelineDiagnostics(
     /** Current stall reason from NO_FRAMES watchdog */
     val stallReason: StallReason = StallReason.NONE,
     /** Number of recovery attempts made by watchdog */
-    val recoveryAttempts: Int = 0
+    val recoveryAttempts: Int = 0,
 ) {
     companion object {
         fun initial() = CameraPipelineDiagnostics()
@@ -131,7 +131,7 @@ class CameraSessionController {
                 isScanningActive = false,
                 bboxCount = 0,
                 stallReason = StallReason.NONE,
-                recoveryAttempts = 0
+                recoveryAttempts = 0,
             )
         }
     }
@@ -206,7 +206,10 @@ class CameraSessionController {
         updateDiagnostics { it.copy(lastFrameTimestampMs = timestampMs) }
     }
 
-    fun updateLastBboxTimestamp(timestampMs: Long, count: Int) {
+    fun updateLastBboxTimestamp(
+        timestampMs: Long,
+        count: Int,
+    ) {
         val now = System.currentTimeMillis()
         // Rate limit bbox timestamp logging to 1 per second
         if (now - lastBboxLogTime >= LOG_RATE_LIMIT_MS && timestampMs != lastLoggedBboxTs) {
@@ -241,7 +244,10 @@ class CameraSessionController {
      * Logs a lifecycle event (not rate-limited).
      * Use for important one-time events like bind/unbind, start/stop.
      */
-    fun logEvent(event: String, details: String = "") {
+    fun logEvent(
+        event: String,
+        details: String = "",
+    ) {
         if (details.isNotEmpty()) {
             Log.i(TAG, "$event: $details")
         } else {
@@ -249,7 +255,10 @@ class CameraSessionController {
         }
     }
 
-    private fun logIfChanged(event: String, value: String) {
+    private fun logIfChanged(
+        event: String,
+        value: String,
+    ) {
         // Always log state changes (not rate-limited)
         Log.i(TAG, "$event: $value")
     }

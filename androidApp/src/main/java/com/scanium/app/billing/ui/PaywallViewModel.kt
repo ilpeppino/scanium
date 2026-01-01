@@ -17,51 +17,55 @@ import javax.inject.Inject
  * Part of ARCH-001: Migrated to Hilt dependency injection.
  */
 @HiltViewModel
-class PaywallViewModel @Inject constructor(
-    private val billingProvider: BillingProvider
-) : ViewModel() {
+class PaywallViewModel
+    @Inject
+    constructor(
+        private val billingProvider: BillingProvider,
+    ) : ViewModel() {
+        private val _products = MutableStateFlow<List<ProductDetails>>(emptyList())
+        val products: StateFlow<List<ProductDetails>> = _products
 
-    private val _products = MutableStateFlow<List<ProductDetails>>(emptyList())
-    val products: StateFlow<List<ProductDetails>> = _products
+        private val _isLoading = MutableStateFlow(true)
+        val isLoading: StateFlow<Boolean> = _isLoading
 
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading: StateFlow<Boolean> = _isLoading
-    
-    private val _error = MutableStateFlow<String?>(null)
-    val error: StateFlow<String?> = _error
+        private val _error = MutableStateFlow<String?>(null)
+        val error: StateFlow<String?> = _error
 
-    init {
-        loadProducts()
-    }
-
-    private fun loadProducts() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            val skus = BillingSkus.SUBSCRIPTIONS + BillingSkus.INAPP
-            val details = billingProvider.getProductDetails(skus)
-            _products.value = details
-            _isLoading.value = false
+        init {
+            loadProducts()
         }
-    }
 
-    fun purchase(activity: Activity, productId: String) {
-        viewModelScope.launch {
-            val result = billingProvider.purchase(productId, activity)
-            result.onFailure { e ->
-                _error.value = "Purchase failed: ${e.message}"
+        private fun loadProducts() {
+            viewModelScope.launch {
+                _isLoading.value = true
+                val skus = BillingSkus.SUBSCRIPTIONS + BillingSkus.INAPP
+                val details = billingProvider.getProductDetails(skus)
+                _products.value = details
+                _isLoading.value = false
             }
         }
-    }
 
-    fun restorePurchases() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            billingProvider.restorePurchases()
-            _isLoading.value = false
+        fun purchase(
+            activity: Activity,
+            productId: String,
+        ) {
+            viewModelScope.launch {
+                val result = billingProvider.purchase(productId, activity)
+                result.onFailure { e ->
+                    _error.value = "Purchase failed: ${e.message}"
+                }
+            }
+        }
+
+        fun restorePurchases() {
+            viewModelScope.launch {
+                _isLoading.value = true
+                billingProvider.restorePurchases()
+                _isLoading.value = false
+            }
+        }
+
+        fun clearError() {
+            _error.value = null
         }
     }
-    
-    fun clearError() {
-        _error.value = null
-    }
-}

@@ -11,16 +11,16 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ExportProfilePreferencesTest {
-
     @Test
-    fun storesAndLoadsLastProfileId() = runTest {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val preferences = ExportProfilePreferences(context)
-        val expected = ExportProfileId("VINTED_STYLE")
+    fun storesAndLoadsLastProfileId() =
+        runTest {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val preferences = ExportProfilePreferences(context)
+            val expected = ExportProfileId("VINTED_STYLE")
 
-        preferences.setLastProfileId(expected)
-        val loaded = preferences.getLastProfileId(ExportProfileId.GENERIC)
+            preferences.setLastProfileId(expected)
+            val loaded = preferences.getLastProfileId(ExportProfileId.GENERIC)
 
-        assertThat(loaded).isEqualTo(expected)
-    }
+            assertThat(loaded).isEqualTo(expected)
+        }
 }

@@ -4,6 +4,7 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.data.ExportProfilePreferences
+import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.createTestItemsViewModel
 import com.scanium.app.listing.DraftField
@@ -16,15 +17,14 @@ import com.scanium.app.listing.ListingDraft
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantPrefs
-import com.scanium.app.data.SettingsRepository
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
@@ -48,10 +48,11 @@ class AssistantViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        itemsViewModel = createTestItemsViewModel(
-            workerDispatcher = testDispatcher,
-            mainDispatcher = testDispatcher
-        )
+        itemsViewModel =
+            createTestItemsViewModel(
+                workerDispatcher = testDispatcher,
+                mainDispatcher = testDispatcher,
+            )
         settingsRepository = SettingsRepository(ApplicationProvider.getApplicationContext())
         connectivityStatusProvider = FakeConnectivityStatusProvider()
         localAssistantHelper = LocalAssistantHelper()
@@ -63,221 +64,236 @@ class AssistantViewModelTest {
     }
 
     @Test
-    fun sendMessage_setsLoadingState() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = DelayingAssistantRepository()
+    fun sendMessage_setsLoadingState() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = DelayingAssistantRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            connectivityStatusProvider = connectivityStatusProvider
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                )
 
-        // Initial state should be IDLE
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.IDLE)
-        assertThat(viewModel.uiState.value.isLoading).isFalse()
+            // Initial state should be IDLE
+            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.IDLE)
+            assertThat(viewModel.uiState.value.isLoading).isFalse()
 
-        // Send message - with UnconfinedTestDispatcher, coroutine starts immediately
-        // so we'll be in LLM_PROCESSING (since VISION_PROCESSING is set sync, then updated to LLM)
-        viewModel.sendMessage("What color is this?")
+            // Send message - with UnconfinedTestDispatcher, coroutine starts immediately
+            // so we'll be in LLM_PROCESSING (since VISION_PROCESSING is set sync, then updated to LLM)
+            viewModel.sendMessage("What color is this?")
 
-        // Should be loading now (at LLM_PROCESSING stage since coroutine ran immediately)
-        assertThat(viewModel.uiState.value.isLoading).isTrue()
-        // Stage should be in a processing state (either VISION or LLM)
-        assertThat(viewModel.uiState.value.loadingStage).isIn(
-            listOf(LoadingStage.VISION_PROCESSING, LoadingStage.LLM_PROCESSING)
-        )
-    }
-
-    @Test
-    fun sendMessage_updatesToLLMProcessingAfterVision() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
-
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            connectivityStatusProvider = connectivityStatusProvider
-        )
-
-        viewModel.sendMessage("What color is this?")
-        advanceUntilIdle()
-
-        // After completion, stage should be DONE
-        assertThat(viewModel.uiState.value.isLoading).isFalse()
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
-    }
+            // Should be loading now (at LLM_PROCESSING stage since coroutine ran immediately)
+            assertThat(viewModel.uiState.value.isLoading).isTrue()
+            // Stage should be in a processing state (either VISION or LLM)
+            assertThat(viewModel.uiState.value.loadingStage).isIn(
+                listOf(LoadingStage.VISION_PROCESSING, LoadingStage.LLM_PROCESSING),
+            )
+        }
 
     @Test
-    fun sendMessage_failure_usesLocalFallback() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FailingAssistantRepository()
+    fun sendMessage_updatesToLLMProcessingAfterVision() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            connectivityStatusProvider = connectivityStatusProvider
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                )
 
-        viewModel.sendMessage("What color is this?")
-        advanceUntilIdle()
+            viewModel.sendMessage("What color is this?")
+            advanceUntilIdle()
 
-        // After failure, should fall back to local helper and mark limited mode
-        assertThat(viewModel.uiState.value.isLoading).isFalse()
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
-        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
-        assertThat(viewModel.uiState.value.lastBackendFailure).isNotNull()
-    }
-
-    @Test
-    fun retryLastMessage_retriesOnlineAfterFallback() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = SuccessAfterFailureRepository()
-
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            connectivityStatusProvider = connectivityStatusProvider
-        )
-
-        // First send should fall back locally
-        viewModel.sendMessage("Test message")
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
-        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
-
-        // Retry should succeed online
-        viewModel.retryLastMessage()
-        advanceUntilIdle()
-
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
-        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.ONLINE)
-    }
+            // After completion, stage should be DONE
+            assertThat(viewModel.uiState.value.isLoading).isFalse()
+            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+        }
 
     @Test
-    fun sendMessage_computesSuggestedQuestions() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val repository = FakeAssistantRepository()
+    fun sendMessage_failure_usesLocalFallback() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FailingAssistantRepository()
 
-        // Add a draft so computeSuggestedQuestions has a snapshot to work with
-        val draft = ListingDraft(
-            id = "draft-1",
-            itemId = "item-1",
-            profile = ExportProfileId.GENERIC,
-            title = DraftField("Test Item", confidence = 0.5f, source = DraftProvenance.DEFAULT),
-            description = DraftField("", confidence = 0.5f, source = DraftProvenance.DEFAULT),
-            fields = emptyMap(),
-            price = DraftField(0.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
-            photos = emptyList(),
-            status = com.scanium.app.listing.DraftStatus.DRAFT,
-            createdAt = 1L,
-            updatedAt = 1L
-        )
-        store.upsert(draft)
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                )
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = repository,
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            connectivityStatusProvider = connectivityStatusProvider
-        )
+            viewModel.sendMessage("What color is this?")
+            advanceUntilIdle()
 
-        // Wait for initial loadProfileAndSnapshots to complete
-        advanceUntilIdle()
-
-        viewModel.sendMessage("Hi")
-        advanceUntilIdle()
-
-        // After successful send, state should be DONE
-        assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
-
-        // Suggested questions should be limited to 3 if present
-        val suggestions = viewModel.uiState.value.suggestedQuestions
-        assertThat(suggestions.size).isAtMost(3)
-    }
+            // After failure, should fall back to local helper and mark limited mode
+            assertThat(viewModel.uiState.value.isLoading).isFalse()
+            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
+            assertThat(viewModel.uiState.value.lastBackendFailure).isNotNull()
+        }
 
     @Test
-    fun applyDraftUpdate_persistsChanges() = runTest {
-        val store = FakeDraftStore()
-        val profileRepository = FakeExportProfileRepository()
-        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
-        val draft = ListingDraft(
-            id = "draft-1",
-            itemId = "item-1",
-            profile = ExportProfileId.GENERIC,
-            title = DraftField("Old Title", confidence = 0.5f, source = DraftProvenance.DEFAULT),
-            description = DraftField("Old description", confidence = 0.5f, source = DraftProvenance.DEFAULT),
-            fields = emptyMap(),
-            price = DraftField(10.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
-            photos = emptyList(),
-            status = com.scanium.app.listing.DraftStatus.DRAFT,
-            createdAt = 1L,
-            updatedAt = 1L
-        )
-        store.upsert(draft)
+    fun retryLastMessage_retriesOnlineAfterFallback() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = SuccessAfterFailureRepository()
 
-        val viewModel = AssistantViewModel(
-            itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
-            draftStore = store,
-            exportProfileRepository = profileRepository,
-            exportProfilePreferences = profilePreferences,
-            assistantRepository = FakeAssistantRepository(),
-            settingsRepository = settingsRepository,
-            localAssistantHelper = localAssistantHelper,
-            connectivityStatusProvider = connectivityStatusProvider
-        )
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                )
 
-        val action = AssistantAction(
-            type = AssistantActionType.APPLY_DRAFT_UPDATE,
-            payload = mapOf("itemId" to "item-1", "title" to "Updated Title")
-        )
-        viewModel.applyDraftUpdate(action)
-        advanceUntilIdle()
+            // First send should fall back locally
+            viewModel.sendMessage("Test message")
+            advanceUntilIdle()
 
-        val updated = store.getByItemId("item-1")
-        assertThat(updated?.title?.value).isEqualTo("Updated Title")
-    }
+            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
+
+            // Retry should succeed online
+            viewModel.retryLastMessage()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.ONLINE)
+        }
+
+    @Test
+    fun sendMessage_computesSuggestedQuestions() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
+
+            // Add a draft so computeSuggestedQuestions has a snapshot to work with
+            val draft =
+                ListingDraft(
+                    id = "draft-1",
+                    itemId = "item-1",
+                    profile = ExportProfileId.GENERIC,
+                    title = DraftField("Test Item", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    description = DraftField("", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    fields = emptyMap(),
+                    price = DraftField(0.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    photos = emptyList(),
+                    status = com.scanium.app.listing.DraftStatus.DRAFT,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                )
+            store.upsert(draft)
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                )
+
+            // Wait for initial loadProfileAndSnapshots to complete
+            advanceUntilIdle()
+
+            viewModel.sendMessage("Hi")
+            advanceUntilIdle()
+
+            // After successful send, state should be DONE
+            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+
+            // Suggested questions should be limited to 3 if present
+            val suggestions = viewModel.uiState.value.suggestedQuestions
+            assertThat(suggestions.size).isAtMost(3)
+        }
+
+    @Test
+    fun applyDraftUpdate_persistsChanges() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val draft =
+                ListingDraft(
+                    id = "draft-1",
+                    itemId = "item-1",
+                    profile = ExportProfileId.GENERIC,
+                    title = DraftField("Old Title", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    description = DraftField("Old description", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    fields = emptyMap(),
+                    price = DraftField(10.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    photos = emptyList(),
+                    status = com.scanium.app.listing.DraftStatus.DRAFT,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                )
+            store.upsert(draft)
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = FakeAssistantRepository(),
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                )
+
+            val action =
+                AssistantAction(
+                    type = AssistantActionType.APPLY_DRAFT_UPDATE,
+                    payload = mapOf("itemId" to "item-1", "title" to "Updated Title"),
+                )
+            viewModel.applyDraftUpdate(action)
+            advanceUntilIdle()
+
+            val updated = store.getByItemId("item-1")
+            assertThat(updated?.title?.value).isEqualTo("Updated Title")
+        }
 
     private class FakeDraftStore : com.scanium.app.selling.persistence.ListingDraftStore {
         private val drafts = mutableMapOf<String, ListingDraft>()
@@ -315,7 +331,7 @@ class AssistantViewModelTest {
             exportProfile: ExportProfileDefinition,
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
-            assistantPrefs: AssistantPrefs?
+            assistantPrefs: AssistantPrefs?,
         ): com.scanium.app.model.AssistantResponse {
             return com.scanium.app.model.AssistantResponse("ok")
         }
@@ -329,7 +345,7 @@ class AssistantViewModelTest {
             exportProfile: ExportProfileDefinition,
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
-            assistantPrefs: AssistantPrefs?
+            assistantPrefs: AssistantPrefs?,
         ): com.scanium.app.model.AssistantResponse {
             // Simulate a long-running request that never completes
             kotlinx.coroutines.delay(Long.MAX_VALUE)
@@ -345,7 +361,7 @@ class AssistantViewModelTest {
             exportProfile: ExportProfileDefinition,
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
-            assistantPrefs: AssistantPrefs?
+            assistantPrefs: AssistantPrefs?,
         ): com.scanium.app.model.AssistantResponse {
             throw RuntimeException("Network error")
         }
@@ -361,7 +377,7 @@ class AssistantViewModelTest {
             exportProfile: ExportProfileDefinition,
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
-            assistantPrefs: AssistantPrefs?
+            assistantPrefs: AssistantPrefs?,
         ): com.scanium.app.model.AssistantResponse {
             callCount++
             if (callCount == 1) {

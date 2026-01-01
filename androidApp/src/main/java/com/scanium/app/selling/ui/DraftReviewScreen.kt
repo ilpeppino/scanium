@@ -1,10 +1,12 @@
 package com.scanium.app.selling.ui
 
+import android.content.Intent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,9 +25,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -33,16 +35,27 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.R
 import com.scanium.app.di.DraftReviewViewModelFactoryEntryPoint
+import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.listing.DraftFieldKey
 import com.scanium.app.listing.DraftStatus
 import com.scanium.app.listing.ExportProfiles
@@ -50,25 +63,10 @@ import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftFormatter
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
-import com.scanium.app.items.ItemsViewModel
-import dagger.hilt.android.EntryPointAccessors
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.Image
-import com.scanium.app.R
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
 import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
-import android.content.Intent
-import androidx.compose.foundation.layout.Box
 
 /**
  * Screen for reviewing and editing listing drafts.
@@ -84,22 +82,25 @@ fun DraftReviewScreen(
     itemsViewModel: ItemsViewModel,
     draftStore: ListingDraftStore,
     onOpenPostingAssist: (List<String>, Int) -> Unit,
-    onOpenAssistant: (List<String>) -> Unit
+    onOpenAssistant: (List<String>) -> Unit,
 ) {
     val context = LocalContext.current
-    val assistedFactory = remember(context) {
-        EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            DraftReviewViewModelFactoryEntryPoint::class.java
-        ).draftReviewViewModelFactory()
-    }
-    val viewModel: DraftReviewViewModel = viewModel(
-        factory = DraftReviewViewModel.provideFactory(
-            assistedFactory = assistedFactory,
-            itemIds = itemIds,
-            itemsViewModel = itemsViewModel
+    val assistedFactory =
+        remember(context) {
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                DraftReviewViewModelFactoryEntryPoint::class.java,
+            ).draftReviewViewModelFactory()
+        }
+    val viewModel: DraftReviewViewModel =
+        viewModel(
+            factory =
+                DraftReviewViewModel.provideFactory(
+                    assistedFactory = assistedFactory,
+                    itemIds = itemIds,
+                    itemsViewModel = itemsViewModel,
+                ),
         )
-    )
 
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -125,7 +126,7 @@ fun DraftReviewScreen(
                             viewModel.saveDraft()
                             onOpenPostingAssist(state.itemIds, state.currentIndex)
                         },
-                        enabled = state.draft != null
+                        enabled = state.draft != null,
                     ) {
                         Text("Posting Assist")
                     }
@@ -135,7 +136,7 @@ fun DraftReviewScreen(
                             val itemId = state.itemIds.getOrNull(state.currentIndex)?.let { listOf(it) } ?: state.itemIds
                             onOpenAssistant(itemId)
                         },
-                        enabled = state.draft != null
+                        enabled = state.draft != null,
                     ) {
                         Text("Ask Assistant")
                     }
@@ -147,7 +148,7 @@ fun DraftReviewScreen(
                     }
                     DropdownMenu(
                         expanded = moreExpanded,
-                        onDismissRequest = { moreExpanded = false }
+                        onDismissRequest = { moreExpanded = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text("Copy all") },
@@ -155,18 +156,19 @@ fun DraftReviewScreen(
                                 moreExpanded = false
                                 val draft = state.draft
                                 if (draft != null) {
-                                    val selectedProfile = state.profiles.firstOrNull { it.id == state.selectedProfileId }
-                                        ?: ExportProfiles.generic()
+                                    val selectedProfile =
+                                        state.profiles.firstOrNull { it.id == state.selectedProfileId }
+                                            ?: ExportProfiles.generic()
                                     val export = ListingDraftFormatter.format(draft, selectedProfile)
                                     ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
                                     scope.launch { snackbarHostState.showSnackbar("Listing copied") }
                                 } else {
                                     scope.launch { snackbarHostState.showSnackbar("No draft to copy") }
                                 }
-                            }
+                            },
                         )
                     }
-                }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -180,44 +182,49 @@ fun DraftReviewScreen(
                     }
                     scope.launch {
                         val currentItem = items.firstOrNull { it.id == draft.itemId }
-                        val selectedProfile = state.profiles.firstOrNull { it.id == state.selectedProfileId }
-                            ?: ExportProfiles.generic()
+                        val selectedProfile =
+                            state.profiles.firstOrNull { it.id == state.selectedProfileId }
+                                ?: ExportProfiles.generic()
                         val export = ListingDraftFormatter.format(draft, selectedProfile)
-                        val shareImages = draft.photos.map { it.image }.ifEmpty {
-                            listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
-                        }
-                        val imageUris = ListingShareHelper.writeShareImages(
-                            context = context,
-                            itemId = draft.itemId,
-                            images = shareImages
-                        )
+                        val shareImages =
+                            draft.photos.map { it.image }.ifEmpty {
+                                listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
+                            }
+                        val imageUris =
+                            ListingShareHelper.writeShareImages(
+                                context = context,
+                                itemId = draft.itemId,
+                                images = shareImages,
+                            )
                         if (shareImages.isNotEmpty() && imageUris.isEmpty()) {
                             snackbarHostState.showSnackbar("Unable to attach images; sharing text only")
                         } else if (shareImages.isEmpty()) {
                             snackbarHostState.showSnackbar("No photos available; sharing text only")
                         }
-                        val intent = ListingShareHelper.buildShareIntent(
-                            contentResolver = context.contentResolver,
-                            text = export.shareText,
-                            imageUris = imageUris
-                        )
+                        val intent =
+                            ListingShareHelper.buildShareIntent(
+                                contentResolver = context.contentResolver,
+                                text = export.shareText,
+                                imageUris = imageUris,
+                            )
                         val chooser = Intent.createChooser(intent, "Share listing")
                         context.startActivity(chooser)
                     }
-                }
+                },
             ) {
                 Icon(imageVector = Icons.Default.Share, contentDescription = "Share listing")
             }
-        }
+        },
     ) { padding ->
         val draft = state.draft
         if (draft == null) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Icon(imageVector = Icons.Default.Warning, contentDescription = stringResource(R.string.cd_no_draft_available))
                 Text("No draft available for this item")
@@ -225,37 +232,39 @@ fun DraftReviewScreen(
             return@Scaffold
         }
 
-        val selectedProfile = remember(state.selectedProfileId, state.profiles) {
-            state.profiles.firstOrNull { it.id == state.selectedProfileId } ?: ExportProfiles.generic()
-        }
+        val selectedProfile =
+            remember(state.selectedProfileId, state.profiles) {
+                state.profiles.firstOrNull { it.id == state.selectedProfileId } ?: ExportProfiles.generic()
+            }
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 if (state.totalCount > 1) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "${state.currentIndex + 1}/${state.totalCount}",
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge,
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(
                                 onClick = viewModel::goToPrevious,
-                                enabled = state.currentIndex > 0
+                                enabled = state.currentIndex > 0,
                             ) {
                                 Text("Prev")
                             }
                             TextButton(
                                 onClick = viewModel::goToNext,
-                                enabled = state.currentIndex < state.totalCount - 1
+                                enabled = state.currentIndex < state.totalCount - 1,
                             ) {
                                 Text("Next")
                             }
@@ -268,27 +277,28 @@ fun DraftReviewScreen(
                 ExportProfileSelector(
                     profiles = state.profiles,
                     selectedProfileId = state.selectedProfileId,
-                    onProfileSelected = viewModel::selectProfile
+                    onProfileSelected = viewModel::selectProfile,
                 )
             }
 
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = draft.title.value.orEmpty().ifBlank { "Untitled" },
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                         IconButton(
                             onClick = {
@@ -299,7 +309,7 @@ fun DraftReviewScreen(
                                     ListingClipboardHelper.copy(context, "Listing title", text)
                                     scope.launch { snackbarHostState.showSnackbar("Title copied") }
                                 }
-                            }
+                            },
                         ) {
                             Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy title")
                         }
@@ -316,20 +326,20 @@ fun DraftReviewScreen(
                     value = draft.title.value.orEmpty(),
                     onValueChange = viewModel::updateTitle,
                     label = { Text("Title") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text("Description", style = MaterialTheme.typography.titleMedium)
                             IconButton(
@@ -341,7 +351,7 @@ fun DraftReviewScreen(
                                         ListingClipboardHelper.copy(context, "Listing description", text)
                                         scope.launch { snackbarHostState.showSnackbar("Description copied") }
                                     }
-                                }
+                                },
                             ) {
                                 Icon(imageVector = Icons.Default.ContentCopy, contentDescription = "Copy description")
                             }
@@ -351,7 +361,7 @@ fun DraftReviewScreen(
                             onValueChange = viewModel::updateDescription,
                             label = { Text("Edit description") },
                             modifier = Modifier.fillMaxWidth(),
-                            minLines = 4
+                            minLines = 4,
                         )
                     }
                 }
@@ -360,7 +370,7 @@ fun DraftReviewScreen(
             item {
                 ConditionSelector(
                     condition = draft.fields[DraftFieldKey.CONDITION]?.value.orEmpty(),
-                    onConditionChange = viewModel::updateCondition
+                    onConditionChange = viewModel::updateCondition,
                 )
             }
 
@@ -369,7 +379,7 @@ fun DraftReviewScreen(
                     value = formatPrice(draft.price.value),
                     onValueChange = viewModel::updatePrice,
                     label = { Text("Price (EUR)") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -391,12 +401,13 @@ private fun DraftPhotoRow(draft: ListingDraft) {
         Image(
             bitmap = it,
             contentDescription = "Draft photo",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(180.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentScale = ContentScale.Crop
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentScale = ContentScale.Crop,
         )
     }
 }
@@ -405,7 +416,7 @@ private fun DraftPhotoRow(draft: ListingDraft) {
 private fun ExportProfileSelector(
     profiles: List<com.scanium.app.listing.ExportProfileDefinition>,
     selectedProfileId: com.scanium.app.listing.ExportProfileId,
-    onProfileSelected: (com.scanium.app.listing.ExportProfileId) -> Unit
+    onProfileSelected: (com.scanium.app.listing.ExportProfileId) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val options = profiles.ifEmpty { listOf(ExportProfiles.generic()) }
@@ -416,14 +427,15 @@ private fun ExportProfileSelector(
         Card(
             modifier = Modifier.fillMaxWidth(),
             onClick = { expanded = true },
-            colors = CardDefaults.cardColors()
+            colors = CardDefaults.cardColors(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(selected.displayName)
             }
@@ -436,7 +448,7 @@ private fun ExportProfileSelector(
                     onClick = {
                         expanded = false
                         onProfileSelected(profile.id)
-                    }
+                    },
                 )
             }
         }
@@ -445,7 +457,10 @@ private fun ExportProfileSelector(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ConditionSelector(condition: String, onConditionChange: (String) -> Unit) {
+private fun ConditionSelector(
+    condition: String,
+    onConditionChange: (String) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     val options = listOf("Used", "New", "Open box")
 
@@ -454,14 +469,15 @@ private fun ConditionSelector(condition: String, onConditionChange: (String) -> 
         Card(
             modifier = Modifier.fillMaxWidth(),
             onClick = { expanded = true },
-            colors = CardDefaults.cardColors()
+            colors = CardDefaults.cardColors(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(condition.ifBlank { "Select condition" })
             }
@@ -474,7 +490,7 @@ private fun ConditionSelector(condition: String, onConditionChange: (String) -> 
                     onClick = {
                         expanded = false
                         onConditionChange(option)
-                    }
+                    },
                 )
             }
         }
@@ -486,7 +502,7 @@ private fun KeyFieldsCard(draft: ListingDraft) {
     val fields = draft.fields
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Key fields", style = MaterialTheme.typography.titleMedium)
@@ -503,13 +519,13 @@ private fun CompletenessCard(draft: ListingDraft) {
     val completeness = draft.completeness
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Completeness", style = MaterialTheme.typography.titleMedium)
             LinearProgressIndicator(
                 progress = completeness.score / 100f,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             Text("${completeness.score}% complete")
             if (completeness.missing.isNotEmpty()) {

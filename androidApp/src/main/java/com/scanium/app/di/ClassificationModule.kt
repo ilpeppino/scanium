@@ -28,7 +28,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object ClassificationModule {
-
     @Provides
     @Singleton
     @Named("onDevice")
@@ -40,7 +39,7 @@ object ClassificationModule {
     @Singleton
     @Named("cloud")
     fun provideCloudClassifier(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ItemClassifier {
         return CloudClassifier(context = context)
     }
@@ -48,16 +47,14 @@ object ClassificationModule {
     @Provides
     @Singleton
     fun provideStableItemCropper(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): StableItemCropper {
         return StableItemCropper(context)
     }
 
     @Provides
     @Singleton
-    fun provideClassificationThumbnailProvider(
-        stableItemCropper: StableItemCropper
-    ): ClassificationThumbnailProvider {
+    fun provideClassificationThumbnailProvider(stableItemCropper: StableItemCropper): ClassificationThumbnailProvider {
         return stableItemCropper
     }
 
@@ -65,7 +62,7 @@ object ClassificationModule {
     @Singleton
     fun provideClassificationModeFlow(
         classificationPreferences: ClassificationPreferences,
-        @ApplicationScope scope: CoroutineScope
+        @ApplicationScope scope: CoroutineScope,
     ): StateFlow<ClassificationMode> {
         return classificationPreferences.mode
             .stateIn(scope, SharingStarted.Eagerly, ClassificationMode.CLOUD)
@@ -76,7 +73,7 @@ object ClassificationModule {
     @Named("cloudClassificationEnabled")
     fun provideCloudClassificationEnabledFlow(
         featureFlagRepository: FeatureFlagRepository,
-        @ApplicationScope scope: CoroutineScope
+        @ApplicationScope scope: CoroutineScope,
     ): StateFlow<Boolean> {
         return featureFlagRepository.isCloudClassificationEnabled
             .stateIn(scope, SharingStarted.Eagerly, true)

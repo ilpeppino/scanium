@@ -19,5 +19,5 @@ enum class CameraState {
     SCANNING,
 
     /** An error occurred while preparing or using the camera */
-    ERROR
+    ERROR,
 }

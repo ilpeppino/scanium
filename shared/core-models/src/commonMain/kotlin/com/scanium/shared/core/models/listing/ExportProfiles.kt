@@ -14,7 +14,7 @@ data class ExportProfileDefinition(
     val fieldOrdering: List<ExportFieldKey> = ExportFieldKey.defaultOrdering(),
     val requiredFields: List<ExportFieldKey> = emptyList(),
     val optionalFieldLabels: Map<ExportFieldKey, String> = emptyMap(),
-    val missingFieldPolicy: MissingFieldPolicy = MissingFieldPolicy.OMIT
+    val missingFieldPolicy: MissingFieldPolicy = MissingFieldPolicy.OMIT,
 )
 
 @Serializable
@@ -22,7 +22,7 @@ data class ExportTitleRules(
     val maxLen: Int = 80,
     val includeBrandInTitle: Boolean = true,
     val includeModelInTitle: Boolean = true,
-    val capitalization: TitleCapitalization = TitleCapitalization.SENTENCE_CASE
+    val capitalization: TitleCapitalization = TitleCapitalization.SENTENCE_CASE,
 )
 
 @Serializable
@@ -30,13 +30,13 @@ data class ExportDescriptionRules(
     val format: DescriptionFormat = DescriptionFormat.PARAGRAPH,
     val includeMeasurements: Boolean = false,
     val includeConditionLine: Boolean = true,
-    val includeDisclaimerLine: Boolean = false
+    val includeDisclaimerLine: Boolean = false,
 )
 
 @Serializable
 enum class DescriptionFormat {
     PARAGRAPH,
-    BULLETS
+    BULLETS,
 }
 
 @Serializable
@@ -44,35 +44,44 @@ enum class TitleCapitalization {
     NONE,
     SENTENCE_CASE,
     TITLE_CASE,
-    UPPERCASE
+    UPPERCASE,
 }
 
 @Serializable
 enum class MissingFieldPolicy {
     OMIT,
-    SHOW_UNKNOWN
+    SHOW_UNKNOWN,
 }
 
 @Serializable
 enum class ExportFieldKey(val defaultLabel: String) {
     @SerialName("title")
     TITLE("Title"),
+
     @SerialName("price")
     PRICE("Price"),
+
     @SerialName("condition")
     CONDITION("Condition"),
+
     @SerialName("category")
     CATEGORY("Category"),
+
     @SerialName("brand")
     BRAND("Brand"),
+
     @SerialName("model")
     MODEL("Model"),
+
     @SerialName("color")
     COLOR("Color"),
+
     @SerialName("description")
     DESCRIPTION("Description"),
+
     @SerialName("photos")
-    PHOTOS("Photos");
+    PHOTOS("Photos"),
+    ;
 
     companion object {
         fun defaultOrdering(): List<ExportFieldKey> {
@@ -83,7 +92,7 @@ enum class ExportFieldKey(val defaultLabel: String) {
                 BRAND,
                 MODEL,
                 COLOR,
-                PHOTOS
+                PHOTOS,
             )
         }
     }
@@ -91,29 +100,33 @@ enum class ExportFieldKey(val defaultLabel: String) {
 
 interface ExportProfileRepository {
     suspend fun getProfiles(): List<ExportProfileDefinition>
+
     suspend fun getProfile(id: ExportProfileId): ExportProfileDefinition?
+
     suspend fun getDefaultProfileId(): ExportProfileId
 }
 
 object ExportProfiles {
-    private val genericDefinition = ExportProfileDefinition(
-        id = ExportProfileId.GENERIC,
-        displayName = "Generic",
-        localeHint = "en_US",
-        currencyHint = "EUR",
-        titleRules = ExportTitleRules(),
-        descriptionRules = ExportDescriptionRules(),
-        fieldOrdering = ExportFieldKey.defaultOrdering(),
-        requiredFields = listOf(
-            ExportFieldKey.TITLE,
-            ExportFieldKey.PRICE,
-            ExportFieldKey.CONDITION,
-            ExportFieldKey.CATEGORY,
-            ExportFieldKey.PHOTOS
-        ),
-        optionalFieldLabels = emptyMap(),
-        missingFieldPolicy = MissingFieldPolicy.OMIT
-    )
+    private val genericDefinition =
+        ExportProfileDefinition(
+            id = ExportProfileId.GENERIC,
+            displayName = "Generic",
+            localeHint = "en_US",
+            currencyHint = "EUR",
+            titleRules = ExportTitleRules(),
+            descriptionRules = ExportDescriptionRules(),
+            fieldOrdering = ExportFieldKey.defaultOrdering(),
+            requiredFields =
+                listOf(
+                    ExportFieldKey.TITLE,
+                    ExportFieldKey.PRICE,
+                    ExportFieldKey.CONDITION,
+                    ExportFieldKey.CATEGORY,
+                    ExportFieldKey.PHOTOS,
+                ),
+            optionalFieldLabels = emptyMap(),
+            missingFieldPolicy = MissingFieldPolicy.OMIT,
+        )
 
     fun generic(): ExportProfileDefinition = genericDefinition
 }

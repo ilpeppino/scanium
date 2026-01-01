@@ -3,13 +3,13 @@ package com.scanium.app.ml
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
-import com.scanium.app.items.ScannedItem
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect
+import com.scanium.app.items.ScannedItem
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -19,7 +19,6 @@ import kotlinx.coroutines.tasks.await
  * Provides methods to process images and convert text recognition results to ScannedItems.
  */
 class DocumentTextRecognitionClient {
-
     companion object {
         private const val TAG = "DocumentTextRecognitionClient"
         private const val MIN_TEXT_LENGTH = 3 // Minimum text length to consider valid
@@ -41,7 +40,7 @@ class DocumentTextRecognitionClient {
      */
     suspend fun recognizeText(
         image: InputImage,
-        sourceBitmap: () -> Bitmap?
+        sourceBitmap: () -> Bitmap?,
     ): List<ScannedItem> {
         return try {
             Log.d(TAG, "Starting text recognition on image ${image.width}x${image.height}, rotation=${image.rotationDegrees}")
@@ -61,57 +60,62 @@ class DocumentTextRecognitionClient {
             val bitmap = sourceBitmap()
 
             // SEC-006: Limit text length to 10KB for memory/UI performance
-            val fullText = if (rawText.length > MAX_TEXT_LENGTH) {
-                Log.w(TAG, "Text exceeds maximum length (${rawText.length} > $MAX_TEXT_LENGTH), truncating")
-                rawText.take(MAX_TEXT_LENGTH) + "..."
-            } else {
-                rawText
-            }
+            val fullText =
+                if (rawText.length > MAX_TEXT_LENGTH) {
+                    Log.w(TAG, "Text exceeds maximum length (${rawText.length} > $MAX_TEXT_LENGTH), truncating")
+                    rawText.take(MAX_TEXT_LENGTH) + "..."
+                } else {
+                    rawText
+                }
 
             Log.d(TAG, "Recognized text preview: ${fullText.take(100)}...")
             Log.d(TAG, "Text blocks: ${visionText.textBlocks.size}")
 
             // Get bounding box of the entire text region (or use whole image if not available)
-            val boundingBox = calculateOverallBoundingBox(visionText.textBlocks.mapNotNull { it.boundingBox })
-                ?: Rect(0, 0, image.width, image.height)
+            val boundingBox =
+                calculateOverallBoundingBox(visionText.textBlocks.mapNotNull { it.boundingBox })
+                    ?: Rect(0, 0, image.width, image.height)
 
             // Create thumbnail from source bitmap
-            val thumbnail = bitmap?.let {
-                if (boundingBox.width() > 0 && boundingBox.height() > 0) {
-                    cropThumbnail(it, boundingBox)
-                } else {
-                    // Use the whole image as thumbnail
-                    it
+            val thumbnail =
+                bitmap?.let {
+                    if (boundingBox.width() > 0 && boundingBox.height() > 0) {
+                        cropThumbnail(it, boundingBox)
+                    } else {
+                        // Use the whole image as thumbnail
+                        it
+                    }
                 }
-            }
             val thumbnailRef = thumbnail?.toImageRefJpeg(quality = 85)
 
             // Generate unique ID from text hash
             val id = "document_${fullText.hashCode()}_${System.currentTimeMillis()}"
 
-            val bboxNorm = boundingBox?.toNormalizedRect(
-                frameWidth = bitmap?.width ?: image.width,
-                frameHeight = bitmap?.height ?: image.height
-            )
+            val bboxNorm =
+                boundingBox?.toNormalizedRect(
+                    frameWidth = bitmap?.width ?: image.width,
+                    frameHeight = bitmap?.height ?: image.height,
+                )
 
             if (thumbnail != null) {
                 RawDetection(
                     trackingId = id,
                     bboxNorm = bboxNorm,
                     labels = emptyList(),
-                    thumbnailRef = thumbnailRef
+                    thumbnailRef = thumbnailRef,
                 )
             }
 
-            val item = ScannedItem(
-                id = id,
-                thumbnail = thumbnailRef,
-                thumbnailRef = thumbnailRef,
-                category = ItemCategory.DOCUMENT,
-                priceRange = 0.0 to 0.0,
-                recognizedText = fullText,
-                boundingBox = bboxNorm
-            )
+            val item =
+                ScannedItem(
+                    id = id,
+                    thumbnail = thumbnailRef,
+                    thumbnailRef = thumbnailRef,
+                    category = ItemCategory.DOCUMENT,
+                    priceRange = 0.0 to 0.0,
+                    recognizedText = fullText,
+                    boundingBox = bboxNorm,
+                )
 
             Log.d(TAG, "Created document item with ${fullText.length} characters")
             listOf(item)
@@ -149,7 +153,10 @@ class DocumentTextRecognitionClient {
     /**
      * Crops a thumbnail from the source bitmap using the bounding box.
      */
-    private fun cropThumbnail(source: Bitmap, boundingBox: Rect): Bitmap? {
+    private fun cropThumbnail(
+        source: Bitmap,
+        boundingBox: Rect,
+    ): Bitmap? {
         return try {
             // Ensure bounding box is within bitmap bounds
             val left = boundingBox.left.coerceIn(0, source.width - 1)
@@ -183,7 +190,11 @@ class DocumentTextRecognitionClient {
     /**
      * Calculates normalized bounding box area (0.0 to 1.0).
      */
-    private fun calculateNormalizedArea(box: Rect, imageWidth: Int, imageHeight: Int): Float {
+    private fun calculateNormalizedArea(
+        box: Rect,
+        imageWidth: Int,
+        imageHeight: Int,
+    ): Float {
         val boxArea = box.width() * box.height()
         val totalArea = imageWidth * imageHeight
         return if (totalArea > 0) {

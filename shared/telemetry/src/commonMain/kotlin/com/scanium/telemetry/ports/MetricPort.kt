@@ -20,7 +20,11 @@ interface MetricPort {
      * @param delta Amount to increment (typically 1)
      * @param attributes Sanitized attributes for this metric
      */
-    fun counter(name: String, delta: Long = 1, attributes: Map<String, String> = emptyMap())
+    fun counter(
+        name: String,
+        delta: Long = 1,
+        attributes: Map<String, String> = emptyMap(),
+    )
 
     /**
      * Records a timer/duration metric.
@@ -29,7 +33,11 @@ interface MetricPort {
      * @param millis Duration in milliseconds
      * @param attributes Sanitized attributes for this metric
      */
-    fun timer(name: String, millis: Long, attributes: Map<String, String> = emptyMap())
+    fun timer(
+        name: String,
+        millis: Long,
+        attributes: Map<String, String> = emptyMap(),
+    )
 
     /**
      * Records a gauge metric (current value snapshot).
@@ -38,5 +46,9 @@ interface MetricPort {
      * @param value Current value
      * @param attributes Sanitized attributes for this metric
      */
-    fun gauge(name: String, value: Double, attributes: Map<String, String> = emptyMap())
+    fun gauge(
+        name: String,
+        value: Double,
+        attributes: Map<String, String> = emptyMap(),
+    )
 }

@@ -3,7 +3,6 @@ package com.scanium.app.items.export
 import com.scanium.app.items.ScannedItem
 import com.scanium.core.export.ExportItem
 import com.scanium.core.export.ExportPayload
-import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
@@ -11,11 +10,13 @@ import kotlinx.datetime.Instant
  * Convert a generic ScannedItem<Uri> to ExportItem.
  */
 fun ScannedItem.toExportItem(): ExportItem {
-    val resolvedTitle = labelText?.trim()?.takeIf { it.isNotEmpty() }
-        ?: "Item ${id.takeLast(6)}"
+    val resolvedTitle =
+        labelText?.trim()?.takeIf { it.isNotEmpty() }
+            ?: "Item ${id.takeLast(6)}"
 
-    val categoryLabel = domainCategoryId?.takeIf { it.isNotBlank() }
-        ?: category.displayName
+    val categoryLabel =
+        domainCategoryId?.takeIf { it.isNotBlank() }
+            ?: category.displayName
 
     val pricePair = estimatedPriceRange?.toPair() ?: priceRange
     val hasExplicitPrice = estimatedPriceRange != null || priceRange.first != 0.0 || priceRange.second != 0.0
@@ -28,7 +29,7 @@ fun ScannedItem.toExportItem(): ExportItem {
         attributes = emptyMap(),
         priceMin = if (hasExplicitPrice) pricePair.first else null,
         priceMax = if (hasExplicitPrice) pricePair.second else null,
-        imageRef = thumbnailRef ?: thumbnail
+        imageRef = thumbnailRef ?: thumbnail,
     )
 }
 
@@ -37,9 +38,10 @@ fun ScannedItem.toExportItem(): ExportItem {
  */
 fun List<ScannedItem>.toExportPayload(
     createdAt: Instant = Clock.System.now(),
-    appVersion: String? = null
-): ExportPayload = ExportPayload(
-    items = map { it.toExportItem() },
-    createdAt = createdAt,
-    appVersion = appVersion
-)
+    appVersion: String? = null,
+): ExportPayload =
+    ExportPayload(
+        items = map { it.toExportItem() },
+        createdAt = createdAt,
+        appVersion = appVersion,
+    )

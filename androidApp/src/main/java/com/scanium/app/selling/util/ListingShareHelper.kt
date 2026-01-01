@@ -8,10 +8,10 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import com.scanium.app.model.resolveBytes
 import com.scanium.shared.core.models.model.ImageRef
-import java.io.File
-import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.util.Locale
 
 object ListingShareHelper {
     private const val SHARE_DIR = "listing_share"
@@ -21,34 +21,36 @@ object ListingShareHelper {
         context: Context,
         itemId: String,
         images: List<ImageRef>,
-        maxImages: Int = MAX_IMAGES_DEFAULT
-    ): List<Uri> = withContext(Dispatchers.IO) {
-        val outputDir = File(context.cacheDir, SHARE_DIR).apply { mkdirs() }
-        val authority = "${context.packageName}.fileprovider"
+        maxImages: Int = MAX_IMAGES_DEFAULT,
+    ): List<Uri> =
+        withContext(Dispatchers.IO) {
+            val outputDir = File(context.cacheDir, SHARE_DIR).apply { mkdirs() }
+            val authority = "${context.packageName}.fileprovider"
 
-        images
-            .mapNotNull { it.resolveBytes() }
-            .take(maxImages)
-            .mapIndexedNotNull { index, image ->
-                if (!image.mimeType.startsWith("image/")) return@mapIndexedNotNull null
-                val extension = mimeToExtension(image.mimeType)
-                val safeId = itemId.replace(Regex("[^A-Za-z0-9_-]"), "_")
-                val file = File(outputDir, "${safeId}_${index + 1}.$extension")
-                file.writeBytes(image.bytes)
-                FileProvider.getUriForFile(context, authority, file)
-            }
-    }
+            images
+                .mapNotNull { it.resolveBytes() }
+                .take(maxImages)
+                .mapIndexedNotNull { index, image ->
+                    if (!image.mimeType.startsWith("image/")) return@mapIndexedNotNull null
+                    val extension = mimeToExtension(image.mimeType)
+                    val safeId = itemId.replace(Regex("[^A-Za-z0-9_-]"), "_")
+                    val file = File(outputDir, "${safeId}_${index + 1}.$extension")
+                    file.writeBytes(image.bytes)
+                    FileProvider.getUriForFile(context, authority, file)
+                }
+        }
 
     fun buildShareIntent(
         contentResolver: ContentResolver,
         text: String,
-        imageUris: List<Uri>
+        imageUris: List<Uri>,
     ): Intent {
-        val intent = if (imageUris.size > 1) {
-            Intent(Intent.ACTION_SEND_MULTIPLE)
-        } else {
-            Intent(Intent.ACTION_SEND)
-        }
+        val intent =
+            if (imageUris.size > 1) {
+                Intent(Intent.ACTION_SEND_MULTIPLE)
+            } else {
+                Intent(Intent.ACTION_SEND)
+            }
 
         intent.putExtra(Intent.EXTRA_TEXT, text)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

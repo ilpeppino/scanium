@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -44,19 +43,20 @@ import kotlinx.coroutines.delay
 @Preview(
     name = "ScanFrameAppear - Visible",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun ScanFrameAppearVisiblePreview() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
     ) {
         ScanFrameAppear(
             rect = Rect(0.15f, 0.25f, 0.85f, 0.75f),
             isVisible = true,
-            frameColor = ScaniumBluePrimary
+            frameColor = ScaniumBluePrimary,
         )
     }
 }
@@ -64,19 +64,20 @@ private fun ScanFrameAppearVisiblePreview() {
 @Preview(
     name = "ScanFrameAppear - Small Frame",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun ScanFrameAppearSmallPreview() {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
     ) {
         ScanFrameAppear(
             rect = Rect(0.3f, 0.35f, 0.7f, 0.65f),
             isVisible = true,
-            frameColor = ScaniumBluePrimary
+            frameColor = ScaniumBluePrimary,
         )
     }
 }
@@ -86,7 +87,7 @@ private fun ScanFrameAppearSmallPreview() {
 @Preview(
     name = "LightningScanPulse - Vertical",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun LightningScanPulseVerticalPreview() {
@@ -101,15 +102,16 @@ private fun LightningScanPulseVerticalPreview() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
     ) {
         LightningScanPulse(
             rect = Rect(0.1f, 0.2f, 0.9f, 0.8f),
             triggerKey = triggerKey,
             direction = PulseDirection.VERTICAL_DOWN,
-            pulseColor = LightningYellow
+            pulseColor = LightningYellow,
         )
     }
 }
@@ -117,7 +119,7 @@ private fun LightningScanPulseVerticalPreview() {
 @Preview(
     name = "LightningScanPulse - Horizontal",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun LightningScanPulseHorizontalPreview() {
@@ -131,15 +133,16 @@ private fun LightningScanPulseHorizontalPreview() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
     ) {
         LightningScanPulse(
             rect = Rect(0.1f, 0.2f, 0.9f, 0.8f),
             triggerKey = triggerKey,
             direction = PulseDirection.HORIZONTAL_RIGHT,
-            pulseColor = LightningYellow
+            pulseColor = LightningYellow,
         )
     }
 }
@@ -147,7 +150,7 @@ private fun LightningScanPulseHorizontalPreview() {
 @Preview(
     name = "LightningScanPulse - Diagonal",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun LightningScanPulseDiagonalPreview() {
@@ -161,15 +164,16 @@ private fun LightningScanPulseDiagonalPreview() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
     ) {
         LightningScanPulse(
             rect = Rect(0.1f, 0.2f, 0.9f, 0.8f),
             triggerKey = triggerKey,
             direction = PulseDirection.DIAGONAL_DOWN_RIGHT,
-            pulseColor = LightningYellow
+            pulseColor = LightningYellow,
         )
     }
 }
@@ -179,7 +183,7 @@ private fun LightningScanPulseDiagonalPreview() {
 @Preview(
     name = "PriceCountUp - Single Value",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun PriceCountUpSinglePreview() {
@@ -194,26 +198,28 @@ private fun PriceCountUpSinglePreview() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
+        contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "Price Count-Up Demo",
                 color = Color.White.copy(alpha = 0.7f),
-                fontSize = 14.sp
+                fontSize = 14.sp,
             )
             Spacer(modifier = Modifier.height(16.dp))
             PriceCountUp(
                 targetValue = 25,
                 stableKey = key,
                 currencySymbol = "€",
-                textStyle = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                textColor = Color.White
+                textStyle =
+                    MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                textColor = Color.White,
             )
         }
     }
@@ -222,7 +228,7 @@ private fun PriceCountUpSinglePreview() {
 @Preview(
     name = "PriceRangeCountUp - Range",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun PriceRangeCountUpPreview() {
@@ -236,16 +242,17 @@ private fun PriceRangeCountUpPreview() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
+        contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "Price Range Count-Up Demo",
                 color = Color.White.copy(alpha = 0.7f),
-                fontSize = 14.sp
+                fontSize = 14.sp,
             )
             Spacer(modifier = Modifier.height(16.dp))
             PriceRangeCountUp(
@@ -253,10 +260,11 @@ private fun PriceRangeCountUpPreview() {
                 highValue = 45,
                 stableKey = key,
                 currencySymbol = "€",
-                textStyle = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                textColor = Color.White
+                textStyle =
+                    MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                textColor = Color.White,
             )
         }
     }
@@ -265,7 +273,7 @@ private fun PriceRangeCountUpPreview() {
 @Preview(
     name = "AnimatedPriceText - Parsed",
     showBackground = true,
-    backgroundColor = 0xFF050B18
+    backgroundColor = 0xFF050B18,
 )
 @Composable
 private fun AnimatedPriceTextPreview() {
@@ -279,25 +287,27 @@ private fun AnimatedPriceTextPreview() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
+        contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "Parsed Price Range Demo",
                 color = Color.White.copy(alpha = 0.7f),
-                fontSize = 14.sp
+                fontSize = 14.sp,
             )
             Spacer(modifier = Modifier.height(16.dp))
             AnimatedPriceText(
                 priceText = "€15–€35",
                 stableKey = key,
-                textStyle = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                textColor = Color.White
+                textStyle =
+                    MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                textColor = Color.White,
             )
         }
     }
@@ -310,7 +320,7 @@ private fun AnimatedPriceTextPreview() {
     showBackground = true,
     backgroundColor = 0xFF050B18,
     widthDp = 360,
-    heightDp = 640
+    heightDp = 640,
 )
 @Composable
 private fun MotionShowcasePreview() {
@@ -340,15 +350,16 @@ private fun MotionShowcasePreview() {
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DeepNavy)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(DeepNavy),
     ) {
         // Scan frame
         ScanFrameAppear(
             rect = Rect(0.1f, 0.15f, 0.9f, 0.65f),
             isVisible = frameVisible,
-            frameColor = ScaniumBluePrimary
+            frameColor = ScaniumBluePrimary,
         )
 
         // Lightning pulse
@@ -357,22 +368,23 @@ private fun MotionShowcasePreview() {
                 rect = Rect(0.1f, 0.15f, 0.9f, 0.65f),
                 triggerKey = pulseTrigger,
                 direction = PulseDirection.VERTICAL_DOWN,
-                pulseColor = LightningYellow
+                pulseColor = LightningYellow,
             )
         }
 
         // Price display at bottom
         Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 100.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 100.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "Vintage Jacket",
                 color = Color.White,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
             )
             Spacer(modifier = Modifier.height(8.dp))
             PriceRangeCountUp(
@@ -380,10 +392,11 @@ private fun MotionShowcasePreview() {
                 highValue = 45,
                 stableKey = priceKey,
                 currencySymbol = "€",
-                textStyle = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                textColor = LightningYellow
+                textStyle =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                    ),
+                textColor = LightningYellow,
             )
         }
 
@@ -392,9 +405,10 @@ private fun MotionShowcasePreview() {
             text = "MOTION SHOWCASE",
             color = Color.White.copy(alpha = 0.5f),
             fontSize = 12.sp,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 16.dp),
         )
     }
 }

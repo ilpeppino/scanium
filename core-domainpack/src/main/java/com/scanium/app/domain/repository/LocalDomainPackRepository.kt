@@ -23,81 +23,86 @@ import kotlinx.serialization.json.Json
  * @param context Android context for accessing resources
  */
 class LocalDomainPackRepository(
-    private val context: Context
+    private val context: Context,
 ) : DomainPackRepository {
-
     // Thread-safe cache for parsed Domain Pack
     @Volatile
     private var cachedPack: DomainPack? = null
     private val cacheLock = Any()
 
     // JSON parser with lenient settings for better error tolerance
-    private val json = Json {
-        ignoreUnknownKeys = true  // Ignore unknown JSON fields
-        isLenient = true           // Allow relaxed JSON syntax
-        prettyPrint = false
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true // Ignore unknown JSON fields
+            isLenient = true // Allow relaxed JSON syntax
+            prettyPrint = false
+        }
 
     /**
      * Get the active Domain Pack, loading from resources if not cached.
      *
      * This method is safe to call repeatedly; the pack is only parsed once.
      */
-    override suspend fun getActiveDomainPack(): DomainPack = withContext(Dispatchers.IO) {
-        // Double-checked locking for thread-safe caching
-        cachedPack?.let { return@withContext it }
-
-        synchronized(cacheLock) {
-            // Check again inside synchronized block
+    override suspend fun getActiveDomainPack(): DomainPack =
+        withContext(Dispatchers.IO) {
+            // Double-checked locking for thread-safe caching
             cachedPack?.let { return@withContext it }
 
-            try {
-                Log.d(TAG, "Loading Domain Pack from resources...")
+            synchronized(cacheLock) {
+                // Check again inside synchronized block
+                cachedPack?.let { return@withContext it }
 
-                // Read JSON from res/raw
-                val jsonString = context.resources
-                    .openRawResource(R.raw.home_resale_domain_pack)
-                    .bufferedReader()
-                    .use { it.readText() }
+                try {
+                    Log.d(TAG, "Loading Domain Pack from resources...")
 
-                // Parse JSON to DomainPack
-                val pack = json.decodeFromString<DomainPack>(jsonString)
+                    // Read JSON from res/raw
+                    val jsonString =
+                        context.resources
+                            .openRawResource(R.raw.home_resale_domain_pack)
+                            .bufferedReader()
+                            .use { it.readText() }
 
-                // Validate the pack
-                validateDomainPack(pack)
+                    // Parse JSON to DomainPack
+                    val pack = json.decodeFromString<DomainPack>(jsonString)
 
-                Log.d(
-                    TAG,
-                    "Domain Pack loaded: ${pack.id} v${pack.version} " +
-                            "(${pack.categories.size} categories, ${pack.attributes.size} attributes)"
-                )
+                    // Validate the pack
+                    validateDomainPack(pack)
 
-                // Cache and return
-                cachedPack = pack
-                pack
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load Domain Pack", e)
-
-                // Determine specific error type
-                val exception = when (e) {
-                    is SerializationException -> DomainPackLoadException(
-                        "Failed to parse Domain Pack JSON: ${e.message}",
-                        e
+                    Log.d(
+                        TAG,
+                        "Domain Pack loaded: ${pack.id} v${pack.version} " +
+                            "(${pack.categories.size} categories, ${pack.attributes.size} attributes)",
                     )
-                    else -> DomainPackLoadException(
-                        "Failed to load Domain Pack: ${e.message}",
-                        e
-                    )
+
+                    // Cache and return
+                    cachedPack = pack
+                    pack
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to load Domain Pack", e)
+
+                    // Determine specific error type
+                    val exception =
+                        when (e) {
+                            is SerializationException ->
+                                DomainPackLoadException(
+                                    "Failed to parse Domain Pack JSON: ${e.message}",
+                                    e,
+                                )
+                            else ->
+                                DomainPackLoadException(
+                                    "Failed to load Domain Pack: ${e.message}",
+                                    e,
+                                )
+                        }
+
+                    // Return fallback pack instead of throwing
+                    Log.w(TAG, "Using fallback empty Domain Pack")
+                    val fallback = createFallbackDomainPack()
+                    cachedPack = fallback
+                    fallback
                 }
-
-                // Return fallback pack instead of throwing
-                Log.w(TAG, "Using fallback empty Domain Pack")
-                val fallback = createFallbackDomainPack()
-                cachedPack = fallback
-                fallback
             }
         }
-    }
 
     /**
      * Validate the loaded Domain Pack for correctness.
@@ -120,7 +125,7 @@ class LocalDomainPackRepository(
         val duplicates = categoryIds.groupingBy { it }.eachCount().filter { it.value > 1 }
         if (duplicates.isNotEmpty()) {
             throw DomainPackLoadException(
-                "Domain Pack contains duplicate category IDs: ${duplicates.keys}"
+                "Domain Pack contains duplicate category IDs: ${duplicates.keys}",
             )
         }
 
@@ -133,7 +138,7 @@ class LocalDomainPackRepository(
                 Log.w(
                     TAG,
                     "Category '${category.id}' has invalid itemCategoryName: " +
-                            "'${category.itemCategoryName}' (not a valid ItemCategory enum value)"
+                        "'${category.itemCategoryName}' (not a valid ItemCategory enum value)",
                 )
             }
         }
@@ -154,7 +159,7 @@ class LocalDomainPackRepository(
             version = "0.0.0",
             description = "Emergency fallback pack used when primary pack fails to load",
             categories = emptyList(),
-            attributes = emptyList()
+            attributes = emptyList(),
         )
     }
 

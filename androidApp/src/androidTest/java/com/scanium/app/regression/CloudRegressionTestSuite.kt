@@ -32,6 +32,6 @@ import org.junit.runners.Suite
     CameraLifecycleRegressionTest::class,
     CloudClassificationRegressionTest::class,
     ShareExportRegressionTest::class,
-    BackgroundForegroundRegressionTest::class
+    BackgroundForegroundRegressionTest::class,
 )
 class CloudRegressionTestSuite

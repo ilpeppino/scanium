@@ -35,7 +35,7 @@ data class ObjectCandidate(
     var thumbnail: ImageRef? = null,
     val firstSeenFrame: Long = lastSeenFrame,
     var averageBoxArea: Float = 0f,
-    var qualityScore: Float = 0f
+    var qualityScore: Float = 0f,
 ) {
     /**
      * Update this candidate with new detection information from the current frame.
@@ -48,7 +48,7 @@ data class ObjectCandidate(
         newLabelText: String,
         newThumbnail: ImageRef?,
         boxArea: Float,
-        newQualityScore: Float = 0f
+        newQualityScore: Float = 0f,
     ) {
         boundingBox = newBoundingBox
         lastSeenFrame = frameNumber
@@ -65,7 +65,7 @@ data class ObjectCandidate(
         if (newThumbnail != null) {
             val isBetterQuality = newQualityScore > qualityScore
             val isFirstThumbnail = thumbnail == null
-            
+
             if (isFirstThumbnail || isBetterQuality) {
                 thumbnail = newThumbnail
                 qualityScore = newQualityScore
@@ -82,7 +82,7 @@ data class ObjectCandidate(
     fun getCenterPoint(): Pair<Float, Float> {
         return Pair(
             (boundingBox.left + boundingBox.right) / 2f,
-            (boundingBox.top + boundingBox.bottom) / 2f
+            (boundingBox.top + boundingBox.bottom) / 2f,
         )
     }
 
@@ -129,5 +129,5 @@ data class FloatRect(
     val left: Float,
     val top: Float,
     val right: Float,
-    val bottom: Float
+    val bottom: Float,
 )

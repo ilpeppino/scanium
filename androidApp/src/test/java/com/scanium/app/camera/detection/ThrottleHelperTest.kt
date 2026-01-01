@@ -10,7 +10,6 @@ import org.junit.Test
  * Tests time-based throttling logic for detector invocations.
  */
 class ThrottleHelperTest {
-
     private lateinit var helper: ThrottleHelper
 
     @Before

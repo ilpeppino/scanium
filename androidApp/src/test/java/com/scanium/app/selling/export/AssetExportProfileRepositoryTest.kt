@@ -11,17 +11,17 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class AssetExportProfileRepositoryTest {
-
     @Test
-    fun loadsProfilesFromAssets() = runTest {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val repository = AssetExportProfileRepository(context)
+    fun loadsProfilesFromAssets() =
+        runTest {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val repository = AssetExportProfileRepository(context)
 
-        val profiles = repository.getProfiles()
-        val defaultId = repository.getDefaultProfileId()
+            val profiles = repository.getProfiles()
+            val defaultId = repository.getDefaultProfileId()
 
-        assertThat(profiles).isNotEmpty()
-        assertThat(profiles.first().id).isNotNull()
-        assertThat(defaultId).isEqualTo(ExportProfileId.GENERIC)
-    }
+            assertThat(profiles).isNotEmpty()
+            assertThat(profiles.first().id).isNotNull()
+            assertThat(defaultId).isEqualTo(ExportProfileId.GENERIC)
+        }
 }

@@ -44,7 +44,7 @@ fun ShutterButton(
     onLongPress: () -> Unit,
     onStopScanning: () -> Unit,
     showHint: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     var isPressed by remember { mutableStateOf(false) }
@@ -55,39 +55,42 @@ fun ShutterButton(
     val scanningPulse by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "pulse",
     )
 
     // Press animation
     val pressScale by animateFloatAsState(
         targetValue = if (isPressed) 0.9f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "press_scale"
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        label = "press_scale",
     )
 
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (showHint && cameraState == CameraState.IDLE) {
             Text(
                 text = "Tap to capture, hold to scan",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White,
-                modifier = Modifier
-                    .background(
-                        Color.Black.copy(alpha = 0.6f),
-                        shape = MaterialTheme.shapes.small
-                    )
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                modifier =
+                    Modifier
+                        .background(
+                            Color.Black.copy(alpha = 0.6f),
+                            shape = MaterialTheme.shapes.small,
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
 
@@ -98,63 +101,68 @@ fun ShutterButton(
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White,
                 fontSize = 14.sp,
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
+                modifier =
+                    Modifier
+                        .padding(bottom = 4.dp),
             )
         }
 
         // Shutter button
         Box(
-            modifier = Modifier
-                .size(80.dp)
-                .semantics(mergeDescendants = true) {
-                    role = Role.Button
-                    contentDescription = when (cameraState) {
-                        CameraState.IDLE -> "Capture button. Double tap to take photo. Long press to scan continuously"
-                        CameraState.SCANNING -> "Stop scanning. Double tap to stop"
-                        CameraState.CAPTURING -> "Processing capture"
-                        CameraState.ERROR -> "Camera error"
-                    }
-                }
-                .pointerInput(cameraState) {
-                    detectTapGestures(
-                        onPress = {
-                            // Only handle press for IDLE and SCANNING states
-                            if (cameraState == CameraState.IDLE || cameraState == CameraState.SCANNING) {
-                                isPressed = true
-                                longPressTriggered = false
-
-                                // Start long press timer (500ms threshold)
-                                val longPressJob = scope.launch {
-                                    delay(500)
-                                    if (isPressed && cameraState == CameraState.IDLE) {
-                                        longPressTriggered = true
-                                        onLongPress()
-                                    }
-                                }
-
-                                // Wait for release
-                                tryAwaitRelease()
-                                longPressJob.cancel()
-                                isPressed = false
-
-                                // Handle tap if long press wasn't triggered
-                                if (!longPressTriggered) {
-                                    if (cameraState == CameraState.SCANNING) {
-                                        onStopScanning()
-                                    } else if (cameraState == CameraState.IDLE) {
-                                        onTap()
-                                    }
-                                }
+            modifier =
+                Modifier
+                    .size(80.dp)
+                    .semantics(mergeDescendants = true) {
+                        role = Role.Button
+                        contentDescription =
+                            when (cameraState) {
+                                CameraState.IDLE -> "Capture button. Double tap to take photo. Long press to scan continuously"
+                                CameraState.SCANNING -> "Stop scanning. Double tap to stop"
+                                CameraState.CAPTURING -> "Processing capture"
+                                CameraState.ERROR -> "Camera error"
                             }
-                        }
-                    )
-                },
-            contentAlignment = Alignment.Center
+                    }
+                    .pointerInput(cameraState) {
+                        detectTapGestures(
+                            onPress = {
+                                // Only handle press for IDLE and SCANNING states
+                                if (cameraState == CameraState.IDLE || cameraState == CameraState.SCANNING) {
+                                    isPressed = true
+                                    longPressTriggered = false
+
+                                    // Start long press timer (500ms threshold)
+                                    val longPressJob =
+                                        scope.launch {
+                                            delay(500)
+                                            if (isPressed && cameraState == CameraState.IDLE) {
+                                                longPressTriggered = true
+                                                onLongPress()
+                                            }
+                                        }
+
+                                    // Wait for release
+                                    tryAwaitRelease()
+                                    longPressJob.cancel()
+                                    isPressed = false
+
+                                    // Handle tap if long press wasn't triggered
+                                    if (!longPressTriggered) {
+                                        if (cameraState == CameraState.SCANNING) {
+                                            onStopScanning()
+                                        } else if (cameraState == CameraState.IDLE) {
+                                            onTap()
+                                        }
+                                    }
+                                }
+                            },
+                        )
+                    },
+            contentAlignment = Alignment.Center,
         ) {
             Canvas(
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier =
+                    Modifier
+                        .fillMaxSize(),
             ) {
                 val centerX = size.width / 2
                 val centerY = size.height / 2
@@ -170,18 +178,19 @@ fun ShutterButton(
                     color = if (cameraState == CameraState.SCANNING) Color(0xFFFF4444) else Color.White,
                     radius = outerRadius * scale,
                     center = center,
-                    style = Stroke(width = 4.dp.toPx())
+                    style = Stroke(width = 4.dp.toPx()),
                 )
 
                 // Inner circle
                 drawCircle(
-                    color = if (cameraState == CameraState.SCANNING) {
-                        Color(0xFFFF4444).copy(alpha = 0.8f)
-                    } else {
-                        Color.White.copy(alpha = if (isPressed) 0.9f else 1f)
-                    },
+                    color =
+                        if (cameraState == CameraState.SCANNING) {
+                            Color(0xFFFF4444).copy(alpha = 0.8f)
+                        } else {
+                            Color.White.copy(alpha = if (isPressed) 0.9f else 1f)
+                        },
                     radius = innerRadius * scale,
-                    center = center
+                    center = center,
                 )
 
                 // Scanning indicator (red dot in center)
@@ -189,11 +198,10 @@ fun ShutterButton(
                     drawCircle(
                         color = Color.White,
                         radius = 8.dp.toPx(),
-                        center = center
+                        center = center,
                     )
                 }
             }
         }
-
     }
 }

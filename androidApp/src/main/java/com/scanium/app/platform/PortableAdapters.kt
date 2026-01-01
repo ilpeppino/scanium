@@ -9,7 +9,10 @@ import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
 import java.io.ByteArrayOutputStream
 
-fun Rect.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
+fun Rect.toNormalizedRect(
+    frameW: Int,
+    frameH: Int,
+): NormalizedRect {
     if (frameW <= 0 || frameH <= 0) {
         return NormalizedRect(0f, 0f, 0f, 0f)
     }
@@ -22,7 +25,10 @@ fun Rect.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
     ).clampToUnit()
 }
 
-fun RectF.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
+fun RectF.toNormalizedRect(
+    frameW: Int,
+    frameH: Int,
+): NormalizedRect {
     if (frameW <= 0 || frameH <= 0) {
         return NormalizedRect(0f, 0f, 0f, 0f)
     }
@@ -35,7 +41,10 @@ fun RectF.toNormalizedRect(frameW: Int, frameH: Int): NormalizedRect {
     ).clampToUnit()
 }
 
-fun NormalizedRect.toRectF(frameW: Int, frameH: Int): RectF {
+fun NormalizedRect.toRectF(
+    frameW: Int,
+    frameH: Int,
+): RectF {
     val clamped = clampToUnit()
     return RectF(
         clamped.left * frameW,
@@ -58,7 +67,7 @@ fun Bitmap.toImageRefJpeg(quality: Int = 85): ImageRef.Bytes {
 }
 
 fun ImageRef.Bytes.toBitmap(): Bitmap {
-    return PerformanceMonitor.measureBitmapDecode("${width}x${height}") {
+    return PerformanceMonitor.measureBitmapDecode("${width}x$height") {
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             ?: Bitmap.createBitmap(
                 width.coerceAtLeast(1),

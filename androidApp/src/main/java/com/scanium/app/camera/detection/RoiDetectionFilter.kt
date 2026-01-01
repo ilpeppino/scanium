@@ -13,7 +13,7 @@ import com.scanium.core.models.scanning.ScanRoi
 data class RoiFilterResult(
     val roiEligible: List<DetectionResult>,
     val outsideRoi: List<DetectionResult>,
-    val totalDetections: Int
+    val totalDetections: Int,
 ) {
     /** True if detections exist but none are inside ROI */
     val hasDetectionsOutsideRoiOnly: Boolean
@@ -38,7 +38,6 @@ data class RoiFilterResult(
  * - Consistent behavior between visualization and scanning
  */
 object RoiDetectionFilter {
-
     /**
      * Filter detections by ROI eligibility.
      *
@@ -50,13 +49,13 @@ object RoiDetectionFilter {
     fun filterByRoi(
         detections: List<DetectionResult>,
         scanRoi: ScanRoi,
-        maxPreviewBoxes: Int = MAX_PREVIEW_BOXES
+        maxPreviewBoxes: Int = MAX_PREVIEW_BOXES,
     ): RoiFilterResult {
         if (detections.isEmpty()) {
             return RoiFilterResult(
                 roiEligible = emptyList(),
                 outsideRoi = emptyList(),
-                totalDetections = 0
+                totalDetections = 0,
             )
         }
 
@@ -76,16 +75,17 @@ object RoiDetectionFilter {
         }
 
         // Limit to max preview boxes, preferring centered/higher confidence ones
-        val limitedEligible = if (eligible.size > maxPreviewBoxes) {
-            selectBestCandidates(eligible, scanRoi, maxPreviewBoxes)
-        } else {
-            eligible
-        }
+        val limitedEligible =
+            if (eligible.size > maxPreviewBoxes) {
+                selectBestCandidates(eligible, scanRoi, maxPreviewBoxes)
+            } else {
+                eligible
+            }
 
         return RoiFilterResult(
             roiEligible = limitedEligible,
             outsideRoi = outside,
-            totalDetections = detections.size
+            totalDetections = detections.size,
         )
     }
 
@@ -96,7 +96,10 @@ object RoiDetectionFilter {
      * @param scanRoi Current scan ROI
      * @return True if detection center is inside ROI
      */
-    fun isInsideRoi(detection: DetectionResult, scanRoi: ScanRoi): Boolean {
+    fun isInsideRoi(
+        detection: DetectionResult,
+        scanRoi: ScanRoi,
+    ): Boolean {
         val bbox = detection.bboxNorm
         val centerX = (bbox.left + bbox.right) / 2f
         val centerY = (bbox.top + bbox.bottom) / 2f
@@ -110,7 +113,10 @@ object RoiDetectionFilter {
      * @param scanRoi Current scan ROI
      * @return Score from 0 (corner) to 1 (perfectly centered)
      */
-    fun calculateCenterScore(detection: DetectionResult, scanRoi: ScanRoi): Float {
+    fun calculateCenterScore(
+        detection: DetectionResult,
+        scanRoi: ScanRoi,
+    ): Float {
         val bbox = detection.bboxNorm
         val centerX = (bbox.left + bbox.right) / 2f
         val centerY = (bbox.top + bbox.bottom) / 2f
@@ -123,7 +129,7 @@ object RoiDetectionFilter {
     private fun selectBestCandidates(
         detections: List<DetectionResult>,
         scanRoi: ScanRoi,
-        maxCount: Int
+        maxCount: Int,
     ): List<DetectionResult> {
         return detections
             .map { detection ->

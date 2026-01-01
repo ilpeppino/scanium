@@ -7,29 +7,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.scanium.app.camera.detection.DocumentCandidateState
 import com.scanium.app.platform.toRectF
 import com.scanium.app.ui.theme.CyanGlow
 import com.scanium.app.ui.theme.ScaniumBlue
+import androidx.compose.ui.geometry.Size as ComposeSize
 
 @Composable
 fun DocumentAlignmentOverlay(
     candidateState: DocumentCandidateState,
     imageSize: Size,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier.fillMaxSize()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
-        val transform = calculateTransform(
-            imageWidth = imageSize.width,
-            imageHeight = imageSize.height,
-            previewWidth = canvasWidth,
-            previewHeight = canvasHeight
-        )
+        val transform =
+            calculateTransform(
+                imageWidth = imageSize.width,
+                imageHeight = imageSize.height,
+                previewWidth = canvasWidth,
+                previewHeight = canvasHeight,
+            )
 
         val strokeWidth = 2.dp.toPx()
         val glowWidth = 6.dp.toPx()
@@ -45,7 +46,7 @@ fun DocumentAlignmentOverlay(
             topLeft = topLeft,
             size = boxSize,
             cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-            style = Stroke(width = glowWidth)
+            style = Stroke(width = glowWidth),
         )
 
         drawRoundRect(
@@ -53,19 +54,20 @@ fun DocumentAlignmentOverlay(
             topLeft = topLeft,
             size = boxSize,
             cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-            style = Stroke(width = strokeWidth)
+            style = Stroke(width = strokeWidth),
         )
 
         val quad = candidateState.candidate.quad
         if (quad.size == 4) {
-            val points = quad.map { point ->
-                val x = point.x * imageSize.width
-                val y = point.y * imageSize.height
-                Offset(
-                    x = x * transform.scaleX + transform.offsetX,
-                    y = y * transform.scaleY + transform.offsetY
-                )
-            }
+            val points =
+                quad.map { point ->
+                    val x = point.x * imageSize.width
+                    val y = point.y * imageSize.height
+                    Offset(
+                        x = x * transform.scaleX + transform.offsetX,
+                        y = y * transform.scaleY + transform.offsetY,
+                    )
+                }
 
             for (index in points.indices) {
                 val start = points[index]
@@ -74,7 +76,7 @@ fun DocumentAlignmentOverlay(
                     color = ScaniumBlue,
                     start = start,
                     end = end,
-                    strokeWidth = strokeWidth
+                    strokeWidth = strokeWidth,
                 )
             }
         }

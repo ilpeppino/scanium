@@ -4,7 +4,7 @@ import kotlin.math.roundToInt
 
 data class Money(
     val amount: Double,
-    val currencyCode: String = "EUR"
+    val currencyCode: String = "EUR",
 )
 
 data class PriceRange(
@@ -12,16 +12,17 @@ data class PriceRange(
     val high: Money,
     val confidence: Float = 0.0f,
     val source: String = "",
-    val metadata: Map<String, String> = emptyMap()
+    val metadata: Map<String, String> = emptyMap(),
 ) {
     val currencyCode: String = high.currencyCode
 
     fun formatted(): String {
-        val symbol = when (currencyCode) {
-            "EUR" -> "€"
-            "USD" -> "$"
-            else -> "$currencyCode "
-        }
+        val symbol =
+            when (currencyCode) {
+                "EUR" -> "€"
+                "USD" -> "$"
+                else -> "$currencyCode "
+            }
         return "$symbol${low.amount.roundToInt()}–${high.amount.roundToInt()}"
     }
 
@@ -30,8 +31,11 @@ data class PriceRange(
 
 sealed interface PriceEstimationStatus {
     object Idle : PriceEstimationStatus
+
     object Estimating : PriceEstimationStatus
+
     data class Ready(val priceRange: PriceRange) : PriceEstimationStatus
+
     data class Failed(val reason: String? = null) : PriceEstimationStatus
 }
 
@@ -41,12 +45,12 @@ data class PriceEstimationRequest(
     val domainCategoryId: String? = null,
     val attributes: Map<String, String> = emptyMap(),
     val region: String? = null,
-    val currencyCode: String = "EUR"
+    val currencyCode: String = "EUR",
 )
 
 data class PriceEstimatorCapabilities(
     val supportsAttributes: Boolean = true,
-    val supportsDomainCategory: Boolean = true
+    val supportsDomainCategory: Boolean = true,
 )
 
 interface PriceEstimatorProvider {

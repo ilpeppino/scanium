@@ -21,7 +21,7 @@ class ItemAggregator(
     private val config: AggregationConfig = AggregationConfig(),
     private val logger: Logger = Logger.NONE,
     private val mergePolicy: SpatialTemporalMergePolicy = SpatialTemporalMergePolicy(),
-    private val telemetry: Telemetry? = null
+    private val telemetry: Telemetry? = null,
 ) {
     companion object {
         private const val TAG = "ItemAggregator"
@@ -45,13 +45,20 @@ class ItemAggregator(
     fun getCurrentSimilarityThreshold(): Float = dynamicThreshold ?: config.similarityThreshold
 
     fun processDetection(detection: ScannedItem): AggregatedItem {
-        val span = telemetry?.beginSpan("aggregation.process_detection", mapOf(
-            "detection_id" to detection.aggregatedId,
-            "category" to detection.category.name
-        ))
+        val span =
+            telemetry?.beginSpan(
+                "aggregation.process_detection",
+                mapOf(
+                    "detection_id" to detection.aggregatedId,
+                    "category" to detection.category.name,
+                ),
+            )
         try {
             val currentThreshold = getCurrentSimilarityThreshold()
-            logger.i(TAG, ">>> processDetection id=${detection.aggregatedId}, category=${detection.category}, confidence=${detection.confidence}")
+            logger.i(
+                TAG,
+                ">>> processDetection id=${detection.aggregatedId}, category=${detection.category}, confidence=${detection.confidence}",
+            )
 
             val (bestMatch, bestSimilarity) = findBestMatch(detection)
 
@@ -68,14 +75,18 @@ class ItemAggregator(
             // This handles tracker ID churn and cases where the full similarity calculation is too strict
             val timestampMs = nowMillis()
             val categoryId = detection.category.ordinal
-            val spatialMatch = findSpatialTemporalMatch(
-                detection.boundingBox,
-                timestampMs,
-                categoryId
-            )
+            val spatialMatch =
+                findSpatialTemporalMatch(
+                    detection.boundingBox,
+                    timestampMs,
+                    categoryId,
+                )
 
             if (spatialMatch != null) {
-                logger.w(TAG, "✓ SPATIAL-TEMPORAL MERGE detection ${detection.aggregatedId} → ${spatialMatch.aggregatedId} (tracker ID churn)")
+                logger.w(
+                    TAG,
+                    "✓ SPATIAL-TEMPORAL MERGE detection ${detection.aggregatedId} → ${spatialMatch.aggregatedId} (tracker ID churn)",
+                )
                 spatialMatch.merge(detection)
                 // Update candidate metadata cache
                 updateCandidateMetadata(spatialMatch)
@@ -105,9 +116,13 @@ class ItemAggregator(
     fun processDetections(detections: List<ScannedItem>): List<AggregatedItem> {
         if (detections.isEmpty()) return emptyList()
 
-        val span = telemetry?.beginSpan("aggregation.process_batch", mapOf(
-            "batch_size" to detections.size.toString()
-        ))
+        val span =
+            telemetry?.beginSpan(
+                "aggregation.process_batch",
+                mapOf(
+                    "batch_size" to detections.size.toString(),
+                ),
+            )
         return try {
             detections.map { processDetection(it) }
         } finally {
@@ -122,16 +137,17 @@ class ItemAggregator(
     fun updatePriceEstimation(
         aggregatedId: String,
         status: PriceEstimationStatus,
-        priceRange: PriceRange? = null
+        priceRange: PriceRange? = null,
     ) {
         aggregatedItems[aggregatedId]?.updatePriceEstimation(status, priceRange)
     }
 
     fun removeStaleItems(maxAgeMs: Long): Int {
         val now = nowMillis()
-        val stale = aggregatedItems.values.filter { item ->
-            now - item.lastSeenTimestamp >= maxAgeMs
-        }
+        val stale =
+            aggregatedItems.values.filter { item ->
+                now - item.lastSeenTimestamp >= maxAgeMs
+            }
 
         stale.forEach { item ->
             logger.d(TAG, "Removing stale item ${item.aggregatedId}")
@@ -160,7 +176,7 @@ class ItemAggregator(
     private fun findSpatialTemporalMatch(
         bbox: NormalizedRect,
         timestampMs: Long,
-        categoryId: Int
+        categoryId: Int,
     ): AggregatedItem? {
         // Quick path: if no cached metadata, no matches possible
         if (candidateMetadataCache.isEmpty()) return null
@@ -169,8 +185,9 @@ class ItemAggregator(
         val candidates = candidateMetadataCache.values.toList()
 
         // Find best match using the merge policy
-        val matchResult = mergePolicy.findBestMatch(bbox, timestampMs, categoryId, candidates)
-            ?: return null
+        val matchResult =
+            mergePolicy.findBestMatch(bbox, timestampMs, categoryId, candidates)
+                ?: return null
 
         val (bestIndex, score) = matchResult
 
@@ -187,26 +204,28 @@ class ItemAggregator(
      * Stores lightweight metadata for fast spatial-temporal matching.
      */
     private fun updateCandidateMetadata(item: AggregatedItem) {
-        val metadata = mergePolicy.createCandidateMetadata(
-            bbox = item.boundingBox,
-            timestampMs = item.lastSeenTimestamp,
-            categoryId = item.category.ordinal
-        )
+        val metadata =
+            mergePolicy.createCandidateMetadata(
+                bbox = item.boundingBox,
+                timestampMs = item.lastSeenTimestamp,
+                categoryId = item.category.ordinal,
+            )
         candidateMetadataCache[item.aggregatedId] = metadata
     }
 
     fun getStats(): AggregationStats {
         val totalMerges = aggregatedItems.values.sumOf { it.mergeCount - 1 }
-        val avgMergesPerItem = if (aggregatedItems.isNotEmpty()) {
-            totalMerges.toFloat() / aggregatedItems.size
-        } else {
-            0f
-        }
+        val avgMergesPerItem =
+            if (aggregatedItems.isNotEmpty()) {
+                totalMerges.toFloat() / aggregatedItems.size
+            } else {
+                0f
+            }
 
         return AggregationStats(
             totalItems = aggregatedItems.size,
             totalMerges = totalMerges,
-            averageMergesPerItem = avgMergesPerItem
+            averageMergesPerItem = avgMergesPerItem,
         )
     }
 
@@ -215,7 +234,7 @@ class ItemAggregator(
         category: ItemCategory?,
         label: String?,
         priceRange: Pair<Double, Double>?,
-        classificationConfidence: Float? = null
+        classificationConfidence: Float? = null,
     ) {
         aggregatedItems[aggregatedId]?.let { item ->
             category?.let { item.enhancedCategory = it }
@@ -242,7 +261,10 @@ class ItemAggregator(
         return bestMatch to bestSimilarity
     }
 
-    private fun calculateSimilarity(detection: ScannedItem, item: AggregatedItem): Float {
+    private fun calculateSimilarity(
+        detection: ScannedItem,
+        item: AggregatedItem,
+    ): Float {
         // Hard filter: category must match if required
         if (config.categoryMatchRequired && detection.category != item.category) {
             return 0f
@@ -295,17 +317,21 @@ class ItemAggregator(
         if (totalWeight == 0f) return 0f
 
         val categoryScore = if (detection.category == item.category) 1f else 0f
-        val weightedScore = (
-            categoryScore * weights.categoryWeight +
-                labelScore * weights.labelWeight +
-                sizeScore * weights.sizeWeight +
-                distanceScore * weights.distanceWeight
+        val weightedScore =
+            (
+                categoryScore * weights.categoryWeight +
+                    labelScore * weights.labelWeight +
+                    sizeScore * weights.sizeWeight +
+                    distanceScore * weights.distanceWeight
             ) / totalWeight
 
         return weightedScore.coerceIn(0f, 1f)
     }
 
-    private fun calculateLabelSimilarity(label1: String, label2: String): Float {
+    private fun calculateLabelSimilarity(
+        label1: String,
+        label2: String,
+    ): Float {
         if (label1.isEmpty() || label2.isEmpty()) return 0f
         if (label1.equals(label2, ignoreCase = true)) return 1f
 
@@ -317,7 +343,10 @@ class ItemAggregator(
         return if (maxLen > 0) 1f - (distance.toFloat() / maxLen) else 0f
     }
 
-    private fun levenshteinDistance(s1: String, s2: String): Int {
+    private fun levenshteinDistance(
+        s1: String,
+        s2: String,
+    ): Int {
         val len1 = s1.length
         val len2 = s2.length
         val dp = Array(len1 + 1) { IntArray(len2 + 1) }
@@ -328,11 +357,12 @@ class ItemAggregator(
         for (i in 1..len1) {
             for (j in 1..len2) {
                 val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
-                dp[i][j] = minOf(
-                    dp[i - 1][j] + 1,
-                    dp[i][j - 1] + 1,
-                    dp[i - 1][j - 1] + cost
-                )
+                dp[i][j] =
+                    minOf(
+                        dp[i - 1][j] + 1,
+                        dp[i][j - 1] + 1,
+                        dp[i - 1][j - 1] + cost,
+                    )
             }
         }
 
@@ -353,28 +383,30 @@ class ItemAggregator(
             mergeCount = detection.mergeCount,
             firstSeenTimestamp = detection.timestampMs,
             lastSeenTimestamp = detection.timestampMs,
-            sourceDetectionIds = detection.sourceDetectionIds.toMutableSet().ifEmpty { mutableSetOf(detection.id) }
+            sourceDetectionIds = detection.sourceDetectionIds.toMutableSet().ifEmpty { mutableSetOf(detection.id) },
         )
     }
 
     private fun logSimilarityBreakdown(
         detection: ScannedItem,
         item: AggregatedItem,
-        finalScore: Float
+        finalScore: Float,
     ) {
-        val labelSim = if (detection.labelText.isNotEmpty() && item.labelText.isNotEmpty()) {
-            calculateLabelSimilarity(detection.labelText, item.labelText)
-        } else {
-            0f
-        }
+        val labelSim =
+            if (detection.labelText.isNotEmpty() && item.labelText.isNotEmpty()) {
+                calculateLabelSimilarity(detection.labelText, item.labelText)
+            } else {
+                0f
+            }
 
         val detectionArea = detection.boundingBox.area
         val itemArea = item.boundingBox.area
-        val sizeSim = if (detectionArea > 0.0001f && itemArea > 0.0001f) {
-            minOf(detectionArea, itemArea) / maxOf(detectionArea, itemArea)
-        } else {
-            0f
-        }
+        val sizeSim =
+            if (detectionArea > 0.0001f && itemArea > 0.0001f) {
+                minOf(detectionArea, itemArea) / maxOf(detectionArea, itemArea)
+            } else {
+                0f
+            }
 
         val detectionCenter = detection.boundingBox.center()
         val itemCenter = item.boundingBox.center()
@@ -421,7 +453,7 @@ data class AggregatedItem(
     var classificationStatus: String = "NOT_STARTED",
     var domainCategoryId: String? = null,
     var classificationErrorMessage: String? = null,
-    var classificationRequestId: String? = null
+    var classificationRequestId: String? = null,
 ) {
     fun merge(detection: ScannedItem) {
         mergeCount++
@@ -473,11 +505,14 @@ data class AggregatedItem(
             classificationStatus = classificationStatus,
             domainCategoryId = domainCategoryId,
             classificationErrorMessage = classificationErrorMessage,
-            classificationRequestId = classificationRequestId
+            classificationRequestId = classificationRequestId,
         )
     }
 
-    fun updatePriceEstimation(status: PriceEstimationStatus, priceRange: PriceRange?) {
+    fun updatePriceEstimation(
+        status: PriceEstimationStatus,
+        priceRange: PriceRange?,
+    ) {
         priceEstimationStatus = status
         priceRange?.let { range ->
             estimatedPriceRange = range
@@ -492,106 +527,118 @@ data class AggregationConfig(
     val maxSizeDifferenceRatio: Float = 0.5f,
     val categoryMatchRequired: Boolean = true,
     val labelMatchRequired: Boolean = false,
-    val weights: SimilarityWeights = SimilarityWeights()
+    val weights: SimilarityWeights = SimilarityWeights(),
 )
 
 data class SimilarityWeights(
     val categoryWeight: Float = 0.3f,
     val labelWeight: Float = 0.25f,
     val sizeWeight: Float = 0.2f,
-    val distanceWeight: Float = 0.25f
+    val distanceWeight: Float = 0.25f,
 )
 
 data class AggregationStats(
     val totalItems: Int,
     val totalMerges: Int,
-    val averageMergesPerItem: Float
+    val averageMergesPerItem: Float,
 )
 
 object AggregationPresets {
-    val BALANCED = AggregationConfig(
-        similarityThreshold = 0.6f,
-        maxCenterDistanceRatio = 0.25f,
-        maxSizeDifferenceRatio = 0.5f,
-        categoryMatchRequired = true,
-        labelMatchRequired = false,
-        weights = SimilarityWeights(
-            categoryWeight = 0.3f,
-            labelWeight = 0.25f,
-            sizeWeight = 0.20f,
-            distanceWeight = 0.25f
+    val BALANCED =
+        AggregationConfig(
+            similarityThreshold = 0.6f,
+            maxCenterDistanceRatio = 0.25f,
+            maxSizeDifferenceRatio = 0.5f,
+            categoryMatchRequired = true,
+            labelMatchRequired = false,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.3f,
+                    labelWeight = 0.25f,
+                    sizeWeight = 0.20f,
+                    distanceWeight = 0.25f,
+                ),
         )
-    )
 
-    val STRICT = AggregationConfig(
-        similarityThreshold = 0.75f,
-        maxCenterDistanceRatio = 0.15f,
-        maxSizeDifferenceRatio = 0.3f,
-        categoryMatchRequired = true,
-        labelMatchRequired = true,
-        weights = SimilarityWeights(
-            categoryWeight = 0.35f,
-            labelWeight = 0.35f,
-            sizeWeight = 0.15f,
-            distanceWeight = 0.15f
+    val STRICT =
+        AggregationConfig(
+            similarityThreshold = 0.75f,
+            maxCenterDistanceRatio = 0.15f,
+            maxSizeDifferenceRatio = 0.3f,
+            categoryMatchRequired = true,
+            labelMatchRequired = true,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.35f,
+                    labelWeight = 0.35f,
+                    sizeWeight = 0.15f,
+                    distanceWeight = 0.15f,
+                ),
         )
-    )
 
-    val LOOSE = AggregationConfig(
-        similarityThreshold = 0.5f,
-        maxCenterDistanceRatio = 0.35f,
-        maxSizeDifferenceRatio = 0.7f,
-        categoryMatchRequired = true,
-        labelMatchRequired = false,
-        weights = SimilarityWeights(
-            categoryWeight = 0.35f,
-            labelWeight = 0.2f,
-            sizeWeight = 0.15f,
-            distanceWeight = 0.3f
+    val LOOSE =
+        AggregationConfig(
+            similarityThreshold = 0.5f,
+            maxCenterDistanceRatio = 0.35f,
+            maxSizeDifferenceRatio = 0.7f,
+            categoryMatchRequired = true,
+            labelMatchRequired = false,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.35f,
+                    labelWeight = 0.2f,
+                    sizeWeight = 0.15f,
+                    distanceWeight = 0.3f,
+                ),
         )
-    )
 
-    val REALTIME = AggregationConfig(
-        similarityThreshold = 0.55f,
-        maxCenterDistanceRatio = 0.30f,
-        maxSizeDifferenceRatio = 0.6f,
-        categoryMatchRequired = true,
-        labelMatchRequired = false,
-        weights = SimilarityWeights(
-            categoryWeight = 0.4f,
-            labelWeight = 0.15f,
-            sizeWeight = 0.20f,
-            distanceWeight = 0.25f
+    val REALTIME =
+        AggregationConfig(
+            similarityThreshold = 0.55f,
+            maxCenterDistanceRatio = 0.30f,
+            maxSizeDifferenceRatio = 0.6f,
+            categoryMatchRequired = true,
+            labelMatchRequired = false,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.4f,
+                    labelWeight = 0.15f,
+                    sizeWeight = 0.20f,
+                    distanceWeight = 0.25f,
+                ),
         )
-    )
 
-    val LABEL_FOCUSED = AggregationConfig(
-        similarityThreshold = 0.65f,
-        maxCenterDistanceRatio = 0.4f,
-        maxSizeDifferenceRatio = 0.6f,
-        categoryMatchRequired = true,
-        labelMatchRequired = true,
-        weights = SimilarityWeights(
-            categoryWeight = 0.25f,
-            labelWeight = 0.45f,
-            sizeWeight = 0.15f,
-            distanceWeight = 0.15f
+    val LABEL_FOCUSED =
+        AggregationConfig(
+            similarityThreshold = 0.65f,
+            maxCenterDistanceRatio = 0.4f,
+            maxSizeDifferenceRatio = 0.6f,
+            categoryMatchRequired = true,
+            labelMatchRequired = true,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.25f,
+                    labelWeight = 0.45f,
+                    sizeWeight = 0.15f,
+                    distanceWeight = 0.15f,
+                ),
         )
-    )
 
-    val SPATIAL_FOCUSED = AggregationConfig(
-        similarityThreshold = 0.6f,
-        maxCenterDistanceRatio = 0.20f,
-        maxSizeDifferenceRatio = 0.4f,
-        categoryMatchRequired = true,
-        labelMatchRequired = false,
-        weights = SimilarityWeights(
-            categoryWeight = 0.3f,
-            labelWeight = 0.1f,
-            sizeWeight = 0.3f,
-            distanceWeight = 0.3f
+    val SPATIAL_FOCUSED =
+        AggregationConfig(
+            similarityThreshold = 0.6f,
+            maxCenterDistanceRatio = 0.20f,
+            maxSizeDifferenceRatio = 0.4f,
+            categoryMatchRequired = true,
+            labelMatchRequired = false,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.3f,
+                    labelWeight = 0.1f,
+                    sizeWeight = 0.3f,
+                    distanceWeight = 0.3f,
+                ),
         )
-    )
 
     fun getPreset(name: String): AggregationConfig {
         return when (name.uppercase()) {
@@ -605,20 +652,21 @@ object AggregationPresets {
         }
     }
 
-    fun getPresetNames(): List<String> = listOf(
-        "BALANCED",
-        "STRICT",
-        "LOOSE",
-        "REALTIME",
-        "LABEL_FOCUSED",
-        "SPATIAL_FOCUSED"
-    )
+    fun getPresetNames(): List<String> =
+        listOf(
+            "BALANCED",
+            "STRICT",
+            "LOOSE",
+            "REALTIME",
+            "LABEL_FOCUSED",
+            "SPATIAL_FOCUSED",
+        )
 }
 
 private fun NormalizedRect.center(): Pair<Float, Float> {
     return Pair(
         (left + right) / 2f,
-        (top + bottom) / 2f
+        (top + bottom) / 2f,
     )
 }
 

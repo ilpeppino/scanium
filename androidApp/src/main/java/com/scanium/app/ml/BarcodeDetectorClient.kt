@@ -20,16 +20,16 @@ import kotlinx.coroutines.tasks.await
  * Configures ML Kit to scan all barcode formats and convert results to ScannedItems.
  */
 class BarcodeDetectorClient {
-
     companion object {
         private const val TAG = "BarcodeDetectorClient"
     }
 
     // ML Kit barcode scanner configured to detect all formats
     private val scanner: BarcodeScanner by lazy {
-        val options = BarcodeScannerOptions.Builder()
-            .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
-            .build()
+        val options =
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(Barcode.FORMAT_ALL_FORMATS)
+                .build()
 
         Log.d(TAG, "Creating barcode scanner with all formats")
         BarcodeScanning.getClient(options)
@@ -44,7 +44,7 @@ class BarcodeDetectorClient {
      */
     suspend fun scanBarcodes(
         image: InputImage,
-        sourceBitmap: () -> Bitmap?
+        sourceBitmap: () -> Bitmap?,
     ): List<ScannedItem> {
         return try {
             Log.d(TAG, "Starting barcode scan on image ${image.width}x${image.height}, rotation=${image.rotationDegrees}")
@@ -58,22 +58,24 @@ class BarcodeDetectorClient {
             }
 
             // OPTIMIZATION: Only generate bitmap if we have barcodes to process
-            val bitmap = if (barcodes.isNotEmpty()) {
-                sourceBitmap()
-            } else {
-                Log.d(TAG, "No barcodes detected - skipping bitmap generation")
-                null
-            }
+            val bitmap =
+                if (barcodes.isNotEmpty()) {
+                    sourceBitmap()
+                } else {
+                    Log.d(TAG, "No barcodes detected - skipping bitmap generation")
+                    null
+                }
 
             // Convert each detected barcode to ScannedItem
-            val items = barcodes.mapNotNull { barcode ->
-                convertToScannedItem(
-                    barcode = barcode,
-                    sourceBitmap = bitmap,
-                    fallbackWidth = image.width,
-                    fallbackHeight = image.height
-                )
-            }
+            val items =
+                barcodes.mapNotNull { barcode ->
+                    convertToScannedItem(
+                        barcode = barcode,
+                        sourceBitmap = bitmap,
+                        fallbackWidth = image.width,
+                        fallbackHeight = image.height,
+                    )
+                }
 
             Log.d(TAG, "Converted to ${items.size} scanned items")
             items
@@ -93,7 +95,7 @@ class BarcodeDetectorClient {
         barcode: Barcode,
         sourceBitmap: Bitmap?,
         fallbackWidth: Int,
-        fallbackHeight: Int
+        fallbackHeight: Int,
     ): ScannedItem? {
         return try {
             // Use barcode rawValue as stable ID (or displayValue if rawValue is null)
@@ -104,10 +106,11 @@ class BarcodeDetectorClient {
             val frameHeight = sourceBitmap?.height ?: fallbackHeight
 
             // Convert to NormalizedRect early (prefer portable type)
-            val bboxNorm = barcode.boundingBox?.toNormalizedRect(
-                frameWidth = frameWidth,
-                frameHeight = frameHeight
-            ) ?: com.scanium.app.model.NormalizedRect(0f, 0f, 0.1f, 0.1f)
+            val bboxNorm =
+                barcode.boundingBox?.toNormalizedRect(
+                    frameWidth = frameWidth,
+                    frameHeight = frameHeight,
+                ) ?: com.scanium.app.model.NormalizedRect(0f, 0f, 0.1f, 0.1f)
 
             // For cropping, convert back to pixel coordinates temporarily
             val boundingBoxPixels = barcode.boundingBox ?: Rect(0, 0, 100, 100)
@@ -132,7 +135,7 @@ class BarcodeDetectorClient {
                 confidence = confidence,
                 boundingBox = bboxNorm,
                 barcodeValue = barcodeValue,
-                labelText = formatLabel(barcode.format)
+                labelText = formatLabel(barcode.format),
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error converting barcode to item", e)
@@ -180,7 +183,8 @@ class BarcodeDetectorClient {
             Barcode.FORMAT_CODE_39,
             Barcode.FORMAT_CODE_93,
             Barcode.FORMAT_ITF,
-            Barcode.FORMAT_CODABAR -> {
+            Barcode.FORMAT_CODABAR,
+            -> {
                 Log.d(TAG, "Barcode detected: format=${barcode.format}, value=${barcode.rawValue}")
                 ItemCategory.BARCODE
             }
@@ -195,7 +199,10 @@ class BarcodeDetectorClient {
     /**
      * Crops a thumbnail from the source bitmap using the bounding box.
      */
-    private fun cropThumbnail(source: Bitmap, boundingBox: Rect): Bitmap? {
+    private fun cropThumbnail(
+        source: Bitmap,
+        boundingBox: Rect,
+    ): Bitmap? {
         return try {
             // Ensure bounding box is within bitmap bounds
             val left = boundingBox.left.coerceIn(0, source.width - 1)

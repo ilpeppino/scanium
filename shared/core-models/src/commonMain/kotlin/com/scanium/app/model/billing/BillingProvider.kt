@@ -4,10 +4,16 @@ import kotlinx.coroutines.flow.Flow
 
 interface BillingProvider {
     val entitlementState: Flow<EntitlementState>
-    
+
     suspend fun refreshEntitlements()
-    suspend fun purchase(productId: String, activityContext: Any? = null): Result<Unit>
+
+    suspend fun purchase(
+        productId: String,
+        activityContext: Any? = null,
+    ): Result<Unit>
+
     suspend fun restorePurchases(): Result<Unit>
+
     suspend fun getProductDetails(productIds: List<String>): List<ProductDetails>
 }
 
@@ -17,5 +23,5 @@ data class ProductDetails(
     val description: String,
     val formattedPrice: String,
     val priceCurrencyCode: String,
-    val priceAmountMicros: Long
+    val priceAmountMicros: Long,
 )

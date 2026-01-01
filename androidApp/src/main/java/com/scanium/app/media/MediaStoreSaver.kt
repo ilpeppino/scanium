@@ -1,19 +1,18 @@
 package com.scanium.app.media
 
-import android.content.ContentValues
 import android.Manifest
+import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.ContextCompat
-import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.app.model.toBitmap
+import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.IOException
@@ -26,7 +25,7 @@ import java.util.*
 data class SaveResult(
     val successCount: Int,
     val failureCount: Int,
-    val errors: List<String> = emptyList()
+    val errors: List<String> = emptyList(),
 ) {
     val totalCount: Int = successCount + failureCount
     val isSuccess: Boolean = failureCount == 0
@@ -60,47 +59,49 @@ object MediaStoreSaver {
      */
     suspend fun saveImagesToGallery(
         context: Context,
-        images: List<Triple<String, Uri?, ImageRef?>>
-    ): SaveResult = withContext(Dispatchers.IO) {
-        var successCount = 0
-        var failureCount = 0
-        val errors = mutableListOf<String>()
+        images: List<Triple<String, Uri?, ImageRef?>>,
+    ): SaveResult =
+        withContext(Dispatchers.IO) {
+            var successCount = 0
+            var failureCount = 0
+            val errors = mutableListOf<String>()
 
-        Log.i(TAG, "Starting save operation for ${images.size} images")
-        if (!hasWritePermission(context)) {
-            val errorMsg = "Storage permission not granted"
-            Log.w(TAG, errorMsg)
-            return@withContext SaveResult(0, images.size, listOf(errorMsg))
-        }
-
-        images.forEachIndexed { index, (itemId, fullImageUri, thumbnail) ->
-            try {
-                if (fullImageUri != null) {
-                    // Prefer high-res URI
-                    saveFromUri(context, fullImageUri, itemId, index)
-                } else if (thumbnail != null) {
-                    val thumbnailBitmap = thumbnail.toBitmap()
-                        ?: throw IllegalArgumentException("Unsupported thumbnail type: ${thumbnail::class.java.simpleName}")
-                    // Fallback to thumbnail
-                    saveSingleBitmap(context, thumbnailBitmap, itemId, index)
-                } else {
-                    throw IllegalArgumentException("No image source available")
-                }
-                successCount++
-                Log.d(TAG, "Successfully saved image $index for item $itemId")
-            } catch (e: Exception) {
-                failureCount++
-                val errorMsg = "Failed to save image $index: ${e.message}"
-                errors.add(errorMsg)
-                Log.e(TAG, errorMsg, e)
+            Log.i(TAG, "Starting save operation for ${images.size} images")
+            if (!hasWritePermission(context)) {
+                val errorMsg = "Storage permission not granted"
+                Log.w(TAG, errorMsg)
+                return@withContext SaveResult(0, images.size, listOf(errorMsg))
             }
+
+            images.forEachIndexed { index, (itemId, fullImageUri, thumbnail) ->
+                try {
+                    if (fullImageUri != null) {
+                        // Prefer high-res URI
+                        saveFromUri(context, fullImageUri, itemId, index)
+                    } else if (thumbnail != null) {
+                        val thumbnailBitmap =
+                            thumbnail.toBitmap()
+                                ?: throw IllegalArgumentException("Unsupported thumbnail type: ${thumbnail::class.java.simpleName}")
+                        // Fallback to thumbnail
+                        saveSingleBitmap(context, thumbnailBitmap, itemId, index)
+                    } else {
+                        throw IllegalArgumentException("No image source available")
+                    }
+                    successCount++
+                    Log.d(TAG, "Successfully saved image $index for item $itemId")
+                } catch (e: Exception) {
+                    failureCount++
+                    val errorMsg = "Failed to save image $index: ${e.message}"
+                    errors.add(errorMsg)
+                    Log.e(TAG, errorMsg, e)
+                }
+            }
+
+            val result = SaveResult(successCount, failureCount, errors)
+            Log.i(TAG, "Save operation completed: ${result.getStatusMessage()}")
+
+            return@withContext result
         }
-
-        val result = SaveResult(successCount, failureCount, errors)
-        Log.i(TAG, "Save operation completed: ${result.getStatusMessage()}")
-
-        return@withContext result
-    }
 
     /**
      * Legacy method for backward compatibility.
@@ -108,7 +109,7 @@ object MediaStoreSaver {
      */
     suspend fun saveBitmapsToGallery(
         context: Context,
-        bitmaps: List<Pair<String, Bitmap>>
+        bitmaps: List<Pair<String, Bitmap>>,
     ): SaveResult {
         val images = bitmaps.map { (id, bitmap) -> Triple(id, null, bitmap.toImageRefJpeg()) }
         return saveImagesToGallery(context, images)
@@ -121,27 +122,29 @@ object MediaStoreSaver {
         context: Context,
         sourceUri: Uri,
         itemId: String,
-        index: Int
+        index: Int,
     ) {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val displayName = "Scanium_${timestamp}_${itemId.take(8)}.jpg"
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
-            put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
+        val contentValues =
+            ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+                put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
 
-            // For Android 10+ (API 29+), use RELATIVE_PATH
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$ALBUM_NAME")
-                put(MediaStore.Images.Media.IS_PENDING, 1)
+                // For Android 10+ (API 29+), use RELATIVE_PATH
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$ALBUM_NAME")
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                }
             }
-        }
 
         val resolver = context.contentResolver
-        val destUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            ?: throw IOException("Failed to create MediaStore entry for $displayName")
+        val destUri =
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                ?: throw IOException("Failed to create MediaStore entry for $displayName")
 
         try {
             // Copy from source URI to MediaStore
@@ -173,27 +176,29 @@ object MediaStoreSaver {
         context: Context,
         bitmap: Bitmap,
         itemId: String,
-        index: Int
+        index: Int,
     ) {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val displayName = "Scanium_${timestamp}_${itemId.take(8)}.jpg"
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
-            put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
+        val contentValues =
+            ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+                put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
 
-            // For Android 10+ (API 29+), use RELATIVE_PATH
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$ALBUM_NAME")
-                put(MediaStore.Images.Media.IS_PENDING, 1)
+                // For Android 10+ (API 29+), use RELATIVE_PATH
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/$ALBUM_NAME")
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                }
             }
-        }
 
         val resolver = context.contentResolver
-        val imageUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-            ?: throw IOException("Failed to create MediaStore entry for $displayName")
+        val imageUri =
+            resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+                ?: throw IOException("Failed to create MediaStore entry for $displayName")
 
         try {
             resolver.openOutputStream(imageUri)?.use { outputStream ->
@@ -223,7 +228,7 @@ object MediaStoreSaver {
         }
         return ContextCompat.checkSelfPermission(
             context,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
         ) == PackageManager.PERMISSION_GRANTED
     }
 }

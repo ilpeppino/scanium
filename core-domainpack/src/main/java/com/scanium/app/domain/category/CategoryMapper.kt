@@ -43,7 +43,7 @@ object CategoryMapper {
             Log.w(
                 TAG,
                 "Invalid itemCategoryName '$itemCategoryName' for category '$id'. " +
-                        "Valid values: ${ItemCategory.values().joinToString()}"
+                    "Valid values: ${ItemCategory.values().joinToString()}",
             )
             null
         }
@@ -56,9 +56,7 @@ object CategoryMapper {
      * @param default Fallback ItemCategory if mapping fails (default: UNKNOWN)
      * @return The corresponding ItemCategory, or the default if mapping fails
      */
-    fun DomainCategory.toItemCategoryOrDefault(
-        default: ItemCategory = ItemCategory.UNKNOWN
-    ): ItemCategory {
+    fun DomainCategory.toItemCategoryOrDefault(default: ItemCategory = ItemCategory.UNKNOWN): ItemCategory {
         return toItemCategory() ?: default
     }
 

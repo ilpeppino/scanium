@@ -1,11 +1,11 @@
 package com.scanium.app.telemetry
 
 import android.util.Log
+import com.scanium.app.telemetry.otlp.*
 import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.TelemetryEvent
 import com.scanium.telemetry.TelemetrySeverity
 import com.scanium.telemetry.ports.LogPort
-import com.scanium.app.telemetry.otlp.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,9 +39,8 @@ import kotlin.concurrent.withLock
  */
 class AndroidLogPortOtlp(
     private val telemetryConfig: TelemetryConfig,
-    private val otlpConfig: OtlpConfiguration
+    private val otlpConfig: OtlpConfiguration,
 ) : LogPort {
-
     private val tag = "AndroidLogPortOtlp"
     private val exporter = OtlpHttpExporter(otlpConfig, telemetryConfig)
     private val buffer = ArrayDeque<TelemetryEvent>()
@@ -93,46 +92,53 @@ class AndroidLogPortOtlp(
      * Must be called within lock or from synchronized context.
      */
     private fun flush() {
-        val events = lock.withLock {
-            val batch = mutableListOf<TelemetryEvent>()
-            while (batch.size < telemetryConfig.maxBatchSize && buffer.isNotEmpty()) {
-                batch.add(buffer.removeFirst())
+        val events =
+            lock.withLock {
+                val batch = mutableListOf<TelemetryEvent>()
+                while (batch.size < telemetryConfig.maxBatchSize && buffer.isNotEmpty()) {
+                    batch.add(buffer.removeFirst())
+                }
+                batch
             }
-            batch
-        }
 
         if (events.isEmpty()) return
 
         // Convert to OTLP log records
-        val logRecords = events.map { event ->
-            LogRecord(
-                timeUnixNano = (event.timestamp.toEpochMilliseconds() * 1_000_000).toString(),
-                severityNumber = mapSeverity(event.severity),
-                severityText = event.severity.name,
-                body = AnyValue.string(event.name),
-                attributes = event.attributes.map { (key, value) ->
-                    KeyValue(key, AnyValue.string(value))
-                }
-            )
-        }
+        val logRecords =
+            events.map { event ->
+                LogRecord(
+                    timeUnixNano = (event.timestamp.toEpochMilliseconds() * 1_000_000).toString(),
+                    severityNumber = mapSeverity(event.severity),
+                    severityText = event.severity.name,
+                    body = AnyValue.string(event.name),
+                    attributes =
+                        event.attributes.map { (key, value) ->
+                            KeyValue(key, AnyValue.string(value))
+                        },
+                )
+            }
 
         // Build OTLP request
-        val request = ExportLogsServiceRequest(
-            resourceLogs = listOf(
-                ResourceLogs(
-                    resource = exporter.buildResource(),
-                    scopeLogs = listOf(
-                        ScopeLogs(
-                            scope = InstrumentationScope(
-                                name = "com.scanium.telemetry",
-                                version = "1.0.0"
-                            ),
-                            logRecords = logRecords
-                        )
-                    )
-                )
+        val request =
+            ExportLogsServiceRequest(
+                resourceLogs =
+                    listOf(
+                        ResourceLogs(
+                            resource = exporter.buildResource(),
+                            scopeLogs =
+                                listOf(
+                                    ScopeLogs(
+                                        scope =
+                                            InstrumentationScope(
+                                                name = "com.scanium.telemetry",
+                                                version = "1.0.0",
+                                            ),
+                                        logRecords = logRecords,
+                                    ),
+                                ),
+                        ),
+                    ),
             )
-        )
 
         // Export (async, with retry and backoff)
         exporter.exportLogs(request)

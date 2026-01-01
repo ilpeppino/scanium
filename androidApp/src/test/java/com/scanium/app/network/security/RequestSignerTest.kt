@@ -5,7 +5,6 @@ import okhttp3.Request
 import org.junit.Test
 
 class RequestSignerTest {
-
     @Test
     fun `generateSignature produces consistent output for same inputs`() {
         val apiKey = "test-api-key"
@@ -54,17 +53,19 @@ class RequestSignerTest {
 
     @Test
     fun `sign adds timestamp and signature headers to request`() {
-        val originalRequest = Request.Builder()
-            .url("https://example.com/api")
-            .build()
+        val originalRequest =
+            Request.Builder()
+                .url("https://example.com/api")
+                .build()
         val timestamp = 1703520000000L
 
-        val signedRequest = RequestSigner.sign(
-            request = originalRequest,
-            apiKey = "test-api-key",
-            requestBody = """{"test":"data"}""",
-            timestampMs = timestamp
-        )
+        val signedRequest =
+            RequestSigner.sign(
+                request = originalRequest,
+                apiKey = "test-api-key",
+                requestBody = """{"test":"data"}""",
+                timestampMs = timestamp,
+            )
 
         assertThat(signedRequest.header(RequestSigner.HEADER_TIMESTAMP)).isEqualTo("1703520000000")
         assertThat(signedRequest.header(RequestSigner.HEADER_SIGNATURE)).isNotNull()
@@ -73,15 +74,17 @@ class RequestSignerTest {
 
     @Test
     fun `sign returns original request when api key is blank`() {
-        val originalRequest = Request.Builder()
-            .url("https://example.com/api")
-            .build()
+        val originalRequest =
+            Request.Builder()
+                .url("https://example.com/api")
+                .build()
 
-        val signedRequest = RequestSigner.sign(
-            request = originalRequest,
-            apiKey = "",
-            requestBody = """{"test":"data"}"""
-        )
+        val signedRequest =
+            RequestSigner.sign(
+                request = originalRequest,
+                apiKey = "",
+                requestBody = """{"test":"data"}""",
+            )
 
         assertThat(signedRequest.header(RequestSigner.HEADER_TIMESTAMP)).isNull()
         assertThat(signedRequest.header(RequestSigner.HEADER_SIGNATURE)).isNull()
@@ -89,15 +92,16 @@ class RequestSignerTest {
 
     @Test
     fun `addSignatureHeaders for JSON adds headers to builder`() {
-        val builder = Request.Builder()
-            .url("https://example.com/api")
+        val builder =
+            Request.Builder()
+                .url("https://example.com/api")
         val timestamp = 1703520000000L
 
         RequestSigner.addSignatureHeaders(
             builder = builder,
             apiKey = "test-api-key",
             requestBody = """{"test":"data"}""",
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val request = builder.build()
@@ -107,13 +111,14 @@ class RequestSignerTest {
 
     @Test
     fun `addSignatureHeaders for JSON does nothing when api key is blank`() {
-        val builder = Request.Builder()
-            .url("https://example.com/api")
+        val builder =
+            Request.Builder()
+                .url("https://example.com/api")
 
         RequestSigner.addSignatureHeaders(
             builder = builder,
             apiKey = "   ",
-            requestBody = """{"test":"data"}"""
+            requestBody = """{"test":"data"}""",
         )
 
         val request = builder.build()
@@ -123,8 +128,9 @@ class RequestSignerTest {
 
     @Test
     fun `addSignatureHeaders for multipart creates canonical body`() {
-        val builder = Request.Builder()
-            .url("https://example.com/upload")
+        val builder =
+            Request.Builder()
+                .url("https://example.com/upload")
         val timestamp = 1703520000000L
         val params = mapOf("domainPackId" to "home_resale", "format" to "jpeg")
 
@@ -133,7 +139,7 @@ class RequestSignerTest {
             apiKey = "test-api-key",
             params = params,
             binaryContentSize = 1024L,
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val request = builder.build()
@@ -151,7 +157,7 @@ class RequestSignerTest {
             apiKey = "test-api-key",
             params = linkedMapOf("a" to "1", "b" to "2"),
             binaryContentSize = 100L,
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val builder2 = Request.Builder().url("https://example.com/upload")
@@ -160,7 +166,7 @@ class RequestSignerTest {
             apiKey = "test-api-key",
             params = linkedMapOf("b" to "2", "a" to "1"),
             binaryContentSize = 100L,
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val sig1 = builder1.build().header(RequestSigner.HEADER_SIGNATURE)
@@ -180,7 +186,7 @@ class RequestSignerTest {
             apiKey = "test-api-key",
             params = params,
             binaryContentSize = 1024L,
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val builder2 = Request.Builder().url("https://example.com/upload")
@@ -189,7 +195,7 @@ class RequestSignerTest {
             apiKey = "test-api-key",
             params = params,
             binaryContentSize = 2048L,
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val sig1 = builder1.build().header(RequestSigner.HEADER_SIGNATURE)
@@ -200,15 +206,16 @@ class RequestSignerTest {
 
     @Test
     fun `addSignatureHeadersForGet signs URL path`() {
-        val builder = Request.Builder()
-            .url("https://example.com/v1/config")
+        val builder =
+            Request.Builder()
+                .url("https://example.com/v1/config")
         val timestamp = 1703520000000L
 
         RequestSigner.addSignatureHeadersForGet(
             builder = builder,
             apiKey = "test-api-key",
             urlPath = "/v1/config",
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val request = builder.build()
@@ -225,7 +232,7 @@ class RequestSignerTest {
             builder = builder1,
             apiKey = "test-api-key",
             urlPath = "/v1/config",
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val builder2 = Request.Builder().url("https://example.com/v1/users")
@@ -233,7 +240,7 @@ class RequestSignerTest {
             builder = builder2,
             apiKey = "test-api-key",
             urlPath = "/v1/users",
-            timestampMs = timestamp
+            timestampMs = timestamp,
         )
 
         val sig1 = builder1.build().header(RequestSigner.HEADER_SIGNATURE)
@@ -244,13 +251,14 @@ class RequestSignerTest {
 
     @Test
     fun `addSignatureHeadersForGet does nothing when api key is blank`() {
-        val builder = Request.Builder()
-            .url("https://example.com/v1/config")
+        val builder =
+            Request.Builder()
+                .url("https://example.com/v1/config")
 
         RequestSigner.addSignatureHeadersForGet(
             builder = builder,
             apiKey = "",
-            urlPath = "/v1/config"
+            urlPath = "/v1/config",
         )
 
         val request = builder.build()
@@ -260,11 +268,12 @@ class RequestSignerTest {
 
     @Test
     fun `signature is valid hex string`() {
-        val signature = RequestSigner.generateSignature(
-            apiKey = "test-key",
-            timestampMs = 1703520000000L,
-            requestBody = "test body"
-        )
+        val signature =
+            RequestSigner.generateSignature(
+                apiKey = "test-key",
+                timestampMs = 1703520000000L,
+                requestBody = "test body",
+            )
 
         assertThat(signature).matches("[0-9a-f]{64}")
     }

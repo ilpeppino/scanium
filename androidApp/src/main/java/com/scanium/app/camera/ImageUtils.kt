@@ -37,84 +37,94 @@ object ImageUtils {
     suspend fun createThumbnailFromUri(
         context: Context,
         uri: Uri,
-        maxDimension: Int = THUMBNAIL_MAX_DIMENSION
-    ): Bitmap? = withContext(Dispatchers.IO) {
-        try {
-            val contentResolver = context.contentResolver
+        maxDimension: Int = THUMBNAIL_MAX_DIMENSION,
+    ): Bitmap? =
+        withContext(Dispatchers.IO) {
+            try {
+                val contentResolver = context.contentResolver
 
-            // First pass: Decode image bounds without loading the full bitmap
-            val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
+                // First pass: Decode image bounds without loading the full bitmap
+                val options =
+                    BitmapFactory.Options().apply {
+                        inJustDecodeBounds = true
+                    }
 
-            contentResolver.openInputStream(uri)?.use { inputStream ->
-                BitmapFactory.decodeStream(inputStream, null, options)
-            }
-
-            val imageWidth = options.outWidth
-            val imageHeight = options.outHeight
-
-            if (imageWidth <= 0 || imageHeight <= 0) {
-                Log.e(TAG, "Invalid image dimensions: ${imageWidth}x${imageHeight}")
-                return@withContext null
-            }
-
-            // Calculate inSampleSize to reduce memory footprint
-            val maxOriginalDimension = maxOf(imageWidth, imageHeight)
-            val sampleSize = if (maxOriginalDimension > maxDimension) {
-                maxOriginalDimension / maxDimension
-            } else {
-                1
-            }
-
-            // Second pass: Decode the scaled-down bitmap
-            val decodeOptions = BitmapFactory.Options().apply {
-                inSampleSize = sampleSize
-                inJustDecodeBounds = false
-            }
-
-            val bitmap = contentResolver.openInputStream(uri)?.use { inputStream ->
-                BitmapFactory.decodeStream(inputStream, null, decodeOptions)
-            }
-
-            if (bitmap == null) {
-                Log.e(TAG, "Failed to decode bitmap from URI: $uri")
-                return@withContext null
-            }
-
-            // Final resize if needed (inSampleSize is a power of 2, so we may still be over target)
-            val scaledBitmap = if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
-                val scale = min(
-                    maxDimension.toFloat() / bitmap.width,
-                    maxDimension.toFloat() / bitmap.height
-                )
-                val targetWidth = (bitmap.width * scale).toInt()
-                val targetHeight = (bitmap.height * scale).toInt()
-
-                val scaled = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
-                if (scaled != bitmap) {
-                    bitmap.recycle() // Recycle the intermediate bitmap
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    BitmapFactory.decodeStream(inputStream, null, options)
                 }
-                scaled
-            } else {
-                bitmap
+
+                val imageWidth = options.outWidth
+                val imageHeight = options.outHeight
+
+                if (imageWidth <= 0 || imageHeight <= 0) {
+                    Log.e(TAG, "Invalid image dimensions: ${imageWidth}x$imageHeight")
+                    return@withContext null
+                }
+
+                // Calculate inSampleSize to reduce memory footprint
+                val maxOriginalDimension = maxOf(imageWidth, imageHeight)
+                val sampleSize =
+                    if (maxOriginalDimension > maxDimension) {
+                        maxOriginalDimension / maxDimension
+                    } else {
+                        1
+                    }
+
+                // Second pass: Decode the scaled-down bitmap
+                val decodeOptions =
+                    BitmapFactory.Options().apply {
+                        inSampleSize = sampleSize
+                        inJustDecodeBounds = false
+                    }
+
+                val bitmap =
+                    contentResolver.openInputStream(uri)?.use { inputStream ->
+                        BitmapFactory.decodeStream(inputStream, null, decodeOptions)
+                    }
+
+                if (bitmap == null) {
+                    Log.e(TAG, "Failed to decode bitmap from URI: $uri")
+                    return@withContext null
+                }
+
+                // Final resize if needed (inSampleSize is a power of 2, so we may still be over target)
+                val scaledBitmap =
+                    if (bitmap.width > maxDimension || bitmap.height > maxDimension) {
+                        val scale =
+                            min(
+                                maxDimension.toFloat() / bitmap.width,
+                                maxDimension.toFloat() / bitmap.height,
+                            )
+                        val targetWidth = (bitmap.width * scale).toInt()
+                        val targetHeight = (bitmap.height * scale).toInt()
+
+                        val scaled = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true)
+                        if (scaled != bitmap) {
+                            bitmap.recycle() // Recycle the intermediate bitmap
+                        }
+                        scaled
+                    } else {
+                        bitmap
+                    }
+
+                val rotationDegrees = readExifRotation(context, uri)
+                val finalBitmap = rotateBitmap(scaledBitmap, rotationDegrees)
+
+                Log.d(
+                    TAG,
+                    "Created thumbnail: ${finalBitmap.width}x${finalBitmap.height} from ${imageWidth}x$imageHeight (sample: $sampleSize, rotation: $rotationDegrees)",
+                )
+                finalBitmap
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create thumbnail from URI: $uri", e)
+                null
             }
-
-            val rotationDegrees = readExifRotation(context, uri)
-            val finalBitmap = rotateBitmap(scaledBitmap, rotationDegrees)
-
-            Log.d(
-                TAG,
-                "Created thumbnail: ${finalBitmap.width}x${finalBitmap.height} from ${imageWidth}x${imageHeight} (sample: $sampleSize, rotation: $rotationDegrees)"
-            )
-            finalBitmap
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create thumbnail from URI: $uri", e)
-            null
         }
-    }
 
-    fun rotateBitmap(bitmap: Bitmap, rotationDegrees: Int): Bitmap {
+    fun rotateBitmap(
+        bitmap: Bitmap,
+        rotationDegrees: Int,
+    ): Bitmap {
         return if (rotationDegrees != 0) {
             val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
             Bitmap.createBitmap(
@@ -124,7 +134,7 @@ object ImageUtils {
                 bitmap.width,
                 bitmap.height,
                 matrix,
-                true
+                true,
             ).also {
                 if (it != bitmap) {
                     bitmap.recycle()
@@ -135,7 +145,10 @@ object ImageUtils {
         }
     }
 
-    fun readExifRotation(context: Context, uri: Uri): Int {
+    fun readExifRotation(
+        context: Context,
+        uri: Uri,
+    ): Int {
         return runCatching {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 val exif = ExifInterface(inputStream)
@@ -176,21 +189,22 @@ object ImageUtils {
     fun calculateSharpness(bitmap: Bitmap): Double {
         val width = bitmap.width
         val height = bitmap.height
-        
+
         // Operate on a smaller bitmap for performance if needed
         val targetSize = 256
-        val (processBitmap, w, h) = if (width > targetSize || height > targetSize) {
-            val scale = min(targetSize.toFloat() / width, targetSize.toFloat() / height)
-            val sw = (width * scale).toInt()
-            val sh = (height * scale).toInt()
-            Triple(Bitmap.createScaledBitmap(bitmap, sw, sh, true), sw, sh)
-        } else {
-            Triple(bitmap, width, height)
-        }
+        val (processBitmap, w, h) =
+            if (width > targetSize || height > targetSize) {
+                val scale = min(targetSize.toFloat() / width, targetSize.toFloat() / height)
+                val sw = (width * scale).toInt()
+                val sh = (height * scale).toInt()
+                Triple(Bitmap.createScaledBitmap(bitmap, sw, sh, true), sw, sh)
+            } else {
+                Triple(bitmap, width, height)
+            }
 
         val pixels = IntArray(w * h)
         processBitmap.getPixels(pixels, 0, w, 0, 0, w, h)
-        
+
         if (processBitmap != bitmap) {
             processBitmap.recycle()
         }
@@ -211,11 +225,11 @@ object ImageUtils {
         // 0  1  0
         // 1 -4  1
         // 0  1  0
-        
+
         val laplacian = IntArray(w * h)
         var sum = 0L
         var count = 0
-        
+
         // Skip borders
         for (y in 1 until h - 1) {
             for (x in 1 until w - 1) {
@@ -225,19 +239,19 @@ object ImageUtils {
                 val valLeft = grayPixels[idx - 1]
                 val valRight = grayPixels[idx + 1]
                 val valCenter = grayPixels[idx]
-                
+
                 val lap = valTop + valBottom + valLeft + valRight - (4 * valCenter)
                 laplacian[idx] = lap
                 sum += lap
                 count++
             }
         }
-        
+
         if (count == 0) return 0.0
-        
+
         val mean = sum.toDouble() / count
         var sqDiffSum = 0.0
-        
+
         for (y in 1 until h - 1) {
             for (x in 1 until w - 1) {
                 val idx = y * w + x
@@ -245,7 +259,7 @@ object ImageUtils {
                 sqDiffSum += diff * diff
             }
         }
-        
+
         return sqDiffSum / count
     }
 }

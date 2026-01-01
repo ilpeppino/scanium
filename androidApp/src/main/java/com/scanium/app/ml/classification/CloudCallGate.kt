@@ -2,7 +2,6 @@ package com.scanium.app.ml.classification
 
 import android.util.Log
 import com.scanium.app.aggregation.AggregatedItem
-import com.scanium.app.config.CloudClassificationConfig
 import com.scanium.shared.core.models.model.ImageRef
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
@@ -13,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class CloudCallGate(
     private val isCloudMode: () -> Boolean,
-    private val cooldownMs: Long = 8_000L
+    private val cooldownMs: Long = 8_000L,
 ) {
     companion object {
         private const val TAG = "CloudCallGate"
@@ -27,7 +26,10 @@ class CloudCallGate(
     /**
      * Checks if the item is allowed to be classified via cloud.
      */
-    fun canClassify(item: AggregatedItem, thumbnail: ImageRef?): Boolean {
+    fun canClassify(
+        item: AggregatedItem,
+        thumbnail: ImageRef?,
+    ): Boolean {
         if (!isCloudMode()) {
             return false
         }
@@ -38,9 +40,9 @@ class CloudCallGate(
             // Check temporal stability if available
             val age = System.currentTimeMillis() - item.firstSeenTimestamp
             if (age < MIN_STABILITY_DURATION_MS) {
-                 if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                if (Log.isLoggable(TAG, Log.VERBOSE)) {
                     Log.v(TAG, "Blocked: Unstable item ${item.aggregatedId} (merges=${item.mergeCount}, age=${age}ms)")
-                 }
+                }
                 return false
             }
         }
@@ -48,13 +50,13 @@ class CloudCallGate(
         // 2. Cooldown Check
         val now = System.currentTimeMillis()
         val lastTime = lastCallTime[item.aggregatedId] ?: 0L
-        
+
         // Check remote config cooldown if available via CloudClassificationConfig or similar
         // For now using the passed cooldownMs which comes from remote config in ItemsViewModel
         if (now - lastTime < cooldownMs) {
-             if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            if (Log.isLoggable(TAG, Log.VERBOSE)) {
                 Log.v(TAG, "Blocked: Cooldown active for ${item.aggregatedId} (${now - lastTime}ms < $cooldownMs)")
-             }
+            }
             return false
         }
 
@@ -63,9 +65,9 @@ class CloudCallGate(
             val currentHash = computeBytesHash(thumbnail.bytes)
             val lastHash = processedHashes[item.aggregatedId]
             if (currentHash == lastHash) {
-                 if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                if (Log.isLoggable(TAG, Log.VERBOSE)) {
                     Log.v(TAG, "Blocked: Duplicate input for ${item.aggregatedId}")
-                 }
+                }
                 return false // Identical image, skip
             }
         }
@@ -76,14 +78,17 @@ class CloudCallGate(
     /**
      * Records a successful classification trigger.
      */
-    fun onClassificationTriggered(item: AggregatedItem, thumbnail: ImageRef?) {
+    fun onClassificationTriggered(
+        item: AggregatedItem,
+        thumbnail: ImageRef?,
+    ) {
         val now = System.currentTimeMillis()
         lastCallTime[item.aggregatedId] = now
         if (thumbnail is ImageRef.Bytes) {
             processedHashes[item.aggregatedId] = computeBytesHash(thumbnail.bytes)
         }
     }
-    
+
     fun reset() {
         lastCallTime.clear()
         processedHashes.clear()

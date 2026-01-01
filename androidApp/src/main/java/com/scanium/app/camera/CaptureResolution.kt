@@ -11,7 +11,7 @@ package com.scanium.app.camera
  */
 enum class CaptureResolution(
     val displayName: String,
-    val description: String
+    val description: String,
 ) {
     /**
      * Low resolution - smallest file sizes, suitable for quick sharing/mobile data.
@@ -19,7 +19,7 @@ enum class CaptureResolution(
      */
     LOW(
         displayName = "Low",
-        description = "Smaller files, faster processing"
+        description = "Smaller files, faster processing",
     ),
 
     /**
@@ -28,7 +28,7 @@ enum class CaptureResolution(
      */
     NORMAL(
         displayName = "Normal",
-        description = "Balanced quality and size"
+        description = "Balanced quality and size",
     ),
 
     /**
@@ -37,8 +37,9 @@ enum class CaptureResolution(
      */
     HIGH(
         displayName = "High",
-        description = "Best quality, larger files"
-    );
+        description = "Best quality, larger files",
+    ),
+    ;
 
     companion object {
         /**

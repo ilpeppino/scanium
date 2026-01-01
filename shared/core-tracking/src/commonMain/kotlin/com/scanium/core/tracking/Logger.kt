@@ -9,20 +9,51 @@ package com.scanium.core.tracking
  * - JVM: println or SLF4J
  */
 interface Logger {
-    fun d(tag: String, message: String)
-    fun i(tag: String, message: String)
-    fun w(tag: String, message: String)
-    fun e(tag: String, message: String)
+    fun d(
+        tag: String,
+        message: String,
+    )
+
+    fun i(
+        tag: String,
+        message: String,
+    )
+
+    fun w(
+        tag: String,
+        message: String,
+    )
+
+    fun e(
+        tag: String,
+        message: String,
+    )
 
     companion object {
         /**
          * No-op logger for platforms that don't need logging.
          */
-        val NONE: Logger = object : Logger {
-            override fun d(tag: String, message: String) {}
-            override fun i(tag: String, message: String) {}
-            override fun w(tag: String, message: String) {}
-            override fun e(tag: String, message: String) {}
-        }
+        val NONE: Logger =
+            object : Logger {
+                override fun d(
+                    tag: String,
+                    message: String,
+                ) {}
+
+                override fun i(
+                    tag: String,
+                    message: String,
+                ) {}
+
+                override fun w(
+                    tag: String,
+                    message: String,
+                ) {}
+
+                override fun e(
+                    tag: String,
+                    message: String,
+                ) {}
+            }
     }
 }

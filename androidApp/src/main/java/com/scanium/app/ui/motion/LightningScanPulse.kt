@@ -28,10 +28,12 @@ import com.scanium.app.ui.theme.LightningYellow
 enum class PulseDirection {
     /** Pulse travels from top to bottom */
     VERTICAL_DOWN,
+
     /** Pulse travels from left to right */
     HORIZONTAL_RIGHT,
+
     /** Pulse travels diagonally from top-left to bottom-right */
-    DIAGONAL_DOWN_RIGHT
+    DIAGONAL_DOWN_RIGHT,
 }
 
 /**
@@ -57,7 +59,7 @@ fun LightningScanPulse(
     direction: PulseDirection = PulseDirection.VERTICAL_DOWN,
     pulseColor: Color = LightningYellow,
     modifier: Modifier = Modifier,
-    onPulseComplete: (() -> Unit)? = null
+    onPulseComplete: (() -> Unit)? = null,
 ) {
     if (!MotionConfig.isMotionOverlaysEnabled) {
         return
@@ -88,10 +90,11 @@ fun LightningScanPulse(
         progress.snapTo(0f)
         progress.animateTo(
             targetValue = 1f,
-            animationSpec = tween(
-                durationMillis = MotionConstants.LIGHTNING_PULSE_DURATION_MS,
-                easing = LinearEasing
-            )
+            animationSpec =
+                tween(
+                    durationMillis = MotionConstants.LIGHTNING_PULSE_DURATION_MS,
+                    easing = LinearEasing,
+                ),
         )
 
         isAnimating = false
@@ -115,45 +118,49 @@ fun LightningScanPulse(
             val glowWidth = MotionConstants.LIGHTNING_PULSE_GLOW_WIDTH_DP.dp.toPx()
 
             // Calculate pulse position based on direction and progress
-            val (startPoint, endPoint) = when (direction) {
-                PulseDirection.VERTICAL_DOWN -> {
-                    val y = frameTop + frameHeight * progress.value
-                    Offset(frameLeft, y) to Offset(frameRight, y)
+            val (startPoint, endPoint) =
+                when (direction) {
+                    PulseDirection.VERTICAL_DOWN -> {
+                        val y = frameTop + frameHeight * progress.value
+                        Offset(frameLeft, y) to Offset(frameRight, y)
+                    }
+                    PulseDirection.HORIZONTAL_RIGHT -> {
+                        val x = frameLeft + frameWidth * progress.value
+                        Offset(x, frameTop) to Offset(x, frameBottom)
+                    }
+                    PulseDirection.DIAGONAL_DOWN_RIGHT -> {
+                        val x = frameLeft + frameWidth * progress.value
+                        val y = frameTop + frameHeight * progress.value
+                        // Short diagonal line segment
+                        val segmentLength = minOf(frameWidth, frameHeight) * 0.1f
+                        Offset(x - segmentLength, y - segmentLength) to Offset(x + segmentLength, y + segmentLength)
+                    }
                 }
-                PulseDirection.HORIZONTAL_RIGHT -> {
-                    val x = frameLeft + frameWidth * progress.value
-                    Offset(x, frameTop) to Offset(x, frameBottom)
-                }
-                PulseDirection.DIAGONAL_DOWN_RIGHT -> {
-                    val x = frameLeft + frameWidth * progress.value
-                    val y = frameTop + frameHeight * progress.value
-                    // Short diagonal line segment
-                    val segmentLength = minOf(frameWidth, frameHeight) * 0.1f
-                    Offset(x - segmentLength, y - segmentLength) to Offset(x + segmentLength, y + segmentLength)
-                }
-            }
 
             // Calculate alpha based on position (fade in at start, fade out at end)
             val fadeZone = 0.15f
-            val alpha = when {
-                progress.value < fadeZone -> progress.value / fadeZone
-                progress.value > (1 - fadeZone) -> (1 - progress.value) / fadeZone
-                else -> 1f
-            } * MotionConstants.LIGHTNING_PULSE_ALPHA
+            val alpha =
+                when {
+                    progress.value < fadeZone -> progress.value / fadeZone
+                    progress.value > (1 - fadeZone) -> (1 - progress.value) / fadeZone
+                    else -> 1f
+                } * MotionConstants.LIGHTNING_PULSE_ALPHA
 
             // Draw glow layer (wider, more transparent)
             drawLine(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        pulseColor.copy(alpha = 0f),
-                        pulseColor.copy(alpha = alpha * MotionConstants.LIGHTNING_PULSE_GLOW_ALPHA),
-                        pulseColor.copy(alpha = 0f)
-                    )
-                ),
+                brush =
+                    Brush.linearGradient(
+                        colors =
+                            listOf(
+                                pulseColor.copy(alpha = 0f),
+                                pulseColor.copy(alpha = alpha * MotionConstants.LIGHTNING_PULSE_GLOW_ALPHA),
+                                pulseColor.copy(alpha = 0f),
+                            ),
+                    ),
                 start = startPoint,
                 end = endPoint,
                 strokeWidth = glowWidth,
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
             )
 
             // Draw core pulse line
@@ -162,7 +169,7 @@ fun LightningScanPulse(
                 start = startPoint,
                 end = endPoint,
                 strokeWidth = pulseWidth,
-                cap = StrokeCap.Round
+                cap = StrokeCap.Round,
             )
         }
     }
@@ -188,7 +195,7 @@ fun DebouncedLightningScanPulse(
     direction: PulseDirection = PulseDirection.VERTICAL_DOWN,
     pulseColor: Color = LightningYellow,
     modifier: Modifier = Modifier,
-    onPulseComplete: (() -> Unit)? = null
+    onPulseComplete: (() -> Unit)? = null,
 ) {
     // Generate a unique key only when shouldTrigger transitions to true
     var triggerKey by remember { mutableLongStateOf(0L) }
@@ -206,7 +213,7 @@ fun DebouncedLightningScanPulse(
             direction = direction,
             pulseColor = pulseColor,
             modifier = modifier,
-            onPulseComplete = onPulseComplete
+            onPulseComplete = onPulseComplete,
         )
     }
 }
@@ -217,6 +224,6 @@ private fun LightningScanPulsePreview() {
     LightningScanPulse(
         rect = Rect(0.1f, 0.2f, 0.9f, 0.8f),
         triggerKey = "preview",
-        direction = PulseDirection.VERTICAL_DOWN
+        direction = PulseDirection.VERTICAL_DOWN,
     )
 }

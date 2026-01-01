@@ -4,11 +4,14 @@ import kotlin.math.round
 
 data class ListingDraftExport(
     val clipboardText: String,
-    val shareText: String
+    val shareText: String,
 )
 
 object ListingDraftFormatter {
-    fun format(draft: ListingDraft, profile: ExportProfileDefinition): ListingDraftExport {
+    fun format(
+        draft: ListingDraft,
+        profile: ExportProfileDefinition,
+    ): ListingDraftExport {
         val title = formatTitle(draft, profile.titleRules)
         val description = formatDescription(draft, profile)
         val fieldValues = buildFieldValues(draft, title, description)
@@ -18,7 +21,7 @@ object ListingDraftFormatter {
 
         return ListingDraftExport(
             clipboardText = clipboardText,
-            shareText = shareText
+            shareText = shareText,
         )
     }
 
@@ -28,7 +31,7 @@ object ListingDraftFormatter {
 
     fun formattedValues(
         draft: ListingDraft,
-        profile: ExportProfileDefinition
+        profile: ExportProfileDefinition,
     ): Map<ExportFieldKey, String> {
         val title = formatTitle(draft, profile.titleRules)
         val description = formatDescription(draft, profile)
@@ -38,14 +41,14 @@ object ListingDraftFormatter {
     fun formatFieldLine(
         key: ExportFieldKey,
         values: Map<ExportFieldKey, String>,
-        profile: ExportProfileDefinition
+        profile: ExportProfileDefinition,
     ): String {
         return buildFieldLine(key, values, profile)
     }
 
     fun missingRequiredFields(
         draft: ListingDraft,
-        profile: ExportProfileDefinition
+        profile: ExportProfileDefinition,
     ): List<ExportFieldKey> {
         return profile.requiredFields.filter { key ->
             when (key) {
@@ -65,7 +68,7 @@ object ListingDraftFormatter {
     private fun buildFieldValues(
         draft: ListingDraft,
         formattedTitle: String,
-        formattedDescription: String?
+        formattedDescription: String?,
     ): Map<ExportFieldKey, String> {
         val price = formatNumber(draft.price.value)
         val condition = formatField(draft.fields[DraftFieldKey.CONDITION])
@@ -85,13 +88,13 @@ object ListingDraftFormatter {
             ExportFieldKey.MODEL to model,
             ExportFieldKey.COLOR to color,
             ExportFieldKey.DESCRIPTION to description,
-            ExportFieldKey.PHOTOS to photos
+            ExportFieldKey.PHOTOS to photos,
         )
     }
 
     private fun buildClipboardText(
         values: Map<ExportFieldKey, String>,
-        profile: ExportProfileDefinition
+        profile: ExportProfileDefinition,
     ): String {
         val title = resolveTitle(values, profile)
         val description = values[ExportFieldKey.DESCRIPTION].orEmpty()
@@ -110,7 +113,7 @@ object ListingDraftFormatter {
 
     private fun buildShareText(
         values: Map<ExportFieldKey, String>,
-        profile: ExportProfileDefinition
+        profile: ExportProfileDefinition,
     ): String {
         val title = resolveTitle(values, profile)
         val description = values[ExportFieldKey.DESCRIPTION].orEmpty()
@@ -130,7 +133,7 @@ object ListingDraftFormatter {
         values: Map<ExportFieldKey, String>,
         profile: ExportProfileDefinition,
         includeDescription: Boolean,
-        includePhotos: Boolean
+        includePhotos: Boolean,
     ): List<String> {
         val keys = profile.fieldOrdering
         val lines = mutableListOf<String>()
@@ -149,14 +152,15 @@ object ListingDraftFormatter {
     private fun buildFieldLine(
         key: ExportFieldKey,
         values: Map<ExportFieldKey, String>,
-        profile: ExportProfileDefinition
+        profile: ExportProfileDefinition,
     ): String {
         val rawValue = values[key].orEmpty()
-        val value = when {
-            rawValue.isNotBlank() -> rawValue
-            profile.missingFieldPolicy == MissingFieldPolicy.SHOW_UNKNOWN -> "Unknown"
-            else -> ""
-        }
+        val value =
+            when {
+                rawValue.isNotBlank() -> rawValue
+                profile.missingFieldPolicy == MissingFieldPolicy.SHOW_UNKNOWN -> "Unknown"
+                else -> ""
+            }
         if (value.isBlank()) return ""
         val label = profile.optionalFieldLabels[key] ?: key.defaultLabel
         return "$label: $value"
@@ -164,7 +168,7 @@ object ListingDraftFormatter {
 
     private fun resolveTitle(
         values: Map<ExportFieldKey, String>,
-        profile: ExportProfileDefinition
+        profile: ExportProfileDefinition,
     ): String {
         val raw = values[ExportFieldKey.TITLE].orEmpty()
         return when {
@@ -174,7 +178,10 @@ object ListingDraftFormatter {
         }
     }
 
-    private fun formatTitle(draft: ListingDraft, rules: ExportTitleRules): String {
+    private fun formatTitle(
+        draft: ListingDraft,
+        rules: ExportTitleRules,
+    ): String {
         val base = draft.title.value.orEmpty().trim()
         val brand = formatFieldValue(draft.fields[DraftFieldKey.BRAND])
         val model = formatFieldValue(draft.fields[DraftFieldKey.MODEL])
@@ -191,7 +198,10 @@ object ListingDraftFormatter {
         return truncateTitle(capitalized, rules.maxLen)
     }
 
-    private fun formatDescription(draft: ListingDraft, profile: ExportProfileDefinition): String {
+    private fun formatDescription(
+        draft: ListingDraft,
+        profile: ExportProfileDefinition,
+    ): String {
         val rules = profile.descriptionRules
         val lines = mutableListOf<String>()
         val baseDescription = draft.description.value.orEmpty().trim()
@@ -200,9 +210,10 @@ object ListingDraftFormatter {
         }
         if (rules.includeConditionLine) {
             val condition = formatFieldValue(draft.fields[DraftFieldKey.CONDITION])
-            val value = condition.ifBlank {
-                if (profile.missingFieldPolicy == MissingFieldPolicy.SHOW_UNKNOWN) "Unknown" else ""
-            }
+            val value =
+                condition.ifBlank {
+                    if (profile.missingFieldPolicy == MissingFieldPolicy.SHOW_UNKNOWN) "Unknown" else ""
+                }
             if (value.isNotBlank()) {
                 lines += "Condition: $value"
             }
@@ -220,25 +231,35 @@ object ListingDraftFormatter {
         }.trim()
     }
 
-    private fun containsIgnoreCase(base: String, value: String): Boolean {
+    private fun containsIgnoreCase(
+        base: String,
+        value: String,
+    ): Boolean {
         if (base.isBlank() || value.isBlank()) return false
         return base.lowercase().contains(value.lowercase())
     }
 
-    private fun applyCapitalization(value: String, mode: TitleCapitalization): String {
+    private fun applyCapitalization(
+        value: String,
+        mode: TitleCapitalization,
+    ): String {
         return when (mode) {
             TitleCapitalization.NONE -> value
             TitleCapitalization.UPPERCASE -> value.uppercase()
             TitleCapitalization.SENTENCE_CASE -> value.replaceFirstChar { it.uppercase() }
-            TitleCapitalization.TITLE_CASE -> value.split(" ")
-                .filter { it.isNotBlank() }
-                .joinToString(" ") { part ->
-                    part.replaceFirstChar { it.uppercase() }
-                }
+            TitleCapitalization.TITLE_CASE ->
+                value.split(" ")
+                    .filter { it.isNotBlank() }
+                    .joinToString(" ") { part ->
+                        part.replaceFirstChar { it.uppercase() }
+                    }
         }
     }
 
-    private fun truncateTitle(value: String, maxLen: Int): String {
+    private fun truncateTitle(
+        value: String,
+        maxLen: Int,
+    ): String {
         if (maxLen <= 0) return ""
         return if (value.length <= maxLen) value else value.substring(0, maxLen).trimEnd()
     }

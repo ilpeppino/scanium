@@ -24,7 +24,6 @@ import kotlinx.coroutines.runBlocking
  */
 @HiltAndroidApp
 class ScaniumApplication : Application() {
-
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     @Volatile
@@ -49,19 +48,22 @@ class ScaniumApplication : Application() {
         val classificationPreferences = com.scanium.app.data.ClassificationPreferences(this)
 
         // Initialize DiagnosticsPort (shared buffer for crash-time diagnostics)
-        diagnosticsPort = DefaultDiagnosticsPort(
-            contextProvider = {
-                mapOf(
-                    "platform" to "android",
-                    "app_version" to BuildConfig.VERSION_NAME,
-                    "build" to BuildConfig.VERSION_CODE.toString(),
-                    "env" to if (BuildConfig.DEBUG) "dev" else "prod",
-                    "session_id" to com.scanium.app.logging.CorrelationIds.currentClassificationSessionId()
-                )
-            },
-            maxEvents = 200,  // Keep last 200 events
-            maxBytes = 128 * 1024  // 128KB max (will be enforced again at attachment time)
-        )
+        diagnosticsPort =
+            DefaultDiagnosticsPort(
+                contextProvider = {
+                    mapOf(
+                        "platform" to "android",
+                        "app_version" to BuildConfig.VERSION_NAME,
+                        "build" to BuildConfig.VERSION_CODE.toString(),
+                        "env" to if (BuildConfig.DEBUG) "dev" else "prod",
+                        "session_id" to com.scanium.app.logging.CorrelationIds.currentClassificationSessionId(),
+                    )
+                },
+                maxEvents = 200,
+// Keep last 200 events
+                maxBytes = 128 * 1024,
+// 128KB max (will be enforced again at attachment time)
+            )
 
         // Initialize Sentry via CrashPort adapter
         val sentryDsn = BuildConfig.SENTRY_DSN
@@ -77,16 +79,18 @@ class ScaniumApplication : Application() {
                 options.environment = if (BuildConfig.DEBUG) "dev" else "prod"
 
                 // Set initial enabled state based on user consent
-                val initialShare = runCatching {
-                    runBlocking { settingsRepository.shareDiagnosticsFlow.first() }
-                }.getOrDefault(false)
+                val initialShare =
+                    runCatching {
+                        runBlocking { settingsRepository.shareDiagnosticsFlow.first() }
+                    }.getOrDefault(false)
 
                 crashReportingEnabled = initialShare
 
                 // Filter events based on user consent
-                options.beforeSend = io.sentry.SentryOptions.BeforeSendCallback { event, _ ->
-                    if (crashReportingEnabled) event else null
-                }
+                options.beforeSend =
+                    io.sentry.SentryOptions.BeforeSendCallback { event, _ ->
+                        if (crashReportingEnabled) event else null
+                    }
             }
 
             // Create CrashPort adapter with diagnostics attachment
@@ -138,34 +142,37 @@ class ScaniumApplication : Application() {
 
     private fun initializeTelemetry() {
         // Build TelemetryConfig based on build type
-        val telemetryConfig = if (BuildConfig.DEBUG) {
-            com.scanium.telemetry.TelemetryConfig.development()
-        } else {
-            com.scanium.telemetry.TelemetryConfig.production()
-        }.copy(dataRegion = BuildConfig.TELEMETRY_DATA_REGION)
+        val telemetryConfig =
+            if (BuildConfig.DEBUG) {
+                com.scanium.telemetry.TelemetryConfig.development()
+            } else {
+                com.scanium.telemetry.TelemetryConfig.production()
+            }.copy(dataRegion = BuildConfig.TELEMETRY_DATA_REGION)
 
         // Build OTLP configuration from BuildConfig
-        val otlpConfig = if (BuildConfig.OTLP_ENABLED && BuildConfig.OTLP_ENDPOINT.isNotBlank()) {
-            OtlpConfiguration(
-                enabled = true,
-                endpoint = BuildConfig.OTLP_ENDPOINT,
-                environment = if (BuildConfig.DEBUG) "dev" else "prod",
-                serviceVersion = BuildConfig.VERSION_NAME,
-                traceSamplingRate = telemetryConfig.traceSampleRate, // Use TelemetryConfig value
-                debugLogging = BuildConfig.DEBUG
-            ).also {
-                android.util.Log.i(
-                    "ScaniumApplication",
-                    "OTLP telemetry enabled: endpoint=${it.endpoint}, env=${it.environment}, " +
-                    "minSeverity=${telemetryConfig.minSeverity}, traceSampling=${telemetryConfig.traceSampleRate}, " +
-                    "maxQueue=${telemetryConfig.maxQueueSize}, dropPolicy=${telemetryConfig.dropPolicy}"
-                )
+        val otlpConfig =
+            if (BuildConfig.OTLP_ENABLED && BuildConfig.OTLP_ENDPOINT.isNotBlank()) {
+                OtlpConfiguration(
+                    enabled = true,
+                    endpoint = BuildConfig.OTLP_ENDPOINT,
+                    environment = if (BuildConfig.DEBUG) "dev" else "prod",
+                    serviceVersion = BuildConfig.VERSION_NAME,
+                    traceSamplingRate = telemetryConfig.traceSampleRate,
+// Use TelemetryConfig value
+                    debugLogging = BuildConfig.DEBUG,
+                ).also {
+                    android.util.Log.i(
+                        "ScaniumApplication",
+                        "OTLP telemetry enabled: endpoint=${it.endpoint}, env=${it.environment}, " +
+                            "minSeverity=${telemetryConfig.minSeverity}, traceSampling=${telemetryConfig.traceSampleRate}, " +
+                            "maxQueue=${telemetryConfig.maxQueueSize}, dropPolicy=${telemetryConfig.dropPolicy}",
+                    )
+                }
+            } else {
+                OtlpConfiguration.DISABLED.also {
+                    android.util.Log.i("ScaniumApplication", "OTLP telemetry disabled")
+                }
             }
-        } else {
-            OtlpConfiguration.DISABLED.also {
-                android.util.Log.i("ScaniumApplication", "OTLP telemetry disabled")
-            }
-        }
 
         // Create OTLP port implementations with both configs
         val logPort = AndroidLogPortOtlp(telemetryConfig, otlpConfig)
@@ -173,15 +180,18 @@ class ScaniumApplication : Application() {
         val tracePort = AndroidTracePortOtlp(telemetryConfig, otlpConfig)
 
         // Create Telemetry facade with config and diagnostics
-        telemetry = Telemetry(
-            config = telemetryConfig,
-            defaultAttributesProvider = AndroidDefaultAttributesProvider(telemetryConfig.dataRegion),
-            logPort = logPort,
-            metricPort = metricPort,
-            tracePort = tracePort,
-            crashPort = crashPort, // Bridge telemetry to crash reporting
-            diagnosticsPort = diagnosticsPort // Collect breadcrumbs for crash-time attachment
-        )
+        telemetry =
+            Telemetry(
+                config = telemetryConfig,
+                defaultAttributesProvider = AndroidDefaultAttributesProvider(telemetryConfig.dataRegion),
+                logPort = logPort,
+                metricPort = metricPort,
+                tracePort = tracePort,
+                crashPort = crashPort,
+// Bridge telemetry to crash reporting
+                diagnosticsPort = diagnosticsPort,
+// Collect breadcrumbs for crash-time attachment
+            )
 
         android.util.Log.i("ScaniumApplication", "Telemetry facade initialized with diagnostics collection")
 

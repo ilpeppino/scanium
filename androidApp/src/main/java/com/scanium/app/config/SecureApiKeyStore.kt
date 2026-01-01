@@ -8,27 +8,30 @@ import com.scanium.app.BuildConfig
 class SecureApiKeyStore(context: Context) {
     private val appContext = context.applicationContext
     private val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-    private val sharedPreferences = EncryptedSharedPreferences.create(
-        STORE_NAME,
-        masterKeyAlias,
-        appContext,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val sharedPreferences =
+        EncryptedSharedPreferences.create(
+            STORE_NAME,
+            masterKeyAlias,
+            appContext,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
 
     fun getApiKey(): String? {
-        val storedKey = sharedPreferences
-            .getString(KEY_API_KEY, null)
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
+        val storedKey =
+            sharedPreferences
+                .getString(KEY_API_KEY, null)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
 
         if (storedKey != null) {
             return storedKey
         }
 
-        val buildConfigKey = BuildConfig.SCANIUM_API_KEY
-            .takeIf { it.isNotBlank() }
-            ?.trim()
+        val buildConfigKey =
+            BuildConfig.SCANIUM_API_KEY
+                .takeIf { it.isNotBlank() }
+                ?.trim()
 
         if (buildConfigKey != null) {
             // Seed encrypted storage so subsequent reads don't rely on BuildConfig.

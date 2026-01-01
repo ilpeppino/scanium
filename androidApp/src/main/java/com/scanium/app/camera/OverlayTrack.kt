@@ -28,12 +28,15 @@ private const val DEFAULT_READY_THRESHOLD = 0.55f
 enum class OverlayBoxStyle {
     /** Eye style: thin stroke, very subtle - detected anywhere in frame (global vision) */
     EYE,
+
     /** Selected style: medium stroke, accent color - object center inside ROI (user intent) */
     SELECTED,
+
     /** Ready style: medium-thick stroke, green - selected + conditions met, holding steady */
     READY,
+
     /** Locked style: thick stroke, bright green with pulse - stable lock achieved, scan-ready */
-    LOCKED
+    LOCKED,
 }
 
 data class OverlayTrack(
@@ -46,7 +49,7 @@ data class OverlayTrack(
     val aggregatedId: String? = null,
     val trackingId: String? = null,
     /** Box style for visual distinction: EYE (global) → SELECTED → READY → LOCKED */
-    val boxStyle: OverlayBoxStyle = OverlayBoxStyle.EYE
+    val boxStyle: OverlayBoxStyle = OverlayBoxStyle.EYE,
 )
 
 /**
@@ -75,7 +78,7 @@ fun mapOverlayTracks(
     /** Tracking ID of the locked candidate (if any) - used to set LOCKED box style */
     lockedTrackingId: String? = null,
     /** True if guidance state is GOOD (conditions met, waiting for lock) */
-    isGoodState: Boolean = false
+    isGoodState: Boolean = false,
 ): List<OverlayTrack> {
     val aggregatedBySource = mutableMapOf<String, AggregatedItem>()
     aggregatedItems.forEach { item ->
@@ -87,22 +90,25 @@ fun mapOverlayTracks(
         val detectionId = detection.trackingId?.toString()
         val matched = detectionId?.let { aggregatedBySource[it] }
         val category = matched?.enhancedCategory ?: matched?.category ?: detection.category
-        val baseLabel = matched?.enhancedLabelText?.takeUnless { it.isNullOrBlank() }
-            ?: matched?.labelText?.takeUnless { it.isBlank() }
-        val label = when {
-            !baseLabel.isNullOrBlank() -> baseLabel
-            category != ItemCategory.UNKNOWN -> category.displayName
-            else -> pendingLabel
-        }
+        val baseLabel =
+            matched?.enhancedLabelText?.takeUnless { it.isNullOrBlank() }
+                ?: matched?.labelText?.takeUnless { it.isBlank() }
+        val label =
+            when {
+                !baseLabel.isNullOrBlank() -> baseLabel
+                category != ItemCategory.UNKNOWN -> category.displayName
+                else -> pendingLabel
+            }
 
         val classificationConfidence = matched?.classificationConfidence
         val confidence = classificationConfidence ?: matched?.maxConfidence ?: detection.confidence
         val isReady = category != ItemCategory.UNKNOWN && confidence >= readyConfidenceThreshold
 
-        val priceText = matched?.estimatedPriceRange?.formatted()
-            ?: matched?.enhancedPriceRange?.let { PriceRange(Money(it.first), Money(it.second)).formatted() }
-            ?: matched?.priceRange?.let { PriceRange(Money(it.first), Money(it.second)).formatted() }
-            ?: detection.formattedPriceRange
+        val priceText =
+            matched?.estimatedPriceRange?.formatted()
+                ?: matched?.enhancedPriceRange?.let { PriceRange(Money(it.first), Money(it.second)).formatted() }
+                ?: matched?.priceRange?.let { PriceRange(Money(it.first), Money(it.second)).formatted() }
+                ?: detection.formattedPriceRange
 
         // Determine box style based on selection and lock status
         // Visual progression: EYE → SELECTED → READY → LOCKED
@@ -112,16 +118,17 @@ fun mapOverlayTracks(
         val isSelected = selectedTrackingId != null && detectionId == selectedTrackingId
         val isLocked = lockedTrackingId != null && detectionId == lockedTrackingId
 
-        val boxStyle = when {
-            // LOCKED: This detection is the locked candidate (scan-ready)
-            isLocked -> OverlayBoxStyle.LOCKED
-            // READY: Selected + guidance is GOOD + conditions met
-            isSelected && isGoodState && isReady -> OverlayBoxStyle.READY
-            // SELECTED: Object center is inside ROI (user intent)
-            isSelected -> OverlayBoxStyle.SELECTED
-            // EYE: Object detected but not inside ROI (global vision)
-            else -> OverlayBoxStyle.EYE
-        }
+        val boxStyle =
+            when {
+                // LOCKED: This detection is the locked candidate (scan-ready)
+                isLocked -> OverlayBoxStyle.LOCKED
+                // READY: Selected + guidance is GOOD + conditions met
+                isSelected && isGoodState && isReady -> OverlayBoxStyle.READY
+                // SELECTED: Object center is inside ROI (user intent)
+                isSelected -> OverlayBoxStyle.SELECTED
+                // EYE: Object detected but not inside ROI (global vision)
+                else -> OverlayBoxStyle.EYE
+            }
 
         OverlayTrack(
             bboxNorm = detection.bboxNorm,
@@ -132,7 +139,7 @@ fun mapOverlayTracks(
             priceEstimationStatus = matched?.priceEstimationStatus ?: detection.priceEstimationStatus,
             aggregatedId = matched?.aggregatedId,
             trackingId = detectionId,
-            boxStyle = boxStyle
+            boxStyle = boxStyle,
         )
     }
 }
