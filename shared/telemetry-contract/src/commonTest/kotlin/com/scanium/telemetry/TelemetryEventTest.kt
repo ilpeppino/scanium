@@ -7,19 +7,20 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class TelemetryEventTest {
-
     @Test
     fun `TelemetryEvent can be created with valid data`() {
         val timestamp = Clock.System.now()
-        val event = TelemetryEvent(
-            name = "scan.started",
-            severity = TelemetrySeverity.INFO,
-            timestamp = timestamp,
-            attributes = mapOf(
-                "platform" to "android",
-                "app_version" to "1.0.0"
+        val event =
+            TelemetryEvent(
+                name = "scan.started",
+                severity = TelemetrySeverity.INFO,
+                timestamp = timestamp,
+                attributes =
+                    mapOf(
+                        "platform" to "android",
+                        "app_version" to "1.0.0",
+                    ),
             )
-        )
 
         assertEquals("scan.started", event.name)
         assertEquals(TelemetrySeverity.INFO, event.severity)
@@ -35,7 +36,7 @@ class TelemetryEventTest {
                 name = "",
                 severity = TelemetrySeverity.INFO,
                 timestamp = Clock.System.now(),
-                attributes = emptyMap()
+                attributes = emptyMap(),
             )
         }
 
@@ -44,7 +45,7 @@ class TelemetryEventTest {
                 name = "   ",
                 severity = TelemetrySeverity.INFO,
                 timestamp = Clock.System.now(),
-                attributes = emptyMap()
+                attributes = emptyMap(),
             )
         }
     }
@@ -56,7 +57,7 @@ class TelemetryEventTest {
                 name = "test.event",
                 severity = TelemetrySeverity.INFO,
                 timestamp = Clock.System.now(),
-                attributes = mapOf("" to "value")
+                attributes = mapOf("" to "value"),
             )
         }
 
@@ -65,18 +66,19 @@ class TelemetryEventTest {
                 name = "test.event",
                 severity = TelemetrySeverity.INFO,
                 timestamp = Clock.System.now(),
-                attributes = mapOf("   " to "value")
+                attributes = mapOf("   " to "value"),
             )
         }
     }
 
     @Test
     fun `TelemetryEvent can be created without attributes`() {
-        val event = TelemetryEvent(
-            name = "test.event",
-            severity = TelemetrySeverity.INFO,
-            timestamp = Clock.System.now()
-        )
+        val event =
+            TelemetryEvent(
+                name = "test.event",
+                severity = TelemetrySeverity.INFO,
+                timestamp = Clock.System.now(),
+            )
 
         assertTrue(event.attributes.isEmpty())
     }
@@ -101,19 +103,21 @@ class TelemetryEventTest {
 
     @Test
     fun `TelemetryEvent can include all required attributes`() {
-        val event = TelemetryEvent(
-            name = "scan.started",
-            severity = TelemetrySeverity.INFO,
-            timestamp = Clock.System.now(),
-            attributes = mapOf(
-                TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_ANDROID,
-                TelemetryEvent.ATTR_APP_VERSION to "1.0.0",
-                TelemetryEvent.ATTR_BUILD to "42",
-                TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_PROD,
-                TelemetryEvent.ATTR_SESSION_ID to "session-123",
-                TelemetryEvent.ATTR_DATA_REGION to "EU"
+        val event =
+            TelemetryEvent(
+                name = "scan.started",
+                severity = TelemetrySeverity.INFO,
+                timestamp = Clock.System.now(),
+                attributes =
+                    mapOf(
+                        TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_ANDROID,
+                        TelemetryEvent.ATTR_APP_VERSION to "1.0.0",
+                        TelemetryEvent.ATTR_BUILD to "42",
+                        TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_PROD,
+                        TelemetryEvent.ATTR_SESSION_ID to "session-123",
+                        TelemetryEvent.ATTR_DATA_REGION to "EU",
+                    ),
             )
-        )
 
         assertEquals(TelemetryEvent.PLATFORM_ANDROID, event.attributes[TelemetryEvent.ATTR_PLATFORM])
         assertEquals("1.0.0", event.attributes[TelemetryEvent.ATTR_APP_VERSION])
@@ -125,15 +129,17 @@ class TelemetryEventTest {
 
     @Test
     fun `TelemetryEvent can include optional trace_id`() {
-        val event = TelemetryEvent(
-            name = "scan.started",
-            severity = TelemetrySeverity.INFO,
-            timestamp = Clock.System.now(),
-            attributes = mapOf(
-                TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_IOS,
-                TelemetryEvent.ATTR_TRACE_ID to "trace-abc-123"
+        val event =
+            TelemetryEvent(
+                name = "scan.started",
+                severity = TelemetrySeverity.INFO,
+                timestamp = Clock.System.now(),
+                attributes =
+                    mapOf(
+                        TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_IOS,
+                        TelemetryEvent.ATTR_TRACE_ID to "trace-abc-123",
+                    ),
             )
-        )
 
         assertEquals("trace-abc-123", event.attributes[TelemetryEvent.ATTR_TRACE_ID])
     }

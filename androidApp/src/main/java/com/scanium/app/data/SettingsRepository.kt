@@ -7,18 +7,18 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.scanium.app.model.user.UserEdition
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
+import com.scanium.app.model.user.UserEdition
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "settings_preferences"
+    name = "settings_preferences",
 )
 
 class SettingsRepository(private val context: Context) {
@@ -73,10 +73,11 @@ class SettingsRepository(private val context: Context) {
         private val DEV_MOTION_OVERLAYS_ENABLED_KEY = booleanPreferencesKey("dev_motion_overlays_enabled")
     }
 
-    val themeModeFlow: Flow<ThemeMode> = context.settingsDataStore.data.map { preferences ->
-        val raw = preferences[THEME_MODE_KEY]
-        raw?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM
-    }
+    val themeModeFlow: Flow<ThemeMode> =
+        context.settingsDataStore.data.map { preferences ->
+            val raw = preferences[THEME_MODE_KEY]
+            raw?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM
+        }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.settingsDataStore.edit { preferences ->
@@ -84,9 +85,10 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val allowCloudClassificationFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] ?: true
-    }
+    val allowCloudClassificationFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] ?: true
+        }
 
     suspend fun setAllowCloudClassification(allow: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -94,9 +96,10 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val allowAssistantFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[ALLOW_ASSISTANT_KEY] ?: false
-    }
+    val allowAssistantFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[ALLOW_ASSISTANT_KEY] ?: false
+        }
 
     suspend fun setAllowAssistant(allow: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -104,9 +107,10 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val shareDiagnosticsFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[SHARE_DIAGNOSTICS_KEY] ?: false
-    }
+    val shareDiagnosticsFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[SHARE_DIAGNOSTICS_KEY] ?: false
+        }
 
     suspend fun setShareDiagnostics(share: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -114,10 +118,11 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val userEditionFlow: Flow<UserEdition> = context.settingsDataStore.data.map { preferences ->
-        val raw = preferences[USER_EDITION_KEY]
-        raw?.let { runCatching { UserEdition.valueOf(it) }.getOrNull() } ?: UserEdition.FREE
-    }
+    val userEditionFlow: Flow<UserEdition> =
+        context.settingsDataStore.data.map { preferences ->
+            val raw = preferences[USER_EDITION_KEY]
+            raw?.let { runCatching { UserEdition.valueOf(it) }.getOrNull() } ?: UserEdition.FREE
+        }
 
     suspend fun setUserEdition(edition: UserEdition) {
         context.settingsDataStore.edit { preferences ->
@@ -125,9 +130,10 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val developerModeFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEVELOPER_MODE_KEY] ?: false
-    }
+    val developerModeFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEVELOPER_MODE_KEY] ?: false
+        }
 
     suspend fun setDeveloperMode(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -135,9 +141,10 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val autoSaveEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[AUTO_SAVE_ENABLED_KEY] ?: false
-    }
+    val autoSaveEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[AUTO_SAVE_ENABLED_KEY] ?: false
+        }
 
     suspend fun setAutoSaveEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -145,9 +152,10 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val saveDirectoryUriFlow: Flow<String?> = context.settingsDataStore.data.map { preferences ->
-        preferences[SAVE_DIRECTORY_URI_KEY]
-    }
+    val saveDirectoryUriFlow: Flow<String?> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[SAVE_DIRECTORY_URI_KEY]
+        }
 
     suspend fun setSaveDirectoryUri(uri: String?) {
         context.settingsDataStore.edit { preferences ->
@@ -163,9 +171,10 @@ class SettingsRepository(private val context: Context) {
      * Whether to allow images to be sent to the AI assistant.
      * Default is OFF for privacy reasons.
      */
-    val allowAssistantImagesFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false
-    }
+    val allowAssistantImagesFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false
+        }
 
     suspend fun setAllowAssistantImages(allow: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -177,9 +186,10 @@ class SettingsRepository(private val context: Context) {
      * Whether app sounds are enabled.
      * Default is ON for subtle feedback.
      */
-    val soundsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[SOUNDS_ENABLED_KEY] ?: true
-    }
+    val soundsEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[SOUNDS_ENABLED_KEY] ?: true
+        }
 
     suspend fun setSoundsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -191,9 +201,10 @@ class SettingsRepository(private val context: Context) {
     // Assistant Personalization Preferences
     // =========================================================================
 
-    val assistantLanguageFlow: Flow<String> = context.settingsDataStore.data.map { preferences ->
-        preferences[ASSISTANT_LANGUAGE_KEY] ?: "EN"
-    }
+    val assistantLanguageFlow: Flow<String> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[ASSISTANT_LANGUAGE_KEY] ?: "EN"
+        }
 
     suspend fun setAssistantLanguage(language: String) {
         context.settingsDataStore.edit { preferences ->
@@ -201,10 +212,11 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val assistantToneFlow: Flow<AssistantTone> = context.settingsDataStore.data.map { preferences ->
-        val raw = preferences[ASSISTANT_TONE_KEY]
-        raw?.let { runCatching { AssistantTone.valueOf(it) }.getOrNull() } ?: AssistantTone.NEUTRAL
-    }
+    val assistantToneFlow: Flow<AssistantTone> =
+        context.settingsDataStore.data.map { preferences ->
+            val raw = preferences[ASSISTANT_TONE_KEY]
+            raw?.let { runCatching { AssistantTone.valueOf(it) }.getOrNull() } ?: AssistantTone.NEUTRAL
+        }
 
     suspend fun setAssistantTone(tone: AssistantTone) {
         context.settingsDataStore.edit { preferences ->
@@ -212,10 +224,11 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val assistantRegionFlow: Flow<AssistantRegion> = context.settingsDataStore.data.map { preferences ->
-        val raw = preferences[ASSISTANT_REGION_KEY]
-        raw?.let { runCatching { AssistantRegion.valueOf(it) }.getOrNull() } ?: AssistantRegion.EU
-    }
+    val assistantRegionFlow: Flow<AssistantRegion> =
+        context.settingsDataStore.data.map { preferences ->
+            val raw = preferences[ASSISTANT_REGION_KEY]
+            raw?.let { runCatching { AssistantRegion.valueOf(it) }.getOrNull() } ?: AssistantRegion.EU
+        }
 
     suspend fun setAssistantRegion(region: AssistantRegion) {
         context.settingsDataStore.edit { preferences ->
@@ -223,10 +236,11 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val assistantUnitsFlow: Flow<AssistantUnits> = context.settingsDataStore.data.map { preferences ->
-        val raw = preferences[ASSISTANT_UNITS_KEY]
-        raw?.let { runCatching { AssistantUnits.valueOf(it) }.getOrNull() } ?: AssistantUnits.METRIC
-    }
+    val assistantUnitsFlow: Flow<AssistantUnits> =
+        context.settingsDataStore.data.map { preferences ->
+            val raw = preferences[ASSISTANT_UNITS_KEY]
+            raw?.let { runCatching { AssistantUnits.valueOf(it) }.getOrNull() } ?: AssistantUnits.METRIC
+        }
 
     suspend fun setAssistantUnits(units: AssistantUnits) {
         context.settingsDataStore.edit { preferences ->
@@ -234,10 +248,11 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    val assistantVerbosityFlow: Flow<AssistantVerbosity> = context.settingsDataStore.data.map { preferences ->
-        val raw = preferences[ASSISTANT_VERBOSITY_KEY]
-        raw?.let { runCatching { AssistantVerbosity.valueOf(it) }.getOrNull() } ?: AssistantVerbosity.NORMAL
-    }
+    val assistantVerbosityFlow: Flow<AssistantVerbosity> =
+        context.settingsDataStore.data.map { preferences ->
+            val raw = preferences[ASSISTANT_VERBOSITY_KEY]
+            raw?.let { runCatching { AssistantVerbosity.valueOf(it) }.getOrNull() } ?: AssistantVerbosity.NORMAL
+        }
 
     suspend fun setAssistantVerbosity(verbosity: AssistantVerbosity) {
         context.settingsDataStore.edit { preferences ->
@@ -249,21 +264,22 @@ class SettingsRepository(private val context: Context) {
      * Combined flow that emits the current assistant preferences.
      * This can be collected to get all preferences as a single object.
      */
-    val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
-        assistantLanguageFlow,
-        assistantToneFlow,
-        assistantRegionFlow,
-        assistantUnitsFlow,
-        assistantVerbosityFlow
-    ) { language, tone, region, units, verbosity ->
-        AssistantPrefs(
-            language = language,
-            tone = tone,
-            region = region,
-            units = units,
-            verbosity = verbosity
-        )
-    }
+    val assistantPrefsFlow: Flow<AssistantPrefs> =
+        combine(
+            assistantLanguageFlow,
+            assistantToneFlow,
+            assistantRegionFlow,
+            assistantUnitsFlow,
+            assistantVerbosityFlow,
+        ) { language, tone, region, units, verbosity ->
+            AssistantPrefs(
+                language = language,
+                tone = tone,
+                region = region,
+                units = units,
+                verbosity = verbosity,
+            )
+        }
 
     // =========================================================================
     // Voice Mode Preferences
@@ -273,9 +289,10 @@ class SettingsRepository(private val context: Context) {
      * Whether voice mode is enabled (master toggle).
      * Default is OFF for privacy-first approach.
      */
-    val voiceModeEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[VOICE_MODE_ENABLED_KEY] ?: false
-    }
+    val voiceModeEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[VOICE_MODE_ENABLED_KEY] ?: false
+        }
 
     suspend fun setVoiceModeEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -287,9 +304,10 @@ class SettingsRepository(private val context: Context) {
      * Whether to speak assistant answers aloud (TTS).
      * Default is OFF for privacy-first approach.
      */
-    val speakAnswersEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[SPEAK_ANSWERS_KEY] ?: false
-    }
+    val speakAnswersEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[SPEAK_ANSWERS_KEY] ?: false
+        }
 
     suspend fun setSpeakAnswersEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -301,9 +319,10 @@ class SettingsRepository(private val context: Context) {
      * Whether to automatically send message after transcription.
      * Default is OFF so users can edit transcripts for privacy.
      */
-    val autoSendTranscriptFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[AUTO_SEND_TRANSCRIPT_KEY] ?: false
-    }
+    val autoSendTranscriptFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[AUTO_SEND_TRANSCRIPT_KEY] ?: false
+        }
 
     suspend fun setAutoSendTranscript(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -315,9 +334,10 @@ class SettingsRepository(private val context: Context) {
      * Voice language for STT/TTS.
      * Empty string means follow assistant language setting.
      */
-    val voiceLanguageFlow: Flow<String> = context.settingsDataStore.data.map { preferences ->
-        preferences[VOICE_LANGUAGE_KEY] ?: ""
-    }
+    val voiceLanguageFlow: Flow<String> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[VOICE_LANGUAGE_KEY] ?: ""
+        }
 
     suspend fun setVoiceLanguage(language: String) {
         context.settingsDataStore.edit { preferences ->
@@ -329,9 +349,10 @@ class SettingsRepository(private val context: Context) {
      * Developer preference to allow screenshots.
      * Default true to avoid disrupting debugging workflows.
      */
-    val devAllowScreenshotsFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_ALLOW_SCREENSHOTS_KEY] ?: true
-    }
+    val devAllowScreenshotsFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_ALLOW_SCREENSHOTS_KEY] ?: true
+        }
 
     suspend fun setDevAllowScreenshots(allowed: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -343,9 +364,10 @@ class SettingsRepository(private val context: Context) {
      * Developer preference to show FTUE debug bounds.
      * Default false to avoid visual clutter.
      */
-    val devShowFtueBoundsFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_SHOW_FTUE_BOUNDS_KEY] ?: false
-    }
+    val devShowFtueBoundsFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_SHOW_FTUE_BOUNDS_KEY] ?: false
+        }
 
     suspend fun setDevShowFtueBounds(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -357,9 +379,10 @@ class SettingsRepository(private val context: Context) {
      * Whether assistant interactions should trigger haptic feedback.
      * Default is OFF.
      */
-    val assistantHapticsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[ASSISTANT_HAPTICS_KEY] ?: false
-    }
+    val assistantHapticsEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[ASSISTANT_HAPTICS_KEY] ?: false
+        }
 
     suspend fun setAssistantHapticsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -375,9 +398,10 @@ class SettingsRepository(private val context: Context) {
      * Whether barcode/QR detection is enabled.
      * Default is ON for beta.
      */
-    val devBarcodeDetectionEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_BARCODE_DETECTION_ENABLED_KEY] ?: true
-    }
+    val devBarcodeDetectionEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_BARCODE_DETECTION_ENABLED_KEY] ?: true
+        }
 
     suspend fun setDevBarcodeDetectionEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -389,9 +413,10 @@ class SettingsRepository(private val context: Context) {
      * Whether document candidate detection is enabled.
      * Default is ON for beta.
      */
-    val devDocumentDetectionEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_DOCUMENT_DETECTION_ENABLED_KEY] ?: true
-    }
+    val devDocumentDetectionEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_DOCUMENT_DETECTION_ENABLED_KEY] ?: true
+        }
 
     suspend fun setDevDocumentDetectionEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -403,9 +428,10 @@ class SettingsRepository(private val context: Context) {
      * Whether adaptive throttling (low-power mode) is enabled.
      * Default is ON for beta.
      */
-    val devAdaptiveThrottlingEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_ADAPTIVE_THROTTLING_ENABLED_KEY] ?: true
-    }
+    val devAdaptiveThrottlingEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_ADAPTIVE_THROTTLING_ENABLED_KEY] ?: true
+        }
 
     suspend fun setDevAdaptiveThrottlingEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -418,9 +444,10 @@ class SettingsRepository(private val context: Context) {
      * When enabled, detailed ScanPipeline logs are emitted for debugging.
      * Default is OFF to reduce log noise.
      */
-    val devScanningDiagnosticsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_SCANNING_DIAGNOSTICS_ENABLED_KEY] ?: false
-    }
+    val devScanningDiagnosticsEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_SCANNING_DIAGNOSTICS_ENABLED_KEY] ?: false
+        }
 
     suspend fun setDevScanningDiagnosticsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -437,9 +464,10 @@ class SettingsRepository(private val context: Context) {
      * Shows the scan zone, hints, and visual feedback during live scanning.
      * Default is ON for improved UX.
      */
-    val scanningGuidanceEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[SCANNING_GUIDANCE_ENABLED_KEY] ?: true
-    }
+    val scanningGuidanceEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[SCANNING_GUIDANCE_ENABLED_KEY] ?: true
+        }
 
     suspend fun setScanningGuidanceEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -452,9 +480,10 @@ class SettingsRepository(private val context: Context) {
      * Shows numeric values for ROI size, sharpness, center distance, lock state, etc.
      * Default is OFF to avoid visual clutter in production.
      */
-    val devRoiDiagnosticsEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_ROI_DIAGNOSTICS_ENABLED_KEY] ?: false
-    }
+    val devRoiDiagnosticsEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_ROI_DIAGNOSTICS_ENABLED_KEY] ?: false
+        }
 
     suspend fun setDevRoiDiagnosticsEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -467,9 +496,10 @@ class SettingsRepository(private val context: Context) {
      * Shows rotation, scale, offset, and effective dimensions for portrait/landscape debugging.
      * Default is OFF to avoid visual clutter in production.
      */
-    val devBboxMappingDebugEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_BBOX_MAPPING_DEBUG_KEY] ?: false
-    }
+    val devBboxMappingDebugEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_BBOX_MAPPING_DEBUG_KEY] ?: false
+        }
 
     suspend fun setDevBboxMappingDebugEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -482,9 +512,10 @@ class SettingsRepository(private val context: Context) {
      * Shows aspect ratio validation, logs once per second with tag CORR.
      * Default is OFF to avoid performance impact.
      */
-    val devCorrelationDebugEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_CORRELATION_DEBUG_KEY] ?: false
-    }
+    val devCorrelationDebugEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_CORRELATION_DEBUG_KEY] ?: false
+        }
 
     suspend fun setDevCorrelationDebugEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -499,9 +530,10 @@ class SettingsRepository(private val context: Context) {
      * Also enables CAM_LIFE log tag for lifecycle events.
      * Default is OFF to avoid visual clutter.
      */
-    val devCameraPipelineDebugEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_CAMERA_PIPELINE_DEBUG_KEY] ?: false
-    }
+    val devCameraPipelineDebugEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_CAMERA_PIPELINE_DEBUG_KEY] ?: false
+        }
 
     suspend fun setDevCameraPipelineDebugEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
@@ -536,12 +568,13 @@ class SettingsRepository(private val context: Context) {
      * Checks if Privacy Safe Mode is effectively active.
      * Returns true if all cloud sharing features are disabled.
      */
-    val isPrivacySafeModeActiveFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        val cloudOff = !(preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] ?: true)
-        val imagesOff = !(preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false)
-        val diagnosticsOff = !(preferences[SHARE_DIAGNOSTICS_KEY] ?: false)
-        cloudOff && imagesOff && diagnosticsOff
-    }
+    val isPrivacySafeModeActiveFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            val cloudOff = !(preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] ?: true)
+            val imagesOff = !(preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false)
+            val diagnosticsOff = !(preferences[SHARE_DIAGNOSTICS_KEY] ?: false)
+            cloudOff && imagesOff && diagnosticsOff
+        }
 
     /**
      * Resets all privacy-related settings to their default values.
@@ -575,9 +608,10 @@ class SettingsRepository(private val context: Context) {
      * Part of Scanium motion language system.
      * Default is ON for enhanced visual feedback.
      */
-    val devMotionOverlaysEnabledFlow: Flow<Boolean> = context.settingsDataStore.data.map { preferences ->
-        preferences[DEV_MOTION_OVERLAYS_ENABLED_KEY] ?: true
-    }
+    val devMotionOverlaysEnabledFlow: Flow<Boolean> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_MOTION_OVERLAYS_ENABLED_KEY] ?: true
+        }
 
     suspend fun setDevMotionOverlaysEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->

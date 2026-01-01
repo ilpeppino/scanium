@@ -18,20 +18,21 @@ object DraftFieldsSerializer {
     fun toJson(fields: Map<DraftFieldKey, DraftField<String>>): String {
         if (fields.isEmpty()) return "{}"
         val sorted = fields.entries.sortedBy { it.key.wireValue }
-        val obj = buildMap<String, JsonObject> {
-            sorted.forEach { (key, field) ->
-                put(
-                    key.wireValue,
-                    JsonObject(
-                        mapOf(
-                            "value" to (field.value?.let { JsonPrimitive(it) } ?: JsonNull),
-                            "confidence" to JsonPrimitive(field.confidence),
-                            "source" to JsonPrimitive(field.source.name)
-                        )
+        val obj =
+            buildMap<String, JsonObject> {
+                sorted.forEach { (key, field) ->
+                    put(
+                        key.wireValue,
+                        JsonObject(
+                            mapOf(
+                                "value" to (field.value?.let { JsonPrimitive(it) } ?: JsonNull),
+                                "confidence" to JsonPrimitive(field.confidence),
+                                "source" to JsonPrimitive(field.source.name),
+                            ),
+                        ),
                     )
-                )
+                }
             }
-        }
         return JsonObject(obj).toString()
     }
 
@@ -44,15 +45,17 @@ object DraftFieldsSerializer {
                 val obj = element.jsonObject
                 val storedValue = obj["value"]?.jsonPrimitive?.contentOrNull
                 val confidence = obj["confidence"]?.jsonPrimitive?.floatOrNull ?: 0f
-                val source = obj["source"]?.jsonPrimitive?.contentOrNull
-                    ?.let { runCatching { DraftProvenance.valueOf(it) }.getOrNull() }
-                    ?: DraftProvenance.UNKNOWN
+                val source =
+                    obj["source"]?.jsonPrimitive?.contentOrNull
+                        ?.let { runCatching { DraftProvenance.valueOf(it) }.getOrNull() }
+                        ?: DraftProvenance.UNKNOWN
 
-                fieldKey to DraftField(
-                    value = storedValue,
-                    confidence = confidence,
-                    source = source
-                )
+                fieldKey to
+                    DraftField(
+                        value = storedValue,
+                        confidence = confidence,
+                        source = source,
+                    )
             }
             .toMap()
     }

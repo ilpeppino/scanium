@@ -10,10 +10,10 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
+import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange
-import com.scanium.shared.core.models.ml.ItemCategory
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +53,7 @@ class ItemsStateManager(
     private val itemsStore: ScannedItemStore = NoopScannedItemStore,
     initialWorkerDispatcher: CoroutineDispatcher = Dispatchers.Default,
     initialMainDispatcher: CoroutineDispatcher = Dispatchers.Main,
-    aggregationConfig: AggregationConfig = AggregationPresets.REALTIME
+    aggregationConfig: AggregationConfig = AggregationPresets.REALTIME,
 ) {
     companion object {
         private const val TAG = "ItemsStateManager"
@@ -101,7 +101,7 @@ class ItemsStateManager(
      */
     internal fun overrideDispatchers(
         workerDispatcher: CoroutineDispatcher,
-        mainDispatcher: CoroutineDispatcher
+        mainDispatcher: CoroutineDispatcher,
     ) {
         this.workerDispatcher = workerDispatcher
         this.mainDispatcher = mainDispatcher
@@ -230,19 +230,20 @@ class ItemsStateManager(
         itemId: String,
         status: com.scanium.shared.core.models.items.ItemListingStatus,
         listingId: String? = null,
-        listingUrl: String? = null
+        listingUrl: String? = null,
     ) {
-        val updatedItems = _items.value.map { item ->
-            if (item.id == itemId) {
-                item.copy(
-                    listingStatus = status,
-                    listingId = listingId,
-                    listingUrl = listingUrl
-                )
-            } else {
-                item
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        listingStatus = status,
+                        listingId = listingId,
+                        listingUrl = listingUrl,
+                    )
+                } else {
+                    item
+                }
             }
-        }
         _items.value = updatedItems
         persistItems(updatedItems)
     }
@@ -301,14 +302,14 @@ class ItemsStateManager(
         category: ItemCategory?,
         label: String?,
         priceRange: Pair<Double, Double>?,
-        classificationConfidence: Float? = null
+        classificationConfidence: Float? = null,
     ) {
         itemAggregator.applyEnhancedClassification(
             aggregatedId = aggregatedId,
             category = category,
             label = label,
             priceRange = priceRange,
-            classificationConfidence = classificationConfidence
+            classificationConfidence = classificationConfidence,
         )
     }
 
@@ -320,14 +321,14 @@ class ItemsStateManager(
         status: String,
         domainCategoryId: String? = null,
         errorMessage: String? = null,
-        requestId: String? = null
+        requestId: String? = null,
     ) {
         itemAggregator.updateClassificationStatus(
             aggregatedId = aggregatedId,
             status = status,
             domainCategoryId = domainCategoryId,
             errorMessage = errorMessage,
-            requestId = requestId
+            requestId = requestId,
         )
     }
 
@@ -337,7 +338,7 @@ class ItemsStateManager(
     fun updatePriceEstimation(
         aggregatedId: String,
         status: PriceEstimationStatus,
-        priceRange: PriceRange? = null
+        priceRange: PriceRange? = null,
     ) {
         itemAggregator.updatePriceEstimation(aggregatedId, status, priceRange)
     }
@@ -352,7 +353,10 @@ class ItemsStateManager(
     /**
      * Update thumbnail for an aggregated item.
      */
-    fun updateThumbnail(aggregatedId: String, thumbnail: ImageRef?) {
+    fun updateThumbnail(
+        aggregatedId: String,
+        thumbnail: ImageRef?,
+    ) {
         itemAggregator.updateThumbnail(aggregatedId, thumbnail)
     }
 
@@ -368,32 +372,33 @@ class ItemsStateManager(
         }
 
         _telemetryEnabled.value = true
-        telemetryJob = scope.launch(workerDispatcher) {
-            Log.i(TAG, "╔═══════════════════════════════════════════════════════════════")
-            Log.i(TAG, "║ ASYNC TELEMETRY ENABLED")
-            Log.i(TAG, "║ Collection interval: ${TELEMETRY_INTERVAL_MS}ms")
-            Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")
+        telemetryJob =
+            scope.launch(workerDispatcher) {
+                Log.i(TAG, "╔═══════════════════════════════════════════════════════════════")
+                Log.i(TAG, "║ ASYNC TELEMETRY ENABLED")
+                Log.i(TAG, "║ Collection interval: ${TELEMETRY_INTERVAL_MS}ms")
+                Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")
 
-            while (isActive && _telemetryEnabled.value) {
-                delay(TELEMETRY_INTERVAL_MS)
+                while (isActive && _telemetryEnabled.value) {
+                    delay(TELEMETRY_INTERVAL_MS)
 
-                val stats = itemAggregator.getStats()
-                val runtime = Runtime.getRuntime()
-                val usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
-                val maxMemoryMB = runtime.maxMemory() / 1024 / 1024
+                    val stats = itemAggregator.getStats()
+                    val runtime = Runtime.getRuntime()
+                    val usedMemoryMB = (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024
+                    val maxMemoryMB = runtime.maxMemory() / 1024 / 1024
 
-                Log.i(TAG, "┌─────────────────────────────────────────────────────────────")
-                Log.i(TAG, "│ TELEMETRY SNAPSHOT")
-                Log.i(TAG, "├─────────────────────────────────────────────────────────────")
-                Log.i(TAG, "│ Aggregated items: ${stats.totalItems}")
-                Log.i(TAG, "│ Total merges: ${stats.totalMerges}")
-                Log.i(TAG, "│ Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
-                Log.i(TAG, "│ Memory: ${usedMemoryMB}MB / ${maxMemoryMB}MB")
-                Log.i(TAG, "└─────────────────────────────────────────────────────────────")
+                    Log.i(TAG, "┌─────────────────────────────────────────────────────────────")
+                    Log.i(TAG, "│ TELEMETRY SNAPSHOT")
+                    Log.i(TAG, "├─────────────────────────────────────────────────────────────")
+                    Log.i(TAG, "│ Aggregated items: ${stats.totalItems}")
+                    Log.i(TAG, "│ Total merges: ${stats.totalMerges}")
+                    Log.i(TAG, "│ Avg merges/item: ${"%.2f".format(stats.averageMergesPerItem)}")
+                    Log.i(TAG, "│ Memory: ${usedMemoryMB}MB / ${maxMemoryMB}MB")
+                    Log.i(TAG, "└─────────────────────────────────────────────────────────────")
+                }
+
+                Log.i(TAG, "Async telemetry stopped")
             }
-
-            Log.i(TAG, "Async telemetry stopped")
-        }
     }
 
     /**
@@ -419,7 +424,7 @@ class ItemsStateManager(
     internal fun updateItemsState(
         notifyNewItems: Boolean = true,
         triggerCallback: Boolean = true,
-        animationEnabled: Boolean = true
+        animationEnabled: Boolean = true,
     ) {
         val oldItems = _items.value
         val scannedItems = itemAggregator.getScannedItems()
@@ -428,9 +433,10 @@ class ItemsStateManager(
         Log.d(TAG, "Updated UI state: ${cachedItems.size} items")
 
         if (notifyNewItems && animationEnabled) {
-            val newItems = cachedItems.filter { newItem ->
-                oldItems.none { oldItem -> oldItem.id == newItem.id }
-            }
+            val newItems =
+                cachedItems.filter { newItem ->
+                    oldItems.none { oldItem -> oldItem.id == newItem.id }
+                }
             newItems.forEach {
                 if (DEBUG_LOGGING) {
                     Log.d(TAG, "Emitting new item event: ${it.id}")
@@ -476,12 +482,13 @@ class ItemsStateManager(
             val thumbnail = item.thumbnailRef ?: item.thumbnail
             val bytesRef = thumbnail as? ImageRef.Bytes ?: return@map item
             ThumbnailCache.put(item.id, bytesRef)
-            val cachedRef = ImageRef.CacheKey(
-                key = item.id,
-                mimeType = bytesRef.mimeType,
-                width = bytesRef.width,
-                height = bytesRef.height
-            )
+            val cachedRef =
+                ImageRef.CacheKey(
+                    key = item.id,
+                    mimeType = bytesRef.mimeType,
+                    width = bytesRef.width,
+                    height = bytesRef.height,
+                )
             itemAggregator.updateThumbnail(item.id, cachedRef)
             item.copy(thumbnail = cachedRef, thumbnailRef = cachedRef)
         }

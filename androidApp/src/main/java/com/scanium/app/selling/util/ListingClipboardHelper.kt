@@ -5,7 +5,11 @@ import android.content.ClipboardManager
 import android.content.Context
 
 object ListingClipboardHelper {
-    fun copy(context: Context, label: String, text: String) {
+    fun copy(
+        context: Context,
+        label: String,
+        text: String,
+    ) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
     }

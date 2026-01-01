@@ -2,7 +2,6 @@ package com.scanium.app.ui.settings
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -38,7 +37,7 @@ import java.util.Locale
 fun DeveloperOptionsScreen(
     viewModel: DeveloperOptionsViewModel,
     classificationViewModel: com.scanium.app.settings.ClassificationModeViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val diagnosticsState by viewModel.diagnosticsState.collectAsState()
     val assistantDiagnosticsState by viewModel.assistantDiagnosticsState.collectAsState()
@@ -76,16 +75,17 @@ fun DeveloperOptionsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(scrollState)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(scrollState),
         ) {
             // System Health Section
             SystemHealthSection(
@@ -93,7 +93,7 @@ fun DeveloperOptionsScreen(
                 autoRefreshEnabled = autoRefreshEnabled,
                 onRefresh = { viewModel.refreshDiagnostics() },
                 onCopyDiagnostics = { viewModel.copyDiagnosticsToClipboard() },
-                onAutoRefreshChange = { viewModel.setAutoRefreshEnabled(it) }
+                onAutoRefreshChange = { viewModel.setAutoRefreshEnabled(it) },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -101,7 +101,7 @@ fun DeveloperOptionsScreen(
             // Assistant / AI Diagnostics Section
             AssistantDiagnosticsSection(
                 state = assistantDiagnosticsState,
-                onRecheck = { viewModel.refreshAssistantDiagnostics() }
+                onRecheck = { viewModel.refreshAssistantDiagnostics() },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -113,7 +113,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (allowScreenshots) "Screenshots allowed" else "Screenshots blocked (FLAG_SECURE)",
                 icon = Icons.Default.ScreenLockPortrait,
                 checked = allowScreenshots,
-                onCheckedChange = { viewModel.setAllowScreenshots(it) }
+                onCheckedChange = { viewModel.setAllowScreenshots(it) },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -126,7 +126,7 @@ fun DeveloperOptionsScreen(
                 subtitle = "Unlock all features for testing",
                 icon = Icons.Default.BugReport,
                 checked = isDeveloperMode,
-                onCheckedChange = { viewModel.setDeveloperMode(it) }
+                onCheckedChange = { viewModel.setDeveloperMode(it) },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -139,7 +139,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (barcodeDetectionEnabled) "Scanning for barcodes and QR codes" else "Barcode detection disabled",
                 icon = Icons.Default.CropFree,
                 checked = barcodeDetectionEnabled,
-                onCheckedChange = { viewModel.setBarcodeDetectionEnabled(it) }
+                onCheckedChange = { viewModel.setBarcodeDetectionEnabled(it) },
             )
 
             SettingSwitchRow(
@@ -147,7 +147,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (documentDetectionEnabled) "Detecting document candidates" else "Document detection disabled",
                 icon = Icons.Default.Article,
                 checked = documentDetectionEnabled,
-                onCheckedChange = { viewModel.setDocumentDetectionEnabled(it) }
+                onCheckedChange = { viewModel.setDocumentDetectionEnabled(it) },
             )
 
             SettingSwitchRow(
@@ -155,7 +155,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (adaptiveThrottlingEnabled) "Low-power mode: auto-adjusts scan rate" else "Fixed scan rate (may drain battery)",
                 icon = Icons.Default.Speed,
                 checked = adaptiveThrottlingEnabled,
-                onCheckedChange = { viewModel.setAdaptiveThrottlingEnabled(it) }
+                onCheckedChange = { viewModel.setAdaptiveThrottlingEnabled(it) },
             )
 
             SettingSwitchRow(
@@ -163,7 +163,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (liveScanDiagnosticsEnabled) "Detailed LiveScan logs enabled (Logcat tag: LiveScan)" else "Diagnostic logging disabled",
                 icon = Icons.Default.Analytics,
                 checked = liveScanDiagnosticsEnabled,
-                onCheckedChange = { viewModel.setScanningDiagnosticsEnabled(it) }
+                onCheckedChange = { viewModel.setScanningDiagnosticsEnabled(it) },
             )
 
             SettingSwitchRow(
@@ -171,7 +171,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (bboxMappingDebugEnabled) "Shows bbox mapping info: rotation, scale, dimensions (Logcat tag: GeomMap)" else "Geometry debug disabled",
                 icon = Icons.Default.GridOn,
                 checked = bboxMappingDebugEnabled,
-                onCheckedChange = { viewModel.setBboxMappingDebugEnabled(it) }
+                onCheckedChange = { viewModel.setBboxMappingDebugEnabled(it) },
             )
 
             SettingSwitchRow(
@@ -179,7 +179,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (correlationDebugEnabled) "Validates bbox AR matches crop AR (Logcat tag: CORR)" else "Correlation validation disabled",
                 icon = Icons.Default.Compare,
                 checked = correlationDebugEnabled,
-                onCheckedChange = { viewModel.setCorrelationDebugEnabled(it) }
+                onCheckedChange = { viewModel.setCorrelationDebugEnabled(it) },
             )
 
             SettingSwitchRow(
@@ -187,7 +187,7 @@ fun DeveloperOptionsScreen(
                 subtitle = if (cameraPipelineDebugEnabled) "Shows lifecycle/session overlay (Logcat tag: CAM_LIFE)" else "Pipeline debug disabled",
                 icon = Icons.Default.Videocam,
                 checked = cameraPipelineDebugEnabled,
-                onCheckedChange = { viewModel.setCameraPipelineDebugEnabled(it) }
+                onCheckedChange = { viewModel.setCameraPipelineDebugEnabled(it) },
             )
 
             SettingsSectionHeader("Classifier Diagnostics")
@@ -196,7 +196,7 @@ fun DeveloperOptionsScreen(
                 subtitle = "Writes outgoing classifier crops to cache (cleared on uninstall)",
                 icon = Icons.Default.Cloud,
                 checked = saveCloudCrops,
-                onCheckedChange = classificationViewModel::updateSaveCloudCrops
+                onCheckedChange = classificationViewModel::updateSaveCloudCrops,
             )
 
             SettingSwitchRow(
@@ -204,7 +204,7 @@ fun DeveloperOptionsScreen(
                 subtitle = "Adds extra classifier details to Logcat (debug builds only)",
                 icon = Icons.Default.Tune,
                 checked = verboseLogging,
-                onCheckedChange = classificationViewModel::updateVerboseLogging
+                onCheckedChange = classificationViewModel::updateVerboseLogging,
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -216,14 +216,14 @@ fun DeveloperOptionsScreen(
                 title = "Test Crash Reporting",
                 subtitle = "Send test event to Sentry (handled exception)",
                 icon = Icons.Default.BugReport,
-                onClick = { viewModel.triggerCrashTest(throwCrash = false) }
+                onClick = { viewModel.triggerCrashTest(throwCrash = false) },
             )
 
             SettingActionRow(
                 title = "Test Diagnostics Bundle",
                 subtitle = "Capture exception with diagnostics.json attachment",
                 icon = Icons.Default.BugReport,
-                onClick = { viewModel.triggerDiagnosticsTest() }
+                onClick = { viewModel.triggerDiagnosticsTest() },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -236,7 +236,7 @@ fun DeveloperOptionsScreen(
                 subtitle = "Always show tour on app launch (debug only)",
                 icon = Icons.Default.Info,
                 checked = forceFtueTour,
-                onCheckedChange = { viewModel.setForceFtueTour(it) }
+                onCheckedChange = { viewModel.setForceFtueTour(it) },
             )
 
             SettingSwitchRow(
@@ -244,14 +244,14 @@ fun DeveloperOptionsScreen(
                 subtitle = "Draw spotlight outlines and center line",
                 icon = Icons.Default.CenterFocusStrong,
                 checked = showFtueDebugBounds,
-                onCheckedChange = { viewModel.setShowFtueDebugBounds(it) }
+                onCheckedChange = { viewModel.setShowFtueDebugBounds(it) },
             )
 
             SettingActionRow(
                 title = "Reset Tour Progress",
                 subtitle = "Clear tour completion flag",
                 icon = Icons.Default.Refresh,
-                onClick = { viewModel.resetFtueTour() }
+                onClick = { viewModel.resetFtueTour() },
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -265,52 +265,53 @@ private fun SystemHealthSection(
     autoRefreshEnabled: Boolean,
     onRefresh: () -> Unit,
     onCopyDiagnostics: () -> Unit,
-    onAutoRefreshChange: (Boolean) -> Unit
+    onAutoRefreshChange: (Boolean) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         // Header with actions
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "System Health",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Auto-refresh toggle
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         text = "Auto",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Switch(
                         checked = autoRefreshEnabled,
                         onCheckedChange = onAutoRefreshChange,
-                        modifier = Modifier.height(24.dp)
+                        modifier = Modifier.height(24.dp),
                     )
                 }
 
                 // Refresh button
                 FilledTonalIconButton(
                     onClick = onRefresh,
-                    enabled = !diagnosticsState.isRefreshing
+                    enabled = !diagnosticsState.isRefreshing,
                 ) {
                     if (diagnosticsState.isRefreshing) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
+                            strokeWidth = 2.dp,
                         )
                     } else {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh")
@@ -329,9 +330,10 @@ private fun SystemHealthSection(
         // Health check cards
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ),
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 // Backend Health
@@ -341,7 +343,7 @@ private fun SystemHealthSection(
                     status = diagnosticsState.backendHealth.status,
                     detail = diagnosticsState.backendHealth.detail,
                     latencyMs = diagnosticsState.backendHealth.latencyMs,
-                    lastChecked = diagnosticsState.backendHealth.lastCheckedFormatted
+                    lastChecked = diagnosticsState.backendHealth.lastCheckedFormatted,
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -356,7 +358,7 @@ private fun SystemHealthSection(
                     text = "Permissions",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 4.dp),
                 )
                 diagnosticsState.permissions.forEach { perm ->
                     PermissionRow(permission = perm)
@@ -369,7 +371,7 @@ private fun SystemHealthSection(
                     text = "Capabilities",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 4.dp)
+                    modifier = Modifier.padding(bottom = 4.dp),
                 )
                 diagnosticsState.capabilities.forEach { cap ->
                     CapabilityRow(capability = cap)
@@ -393,34 +395,35 @@ private fun HealthCheckRow(
     status: HealthStatus,
     detail: String?,
     latencyMs: Long?,
-    lastChecked: String
+    lastChecked: String,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
                 icon,
                 contentDescription = stringResource(R.string.cd_service_status),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
             Column {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = name,
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                     StatusIndicator(status = status)
                 }
@@ -428,7 +431,7 @@ private fun HealthCheckRow(
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -439,13 +442,13 @@ private fun HealthCheckRow(
                 Text(
                     text = "${it}ms",
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
                 )
             }
             Text(
                 text = lastChecked,
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -454,15 +457,16 @@ private fun HealthCheckRow(
 @Composable
 private fun NetworkStatusRow(networkStatus: NetworkStatus) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
                 when (networkStatus.transport) {
@@ -474,36 +478,37 @@ private fun NetworkStatusRow(networkStatus: NetworkStatus) {
                 },
                 contentDescription = stringResource(R.string.cd_network_status),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
             Column {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = "Network",
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                     StatusIndicator(
-                        status = if (networkStatus.isConnected) HealthStatus.HEALTHY else HealthStatus.DOWN
+                        status = if (networkStatus.isConnected) HealthStatus.HEALTHY else HealthStatus.DOWN,
                     )
                 }
                 Text(
-                    text = buildString {
-                        append(networkStatus.transport.name)
-                        if (networkStatus.isMetered) append(" (Metered)")
-                    },
+                    text =
+                        buildString {
+                            append(networkStatus.transport.name)
+                            if (networkStatus.isMetered) append(" (Metered)")
+                        },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
 
         Text(
             text = if (networkStatus.isConnected) "Connected" else "Not connected",
-            style = MaterialTheme.typography.labelMedium
+            style = MaterialTheme.typography.labelMedium,
         )
     }
 }
@@ -511,53 +516,60 @@ private fun NetworkStatusRow(networkStatus: NetworkStatus) {
 @Composable
 private fun PermissionRow(permission: PermissionStatus) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     if (permission.name == "Camera") Icons.Default.CameraAlt else Icons.Default.Mic,
                     contentDescription = stringResource(R.string.cd_permission_status),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
                 )
             }
             Text(
                 text = permission.name,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (permission.isGranted) Color(0xFF4CAF50)
-                        else Color(0xFFF44336)
-                    )
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (permission.isGranted) {
+                                Color(0xFF4CAF50)
+                            } else {
+                                Color(0xFFF44336)
+                            },
+                        ),
             )
             Text(
                 text = if (permission.isGranted) "Granted" else "Not granted",
                 style = MaterialTheme.typography.labelSmall,
-                color = if (permission.isGranted)
-                    Color(0xFF4CAF50)
-                else
-                    Color(0xFFF44336)
+                color =
+                    if (permission.isGranted) {
+                        Color(0xFF4CAF50)
+                    } else {
+                        Color(0xFFF44336)
+                    },
             )
         }
     }
@@ -566,19 +578,20 @@ private fun PermissionRow(permission: PermissionStatus) {
 @Composable
 private fun CapabilityRow(capability: CapabilityStatus) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     when (capability.name) {
@@ -589,32 +602,36 @@ private fun CapabilityRow(capability: CapabilityStatus) {
                     },
                     contentDescription = stringResource(R.string.cd_capability_status),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(18.dp),
                 )
             }
             Column {
                 Text(
                     text = capability.name,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 capability.detail?.let {
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         }
 
         Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(
-                    if (capability.isAvailable) Color(0xFF4CAF50)
-                    else Color(0xFFF44336)
-                )
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (capability.isAvailable) {
+                            Color(0xFF4CAF50)
+                        } else {
+                            Color(0xFFF44336)
+                        },
+                    ),
         )
     }
 }
@@ -626,7 +643,7 @@ private fun AppConfigSection(config: AppConfigSnapshot) {
             text = "App Configuration",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp)
+            modifier = Modifier.padding(bottom = 4.dp),
         )
 
         ConfigRow("Version", "${config.versionName} (${config.versionCode})")
@@ -638,22 +655,26 @@ private fun AppConfigSection(config: AppConfigSnapshot) {
 }
 
 @Composable
-private fun ConfigRow(label: String, value: String) {
+private fun ConfigRow(
+    label: String,
+    value: String,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            fontFamily = FontFamily.Monospace
+            fontFamily = FontFamily.Monospace,
         )
     }
 }
@@ -661,37 +682,40 @@ private fun ConfigRow(label: String, value: String) {
 @Composable
 private fun StatusIndicator(status: HealthStatus) {
     val color by animateColorAsState(
-        targetValue = when (status) {
-            HealthStatus.HEALTHY -> Color(0xFF4CAF50) // Green
-            HealthStatus.DEGRADED -> Color(0xFFFF9800) // Orange
-            HealthStatus.DOWN -> Color(0xFFF44336) // Red
-            HealthStatus.UNKNOWN -> Color(0xFF9E9E9E) // Gray
-        },
-        label = "status_color"
+        targetValue =
+            when (status) {
+                HealthStatus.HEALTHY -> Color(0xFF4CAF50) // Green
+                HealthStatus.DEGRADED -> Color(0xFFFF9800) // Orange
+                HealthStatus.DOWN -> Color(0xFFF44336) // Red
+                HealthStatus.UNKNOWN -> Color(0xFF9E9E9E) // Gray
+            },
+        label = "status_color",
     )
 
-    val text = when (status) {
-        HealthStatus.HEALTHY -> "Healthy"
-        HealthStatus.DEGRADED -> "Degraded"
-        HealthStatus.DOWN -> "Down"
-        HealthStatus.UNKNOWN -> "Unknown"
-    }
+    val text =
+        when (status) {
+            HealthStatus.HEALTHY -> "Healthy"
+            HealthStatus.DEGRADED -> "Degraded"
+            HealthStatus.DOWN -> "Down"
+            HealthStatus.UNKNOWN -> "Unknown"
+        }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box(
-            modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(color)
+            modifier =
+                Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(color),
         )
         Text(
             text = text,
             style = MaterialTheme.typography.labelSmall,
             color = color,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -705,44 +729,45 @@ private fun StatusIndicator(status: HealthStatus) {
 @Composable
 private fun AssistantDiagnosticsSection(
     state: AssistantDiagnosticsState,
-    onRecheck: () -> Unit
+    onRecheck: () -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         // Header with recheck button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Icon(
                     Icons.Default.SmartToy,
                     contentDescription = stringResource(R.string.cd_ai_model),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
                     text = "Assistant / AI Diagnostics",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
 
             // Recheck button
             FilledTonalIconButton(
                 onClick = onRecheck,
-                enabled = !state.isChecking
+                enabled = !state.isChecking,
             ) {
                 if (state.isChecking) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Icon(Icons.Default.Refresh, contentDescription = "Recheck")
@@ -760,27 +785,30 @@ private fun AssistantDiagnosticsSection(
         // Diagnostics card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ),
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 // Backend Reachability
                 AssistantDiagnosticRow(
                     icon = Icons.Default.Cloud,
                     label = "Backend Reachability",
-                    status = when (state.backendReachable) {
-                        BackendReachabilityStatus.REACHABLE -> DiagnosticStatus.OK
-                        BackendReachabilityStatus.UNREACHABLE -> DiagnosticStatus.ERROR
-                        BackendReachabilityStatus.DEGRADED -> DiagnosticStatus.WARNING
-                        BackendReachabilityStatus.CHECKING -> DiagnosticStatus.CHECKING
-                        BackendReachabilityStatus.UNKNOWN -> DiagnosticStatus.UNKNOWN
-                    },
-                    detail = when (val result = state.connectionTestResult) {
-                        is ConnectionTestResult.Success -> "Connected"
-                        is ConnectionTestResult.Failure -> result.message
-                        null -> if (state.isChecking) "Checking..." else "Not checked"
-                    }
+                    status =
+                        when (state.backendReachable) {
+                            BackendReachabilityStatus.REACHABLE -> DiagnosticStatus.OK
+                            BackendReachabilityStatus.UNREACHABLE -> DiagnosticStatus.ERROR
+                            BackendReachabilityStatus.DEGRADED -> DiagnosticStatus.WARNING
+                            BackendReachabilityStatus.CHECKING -> DiagnosticStatus.CHECKING
+                            BackendReachabilityStatus.UNKNOWN -> DiagnosticStatus.UNKNOWN
+                        },
+                    detail =
+                        when (val result = state.connectionTestResult) {
+                            is ConnectionTestResult.Success -> "Connected"
+                            is ConnectionTestResult.Failure -> result.message
+                            null -> if (state.isChecking) "Checking..." else "Not checked"
+                        },
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -789,16 +817,18 @@ private fun AssistantDiagnosticsSection(
                 AssistantDiagnosticRow(
                     icon = Icons.Default.CheckCircle,
                     label = "Assistant Readiness",
-                    status = when {
-                        state.prerequisiteState.allSatisfied -> DiagnosticStatus.OK
-                        state.prerequisiteState.unsatisfiedCount > 0 -> DiagnosticStatus.WARNING
-                        else -> DiagnosticStatus.UNKNOWN
-                    },
-                    detail = if (state.prerequisiteState.allSatisfied) {
-                        "All ${state.prerequisiteState.prerequisites.size} prerequisites met"
-                    } else {
-                        "${state.prerequisiteState.unsatisfiedCount} prerequisites not met"
-                    }
+                    status =
+                        when {
+                            state.prerequisiteState.allSatisfied -> DiagnosticStatus.OK
+                            state.prerequisiteState.unsatisfiedCount > 0 -> DiagnosticStatus.WARNING
+                            else -> DiagnosticStatus.UNKNOWN
+                        },
+                    detail =
+                        if (state.prerequisiteState.allSatisfied) {
+                            "All ${state.prerequisiteState.prerequisites.size} prerequisites met"
+                        } else {
+                            "${state.prerequisiteState.unsatisfiedCount} prerequisites not met"
+                        },
                 )
 
                 // Show prerequisite details
@@ -816,11 +846,12 @@ private fun AssistantDiagnosticsSection(
                     icon = if (state.isNetworkConnected) Icons.Default.Wifi else Icons.Default.WifiOff,
                     label = "Network State",
                     status = if (state.isNetworkConnected) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
-                    detail = if (state.isNetworkConnected) {
-                        "Connected (${state.networkType})"
-                    } else {
-                        "Not connected"
-                    }
+                    detail =
+                        if (state.isNetworkConnected) {
+                            "Connected (${state.networkType})"
+                        } else {
+                            "Not connected"
+                        },
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -830,7 +861,7 @@ private fun AssistantDiagnosticsSection(
                     icon = Icons.Default.Mic,
                     label = "Microphone Permission",
                     status = if (state.hasMicrophonePermission) DiagnosticStatus.OK else DiagnosticStatus.WARNING,
-                    detail = if (state.hasMicrophonePermission) "Granted" else "Not granted"
+                    detail = if (state.hasMicrophonePermission) "Granted" else "Not granted",
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -840,7 +871,7 @@ private fun AssistantDiagnosticsSection(
                     icon = Icons.Default.RecordVoiceOver,
                     label = "Speech Recognition",
                     status = if (state.isSpeechRecognitionAvailable) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
-                    detail = if (state.isSpeechRecognitionAvailable) "Available" else "Not available on this device"
+                    detail = if (state.isSpeechRecognitionAvailable) "Available" else "Not available on this device",
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -850,11 +881,12 @@ private fun AssistantDiagnosticsSection(
                     icon = Icons.Default.VolumeUp,
                     label = "Text-to-Speech",
                     status = if (state.isTextToSpeechAvailable) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
-                    detail = if (state.isTextToSpeechAvailable) {
-                        if (state.isTtsReady) "Available and ready" else "Available"
-                    } else {
-                        "Not available"
-                    }
+                    detail =
+                        if (state.isTextToSpeechAvailable) {
+                            if (state.isTtsReady) "Available and ready" else "Available"
+                        } else {
+                            "Not available"
+                        },
                 )
 
                 // Last checked timestamp
@@ -864,7 +896,7 @@ private fun AssistantDiagnosticsSection(
                         text = "Last checked: ${formatTimestamp(state.lastChecked)}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -877,62 +909,70 @@ private fun AssistantDiagnosticsSection(
  */
 @Composable
 private fun AssistantOverallStatusBadge(readiness: AssistantReadiness) {
-    val (color, text, icon) = when (readiness) {
-        AssistantReadiness.READY -> Triple(
-            Color(0xFF4CAF50),
-            "Assistant Ready",
-            Icons.Default.CheckCircle
-        )
-        AssistantReadiness.CHECKING -> Triple(
-            Color(0xFF2196F3),
-            "Checking...",
-            Icons.Default.Sync
-        )
-        AssistantReadiness.NO_NETWORK -> Triple(
-            Color(0xFFF44336),
-            "No Network Connection",
-            Icons.Default.WifiOff
-        )
-        AssistantReadiness.BACKEND_UNREACHABLE -> Triple(
-            Color(0xFFF44336),
-            "Backend Unreachable",
-            Icons.Default.CloudOff
-        )
-        AssistantReadiness.PREREQUISITES_NOT_MET -> Triple(
-            Color(0xFFFF9800),
-            "Prerequisites Not Met",
-            Icons.Default.Warning
-        )
-        AssistantReadiness.UNKNOWN -> Triple(
-            Color(0xFF9E9E9E),
-            "Unknown Status",
-            Icons.Default.Help
-        )
-    }
+    val (color, text, icon) =
+        when (readiness) {
+            AssistantReadiness.READY ->
+                Triple(
+                    Color(0xFF4CAF50),
+                    "Assistant Ready",
+                    Icons.Default.CheckCircle,
+                )
+            AssistantReadiness.CHECKING ->
+                Triple(
+                    Color(0xFF2196F3),
+                    "Checking...",
+                    Icons.Default.Sync,
+                )
+            AssistantReadiness.NO_NETWORK ->
+                Triple(
+                    Color(0xFFF44336),
+                    "No Network Connection",
+                    Icons.Default.WifiOff,
+                )
+            AssistantReadiness.BACKEND_UNREACHABLE ->
+                Triple(
+                    Color(0xFFF44336),
+                    "Backend Unreachable",
+                    Icons.Default.CloudOff,
+                )
+            AssistantReadiness.PREREQUISITES_NOT_MET ->
+                Triple(
+                    Color(0xFFFF9800),
+                    "Prerequisites Not Met",
+                    Icons.Default.Warning,
+                )
+            AssistantReadiness.UNKNOWN ->
+                Triple(
+                    Color(0xFF9E9E9E),
+                    "Unknown Status",
+                    Icons.Default.Help,
+                )
+        }
 
     Surface(
         color = color.copy(alpha = 0.15f),
         shape = RoundedCornerShape(8.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
                 icon,
                 contentDescription = text,
                 tint = color,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
             Text(
                 text = text,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = color
+                color = color,
             )
         }
     }
@@ -942,7 +982,11 @@ private fun AssistantOverallStatusBadge(readiness: AssistantReadiness) {
  * Status enum for diagnostic rows.
  */
 private enum class DiagnosticStatus {
-    OK, WARNING, ERROR, CHECKING, UNKNOWN
+    OK,
+    WARNING,
+    ERROR,
+    CHECKING,
+    UNKNOWN,
 }
 
 /**
@@ -953,55 +997,58 @@ private fun AssistantDiagnosticRow(
     icon: ImageVector,
     label: String,
     status: DiagnosticStatus,
-    detail: String
+    detail: String,
 ) {
-    val statusColor = when (status) {
-        DiagnosticStatus.OK -> Color(0xFF4CAF50)
-        DiagnosticStatus.WARNING -> Color(0xFFFF9800)
-        DiagnosticStatus.ERROR -> Color(0xFFF44336)
-        DiagnosticStatus.CHECKING -> Color(0xFF2196F3)
-        DiagnosticStatus.UNKNOWN -> Color(0xFF9E9E9E)
-    }
+    val statusColor =
+        when (status) {
+            DiagnosticStatus.OK -> Color(0xFF4CAF50)
+            DiagnosticStatus.WARNING -> Color(0xFFFF9800)
+            DiagnosticStatus.ERROR -> Color(0xFFF44336)
+            DiagnosticStatus.CHECKING -> Color(0xFF2196F3)
+            DiagnosticStatus.UNKNOWN -> Color(0xFF9E9E9E)
+        }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         ) {
             Icon(
                 icon,
                 contentDescription = label,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
             Column {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
                         text = label,
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                     Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(statusColor)
+                        modifier =
+                            Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(statusColor),
                     )
                 }
                 Text(
                     text = detail,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -1012,28 +1059,40 @@ private fun AssistantDiagnosticRow(
  * Small row showing prerequisite detail.
  */
 @Composable
-private fun PrerequisiteDetailRow(name: String, satisfied: Boolean) {
+private fun PrerequisiteDetailRow(
+    name: String,
+    satisfied: Boolean,
+) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = 36.dp, top = 2.dp, bottom = 2.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 36.dp, top = 2.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
             if (satisfied) Icons.Default.Check else Icons.Default.Close,
-            contentDescription = if (satisfied) stringResource(R.string.cd_prerequisite_satisfied) else stringResource(R.string.cd_prerequisite_not_satisfied),
+            contentDescription =
+                if (satisfied) {
+                    stringResource(
+                        R.string.cd_prerequisite_satisfied,
+                    )
+                } else {
+                    stringResource(R.string.cd_prerequisite_not_satisfied)
+                },
             tint = if (satisfied) Color(0xFF4CAF50) else Color(0xFFF44336),
-            modifier = Modifier.size(14.dp)
+            modifier = Modifier.size(14.dp),
         )
         Text(
             text = name,
             style = MaterialTheme.typography.bodySmall,
-            color = if (satisfied) {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            } else {
-                Color(0xFFF44336)
-            }
+            color =
+                if (satisfied) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    Color(0xFFF44336)
+                },
         )
     }
 }

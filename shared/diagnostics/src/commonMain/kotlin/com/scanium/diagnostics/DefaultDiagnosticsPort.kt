@@ -36,9 +36,8 @@ import com.scanium.telemetry.TelemetryEvent
 class DefaultDiagnosticsPort(
     private val contextProvider: () -> Map<String, String>,
     maxEvents: Int = DiagnosticsBuffer.DEFAULT_MAX_EVENTS,
-    maxBytes: Int = DiagnosticsBuffer.DEFAULT_MAX_BYTES
+    maxBytes: Int = DiagnosticsBuffer.DEFAULT_MAX_BYTES,
 ) : DiagnosticsPort {
-
     private val buffer = DiagnosticsBuffer(maxEvents, maxBytes)
     private val bundleBuilder = DiagnosticsBundleBuilder()
 

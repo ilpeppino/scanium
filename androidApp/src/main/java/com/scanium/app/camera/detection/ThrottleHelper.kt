@@ -11,16 +11,19 @@ import android.os.SystemClock
  * Thread-safe: Uses synchronized access to internal state.
  */
 class ThrottleHelper {
-
     companion object {
         private const val TAG = "ThrottleHelper"
 
         /** Default throttle intervals per detector type (milliseconds) */
-        val DEFAULT_INTERVALS = mapOf(
-            DetectorType.OBJECT to 400L,    // Object detection is heavy, run ~2.5x per second max
-            DetectorType.BARCODE to 250L,   // Barcode runs 3-5x per second (lightweight but not spam)
-            DetectorType.DOCUMENT to 500L   // Document detection is heavy
-        )
+        val DEFAULT_INTERVALS =
+            mapOf(
+                DetectorType.OBJECT to 400L,
+// Object detection is heavy, run ~2.5x per second max
+                DetectorType.BARCODE to 250L,
+// Barcode runs 3-5x per second (lightweight but not spam)
+                DetectorType.DOCUMENT to 500L,
+// Document detection is heavy
+            )
     }
 
     /** Configuration: minimum interval between invocations per detector */
@@ -45,7 +48,10 @@ class ThrottleHelper {
      * @param detectorType The detector to configure
      * @param intervalMs Minimum milliseconds between invocations
      */
-    fun setMinInterval(detectorType: DetectorType, intervalMs: Long) {
+    fun setMinInterval(
+        detectorType: DetectorType,
+        intervalMs: Long,
+    ) {
         require(intervalMs >= 0) { "Interval must be non-negative" }
         synchronized(lock) {
             minIntervals[detectorType] = intervalMs
@@ -68,7 +74,10 @@ class ThrottleHelper {
      * @param currentTimeMs Current timestamp (use SystemClock.elapsedRealtime() for consistency)
      * @return true if the detector can be invoked, false if throttled
      */
-    fun canInvoke(detectorType: DetectorType, currentTimeMs: Long = SystemClock.elapsedRealtime()): Boolean {
+    fun canInvoke(
+        detectorType: DetectorType,
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
+    ): Boolean {
         synchronized(lock) {
             val lastTime = lastInvocationTime[detectorType] ?: return true
             val minInterval = minIntervals[detectorType] ?: 0L
@@ -85,7 +94,10 @@ class ThrottleHelper {
      * @param currentTimeMs Current timestamp
      * @return true if invocation was allowed and recorded, false if throttled
      */
-    fun tryInvoke(detectorType: DetectorType, currentTimeMs: Long = SystemClock.elapsedRealtime()): Boolean {
+    fun tryInvoke(
+        detectorType: DetectorType,
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
+    ): Boolean {
         synchronized(lock) {
             val lastTime = lastInvocationTime[detectorType]
             val minInterval = minIntervals[detectorType] ?: 0L
@@ -103,7 +115,10 @@ class ThrottleHelper {
      * Record an invocation timestamp without checking throttle.
      * Use when you've already checked canInvoke() separately.
      */
-    fun recordInvocation(detectorType: DetectorType, currentTimeMs: Long = SystemClock.elapsedRealtime()) {
+    fun recordInvocation(
+        detectorType: DetectorType,
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
+    ) {
         synchronized(lock) {
             lastInvocationTime[detectorType] = currentTimeMs
         }
@@ -114,7 +129,10 @@ class ThrottleHelper {
      *
      * @return Milliseconds until allowed, or 0 if already allowed
      */
-    fun timeUntilAllowed(detectorType: DetectorType, currentTimeMs: Long = SystemClock.elapsedRealtime()): Long {
+    fun timeUntilAllowed(
+        detectorType: DetectorType,
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
+    ): Long {
         synchronized(lock) {
             val lastTime = lastInvocationTime[detectorType] ?: return 0L
             val minInterval = minIntervals[detectorType] ?: 0L
@@ -150,7 +168,7 @@ class ThrottleHelper {
                 ThrottleStats(
                     minIntervalMs = minIntervals[type] ?: 0L,
                     lastInvocationMs = lastInvocationTime[type] ?: 0L,
-                    timeSinceLastMs = currentTimeMs - (lastInvocationTime[type] ?: currentTimeMs)
+                    timeSinceLastMs = currentTimeMs - (lastInvocationTime[type] ?: currentTimeMs),
                 )
             }
         }
@@ -163,5 +181,5 @@ class ThrottleHelper {
 data class ThrottleStats(
     val minIntervalMs: Long,
     val lastInvocationMs: Long,
-    val timeSinceLastMs: Long
+    val timeSinceLastMs: Long,
 )

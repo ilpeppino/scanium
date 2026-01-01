@@ -15,9 +15,7 @@ import com.scanium.app.selling.data.MockFailureMode
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DebugSettingsDialog(
-    onDismiss: () -> Unit
-) {
+fun DebugSettingsDialog(onDismiss: () -> Unit) {
     val config by MockEbayConfigManager.config.collectAsState()
 
     var networkDelayEnabled by remember { mutableStateOf(config.simulateNetworkDelay) }
@@ -30,17 +28,17 @@ fun DebugSettingsDialog(
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 // Network delay toggle
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text("Simulate Network Delay", style = MaterialTheme.typography.bodyMedium)
                     Switch(
                         checked = networkDelayEnabled,
-                        onCheckedChange = { networkDelayEnabled = it }
+                        onCheckedChange = { networkDelayEnabled = it },
                     )
                 }
 
@@ -52,22 +50,22 @@ fun DebugSettingsDialog(
                 MockFailureMode.values().forEach { mode ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
+                        horizontalArrangement = Arrangement.Start,
                     ) {
                         RadioButton(
                             selected = selectedFailureMode == mode,
-                            onClick = { selectedFailureMode = mode }
+                            onClick = { selectedFailureMode = mode },
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
                                 text = mode.name.replace('_', ' '),
-                                style = MaterialTheme.typography.bodyMedium
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                             Text(
                                 text = getFailureModeDescription(mode),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -81,17 +79,19 @@ fun DebugSettingsDialog(
                         value = failureRate,
                         onValueChange = { failureRate = it },
                         valueRange = 0f..1f,
-                        steps = 9 // 0%, 10%, 20%, ..., 100%
+                        steps = 9,
+// 0%, 10%, 20%, ..., 100%
                     )
                     Text(
-                        text = when {
-                            failureRate < 0.1f -> "Never fails"
-                            failureRate < 0.3f -> "Rarely fails"
-                            failureRate < 0.7f -> "Sometimes fails"
-                            else -> "Often fails"
-                        },
+                        text =
+                            when {
+                                failureRate < 0.1f -> "Never fails"
+                                failureRate < 0.3f -> "Rarely fails"
+                                failureRate < 0.7f -> "Sometimes fails"
+                                else -> "Often fails"
+                            },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -103,8 +103,8 @@ fun DebugSettingsDialog(
                     config.copy(
                         simulateNetworkDelay = networkDelayEnabled,
                         failureMode = selectedFailureMode,
-                        failureRate = if (selectedFailureMode == MockFailureMode.NONE) 0.0 else failureRate.toDouble()
-                    )
+                        failureRate = if (selectedFailureMode == MockFailureMode.NONE) 0.0 else failureRate.toDouble(),
+                    ),
                 )
                 onDismiss()
             }) {
@@ -118,7 +118,7 @@ fun DebugSettingsDialog(
             }) {
                 Text("Reset")
             }
-        }
+        },
     )
 }
 

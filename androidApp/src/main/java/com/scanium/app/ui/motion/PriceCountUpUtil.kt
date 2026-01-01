@@ -14,7 +14,6 @@ import kotlin.math.roundToInt
  * - Must remain stable once finished
  */
 object PriceCountUpUtil {
-
     /**
      * Data class representing a single step in the price count-up animation.
      *
@@ -25,7 +24,7 @@ object PriceCountUpUtil {
     data class PriceStep(
         val value: Int,
         val delayMs: Long,
-        val isFinal: Boolean
+        val isFinal: Boolean,
     )
 
     /**
@@ -42,7 +41,7 @@ object PriceCountUpUtil {
     fun generateSteps(
         targetValue: Int,
         steps: Int = MotionConstants.PRICE_COUNT_UP_STEPS,
-        totalDurationMs: Int = MotionConstants.PRICE_COUNT_UP_DURATION_MS
+        totalDurationMs: Int = MotionConstants.PRICE_COUNT_UP_DURATION_MS,
     ): List<PriceStep> {
         require(steps >= 2) { "At least 2 steps required" }
         require(targetValue >= 0) { "Target value must be non-negative" }
@@ -102,10 +101,10 @@ object PriceCountUpUtil {
         lowValue: Int,
         highValue: Int,
         steps: Int = MotionConstants.PRICE_COUNT_UP_STEPS,
-        totalDurationMs: Int = MotionConstants.PRICE_COUNT_UP_DURATION_MS
+        totalDurationMs: Int = MotionConstants.PRICE_COUNT_UP_DURATION_MS,
     ): Pair<List<PriceStep>, List<PriceStep>> {
         return generateSteps(lowValue, steps, totalDurationMs) to
-                generateSteps(highValue, steps, totalDurationMs)
+            generateSteps(highValue, steps, totalDurationMs)
     }
 
     /**
@@ -123,7 +122,10 @@ object PriceCountUpUtil {
      * @param currencySymbol Currency symbol (default: €)
      * @return Formatted price string
      */
-    fun formatPrice(value: Int, currencySymbol: String = "€"): String {
+    fun formatPrice(
+        value: Int,
+        currencySymbol: String = "€",
+    ): String {
         return "$currencySymbol$value"
     }
 
@@ -135,7 +137,11 @@ object PriceCountUpUtil {
      * @param currencySymbol Currency symbol (default: €)
      * @return Formatted price range string (e.g., "€10–€25")
      */
-    fun formatPriceRange(low: Int, high: Int, currencySymbol: String = "€"): String {
+    fun formatPriceRange(
+        low: Int,
+        high: Int,
+        currencySymbol: String = "€",
+    ): String {
         return "$currencySymbol$low–$currencySymbol$high"
     }
 }

@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong
  * Thread-safe: Uses atomic operations and synchronized access.
  */
 class AdaptiveThrottlePolicy(
-    private val config: AdaptiveThrottleConfig = AdaptiveThrottleConfig()
+    private val config: AdaptiveThrottleConfig = AdaptiveThrottleConfig(),
 ) {
     companion object {
         private const val TAG = "AdaptiveThrottlePolicy"
@@ -114,21 +114,33 @@ class AdaptiveThrottlePolicy(
         when {
             // High load: increase throttling
             rollingAvgMs > config.highLoadThresholdMs -> {
-                newMultiplier = (currentMultiplier * config.throttleIncreaseRate)
-                    .coerceAtMost(config.maxMultiplier)
+                newMultiplier =
+                    (currentMultiplier * config.throttleIncreaseRate)
+                        .coerceAtMost(config.maxMultiplier)
                 if (newMultiplier > currentMultiplier) {
                     _isThrottling.value = true
                     throttledFrames.incrementAndGet()
-                    Log.i(TAG, "[LOW_POWER] Increasing throttle: avg=${rollingAvgMs}ms > threshold=${config.highLoadThresholdMs}ms, multiplier=${"%.2f".format(currentMultiplier)} -> ${"%.2f".format(newMultiplier)}")
+                    Log.i(
+                        TAG,
+                        "[LOW_POWER] Increasing throttle: avg=${rollingAvgMs}ms > threshold=${config.highLoadThresholdMs}ms, multiplier=${"%.2f".format(
+                            currentMultiplier,
+                        )} -> ${"%.2f".format(newMultiplier)}",
+                    )
                 }
             }
 
             // Low load: decrease throttling
             rollingAvgMs < config.lowLoadThresholdMs && currentMultiplier > 1.0f -> {
-                newMultiplier = (currentMultiplier * config.throttleDecreaseRate)
-                    .coerceAtLeast(1.0f)
+                newMultiplier =
+                    (currentMultiplier * config.throttleDecreaseRate)
+                        .coerceAtLeast(1.0f)
                 if (newMultiplier < currentMultiplier) {
-                    Log.i(TAG, "[LOW_POWER] Decreasing throttle: avg=${rollingAvgMs}ms < threshold=${config.lowLoadThresholdMs}ms, multiplier=${"%.2f".format(currentMultiplier)} -> ${"%.2f".format(newMultiplier)}")
+                    Log.i(
+                        TAG,
+                        "[LOW_POWER] Decreasing throttle: avg=${rollingAvgMs}ms < threshold=${config.lowLoadThresholdMs}ms, multiplier=${"%.2f".format(
+                            currentMultiplier,
+                        )} -> ${"%.2f".format(newMultiplier)}",
+                    )
                     if (newMultiplier <= 1.05f) {
                         _isThrottling.value = false
                         newMultiplier.let { _adaptiveMultiplier.value = 1.0f }
@@ -200,26 +212,32 @@ class AdaptiveThrottlePolicy(
             rollingAverageMs = rollingAvg,
             windowSampleCount = windowCount,
             totalFramesProcessed = totalFramesProcessed.get(),
-            throttledFrameCount = throttledFrames.get()
+            throttledFrameCount = throttledFrames.get(),
         )
     }
 
-    private fun maybeLogMetrics(rollingAvgMs: Long, lastProcessingTimeMs: Long) {
+    private fun maybeLogMetrics(
+        rollingAvgMs: Long,
+        lastProcessingTimeMs: Long,
+    ) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastLogTimeMs < config.metricsLogIntervalMs) return
 
         lastLogTimeMs = now
         val stats = getStats()
-        Log.i(TAG, buildString {
-            append("[METRICS] ")
-            append("enabled=${stats.isEnabled}, ")
-            append("throttling=${stats.isThrottling}, ")
-            append("multiplier=${"%.2f".format(stats.adaptiveMultiplier)}, ")
-            append("rollingAvg=${stats.rollingAverageMs}ms, ")
-            append("lastFrame=${lastProcessingTimeMs}ms, ")
-            append("samples=${stats.windowSampleCount}/${config.rollingWindowSize}, ")
-            append("totalFrames=${stats.totalFramesProcessed}")
-        })
+        Log.i(
+            TAG,
+            buildString {
+                append("[METRICS] ")
+                append("enabled=${stats.isEnabled}, ")
+                append("throttling=${stats.isThrottling}, ")
+                append("multiplier=${"%.2f".format(stats.adaptiveMultiplier)}, ")
+                append("rollingAvg=${stats.rollingAverageMs}ms, ")
+                append("lastFrame=${lastProcessingTimeMs}ms, ")
+                append("samples=${stats.windowSampleCount}/${config.rollingWindowSize}, ")
+                append("totalFrames=${stats.totalFramesProcessed}")
+            },
+        )
     }
 }
 
@@ -229,39 +247,28 @@ class AdaptiveThrottlePolicy(
 data class AdaptiveThrottleConfig(
     /** Size of rolling window for averaging processing times */
     val rollingWindowSize: Int = 10,
-
     /** Minimum samples needed before making adjustments */
     val minSamplesForAdjustment: Int = 5,
-
     /** Processing time threshold (ms) above which throttling increases */
     val highLoadThresholdMs: Long = 150L,
-
     /** Processing time threshold (ms) below which throttling decreases */
     val lowLoadThresholdMs: Long = 80L,
-
     /** Multiplier increase rate when high load detected (e.g., 1.25 = 25% increase) */
     val throttleIncreaseRate: Float = 1.25f,
-
     /** Multiplier decrease rate when low load detected (e.g., 0.9 = 10% decrease) */
     val throttleDecreaseRate: Float = 0.9f,
-
     /** Maximum throttle multiplier (caps how much intervals can increase) */
     val maxMultiplier: Float = 3.0f,
-
     /** Minimum interval after adaptive adjustment (ms) */
     val minIntervalMs: Long = 200L,
-
     /** Maximum interval after adaptive adjustment (ms) */
     val maxIntervalMs: Long = 2000L,
-
     /** Cooldown between adjustments to avoid oscillation (ms) */
     val adjustmentCooldownMs: Long = 500L,
-
     /** Interval for logging metrics (ms) */
     val metricsLogIntervalMs: Long = 10_000L,
-
     /** Whether adaptive throttling is enabled by default */
-    val enabledByDefault: Boolean = true
+    val enabledByDefault: Boolean = true,
 )
 
 /**
@@ -274,5 +281,5 @@ data class AdaptiveThrottleStats(
     val rollingAverageMs: Long,
     val windowSampleCount: Int,
     val totalFramesProcessed: Long,
-    val throttledFrameCount: Long
+    val throttledFrameCount: Long,
 )

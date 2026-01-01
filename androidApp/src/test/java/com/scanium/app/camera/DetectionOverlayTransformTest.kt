@@ -26,7 +26,6 @@ import kotlin.math.abs
  */
 @RunWith(RobolectricTestRunner::class)
 class DetectionOverlayTransformTest {
-
     // ==========================================
     // NEW TESTS: Rotation-aware transformations
     // ==========================================
@@ -66,9 +65,9 @@ class DetectionOverlayTransformTest {
         val rect = NormalizedRect(0.1f, 0.2f, 0.3f, 0.4f)
         val rotated = rotateNormalizedRect(rect, 180)
 
-        assertThat(rotated.left).isWithin(0.001f).of(0.7f)   // 1 - 0.3
-        assertThat(rotated.top).isWithin(0.001f).of(0.6f)    // 1 - 0.4
-        assertThat(rotated.right).isWithin(0.001f).of(0.9f)  // 1 - 0.1
+        assertThat(rotated.left).isWithin(0.001f).of(0.7f) // 1 - 0.3
+        assertThat(rotated.top).isWithin(0.001f).of(0.6f) // 1 - 0.4
+        assertThat(rotated.right).isWithin(0.001f).of(0.9f) // 1 - 0.1
         assertThat(rotated.bottom).isWithin(0.001f).of(0.8f) // 1 - 0.2
     }
 
@@ -108,14 +107,15 @@ class DetectionOverlayTransformTest {
         // Sensor: 1280x720 landscape
         // Preview: 1080x1920 portrait
         // Rotation: 90 degrees (portrait mode)
-        val transform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 1080f,
-            previewHeight = 1920f,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Effective dimensions after rotation: 720x1280 (portrait)
         assertThat(transform.effectiveImageWidth).isEqualTo(720)
@@ -125,23 +125,25 @@ class DetectionOverlayTransformTest {
 
     @Test
     fun `calculateTransformWithRotation with FILL_CENTER uses larger or equal scale`() {
-        val fillTransform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 1080f,
-            previewHeight = 1920f,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val fillTransform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
-        val fitTransform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 1080f,
-            previewHeight = 1920f,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FIT_CENTER
-        )
+        val fitTransform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FIT_CENTER,
+            )
 
         // FILL_CENTER should never scale less than FIT_CENTER (fills the preview)
         assertThat(fillTransform.scale).isAtLeast(fitTransform.scale)
@@ -149,14 +151,15 @@ class DetectionOverlayTransformTest {
 
     @Test
     fun `calculateTransformWithRotation with 0 degrees does not swap dimensions`() {
-        val transform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 1920f,
-            previewHeight = 1080f,
-            rotationDegrees = 0,
-            scaleType = PreviewScaleType.FIT_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 1920f,
+                previewHeight = 1080f,
+                rotationDegrees = 0,
+                scaleType = PreviewScaleType.FIT_CENTER,
+            )
 
         // Effective dimensions unchanged
         assertThat(transform.effectiveImageWidth).isEqualTo(1280)
@@ -166,23 +169,27 @@ class DetectionOverlayTransformTest {
     @Test
     fun `mapBboxToPreview applies rotation and scale correctly in portrait mode`() {
         // Simulate portrait mode: sensor 1280x720, rotation 90, preview 720x1280
-        val transform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 720f,
-            previewHeight = 1280f,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 720f,
+                previewHeight = 1280f,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Object in top-right of sensor image (landscape coords)
         // After 90° rotation should appear at top of portrait preview
-        val bboxNorm = NormalizedRect(
-            left = 0.8f,   // right side in landscape
-            top = 0f,      // top in landscape
-            right = 1f,
-            bottom = 0.2f
-        )
+        val bboxNorm =
+            NormalizedRect(
+                left = 0.8f,
+// right side in landscape
+                top = 0f,
+// top in landscape
+                right = 1f,
+                bottom = 0.2f,
+            )
 
         val result = mapBboxToPreview(bboxNorm, transform)
 
@@ -194,14 +201,15 @@ class DetectionOverlayTransformTest {
     @Test
     fun `mapBboxToPreview full frame box maps to preview bounds`() {
         // Test with FIT_CENTER to ensure full image maps to preview
-        val transform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 1280f,
-            previewHeight = 720f,
-            rotationDegrees = 0,
-            scaleType = PreviewScaleType.FIT_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 1280f,
+                previewHeight = 720f,
+                rotationDegrees = 0,
+                scaleType = PreviewScaleType.FIT_CENTER,
+            )
 
         // Full frame bbox
         val fullFrameBbox = NormalizedRect(0f, 0f, 1f, 1f)
@@ -232,7 +240,6 @@ class DetectionOverlayTransformTest {
     // ==========================================
 
     @Ignore("Requires updated overlay transform contract; skip for now.")
-
     @Test
     fun whenImageAndPreviewHaveSameAspectRatio_thenNoOffsetApplied() {
         // Arrange - Both 16:9 aspect ratio

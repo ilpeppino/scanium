@@ -9,7 +9,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
 import androidx.core.content.ContextCompat
 import com.scanium.app.BuildConfig
 import com.scanium.app.config.AndroidCloudConfigProvider
@@ -33,7 +32,7 @@ enum class HealthStatus {
     HEALTHY,
     DEGRADED,
     DOWN,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -44,7 +43,7 @@ data class HealthCheckResult(
     val status: HealthStatus,
     val detail: String? = null,
     val latencyMs: Long? = null,
-    val lastChecked: Long = System.currentTimeMillis()
+    val lastChecked: Long = System.currentTimeMillis(),
 ) {
     val lastCheckedFormatted: String
         get() = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(lastChecked))
@@ -59,7 +58,7 @@ enum class NetworkTransport {
     ETHERNET,
     VPN,
     UNKNOWN,
-    NONE
+    NONE,
 }
 
 /**
@@ -69,7 +68,7 @@ data class NetworkStatus(
     val isConnected: Boolean,
     val transport: NetworkTransport,
     val isMetered: Boolean,
-    val lastChecked: Long = System.currentTimeMillis()
+    val lastChecked: Long = System.currentTimeMillis(),
 )
 
 /**
@@ -78,7 +77,7 @@ data class NetworkStatus(
 data class PermissionStatus(
     val name: String,
     val isGranted: Boolean,
-    val permissionKey: String
+    val permissionKey: String,
 )
 
 /**
@@ -87,7 +86,7 @@ data class PermissionStatus(
 data class CapabilityStatus(
     val name: String,
     val isAvailable: Boolean,
-    val detail: String? = null
+    val detail: String? = null,
 )
 
 /**
@@ -101,7 +100,7 @@ data class AppConfigSnapshot(
     val isDebugBuild: Boolean,
     val deviceModel: String,
     val androidVersion: String,
-    val sdkInt: Int
+    val sdkInt: Int,
 )
 
 /**
@@ -113,7 +112,7 @@ data class DiagnosticsState(
     val permissions: List<PermissionStatus> = emptyList(),
     val capabilities: List<CapabilityStatus> = emptyList(),
     val appConfig: AppConfigSnapshot? = null,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
 )
 
 /**
@@ -121,15 +120,16 @@ data class DiagnosticsState(
  * Debug-only - should not be used in release builds.
  */
 class DiagnosticsRepository(
-    private val context: Context
+    private val context: Context,
 ) {
     private val _state = MutableStateFlow(DiagnosticsState())
     val state: StateFlow<DiagnosticsState> = _state.asStateFlow()
 
-    private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .readTimeout(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .build()
+    private val httpClient =
+        OkHttpClient.Builder()
+            .connectTimeout(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(HEALTH_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .build()
 
     private val configProvider = AndroidCloudConfigProvider(context)
 
@@ -145,88 +145,96 @@ class DiagnosticsRepository(
         val capabilities = checkCapabilities()
         val appConfig = getAppConfigSnapshot()
 
-        _state.value = DiagnosticsState(
-            backendHealth = backendHealth,
-            networkStatus = networkStatus,
-            permissions = permissions,
-            capabilities = capabilities,
-            appConfig = appConfig,
-            isRefreshing = false
-        )
+        _state.value =
+            DiagnosticsState(
+                backendHealth = backendHealth,
+                networkStatus = networkStatus,
+                permissions = permissions,
+                capabilities = capabilities,
+                appConfig = appConfig,
+                isRefreshing = false,
+            )
     }
 
     /**
      * Check backend health by pinging the /health endpoint.
      */
-    suspend fun checkBackendHealth(): HealthCheckResult = withContext(Dispatchers.IO) {
-        val config = configProvider.current()
-        val baseUrl = config.baseUrl
+    suspend fun checkBackendHealth(): HealthCheckResult =
+        withContext(Dispatchers.IO) {
+            val config = configProvider.current()
+            val baseUrl = config.baseUrl
 
-        if (baseUrl.isBlank()) {
-            return@withContext HealthCheckResult(
-                name = "Backend",
-                status = HealthStatus.DOWN,
-                detail = "Base URL not configured"
-            )
-        }
-
-        val healthUrl = "${baseUrl.trimEnd('/')}/health"
-        val startTime = System.currentTimeMillis()
-
-        try {
-            val result = withTimeoutOrNull(HEALTH_CHECK_TIMEOUT_MS) {
-                val request = Request.Builder()
-                    .url(healthUrl)
-                    .get()
-                    .build()
-
-                httpClient.newCall(request).execute().use { response ->
-                    val latency = System.currentTimeMillis() - startTime
-
-                    when {
-                        response.isSuccessful -> HealthCheckResult(
-                            name = "Backend",
-                            status = HealthStatus.HEALTHY,
-                            detail = "OK (${response.code})",
-                            latencyMs = latency
-                        )
-                        response.code in 401..403 -> HealthCheckResult(
-                            name = "Backend",
-                            status = HealthStatus.DEGRADED,
-                            detail = "Reachable (Auth required: ${response.code})",
-                            latencyMs = latency
-                        )
-                        response.code in 500..599 -> HealthCheckResult(
-                            name = "Backend",
-                            status = HealthStatus.DOWN,
-                            detail = "Server error (${response.code})",
-                            latencyMs = latency
-                        )
-                        else -> HealthCheckResult(
-                            name = "Backend",
-                            status = HealthStatus.DEGRADED,
-                            detail = "Unexpected response (${response.code})",
-                            latencyMs = latency
-                        )
-                    }
-                }
+            if (baseUrl.isBlank()) {
+                return@withContext HealthCheckResult(
+                    name = "Backend",
+                    status = HealthStatus.DOWN,
+                    detail = "Base URL not configured",
+                )
             }
 
-            result ?: HealthCheckResult(
-                name = "Backend",
-                status = HealthStatus.DOWN,
-                detail = "Timeout after ${HEALTH_CHECK_TIMEOUT_SECONDS}s"
-            )
-        } catch (e: Exception) {
-            val latency = System.currentTimeMillis() - startTime
-            HealthCheckResult(
-                name = "Backend",
-                status = HealthStatus.DOWN,
-                detail = e.message?.take(50) ?: "Connection failed",
-                latencyMs = latency
-            )
+            val healthUrl = "${baseUrl.trimEnd('/')}/health"
+            val startTime = System.currentTimeMillis()
+
+            try {
+                val result =
+                    withTimeoutOrNull(HEALTH_CHECK_TIMEOUT_MS) {
+                        val request =
+                            Request.Builder()
+                                .url(healthUrl)
+                                .get()
+                                .build()
+
+                        httpClient.newCall(request).execute().use { response ->
+                            val latency = System.currentTimeMillis() - startTime
+
+                            when {
+                                response.isSuccessful ->
+                                    HealthCheckResult(
+                                        name = "Backend",
+                                        status = HealthStatus.HEALTHY,
+                                        detail = "OK (${response.code})",
+                                        latencyMs = latency,
+                                    )
+                                response.code in 401..403 ->
+                                    HealthCheckResult(
+                                        name = "Backend",
+                                        status = HealthStatus.DEGRADED,
+                                        detail = "Reachable (Auth required: ${response.code})",
+                                        latencyMs = latency,
+                                    )
+                                response.code in 500..599 ->
+                                    HealthCheckResult(
+                                        name = "Backend",
+                                        status = HealthStatus.DOWN,
+                                        detail = "Server error (${response.code})",
+                                        latencyMs = latency,
+                                    )
+                                else ->
+                                    HealthCheckResult(
+                                        name = "Backend",
+                                        status = HealthStatus.DEGRADED,
+                                        detail = "Unexpected response (${response.code})",
+                                        latencyMs = latency,
+                                    )
+                            }
+                        }
+                    }
+
+                result ?: HealthCheckResult(
+                    name = "Backend",
+                    status = HealthStatus.DOWN,
+                    detail = "Timeout after ${HEALTH_CHECK_TIMEOUT_SECONDS}s",
+                )
+            } catch (e: Exception) {
+                val latency = System.currentTimeMillis() - startTime
+                HealthCheckResult(
+                    name = "Backend",
+                    status = HealthStatus.DOWN,
+                    detail = e.message?.take(50) ?: "Connection failed",
+                    latencyMs = latency,
+                )
+            }
         }
-    }
 
     /**
      * Check network connectivity status.
@@ -240,25 +248,26 @@ class DiagnosticsRepository(
             return NetworkStatus(
                 isConnected = false,
                 transport = NetworkTransport.NONE,
-                isMetered = false
+                isMetered = false,
             )
         }
 
         val hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
         val isMetered = !capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
 
-        val transport = when {
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetworkTransport.WIFI
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkTransport.CELLULAR
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetworkTransport.ETHERNET
-            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> NetworkTransport.VPN
-            else -> NetworkTransport.UNKNOWN
-        }
+        val transport =
+            when {
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetworkTransport.WIFI
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkTransport.CELLULAR
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetworkTransport.ETHERNET
+                capabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN) -> NetworkTransport.VPN
+                else -> NetworkTransport.UNKNOWN
+            }
 
         return NetworkStatus(
             isConnected = hasInternet,
             transport = transport,
-            isMetered = isMetered
+            isMetered = isMetered,
         )
     }
 
@@ -270,13 +279,13 @@ class DiagnosticsRepository(
             PermissionStatus(
                 name = "Camera",
                 isGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED,
-                permissionKey = Manifest.permission.CAMERA
+                permissionKey = Manifest.permission.CAMERA,
             ),
             PermissionStatus(
                 name = "Microphone",
                 isGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED,
-                permissionKey = Manifest.permission.RECORD_AUDIO
-            )
+                permissionKey = Manifest.permission.RECORD_AUDIO,
+            ),
         )
     }
 
@@ -292,17 +301,18 @@ class DiagnosticsRepository(
             CapabilityStatus(
                 name = "Speech Recognition",
                 isAvailable = speechAvailable,
-                detail = if (speechAvailable) "Available" else "Not available on this device"
-            )
+                detail = if (speechAvailable) "Available" else "Not available on this device",
+            ),
         )
 
         // Text-to-Speech - basic availability check
         capabilities.add(
             CapabilityStatus(
                 name = "Text-to-Speech",
-                isAvailable = true, // TTS is generally available on all Android devices
-                detail = "Available"
-            )
+                isAvailable = true,
+// TTS is generally available on all Android devices
+                detail = "Available",
+            ),
         )
 
         // Camera availability
@@ -322,27 +332,28 @@ class DiagnosticsRepository(
                 }
             }
 
-            val cameraDetail = buildString {
-                if (hasBack) append("Back")
-                if (hasBack && hasFront) append(", ")
-                if (hasFront) append("Front")
-                if (!hasBack && !hasFront) append("None detected")
-            }
+            val cameraDetail =
+                buildString {
+                    if (hasBack) append("Back")
+                    if (hasBack && hasFront) append(", ")
+                    if (hasFront) append("Front")
+                    if (!hasBack && !hasFront) append("None detected")
+                }
 
             capabilities.add(
                 CapabilityStatus(
                     name = "Camera Lenses",
                     isAvailable = hasBack || hasFront,
-                    detail = cameraDetail
-                )
+                    detail = cameraDetail,
+                ),
             )
         } catch (e: Exception) {
             capabilities.add(
                 CapabilityStatus(
                     name = "Camera Lenses",
                     isAvailable = false,
-                    detail = "Error checking cameras"
-                )
+                    detail = "Error checking cameras",
+                ),
             )
         }
 
@@ -363,7 +374,7 @@ class DiagnosticsRepository(
             isDebugBuild = BuildConfig.DEBUG,
             deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
             androidVersion = Build.VERSION.RELEASE,
-            sdkInt = Build.VERSION.SDK_INT
+            sdkInt = Build.VERSION.SDK_INT,
         )
     }
 

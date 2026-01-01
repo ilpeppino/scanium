@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.postingTargetDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "posting_target_preferences"
+    name = "posting_target_preferences",
 )
 
 class PostingTargetPreferences(private val context: Context) {
@@ -20,9 +20,10 @@ class PostingTargetPreferences(private val context: Context) {
     }
 
     suspend fun getLastTargetId(defaultId: String): String {
-        val raw = context.postingTargetDataStore.data
-            .map { preferences -> preferences[LAST_TARGET_ID] }
-            .first()
+        val raw =
+            context.postingTargetDataStore.data
+                .map { preferences -> preferences[LAST_TARGET_ID] }
+                .first()
         return raw?.takeIf { it.isNotBlank() } ?: defaultId
     }
 

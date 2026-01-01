@@ -15,9 +15,8 @@ import com.scanium.core.models.geometry.NormalizedRect
  * Thread-safe: Uses synchronized access to internal state.
  */
 class DedupeHelper(
-    private val config: DedupeConfig = DedupeConfig()
+    private val config: DedupeConfig = DedupeConfig(),
 ) {
-
     companion object {
         private const val TAG = "DedupeHelper"
     }
@@ -44,7 +43,7 @@ class DedupeHelper(
         detectorType: DetectorType,
         category: String,
         boundingBox: NormalizedRect,
-        currentTimeMs: Long = SystemClock.elapsedRealtime()
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
     ): Boolean {
         synchronized(lock) {
             // Clean expired entries periodically
@@ -70,10 +69,11 @@ class DedupeHelper(
                 if (iou >= config.iouThreshold) {
                     // Update last seen time for this entry
                     val key = generateKey(entry.detectorType, entry.category, entry.boundingBox)
-                    recentlySeen[key] = entry.copy(
-                        lastSeenMs = currentTimeMs,
-                        seenCount = entry.seenCount + 1
-                    )
+                    recentlySeen[key] =
+                        entry.copy(
+                            lastSeenMs = currentTimeMs,
+                            seenCount = entry.seenCount + 1,
+                        )
                     return true
                 }
             }
@@ -91,21 +91,22 @@ class DedupeHelper(
         category: String,
         boundingBox: NormalizedRect,
         itemId: String? = null,
-        currentTimeMs: Long = SystemClock.elapsedRealtime()
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
     ) {
         synchronized(lock) {
             val key = generateKey(detectorType, category, boundingBox)
             val existing = recentlySeen[key]
 
-            recentlySeen[key] = SeenEntry(
-                detectorType = detectorType,
-                category = category,
-                boundingBox = boundingBox,
-                itemId = itemId,
-                firstSeenMs = existing?.firstSeenMs ?: currentTimeMs,
-                lastSeenMs = currentTimeMs,
-                seenCount = (existing?.seenCount ?: 0) + 1
-            )
+            recentlySeen[key] =
+                SeenEntry(
+                    detectorType = detectorType,
+                    category = category,
+                    boundingBox = boundingBox,
+                    itemId = itemId,
+                    firstSeenMs = existing?.firstSeenMs ?: currentTimeMs,
+                    lastSeenMs = currentTimeMs,
+                    seenCount = (existing?.seenCount ?: 0) + 1,
+                )
         }
     }
 
@@ -119,7 +120,7 @@ class DedupeHelper(
         category: String,
         boundingBox: NormalizedRect,
         itemId: String? = null,
-        currentTimeMs: Long = SystemClock.elapsedRealtime()
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
     ): Boolean {
         synchronized(lock) {
             val isDupe = isDuplicate(detectorType, category, boundingBox, currentTimeMs)
@@ -137,20 +138,23 @@ class DedupeHelper(
     private fun generateKey(
         detectorType: DetectorType,
         category: String,
-        boundingBox: NormalizedRect
+        boundingBox: NormalizedRect,
     ): String {
         // Quantize position to grid cells for fuzzy matching
         val gridSize = config.spatialGridSize
         val centerX = ((boundingBox.left + boundingBox.right) / 2 * gridSize).toInt()
         val centerY = ((boundingBox.top + boundingBox.bottom) / 2 * gridSize).toInt()
 
-        return "${detectorType.name}_${category}_${centerX}_${centerY}"
+        return "${detectorType.name}_${category}_${centerX}_$centerY"
     }
 
     /**
      * Calculate Intersection over Union between two bounding boxes.
      */
-    private fun calculateIoU(a: NormalizedRect, b: NormalizedRect): Float {
+    private fun calculateIoU(
+        a: NormalizedRect,
+        b: NormalizedRect,
+    ): Float {
         val intersectLeft = maxOf(a.left, b.left)
         val intersectTop = maxOf(a.top, b.top)
         val intersectRight = minOf(a.right, b.right)
@@ -205,7 +209,7 @@ class DedupeHelper(
     fun isBarcodeDuplicate(
         rawValue: String,
         format: Int,
-        currentTimeMs: Long = SystemClock.elapsedRealtime()
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
     ): Boolean {
         synchronized(lock) {
             // Clean expired barcode entries periodically
@@ -213,18 +217,20 @@ class DedupeHelper(
                 cleanupExpiredBarcodes(currentTimeMs)
             }
 
-            val expiryWindowMs = config.expiryWindowMs[DetectorType.BARCODE]
-                ?: config.defaultExpiryWindowMs
+            val expiryWindowMs =
+                config.expiryWindowMs[DetectorType.BARCODE]
+                    ?: config.defaultExpiryWindowMs
 
             val existing = recentlySeenBarcodes[rawValue]
             if (existing != null) {
                 // Check if not expired
                 if (currentTimeMs - existing.lastSeenMs <= expiryWindowMs) {
                     // Update last seen time
-                    recentlySeenBarcodes[rawValue] = existing.copy(
-                        lastSeenMs = currentTimeMs,
-                        seenCount = existing.seenCount + 1
-                    )
+                    recentlySeenBarcodes[rawValue] =
+                        existing.copy(
+                            lastSeenMs = currentTimeMs,
+                            seenCount = existing.seenCount + 1,
+                        )
                     android.util.Log.d(TAG, "[DEDUPE_HIT] Barcode duplicate: value=$rawValue, seenCount=${existing.seenCount + 1}")
                     return true
                 }
@@ -247,19 +253,20 @@ class DedupeHelper(
         rawValue: String,
         format: Int,
         itemId: String? = null,
-        currentTimeMs: Long = SystemClock.elapsedRealtime()
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
     ) {
         synchronized(lock) {
             val existing = recentlySeenBarcodes[rawValue]
 
-            recentlySeenBarcodes[rawValue] = BarcodeSeenEntry(
-                rawValue = rawValue,
-                format = format,
-                itemId = itemId,
-                firstSeenMs = existing?.firstSeenMs ?: currentTimeMs,
-                lastSeenMs = currentTimeMs,
-                seenCount = (existing?.seenCount ?: 0) + 1
-            )
+            recentlySeenBarcodes[rawValue] =
+                BarcodeSeenEntry(
+                    rawValue = rawValue,
+                    format = format,
+                    itemId = itemId,
+                    firstSeenMs = existing?.firstSeenMs ?: currentTimeMs,
+                    lastSeenMs = currentTimeMs,
+                    seenCount = (existing?.seenCount ?: 0) + 1,
+                )
             android.util.Log.d(TAG, "[BARCODE_SEEN] Recorded barcode: value=$rawValue, format=$format")
         }
     }
@@ -277,7 +284,7 @@ class DedupeHelper(
         rawValue: String,
         format: Int,
         itemId: String? = null,
-        currentTimeMs: Long = SystemClock.elapsedRealtime()
+        currentTimeMs: Long = SystemClock.elapsedRealtime(),
     ): Boolean {
         synchronized(lock) {
             val isDupe = isBarcodeDuplicate(rawValue, format, currentTimeMs)
@@ -293,8 +300,9 @@ class DedupeHelper(
      * Remove expired barcode entries.
      */
     private fun cleanupExpiredBarcodes(currentTimeMs: Long) {
-        val expiryWindowMs = config.expiryWindowMs[DetectorType.BARCODE]
-            ?: config.defaultExpiryWindowMs
+        val expiryWindowMs =
+            config.expiryWindowMs[DetectorType.BARCODE]
+                ?: config.defaultExpiryWindowMs
 
         val iterator = recentlySeenBarcodes.iterator()
         while (iterator.hasNext()) {
@@ -346,13 +354,14 @@ class DedupeHelper(
      */
     fun getStats(): DedupeStats {
         synchronized(lock) {
-            val byType = DetectorType.entries.associateWith { type ->
-                recentlySeen.values.count { it.detectorType == type }
-            }
+            val byType =
+                DetectorType.entries.associateWith { type ->
+                    recentlySeen.values.count { it.detectorType == type }
+                }
             return DedupeStats(
                 totalTracked = recentlySeen.size,
                 trackedByType = byType,
-                trackedBarcodes = recentlySeenBarcodes.size
+                trackedBarcodes = recentlySeenBarcodes.size,
             )
         }
     }
@@ -363,23 +372,23 @@ class DedupeHelper(
  */
 data class DedupeConfig(
     /** Time window for considering items as duplicates (per detector type) */
-    val expiryWindowMs: Map<DetectorType, Long> = mapOf(
-        DetectorType.OBJECT to 3000L,    // 3 seconds for objects
-        DetectorType.BARCODE to 5000L,   // 5 seconds for barcodes (user might rescan)
-        DetectorType.DOCUMENT to 4000L   // 4 seconds for documents
-    ),
-
+    val expiryWindowMs: Map<DetectorType, Long> =
+        mapOf(
+            DetectorType.OBJECT to 3000L,
+// 3 seconds for objects
+            DetectorType.BARCODE to 5000L,
+// 5 seconds for barcodes (user might rescan)
+            DetectorType.DOCUMENT to 4000L,
+// 4 seconds for documents
+        ),
     /** Default expiry window if not specified per type */
     val defaultExpiryWindowMs: Long = 3000L,
-
     /** Minimum IoU to consider two detections as the same item */
     val iouThreshold: Float = 0.3f,
-
     /** Grid size for spatial quantization (higher = more granular) */
     val spatialGridSize: Int = 10,
-
     /** Number of operations between cleanup runs */
-    val cleanupInterval: Int = 50
+    val cleanupInterval: Int = 50,
 )
 
 /**
@@ -392,7 +401,7 @@ private data class SeenEntry(
     val itemId: String?,
     val firstSeenMs: Long,
     val lastSeenMs: Long,
-    val seenCount: Int
+    val seenCount: Int,
 )
 
 /**
@@ -404,7 +413,7 @@ private data class BarcodeSeenEntry(
     val itemId: String?,
     val firstSeenMs: Long,
     val lastSeenMs: Long,
-    val seenCount: Int
+    val seenCount: Int,
 )
 
 /**
@@ -413,5 +422,5 @@ private data class BarcodeSeenEntry(
 data class DedupeStats(
     val totalTracked: Int,
     val trackedByType: Map<DetectorType, Int>,
-    val trackedBarcodes: Int = 0
+    val trackedBarcodes: Int = 0,
 )

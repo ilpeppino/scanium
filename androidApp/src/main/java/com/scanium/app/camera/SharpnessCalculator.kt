@@ -1,7 +1,6 @@
 package com.scanium.app.camera
 
 import android.graphics.Bitmap
-import kotlin.math.abs
 
 /**
  * Lightweight sharpness calculator for camera frames.
@@ -15,7 +14,6 @@ import kotlin.math.abs
  * - No heavy dependencies (pure Kotlin/Android APIs)
  */
 object SharpnessCalculator {
-
     // Default sample region size (in pixels)
     private const val DEFAULT_SAMPLE_SIZE = 128
 
@@ -32,7 +30,7 @@ object SharpnessCalculator {
      */
     fun calculateSharpness(
         bitmap: Bitmap,
-        sampleSize: Int = DEFAULT_SAMPLE_SIZE
+        sampleSize: Int = DEFAULT_SAMPLE_SIZE,
     ): Float {
         if (bitmap.isRecycled || bitmap.width < 4 || bitmap.height < 4) {
             return 0f
@@ -57,7 +55,7 @@ object SharpnessCalculator {
      */
     fun isBlurry(
         bitmap: Bitmap,
-        minSharpness: Float = DEFAULT_MIN_SHARPNESS
+        minSharpness: Float = DEFAULT_MIN_SHARPNESS,
     ): Boolean {
         return calculateSharpness(bitmap) < minSharpness
     }
@@ -75,7 +73,7 @@ object SharpnessCalculator {
         startX: Int,
         startY: Int,
         width: Int,
-        height: Int
+        height: Int,
     ): Float {
         if (width < 3 || height < 3) return 0f
 
@@ -117,7 +115,11 @@ object SharpnessCalculator {
      * Uses green channel as a fast approximation for luminance
      * (green contributes ~60% to perceived brightness).
      */
-    private fun getGray(bitmap: Bitmap, x: Int, y: Int): Int {
+    private fun getGray(
+        bitmap: Bitmap,
+        x: Int,
+        y: Int,
+    ): Int {
         val pixel = bitmap.getPixel(x, y)
         // Extract green channel (fast luminance approximation)
         return (pixel shr 8) and 0xFF
@@ -140,7 +142,7 @@ object SharpnessCalculator {
         width: Int,
         height: Int,
         rowStride: Int,
-        sampleSize: Int = DEFAULT_SAMPLE_SIZE
+        sampleSize: Int = DEFAULT_SAMPLE_SIZE,
     ): Float {
         if (width < 4 || height < 4) return 0f
 
@@ -184,7 +186,12 @@ object SharpnessCalculator {
     /**
      * Get Y value from YUV plane.
      */
-    private fun getYuv(yPlane: ByteArray, x: Int, y: Int, rowStride: Int): Int {
+    private fun getYuv(
+        yPlane: ByteArray,
+        x: Int,
+        y: Int,
+        rowStride: Int,
+    ): Int {
         val index = y * rowStride + x
         return if (index >= 0 && index < yPlane.size) {
             yPlane[index].toInt() and 0xFF

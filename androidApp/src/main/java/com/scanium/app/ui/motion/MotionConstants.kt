@@ -22,6 +22,7 @@ object MotionConstants {
 
     /** Price count-up: total duration for the animation */
     const val PRICE_COUNT_UP_DURATION_MS = 1200
+
     /** Number of discrete steps for price count-up (3-4 per spec) */
     const val PRICE_COUNT_UP_STEPS = 4
 

@@ -41,7 +41,7 @@ data class DomainPack(
     val version: String,
     val description: String? = null,
     val categories: List<DomainCategory>,
-    val attributes: List<DomainAttribute>
+    val attributes: List<DomainAttribute>,
 ) {
     /**
      * Get all enabled categories.

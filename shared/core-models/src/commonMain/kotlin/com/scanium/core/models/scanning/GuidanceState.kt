@@ -9,12 +9,15 @@ package com.scanium.core.models.scanning
 enum class DistanceConfidence {
     /** Object is too close to the camera */
     TOO_CLOSE,
+
     /** Object is at optimal scanning distance */
     OPTIMAL,
+
     /** Object is too far from the camera */
     TOO_FAR,
+
     /** No object detected or unable to determine */
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -75,7 +78,7 @@ enum class GuidanceState {
      * Only this candidate will be considered for adding.
      * Visual: Stronger outline on scan zone
      */
-    LOCKED
+    LOCKED,
 }
 
 /**
@@ -86,39 +89,28 @@ enum class GuidanceState {
 data class ScanGuidanceState(
     /** Current guidance state */
     val state: GuidanceState,
-
     /** Current scan ROI (for overlay rendering) */
     val scanRoi: ScanRoi,
-
     /** Hint text to display (localized) */
     val hintText: String?,
-
     /** Whether hint should be visible */
     val showHint: Boolean,
-
     /** Detected candidate box area (normalized, 0-1) */
     val detectedBoxArea: Float?,
-
     /** Distance from candidate center to ROI center (0 = centered) */
     val centerDistance: Float?,
-
     /** Current sharpness score */
     val sharpnessScore: Float?,
-
     /** Current motion score (0 = still, 1 = high motion) */
     val motionScore: Float?,
-
     /** Time in current state (ms) */
     val stateTimeMs: Long,
-
     /** Whether locked state allows item add */
     val canAddItem: Boolean,
-
     /** ID of locked candidate (if in LOCKED state) */
     val lockedCandidateId: String?,
-
     /** Distance confidence for visual feedback on scan zone */
-    val distanceConfidence: DistanceConfidence = DistanceConfidence.UNKNOWN
+    val distanceConfidence: DistanceConfidence = DistanceConfidence.UNKNOWN,
 ) {
     companion object {
         /** Initial state when scanning starts */
@@ -135,7 +127,7 @@ data class ScanGuidanceState(
                 stateTimeMs = 0L,
                 canAddItem = false,
                 lockedCandidateId = null,
-                distanceConfidence = DistanceConfidence.UNKNOWN
+                distanceConfidence = DistanceConfidence.UNKNOWN,
             )
         }
     }
@@ -147,28 +139,20 @@ data class ScanGuidanceState(
 data class ScanDiagnostics(
     /** Current ROI size as percentage */
     val roiSizePercent: Int,
-
     /** Detected box area as percentage */
     val boxAreaPercent: Int?,
-
     /** Sharpness score */
     val sharpness: Float?,
-
     /** Center distance (0-1) */
     val centerDistance: Float?,
-
     /** Current lock state */
     val lockState: String,
-
     /** Consecutive stable frames */
     val stableFrames: Int,
-
     /** Stable time in ms */
     val stableTimeMs: Long,
-
     /** Motion score */
     val motionScore: Float?,
-
     /** Current guidance state name */
-    val guidanceState: String
+    val guidanceState: String,
 )

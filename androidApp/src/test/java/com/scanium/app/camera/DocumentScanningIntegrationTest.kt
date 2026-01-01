@@ -11,14 +11,13 @@ import org.junit.Test
  * of the scanning system.
  */
 class DocumentScanningIntegrationTest {
-
     @Test
     fun `verify ScanMode has DOCUMENT_TEXT mode`() {
         val modes = ScanMode.values()
 
         assertTrue(
             "DOCUMENT_TEXT mode should exist",
-            modes.contains(ScanMode.DOCUMENT_TEXT)
+            modes.contains(ScanMode.DOCUMENT_TEXT),
         )
     }
 
@@ -28,7 +27,7 @@ class DocumentScanningIntegrationTest {
 
         assertTrue(
             "DOCUMENT category should exist",
-            categories.contains(ItemCategory.DOCUMENT)
+            categories.contains(ItemCategory.DOCUMENT),
         )
     }
 
@@ -54,12 +53,13 @@ class DocumentScanningIntegrationTest {
         val modes = ScanMode.values()
 
         for (mode in modes) {
-            val result = when (mode) {
-                ScanMode.OBJECT_DETECTION -> "object"
-                ScanMode.BARCODE -> "barcode"
-                ScanMode.DOCUMENT_TEXT -> "document"
-                else -> "other"
-            }
+            val result =
+                when (mode) {
+                    ScanMode.OBJECT_DETECTION -> "object"
+                    ScanMode.BARCODE -> "barcode"
+                    ScanMode.DOCUMENT_TEXT -> "document"
+                    else -> "other"
+                }
 
             assertNotNull("When expression should handle $mode", result)
         }
@@ -114,7 +114,7 @@ class DocumentScanningIntegrationTest {
         // DOCUMENT should come before UNKNOWN (last category)
         assertTrue(
             "DOCUMENT should come before UNKNOWN",
-            ItemCategory.DOCUMENT.ordinal < ItemCategory.UNKNOWN.ordinal
+            ItemCategory.DOCUMENT.ordinal < ItemCategory.UNKNOWN.ordinal,
         )
     }
 
@@ -141,11 +141,12 @@ class DocumentScanningIntegrationTest {
 
             // Enum toString should return the enum constant name
             assertTrue(
-                stringRepresentation in listOf(
-                    "OBJECT_DETECTION",
-                    "BARCODE",
-                    "DOCUMENT_TEXT"
-                )
+                stringRepresentation in
+                    listOf(
+                        "OBJECT_DETECTION",
+                        "BARCODE",
+                        "DOCUMENT_TEXT",
+                    ),
             )
         }
     }
@@ -158,26 +159,28 @@ class DocumentScanningIntegrationTest {
         assertEquals(
             "Document mode should be last",
             ScanMode.DOCUMENT_TEXT,
-            lastMode
+            lastMode,
         )
     }
 
     @Test
     fun `verify mode enum can be used in collections`() {
-        val modeSet = setOf(
-            ScanMode.OBJECT_DETECTION,
-            ScanMode.BARCODE,
-            ScanMode.DOCUMENT_TEXT
-        )
+        val modeSet =
+            setOf(
+                ScanMode.OBJECT_DETECTION,
+                ScanMode.BARCODE,
+                ScanMode.DOCUMENT_TEXT,
+            )
 
         assertEquals(3, modeSet.size)
         assertTrue(modeSet.contains(ScanMode.DOCUMENT_TEXT))
 
-        val modeList = listOf(
-            ScanMode.OBJECT_DETECTION,
-            ScanMode.BARCODE,
-            ScanMode.DOCUMENT_TEXT
-        )
+        val modeList =
+            listOf(
+                ScanMode.OBJECT_DETECTION,
+                ScanMode.BARCODE,
+                ScanMode.DOCUMENT_TEXT,
+            )
 
         assertEquals(3, modeList.size)
         assertEquals(ScanMode.DOCUMENT_TEXT, modeList[2])
@@ -187,17 +190,18 @@ class DocumentScanningIntegrationTest {
     fun `verify category enum can be used in when expressions`() {
         val category = ItemCategory.DOCUMENT
 
-        val result = when (category) {
-            ItemCategory.FASHION -> "fashion"
-            ItemCategory.HOME_GOOD -> "home"
-            ItemCategory.FOOD -> "food"
-            ItemCategory.PLACE -> "place"
-            ItemCategory.PLANT -> "plant"
-            ItemCategory.ELECTRONICS -> "electronics"
-            ItemCategory.DOCUMENT -> "document"
-            ItemCategory.UNKNOWN -> "unknown"
-            else -> "other"
-        }
+        val result =
+            when (category) {
+                ItemCategory.FASHION -> "fashion"
+                ItemCategory.HOME_GOOD -> "home"
+                ItemCategory.FOOD -> "food"
+                ItemCategory.PLACE -> "place"
+                ItemCategory.PLANT -> "plant"
+                ItemCategory.ELECTRONICS -> "electronics"
+                ItemCategory.DOCUMENT -> "document"
+                ItemCategory.UNKNOWN -> "unknown"
+                else -> "other"
+            }
 
         assertEquals("document", result)
     }

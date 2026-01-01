@@ -2,13 +2,14 @@ package com.scanium.app.camera
 
 import android.graphics.Rect
 import android.util.Size
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.waitForIdle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.platform.toNormalizedRect
-import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +29,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class DetectionOverlayTest {
-
     @get:Rule
     val composeTestRule = createComposeRule()
 
@@ -39,7 +39,7 @@ class DetectionOverlayTest {
             DetectionOverlay(
                 detections = emptyList(),
                 imageSize = Size(1280, 720),
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -53,19 +53,20 @@ class DetectionOverlayTest {
     fun whenSingleDetection_thenOverlayRendersCircleMarker() {
         // Arrange
         val imageSize = Size(640, 480)
-        val detection = DetectionResult(
-            bboxNorm = Rect(100, 100, 300, 300).toNormalizedRect(imageSize.width, imageSize.height),
-            category = ItemCategory.FASHION,
-            priceRange = Pair(10.0, 50.0),
-            confidence = 0.85f
-        )
+        val detection =
+            DetectionResult(
+                bboxNorm = Rect(100, 100, 300, 300).toNormalizedRect(imageSize.width, imageSize.height),
+                category = ItemCategory.FASHION,
+                priceRange = Pair(10.0, 50.0),
+                confidence = 0.85f,
+            )
 
         // Act
         composeTestRule.setContent {
             DetectionOverlay(
                 detections = listOf(detection),
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -78,33 +79,34 @@ class DetectionOverlayTest {
     fun whenMultipleDetections_thenOverlayRendersAllMarkers() {
         // Arrange
         val imageSize = Size(640, 480)
-        val detections = listOf(
-            DetectionResult(
-                bboxNorm = Rect(50, 50, 150, 150).toNormalizedRect(imageSize.width, imageSize.height),
-                category = ItemCategory.FASHION,
-                priceRange = Pair(10.0, 30.0),
-                confidence = 0.8f
-            ),
-            DetectionResult(
-                bboxNorm = Rect(200, 200, 350, 350).toNormalizedRect(imageSize.width, imageSize.height),
-                category = ItemCategory.FOOD,
-                priceRange = Pair(5.0, 10.0),
-                confidence = 0.9f
-            ),
-            DetectionResult(
-                bboxNorm = Rect(400, 100, 600, 300).toNormalizedRect(imageSize.width, imageSize.height),
-                category = ItemCategory.PLANT,
-                priceRange = Pair(15.0, 40.0),
-                confidence = 0.7f
+        val detections =
+            listOf(
+                DetectionResult(
+                    bboxNorm = Rect(50, 50, 150, 150).toNormalizedRect(imageSize.width, imageSize.height),
+                    category = ItemCategory.FASHION,
+                    priceRange = Pair(10.0, 30.0),
+                    confidence = 0.8f,
+                ),
+                DetectionResult(
+                    bboxNorm = Rect(200, 200, 350, 350).toNormalizedRect(imageSize.width, imageSize.height),
+                    category = ItemCategory.FOOD,
+                    priceRange = Pair(5.0, 10.0),
+                    confidence = 0.9f,
+                ),
+                DetectionResult(
+                    bboxNorm = Rect(400, 100, 600, 300).toNormalizedRect(imageSize.width, imageSize.height),
+                    category = ItemCategory.PLANT,
+                    priceRange = Pair(15.0, 40.0),
+                    confidence = 0.7f,
+                ),
             )
-        )
 
         // Act
         composeTestRule.setContent {
             DetectionOverlay(
                 detections = detections,
                 imageSize = Size(640, 480),
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -121,7 +123,7 @@ class DetectionOverlayTest {
             DetectionOverlay(
                 detections = detections,
                 imageSize = Size(640, 480),
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -130,16 +132,17 @@ class DetectionOverlayTest {
 
         // Act - Update to include detections
         val imageSize = Size(640, 480)
-        detections = listOf(
-            detection(Rect(100, 100, 300, 300), ItemCategory.FASHION, Pair(10.0, 50.0), 0.85f, imageSize),
-            detection(Rect(200, 200, 400, 400), ItemCategory.FOOD, Pair(5.0, 15.0), 0.9f, imageSize)
-        )
+        detections =
+            listOf(
+                detection(Rect(100, 100, 300, 300), ItemCategory.FASHION, Pair(10.0, 50.0), 0.85f, imageSize),
+                detection(Rect(200, 200, 400, 400), ItemCategory.FOOD, Pair(5.0, 15.0), 0.9f, imageSize),
+            )
 
         composeTestRule.setContent {
             DetectionOverlay(
                 detections = detections,
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -157,8 +160,10 @@ class DetectionOverlayTest {
         composeTestRule.setContent {
             DetectionOverlay(
                 detections = listOf(detection),
-                imageSize = imageSize, // 16:9 landscape
-                previewSize = Size(1080, 1920) // 9:16 portrait
+                // 16:9 landscape
+                imageSize = imageSize,
+                // 9:16 portrait
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -177,7 +182,7 @@ class DetectionOverlayTest {
             DetectionOverlay(
                 detections = listOf(detection),
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -196,7 +201,7 @@ class DetectionOverlayTest {
             DetectionOverlay(
                 detections = listOf(detection),
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -215,7 +220,7 @@ class DetectionOverlayTest {
             DetectionOverlay(
                 detections = listOf(detection),
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -234,7 +239,7 @@ class DetectionOverlayTest {
             DetectionOverlay(
                 detections = listOf(detection),
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -253,7 +258,7 @@ class DetectionOverlayTest {
             DetectionOverlay(
                 detections = listOf(detection),
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -265,17 +270,18 @@ class DetectionOverlayTest {
     fun whenOverlappingDetections_thenBothMarkersRender() {
         // Arrange - Two detections with overlapping bounding boxes
         val imageSize = Size(640, 480)
-        val detections = listOf(
-            detection(Rect(100, 100, 300, 300), ItemCategory.FASHION, Pair(10.0, 30.0), 0.8f, imageSize),
-            detection(Rect(150, 150, 350, 350), ItemCategory.FOOD, Pair(5.0, 10.0), 0.9f, imageSize)
-        )
+        val detections =
+            listOf(
+                detection(Rect(100, 100, 300, 300), ItemCategory.FASHION, Pair(10.0, 30.0), 0.8f, imageSize),
+                detection(Rect(150, 150, 350, 350), ItemCategory.FOOD, Pair(5.0, 10.0), 0.9f, imageSize),
+            )
 
         // Act
         composeTestRule.setContent {
             DetectionOverlay(
                 detections = detections,
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -287,27 +293,28 @@ class DetectionOverlayTest {
     fun whenManyDetections_thenAllMarkersRenderWithoutPerformanceIssues() {
         // Arrange - Many detections to test performance
         val imageSize = Size(640, 480)
-        val detections = (1..20).map { index ->
-            detection(
-                Rect(
-                    index * 30,
-                    index * 20,
-                    index * 30 + 100,
-                    index * 20 + 100
-                ),
-                ItemCategory.values()[index % ItemCategory.values().size],
-                Pair(10.0 * index, 50.0 * index),
-                0.5f + (index % 5) * 0.1f,
-                imageSize
-            )
-        }
+        val detections =
+            (1..20).map { index ->
+                detection(
+                    Rect(
+                        index * 30,
+                        index * 20,
+                        index * 30 + 100,
+                        index * 20 + 100,
+                    ),
+                    ItemCategory.values()[index % ItemCategory.values().size],
+                    Pair(10.0 * index, 50.0 * index),
+                    0.5f + (index % 5) * 0.1f,
+                    imageSize,
+                )
+            }
 
         // Act
         composeTestRule.setContent {
             DetectionOverlay(
                 detections = detections,
                 imageSize = imageSize,
-                previewSize = Size(1080, 1920)
+                previewSize = Size(1080, 1920),
             )
         }
 
@@ -320,13 +327,13 @@ class DetectionOverlayTest {
         category: ItemCategory,
         priceRange: Pair<Double, Double>,
         confidence: Float,
-        imageSize: Size
+        imageSize: Size,
     ): DetectionResult {
         return DetectionResult(
             bboxNorm = rect.toNormalizedRect(imageSize.width, imageSize.height),
             category = category,
             priceRange = priceRange,
-            confidence = confidence
+            confidence = confidence,
         )
     }
 }

@@ -14,7 +14,6 @@ class AndroidCloudConfigProvider(
     private val context: Context,
     private val domainPackId: String = DEFAULT_DOMAIN_PACK_ID,
 ) : CloudConfigProvider {
-
     override fun current(): CloudClassifierConfig {
         val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.orEmpty()
         val apiKey = SecureApiKeyStore(context).getApiKey()

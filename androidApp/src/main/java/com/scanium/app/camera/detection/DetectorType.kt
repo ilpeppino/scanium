@@ -23,5 +23,5 @@ enum class DetectorType {
      * Document candidate detection (text regions, receipts).
      * Future: Will use ML Kit Text Recognition for region detection.
      */
-    DOCUMENT
+    DOCUMENT,
 }

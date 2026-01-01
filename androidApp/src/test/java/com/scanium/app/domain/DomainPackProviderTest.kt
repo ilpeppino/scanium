@@ -14,7 +14,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class DomainPackProviderTest {
-
     private lateinit var context: Context
 
     @Before

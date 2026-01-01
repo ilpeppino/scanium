@@ -15,7 +15,6 @@ import org.junit.Test
  * - Ease-out progression (faster at start)
  */
 class PriceCountUpUtilTest {
-
     @Test
     fun whenGeneratingSteps_thenCorrectNumberOfSteps() {
         // Act
@@ -77,11 +76,12 @@ class PriceCountUpUtilTest {
         val totalDuration = 1200
 
         // Act
-        val steps = PriceCountUpUtil.generateSteps(
-            targetValue = 100,
-            steps = 4,
-            totalDurationMs = totalDuration
-        )
+        val steps =
+            PriceCountUpUtil.generateSteps(
+                targetValue = 100,
+                steps = 4,
+                totalDurationMs = totalDuration,
+            )
 
         // Assert - Last step delay should equal or be close to total duration
         assertThat(steps.last().delayMs).isEqualTo(totalDuration.toLong())
@@ -139,11 +139,12 @@ class PriceCountUpUtilTest {
     @Test
     fun whenGeneratingRangeSteps_thenTimingsMatch() {
         // Act
-        val (lowSteps, highSteps) = PriceCountUpUtil.generateRangeSteps(
-            lowValue = 10,
-            highValue = 100,
-            totalDurationMs = 1000
-        )
+        val (lowSteps, highSteps) =
+            PriceCountUpUtil.generateRangeSteps(
+                lowValue = 10,
+                highValue = 100,
+                totalDurationMs = 1000,
+            )
 
         // Assert - Both should end at same time
         assertThat(lowSteps.last().delayMs).isEqualTo(1000L)

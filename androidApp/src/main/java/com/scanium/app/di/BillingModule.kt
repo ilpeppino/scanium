@@ -23,13 +23,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object BillingModule {
-
     @Provides
     @Singleton
     fun provideBillingProvider(
         @ApplicationContext context: Context,
         billingRepository: BillingRepository,
-        @ApplicationScope scope: CoroutineScope
+        @ApplicationScope scope: CoroutineScope,
     ): BillingProvider {
         return if (BuildConfig.DEBUG) {
             FakeBillingProvider(billingRepository)

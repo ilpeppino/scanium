@@ -19,5 +19,5 @@ enum class AttributeType {
     ENUM,
 
     /** Boolean true/false value */
-    BOOLEAN
+    BOOLEAN,
 }

@@ -13,5 +13,5 @@ data class ExportItem(
     val attributes: Map<String, String> = emptyMap(),
     val priceMin: Double? = null,
     val priceMax: Double? = null,
-    val imageRef: ImageRef? = null
+    val imageRef: ImageRef? = null,
 )

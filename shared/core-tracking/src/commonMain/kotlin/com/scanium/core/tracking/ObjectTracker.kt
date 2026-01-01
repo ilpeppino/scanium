@@ -4,8 +4,8 @@ import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.models.scanning.ScanRoi
-import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.TelemetrySeverity
+import com.scanium.telemetry.facade.Telemetry
 import kotlinx.datetime.Clock
 import kotlin.math.floor
 import kotlin.math.sqrt
@@ -30,7 +30,7 @@ import kotlin.random.Random
 class ObjectTracker(
     private val config: TrackerConfig = TrackerConfig(),
     private val logger: Logger = Logger.NONE,
-    private val telemetry: Telemetry? = null
+    private val telemetry: Telemetry? = null,
 ) {
     companion object {
         private const val TAG = "ObjectTracker"
@@ -42,21 +42,23 @@ class ObjectTracker(
     private val spatialIndex = SpatialGridIndex(config.gridCellSize)
 
     // Center-weighted candidate selector for prioritizing centered objects
-    private val centerWeightedSelector = CenterWeightedCandidateSelector(
-        config = CenterWeightedConfig(
-            confidenceWeight = config.centerWeightConfidence,
-            areaWeight = config.centerWeightArea,
-            centerWeight = config.centerWeightCenter,
-            maxCenterDistance = config.maxCenterDistance,
-            minArea = config.centerWeightMinArea,
-            minSharpness = config.minSharpnessScore,
-            sharpnessAreaThreshold = config.sharpnessAreaThreshold,
-            highConfidenceOverride = config.highConfidenceOverride,
-            minStabilityFrames = config.minStabilityFrames,
-            minStabilityTimeMs = config.minStabilityTimeMs,
-            stabilityExpiryMs = config.stabilityExpiryMs
+    private val centerWeightedSelector =
+        CenterWeightedCandidateSelector(
+            config =
+                CenterWeightedConfig(
+                    confidenceWeight = config.centerWeightConfidence,
+                    areaWeight = config.centerWeightArea,
+                    centerWeight = config.centerWeightCenter,
+                    maxCenterDistance = config.maxCenterDistance,
+                    minArea = config.centerWeightMinArea,
+                    minSharpness = config.minSharpnessScore,
+                    sharpnessAreaThreshold = config.sharpnessAreaThreshold,
+                    highConfidenceOverride = config.highConfidenceOverride,
+                    minStabilityFrames = config.minStabilityFrames,
+                    minStabilityTimeMs = config.minStabilityTimeMs,
+                    stabilityExpiryMs = config.stabilityExpiryMs,
+                ),
         )
-    )
 
     // Frame counter for tracking temporal information
     private var currentFrame: Long = 0
@@ -80,7 +82,7 @@ class ObjectTracker(
     fun processFrame(
         detections: List<DetectionInfo>,
         inferenceLatencyMs: Long = 0,
-        frameSharpness: Float = 0f
+        frameSharpness: Float = 0f,
     ): List<ObjectCandidate> {
         val span = telemetry?.beginSpan("scan.process_frame")
         try {
@@ -94,7 +96,7 @@ class ObjectTracker(
             if (config.enableVerboseLogging) {
                 logger.i(
                     TAG,
-                    ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}, sharpness=$frameSharpness"
+                    ">>> processFrame START: frame=$currentFrame, detections=${detections.size}, existingCandidates=${candidates.size}, sharpness=$frameSharpness",
                 )
             }
 
@@ -110,39 +112,47 @@ class ObjectTracker(
             var centerWeightedSelection: SelectionResult? = null
 
             if (config.enableCenterWeightedSelection && detections.isNotEmpty()) {
-                centerWeightedSelection = centerWeightedSelector.selectBestCandidate(
-                    detections = detections,
-                    frameSharpness = frameSharpness,
-                    currentTimeMs = currentTimeMs
-                )
+                centerWeightedSelection =
+                    centerWeightedSelector.selectBestCandidate(
+                        detections = detections,
+                        frameSharpness = frameSharpness,
+                        currentTimeMs = currentTimeMs,
+                    )
 
                 if (config.enableVerboseLogging) {
                     val sel = centerWeightedSelection.selectedCandidate
                     logger.i(TAG, "    CENTER_WEIGHTED: reason=${centerWeightedSelection.selectionReason}")
                     if (sel != null) {
-                        logger.i(TAG, "    SELECTED: id=${sel.detection.trackingId}, " +
+                        logger.i(
+                            TAG,
+                            "    SELECTED: id=${sel.detection.trackingId}, " +
                                 "score=${sel.score}, centerDist=${sel.centerDistance}, " +
-                                "stable=${sel.isStable} (frames=${sel.consecutiveFrames})")
+                                "stable=${sel.isStable} (frames=${sel.consecutiveFrames})",
+                        )
                     }
                     centerWeightedSelection.rejectedCandidates.take(2).forEach { rej ->
-                        logger.i(TAG, "    REJECTED: id=${rej.detection.trackingId}, " +
-                                "reason=${rej.reason}, centerDist=${rej.centerDistance}")
+                        logger.i(
+                            TAG,
+                            "    REJECTED: id=${rej.detection.trackingId}, " +
+                                "reason=${rej.reason}, centerDist=${rej.centerDistance}",
+                        )
                     }
                 }
 
                 // If we have a stable selection, only process that candidate
                 // Otherwise, process all candidates that passed gating
-                detectionsToProcess = if (centerWeightedSelection.selectedCandidate?.isStable == true) {
-                    // Only process the stable selected candidate
-                    listOf(centerWeightedSelection.selectedCandidate.detection)
-                } else if (centerWeightedSelection.selectedCandidate != null) {
-                    // Selection exists but not yet stable - still process it for tracking
-                    // but don't confirm until stable
-                    listOf(centerWeightedSelection.selectedCandidate.detection)
-                } else {
-                    // No valid selection - skip all detections this frame
-                    emptyList()
-                }
+                detectionsToProcess =
+                    if (centerWeightedSelection.selectedCandidate?.isStable == true) {
+                        // Only process the stable selected candidate
+                        listOf(centerWeightedSelection.selectedCandidate.detection)
+                    } else if (centerWeightedSelection.selectedCandidate != null) {
+                        // Selection exists but not yet stable - still process it for tracking
+                        // but don't confirm until stable
+                        listOf(centerWeightedSelection.selectedCandidate.detection)
+                    } else {
+                        // No valid selection - skip all detections this frame
+                        emptyList()
+                    }
             } else {
                 // Center-weighted selection disabled - process all detections
                 detectionsToProcess = detections
@@ -153,7 +163,7 @@ class ObjectTracker(
                 if (config.enableVerboseLogging) {
                     logger.i(
                         TAG,
-                        "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}"
+                        "    Processing detection $index: trackingId=${detection.trackingId}, category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}",
                     )
                 }
 
@@ -162,7 +172,7 @@ class ObjectTracker(
                     if (config.enableVerboseLogging) {
                         logger.i(
                             TAG,
-                            "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})"
+                            "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})",
                         )
                     }
                     continue
@@ -186,7 +196,7 @@ class ObjectTracker(
                         newLabelText = detection.labelText,
                         newThumbnail = detection.thumbnail,
                         boxArea = detection.normalizedBoxArea,
-                        newQualityScore = detection.qualityScore
+                        newQualityScore = detection.qualityScore,
                     )
                     matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
                     spatialIndex.upsert(matchedCandidate.internalId, matchedCandidate.indexBoundingBox())
@@ -196,17 +206,18 @@ class ObjectTracker(
                     if (config.enableVerboseLogging) {
                         logger.i(
                             TAG,
-                            "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}"
+                            "    MATCHED existing candidate ${matchedCandidate.internalId}: seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}",
                         )
                     }
 
                     // Check if it just became confirmed
                     // With center-weighted selection, also require stability
-                    val stabilityOk = if (config.enableCenterWeightedSelection) {
-                        centerWeightedSelection?.selectedCandidate?.isStable == true
-                    } else {
-                        true
-                    }
+                    val stabilityOk =
+                        if (config.enableCenterWeightedSelection) {
+                            centerWeightedSelection?.selectedCandidate?.isStable == true
+                        } else {
+                            true
+                        }
 
                     if (!wasConfirmed && isConfirmed(matchedCandidate) && stabilityOk) {
                         if (!confirmedIds.contains(matchedCandidate.internalId)) {
@@ -215,14 +226,18 @@ class ObjectTracker(
                             if (config.enableVerboseLogging) {
                                 logger.i(
                                     TAG,
-                                    "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames"
+                                    "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: ${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames",
                                 )
                             }
-                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
-                                "candidate_id" to matchedCandidate.internalId,
-                                "category" to matchedCandidate.category.name,
-                                "label" to matchedCandidate.labelText
-                            ))
+                            telemetry?.event(
+                                "scan.candidate_confirmed",
+                                TelemetrySeverity.INFO,
+                                mapOf(
+                                    "candidate_id" to matchedCandidate.internalId,
+                                    "category" to matchedCandidate.category.name,
+                                    "label" to matchedCandidate.labelText,
+                                ),
+                            )
                         }
                     } else if (!wasConfirmed && isConfirmed(matchedCandidate) && !stabilityOk) {
                         if (config.enableVerboseLogging) {
@@ -241,24 +256,29 @@ class ObjectTracker(
                     if (config.enableVerboseLogging) {
                         logger.i(
                             TAG,
-                            "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})"
+                            "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})",
                         )
                     }
-                    telemetry?.event("scan.candidate_created", TelemetrySeverity.DEBUG, mapOf(
-                        "candidate_id" to newCandidate.internalId,
-                        "category" to newCandidate.category.name,
-                        "top_label" to newCandidate.labelText,
-                        "confidence" to newCandidate.maxConfidence.toString()
-                    ))
+                    telemetry?.event(
+                        "scan.candidate_created",
+                        TelemetrySeverity.DEBUG,
+                        mapOf(
+                            "candidate_id" to newCandidate.internalId,
+                            "category" to newCandidate.category.name,
+                            "top_label" to newCandidate.labelText,
+                            "confidence" to newCandidate.maxConfidence.toString(),
+                        ),
+                    )
 
                     // Check if it's immediately confirmed (rare, but possible with minFramesToConfirm=1)
                     // With center-weighted selection, new candidates can't be immediately confirmed
                     // (they need stability first)
-                    val immediateStabilityOk = if (config.enableCenterWeightedSelection) {
-                        centerWeightedSelection?.selectedCandidate?.isStable == true
-                    } else {
-                        true
-                    }
+                    val immediateStabilityOk =
+                        if (config.enableCenterWeightedSelection) {
+                            centerWeightedSelection?.selectedCandidate?.isStable == true
+                        } else {
+                            true
+                        }
 
                     if (isConfirmed(newCandidate) && immediateStabilityOk) {
                         if (!confirmedIds.contains(newCandidate.internalId)) {
@@ -267,14 +287,18 @@ class ObjectTracker(
                             if (config.enableVerboseLogging) {
                                 logger.i(
                                     TAG,
-                                    "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}"
+                                    "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}",
                                 )
                             }
-                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
-                                "candidate_id" to newCandidate.internalId,
-                                "category" to newCandidate.category.name,
-                                "label" to newCandidate.labelText
-                            ))
+                            telemetry?.event(
+                                "scan.candidate_confirmed",
+                                TelemetrySeverity.INFO,
+                                mapOf(
+                                    "candidate_id" to newCandidate.internalId,
+                                    "category" to newCandidate.category.name,
+                                    "label" to newCandidate.labelText,
+                                ),
+                            )
                         }
                     }
                 }
@@ -311,7 +335,7 @@ class ObjectTracker(
         detections: List<DetectionInfo>,
         scanRoi: ScanRoi,
         inferenceLatencyMs: Long = 0,
-        frameSharpness: Float = 0f
+        frameSharpness: Float = 0f,
     ): List<ObjectCandidate> {
         val span = telemetry?.beginSpan("scan.process_frame_roi")
         try {
@@ -326,8 +350,8 @@ class ObjectTracker(
                 logger.i(
                     TAG,
                     ">>> processFrameWithRoi START: frame=$currentFrame, detections=${detections.size}, " +
-                    "existingCandidates=${candidates.size}, sharpness=$frameSharpness, " +
-                    "roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}"
+                        "existingCandidates=${candidates.size}, sharpness=$frameSharpness, " +
+                        "roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}",
                 )
             }
 
@@ -340,34 +364,42 @@ class ObjectTracker(
 
             if (config.enableCenterWeightedSelection && detections.isNotEmpty()) {
                 // Use the new ROI-based selection method
-                centerWeightedSelection = centerWeightedSelector.selectBestCandidateWithRoi(
-                    detections = detections,
-                    scanRoi = scanRoi,
-                    frameSharpness = frameSharpness,
-                    currentTimeMs = currentTimeMs
-                )
+                centerWeightedSelection =
+                    centerWeightedSelector.selectBestCandidateWithRoi(
+                        detections = detections,
+                        scanRoi = scanRoi,
+                        frameSharpness = frameSharpness,
+                        currentTimeMs = currentTimeMs,
+                    )
 
                 if (config.enableVerboseLogging) {
                     val sel = centerWeightedSelection.selectedCandidate
                     logger.i(TAG, "    ROI_SELECTION: reason=${centerWeightedSelection.selectionReason}")
                     if (sel != null) {
-                        logger.i(TAG, "    SELECTED: id=${sel.detection.trackingId}, " +
+                        logger.i(
+                            TAG,
+                            "    SELECTED: id=${sel.detection.trackingId}, " +
                                 "score=${sel.score}, centerDist=${sel.centerDistance}, " +
-                                "stable=${sel.isStable} (frames=${sel.consecutiveFrames})")
+                                "stable=${sel.isStable} (frames=${sel.consecutiveFrames})",
+                        )
                     }
                     centerWeightedSelection.rejectedCandidates.take(2).forEach { rej ->
-                        logger.i(TAG, "    REJECTED: id=${rej.detection.trackingId}, " +
-                                "reason=${rej.reason}, centerDist=${rej.centerDistance}")
+                        logger.i(
+                            TAG,
+                            "    REJECTED: id=${rej.detection.trackingId}, " +
+                                "reason=${rej.reason}, centerDist=${rej.centerDistance}",
+                        )
                     }
                 }
 
-                detectionsToProcess = if (centerWeightedSelection.selectedCandidate?.isStable == true) {
-                    listOf(centerWeightedSelection.selectedCandidate.detection)
-                } else if (centerWeightedSelection.selectedCandidate != null) {
-                    listOf(centerWeightedSelection.selectedCandidate.detection)
-                } else {
-                    emptyList()
-                }
+                detectionsToProcess =
+                    if (centerWeightedSelection.selectedCandidate?.isStable == true) {
+                        listOf(centerWeightedSelection.selectedCandidate.detection)
+                    } else if (centerWeightedSelection.selectedCandidate != null) {
+                        listOf(centerWeightedSelection.selectedCandidate.detection)
+                    } else {
+                        emptyList()
+                    }
             } else {
                 detectionsToProcess = detections
             }
@@ -378,7 +410,7 @@ class ObjectTracker(
                     logger.i(
                         TAG,
                         "    Processing detection $index: trackingId=${detection.trackingId}, " +
-                        "category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}"
+                            "category=${detection.category}, confidence=${detection.confidence}, area=${detection.normalizedBoxArea}",
                     )
                 }
 
@@ -387,7 +419,7 @@ class ObjectTracker(
                     if (config.enableVerboseLogging) {
                         logger.i(
                             TAG,
-                            "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})"
+                            "    SKIPPED: box too small (${detection.normalizedBoxArea} < ${config.minBoxArea})",
                         )
                     }
                     continue
@@ -408,7 +440,7 @@ class ObjectTracker(
                         newLabelText = detection.labelText,
                         newThumbnail = detection.thumbnail,
                         boxArea = detection.normalizedBoxArea,
-                        newQualityScore = detection.qualityScore
+                        newQualityScore = detection.qualityScore,
                     )
                     matchedCandidate.boundingBoxNorm = detection.boundingBoxNorm ?: detection.boundingBox
                     spatialIndex.upsert(matchedCandidate.internalId, matchedCandidate.indexBoundingBox())
@@ -419,16 +451,17 @@ class ObjectTracker(
                         logger.i(
                             TAG,
                             "    MATCHED existing candidate ${matchedCandidate.internalId}: " +
-                            "seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}"
+                                "seenCount=${matchedCandidate.seenCount}, maxConfidence=${matchedCandidate.maxConfidence}",
                         )
                     }
 
                     // Check if it just became confirmed
-                    val stabilityOk = if (config.enableCenterWeightedSelection) {
-                        centerWeightedSelection?.selectedCandidate?.isStable == true
-                    } else {
-                        true
-                    }
+                    val stabilityOk =
+                        if (config.enableCenterWeightedSelection) {
+                            centerWeightedSelection?.selectedCandidate?.isStable == true
+                        } else {
+                            true
+                        }
 
                     if (!wasConfirmed && isConfirmed(matchedCandidate) && stabilityOk) {
                         if (!confirmedIds.contains(matchedCandidate.internalId)) {
@@ -438,14 +471,18 @@ class ObjectTracker(
                                 logger.i(
                                     TAG,
                                     "    ✓✓✓ CONFIRMED candidate ${matchedCandidate.internalId}: " +
-                                    "${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames"
+                                        "${matchedCandidate.category} (${matchedCandidate.labelText}) after ${matchedCandidate.seenCount} frames",
                                 )
                             }
-                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
-                                "candidate_id" to matchedCandidate.internalId,
-                                "category" to matchedCandidate.category.name,
-                                "label" to matchedCandidate.labelText
-                            ))
+                            telemetry?.event(
+                                "scan.candidate_confirmed",
+                                TelemetrySeverity.INFO,
+                                mapOf(
+                                    "candidate_id" to matchedCandidate.internalId,
+                                    "category" to matchedCandidate.category.name,
+                                    "label" to matchedCandidate.labelText,
+                                ),
+                            )
                         }
                     } else if (!wasConfirmed && isConfirmed(matchedCandidate) && !stabilityOk) {
                         if (config.enableVerboseLogging) {
@@ -464,22 +501,27 @@ class ObjectTracker(
                     if (config.enableVerboseLogging) {
                         logger.i(
                             TAG,
-                            "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})"
+                            "    CREATED new candidate ${newCandidate.internalId}: ${newCandidate.category} (${newCandidate.labelText})",
                         )
                     }
-                    telemetry?.event("scan.candidate_created", TelemetrySeverity.DEBUG, mapOf(
-                        "candidate_id" to newCandidate.internalId,
-                        "category" to newCandidate.category.name,
-                        "top_label" to newCandidate.labelText,
-                        "confidence" to newCandidate.maxConfidence.toString()
-                    ))
+                    telemetry?.event(
+                        "scan.candidate_created",
+                        TelemetrySeverity.DEBUG,
+                        mapOf(
+                            "candidate_id" to newCandidate.internalId,
+                            "category" to newCandidate.category.name,
+                            "top_label" to newCandidate.labelText,
+                            "confidence" to newCandidate.maxConfidence.toString(),
+                        ),
+                    )
 
                     // Check for immediate confirmation
-                    val immediateStabilityOk = if (config.enableCenterWeightedSelection) {
-                        centerWeightedSelection?.selectedCandidate?.isStable == true
-                    } else {
-                        true
-                    }
+                    val immediateStabilityOk =
+                        if (config.enableCenterWeightedSelection) {
+                            centerWeightedSelection?.selectedCandidate?.isStable == true
+                        } else {
+                            true
+                        }
 
                     if (isConfirmed(newCandidate) && immediateStabilityOk) {
                         if (!confirmedIds.contains(newCandidate.internalId)) {
@@ -488,14 +530,18 @@ class ObjectTracker(
                             if (config.enableVerboseLogging) {
                                 logger.i(
                                     TAG,
-                                    "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}"
+                                    "    ✓✓✓ IMMEDIATELY CONFIRMED candidate ${newCandidate.internalId}",
                                 )
                             }
-                            telemetry?.event("scan.candidate_confirmed", TelemetrySeverity.INFO, mapOf(
-                                "candidate_id" to newCandidate.internalId,
-                                "category" to newCandidate.category.name,
-                                "label" to newCandidate.labelText
-                            ))
+                            telemetry?.event(
+                                "scan.candidate_confirmed",
+                                TelemetrySeverity.INFO,
+                                mapOf(
+                                    "candidate_id" to newCandidate.internalId,
+                                    "category" to newCandidate.category.name,
+                                    "label" to newCandidate.labelText,
+                                ),
+                            )
                         }
                     }
                 }
@@ -545,11 +591,12 @@ class ObjectTracker(
         var bestScore = 0f
 
         val searchBox = (detection.boundingBoxNorm ?: detection.boundingBox).toIndexRect()
-        val candidateIds = if (candidates.size <= config.linearScanThreshold) {
-            candidates.keys
-        } else {
-            spatialIndex.query(searchBox).ifEmpty { candidates.keys }
-        }
+        val candidateIds =
+            if (candidates.size <= config.linearScanThreshold) {
+                candidates.keys
+            } else {
+                spatialIndex.query(searchBox).ifEmpty { candidates.keys }
+            }
 
         for (candidateId in candidateIds) {
             val candidate = candidates[candidateId] ?: continue
@@ -558,34 +605,41 @@ class ObjectTracker(
                 continue
             }
 
-            val useNormalizedBoxes = candidate.boundingBoxNorm?.isNormalized() == true &&
+            val useNormalizedBoxes =
+                candidate.boundingBoxNorm?.isNormalized() == true &&
                     detection.boundingBox.isNormalized()
             val candidateBox = if (useNormalizedBoxes) candidate.boundingBoxNorm!! else candidate.boundingBox
             val detectionBox = detection.boundingBox
 
             // Calculate IoU (Intersection over Union)
-            val iou = if (useNormalizedBoxes) {
-                calculateIoU(candidateBox, detectionBox)
-            } else {
-                candidate.calculateIoU(detectionBox)
-            }
+            val iou =
+                if (useNormalizedBoxes) {
+                    calculateIoU(candidateBox, detectionBox)
+                } else {
+                    candidate.calculateIoU(detectionBox)
+                }
 
             // Calculate normalized center distance
             // Use diagonal of detection box as normalization factor (more robust than fixed 1000px)
-            val detectionBoxDiagonal = sqrt(
-                (detectionBox.width * detectionBox.width +
-                detectionBox.height * detectionBox.height).toDouble()
-            ).toFloat()
-            val distance = if (useNormalizedBoxes) {
-                centerDistance(candidateBox, detectionBox)
-            } else {
-                candidate.distanceTo(detectionBox)
-            }
-            val normalizedDistance = if (detectionBoxDiagonal > 0) {
-                (distance / detectionBoxDiagonal).coerceIn(0f, 2f) / 2f // Normalize to 0-1 range
-            } else {
-                1f // Maximum distance if box has no size
-            }
+            val detectionBoxDiagonal =
+                sqrt(
+                    (
+                        detectionBox.width * detectionBox.width +
+                            detectionBox.height * detectionBox.height
+                    ).toDouble(),
+                ).toFloat()
+            val distance =
+                if (useNormalizedBoxes) {
+                    centerDistance(candidateBox, detectionBox)
+                } else {
+                    candidate.distanceTo(detectionBox)
+                }
+            val normalizedDistance =
+                if (detectionBoxDiagonal > 0) {
+                    (distance / detectionBoxDiagonal).coerceIn(0f, 2f) / 2f // Normalize to 0-1 range
+                } else {
+                    1f // Maximum distance if box has no size
+                }
 
             // Combined score: prioritize IoU, but also consider distance
             // IoU is weighted 60%, distance is weighted 40% (more balanced for movement)
@@ -606,7 +660,10 @@ class ObjectTracker(
         return bestMatch
     }
 
-    private fun calculateIoU(a: NormalizedRect, b: NormalizedRect): Float {
+    private fun calculateIoU(
+        a: NormalizedRect,
+        b: NormalizedRect,
+    ): Float {
         val intersectLeft = maxOf(a.left, b.left)
         val intersectTop = maxOf(a.top, b.top)
         val intersectRight = minOf(a.right, b.right)
@@ -624,7 +681,10 @@ class ObjectTracker(
         return if (unionArea > 0) intersectionArea / unionArea else 0f
     }
 
-    private fun centerDistance(a: NormalizedRect, b: NormalizedRect): Float {
+    private fun centerDistance(
+        a: NormalizedRect,
+        b: NormalizedRect,
+    ): Float {
         val centerAx = (a.left + a.right) / 2f
         val centerAy = (a.top + a.bottom) / 2f
         val centerBx = (b.left + b.right) / 2f
@@ -655,7 +715,7 @@ class ObjectTracker(
             thumbnail = detection.thumbnail,
             firstSeenFrame = currentFrame,
             averageBoxArea = detection.normalizedBoxArea,
-            qualityScore = detection.qualityScore
+            qualityScore = detection.qualityScore,
         )
     }
 
@@ -664,9 +724,10 @@ class ObjectTracker(
             return
         }
 
-        val toRemove = candidates.values.minWithOrNull(
-            compareBy<ObjectCandidate> { it.lastSeenFrame }.thenBy { it.maxConfidence }
-        ) ?: return
+        val toRemove =
+            candidates.values.minWithOrNull(
+                compareBy<ObjectCandidate> { it.lastSeenFrame }.thenBy { it.maxConfidence },
+            ) ?: return
 
         candidates.remove(toRemove.internalId)
         confirmedIds.remove(toRemove.internalId)
@@ -674,7 +735,7 @@ class ObjectTracker(
         if (config.enableVerboseLogging) {
             logger.d(
                 TAG,
-                "Evicting candidate ${toRemove.internalId} to maintain maxTrackedCandidates=${config.maxTrackedCandidates}"
+                "Evicting candidate ${toRemove.internalId} to maintain maxTrackedCandidates=${config.maxTrackedCandidates}",
             )
         }
     }
@@ -699,7 +760,10 @@ class ObjectTracker(
         return "gen_${timestamp}_${idCounter}_${random}_$positionHash"
     }
 
-    private fun iou(a: NormalizedRect, b: NormalizedRect): Float {
+    private fun iou(
+        a: NormalizedRect,
+        b: NormalizedRect,
+    ): Float {
         val intersectLeft = maxOf(a.left, b.left)
         val intersectTop = maxOf(a.top, b.top)
         val intersectRight = minOf(a.right, b.right)
@@ -718,8 +782,8 @@ class ObjectTracker(
      */
     private fun isConfirmed(candidate: ObjectCandidate): Boolean {
         return candidate.seenCount >= config.minFramesToConfirm &&
-                candidate.maxConfidence >= config.minConfidence &&
-                candidate.averageBoxArea >= config.minBoxArea
+            candidate.maxConfidence >= config.minConfidence &&
+            candidate.averageBoxArea >= config.minBoxArea
     }
 
     /**
@@ -736,10 +800,14 @@ class ObjectTracker(
                 if (config.enableVerboseLogging) {
                     logger.d(TAG, "Expiring candidate $id: not seen for $framesSinceLastSeen frames")
                 }
-                telemetry?.event("scan.candidate_expired", TelemetrySeverity.DEBUG, mapOf(
-                    "candidate_id" to id,
-                    "age_frames" to candidate.seenCount.toString()
-                ))
+                telemetry?.event(
+                    "scan.candidate_expired",
+                    TelemetrySeverity.DEBUG,
+                    mapOf(
+                        "candidate_id" to id,
+                        "age_frames" to candidate.seenCount.toString(),
+                    ),
+                )
             }
         }
 
@@ -782,11 +850,15 @@ class ObjectTracker(
      */
     fun stopSession(reason: String) {
         val duration = Clock.System.now().toEpochMilliseconds() - sessionStartTimeMs
-        telemetry?.event("scan.session_stopped", TelemetrySeverity.INFO, mapOf(
-            "reason" to reason,
-            "duration_ms" to duration.toString(),
-            "final_frame_count" to currentFrame.toString()
-        ))
+        telemetry?.event(
+            "scan.session_stopped",
+            TelemetrySeverity.INFO,
+            mapOf(
+                "reason" to reason,
+                "duration_ms" to duration.toString(),
+                "final_frame_count" to currentFrame.toString(),
+            ),
+        )
     }
 
     /**
@@ -796,7 +868,7 @@ class ObjectTracker(
         return TrackerStats(
             activeCandidates = candidates.size,
             confirmedCandidates = confirmedIds.size,
-            currentFrame = currentFrame
+            currentFrame = currentFrame,
         )
     }
 }
@@ -817,7 +889,7 @@ data class DetectionInfo(
     val thumbnail: ImageRef?,
     val normalizedBoxArea: Float,
     val boundingBoxNorm: NormalizedRect? = null,
-    val qualityScore: Float = 0f
+    val qualityScore: Float = 0f,
 )
 
 /**
@@ -826,71 +898,49 @@ data class DetectionInfo(
 data class TrackerConfig(
     /** Minimum frames a candidate must be seen before confirmation */
     val minFramesToConfirm: Int = 3,
-
     /** Minimum confidence threshold (0.0 - 1.0) */
     val minConfidence: Float = 0.4f,
-
     /** Minimum normalized bounding box area (0.0 - 1.0) */
     val minBoxArea: Float = 0.001f,
-
     /** Maximum frame gap for spatial matching */
     val maxFrameGap: Int = 5,
-
     /** Minimum matching score for spatial association (0.0 - 1.0) */
     val minMatchScore: Float = 0.3f,
-
     /** Frames without detection before candidate expires */
     val expiryFrames: Int = 10,
-
     /** Maximum number of candidates to track concurrently */
     val maxTrackedCandidates: Int = 64,
-
     /** Grid cell size (in normalized units) for spatial indexing */
     val gridCellSize: Float = 0.25f,
-
     /** Fall back to linear scan under this candidate count */
     val linearScanThreshold: Int = 8,
-
     /** Controls verbose logging (debug-only). */
     val enableVerboseLogging: Boolean = false,
-
     // =========================================================================
     // Center-weighted selection parameters (fixes distant background detection)
     // =========================================================================
-
     /** Enable center-weighted candidate selection */
     val enableCenterWeightedSelection: Boolean = false,
-
     /** Weight for confidence in composite score (default 0.4) */
     val centerWeightConfidence: Float = 0.4f,
-
     /** Weight for area in composite score (default 0.3) */
     val centerWeightArea: Float = 0.3f,
-
     /** Weight for center proximity in composite score (default 0.3) */
     val centerWeightCenter: Float = 0.3f,
-
     /** Maximum center distance before candidate is rejected (0.0-0.707) */
     val maxCenterDistance: Float = 0.35f,
-
     /** Minimum box area for center-weighted selection (default 3%) */
     val centerWeightMinArea: Float = 0.03f,
-
     /** Minimum sharpness score to accept small objects */
     val minSharpnessScore: Float = 100f,
-
     /** Area threshold below which sharpness is checked */
     val sharpnessAreaThreshold: Float = 0.10f,
-
     /** Confidence level that bypasses center distance gate */
     val highConfidenceOverride: Float = 0.8f,
-
     /** Minimum consecutive frames for stability (center-weighted) */
     val minStabilityFrames: Int = 3,
-
     /** Minimum time in ms for stability (center-weighted) */
     val minStabilityTimeMs: Long = 400L,
-
     /** Time after which stale stability tracking is cleared */
     val stabilityExpiryMs: Long = 1000L,
 )
@@ -901,7 +951,7 @@ data class TrackerConfig(
 data class TrackerStats(
     val activeCandidates: Int,
     val confirmedCandidates: Int,
-    val currentFrame: Long
+    val currentFrame: Long,
 )
 
 private fun ObjectCandidate.indexBoundingBox(): NormalizedRect {
@@ -916,7 +966,10 @@ private class SpatialGridIndex(private val cellSize: Float) {
     private val cells = mutableMapOf<GridCell, MutableSet<String>>()
     private val candidateCells = mutableMapOf<String, Set<GridCell>>()
 
-    fun upsert(id: String, rect: NormalizedRect) {
+    fun upsert(
+        id: String,
+        rect: NormalizedRect,
+    ) {
         remove(id)
         val newCells = computeCells(rect)
         for (cell in newCells) {

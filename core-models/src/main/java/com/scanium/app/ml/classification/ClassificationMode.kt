@@ -8,5 +8,5 @@ package com.scanium.app.ml.classification
  */
 enum class ClassificationMode(val displayName: String) {
     ON_DEVICE("On-device"),
-    CLOUD("Cloud");
+    CLOUD("Cloud"),
 }

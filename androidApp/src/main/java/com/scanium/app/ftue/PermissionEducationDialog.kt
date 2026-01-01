@@ -39,25 +39,24 @@ import com.scanium.app.R
  * @param onContinue Callback when user acknowledges and is ready to grant permission
  */
 @Composable
-fun PermissionEducationDialog(
-    onContinue: () -> Unit
-) {
+fun PermissionEducationDialog(onContinue: () -> Unit) {
     Dialog(onDismissRequest = { /* Non-dismissible - user must acknowledge */ }) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Camera icon
                 Icon(
                     imageVector = Icons.Default.Camera,
                     contentDescription = stringResource(R.string.cd_camera_permission),
                     modifier = Modifier.size(56.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -67,7 +66,7 @@ fun PermissionEducationDialog(
                     text = "Before We Begin",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -77,7 +76,7 @@ fun PermissionEducationDialog(
                     text = "Scanium needs camera access to scan and catalog items in your environment.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -91,7 +90,7 @@ fun PermissionEducationDialog(
                     text = "What You Can Do",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -99,7 +98,7 @@ fun PermissionEducationDialog(
                 EducationFeatureRow(
                     icon = Icons.Outlined.Category,
                     title = "Object Detection",
-                    description = "Point at items to identify and catalog them"
+                    description = "Point at items to identify and catalog them",
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -113,20 +112,20 @@ fun PermissionEducationDialog(
                     text = "How to Capture",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Default.TouchApp,
                         contentDescription = stringResource(R.string.cd_tap_gesture),
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
@@ -135,12 +134,12 @@ fun PermissionEducationDialog(
                         Text(
                             text = "Tap",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
                         )
                         Text(
                             text = "Capture a single frame",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -149,13 +148,13 @@ fun PermissionEducationDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
                         imageVector = Icons.Default.TouchApp,
                         contentDescription = stringResource(R.string.cd_long_press_gesture),
                         tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     )
 
                     Spacer(modifier = Modifier.width(12.dp))
@@ -164,12 +163,12 @@ fun PermissionEducationDialog(
                         Text(
                             text = "Long-Press",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
                         )
                         Text(
                             text = "Start continuous scanning (tap again to stop)",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -181,7 +180,7 @@ fun PermissionEducationDialog(
                     text = "🔒 All processing happens on your device. Images are never uploaded without your permission.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -189,7 +188,7 @@ fun PermissionEducationDialog(
                 // Continue button
                 Button(
                     onClick = onContinue,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Continue")
                 }
@@ -206,20 +205,21 @@ private fun EducationFeatureRow(
     icon: ImageVector,
     title: String,
     description: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.Start
+        horizontalArrangement = Arrangement.Start,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = stringResource(R.string.cd_object_detection),
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .size(24.dp)
-                .padding(top = 2.dp)
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .padding(top = 2.dp),
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -228,12 +228,12 @@ private fun EducationFeatureRow(
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
             )
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

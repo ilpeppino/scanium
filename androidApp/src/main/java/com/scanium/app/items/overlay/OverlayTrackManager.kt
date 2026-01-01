@@ -42,7 +42,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 class OverlayTrackManager(
     private val stateManager: ItemsStateManager,
-    private val readyConfidenceThreshold: Float = DEFAULT_READY_THRESHOLD
+    private val readyConfidenceThreshold: Float = DEFAULT_READY_THRESHOLD,
 ) {
     companion object {
         private const val TAG = "OverlayTrackManager"
@@ -86,10 +86,13 @@ class OverlayTrackManager(
         detections: List<DetectionResult>,
         scanRoi: ScanRoi = ScanRoi.DEFAULT,
         lockedTrackingId: String? = null,
-        isGoodState: Boolean = false
+        isGoodState: Boolean = false,
     ) {
         if (DEBUG_LOGGING) {
-            ScaniumLog.d(TAG, "[OVERLAY] updateOverlayDetections: ${detections.size} detections, roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}, isGoodState=$isGoodState")
+            ScaniumLog.d(
+                TAG,
+                "[OVERLAY] updateOverlayDetections: ${detections.size} detections, roi=${scanRoi.widthNorm}x${scanRoi.heightNorm}, isGoodState=$isGoodState",
+            )
         }
         lastOverlayDetections = detections
         lastScanRoi = scanRoi
@@ -149,7 +152,7 @@ class OverlayTrackManager(
         detections: List<DetectionResult>,
         scanRoi: ScanRoi,
         lockedTrackingId: String?,
-        isGoodState: Boolean
+        isGoodState: Boolean,
     ) {
         // Eye Mode vs Focus Mode:
         // - Use ROI for SELECTION, not filtering
@@ -159,7 +162,10 @@ class OverlayTrackManager(
         _lastRoiFilterResult.value = filterResult
 
         if (DEBUG_LOGGING) {
-            ScaniumLog.d(TAG, "[OVERLAY] ROI selection: ${filterResult.eligibleCount} inside ROI, ${filterResult.outsideCount} outside, total=${detections.size}")
+            ScaniumLog.d(
+                TAG,
+                "[OVERLAY] ROI selection: ${filterResult.eligibleCount} inside ROI, ${filterResult.outsideCount} outside, total=${detections.size}",
+            )
         }
 
         // Determine selected detection: closest to ROI center among those inside ROI
@@ -167,14 +173,17 @@ class OverlayTrackManager(
 
         // Render ALL detections (Eye mode) with selection highlighting (Focus mode)
         val aggregatedItems = stateManager.getAggregatedItems()
-        val mapped = mapOverlayTracks(
-            detections = detections,  // ALL detections, not filtered
-            aggregatedItems = aggregatedItems,
-            readyConfidenceThreshold = readyConfidenceThreshold,
-            selectedTrackingId = selectedTrackingId,  // Which one is selected
-            lockedTrackingId = lockedTrackingId,
-            isGoodState = isGoodState
-        )
+        val mapped =
+            mapOverlayTracks(
+                detections = detections,
+// ALL detections, not filtered
+                aggregatedItems = aggregatedItems,
+                readyConfidenceThreshold = readyConfidenceThreshold,
+                selectedTrackingId = selectedTrackingId,
+// Which one is selected
+                lockedTrackingId = lockedTrackingId,
+                isGoodState = isGoodState,
+            )
 
         // Log when overlay tracks change
         val prevCount = _overlayTracks.value.size
@@ -193,13 +202,13 @@ class OverlayTrackManager(
                 if (previous != aggregatedId) {
                     ScaniumLog.d(
                         TAG,
-                        "[OVERLAY] track=$trackingId -> aggregated=${aggregatedId ?: "none"} label=${track.label}"
+                        "[OVERLAY] track=$trackingId -> aggregated=${aggregatedId ?: "none"} label=${track.label}",
                     )
                     overlayResolutionCache[trackingId] = aggregatedId
                 } else if (!overlayResolutionCache.containsKey(trackingId) && aggregatedId == null) {
                     ScaniumLog.d(
                         TAG,
-                        "[OVERLAY] track=$trackingId -> aggregated=none label=${track.label}"
+                        "[OVERLAY] track=$trackingId -> aggregated=none label=${track.label}",
                     )
                     overlayResolutionCache[trackingId] = aggregatedId
                 }
@@ -210,7 +219,7 @@ class OverlayTrackManager(
                 if (!wasReady && track.isReady) {
                     ScaniumLog.d(
                         TAG,
-                        "[OVERLAY] READY aggregated=$aggregatedId label=${track.label} conf=${track.confidence}"
+                        "[OVERLAY] READY aggregated=$aggregatedId label=${track.label} conf=${track.confidence}",
                     )
                 }
                 overlayReadyStates[aggregatedId] = track.isReady
@@ -237,21 +246,22 @@ class OverlayTrackManager(
      */
     private fun selectBestCandidate(
         roiEligibleDetections: List<DetectionResult>,
-        scanRoi: ScanRoi
+        scanRoi: ScanRoi,
     ): String? {
         if (roiEligibleDetections.isEmpty()) return null
 
         // Score each detection by distance to ROI center (closer = better)
-        val scored = roiEligibleDetections.mapNotNull { detection ->
-            val trackingId = detection.trackingId?.toString() ?: return@mapNotNull null
-            val bbox = detection.bboxNorm
-            val centerX = (bbox.left + bbox.right) / 2f
-            val centerY = (bbox.top + bbox.bottom) / 2f
-            val centerScore = scanRoi.centerScore(centerX, centerY)
-            // Combined score: 70% center proximity, 30% confidence
-            val score = centerScore * 0.7f + detection.confidence * 0.3f
-            Triple(trackingId, score, detection)
-        }
+        val scored =
+            roiEligibleDetections.mapNotNull { detection ->
+                val trackingId = detection.trackingId?.toString() ?: return@mapNotNull null
+                val bbox = detection.bboxNorm
+                val centerX = (bbox.left + bbox.right) / 2f
+                val centerY = (bbox.top + bbox.bottom) / 2f
+                val centerScore = scanRoi.centerScore(centerX, centerY)
+                // Combined score: 70% center proximity, 30% confidence
+                val score = centerScore * 0.7f + detection.confidence * 0.3f
+                Triple(trackingId, score, detection)
+            }
 
         // Return the detection with highest score (closest to center)
         return scored.maxByOrNull { it.second }?.first

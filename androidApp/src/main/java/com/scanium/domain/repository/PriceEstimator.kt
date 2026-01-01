@@ -26,7 +26,6 @@ package com.scanium.domain.repository
  * ```
  */
 interface PriceEstimator {
-
     /**
      * Estimate price for an item.
      *
@@ -38,7 +37,7 @@ interface PriceEstimator {
     suspend fun estimatePrice(
         domainCategoryId: String,
         attributes: Map<String, String> = emptyMap(),
-        currency: String = "EUR"
+        currency: String = "EUR",
     ): PriceEstimate
 
     /**
@@ -51,7 +50,7 @@ interface PriceEstimator {
      */
     suspend fun getPriceFactors(
         domainCategoryId: String,
-        attributes: Map<String, String>
+        attributes: Map<String, String>,
     ): List<PriceFactor> = emptyList()
 }
 
@@ -71,7 +70,7 @@ data class PriceEstimate(
     val currency: String,
     val confidence: Float,
     val source: PriceEstimateSource = PriceEstimateSource.RULE_BASED,
-    val explanation: String? = null
+    val explanation: String? = null,
 ) {
     init {
         require(minPrice >= 0) { "Min price cannot be negative" }
@@ -99,12 +98,13 @@ data class PriceEstimate(
      * Example: "€50 - €500"
      */
     fun formatForDisplay(): String {
-        val symbol = when (currency) {
-            "EUR" -> "€"
-            "USD" -> "$"
-            "GBP" -> "£"
-            else -> currency
-        }
+        val symbol =
+            when (currency) {
+                "EUR" -> "€"
+                "USD" -> "$"
+                "GBP" -> "£"
+                else -> currency
+            }
         return "$symbol${minPrice.toInt()} - $symbol${maxPrice.toInt()}"
     }
 }
@@ -134,7 +134,7 @@ enum class PriceEstimateSource {
     /**
      * User-provided price (manual override).
      */
-    USER_OVERRIDE
+    USER_OVERRIDE,
 }
 
 /**
@@ -147,7 +147,7 @@ enum class PriceEstimateSource {
 data class PriceFactor(
     val name: String,
     val impact: Float,
-    val description: String
+    val description: String,
 ) {
     /**
      * Format impact as percentage.
@@ -164,5 +164,5 @@ data class PriceFactor(
  */
 class PriceEstimationException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : Exception(message, cause)

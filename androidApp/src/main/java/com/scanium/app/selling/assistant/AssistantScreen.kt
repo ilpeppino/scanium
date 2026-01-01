@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,8 +25,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
@@ -58,16 +60,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.hapticfeedback.HapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -76,11 +77,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.scanium.app.R
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.di.AssistantViewModelFactoryEntryPoint
@@ -98,7 +99,6 @@ import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 
 /**
  * Screen for AI-powered listing assistance.
@@ -113,23 +113,26 @@ fun AssistantScreen(
     onBack: () -> Unit,
     onOpenPostingAssist: (List<String>, Int) -> Unit,
     itemsViewModel: ItemsViewModel,
-    draftStore: ListingDraftStore
+    draftStore: ListingDraftStore,
 ) {
     val context = LocalContext.current
     val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
-    val assistedFactory = remember(context) {
-        EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            AssistantViewModelFactoryEntryPoint::class.java
-        ).assistantViewModelFactory()
-    }
-    val viewModel: AssistantViewModel = viewModel(
-        factory = AssistantViewModel.provideFactory(
-            assistedFactory = assistedFactory,
-            itemIds = itemIds,
-            itemsViewModel = itemsViewModel
+    val assistedFactory =
+        remember(context) {
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                AssistantViewModelFactoryEntryPoint::class.java,
+            ).assistantViewModelFactory()
+        }
+    val viewModel: AssistantViewModel =
+        viewModel(
+            factory =
+                AssistantViewModel.provideFactory(
+                    assistedFactory = assistedFactory,
+                    itemIds = itemIds,
+                    itemsViewModel = itemsViewModel,
+                ),
         )
-    )
     val state by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -151,8 +154,9 @@ fun AssistantScreen(
     // Voice state from controller
     val voiceState by voiceController.voiceState.collectAsState()
     val partialTranscript by voiceController.partialTranscript.collectAsState()
-    val latestAssistantTimestamp = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
-        ?.message?.timestamp
+    val latestAssistantTimestamp =
+        state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
+            ?.message?.timestamp
     val lastVoiceError by voiceController.lastError.collectAsState()
     val speechAvailable = voiceController.isSpeechAvailable
 
@@ -177,17 +181,18 @@ fun AssistantScreen(
     // Stop voice recording when app goes to background (lifecycle-aware)
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
-                    // Stop any active voice recording when app goes to background
-                    // This ensures no background mic usage
-                    voiceController.stopListening()
-                    voiceController.stopSpeaking()
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                        // Stop any active voice recording when app goes to background
+                        // This ensures no background mic usage
+                        voiceController.stopListening()
+                        voiceController.stopSpeaking()
+                    }
+                    else -> { /* No action needed for other lifecycle events */ }
                 }
-                else -> { /* No action needed for other lifecycle events */ }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
@@ -216,11 +221,12 @@ fun AssistantScreen(
     LaunchedEffect(state.entries, inputText, voiceState) {
         val lastAssistant = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
         val timestamp = lastAssistant?.message?.timestamp
-        val shouldPlay = timestamp != null &&
-            timestamp != lastSoundedAssistantTimestamp &&
-            inputText.isBlank() &&
-            voiceState != VoiceState.LISTENING &&
-            voiceState != VoiceState.TRANSCRIBING
+        val shouldPlay =
+            timestamp != null &&
+                timestamp != lastSoundedAssistantTimestamp &&
+                inputText.isBlank() &&
+                voiceState != VoiceState.LISTENING &&
+                voiceState != VoiceState.TRANSCRIBING
         if (shouldPlay) {
             soundManager.play(AppSound.RECEIVED)
             lastSoundedAssistantTimestamp = timestamp
@@ -247,15 +253,16 @@ fun AssistantScreen(
         }
     }
 
-    val micPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            voiceController.startListening(handleVoiceResult)
-        } else {
-            scope.launch { snackbarHostState.showSnackbar("Microphone permission denied") }
+    val micPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) {
+                voiceController.startListening(handleVoiceResult)
+            } else {
+                scope.launch { snackbarHostState.showSnackbar("Microphone permission denied") }
+            }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -264,7 +271,7 @@ fun AssistantScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onBack,
-                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
                     ) {
                         Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
                     }
@@ -273,42 +280,45 @@ fun AssistantScreen(
                     if (voiceState == VoiceState.SPEAKING) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.padding(end = 8.dp),
                         ) {
                             androidx.compose.material3.CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
+                                strokeWidth = 2.dp,
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Speaking...", style = MaterialTheme.typography.labelMedium)
                             IconButton(
                                 onClick = { voiceController.stopSpeaking() },
-                                modifier = Modifier
-                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                    .semantics { contentDescription = "Stop reading aloud" }
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                        .semantics { contentDescription = "Stop reading aloud" },
                             ) {
                                 Icon(Icons.Default.Stop, contentDescription = stringResource(R.string.cd_stop_speaking))
                             }
                         }
                     }
-                }
+                },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            verticalArrangement = Arrangement.SpaceBetween
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 if (state.snapshots.isNotEmpty()) {
                     Row(
-                        modifier = Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier =
+                            Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         state.snapshots.forEach { snapshot ->
                             AssistChip(
@@ -317,9 +327,9 @@ fun AssistantScreen(
                                     Text(
                                         text = snapshot.title ?: snapshot.category ?: "Item",
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        overflow = TextOverflow.Ellipsis,
                                     )
-                                }
+                                },
                             )
                         }
                     }
@@ -327,26 +337,29 @@ fun AssistantScreen(
 
                 AssistantModeIndicator(
                     mode = state.assistantMode,
-                    failure = state.lastBackendFailure
+                    failure = state.lastBackendFailure,
                 )
 
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp)
-                        .semantics { traversalIndex = 0f },
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp)
+                            .semantics { traversalIndex = 0f },
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     itemsIndexed(state.entries) { _, entry ->
-                        val isLatestAssistant = entry.message.role == AssistantRole.ASSISTANT &&
-                            entry.message.timestamp == latestAssistantTimestamp
+                        val isLatestAssistant =
+                            entry.message.role == AssistantRole.ASSISTANT &&
+                                entry.message.timestamp == latestAssistantTimestamp
                         MessageBubble(
                             entry = entry,
-                            modifier = if (isLatestAssistant) {
-                                Modifier.semantics { traversalIndex = 1f }
-                            } else {
-                                Modifier
-                            },
+                            modifier =
+                                if (isLatestAssistant) {
+                                    Modifier.semantics { traversalIndex = 1f }
+                                } else {
+                                    Modifier
+                                },
                             actionTraversalIndex = if (isLatestAssistant) 2f else null,
                             onAction = { action ->
                                 handleAssistantAction(
@@ -358,30 +371,35 @@ fun AssistantScreen(
                                     onOpenPostingAssist = onOpenPostingAssist,
                                     onShare = { itemId ->
                                         scope.launch {
-                                            val draft = draftStore.getByItemId(itemId)
-                                                ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
-                                                    ?.let { ListingDraftBuilder.build(it) }
+                                            val draft =
+                                                draftStore.getByItemId(itemId)
+                                                    ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
+                                                        ?.let { ListingDraftBuilder.build(it) }
                                             if (draft == null) {
                                                 snackbarHostState.showSnackbar("No draft to share")
                                                 return@launch
                                             }
-                                            val profile = state.profile.takeIf { it.id == draft.profile }
-                                                ?: ExportProfiles.generic()
+                                            val profile =
+                                                state.profile.takeIf { it.id == draft.profile }
+                                                    ?: ExportProfiles.generic()
                                             val export = ListingDraftFormatter.format(draft, profile)
                                             val currentItem = itemsViewModel.items.value.firstOrNull { it.id == draft.itemId }
-                                            val shareImages = draft.photos.map { it.image }.ifEmpty {
-                                                listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
-                                            }
-                                            val imageUris = ListingShareHelper.writeShareImages(
-                                                context = context,
-                                                itemId = draft.itemId,
-                                                images = shareImages
-                                            )
-                                            val intent = ListingShareHelper.buildShareIntent(
-                                                contentResolver = context.contentResolver,
-                                                text = export.shareText,
-                                                imageUris = imageUris
-                                            )
+                                            val shareImages =
+                                                draft.photos.map { it.image }.ifEmpty {
+                                                    listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
+                                                }
+                                            val imageUris =
+                                                ListingShareHelper.writeShareImages(
+                                                    context = context,
+                                                    itemId = draft.itemId,
+                                                    images = shareImages,
+                                                )
+                                            val intent =
+                                                ListingShareHelper.buildShareIntent(
+                                                    contentResolver = context.contentResolver,
+                                                    text = export.shareText,
+                                                    imageUris = imageUris,
+                                                )
                                             val chooser = Intent.createChooser(intent, "Share listing")
                                             context.startActivity(chooser)
                                         }
@@ -393,9 +411,9 @@ fun AssistantScreen(
                                     onCopyText = { label, text ->
                                         ListingClipboardHelper.copy(context, label, text)
                                         scope.launch { snackbarHostState.showSnackbar("$label copied") }
-                                    }
+                                    },
                                 )
-                            }
+                            },
                         )
                     }
                     item {
@@ -409,7 +427,7 @@ fun AssistantScreen(
                     mode = state.assistantMode,
                     failure = state.lastBackendFailure,
                     retryEnabled = state.isOnline && state.lastUserMessage != null,
-                    onRetry = { viewModel.retryLastMessage() }
+                    onRetry = { viewModel.retryLastMessage() },
                 )
             }
 
@@ -418,18 +436,18 @@ fun AssistantScreen(
                 LoadingStage.VISION_PROCESSING -> {
                     LoadingStageIndicator(
                         stage = "Analyzing images...",
-                        showProgress = true
+                        showProgress = true,
                     )
                 }
                 LoadingStage.LLM_PROCESSING -> {
                     LoadingStageIndicator(
                         stage = "Drafting answer...",
-                        showProgress = true
+                        showProgress = true,
                     )
                 }
                 LoadingStage.ERROR -> {
                     RetryBanner(
-                        onRetry = { viewModel.retryLastMessage() }
+                        onRetry = { viewModel.retryLastMessage() },
                     )
                 }
                 else -> {
@@ -444,7 +462,7 @@ fun AssistantScreen(
                 VoiceListeningIndicator(
                     state = voiceState,
                     partialTranscript = partialTranscript,
-                    onStop = { voiceController.stopListening() }
+                    onStop = { voiceController.stopListening() },
                 )
             }
 
@@ -457,7 +475,7 @@ fun AssistantScreen(
                             voiceController.startListening(handleVoiceResult)
                         }
                     },
-                    onDismiss = { voiceController.stopListening() }
+                    onDismiss = { voiceController.stopListening() },
                 )
             }
 
@@ -467,37 +485,40 @@ fun AssistantScreen(
 
             // Smart suggested questions (context-aware)
             SmartSuggestionsRow(
-                suggestions = state.suggestedQuestions.ifEmpty {
-                    listOf("Suggest a better title", "What details should I add?", "Estimate price range")
-                },
+                suggestions =
+                    state.suggestedQuestions.ifEmpty {
+                        listOf("Suggest a better title", "What details should I add?", "Estimate price range")
+                    },
                 onActionSelected = { actionText ->
                     inputText = actionText
                     soundManager.play(AppSound.SEND)
                     viewModel.sendMessage(actionText)
-                }
+                },
             )
 
             // ChatGPT-like input field with embedded icons
             TextField(
                 value = inputText,
                 onValueChange = { inputText = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .semantics { traversalIndex = 3f }
-                    .navigationBarsPadding()
-                    .imePadding(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .semantics { traversalIndex = 3f }
+                        .navigationBarsPadding()
+                        .imePadding(),
                 placeholder = { Text("Ask about listing improvements...") },
                 shape = RoundedCornerShape(24.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
-                ),
+                colors =
+                    TextFieldDefaults.colors(
+                        focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                        unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                        disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                    ),
                 trailingIcon = {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         // Voice icon button - only show if voice mode is enabled
                         if (voiceModeEnabled) {
@@ -507,13 +528,14 @@ fun AssistantScreen(
 
                             // Animate mic button color when active
                             val micColor by animateColorAsState(
-                                targetValue = when {
-                                    isListening -> MaterialTheme.colorScheme.error
-                                    isTranscribing -> MaterialTheme.colorScheme.tertiary
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                                targetValue =
+                                    when {
+                                        isListening -> MaterialTheme.colorScheme.error
+                                        isTranscribing -> MaterialTheme.colorScheme.tertiary
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                                 animationSpec = tween(300),
-                                label = "micColor"
+                                label = "micColor",
                             )
 
                             IconButton(
@@ -522,10 +544,11 @@ fun AssistantScreen(
                                         !speechAvailable -> Unit
                                         isActive -> voiceController.stopListening()
                                         else -> {
-                                            val hasPermission = ContextCompat.checkSelfPermission(
-                                                context,
-                                                Manifest.permission.RECORD_AUDIO
-                                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                            val hasPermission =
+                                                ContextCompat.checkSelfPermission(
+                                                    context,
+                                                    Manifest.permission.RECORD_AUDIO,
+                                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
                                             if (hasPermission) {
                                                 voiceController.startListening(handleVoiceResult)
                                             } else {
@@ -535,30 +558,34 @@ fun AssistantScreen(
                                     }
                                 },
                                 enabled = speechAvailable,
-                                modifier = Modifier
-                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                    .semantics {
-                                        contentDescription = if (isActive) {
-                                            "Stop voice input"
-                                        } else {
-                                            "Start voice input"
-                                        }
-                                    }
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                        .semantics {
+                                            contentDescription =
+                                                if (isActive) {
+                                                    "Stop voice input"
+                                                } else {
+                                                    "Start voice input"
+                                                }
+                                        },
                             ) {
-                                val icon = when {
-                                    !speechAvailable -> Icons.Default.MicOff
-                                    isActive -> Icons.Default.Stop
-                                    else -> Icons.Default.Mic
-                                }
-                                val description = when {
-                                    !speechAvailable -> "Voice input unavailable"
-                                    isActive -> "Stop listening"
-                                    else -> "Voice input"
-                                }
+                                val icon =
+                                    when {
+                                        !speechAvailable -> Icons.Default.MicOff
+                                        isActive -> Icons.Default.Stop
+                                        else -> Icons.Default.Mic
+                                    }
+                                val description =
+                                    when {
+                                        !speechAvailable -> "Voice input unavailable"
+                                        isActive -> "Stop listening"
+                                        else -> "Voice input"
+                                    }
                                 Icon(
                                     imageVector = icon,
                                     contentDescription = description,
-                                    tint = micColor
+                                    tint = micColor,
                                 )
                             }
                         }
@@ -575,18 +602,20 @@ fun AssistantScreen(
                                 viewModel.sendMessage(text)
                             },
                             enabled = inputText.isNotBlank(),
-                            modifier = Modifier
-                                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                .semantics { contentDescription = "Send message" }
+                            modifier =
+                                Modifier
+                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                    .semantics { contentDescription = "Send message" },
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Send,
                                 contentDescription = "Send",
-                                tint = if (inputText.isNotBlank()) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                }
+                                tint =
+                                    if (inputText.isNotBlank()) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    },
                             )
                         }
                     }
@@ -594,19 +623,20 @@ fun AssistantScreen(
                 minLines = 1,
                 maxLines = 6,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                keyboardActions = KeyboardActions(
-                    onSend = {
-                        if (inputText.isNotBlank()) {
-                            val text = inputText
-                            inputText = ""
-                            if (assistantHapticsEnabled) {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                keyboardActions =
+                    KeyboardActions(
+                        onSend = {
+                            if (inputText.isNotBlank()) {
+                                val text = inputText
+                                inputText = ""
+                                if (assistantHapticsEnabled) {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
+                                soundManager.play(AppSound.SEND)
+                                viewModel.sendMessage(text)
                             }
-                            soundManager.play(AppSound.SEND)
-                            viewModel.sendMessage(text)
-                        }
-                    }
-                )
+                        },
+                    ),
             )
         }
     }
@@ -617,7 +647,7 @@ private fun MessageBubble(
     entry: AssistantChatEntry,
     modifier: Modifier = Modifier,
     actionTraversalIndex: Float? = null,
-    onAction: (AssistantAction) -> Unit
+    onAction: (AssistantAction) -> Unit,
 ) {
     val isUser = entry.message.role == AssistantRole.USER
     val background = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
@@ -632,13 +662,13 @@ private fun MessageBubble(
                 onAction(action)
                 pendingConfirmAction = null
             },
-            onDismiss = { pendingConfirmAction = null }
+            onDismiss = { pendingConfirmAction = null },
         )
     }
 
     Column(horizontalAlignment = alignment, modifier = modifier.fillMaxWidth()) {
         Card(
-            colors = CardDefaults.cardColors(containerColor = background)
+            colors = CardDefaults.cardColors(containerColor = background),
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 // Confidence tier label (if present)
@@ -649,7 +679,7 @@ private fun MessageBubble(
 
                 Text(
                     text = entry.message.content,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
 
                 // Evidence section (if present)
@@ -668,34 +698,37 @@ private fun MessageBubble(
 
         if (entry.actions.isNotEmpty() && !isUser) {
             Row(
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .horizontalScroll(rememberScrollState())
-                    .then(
-                        if (actionTraversalIndex != null) {
-                            Modifier.semantics { traversalIndex = actionTraversalIndex }
-                        } else {
-                            Modifier
-                        }
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier
+                        .padding(top = 8.dp)
+                        .horizontalScroll(rememberScrollState())
+                        .then(
+                            if (actionTraversalIndex != null) {
+                                Modifier.semantics { traversalIndex = actionTraversalIndex }
+                            } else {
+                                Modifier
+                            },
+                        ),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 entry.actions.forEach { action ->
                     if (action.requiresConfirmation) {
                         OutlinedButton(
                             onClick = { pendingConfirmAction = action },
-                            modifier = Modifier
-                                .sizeIn(minHeight = 48.dp)
-                                .semantics { contentDescription = actionContentDescription(action) }
+                            modifier =
+                                Modifier
+                                    .sizeIn(minHeight = 48.dp)
+                                    .semantics { contentDescription = actionContentDescription(action) },
                         ) {
                             Text(text = actionLabel(action), textAlign = TextAlign.Center)
                         }
                     } else {
                         Button(
                             onClick = { onAction(action) },
-                            modifier = Modifier
-                                .sizeIn(minHeight = 48.dp)
-                                .semantics { contentDescription = actionContentDescription(action) }
+                            modifier =
+                                Modifier
+                                    .sizeIn(minHeight = 48.dp)
+                                    .semantics { contentDescription = actionContentDescription(action) },
                         ) {
                             Text(text = actionLabel(action), textAlign = TextAlign.Center)
                         }
@@ -708,15 +741,16 @@ private fun MessageBubble(
 
 @Composable
 private fun ConfidenceLabel(tier: ConfidenceTier) {
-    val (label, color) = when (tier) {
-        ConfidenceTier.HIGH -> "High confidence" to MaterialTheme.colorScheme.primary
-        ConfidenceTier.MED -> "Likely" to MaterialTheme.colorScheme.tertiary
-        ConfidenceTier.LOW -> "Uncertain" to MaterialTheme.colorScheme.error
-    }
+    val (label, color) =
+        when (tier) {
+            ConfidenceTier.HIGH -> "High confidence" to MaterialTheme.colorScheme.primary
+            ConfidenceTier.MED -> "Likely" to MaterialTheme.colorScheme.tertiary
+            ConfidenceTier.LOW -> "Uncertain" to MaterialTheme.colorScheme.error
+        }
     Text(
         text = label,
         style = MaterialTheme.typography.labelSmall,
-        color = color
+        color = color,
     )
 }
 
@@ -726,14 +760,14 @@ private fun EvidenceSection(evidence: List<EvidenceBullet>) {
         Text(
             text = "Based on:",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         evidence.forEach { bullet ->
             Text(
                 text = "• ${bullet.text}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp)
+                modifier = Modifier.padding(start = 4.dp),
             )
         }
     }
@@ -742,14 +776,15 @@ private fun EvidenceSection(evidence: List<EvidenceBullet>) {
 @Composable
 private fun SuggestedPhotoHint(suggestion: String) {
     Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            ),
     ) {
         Text(
             text = suggestion,
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp),
         )
     }
 }
@@ -758,7 +793,7 @@ private fun SuggestedPhotoHint(suggestion: String) {
 private fun ConfirmActionDialog(
     action: AssistantAction,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -775,31 +810,35 @@ private fun ConfirmActionDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }
 
 @Composable
-private fun LoadingStageIndicator(stage: String, showProgress: Boolean) {
+private fun LoadingStageIndicator(
+    stage: String,
+    showProgress: Boolean,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (showProgress) {
                 androidx.compose.material3.CircularProgressIndicator(
                     modifier = Modifier.height(16.dp).width(16.dp),
-                    strokeWidth = 2.dp
+                    strokeWidth = 2.dp,
                 )
             }
             Text(
                 text = stage,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (showProgress) {
@@ -812,24 +851,27 @@ private fun LoadingStageIndicator(stage: String, showProgress: Boolean) {
 @Composable
 private fun RetryBanner(onRetry: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "Request failed",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = MaterialTheme.colorScheme.onErrorContainer,
             )
             Button(onClick = onRetry) {
                 Text("Retry")
@@ -841,55 +883,61 @@ private fun RetryBanner(onRetry: () -> Unit) {
 @Composable
 private fun AssistantModeIndicator(
     mode: AssistantMode,
-    failure: AssistantBackendFailure? = null
+    failure: AssistantBackendFailure? = null,
 ) {
     val isOnline = mode == AssistantMode.ONLINE
 
-    val (label, backgroundColor, contentColor) = when {
-        isOnline -> Triple(
-            "Online assistant",
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer
-        )
-        mode == AssistantMode.OFFLINE -> Triple(
-            "Limited offline assistance",
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer
-        )
-        else -> Triple(
-            "Limited offline assistance",
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer
-        )
-    }
+    val (label, backgroundColor, contentColor) =
+        when {
+            isOnline ->
+                Triple(
+                    "Online assistant",
+                    MaterialTheme.colorScheme.primaryContainer,
+                    MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            mode == AssistantMode.OFFLINE ->
+                Triple(
+                    "Limited offline assistance",
+                    MaterialTheme.colorScheme.errorContainer,
+                    MaterialTheme.colorScheme.onErrorContainer,
+                )
+            else ->
+                Triple(
+                    "Limited offline assistance",
+                    MaterialTheme.colorScheme.tertiaryContainer,
+                    MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+        }
 
     Row(
-        modifier = Modifier
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-            .semantics { traversalIndex = -1f },
+        modifier =
+            Modifier
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .semantics { traversalIndex = -1f },
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         // Status dot indicator
         androidx.compose.foundation.Canvas(
-            modifier = Modifier.size(8.dp)
+            modifier = Modifier.size(8.dp),
         ) {
             drawCircle(
-                color = if (isOnline) {
-                    androidx.compose.ui.graphics.Color(0xFF4CAF50)
-                } else {
-                    androidx.compose.ui.graphics.Color(0xFFFF9800)
-                }
+                color =
+                    if (isOnline) {
+                        androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                    } else {
+                        androidx.compose.ui.graphics.Color(0xFFFF9800)
+                    },
             )
         }
         Card(
-            colors = CardDefaults.cardColors(containerColor = backgroundColor)
+            colors = CardDefaults.cardColors(containerColor = backgroundColor),
         ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
                 color = contentColor,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
     }
@@ -900,69 +948,79 @@ private fun AssistantModeBanner(
     mode: AssistantMode,
     failure: AssistantBackendFailure?,
     retryEnabled: Boolean,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
 ) {
     // Use explicit error info when available
     val errorInfo = AssistantErrorDisplay.getErrorInfo(failure)
 
-    val title = when {
-        errorInfo != null -> errorInfo.title
-        mode == AssistantMode.OFFLINE -> "Limited offline assistance"
-        mode == AssistantMode.LIMITED -> "Limited offline assistance"
-        else -> "Online assistant"
-    }
+    val title =
+        when {
+            errorInfo != null -> errorInfo.title
+            mode == AssistantMode.OFFLINE -> "Limited offline assistance"
+            mode == AssistantMode.LIMITED -> "Limited offline assistance"
+            else -> "Online assistant"
+        }
 
-    val detail = when {
-        errorInfo != null -> errorInfo.explanation
-        mode == AssistantMode.OFFLINE -> "You're offline. Only local suggestions based on your draft are available. No external lookups will be performed."
-        mode == AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Only local suggestions based on your draft are shown."
-        else -> ""
-    }
+    val detail =
+        when {
+            errorInfo != null -> errorInfo.explanation
+            mode == AssistantMode.OFFLINE -> "You're offline. Only local suggestions based on your draft are available. No external lookups will be performed."
+            mode == AssistantMode.LIMITED -> "The online assistant is temporarily unavailable. Only local suggestions based on your draft are shown."
+            else -> ""
+        }
 
     val actionHint = errorInfo?.actionHint
 
     // Determine container color based on error severity
-    val containerColor = when {
-        failure?.category == AssistantBackendErrorCategory.POLICY &&
-            failure.type in listOf(
-                AssistantBackendErrorType.UNAUTHORIZED,
-                AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED,
-                AssistantBackendErrorType.VALIDATION_ERROR
-            ) -> MaterialTheme.colorScheme.errorContainer
-        failure != null -> MaterialTheme.colorScheme.tertiaryContainer
-        mode == AssistantMode.OFFLINE -> MaterialTheme.colorScheme.tertiaryContainer
-        else -> MaterialTheme.colorScheme.tertiaryContainer
-    }
+    val containerColor =
+        when {
+            failure?.category == AssistantBackendErrorCategory.POLICY &&
+                failure.type in
+                listOf(
+                    AssistantBackendErrorType.UNAUTHORIZED,
+                    AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED,
+                    AssistantBackendErrorType.VALIDATION_ERROR,
+                )
+            -> MaterialTheme.colorScheme.errorContainer
+            failure != null -> MaterialTheme.colorScheme.tertiaryContainer
+            mode == AssistantMode.OFFLINE -> MaterialTheme.colorScheme.tertiaryContainer
+            else -> MaterialTheme.colorScheme.tertiaryContainer
+        }
 
-    val contentColor = when {
-        failure?.category == AssistantBackendErrorCategory.POLICY &&
-            failure.type in listOf(
-                AssistantBackendErrorType.UNAUTHORIZED,
-                AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED,
-                AssistantBackendErrorType.VALIDATION_ERROR
-            ) -> MaterialTheme.colorScheme.onErrorContainer
-        else -> MaterialTheme.colorScheme.onTertiaryContainer
-    }
+    val contentColor =
+        when {
+            failure?.category == AssistantBackendErrorCategory.POLICY &&
+                failure.type in
+                listOf(
+                    AssistantBackendErrorType.UNAUTHORIZED,
+                    AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED,
+                    AssistantBackendErrorType.VALIDATION_ERROR,
+                )
+            -> MaterialTheme.colorScheme.onErrorContainer
+            else -> MaterialTheme.colorScheme.onTertiaryContainer
+        }
 
     val showRetryButton = errorInfo?.showRetry ?: (mode != AssistantMode.ONLINE)
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
         ) {
             // Error type label for debugging
             failure?.let {
                 Text(
                     text = AssistantErrorDisplay.getStatusLabel(it),
                     style = MaterialTheme.typography.labelSmall,
-                    color = contentColor.copy(alpha = 0.7f)
+                    color = contentColor.copy(alpha = 0.7f),
                 )
                 Spacer(modifier = Modifier.height(2.dp))
             }
@@ -970,13 +1028,13 @@ private fun AssistantModeBanner(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                color = contentColor
+                color = contentColor,
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = detail,
                 style = MaterialTheme.typography.bodySmall,
-                color = contentColor.copy(alpha = 0.9f)
+                color = contentColor.copy(alpha = 0.9f),
             )
 
             // Show action hint if available
@@ -985,7 +1043,7 @@ private fun AssistantModeBanner(
                 Text(
                     text = hint,
                     style = MaterialTheme.typography.bodySmall,
-                    color = contentColor.copy(alpha = 0.8f)
+                    color = contentColor.copy(alpha = 0.8f),
                 )
             }
 
@@ -996,7 +1054,7 @@ private fun AssistantModeBanner(
                     Text(
                         text = "Retry available in ${seconds}s",
                         style = MaterialTheme.typography.labelSmall,
-                        color = contentColor.copy(alpha = 0.7f)
+                        color = contentColor.copy(alpha = 0.7f),
                     )
                 }
             }
@@ -1006,7 +1064,7 @@ private fun AssistantModeBanner(
                 Button(
                     onClick = onRetry,
                     enabled = retryEnabled,
-                    modifier = Modifier.semantics { contentDescription = "Retry online" }
+                    modifier = Modifier.semantics { contentDescription = "Retry online" },
                 ) {
                     Text("Retry online")
                 }
@@ -1018,25 +1076,29 @@ private fun AssistantModeBanner(
 @Composable
 private fun SmartSuggestionsRow(
     suggestions: List<String>,
-    onActionSelected: (String) -> Unit
+    onActionSelected: (String) -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         suggestions.forEach { suggestion ->
             AssistChip(
                 onClick = { onActionSelected(suggestion) },
-                label = { Text(suggestion) }
+                label = { Text(suggestion) },
             )
         }
     }
 }
 
 @Composable
-private fun QuickActionChip(label: String, onActionSelected: (String) -> Unit) {
+private fun QuickActionChip(
+    label: String,
+    onActionSelected: (String) -> Unit,
+) {
     AssistChip(onClick = { onActionSelected(label) }, label = { Text(label) })
 }
 
@@ -1050,12 +1112,13 @@ private fun handleAssistantAction(
     onShare: (String) -> Unit,
     onOpenUrl: (String) -> Unit,
     onCopyText: (String, String) -> Unit,
-    onSuggestNextPhoto: (String) -> Unit = {}
+    onSuggestNextPhoto: (String) -> Unit = {},
 ) {
-    if (hapticsEnabled && action.type in setOf(
+    if (hapticsEnabled && action.type in
+        setOf(
             AssistantActionType.APPLY_DRAFT_UPDATE,
             AssistantActionType.ADD_ATTRIBUTES,
-            AssistantActionType.COPY_TEXT
+            AssistantActionType.COPY_TEXT,
         )
     ) {
         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -1132,68 +1195,76 @@ private fun actionContentDescription(action: AssistantAction): String {
 private fun VoiceListeningIndicator(
     state: VoiceState,
     partialTranscript: String,
-    onStop: () -> Unit
+    onStop: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when (state) {
-                VoiceState.LISTENING -> MaterialTheme.colorScheme.errorContainer
-                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    when (state) {
+                        VoiceState.LISTENING -> MaterialTheme.colorScheme.errorContainer
+                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiaryContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 // Pulsing indicator
                 androidx.compose.material3.CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = when (state) {
-                        VoiceState.LISTENING -> MaterialTheme.colorScheme.error
-                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiary
-                        else -> MaterialTheme.colorScheme.primary
-                    }
+                    color =
+                        when (state) {
+                            VoiceState.LISTENING -> MaterialTheme.colorScheme.error
+                            VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiary
+                            else -> MaterialTheme.colorScheme.primary
+                        },
                 )
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = when (state) {
-                            VoiceState.LISTENING -> "Listening..."
-                            VoiceState.TRANSCRIBING -> "Transcribing..."
-                            else -> ""
-                        },
+                        text =
+                            when (state) {
+                                VoiceState.LISTENING -> "Listening..."
+                                VoiceState.TRANSCRIBING -> "Transcribing..."
+                                else -> ""
+                            },
                         style = MaterialTheme.typography.labelMedium,
-                        color = when (state) {
-                            VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
-                            VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        color =
+                            when (state) {
+                                VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
+                                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                     if (partialTranscript.isNotBlank()) {
                         Text(
                             text = partialTranscript,
                             style = MaterialTheme.typography.bodySmall,
-                            color = when (state) {
-                                VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
-                                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                            },
+                            color =
+                                when (state) {
+                                    VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                                    VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                },
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -1201,18 +1272,20 @@ private fun VoiceListeningIndicator(
 
             IconButton(
                 onClick = onStop,
-                modifier = Modifier
-                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    .semantics { contentDescription = "Stop voice input" }
+                modifier =
+                    Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .semantics { contentDescription = "Stop voice input" },
             ) {
                 Icon(
                     imageVector = Icons.Default.Stop,
                     contentDescription = stringResource(R.string.cd_stop_speaking),
-                    tint = when (state) {
-                        VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
-                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    tint =
+                        when (state) {
+                            VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
+                            VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                 )
             }
         }
@@ -1224,33 +1297,36 @@ private fun VoiceErrorBanner(
     message: String,
     retryEnabled: Boolean,
     onRetry: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Text(
                     text = "Tap retry or edit and send manually.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1268,35 +1344,38 @@ private fun VoiceErrorBanner(
 @Composable
 private fun VoiceUnavailableBanner() {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.MicOff,
                 contentDescription = stringResource(R.string.cd_voice_unavailable),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Column {
                 Text(
                     text = "Voice input unavailable on this device",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = "You can keep typing questions while we disable the mic button.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 )
             }
         }

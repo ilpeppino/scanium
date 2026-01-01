@@ -20,7 +20,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class DetectionResultTest {
-
     @Test
     fun whenDetectionResultCreated_thenAllFieldsAreSet() {
         // Arrange & Act
@@ -30,13 +29,14 @@ class DetectionResultTest {
         val confidence = 0.85f
         val trackingId = 12345
 
-        val result = DetectionResult(
-            bboxNorm = bboxNorm,
-            category = category,
-            priceRange = priceRange,
-            confidence = confidence,
-            trackingId = trackingId
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = bboxNorm,
+                category = category,
+                priceRange = priceRange,
+                confidence = confidence,
+                trackingId = trackingId,
+            )
 
         // Assert
         assertThat(result.bboxNorm).isEqualTo(bboxNorm)
@@ -49,13 +49,14 @@ class DetectionResultTest {
     @Test
     fun whenTrackingIdIsNull_thenDetectionResultIsValid() {
         // Arrange & Act
-        val result = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.FOOD,
-            priceRange = Pair(5.0, 15.0),
-            confidence = 0.9f,
-            trackingId = null
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.FOOD,
+                priceRange = Pair(5.0, 15.0),
+                confidence = 0.9f,
+                trackingId = null,
+            )
 
         // Assert
         assertThat(result.trackingId).isNull()
@@ -65,14 +66,15 @@ class DetectionResultTest {
     fun whenFormattedPriceRange_thenReturnsCorrectFormat() {
         // Arrange
         val range = PriceRange(Money(20.0), Money(50.0))
-        val result = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.HOME_GOOD,
-            priceRange = Pair(20.0, 50.0),
-            estimatedPriceRange = range,
-            priceEstimationStatus = PriceEstimationStatus.Ready(range),
-            confidence = 0.75f
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.HOME_GOOD,
+                priceRange = Pair(20.0, 50.0),
+                estimatedPriceRange = range,
+                priceEstimationStatus = PriceEstimationStatus.Ready(range),
+                confidence = 0.75f,
+            )
 
         // Act
         val formatted = result.formattedPriceRange
@@ -85,14 +87,15 @@ class DetectionResultTest {
     fun whenPriceRangeHasDecimals_thenRoundsToWholeNumbers() {
         // Arrange
         val range = PriceRange(Money(10.99), Money(25.49))
-        val result = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.PLACE,
-            priceRange = Pair(10.99, 25.49),
-            estimatedPriceRange = range,
-            priceEstimationStatus = PriceEstimationStatus.Ready(range),
-            confidence = 0.6f
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.PLACE,
+                priceRange = Pair(10.99, 25.49),
+                estimatedPriceRange = range,
+                priceEstimationStatus = PriceEstimationStatus.Ready(range),
+                confidence = 0.6f,
+            )
 
         // Act
         val formatted = result.formattedPriceRange
@@ -105,14 +108,15 @@ class DetectionResultTest {
     fun whenPriceRangeIsZero_thenFormatsCorrectly() {
         // Arrange
         val range = PriceRange(Money(0.0), Money(0.0))
-        val result = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.PLANT,
-            priceRange = Pair(0.0, 0.0),
-            estimatedPriceRange = range,
-            priceEstimationStatus = PriceEstimationStatus.Ready(range),
-            confidence = 0.5f
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.PLANT,
+                priceRange = Pair(0.0, 0.0),
+                estimatedPriceRange = range,
+                priceEstimationStatus = PriceEstimationStatus.Ready(range),
+                confidence = 0.5f,
+            )
 
         // Act
         val formatted = result.formattedPriceRange
@@ -125,14 +129,15 @@ class DetectionResultTest {
     fun whenPriceRangeIsLarge_thenFormatsWithoutDecimals() {
         // Arrange
         val range = PriceRange(Money(500.0), Money(1000.0))
-        val result = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.UNKNOWN,
-            priceRange = Pair(500.0, 1000.0),
-            estimatedPriceRange = range,
-            priceEstimationStatus = PriceEstimationStatus.Ready(range),
-            confidence = 0.95f
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.UNKNOWN,
+                priceRange = Pair(500.0, 1000.0),
+                estimatedPriceRange = range,
+                priceEstimationStatus = PriceEstimationStatus.Ready(range),
+                confidence = 0.95f,
+            )
 
         // Act
         val formatted = result.formattedPriceRange
@@ -145,12 +150,13 @@ class DetectionResultTest {
     fun whenBoundingBoxHasDimensions_thenCanAccessProperties() {
         // Arrange
         val boundingBox = NormalizedRect(0.05f, 0.1f, 0.25f, 0.4f)
-        val result = DetectionResult(
-            bboxNorm = boundingBox,
-            category = ItemCategory.FASHION,
-            priceRange = Pair(10.0, 20.0),
-            confidence = 0.8f
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = boundingBox,
+                category = ItemCategory.FASHION,
+                priceRange = Pair(10.0, 20.0),
+                confidence = 0.8f,
+            )
 
         // Act & Assert
         assertThat(result.bboxNorm.left).isEqualTo(0.05f)
@@ -164,12 +170,13 @@ class DetectionResultTest {
     @Test
     fun whenConfidenceIsLow_thenStillCreatesValidResult() {
         // Arrange & Act
-        val result = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.UNKNOWN,
-            priceRange = Pair(1.0, 5.0),
-            confidence = 0.1f
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.UNKNOWN,
+                priceRange = Pair(1.0, 5.0),
+                confidence = 0.1f,
+            )
 
         // Assert
         assertThat(result.confidence).isEqualTo(0.1f)
@@ -178,12 +185,13 @@ class DetectionResultTest {
     @Test
     fun whenConfidenceIsHigh_thenStillCreatesValidResult() {
         // Arrange & Act
-        val result = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.FOOD,
-            priceRange = Pair(5.0, 15.0),
-            confidence = 1.0f
-        )
+        val result =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.FOOD,
+                priceRange = Pair(5.0, 15.0),
+                confidence = 1.0f,
+            )
 
         // Assert
         assertThat(result.confidence).isEqualTo(1.0f)
@@ -192,21 +200,23 @@ class DetectionResultTest {
     @Test
     fun whenMultipleDetectionsCreated_thenEachIsIndependent() {
         // Arrange & Act
-        val detection1 = DetectionResult(
-            bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
-            category = ItemCategory.FASHION,
-            priceRange = Pair(10.0, 20.0),
-            confidence = 0.8f,
-            trackingId = 1
-        )
+        val detection1 =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0f, 0f, 0.1f, 0.1f),
+                category = ItemCategory.FASHION,
+                priceRange = Pair(10.0, 20.0),
+                confidence = 0.8f,
+                trackingId = 1,
+            )
 
-        val detection2 = DetectionResult(
-            bboxNorm = NormalizedRect(0.2f, 0.2f, 0.3f, 0.3f),
-            category = ItemCategory.FOOD,
-            priceRange = Pair(5.0, 10.0),
-            confidence = 0.9f,
-            trackingId = 2
-        )
+        val detection2 =
+            DetectionResult(
+                bboxNorm = NormalizedRect(0.2f, 0.2f, 0.3f, 0.3f),
+                category = ItemCategory.FOOD,
+                priceRange = Pair(5.0, 10.0),
+                confidence = 0.9f,
+                trackingId = 2,
+            )
 
         // Assert - Each detection maintains its own values
         assertThat(detection1.trackingId).isEqualTo(1)

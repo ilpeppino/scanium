@@ -69,9 +69,7 @@ interface CategoryEngine {
      * @param input Classification input data
      * @return List of (DomainCategory, confidence score) pairs, sorted by score descending
      */
-    suspend fun getCandidateCategories(
-        input: CategorySelectionInput
-    ): List<Pair<DomainCategory, Float>> {
+    suspend fun getCandidateCategories(input: CategorySelectionInput): List<Pair<DomainCategory, Float>> {
         // Default implementation: return top match with score 1.0, or empty list
         val topMatch = selectCategory(input)
         return if (topMatch != null) {

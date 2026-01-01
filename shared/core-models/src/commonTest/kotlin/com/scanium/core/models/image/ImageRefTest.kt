@@ -7,7 +7,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class ImageRefTest {
-
     @Test
     fun bytesVariant_acceptsValidInput() {
         val bytes = ByteArray(4) { it.toByte() }

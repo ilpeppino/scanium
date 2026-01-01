@@ -44,7 +44,7 @@ fun PriceCountUp(
     textStyle: TextStyle = LocalTextStyle.current,
     textColor: Color = Color.White,
     modifier: Modifier = Modifier,
-    onCountUpComplete: (() -> Unit)? = null
+    onCountUpComplete: (() -> Unit)? = null,
 ) {
     if (!MotionConfig.isMotionOverlaysEnabled) {
         // Motion disabled - show static value
@@ -52,7 +52,7 @@ fun PriceCountUp(
             text = PriceCountUpUtil.formatPrice(targetValue, currencySymbol),
             style = textStyle,
             color = textColor,
-            modifier = modifier
+            modifier = modifier,
         )
         return
     }
@@ -64,9 +64,10 @@ fun PriceCountUp(
     var animationComplete by remember(stableKey) { mutableStateOf(false) }
 
     // Generate steps only once per stableKey
-    val steps = remember(stableKey, targetValue) {
-        PriceCountUpUtil.generateSteps(targetValue)
-    }
+    val steps =
+        remember(stableKey, targetValue) {
+            PriceCountUpUtil.generateSteps(targetValue)
+        }
 
     LaunchedEffect(stableKey, targetValue) {
         if (animationComplete) return@LaunchedEffect
@@ -82,13 +83,14 @@ fun PriceCountUp(
     }
 
     Text(
-        text = PriceCountUpUtil.formatPrice(
-            if (animationComplete) targetValue else displayedValue,
-            currencySymbol
-        ),
+        text =
+            PriceCountUpUtil.formatPrice(
+                if (animationComplete) targetValue else displayedValue,
+                currencySymbol,
+            ),
         style = textStyle,
         color = textColor,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -113,7 +115,7 @@ fun PriceRangeCountUp(
     textStyle: TextStyle = LocalTextStyle.current,
     textColor: Color = Color.White,
     modifier: Modifier = Modifier,
-    onCountUpComplete: (() -> Unit)? = null
+    onCountUpComplete: (() -> Unit)? = null,
 ) {
     if (!MotionConfig.isMotionOverlaysEnabled) {
         // Motion disabled - show static value
@@ -121,7 +123,7 @@ fun PriceRangeCountUp(
             text = PriceCountUpUtil.formatPriceRange(lowValue, highValue, currencySymbol),
             style = textStyle,
             color = textColor,
-            modifier = modifier
+            modifier = modifier,
         )
         return
     }
@@ -134,17 +136,19 @@ fun PriceRangeCountUp(
     var animationComplete by remember(stableKey) { mutableStateOf(false) }
 
     // Generate steps for both values
-    val (lowSteps, highSteps) = remember(stableKey, lowValue, highValue) {
-        PriceCountUpUtil.generateRangeSteps(lowValue, highValue)
-    }
+    val (lowSteps, highSteps) =
+        remember(stableKey, lowValue, highValue) {
+            PriceCountUpUtil.generateRangeSteps(lowValue, highValue)
+        }
 
     LaunchedEffect(stableKey, lowValue, highValue) {
         if (animationComplete) return@LaunchedEffect
 
         // Animate both values in parallel by stepping through time
-        val allDelays = (lowSteps.map { it.delayMs } + highSteps.map { it.delayMs })
-            .distinct()
-            .sorted()
+        val allDelays =
+            (lowSteps.map { it.delayMs } + highSteps.map { it.delayMs })
+                .distinct()
+                .sorted()
 
         var lastDelay = 0L
         for (targetDelay in allDelays) {
@@ -173,17 +177,17 @@ fun PriceRangeCountUp(
         Text(
             text = "$currencySymbol${if (animationComplete) lowValue else displayedLow}",
             style = textStyle,
-            color = textColor
+            color = textColor,
         )
         Text(
             text = "–",
             style = textStyle,
-            color = textColor
+            color = textColor,
         )
         Text(
             text = "$currencySymbol${if (animationComplete) highValue else displayedHigh}",
             style = textStyle,
-            color = textColor
+            color = textColor,
         )
     }
 }
@@ -207,14 +211,14 @@ fun AnimatedPriceText(
     textStyle: TextStyle = LocalTextStyle.current,
     textColor: Color = Color.White,
     modifier: Modifier = Modifier,
-    onCountUpComplete: (() -> Unit)? = null
+    onCountUpComplete: (() -> Unit)? = null,
 ) {
     if (!MotionConfig.isMotionOverlaysEnabled || priceText.isBlank()) {
         Text(
             text = priceText,
             style = textStyle,
             color = textColor,
-            modifier = modifier
+            modifier = modifier,
         )
         return
     }
@@ -232,7 +236,7 @@ fun AnimatedPriceText(
             textStyle = textStyle,
             textColor = textColor,
             modifier = modifier,
-            onCountUpComplete = onCountUpComplete
+            onCountUpComplete = onCountUpComplete,
         )
     } else {
         // Couldn't parse - just show static text
@@ -240,7 +244,7 @@ fun AnimatedPriceText(
             text = priceText,
             style = textStyle,
             color = textColor,
-            modifier = modifier
+            modifier = modifier,
         )
     }
 }
@@ -278,7 +282,7 @@ private fun PriceCountUpPreview() {
     PriceCountUp(
         targetValue = 25,
         stableKey = "preview-1",
-        textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold)
+        textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold),
     )
 }
 
@@ -289,6 +293,6 @@ private fun PriceRangeCountUpPreview() {
         lowValue = 10,
         highValue = 25,
         stableKey = "preview-2",
-        textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold)
+        textStyle = LocalTextStyle.current.copy(fontWeight = FontWeight.Bold),
     )
 }

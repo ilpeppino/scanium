@@ -19,64 +19,68 @@ import javax.inject.Inject
  * Part of ARCH-001: Migrated to Hilt dependency injection.
  */
 @HiltViewModel
-class ClassificationModeViewModel @Inject constructor(
-    private val preferences: ClassificationPreferences
-) : ViewModel() {
+class ClassificationModeViewModel
+    @Inject
+    constructor(
+        private val preferences: ClassificationPreferences,
+    ) : ViewModel() {
+        val classificationMode: StateFlow<ClassificationMode> =
+            preferences.mode
+                .stateIn(viewModelScope, SharingStarted.Eagerly, ClassificationMode.CLOUD)
 
-    val classificationMode: StateFlow<ClassificationMode> = preferences.mode
-        .stateIn(viewModelScope, SharingStarted.Eagerly, ClassificationMode.CLOUD)
+        val saveCloudCrops: StateFlow<Boolean> =
+            preferences.saveCloudCrops
+                .stateIn(viewModelScope, SharingStarted.Eagerly, ClassifierDebugFlags.saveCloudCropsEnabled)
 
-    val saveCloudCrops: StateFlow<Boolean> = preferences.saveCloudCrops
-        .stateIn(viewModelScope, SharingStarted.Eagerly, ClassifierDebugFlags.saveCloudCropsEnabled)
+        val lowDataMode: StateFlow<Boolean> =
+            preferences.lowDataMode
+                .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
-    val lowDataMode: StateFlow<Boolean> = preferences.lowDataMode
-        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+        val verboseLogging: StateFlow<Boolean> =
+            preferences.verboseLogging
+                .stateIn(viewModelScope, SharingStarted.Eagerly, BuildConfig.DEBUG)
 
-    val verboseLogging: StateFlow<Boolean> = preferences.verboseLogging
-        .stateIn(viewModelScope, SharingStarted.Eagerly, BuildConfig.DEBUG)
-
-    init {
-        viewModelScope.launch {
-            saveCloudCrops.collect { enabled ->
-                ClassifierDebugFlags.saveCloudCropsEnabled = BuildConfig.DEBUG && enabled
+        init {
+            viewModelScope.launch {
+                saveCloudCrops.collect { enabled ->
+                    ClassifierDebugFlags.saveCloudCropsEnabled = BuildConfig.DEBUG && enabled
+                }
+            }
+            viewModelScope.launch {
+                lowDataMode.collect { enabled ->
+                    ClassifierDebugFlags.lowDataModeEnabled = enabled
+                }
+            }
+            viewModelScope.launch {
+                verboseLogging.collect { enabled ->
+                    ScaniumLog.verboseEnabled = BuildConfig.DEBUG && enabled
+                }
             }
         }
-        viewModelScope.launch {
-            lowDataMode.collect { enabled ->
-                ClassifierDebugFlags.lowDataModeEnabled = enabled
+
+        fun updateMode(mode: ClassificationMode) {
+            viewModelScope.launch {
+                preferences.setMode(mode)
             }
         }
-        viewModelScope.launch {
-            verboseLogging.collect { enabled ->
-                ScaniumLog.verboseEnabled = BuildConfig.DEBUG && enabled
+
+        fun updateSaveCloudCrops(enabled: Boolean) {
+            if (!BuildConfig.DEBUG) return
+            viewModelScope.launch {
+                preferences.setSaveCloudCrops(enabled)
+            }
+        }
+
+        fun updateLowDataMode(enabled: Boolean) {
+            viewModelScope.launch {
+                preferences.setLowDataMode(enabled)
+            }
+        }
+
+        fun updateVerboseLogging(enabled: Boolean) {
+            if (!BuildConfig.DEBUG) return
+            viewModelScope.launch {
+                preferences.setVerboseLogging(enabled)
             }
         }
     }
-
-    fun updateMode(mode: ClassificationMode) {
-        viewModelScope.launch {
-            preferences.setMode(mode)
-        }
-    }
-
-    fun updateSaveCloudCrops(enabled: Boolean) {
-        if (!BuildConfig.DEBUG) return
-        viewModelScope.launch {
-            preferences.setSaveCloudCrops(enabled)
-        }
-    }
-
-    fun updateLowDataMode(enabled: Boolean) {
-        viewModelScope.launch {
-            preferences.setLowDataMode(enabled)
-        }
-    }
-
-    fun updateVerboseLogging(enabled: Boolean) {
-        if (!BuildConfig.DEBUG) return
-        viewModelScope.launch {
-            preferences.setVerboseLogging(enabled)
-        }
-    }
-
-}

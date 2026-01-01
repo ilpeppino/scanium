@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -20,34 +21,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.ui.semantics.Role
 import com.scanium.app.R
 
 @Composable
 fun SettingsSectionHeader(
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Text(
         text = title,
         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Normal),
         color = MaterialTheme.colorScheme.primary,
-        modifier = modifier
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+        modifier =
+            modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp),
     )
 }
 
@@ -58,18 +59,19 @@ fun SettingSwitchRow(
     icon: ImageVector? = null,
     checked: Boolean,
     enabled: Boolean = true,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
 ) {
-    val rowModifier = Modifier
-        .fillMaxWidth()
-        .semantics(mergeDescendants = true) {}
-        .toggleable(
-            value = checked,
-            enabled = enabled,
-            role = Role.Switch,
-            onValueChange = onCheckedChange
-        )
-        .alpha(if (enabled) 1f else 0.5f)
+    val rowModifier =
+        Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            )
+            .alpha(if (enabled) 1f else 0.5f)
 
     ListItem(
         headlineContent = { Text(title) },
@@ -79,10 +81,10 @@ fun SettingSwitchRow(
             Switch(
                 checked = checked,
                 onCheckedChange = null,
-                enabled = enabled
+                enabled = enabled,
             )
         },
-        modifier = rowModifier
+        modifier = rowModifier,
     )
 }
 
@@ -93,28 +95,32 @@ fun SettingNavigationRow(
     icon: ImageVector? = null,
     onClick: () -> Unit,
     showChevron: Boolean = true,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
-    val rowModifier = Modifier
-        .fillMaxWidth()
-        .semantics(mergeDescendants = true) {}
-        .alpha(if (enabled) 1f else 0.5f)
-        .then(
-            if (enabled) {
-                Modifier.clickable(role = Role.Button, onClick = onClick)
-            } else {
-                Modifier
-            }
-        )
+    val rowModifier =
+        Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .alpha(if (enabled) 1f else 0.5f)
+            .then(
+                if (enabled) {
+                    Modifier.clickable(role = Role.Button, onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
 
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         leadingContent = icon?.let { { Icon(it, contentDescription = title) } },
-        trailingContent = if (showChevron && enabled) {
-            { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_navigate_forward)) }
-        } else null,
-        modifier = rowModifier
+        trailingContent =
+            if (showChevron && enabled) {
+                { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_navigate_forward)) }
+            } else {
+                null
+            },
+        modifier = rowModifier,
     )
 }
 
@@ -124,32 +130,33 @@ fun SettingActionRow(
     subtitle: String? = null,
     icon: ImageVector? = null,
     onClick: () -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
-    val rowModifier = Modifier
-        .fillMaxWidth()
-        .semantics(mergeDescendants = true) {}
-        .alpha(if (enabled) 1f else 0.5f)
-        .then(
-            if (enabled) {
-                Modifier.clickable(role = Role.Button, onClick = onClick)
-            } else {
-                Modifier
-            }
-        )
+    val rowModifier =
+        Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
+            .alpha(if (enabled) 1f else 0.5f)
+            .then(
+                if (enabled) {
+                    Modifier.clickable(role = Role.Button, onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
 
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         leadingContent = icon?.let { { Icon(it, contentDescription = title) } },
-        modifier = rowModifier
+        modifier = rowModifier,
     )
 }
 
 data class SegmentOption<T>(
     val value: T,
     val label: String,
-    val description: String? = null
+    val description: String? = null,
 )
 
 @Composable
@@ -158,25 +165,26 @@ fun <T> SettingSegmentedRow(
     subtitle: String? = null,
     options: List<SegmentOption<T>>,
     selected: T,
-    onSelect: (T) -> Unit
+    onSelect: (T) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(text = title, style = MaterialTheme.typography.titleMedium)
         subtitle?.let {
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             options.forEach { option ->
                 val selectedState = option.value == selected
@@ -184,7 +192,7 @@ fun <T> SettingSegmentedRow(
                     selected = selectedState,
                     onClick = { onSelect(option.value) },
                     label = { Text(option.label) },
-                    modifier = Modifier.weight(1f, fill = false)
+                    modifier = Modifier.weight(1f, fill = false),
                 )
             }
         }
@@ -192,7 +200,7 @@ fun <T> SettingSegmentedRow(
             Text(
                 text = it,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -206,13 +214,14 @@ fun SettingDropdownRow(
     selectedLabel: String,
     options: List<Pair<String, String>>,
     onOptionSelected: (String) -> Unit,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         Box {
             ListItem(
@@ -223,28 +232,29 @@ fun SettingDropdownRow(
                         Text(
                             text = selectedLabel,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 },
                 leadingContent = icon?.let { { Icon(it, contentDescription = title) } },
                 trailingContent = { Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.cd_expand_menu)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentWidth(Alignment.Start)
-                    .alpha(if (enabled) 1f else 0.5f)
-                    .then(
-                        if (enabled) {
-                            Modifier.clickable { expanded = true }
-                        } else {
-                            Modifier
-                        }
-                    )
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .wrapContentWidth(Alignment.Start)
+                        .alpha(if (enabled) 1f else 0.5f)
+                        .then(
+                            if (enabled) {
+                                Modifier.clickable { expanded = true }
+                            } else {
+                                Modifier
+                            },
+                        ),
             )
 
             DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
             ) {
                 options.forEach { (value, label) ->
                     DropdownMenuItem(
@@ -253,7 +263,7 @@ fun SettingDropdownRow(
                             expanded = false
                             onOptionSelected(value)
                         },
-                        enabled = enabled
+                        enabled = enabled,
                     )
                 }
             }

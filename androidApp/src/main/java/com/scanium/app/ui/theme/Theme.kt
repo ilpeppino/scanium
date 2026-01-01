@@ -16,39 +16,41 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = ScaniumBlue,
-    secondary = CyanGlow,
-    tertiary = SupportPurple,
-    background = DeepNavy,
-    surface = SurfaceDark,
-    surfaceVariant = SurfaceVariantDark,
-    onPrimary = Color.White,
-    onSecondary = DeepNavy,
-    onTertiary = Color.White,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
-    onSurfaceVariant = TextSecondary,
-    outline = BorderColor,
-    surfaceTint = ScaniumBlue
-)
+private val DarkColorScheme =
+    darkColorScheme(
+        primary = ScaniumBlue,
+        secondary = CyanGlow,
+        tertiary = SupportPurple,
+        background = DeepNavy,
+        surface = SurfaceDark,
+        surfaceVariant = SurfaceVariantDark,
+        onPrimary = Color.White,
+        onSecondary = DeepNavy,
+        onTertiary = Color.White,
+        onBackground = TextPrimary,
+        onSurface = TextPrimary,
+        onSurfaceVariant = TextSecondary,
+        outline = BorderColor,
+        surfaceTint = ScaniumBlue,
+    )
 
-private val LightColorScheme = lightColorScheme(
-    primary = ScaniumBlue,
-    secondary = CyanGlow,
-    tertiary = SupportPurple,
-    background = LightBackground,
-    surface = SurfaceLight,
-    surfaceVariant = SurfaceVariantLight,
-    onPrimary = Color.White,
-    onSecondary = DeepNavy,
-    onTertiary = Color.White,
-    onBackground = DeepNavy,
-    onSurface = DeepNavy,
-    onSurfaceVariant = TextSecondary,
-    outline = BorderColor,
-    surfaceTint = ScaniumBlue
-)
+private val LightColorScheme =
+    lightColorScheme(
+        primary = ScaniumBlue,
+        secondary = CyanGlow,
+        tertiary = SupportPurple,
+        background = LightBackground,
+        surface = SurfaceLight,
+        surfaceVariant = SurfaceVariantLight,
+        onPrimary = Color.White,
+        onSecondary = DeepNavy,
+        onTertiary = Color.White,
+        onBackground = DeepNavy,
+        onSurface = DeepNavy,
+        onSurfaceVariant = TextSecondary,
+        outline = BorderColor,
+        surfaceTint = ScaniumBlue,
+    )
 
 @Composable
 fun ScaniumTheme(
@@ -56,17 +58,18 @@ fun ScaniumTheme(
     // Dynamic color is available on Android 12+
     // Disabled by default to maintain consistent Scanium branding
     dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val colorScheme =
+        when {
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+            darkTheme -> DarkColorScheme
+            else -> LightColorScheme
+        }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -79,7 +82,7 @@ fun ScaniumTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }
 
@@ -88,7 +91,7 @@ fun ScaniumTheme(
 fun ObjectaTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ScaniumTheme(darkTheme = darkTheme, dynamicColor = dynamicColor, content = content)
 }

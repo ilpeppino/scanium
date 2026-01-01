@@ -24,7 +24,7 @@ import com.scanium.app.R
 @Composable
 fun SettingsFeedbackScreen(
     viewModel: SettingsViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val soundsEnabled by viewModel.soundsEnabled.collectAsState()
     val assistantHapticsEnabled by viewModel.assistantHapticsEnabled.collectAsState()
@@ -37,14 +37,15 @@ fun SettingsFeedbackScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             SettingsSectionHeader(title = stringResource(R.string.settings_section_notifications))
             SettingSwitchRow(
@@ -52,7 +53,7 @@ fun SettingsFeedbackScreen(
                 subtitle = stringResource(R.string.settings_sounds_subtitle),
                 icon = Icons.AutoMirrored.Filled.VolumeUp,
                 checked = soundsEnabled,
-                onCheckedChange = viewModel::setSoundsEnabled
+                onCheckedChange = viewModel::setSoundsEnabled,
             )
 
             SettingSwitchRow(
@@ -60,7 +61,7 @@ fun SettingsFeedbackScreen(
                 subtitle = stringResource(R.string.settings_assistant_haptics_subtitle),
                 icon = Icons.Filled.Vibration,
                 checked = assistantHapticsEnabled,
-                onCheckedChange = viewModel::setAssistantHapticsEnabled
+                onCheckedChange = viewModel::setAssistantHapticsEnabled,
             )
         }
     }

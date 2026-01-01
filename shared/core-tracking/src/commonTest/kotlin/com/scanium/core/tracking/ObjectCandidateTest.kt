@@ -8,22 +8,22 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ObjectCandidateTest {
-
     @Test
     fun createCandidateWithInitialValues() {
         val boundingBox = NormalizedRect(0.1f, 0.1f, 0.2f, 0.2f)
-        val candidate = ObjectCandidate(
-            internalId = "test_id_1",
-            boundingBox = boundingBox,
-            lastSeenFrame = 1L,
-            seenCount = 1,
-            maxConfidence = 0.5f,
-            category = ItemCategory.FASHION,
-            labelText = "Shirt",
-            thumbnail = null,
-            firstSeenFrame = 1L,
-            averageBoxArea = boundingBox.area
-        )
+        val candidate =
+            ObjectCandidate(
+                internalId = "test_id_1",
+                boundingBox = boundingBox,
+                lastSeenFrame = 1L,
+                seenCount = 1,
+                maxConfidence = 0.5f,
+                category = ItemCategory.FASHION,
+                labelText = "Shirt",
+                thumbnail = null,
+                firstSeenFrame = 1L,
+                averageBoxArea = boundingBox.area,
+            )
 
         assertEquals("test_id_1", candidate.internalId)
         assertEquals(1L, candidate.lastSeenFrame)
@@ -47,7 +47,7 @@ class ObjectCandidateTest {
             newCategory = ItemCategory.FASHION,
             newLabelText = "Shirt",
             newThumbnail = null,
-            boxArea = 0.01f
+            boxArea = 0.01f,
         )
 
         assertEquals(2, candidate.seenCount)
@@ -65,7 +65,7 @@ class ObjectCandidateTest {
             newCategory = ItemCategory.HOME_GOOD,
             newLabelText = "Vase",
             newThumbnail = null,
-            boxArea = 0.01f
+            boxArea = 0.01f,
         )
 
         assertEquals(0.8f, candidate.maxConfidence)
@@ -84,7 +84,7 @@ class ObjectCandidateTest {
             newCategory = ItemCategory.FASHION,
             newLabelText = "Shirt",
             newThumbnail = null,
-            boxArea = 0.02f
+            boxArea = 0.02f,
         )
         assertEquals(0.015f, candidate.averageBoxArea, 0.0001f)
 
@@ -95,7 +95,7 @@ class ObjectCandidateTest {
             newCategory = ItemCategory.FASHION,
             newLabelText = "Shirt",
             newThumbnail = null,
-            boxArea = 0.03f
+            boxArea = 0.03f,
         )
         assertEquals(0.02f, candidate.averageBoxArea, 0.0001f)
     }
@@ -146,7 +146,7 @@ class ObjectCandidateTest {
         category: ItemCategory = ItemCategory.FASHION,
         labelText: String = "Test",
         firstSeenFrame: Long = 1L,
-        averageBoxArea: Float = boundingBox.area
+        averageBoxArea: Float = boundingBox.area,
     ): ObjectCandidate {
         return ObjectCandidate(
             internalId = id,
@@ -158,7 +158,7 @@ class ObjectCandidateTest {
             labelText = labelText,
             thumbnail = null,
             firstSeenFrame = firstSeenFrame,
-            averageBoxArea = averageBoxArea
+            averageBoxArea = averageBoxArea,
         )
     }
 }

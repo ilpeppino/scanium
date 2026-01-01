@@ -6,11 +6,11 @@ import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.domain.DomainPackProvider
+import com.scanium.app.logging.CorrelationIds
+import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.network.security.RequestSigner
 import com.scanium.shared.core.models.config.CloudClassifierConfig
-import com.scanium.app.logging.CorrelationIds
-import com.scanium.app.logging.ScaniumLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -22,12 +22,12 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.net.URI
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.net.URI
 import java.net.UnknownHostException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -79,7 +79,7 @@ class CloudClassifier(
     private val domainPackId: String = "home_resale",
     private val maxAttempts: Int = 3,
     private val baseDelayMs: Long = 1_000L,
-    private val maxDelayMs: Long = 8_000L
+    private val maxDelayMs: Long = 8_000L,
 ) : ItemClassifier {
     companion object {
         private const val TAG = "CloudClassifier"
@@ -89,175 +89,188 @@ class CloudClassifier(
         private val TIMESTAMP_FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
     }
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .apply {
-            // SEC-003: Add certificate pinning for MITM protection
-            val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
-            val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
-            if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
-                val host = try {
-                    URI(baseUrl).host ?: ""
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to parse host from base URL for certificate pinning", e)
-                    ""
+    private val client =
+        OkHttpClient.Builder()
+            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .apply {
+                // SEC-003: Add certificate pinning for MITM protection
+                val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
+                val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
+                if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
+                    val host =
+                        try {
+                            URI(baseUrl).host ?: ""
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to parse host from base URL for certificate pinning", e)
+                            ""
+                        }
+                    if (host.isNotBlank()) {
+                        val pinner =
+                            CertificatePinner.Builder()
+                                .add(host, certificatePin)
+                                .build()
+                        certificatePinner(pinner)
+                        Log.d(TAG, "Certificate pinning enabled for host: $host")
+                    }
+                } else if (certificatePin.isBlank() && baseUrl.isNotBlank()) {
+                    Log.w(TAG, "Certificate pinning not configured - set SCANIUM_API_CERTIFICATE_PIN for production")
                 }
-                if (host.isNotBlank()) {
-                    val pinner = CertificatePinner.Builder()
-                        .add(host, certificatePin)
-                        .build()
-                    certificatePinner(pinner)
-                    Log.d(TAG, "Certificate pinning enabled for host: $host")
-                }
-            } else if (certificatePin.isBlank() && baseUrl.isNotBlank()) {
-                Log.w(TAG, "Certificate pinning not configured - set SCANIUM_API_CERTIFICATE_PIN for production")
             }
-        }
-        .build()
+            .build()
 
     private val apiKeyStore = context?.applicationContext?.let { SecureApiKeyStore(it) }
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-    }
-
-    override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? = withContext(Dispatchers.IO) {
-        val config = currentConfig()
-        if (!config.isConfigured) {
-            ScaniumLog.w(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
-            return@withContext failureResult(
-                message = "Cloud classification disabled",
-                offline = true
-            )
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
         }
 
-        val bitmap = input.bitmap
-        val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify"
-        val correlationId = CorrelationIds.currentClassificationSessionId()
-        ScaniumLog.d(TAG, "Classifying endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
-
-        maybeSaveDebugCrop(input)
-
-        val imageBytes = bitmap.toJpegBytes()
-        val requestBody = MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart(
-                name = "image",
-                filename = "item.jpg",
-                body = imageBytes.toRequestBody("image/jpeg".toMediaType())
-            )
-            .addFormDataPart("domainPackId", domainPackId)
-            .build()
-
-        var attempt = 1
-        var lastError: String? = null
-        while (attempt <= maxAttempts) {
-            val request = Request.Builder()
-                .url(endpoint)
-                .post(requestBody)
-                .apply {
-                    config.apiKey?.let { apiKey ->
-                        header("X-API-Key", apiKey)
-                        // Add HMAC signature for replay protection (SEC-004)
-                        RequestSigner.addSignatureHeaders(
-                            builder = this,
-                            apiKey = apiKey,
-                            params = mapOf("domainPackId" to domainPackId),
-                            binaryContentSize = imageBytes.size.toLong()
-                        )
-                    }
-                    header("X-Scanium-Correlation-Id", correlationId)
-                    header("X-Client", "Scanium-Android")
-                    header("X-App-Version", BuildConfig.VERSION_NAME)
-                }
-                .build()
-
-            try {
-                var retry = false
-                var offlineError = false
-                var errorMessage: String? = null
-
-                client.newCall(request).execute().use { response ->
-                    val responseCode = response.code
-                    val responseBody = response.body?.string()
-                    Log.d(TAG, "Response: code=$responseCode")
-
-                    if (responseCode == 200 && responseBody != null) {
-                        val apiResponse = json.decodeFromString<CloudClassificationResponse>(responseBody)
-                        val result = parseSuccessResponse(apiResponse)
-                        ScaniumLog.i(
-                            TAG,
-                            "Classification success correlationId=$correlationId requestId=${apiResponse.requestId}"
-                        )
-                        return@withContext result
-                    }
-
-                    errorMessage = if (responseBody.isNullOrBlank()) {
-                        "Classification failed (HTTP $responseCode)"
-                    } else {
-                        "Classification failed (HTTP $responseCode): $responseBody"
-                    }
-
-                    if (isRetryableError(responseCode) && attempt < maxAttempts) {
-                        ScaniumLog.w(TAG, "Retryable error HTTP $responseCode attempt=$attempt correlationId=$correlationId")
-                        retry = true
-                        return@use
-                    }
-
-                    offlineError = responseCode == 503 || responseCode == 504
-                }
-
-                if (retry) {
-                    lastError = errorMessage
-                    delay(calculateBackoffDelay(attempt))
-                    attempt++
-                    continue
-                }
-
-                if (errorMessage != null) {
-                    return@withContext failureResult(errorMessage, offlineError)
-                }
-            } catch (e: SocketTimeoutException) {
-                lastError = "Request timeout"
-                Log.w(TAG, "Timeout classifying image (attempt $attempt)", e)
-            } catch (e: UnknownHostException) {
-                lastError = "Offline - check your connection"
-                Log.w(TAG, "Network unavailable (attempt $attempt)", e)
-            } catch (e: IOException) {
-                lastError = "Network error: ${e.message}"
-                Log.w(TAG, "I/O error classifying image (attempt $attempt)", e)
-            } catch (e: Exception) {
-                lastError = "Unexpected error: ${e.message}"
-                Log.e(TAG, "Unexpected error classifying image", e)
-                return@withContext failureResult(lastError ?: "Unexpected error")
+    override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? =
+        withContext(Dispatchers.IO) {
+            val config = currentConfig()
+            if (!config.isConfigured) {
+                ScaniumLog.w(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
+                return@withContext failureResult(
+                    message = "Cloud classification disabled",
+                    offline = true,
+                )
             }
 
-            if (attempt >= maxAttempts) {
-                break
+            val bitmap = input.bitmap
+            val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify"
+            val correlationId = CorrelationIds.currentClassificationSessionId()
+            ScaniumLog.d(TAG, "Classifying endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
+
+            maybeSaveDebugCrop(input)
+
+            val imageBytes = bitmap.toJpegBytes()
+            val requestBody =
+                MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart(
+                        name = "image",
+                        filename = "item.jpg",
+                        body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
+                    )
+                    .addFormDataPart("domainPackId", domainPackId)
+                    .build()
+
+            var attempt = 1
+            var lastError: String? = null
+            while (attempt <= maxAttempts) {
+                val request =
+                    Request.Builder()
+                        .url(endpoint)
+                        .post(requestBody)
+                        .apply {
+                            config.apiKey?.let { apiKey ->
+                                header("X-API-Key", apiKey)
+                                // Add HMAC signature for replay protection (SEC-004)
+                                RequestSigner.addSignatureHeaders(
+                                    builder = this,
+                                    apiKey = apiKey,
+                                    params = mapOf("domainPackId" to domainPackId),
+                                    binaryContentSize = imageBytes.size.toLong(),
+                                )
+                            }
+                            header("X-Scanium-Correlation-Id", correlationId)
+                            header("X-Client", "Scanium-Android")
+                            header("X-App-Version", BuildConfig.VERSION_NAME)
+                        }
+                        .build()
+
+                try {
+                    var retry = false
+                    var offlineError = false
+                    var errorMessage: String? = null
+
+                    client.newCall(request).execute().use { response ->
+                        val responseCode = response.code
+                        val responseBody = response.body?.string()
+                        Log.d(TAG, "Response: code=$responseCode")
+
+                        if (responseCode == 200 && responseBody != null) {
+                            val apiResponse = json.decodeFromString<CloudClassificationResponse>(responseBody)
+                            val result = parseSuccessResponse(apiResponse)
+                            ScaniumLog.i(
+                                TAG,
+                                "Classification success correlationId=$correlationId requestId=${apiResponse.requestId}",
+                            )
+                            return@withContext result
+                        }
+
+                        errorMessage =
+                            if (responseBody.isNullOrBlank()) {
+                                "Classification failed (HTTP $responseCode)"
+                            } else {
+                                "Classification failed (HTTP $responseCode): $responseBody"
+                            }
+
+                        if (isRetryableError(responseCode) && attempt < maxAttempts) {
+                            ScaniumLog.w(TAG, "Retryable error HTTP $responseCode attempt=$attempt correlationId=$correlationId")
+                            retry = true
+                            return@use
+                        }
+
+                        offlineError = responseCode == 503 || responseCode == 504
+                    }
+
+                    if (retry) {
+                        lastError = errorMessage
+                        delay(calculateBackoffDelay(attempt))
+                        attempt++
+                        continue
+                    }
+
+                    if (errorMessage != null) {
+                        return@withContext failureResult(errorMessage, offlineError)
+                    }
+                } catch (e: SocketTimeoutException) {
+                    lastError = "Request timeout"
+                    Log.w(TAG, "Timeout classifying image (attempt $attempt)", e)
+                } catch (e: UnknownHostException) {
+                    lastError = "Offline - check your connection"
+                    Log.w(TAG, "Network unavailable (attempt $attempt)", e)
+                } catch (e: IOException) {
+                    lastError = "Network error: ${e.message}"
+                    Log.w(TAG, "I/O error classifying image (attempt $attempt)", e)
+                } catch (e: Exception) {
+                    lastError = "Unexpected error: ${e.message}"
+                    Log.e(TAG, "Unexpected error classifying image", e)
+                    return@withContext failureResult(lastError ?: "Unexpected error")
+                }
+
+                if (attempt >= maxAttempts) {
+                    break
+                }
+
+                Log.d(TAG, "Retrying after failure (attempt $attempt)")
+                delay(calculateBackoffDelay(attempt))
+                attempt++
             }
 
-            Log.d(TAG, "Retrying after failure (attempt $attempt)")
-            delay(calculateBackoffDelay(attempt))
-            attempt++
+            return@withContext failureResult(lastError ?: "Unable to classify", offline = lastError?.contains("Offline", true) == true)
         }
 
-        return@withContext failureResult(lastError ?: "Unable to classify", offline = lastError?.contains("Offline", true) == true)
-    }
+    private fun currentConfig(): CloudClassifierConfig =
+        CloudClassifierConfig(
+            baseUrl = BuildConfig.SCANIUM_API_BASE_URL,
+            apiKey = apiKeyStore?.getApiKey(),
+            domainPackId = domainPackId,
+        )
 
-    private fun currentConfig(): CloudClassifierConfig = CloudClassifierConfig(
-        baseUrl = BuildConfig.SCANIUM_API_BASE_URL,
-        apiKey = apiKeyStore?.getApiKey(),
-        domainPackId = domainPackId
-    )
-
-    private fun failureResult(message: String, offline: Boolean = false): ClassificationResult {
-        val errorMessage = if (offline) {
-            "$message – using on-device labels"
-        } else {
-            message
-        }
+    private fun failureResult(
+        message: String,
+        offline: Boolean = false,
+    ): ClassificationResult {
+        val errorMessage =
+            if (offline) {
+                "$message – using on-device labels"
+            } else {
+                message
+            }
 
         return ClassificationResult(
             label = null,
@@ -265,7 +278,7 @@ class CloudClassifier(
             category = ItemCategory.UNKNOWN,
             mode = ClassificationMode.CLOUD,
             status = ClassificationStatus.FAILED,
-            errorMessage = errorMessage
+            errorMessage = errorMessage,
         )
     }
 
@@ -277,9 +290,7 @@ class CloudClassifier(
     /**
      * Parse successful API response into ClassificationResult.
      */
-    private suspend fun parseSuccessResponse(
-        apiResponse: CloudClassificationResponse
-    ): ClassificationResult {
+    private suspend fun parseSuccessResponse(apiResponse: CloudClassificationResponse): ClassificationResult {
         val domainCategoryId = apiResponse.domainCategoryId
         val confidence = apiResponse.confidence ?: 0f
         val label = apiResponse.label ?: domainCategoryId
@@ -287,20 +298,21 @@ class CloudClassifier(
         val requestId = apiResponse.requestId
 
         // Map domain category ID to ItemCategory
-        val itemCategory = if (domainCategoryId != null && DomainPackProvider.isInitialized) {
-            try {
-                val domainPack = DomainPackProvider.repository.getActiveDomainPack()
-                val domainCategory = domainPack.categories.find { it.id == domainCategoryId }
-                domainCategory?.let { category ->
-                    ItemCategory.valueOf(category.itemCategoryName)
-                } ?: ItemCategory.fromClassifierLabel(label)
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to map domain category", e)
+        val itemCategory =
+            if (domainCategoryId != null && DomainPackProvider.isInitialized) {
+                try {
+                    val domainPack = DomainPackProvider.repository.getActiveDomainPack()
+                    val domainCategory = domainPack.categories.find { it.id == domainCategoryId }
+                    domainCategory?.let { category ->
+                        ItemCategory.valueOf(category.itemCategoryName)
+                    } ?: ItemCategory.fromClassifierLabel(label)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to map domain category", e)
+                    ItemCategory.fromClassifierLabel(label)
+                }
+            } else {
                 ItemCategory.fromClassifierLabel(label)
             }
-        } else {
-            ItemCategory.fromClassifierLabel(label)
-        }
 
         return ClassificationResult(
             label = label,
@@ -311,7 +323,7 @@ class CloudClassifier(
             attributes = attributes,
             status = ClassificationStatus.SUCCESS,
             errorMessage = null,
-            requestId = requestId
+            requestId = requestId,
         )
     }
 
@@ -353,11 +365,12 @@ class CloudClassifier(
         if (!BuildConfig.DEBUG || !ClassifierDebugFlags.saveCloudCropsEnabled) return
         val ctx = context ?: return
         runCatching {
-            val dir = File(ctx.cacheDir, "classifier_crops").apply {
-                if (!exists() && !mkdirs()) {
-                    Log.w(TAG, "Failed to create classifier crop directory: $absolutePath")
+            val dir =
+                File(ctx.cacheDir, "classifier_crops").apply {
+                    if (!exists() && !mkdirs()) {
+                        Log.w(TAG, "Failed to create classifier crop directory: $absolutePath")
+                    }
                 }
-            }
 
             val timestamp = TIMESTAMP_FORMAT.format(Date())
             val safeId = input.aggregatedId.replace(Regex("[^A-Za-z0-9_-]"), "_")
@@ -381,5 +394,5 @@ private data class CloudClassificationResponse(
     val confidence: Float? = null,
     val label: String? = null,
     val attributes: Map<String, String>? = null,
-    val requestId: String? = null
+    val requestId: String? = null,
 )

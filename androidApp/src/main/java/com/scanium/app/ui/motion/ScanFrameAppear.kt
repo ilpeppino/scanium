@@ -39,7 +39,7 @@ fun ScanFrameAppear(
     isVisible: Boolean,
     frameColor: Color = ScaniumBluePrimary,
     modifier: Modifier = Modifier,
-    onAnimationComplete: (() -> Unit)? = null
+    onAnimationComplete: (() -> Unit)? = null,
 ) {
     if (!MotionConfig.isMotionOverlaysEnabled) {
         // Motion disabled - show static frame if visible
@@ -55,20 +55,22 @@ fun ScanFrameAppear(
         if (isVisible) {
             alpha.animateTo(
                 targetValue = MotionConstants.SCAN_FRAME_ALPHA_END,
-                animationSpec = tween(
-                    durationMillis = MotionConstants.SCAN_FRAME_APPEAR_MS,
-                    easing = LinearEasing
-                )
+                animationSpec =
+                    tween(
+                        durationMillis = MotionConstants.SCAN_FRAME_APPEAR_MS,
+                        easing = LinearEasing,
+                    ),
             )
             onAnimationComplete?.invoke()
         } else {
             // Quick fade out when hiding
             alpha.animateTo(
                 targetValue = MotionConstants.SCAN_FRAME_ALPHA_START,
-                animationSpec = tween(
-                    durationMillis = MotionConstants.SCAN_FRAME_APPEAR_MS / 2,
-                    easing = LinearEasing
-                )
+                animationSpec =
+                    tween(
+                        durationMillis = MotionConstants.SCAN_FRAME_APPEAR_MS / 2,
+                        easing = LinearEasing,
+                    ),
             )
         }
     }
@@ -93,7 +95,7 @@ fun ScanFrameAppear(
                 topLeft = Offset(frameLeft, frameTop),
                 size = Size(frameWidth, frameHeight),
                 cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-                style = Stroke(width = strokeWidth * 2f)
+                style = Stroke(width = strokeWidth * 2f),
             )
 
             // Draw main frame stroke
@@ -102,7 +104,7 @@ fun ScanFrameAppear(
                 topLeft = Offset(frameLeft, frameTop),
                 size = Size(frameWidth, frameHeight),
                 cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-                style = Stroke(width = strokeWidth)
+                style = Stroke(width = strokeWidth),
             )
         }
     }
@@ -115,7 +117,7 @@ fun ScanFrameAppear(
 private fun StaticScanFrame(
     rect: Rect,
     frameColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier.fillMaxSize()) {
         val canvasWidth = size.width
@@ -134,7 +136,7 @@ private fun StaticScanFrame(
             topLeft = Offset(frameLeft, frameTop),
             size = Size(frameWidth, frameHeight),
             cornerRadius = CornerRadius(cornerRadius, cornerRadius),
-            style = Stroke(width = strokeWidth)
+            style = Stroke(width = strokeWidth),
         )
     }
 }
@@ -144,6 +146,6 @@ private fun StaticScanFrame(
 private fun ScanFrameAppearPreview() {
     ScanFrameAppear(
         rect = Rect(0.1f, 0.2f, 0.9f, 0.8f),
-        isVisible = true
+        isVisible = true,
     )
 }

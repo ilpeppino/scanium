@@ -21,44 +21,45 @@ fun PerfOverlay(
     callsFailed: Int,
     lastLatency: Long,
     queueDepth: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
-            .padding(6.dp)
+        modifier =
+            modifier
+                .background(Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(4.dp))
+                .padding(6.dp),
     ) {
         Text(
             text = "Analysis FPS: %.1f".format(analysisFps),
             color = Color.Green,
             fontSize = 10.sp,
-            lineHeight = 12.sp
+            lineHeight = 12.sp,
         )
         Text(
             text = "Mode: ${classificationMode.name}",
             color = Color.White,
             fontSize = 10.sp,
-            lineHeight = 12.sp
+            lineHeight = 12.sp,
         )
-        
+
         if (classificationMode == ClassificationMode.CLOUD) {
             Text(
                 text = "Cloud: $callsCompleted/$callsStarted (Fail: $callsFailed)",
                 color = if (callsFailed > 0) Color(0xFFFF6B6B) else Color.White,
                 fontSize = 10.sp,
-                lineHeight = 12.sp
+                lineHeight = 12.sp,
             )
             Text(
                 text = "Queue: $queueDepth",
                 color = if (queueDepth > 2) Color.Yellow else Color.White,
                 fontSize = 10.sp,
-                lineHeight = 12.sp
+                lineHeight = 12.sp,
             )
             Text(
                 text = "Last Latency: ${lastLatency}ms",
                 color = Color.White,
                 fontSize = 10.sp,
-                lineHeight = 12.sp
+                lineHeight = 12.sp,
             )
         }
     }

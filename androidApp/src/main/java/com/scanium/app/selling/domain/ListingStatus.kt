@@ -6,5 +6,5 @@ enum class ListingStatus {
     ACTIVE,
     FAILED,
     ENDED,
-    UNKNOWN
+    UNKNOWN,
 }

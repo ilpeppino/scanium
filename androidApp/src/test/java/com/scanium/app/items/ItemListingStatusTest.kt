@@ -4,7 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class ItemListingStatusTest {
-
     @Test
     fun `all statuses have display names`() {
         ItemListingStatus.values().forEach { status ->

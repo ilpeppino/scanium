@@ -8,7 +8,10 @@ object ThumbnailCache {
 
     private val cache = object : LruCache<String, ImageRef.Bytes>(MAX_ENTRIES) {}
 
-    fun put(itemId: String, imageRef: ImageRef.Bytes) {
+    fun put(
+        itemId: String,
+        imageRef: ImageRef.Bytes,
+    ) {
         cache.put(itemId, imageRef)
     }
 

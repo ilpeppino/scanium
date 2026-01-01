@@ -31,11 +31,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object ViewModelModule {
-
     @Provides
     @Singleton
     fun provideExportProfilePreferences(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ExportProfilePreferences {
         return ExportProfilePreferences(context)
     }
@@ -43,7 +42,7 @@ object ViewModelModule {
     @Provides
     @Singleton
     fun providePostingTargetPreferences(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): PostingTargetPreferences {
         return PostingTargetPreferences(context)
     }
@@ -51,23 +50,21 @@ object ViewModelModule {
     @Provides
     @Singleton
     fun provideExportProfileRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ExportProfileRepository {
         return AssetExportProfileRepository(context)
     }
 
     @Provides
     @Singleton
-    fun provideListingDraftStore(
-        listingDraftRepository: ListingDraftRepository
-    ): ListingDraftStore {
+    fun provideListingDraftStore(listingDraftRepository: ListingDraftRepository): ListingDraftStore {
         return listingDraftRepository
     }
 
     @Provides
     @Singleton
     fun provideAssistantRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): AssistantRepository {
         return AssistantRepositoryFactory(context).create()
     }
@@ -81,7 +78,7 @@ object ViewModelModule {
     @Provides
     @Singleton
     fun provideDiagnosticsRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): DiagnosticsRepository {
         return DiagnosticsRepository(context)
     }
@@ -96,7 +93,7 @@ object ViewModelModule {
     @Singleton
     fun provideEbayMarketplaceService(
         @ApplicationContext context: Context,
-        ebayApi: EbayApi
+        ebayApi: EbayApi,
     ): EbayMarketplaceService {
         return EbayMarketplaceService(context, ebayApi)
     }

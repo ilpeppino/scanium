@@ -22,28 +22,32 @@ class ClassificationPreferences(private val context: Context) {
         private val VERBOSE_LOGGING_KEY = booleanPreferencesKey("verbose_logging")
     }
 
-    val mode: Flow<ClassificationMode> = context.classificationDataStore.data
-        .map { preferences ->
-            val raw = preferences[CLASSIFICATION_MODE_KEY]
-            // Default to CLOUD mode for production cloud-first classification
-            raw?.let { runCatching { ClassificationMode.valueOf(it) }.getOrNull() } ?: ClassificationMode.CLOUD
-        }
+    val mode: Flow<ClassificationMode> =
+        context.classificationDataStore.data
+            .map { preferences ->
+                val raw = preferences[CLASSIFICATION_MODE_KEY]
+                // Default to CLOUD mode for production cloud-first classification
+                raw?.let { runCatching { ClassificationMode.valueOf(it) }.getOrNull() } ?: ClassificationMode.CLOUD
+            }
 
-    val saveCloudCrops: Flow<Boolean> = context.classificationDataStore.data
-        .map { preferences ->
-            preferences[SAVE_CLOUD_CROPS_KEY]
-                ?: (BuildConfig.DEBUG && BuildConfig.CLASSIFIER_SAVE_CROPS)
-        }
+    val saveCloudCrops: Flow<Boolean> =
+        context.classificationDataStore.data
+            .map { preferences ->
+                preferences[SAVE_CLOUD_CROPS_KEY]
+                    ?: (BuildConfig.DEBUG && BuildConfig.CLASSIFIER_SAVE_CROPS)
+            }
 
-    val lowDataMode: Flow<Boolean> = context.classificationDataStore.data
-        .map { preferences ->
-            preferences[LOW_DATA_MODE_KEY] ?: false
-        }
+    val lowDataMode: Flow<Boolean> =
+        context.classificationDataStore.data
+            .map { preferences ->
+                preferences[LOW_DATA_MODE_KEY] ?: false
+            }
 
-    val verboseLogging: Flow<Boolean> = context.classificationDataStore.data
-        .map { preferences ->
-            preferences[VERBOSE_LOGGING_KEY] ?: BuildConfig.DEBUG
-        }
+    val verboseLogging: Flow<Boolean> =
+        context.classificationDataStore.data
+            .map { preferences ->
+                preferences[VERBOSE_LOGGING_KEY] ?: BuildConfig.DEBUG
+            }
 
     suspend fun setMode(mode: ClassificationMode) {
         context.classificationDataStore.edit { preferences ->

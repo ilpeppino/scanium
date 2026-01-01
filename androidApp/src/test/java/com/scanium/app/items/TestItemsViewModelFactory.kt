@@ -11,9 +11,9 @@ import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 
 /**
  * Helper for constructing [ItemsViewModel] instances in unit tests.
@@ -31,7 +31,7 @@ fun createTestItemsViewModel(
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
-    mainDispatcher: CoroutineDispatcher = workerDispatcher
+    mainDispatcher: CoroutineDispatcher = workerDispatcher,
 ): ItemsViewModel {
     return ItemsViewModel(
         classificationMode = classificationMode,
@@ -42,7 +42,7 @@ fun createTestItemsViewModel(
         stableItemCropper = stableItemCropper,
         telemetry = telemetry,
         workerDispatcher = workerDispatcher,
-        mainDispatcher = mainDispatcher
+        mainDispatcher = mainDispatcher,
     )
 }
 

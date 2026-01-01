@@ -28,7 +28,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
@@ -64,7 +63,7 @@ fun CameraGuidanceOverlay(
     /** PHASE 6: ROI filter result for diagnostics display */
     roiFilterResult: RoiFilterResult? = null,
     /** PHASE 6: Current count of preview bboxes being displayed */
-    previewBboxCount: Int = 0
+    previewBboxCount: Int = 0,
 ) {
     val roi = guidanceState.scanRoi
 
@@ -72,12 +71,12 @@ fun CameraGuidanceOverlay(
     val animatedWidth by animateFloatAsState(
         targetValue = roi.widthNorm,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-        label = "roiWidth"
+        label = "roiWidth",
     )
     val animatedHeight by animateFloatAsState(
         targetValue = roi.heightNorm,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-        label = "roiHeight"
+        label = "roiHeight",
     )
 
     // Pulse animation for GOOD state
@@ -85,50 +84,62 @@ fun CameraGuidanceOverlay(
     val pulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.6f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulseAlpha"
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = 800, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "pulseAlpha",
     )
 
     // PHASE 2: Distance confidence colors for subtle warning tints
-    val distanceWarningColor = Color(0xFFFF9800)  // Orange warning
-    val optimalColor = Color(0xFF1DB954)  // Green optimal
+    val distanceWarningColor = Color(0xFFFF9800) // Orange warning
+    val optimalColor = Color(0xFF1DB954) // Green optimal
 
     // Determine colors based on state and distance confidence
-    val (borderColor, glowColor, borderWidth) = remember(guidanceState.state, guidanceState.distanceConfidence) {
-        when (guidanceState.state) {
-            GuidanceState.SEARCHING -> Triple(ScaniumBlue.copy(alpha = 0.5f), CyanGlow.copy(alpha = 0.2f), 2f)
-            GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR -> Triple(distanceWarningColor, distanceWarningColor.copy(alpha = 0.3f), 2.5f)
-            GuidanceState.OFF_CENTER -> Triple(distanceWarningColor, distanceWarningColor.copy(alpha = 0.3f), 2.5f)
-            GuidanceState.UNSTABLE, GuidanceState.FOCUSING -> Triple(ScaniumBlue.copy(alpha = 0.7f), CyanGlow.copy(alpha = 0.3f), 2f)
-            GuidanceState.GOOD -> {
-                // PHASE 2: Subtle distance feedback in GOOD state
-                // Show slight warning tint if distance is not optimal
-                when (guidanceState.distanceConfidence) {
-                    DistanceConfidence.TOO_CLOSE -> Triple(
-                        Color(0xFF7CB342),  // Yellow-green (leaning toward warning)
-                        Color(0xFF7CB342).copy(alpha = 0.4f),
-                        3f
+    val (borderColor, glowColor, borderWidth) =
+        remember(guidanceState.state, guidanceState.distanceConfidence) {
+            when (guidanceState.state) {
+                GuidanceState.SEARCHING -> Triple(ScaniumBlue.copy(alpha = 0.5f), CyanGlow.copy(alpha = 0.2f), 2f)
+                GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR ->
+                    Triple(
+                        distanceWarningColor,
+                        distanceWarningColor.copy(alpha = 0.3f),
+                        2.5f,
                     )
-                    DistanceConfidence.TOO_FAR -> Triple(
-                        Color(0xFF7CB342),  // Yellow-green (leaning toward warning)
-                        Color(0xFF7CB342).copy(alpha = 0.4f),
-                        3f
-                    )
-                    else -> Triple(optimalColor, optimalColor.copy(alpha = 0.4f), 3f)
+                GuidanceState.OFF_CENTER -> Triple(distanceWarningColor, distanceWarningColor.copy(alpha = 0.3f), 2.5f)
+                GuidanceState.UNSTABLE, GuidanceState.FOCUSING -> Triple(ScaniumBlue.copy(alpha = 0.7f), CyanGlow.copy(alpha = 0.3f), 2f)
+                GuidanceState.GOOD -> {
+                    // PHASE 2: Subtle distance feedback in GOOD state
+                    // Show slight warning tint if distance is not optimal
+                    when (guidanceState.distanceConfidence) {
+                        DistanceConfidence.TOO_CLOSE ->
+                            Triple(
+                                Color(0xFF7CB342),
+// Yellow-green (leaning toward warning)
+                                Color(0xFF7CB342).copy(alpha = 0.4f),
+                                3f,
+                            )
+                        DistanceConfidence.TOO_FAR ->
+                            Triple(
+                                Color(0xFF7CB342),
+// Yellow-green (leaning toward warning)
+                                Color(0xFF7CB342).copy(alpha = 0.4f),
+                                3f,
+                            )
+                        else -> Triple(optimalColor, optimalColor.copy(alpha = 0.4f), 3f)
+                    }
                 }
+                GuidanceState.LOCKED -> Triple(optimalColor, optimalColor.copy(alpha = 0.5f), 4f)
             }
-            GuidanceState.LOCKED -> Triple(optimalColor, optimalColor.copy(alpha = 0.5f), 4f)
         }
-    }
 
     // Apply pulse effect for GOOD state
-    val effectiveAlpha = when (guidanceState.state) {
-        GuidanceState.GOOD -> pulseAlpha
-        else -> 1f
-    }
+    val effectiveAlpha =
+        when (guidanceState.state) {
+            GuidanceState.GOOD -> pulseAlpha
+            else -> 1f
+        }
 
     Box(modifier = modifier.fillMaxSize()) {
         // Canvas for scan zone overlay
@@ -152,7 +163,7 @@ fun CameraGuidanceOverlay(
                 zoneWidth = zoneWidth,
                 zoneHeight = zoneHeight,
                 cornerRadius = cornerRadius,
-                dimAlpha = 0.4f
+                dimAlpha = 0.4f,
             )
 
             // Draw glow effect
@@ -161,7 +172,7 @@ fun CameraGuidanceOverlay(
                 topLeft = Offset(zoneLeft - 4.dp.toPx(), zoneTop - 4.dp.toPx()),
                 size = Size(zoneWidth + 8.dp.toPx(), zoneHeight + 8.dp.toPx()),
                 cornerRadius = CornerRadius(cornerRadius + 4.dp.toPx()),
-                style = Stroke(width = 8.dp.toPx())
+                style = Stroke(width = 8.dp.toPx()),
             )
 
             // Draw scan zone border
@@ -170,7 +181,7 @@ fun CameraGuidanceOverlay(
                 topLeft = Offset(zoneLeft, zoneTop),
                 size = Size(zoneWidth, zoneHeight),
                 cornerRadius = CornerRadius(cornerRadius),
-                style = Stroke(width = borderWidth.dp.toPx())
+                style = Stroke(width = borderWidth.dp.toPx()),
             )
 
             // Draw inner highlight for locked state
@@ -180,7 +191,7 @@ fun CameraGuidanceOverlay(
                     topLeft = Offset(zoneLeft + 2.dp.toPx(), zoneTop + 2.dp.toPx()),
                     size = Size(zoneWidth - 4.dp.toPx(), zoneHeight - 4.dp.toPx()),
                     cornerRadius = CornerRadius(cornerRadius - 2.dp.toPx()),
-                    style = Stroke(width = 1.dp.toPx())
+                    style = Stroke(width = 1.dp.toPx()),
                 )
             }
 
@@ -193,7 +204,7 @@ fun CameraGuidanceOverlay(
                 cornerRadius = cornerRadius,
                 color = borderColor.copy(alpha = borderColor.alpha * effectiveAlpha),
                 bracketSize = 20.dp.toPx(),
-                strokeWidth = borderWidth.dp.toPx()
+                strokeWidth = borderWidth.dp.toPx(),
             )
         }
 
@@ -202,13 +213,14 @@ fun CameraGuidanceOverlay(
             visible = guidanceState.showHint && guidanceState.hintText != null,
             enter = fadeIn(animationSpec = tween(200)),
             exit = fadeOut(animationSpec = tween(200)),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 100.dp)
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 100.dp),
         ) {
             GuidanceHintChip(
                 text = guidanceState.hintText ?: "",
-                state = guidanceState.state
+                state = guidanceState.state,
             )
         }
 
@@ -219,9 +231,10 @@ fun CameraGuidanceOverlay(
                 guidanceState = guidanceState,
                 roiFilterResult = roiFilterResult,
                 previewBboxCount = previewBboxCount,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp),
             )
         }
     }
@@ -238,35 +251,38 @@ private fun DrawScope.drawDimmedBackground(
     zoneWidth: Float,
     zoneHeight: Float,
     cornerRadius: Float,
-    dimAlpha: Float
+    dimAlpha: Float,
 ) {
     // Create full screen path
-    val fullPath = Path().apply {
-        addRect(Rect(0f, 0f, canvasWidth, canvasHeight))
-    }
+    val fullPath =
+        Path().apply {
+            addRect(Rect(0f, 0f, canvasWidth, canvasHeight))
+        }
 
     // Create cutout path (the scan zone)
-    val cutoutPath = Path().apply {
-        addRoundRect(
-            RoundRect(
-                left = zoneLeft,
-                top = zoneTop,
-                right = zoneLeft + zoneWidth,
-                bottom = zoneTop + zoneHeight,
-                cornerRadius = CornerRadius(cornerRadius)
+    val cutoutPath =
+        Path().apply {
+            addRoundRect(
+                RoundRect(
+                    left = zoneLeft,
+                    top = zoneTop,
+                    right = zoneLeft + zoneWidth,
+                    bottom = zoneTop + zoneHeight,
+                    cornerRadius = CornerRadius(cornerRadius),
+                ),
             )
-        )
-    }
+        }
 
     // Subtract cutout from full screen
-    val resultPath = Path().apply {
-        op(fullPath, cutoutPath, PathOperation.Difference)
-    }
+    val resultPath =
+        Path().apply {
+            op(fullPath, cutoutPath, PathOperation.Difference)
+        }
 
     // Draw the dimmed region
     drawPath(
         path = resultPath,
-        color = Color.Black.copy(alpha = dimAlpha)
+        color = Color.Black.copy(alpha = dimAlpha),
     )
 }
 
@@ -281,7 +297,7 @@ private fun DrawScope.drawCornerBrackets(
     cornerRadius: Float,
     color: Color,
     bracketSize: Float,
-    strokeWidth: Float
+    strokeWidth: Float,
 ) {
     val bracketOffset = cornerRadius * 0.3f
 
@@ -290,13 +306,13 @@ private fun DrawScope.drawCornerBrackets(
         color = color,
         start = Offset(zoneLeft + bracketOffset, zoneTop),
         end = Offset(zoneLeft + bracketOffset + bracketSize, zoneTop),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
     drawLine(
         color = color,
         start = Offset(zoneLeft, zoneTop + bracketOffset),
         end = Offset(zoneLeft, zoneTop + bracketOffset + bracketSize),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
 
     // Top-right corner
@@ -304,13 +320,13 @@ private fun DrawScope.drawCornerBrackets(
         color = color,
         start = Offset(zoneLeft + zoneWidth - bracketOffset - bracketSize, zoneTop),
         end = Offset(zoneLeft + zoneWidth - bracketOffset, zoneTop),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
     drawLine(
         color = color,
         start = Offset(zoneLeft + zoneWidth, zoneTop + bracketOffset),
         end = Offset(zoneLeft + zoneWidth, zoneTop + bracketOffset + bracketSize),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
 
     // Bottom-left corner
@@ -318,13 +334,13 @@ private fun DrawScope.drawCornerBrackets(
         color = color,
         start = Offset(zoneLeft + bracketOffset, zoneTop + zoneHeight),
         end = Offset(zoneLeft + bracketOffset + bracketSize, zoneTop + zoneHeight),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
     drawLine(
         color = color,
         start = Offset(zoneLeft, zoneTop + zoneHeight - bracketOffset - bracketSize),
         end = Offset(zoneLeft, zoneTop + zoneHeight - bracketOffset),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
 
     // Bottom-right corner
@@ -332,13 +348,13 @@ private fun DrawScope.drawCornerBrackets(
         color = color,
         start = Offset(zoneLeft + zoneWidth - bracketOffset - bracketSize, zoneTop + zoneHeight),
         end = Offset(zoneLeft + zoneWidth - bracketOffset, zoneTop + zoneHeight),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
     drawLine(
         color = color,
         start = Offset(zoneLeft + zoneWidth, zoneTop + zoneHeight - bracketOffset - bracketSize),
         end = Offset(zoneLeft + zoneWidth, zoneTop + zoneHeight - bracketOffset),
-        strokeWidth = strokeWidth
+        strokeWidth = strokeWidth,
     )
 }
 
@@ -349,31 +365,33 @@ private fun DrawScope.drawCornerBrackets(
 private fun GuidanceHintChip(
     text: String,
     state: GuidanceState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val backgroundColor = when (state) {
-        GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR, GuidanceState.OFF_CENTER ->
-            Color(0xFFFF9800).copy(alpha = 0.9f)
-        GuidanceState.UNSTABLE ->
-            Color(0xFFFF5722).copy(alpha = 0.9f)
-        GuidanceState.FOCUSING ->
-            ScaniumBlue.copy(alpha = 0.9f)
-        GuidanceState.GOOD ->
-            Color(0xFF1DB954).copy(alpha = 0.9f)
-        else ->
-            Color.Black.copy(alpha = 0.7f)
-    }
+    val backgroundColor =
+        when (state) {
+            GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR, GuidanceState.OFF_CENTER ->
+                Color(0xFFFF9800).copy(alpha = 0.9f)
+            GuidanceState.UNSTABLE ->
+                Color(0xFFFF5722).copy(alpha = 0.9f)
+            GuidanceState.FOCUSING ->
+                ScaniumBlue.copy(alpha = 0.9f)
+            GuidanceState.GOOD ->
+                Color(0xFF1DB954).copy(alpha = 0.9f)
+            else ->
+                Color.Black.copy(alpha = 0.7f)
+        }
 
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge,
         color = Color.White,
-        modifier = modifier
-            .background(
-                color = backgroundColor,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier =
+            modifier
+                .background(
+                    color = backgroundColor,
+                    shape = RoundedCornerShape(16.dp),
+                )
+                .padding(horizontal = 16.dp, vertical = 8.dp),
     )
 }
 
@@ -391,56 +409,58 @@ private fun ScanDebugInfo(
     guidanceState: ScanGuidanceState,
     roiFilterResult: RoiFilterResult? = null,
     previewBboxCount: Int = 0,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val debugText = buildString {
-        appendLine("State: ${guidanceState.state}")
-        appendLine("ROI: ${(guidanceState.scanRoi.widthNorm * 100).toInt()}%")
+    val debugText =
+        buildString {
+            appendLine("State: ${guidanceState.state}")
+            appendLine("ROI: ${(guidanceState.scanRoi.widthNorm * 100).toInt()}%")
 
-        // PHASE 6: ROI filter diagnostics
-        if (roiFilterResult != null) {
-            appendLine("─── ROI Filter ───")
-            appendLine("Total: ${roiFilterResult.totalDetections}")
-            appendLine("In ROI: ${roiFilterResult.eligibleCount}")
-            appendLine("Outside: ${roiFilterResult.outsideCount}")
-            appendLine("Preview: $previewBboxCount")
-            if (roiFilterResult.hasDetectionsOutsideRoiOnly) {
-                appendLine("⚠ OUTSIDE ROI ONLY")
+            // PHASE 6: ROI filter diagnostics
+            if (roiFilterResult != null) {
+                appendLine("─── ROI Filter ───")
+                appendLine("Total: ${roiFilterResult.totalDetections}")
+                appendLine("In ROI: ${roiFilterResult.eligibleCount}")
+                appendLine("Outside: ${roiFilterResult.outsideCount}")
+                appendLine("Preview: $previewBboxCount")
+                if (roiFilterResult.hasDetectionsOutsideRoiOnly) {
+                    appendLine("⚠ OUTSIDE ROI ONLY")
+                }
+            }
+
+            appendLine("─── Quality ───")
+            guidanceState.detectedBoxArea?.let {
+                appendLine("Box: ${(it * 100).toInt()}%")
+            }
+            guidanceState.sharpnessScore?.let {
+                appendLine("Sharp: ${it.toInt()}")
+            }
+            guidanceState.motionScore?.let {
+                appendLine("Motion: ${String.format("%.2f", it)}")
+            }
+            guidanceState.centerDistance?.let {
+                appendLine("Center: ${String.format("%.2f", it)}")
+            }
+            appendLine("─── Lock ───")
+            if (guidanceState.lockedCandidateId != null) {
+                appendLine("Locked: ${guidanceState.lockedCandidateId!!.take(8)}...")
+            }
+            if (guidanceState.canAddItem) {
+                appendLine("✓ CAN ADD")
             }
         }
-
-        appendLine("─── Quality ───")
-        guidanceState.detectedBoxArea?.let {
-            appendLine("Box: ${(it * 100).toInt()}%")
-        }
-        guidanceState.sharpnessScore?.let {
-            appendLine("Sharp: ${it.toInt()}")
-        }
-        guidanceState.motionScore?.let {
-            appendLine("Motion: ${String.format("%.2f", it)}")
-        }
-        guidanceState.centerDistance?.let {
-            appendLine("Center: ${String.format("%.2f", it)}")
-        }
-        appendLine("─── Lock ───")
-        if (guidanceState.lockedCandidateId != null) {
-            appendLine("Locked: ${guidanceState.lockedCandidateId!!.take(8)}...")
-        }
-        if (guidanceState.canAddItem) {
-            appendLine("✓ CAN ADD")
-        }
-    }
 
     Text(
         text = debugText,
         style = MaterialTheme.typography.bodySmall,
         color = Color.White,
-        modifier = modifier
-            .background(
-                color = Color.Black.copy(alpha = 0.7f),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .padding(8.dp)
+        modifier =
+            modifier
+                .background(
+                    color = Color.Black.copy(alpha = 0.7f),
+                    shape = RoundedCornerShape(8.dp),
+                )
+                .padding(8.dp),
     )
 }
 
@@ -448,9 +468,7 @@ private fun ScanDebugInfo(
  * Simplified overlay for when scanning is not active.
  */
 @Composable
-fun CameraGuidanceOverlayIdle(
-    modifier: Modifier = Modifier
-) {
+fun CameraGuidanceOverlayIdle(modifier: Modifier = Modifier) {
     val defaultRoi = ScanRoi.DEFAULT
 
     Canvas(modifier = modifier.fillMaxSize()) {
@@ -469,7 +487,7 @@ fun CameraGuidanceOverlayIdle(
             topLeft = Offset(zoneLeft, zoneTop),
             size = Size(zoneWidth, zoneHeight),
             cornerRadius = CornerRadius(cornerRadius),
-            style = Stroke(width = 1.5.dp.toPx())
+            style = Stroke(width = 1.5.dp.toPx()),
         )
     }
 }
@@ -481,26 +499,25 @@ fun CameraGuidanceOverlayIdle(
  * Rate-limited to avoid flashing.
  */
 @Composable
-fun RoiCenteringHint(
-    modifier: Modifier = Modifier
-) {
+fun RoiCenteringHint(modifier: Modifier = Modifier) {
     // Rate-limit hint display with simple animation
     AnimatedVisibility(
         visible = true,
         enter = fadeIn(animationSpec = tween(300)),
         exit = fadeOut(animationSpec = tween(300)),
-        modifier = modifier.padding(top = 100.dp)
+        modifier = modifier.padding(top = 100.dp),
     ) {
         Text(
             text = "Center the object in the scan zone",
             style = MaterialTheme.typography.labelLarge,
             color = Color.White,
-            modifier = Modifier
-                .background(
-                    color = Color(0xFFFF9800).copy(alpha = 0.9f),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier =
+                Modifier
+                    .background(
+                        color = Color(0xFFFF9800).copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(16.dp),
+                    )
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 }

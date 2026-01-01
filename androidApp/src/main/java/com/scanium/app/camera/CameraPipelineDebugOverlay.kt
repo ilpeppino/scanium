@@ -42,7 +42,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun CameraPipelineDebugOverlay(
     diagnostics: CameraPipelineDiagnostics,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Track current time for "ms ago" calculations
     var currentTimeMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -55,39 +55,43 @@ fun CameraPipelineDebugOverlay(
         }
     }
 
-    val frameAgo = if (diagnostics.lastFrameTimestampMs > 0) {
-        currentTimeMs - diagnostics.lastFrameTimestampMs
-    } else {
-        -1L
-    }
+    val frameAgo =
+        if (diagnostics.lastFrameTimestampMs > 0) {
+            currentTimeMs - diagnostics.lastFrameTimestampMs
+        } else {
+            -1L
+        }
 
-    val bboxAgo = if (diagnostics.lastBboxTimestampMs > 0) {
-        currentTimeMs - diagnostics.lastBboxTimestampMs
-    } else {
-        -1L
-    }
+    val bboxAgo =
+        if (diagnostics.lastBboxTimestampMs > 0) {
+            currentTimeMs - diagnostics.lastBboxTimestampMs
+        } else {
+            -1L
+        }
 
     // Determine pipeline status based on diagnostics
-    val pipelineStatus = when {
-        diagnostics.stallReason == StallReason.RECOVERING -> "RECOVERING"
-        diagnostics.stallReason == StallReason.FAILED -> "STALL_FAILED"
-        diagnostics.stallReason == StallReason.NO_FRAMES -> "STALL_NO_FRAMES"
-        !diagnostics.isCameraBound -> "CAMERA NOT BOUND"
-        !diagnostics.isAnalysisAttached -> "ANALYZER NOT ATTACHED"
-        diagnostics.isAnalysisAttached && !diagnostics.isAnalysisFlowing && frameAgo < 0 -> "WAITING FOR FRAMES"
-        frameAgo > 2000 -> "FRAMES STALE (${frameAgo}ms)"
-        bboxAgo > 2000 && diagnostics.bboxCount == 0 -> "NO BBOXES"
-        else -> "OK"
-    }
+    val pipelineStatus =
+        when {
+            diagnostics.stallReason == StallReason.RECOVERING -> "RECOVERING"
+            diagnostics.stallReason == StallReason.FAILED -> "STALL_FAILED"
+            diagnostics.stallReason == StallReason.NO_FRAMES -> "STALL_NO_FRAMES"
+            !diagnostics.isCameraBound -> "CAMERA NOT BOUND"
+            !diagnostics.isAnalysisAttached -> "ANALYZER NOT ATTACHED"
+            diagnostics.isAnalysisAttached && !diagnostics.isAnalysisFlowing && frameAgo < 0 -> "WAITING FOR FRAMES"
+            frameAgo > 2000 -> "FRAMES STALE (${frameAgo}ms)"
+            bboxAgo > 2000 && diagnostics.bboxCount == 0 -> "NO BBOXES"
+            else -> "OK"
+        }
 
-    val statusColor = when {
-        pipelineStatus == "OK" -> Color.Green
-        pipelineStatus == "RECOVERING" -> Color.Yellow
-        pipelineStatus == "WAITING FOR FRAMES" -> Color.Yellow
-        pipelineStatus.startsWith("FRAMES STALE") -> Color.Yellow
-        pipelineStatus == "NO BBOXES" -> Color.Yellow
-        else -> Color.Red
-    }
+    val statusColor =
+        when {
+            pipelineStatus == "OK" -> Color.Green
+            pipelineStatus == "RECOVERING" -> Color.Yellow
+            pipelineStatus == "WAITING FOR FRAMES" -> Color.Yellow
+            pipelineStatus.startsWith("FRAMES STALE") -> Color.Yellow
+            pipelineStatus == "NO BBOXES" -> Color.Yellow
+            else -> Color.Red
+        }
 
     // Store computed values for test access
     val frameAgoText = if (frameAgo >= 0) "${frameAgo}ms ago" else "never"
@@ -95,16 +99,17 @@ fun CameraPipelineDebugOverlay(
     val fpsText = "%.1f".format(diagnostics.analysisFramesPerSecond)
 
     Column(
-        modifier = modifier
-            .testTag(TestSemantics.CAM_PIPELINE_DEBUG)
-            .background(Color.Black.copy(alpha = 0.75f), shape = MaterialTheme.shapes.small)
-            .padding(8.dp)
+        modifier =
+            modifier
+                .testTag(TestSemantics.CAM_PIPELINE_DEBUG)
+                .background(Color.Black.copy(alpha = 0.75f), shape = MaterialTheme.shapes.small)
+                .padding(8.dp),
     ) {
         Text(
             text = "CAM PIPELINE DEBUG",
             color = Color.Cyan,
             fontSize = 10.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
         )
 
         Text(
@@ -112,7 +117,7 @@ fun CameraPipelineDebugOverlay(
             color = statusColor,
             fontSize = 10.sp,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.testTag(TestSemantics.CAM_STATUS)
+            modifier = Modifier.testTag(TestSemantics.CAM_STATUS),
         )
 
         Text(
@@ -120,35 +125,35 @@ fun CameraPipelineDebugOverlay(
             color = Color.White,
             fontSize = 9.sp,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.testTag(TestSemantics.CAM_SESSION_ID)
+            modifier = Modifier.testTag(TestSemantics.CAM_SESSION_ID),
         )
 
         Text(
             text = "CameraBound: ${diagnostics.isCameraBound}",
             color = if (diagnostics.isCameraBound) Color.Green else Color.Red,
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
         )
 
         Text(
             text = "PreviewDetection: ${diagnostics.isPreviewDetectionActive}",
             color = if (diagnostics.isPreviewDetectionActive) Color.Green else Color.Gray,
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
         )
 
         Text(
             text = "Scanning: ${diagnostics.isScanningActive}",
             color = if (diagnostics.isScanningActive) Color.Green else Color.Gray,
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
         )
 
         Text(
             text = "AnalysisAttached: ${diagnostics.isAnalysisAttached}",
             color = if (diagnostics.isAnalysisAttached) Color.Green else Color.Red,
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
         )
 
         Text(
@@ -156,63 +161,67 @@ fun CameraPipelineDebugOverlay(
             color = if (diagnostics.isAnalysisFlowing) Color.Green else Color.Red,
             fontSize = 9.sp,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.testTag(TestSemantics.CAM_ANALYSIS_FLOWING)
+            modifier = Modifier.testTag(TestSemantics.CAM_ANALYSIS_FLOWING),
         )
 
         Text(
             text = "LastFrame: $frameAgoText",
-            color = when {
-                frameAgo < 0 -> Color.Gray
-                frameAgo < 500 -> Color.Green
-                frameAgo < 2000 -> Color.Yellow
-                else -> Color.Red
-            },
+            color =
+                when {
+                    frameAgo < 0 -> Color.Gray
+                    frameAgo < 500 -> Color.Green
+                    frameAgo < 2000 -> Color.Yellow
+                    else -> Color.Red
+                },
             fontSize = 9.sp,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.testTag(TestSemantics.CAM_LAST_FRAME)
+            modifier = Modifier.testTag(TestSemantics.CAM_LAST_FRAME),
         )
 
         Text(
             text = "LastBbox: $bboxAgoText",
-            color = when {
-                bboxAgo < 0 -> Color.Gray
-                bboxAgo < 500 -> Color.Green
-                bboxAgo < 2000 -> Color.Yellow
-                else -> Color.Red
-            },
+            color =
+                when {
+                    bboxAgo < 0 -> Color.Gray
+                    bboxAgo < 500 -> Color.Green
+                    bboxAgo < 2000 -> Color.Yellow
+                    else -> Color.Red
+                },
             fontSize = 9.sp,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.testTag(TestSemantics.CAM_LAST_BBOX)
+            modifier = Modifier.testTag(TestSemantics.CAM_LAST_BBOX),
         )
 
         Text(
             text = "BboxCount: ${diagnostics.bboxCount}",
             color = if (diagnostics.bboxCount > 0) Color.Green else Color.Gray,
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
         )
 
         Text(
             text = "FPS: $fpsText",
-            color = when {
-                diagnostics.analysisFramesPerSecond >= 1.5 -> Color.Green
-                diagnostics.analysisFramesPerSecond >= 0.5 -> Color.Yellow
-                else -> Color.Red
-            },
+            color =
+                when {
+                    diagnostics.analysisFramesPerSecond >= 1.5 -> Color.Green
+                    diagnostics.analysisFramesPerSecond >= 0.5 -> Color.Yellow
+                    else -> Color.Red
+                },
             fontSize = 9.sp,
             style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.testTag(TestSemantics.CAM_FPS)
+            modifier = Modifier.testTag(TestSemantics.CAM_FPS),
         )
 
         Text(
             text = "Lifecycle: ${diagnostics.lifecycleState}",
-            color = when (diagnostics.lifecycleState) {
-                "RESUMED" -> Color.Green
-                "STARTED" -> Color.Yellow
-                else -> Color.Gray
-            },
+            color =
+                when (diagnostics.lifecycleState) {
+                    "RESUMED" -> Color.Green
+                    "STARTED" -> Color.Yellow
+                    else -> Color.Gray
+                },
             fontSize = 9.sp,
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall,
         )
 
         if (diagnostics.navDestination.isNotEmpty()) {
@@ -220,7 +229,7 @@ fun CameraPipelineDebugOverlay(
                 text = "Nav: ${diagnostics.navDestination}",
                 color = Color.White,
                 fontSize = 9.sp,
-                style = MaterialTheme.typography.labelSmall
+                style = MaterialTheme.typography.labelSmall,
             )
         }
 
@@ -228,21 +237,22 @@ fun CameraPipelineDebugOverlay(
         if (diagnostics.stallReason != StallReason.NONE) {
             Text(
                 text = "StallReason: ${diagnostics.stallReason.name}",
-                color = when (diagnostics.stallReason) {
-                    StallReason.RECOVERING -> Color.Yellow
-                    StallReason.FAILED -> Color.Red
-                    StallReason.NO_FRAMES -> Color.Red
-                    else -> Color.Gray
-                },
+                color =
+                    when (diagnostics.stallReason) {
+                        StallReason.RECOVERING -> Color.Yellow
+                        StallReason.FAILED -> Color.Red
+                        StallReason.NO_FRAMES -> Color.Red
+                        else -> Color.Gray
+                    },
                 fontSize = 9.sp,
-                style = MaterialTheme.typography.labelSmall
+                style = MaterialTheme.typography.labelSmall,
             )
             if (diagnostics.recoveryAttempts > 0) {
                 Text(
                     text = "RecoveryAttempts: ${diagnostics.recoveryAttempts}",
                     color = Color.Yellow,
                     fontSize = 9.sp,
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
                 )
             }
         }

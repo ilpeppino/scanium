@@ -3,8 +3,6 @@ package com.scanium.app.ml.classification
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Singleton to track metrics for classification pipeline.
@@ -19,7 +17,7 @@ object ClassificationMetrics {
 
     private val _callsCompleted = MutableStateFlow(0)
     val callsCompleted: StateFlow<Int> = _callsCompleted.asStateFlow()
-    
+
     private val _callsFailed = MutableStateFlow(0)
     val callsFailed: StateFlow<Int> = _callsFailed.asStateFlow()
 
@@ -31,7 +29,10 @@ object ClassificationMetrics {
         _queueDepth.value++
     }
 
-    fun recordComplete(latencyMs: Long, success: Boolean) {
+    fun recordComplete(
+        latencyMs: Long,
+        success: Boolean,
+    ) {
         _queueDepth.value = (_queueDepth.value - 1).coerceAtLeast(0)
         if (success) {
             _callsCompleted.value++

@@ -33,10 +33,11 @@ import kotlinx.serialization.json.Json
  */
 class DiagnosticsBuffer(
     private val maxEvents: Int = DEFAULT_MAX_EVENTS,
-    private val maxBytes: Int = DEFAULT_MAX_BYTES
+    private val maxBytes: Int = DEFAULT_MAX_BYTES,
 ) {
     private val events = ArrayDeque<TelemetryEvent>()
     private var currentBytes = 0
+    private val lock = Lock()
 
     private val json = Json { prettyPrint = false }
 
@@ -48,58 +49,56 @@ class DiagnosticsBuffer(
      *
      * @param event The telemetry event to append
      */
-    @Synchronized
-    fun append(event: TelemetryEvent) {
-        val eventBytes = estimateEventSize(event)
+    fun append(event: TelemetryEvent) =
+        lock.withLock {
+            val eventBytes = estimateEventSize(event)
 
-        // Evict old events if we're at max count
-        while (events.size >= maxEvents && events.isNotEmpty()) {
-            removeOldest()
-        }
+            // Evict old events if we're at max count
+            while (events.size >= maxEvents && events.isNotEmpty()) {
+                removeOldest()
+            }
 
-        // Evict old events if adding this event would exceed max bytes
-        while (currentBytes + eventBytes > maxBytes && events.isNotEmpty()) {
-            removeOldest()
-        }
+            // Evict old events if adding this event would exceed max bytes
+            while (currentBytes + eventBytes > maxBytes && events.isNotEmpty()) {
+                removeOldest()
+            }
 
-        // Only add if it fits within maxBytes (even if buffer is empty)
-        if (eventBytes <= maxBytes) {
-            events.addLast(event)
-            currentBytes += eventBytes
+            // Only add if it fits within maxBytes (even if buffer is empty)
+            if (eventBytes <= maxBytes) {
+                events.addLast(event)
+                currentBytes += eventBytes
+            }
+            // If single event is larger than maxBytes, silently drop it
         }
-        // If single event is larger than maxBytes, silently drop it
-    }
 
     /**
      * Returns a thread-safe snapshot of all events currently in the buffer.
      *
      * @return Immutable list of events (oldest first)
      */
-    @Synchronized
-    fun snapshot(): List<TelemetryEvent> {
-        return events.toList()
-    }
+    fun snapshot(): List<TelemetryEvent> =
+        lock.withLock {
+            return events.toList()
+        }
 
     /**
      * Clears all events from the buffer.
      */
-    @Synchronized
-    fun clear() {
-        events.clear()
-        currentBytes = 0
-    }
+    fun clear() =
+        lock.withLock {
+            events.clear()
+            currentBytes = 0
+        }
 
     /**
      * Returns the current number of events in the buffer.
      */
-    @Synchronized
-    fun size(): Int = events.size
+    fun size(): Int = lock.withLock { events.size }
 
     /**
      * Returns the approximate current byte size of the buffer.
      */
-    @Synchronized
-    fun currentByteSize(): Int = currentBytes
+    fun currentByteSize(): Int = lock.withLock { currentBytes }
 
     /**
      * Removes the oldest event from the buffer and updates byte count.
@@ -108,7 +107,7 @@ class DiagnosticsBuffer(
         val oldest = events.removeFirstOrNull()
         if (oldest != null) {
             currentBytes -= estimateEventSize(oldest)
-            if (currentBytes < 0) currentBytes = 0  // Safety check
+            if (currentBytes < 0) currentBytes = 0 // Safety check
         }
     }
 

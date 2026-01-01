@@ -43,7 +43,7 @@ fun MotionEnhancedOverlay(
     previewSize: Size,
     rotationDegrees: Int = 90,
     showGeometryDebug: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Track if we have any detections (for scan frame appear)
     val hasDetections by remember(detections) {
@@ -75,7 +75,7 @@ fun MotionEnhancedOverlay(
                     left = (minLeft - 0.05f).coerceAtLeast(0f),
                     top = (minTop - 0.05f).coerceAtLeast(0f),
                     right = (maxRight + 0.05f).coerceAtMost(1f),
-                    bottom = (maxBottom + 0.05f).coerceAtMost(1f)
+                    bottom = (maxBottom + 0.05f).coerceAtMost(1f),
                 )
             }
         }
@@ -119,7 +119,7 @@ fun MotionEnhancedOverlay(
             ScanFrameAppear(
                 rect = scanFrameRect,
                 isVisible = true,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
 
@@ -130,7 +130,7 @@ fun MotionEnhancedOverlay(
                 imageSize = imageSize,
                 previewSize = previewSize,
                 rotationDegrees = rotationDegrees,
-                showGeometryDebug = showGeometryDebug
+                showGeometryDebug = showGeometryDebug,
             )
         }
 
@@ -138,20 +138,21 @@ fun MotionEnhancedOverlay(
         if (MotionConfig.isMotionOverlaysEnabled && pulseTriggerKey > 0) {
             // Find the LOCKED detection for pulse positioning
             val lockedTrack = detections.firstOrNull { it.boxStyle == OverlayBoxStyle.LOCKED }
-            val pulseRect = lockedTrack?.let {
-                Rect(
-                    left = it.bboxNorm.left,
-                    top = it.bboxNorm.top,
-                    right = it.bboxNorm.right,
-                    bottom = it.bboxNorm.bottom
-                )
-            } ?: scanFrameRect
+            val pulseRect =
+                lockedTrack?.let {
+                    Rect(
+                        left = it.bboxNorm.left,
+                        top = it.bboxNorm.top,
+                        right = it.bboxNorm.right,
+                        bottom = it.bboxNorm.bottom,
+                    )
+                } ?: scanFrameRect
 
             LightningScanPulse(
                 rect = pulseRect,
                 triggerKey = pulseTriggerKey,
                 direction = PulseDirection.VERTICAL_DOWN,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }

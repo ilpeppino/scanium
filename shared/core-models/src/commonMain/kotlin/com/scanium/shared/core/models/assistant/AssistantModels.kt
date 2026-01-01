@@ -1,15 +1,15 @@
 package com.scanium.shared.core.models.assistant
 
+import com.scanium.shared.core.models.listing.DraftFieldKey
 import com.scanium.shared.core.models.listing.ExportProfileDefinition
 import com.scanium.shared.core.models.listing.ExportProfileId
 import com.scanium.shared.core.models.listing.ListingDraft
-import com.scanium.shared.core.models.listing.DraftFieldKey
 import kotlinx.serialization.Serializable
 
 enum class AssistantRole {
     USER,
     ASSISTANT,
-    SYSTEM
+    SYSTEM,
 }
 
 // ============================================================================
@@ -22,7 +22,7 @@ enum class AssistantRole {
 enum class AssistantTone {
     NEUTRAL,
     FRIENDLY,
-    PROFESSIONAL
+    PROFESSIONAL,
 }
 
 /**
@@ -35,7 +35,7 @@ enum class AssistantRegion {
     FR,
     UK,
     US,
-    EU
+    EU,
 }
 
 /**
@@ -43,7 +43,7 @@ enum class AssistantRegion {
  */
 enum class AssistantUnits {
     METRIC,
-    IMPERIAL
+    IMPERIAL,
 }
 
 /**
@@ -52,7 +52,7 @@ enum class AssistantUnits {
 enum class AssistantVerbosity {
     CONCISE,
     NORMAL,
-    DETAILED
+    DETAILED,
 }
 
 /**
@@ -70,7 +70,7 @@ data class AssistantPrefs(
     /** Unit system */
     val units: AssistantUnits? = null,
     /** Response verbosity */
-    val verbosity: AssistantVerbosity? = null
+    val verbosity: AssistantVerbosity? = null,
 )
 
 @Serializable
@@ -78,7 +78,7 @@ data class AssistantMessage(
     val role: AssistantRole,
     val content: String,
     val timestamp: Long,
-    val itemContextIds: List<String> = emptyList()
+    val itemContextIds: List<String> = emptyList(),
 )
 
 enum class AssistantActionType {
@@ -88,7 +88,7 @@ enum class AssistantActionType {
     OPEN_POSTING_ASSIST,
     OPEN_SHARE,
     OPEN_URL,
-    SUGGEST_NEXT_PHOTO
+    SUGGEST_NEXT_PHOTO,
 }
 
 @Serializable
@@ -98,7 +98,7 @@ data class AssistantAction(
     /** Label to display on the action button/chip */
     val label: String? = null,
     /** Whether this action requires user confirmation (e.g., for LOW confidence) */
-    val requiresConfirmation: Boolean = false
+    val requiresConfirmation: Boolean = false,
 )
 
 /**
@@ -109,7 +109,7 @@ data class AssistantAction(
 data class SafetyResponse(
     val blocked: Boolean = false,
     val reasonCode: String? = null,
-    val requestId: String? = null
+    val requestId: String? = null,
 )
 
 /**
@@ -121,7 +121,7 @@ data class SafetyResponse(
 enum class ConfidenceTier {
     HIGH,
     MED,
-    LOW
+    LOW,
 }
 
 /**
@@ -132,7 +132,7 @@ data class EvidenceBullet(
     /** Type of evidence */
     val type: String,
     /** Human-readable evidence statement */
-    val text: String
+    val text: String,
 )
 
 /**
@@ -147,7 +147,7 @@ data class SuggestedAttribute(
     /** Confidence tier for this suggestion */
     val confidence: ConfidenceTier,
     /** Source of suggestion (ocr, logo, color, etc.) */
-    val source: String? = null
+    val source: String? = null,
 )
 
 /**
@@ -162,7 +162,7 @@ data class SuggestedDraftUpdate(
     /** Confidence tier for this suggestion */
     val confidence: ConfidenceTier,
     /** Whether this requires user confirmation before applying */
-    val requiresConfirmation: Boolean = false
+    val requiresConfirmation: Boolean = false,
 )
 
 /**
@@ -188,7 +188,7 @@ data class AssistantResponse(
     /** Suggested draft updates (title, description) */
     val suggestedDraftUpdates: List<SuggestedDraftUpdate> = emptyList(),
     /** Suggested next photo instruction when evidence is insufficient */
-    val suggestedNextPhoto: String? = null
+    val suggestedNextPhoto: String? = null,
 ) {
     /** Get the response text, preferring 'reply' over 'content' */
     val text: String get() = reply ?: content ?: ""
@@ -198,7 +198,7 @@ data class AssistantResponse(
 data class ItemAttributeSnapshot(
     val key: String,
     val value: String,
-    val confidence: Float? = null
+    val confidence: Float? = null,
 )
 
 @Serializable
@@ -211,13 +211,13 @@ data class ItemContextSnapshot(
     val attributes: List<ItemAttributeSnapshot> = emptyList(),
     val priceEstimate: Double? = null,
     val photosCount: Int = 0,
-    val exportProfileId: ExportProfileId = ExportProfileId.GENERIC
+    val exportProfileId: ExportProfileId = ExportProfileId.GENERIC,
 )
 
 @Serializable
 data class ExportProfileSnapshot(
     val id: ExportProfileId,
-    val displayName: String
+    val displayName: String,
 )
 
 @Serializable
@@ -228,7 +228,7 @@ data class AssistantPromptRequest(
     val exportProfile: ExportProfileSnapshot,
     val systemPrompt: String,
     /** User's personalization preferences */
-    val assistantPrefs: AssistantPrefs? = null
+    val assistantPrefs: AssistantPrefs? = null,
 )
 
 object AssistantPromptBuilder {
@@ -244,34 +244,36 @@ You are Scanium Seller Assistant. Provide safe, honest guidance for listing item
         userMessage: String,
         exportProfile: ExportProfileDefinition,
         conversation: List<AssistantMessage> = emptyList(),
-        assistantPrefs: AssistantPrefs? = null
+        assistantPrefs: AssistantPrefs? = null,
     ): AssistantPromptRequest {
         return AssistantPromptRequest(
             items = items,
             conversation = conversation,
             userMessage = userMessage.trim(),
-            exportProfile = ExportProfileSnapshot(
-                id = exportProfile.id,
-                displayName = exportProfile.displayName
-            ),
+            exportProfile =
+                ExportProfileSnapshot(
+                    id = exportProfile.id,
+                    displayName = exportProfile.displayName,
+                ),
             systemPrompt = SYSTEM_PROMPT.trim(),
-            assistantPrefs = assistantPrefs
+            assistantPrefs = assistantPrefs,
         )
     }
 }
 
 object ItemContextSnapshotBuilder {
     fun fromDraft(draft: ListingDraft): ItemContextSnapshot {
-        val sortedAttributes = draft.fields.entries
-            .sortedBy { it.key.wireValue }
-            .mapNotNull { (key, field) ->
-                val value = field.value?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-                ItemAttributeSnapshot(
-                    key = key.wireValue,
-                    value = value,
-                    confidence = field.confidence
-                )
-            }
+        val sortedAttributes =
+            draft.fields.entries
+                .sortedBy { it.key.wireValue }
+                .mapNotNull { (key, field) ->
+                    val value = field.value?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+                    ItemAttributeSnapshot(
+                        key = key.wireValue,
+                        value = value,
+                        confidence = field.confidence,
+                    )
+                }
 
         val categoryField = draft.fields[DraftFieldKey.CATEGORY]
         val confidence = categoryField?.confidence ?: draft.title.confidence
@@ -285,7 +287,7 @@ object ItemContextSnapshotBuilder {
             attributes = sortedAttributes,
             priceEstimate = draft.price.value,
             photosCount = draft.photos.size,
-            exportProfileId = draft.profile
+            exportProfileId = draft.profile,
         )
     }
 }

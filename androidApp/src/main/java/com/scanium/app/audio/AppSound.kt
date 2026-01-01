@@ -8,5 +8,5 @@ enum class AppSound {
     ERROR,
     SEND,
     RECEIVED,
-    EXPORT
+    EXPORT,
 }

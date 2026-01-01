@@ -7,8 +7,8 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "scanned_item_history",
     indices = [
-        Index(value = ["itemId", "changedAt"])
-    ]
+        Index(value = ["itemId", "changedAt"]),
+    ],
 )
 data class ScannedItemHistoryEntity(
     @PrimaryKey(autoGenerate = true) val changeId: Long = 0L,
@@ -43,12 +43,12 @@ data class ScannedItemHistoryEntity(
     val classificationStatus: String,
     val domainCategoryId: String?,
     val classificationErrorMessage: String?,
-    val classificationRequestId: String?
+    val classificationRequestId: String?,
 )
 
 fun ScannedItemEntity.toHistoryEntity(
     changedAt: Long,
-    snapshotHash: String
+    snapshotHash: String,
 ): ScannedItemHistoryEntity {
     return ScannedItemHistoryEntity(
         itemId = id,
@@ -82,6 +82,6 @@ fun ScannedItemEntity.toHistoryEntity(
         classificationStatus = classificationStatus,
         domainCategoryId = domainCategoryId,
         classificationErrorMessage = classificationErrorMessage,
-        classificationRequestId = classificationRequestId
+        classificationRequestId = classificationRequestId,
     )
 }

@@ -5,7 +5,7 @@ import com.scanium.app.model.user.UserEdition
 enum class EntitlementSource {
     LOCAL_CACHE,
     PLAY_BILLING,
-    SERVER_VERIFIED
+    SERVER_VERIFIED,
 }
 
 data class EntitlementState(
@@ -13,13 +13,14 @@ data class EntitlementState(
     val source: EntitlementSource,
     val expiresAt: Long? = null,
     val lastUpdatedAt: Long,
-    val isGracePeriod: Boolean = false
+    val isGracePeriod: Boolean = false,
 ) {
     companion object {
-        val DEFAULT = EntitlementState(
-            status = UserEdition.FREE,
-            source = EntitlementSource.LOCAL_CACHE,
-            lastUpdatedAt = 0L
-        )
+        val DEFAULT =
+            EntitlementState(
+                status = UserEdition.FREE,
+                source = EntitlementSource.LOCAL_CACHE,
+                lastUpdatedAt = 0L,
+            )
     }
 }

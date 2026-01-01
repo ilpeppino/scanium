@@ -26,7 +26,7 @@ data class ClassificationResult(
     val attributes: Map<String, String>? = null,
     val status: ClassificationStatus = ClassificationStatus.SUCCESS,
     val errorMessage: String? = null,
-    val requestId: String? = null
+    val requestId: String? = null,
 )
 
 /**
@@ -40,5 +40,5 @@ enum class ClassificationStatus {
     SUCCESS,
 
     /** Classification failed (retryable or non-retryable) */
-    FAILED
+    FAILED,
 }
