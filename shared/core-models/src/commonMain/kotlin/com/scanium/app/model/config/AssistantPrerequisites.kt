@@ -51,20 +51,51 @@ data class AssistantPrerequisiteState(
 
 /**
  * Result of a backend connection test.
+ * Includes detailed debug information for diagnostics display.
  */
 sealed class ConnectionTestResult {
-    object Success : ConnectionTestResult()
+    /** Successful connection - backend responded with 2xx */
+    data class Success(
+        /** HTTP status code (e.g., 200) */
+        val httpStatus: Int = 200,
+        /** Tested endpoint path (e.g., "/health") */
+        val endpoint: String = "/health",
+    ) : ConnectionTestResult()
 
     data class Failure(
         val errorType: ConnectionTestErrorType,
         val message: String,
-    ) : ConnectionTestResult()
+        /** HTTP status code if available (null for network errors) */
+        val httpStatus: Int? = null,
+        /** Tested endpoint path (e.g., "/health", "/v1/assist/chat") */
+        val endpoint: String? = null,
+        /** HTTP method used (e.g., "GET", "POST") */
+        val method: String = "GET",
+    ) : ConnectionTestResult() {
+        /**
+         * Debug string for display in UI, e.g., "GET /health -> 401"
+         */
+        val debugDetail: String
+            get() = buildString {
+                append(method)
+                append(" ")
+                append(endpoint ?: "/unknown")
+                httpStatus?.let { append(" -> $it") }
+            }
+    }
 }
 
 enum class ConnectionTestErrorType {
+    /** Network error - DNS failure, connection refused, SSL error */
     NETWORK_UNREACHABLE,
+    /** HTTP 5xx response */
     SERVER_ERROR,
+    /** HTTP 401/403 response */
     UNAUTHORIZED,
+    /** HTTP 404 response */
+    NOT_FOUND,
+    /** Socket/connection timeout */
     TIMEOUT,
+    /** Backend URL or API key not configured */
     NOT_CONFIGURED,
 }

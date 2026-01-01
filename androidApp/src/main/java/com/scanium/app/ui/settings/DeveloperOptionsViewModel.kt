@@ -15,6 +15,7 @@ import androidx.lifecycle.viewModelScope
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.diagnostics.AssistantDiagnosticsState
 import com.scanium.app.diagnostics.BackendReachabilityStatus
+import com.scanium.app.diagnostics.BackendStatusClassifier
 import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.diagnostics.DiagnosticsState
 import com.scanium.app.ftue.FtueRepository
@@ -165,11 +166,7 @@ class DeveloperOptionsViewModel
 
                 // Test backend connection
                 val connectionResult = featureFlagRepository.testAssistantConnection()
-                val backendStatus =
-                    when (connectionResult) {
-                        is ConnectionTestResult.Success -> BackendReachabilityStatus.REACHABLE
-                        is ConnectionTestResult.Failure -> BackendReachabilityStatus.UNREACHABLE
-                    }
+                val backendStatus = BackendStatusClassifier.classify(connectionResult)
 
                 // Update state with connection test result
                 _assistantDiagnosticsState.value =
@@ -211,6 +208,7 @@ class DeveloperOptionsViewModel
 // Basic availability check; actual readiness depends on VoiceController
                 )
         }
+
 
         /**
          * Toggle auto-refresh.
