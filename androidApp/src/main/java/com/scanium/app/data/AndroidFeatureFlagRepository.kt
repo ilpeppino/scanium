@@ -167,11 +167,15 @@ class AndroidFeatureFlagRepository(
         withContext(Dispatchers.IO) {
             val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
             val apiKey = apiKeyStore.getApiKey()
+            val endpoint = "/health"
+            val method = "GET"
 
             if (baseUrl.isBlank()) {
                 return@withContext ConnectionTestResult.Failure(
                     errorType = ConnectionTestErrorType.NOT_CONFIGURED,
                     message = "Backend URL is not configured",
+                    endpoint = endpoint,
+                    method = method,
                 )
             }
 
@@ -179,10 +183,12 @@ class AndroidFeatureFlagRepository(
                 return@withContext ConnectionTestResult.Failure(
                     errorType = ConnectionTestErrorType.NOT_CONFIGURED,
                     message = "API key is not configured",
+                    endpoint = endpoint,
+                    method = method,
                 )
             }
 
-            val healthEndpoint = "${baseUrl.trimEnd('/')}/health"
+            val healthEndpoint = "${baseUrl.trimEnd('/')}$endpoint"
 
             try {
                 val request =
@@ -196,16 +202,41 @@ class AndroidFeatureFlagRepository(
 
                 healthCheckClient.newCall(request).execute().use { response ->
                     when {
-                        response.isSuccessful -> ConnectionTestResult.Success
+                        response.isSuccessful -> ConnectionTestResult.Success(
+                            httpStatus = response.code,
+                            endpoint = endpoint,
+                        )
                         response.code == 401 || response.code == 403 ->
                             ConnectionTestResult.Failure(
                                 errorType = ConnectionTestErrorType.UNAUTHORIZED,
                                 message = "Invalid API key or unauthorized access",
+                                httpStatus = response.code,
+                                endpoint = endpoint,
+                                method = method,
+                            )
+                        response.code == 404 ->
+                            ConnectionTestResult.Failure(
+                                errorType = ConnectionTestErrorType.NOT_FOUND,
+                                message = "Endpoint not found (wrong base URL or route)",
+                                httpStatus = response.code,
+                                endpoint = endpoint,
+                                method = method,
+                            )
+                        response.code in 500..599 ->
+                            ConnectionTestResult.Failure(
+                                errorType = ConnectionTestErrorType.SERVER_ERROR,
+                                message = "Server error (${response.code})",
+                                httpStatus = response.code,
+                                endpoint = endpoint,
+                                method = method,
                             )
                         else ->
                             ConnectionTestResult.Failure(
                                 errorType = ConnectionTestErrorType.SERVER_ERROR,
-                                message = "Server returned error: ${response.code}",
+                                message = "Unexpected response: ${response.code}",
+                                httpStatus = response.code,
+                                endpoint = endpoint,
+                                method = method,
                             )
                     }
                 }
@@ -213,21 +244,36 @@ class AndroidFeatureFlagRepository(
                 ConnectionTestResult.Failure(
                     errorType = ConnectionTestErrorType.TIMEOUT,
                     message = "Connection timed out",
+                    endpoint = endpoint,
+                    method = method,
                 )
             } catch (e: java.net.UnknownHostException) {
                 ConnectionTestResult.Failure(
                     errorType = ConnectionTestErrorType.NETWORK_UNREACHABLE,
                     message = "Cannot resolve server address",
+                    endpoint = endpoint,
+                    method = method,
                 )
             } catch (e: java.net.ConnectException) {
                 ConnectionTestResult.Failure(
                     errorType = ConnectionTestErrorType.NETWORK_UNREACHABLE,
                     message = "Cannot connect to server",
+                    endpoint = endpoint,
+                    method = method,
+                )
+            } catch (e: javax.net.ssl.SSLException) {
+                ConnectionTestResult.Failure(
+                    errorType = ConnectionTestErrorType.NETWORK_UNREACHABLE,
+                    message = "SSL/TLS error: ${e.message?.take(30) ?: "certificate issue"}",
+                    endpoint = endpoint,
+                    method = method,
                 )
             } catch (e: Exception) {
                 ConnectionTestResult.Failure(
                     errorType = ConnectionTestErrorType.NETWORK_UNREACHABLE,
-                    message = e.message ?: "Unknown error",
+                    message = e.message?.take(50) ?: "Unknown error",
+                    endpoint = endpoint,
+                    method = method,
                 )
             }
         }
