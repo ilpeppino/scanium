@@ -829,8 +829,16 @@ private fun AssistantDiagnosticsSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Overall status badge
-        AssistantOverallStatusBadge(readiness = state.overallReadiness)
+        // Overall status badge with debug detail
+        val debugDetail = when (val result = state.connectionTestResult) {
+            is ConnectionTestResult.Success -> "GET ${result.endpoint} -> ${result.httpStatus}"
+            is ConnectionTestResult.Failure -> result.debugDetail
+            null -> null
+        }
+        AssistantOverallStatusBadge(
+            readiness = state.overallReadiness,
+            debugDetail = debugDetail,
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -851,13 +859,17 @@ private fun AssistantDiagnosticsSection(
                         when (state.backendReachable) {
                             BackendReachabilityStatus.REACHABLE -> DiagnosticStatus.OK
                             BackendReachabilityStatus.UNREACHABLE -> DiagnosticStatus.ERROR
+                            BackendReachabilityStatus.UNAUTHORIZED -> DiagnosticStatus.WARNING
+                            BackendReachabilityStatus.SERVER_ERROR -> DiagnosticStatus.WARNING
+                            BackendReachabilityStatus.NOT_FOUND -> DiagnosticStatus.WARNING
+                            BackendReachabilityStatus.NOT_CONFIGURED -> DiagnosticStatus.WARNING
                             BackendReachabilityStatus.DEGRADED -> DiagnosticStatus.WARNING
                             BackendReachabilityStatus.CHECKING -> DiagnosticStatus.CHECKING
                             BackendReachabilityStatus.UNKNOWN -> DiagnosticStatus.UNKNOWN
                         },
                     detail =
                         when (val result = state.connectionTestResult) {
-                            is ConnectionTestResult.Success -> "Connected"
+                            is ConnectionTestResult.Success -> "Connected (${result.httpStatus})"
                             is ConnectionTestResult.Failure -> result.message
                             null -> if (state.isChecking) "Checking..." else "Not checked"
                         },
@@ -958,9 +970,13 @@ private fun AssistantDiagnosticsSection(
 
 /**
  * Overall status badge for assistant readiness.
+ * Shows accurate status messages distinguishing unreachable vs unauthorized vs server errors.
  */
 @Composable
-private fun AssistantOverallStatusBadge(readiness: AssistantReadiness) {
+private fun AssistantOverallStatusBadge(
+    readiness: AssistantReadiness,
+    debugDetail: String? = null,
+) {
     val (color, text, icon) =
         when (readiness) {
             AssistantReadiness.READY ->
@@ -987,6 +1003,30 @@ private fun AssistantOverallStatusBadge(readiness: AssistantReadiness) {
                     "Backend Unreachable",
                     Icons.Default.CloudOff,
                 )
+            AssistantReadiness.BACKEND_UNAUTHORIZED ->
+                Triple(
+                    Color(0xFFFF9800),
+                    "Backend Reachable — Invalid API Key",
+                    Icons.Default.Lock,
+                )
+            AssistantReadiness.BACKEND_SERVER_ERROR ->
+                Triple(
+                    Color(0xFFFF9800),
+                    "Backend Reachable — Server Error",
+                    Icons.Default.Error,
+                )
+            AssistantReadiness.BACKEND_NOT_FOUND ->
+                Triple(
+                    Color(0xFFFF9800),
+                    "Backend Reachable — Endpoint Not Found",
+                    Icons.Default.SearchOff,
+                )
+            AssistantReadiness.BACKEND_NOT_CONFIGURED ->
+                Triple(
+                    Color(0xFF9E9E9E),
+                    "Backend Not Configured",
+                    Icons.Default.Settings,
+                )
             AssistantReadiness.PREREQUISITES_NOT_MET ->
                 Triple(
                     Color(0xFFFF9800),
@@ -1006,26 +1046,40 @@ private fun AssistantOverallStatusBadge(readiness: AssistantReadiness) {
         shape = RoundedCornerShape(8.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Row(
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                icon,
-                contentDescription = text,
-                tint = color,
-                modifier = Modifier.size(24.dp),
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = color,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = text,
+                    tint = color,
+                    modifier = Modifier.size(24.dp),
+                )
+                Text(
+                    text = text,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = color,
+                )
+            }
+            // Show debug detail (endpoint + status) for error states
+            if (debugDetail != null && readiness != AssistantReadiness.READY && readiness != AssistantReadiness.CHECKING) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = debugDetail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color.copy(alpha = 0.8f),
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
         }
     }
 }
