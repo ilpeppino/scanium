@@ -81,6 +81,7 @@ describe('CORS Plugin', () => {
       headers: {
         origin: 'https://allowed.example.com',
         'access-control-request-method': 'GET',
+        'x-forwarded-proto': 'https',
       },
     });
 
@@ -101,6 +102,7 @@ describe('CORS Plugin', () => {
       headers: {
         origin: 'https://malicious.example.com',
         'access-control-request-method': 'GET',
+        'x-forwarded-proto': 'https',
       },
     });
 

@@ -37,13 +37,13 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Uploads and cache
+# Uploads and cache (runtime directories, not source code)
 uploads/
+/cache/
 cache/
 !src/infra/cache/
 temp/
 
-# Prisma
-.env.migration
+# Prisma.env.migration
 
 # Docker (docker-compose files are tracked; .dockerignore should be tracked too)

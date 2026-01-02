@@ -15,6 +15,7 @@ import { assistantRoutes } from './modules/assistant/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { billingRoutes } from './modules/billing/billing.routes.js';
 import { configRoutes } from './modules/config/config.routes.js';
+import { apiGuardPlugin } from './infra/security/api-guard.js';
 
 /**
  * Build Fastify application instance
@@ -50,6 +51,12 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Register error handler
   app.setErrorHandler(errorHandlerPlugin);
+
+  await app.register(apiGuardPlugin, {
+    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/admin/'],
+    maxRequests: Number(process.env.SECURITY_RATE_LIMIT_MAX ?? 30),
+    windowMs: Number(process.env.SECURITY_RATE_LIMIT_WINDOW_MS ?? 10_000),
+  });
 
   // Correlation IDs
   await app.register(correlationPlugin);

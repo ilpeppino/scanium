@@ -204,7 +204,7 @@ export class ApiKeyManager {
     const now = new Date();
     let removed = 0;
 
-    for (const [key, metadata] of this.keys.entries()) {
+    for (const [_key, metadata] of this.keys.entries()) {
       if (metadata.expiresAt && metadata.expiresAt < now) {
         // Keep in map but mark as inactive for audit trail
         // Could also remove entirely: this.keys.delete(key);

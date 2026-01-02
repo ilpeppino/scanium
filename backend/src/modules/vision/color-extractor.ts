@@ -254,7 +254,7 @@ export async function extractDominantColors(
 
   try {
     // Downscale aggressively for performance
-    const { data, info } = await Promise.race([
+    const { data } = await Promise.race([
       sharp(buffer)
         .resize(targetSize, targetSize, { fit: 'inside' })
         .removeAlpha()

@@ -22,6 +22,10 @@ export interface CacheEvent {
   metadata?: Record<string, unknown>;
 }
 
+// Backward-compat alias for older imports
+export type CacheUsageEvent = CacheEvent;
+
+
 export type UsageCallback = (event: CacheEvent) => void;
 
 interface CacheEntry<T> {

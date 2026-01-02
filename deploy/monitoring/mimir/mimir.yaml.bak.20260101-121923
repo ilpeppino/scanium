@@ -1,0 +1,31 @@
+multitenancy_enabled: false
+
+server:
+  http_listen_port: 9009
+
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /mimir/ruler-storage
+
+blocks_storage:
+  backend: filesystem
+  filesystem:
+    dir: /mimir/blocks
+
+compactor:
+  data_dir: /mimir/compactor
+
+ingester:
+  ring:
+    kvstore:
+      store: inmemory
+
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+
+ruler:
+  rule_path: /mimir/rules
