@@ -62,6 +62,147 @@ describe('POST /v1/assist/chat', () => {
     expect(res.statusCode).toBe(401);
   });
 
+  describe('empty items handling (allowEmptyItems flag)', () => {
+    it('returns default "attach item" message when flag is OFF and items is empty', async () => {
+      const app = await appPromise;
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/assist/chat',
+        headers: { 'x-api-key': 'assist-key' },
+        payload: {
+          items: [],
+          message: 'Help me with my listing',
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.reply).toContain('Attach at least one item');
+      expect(body.correlationId).toBeDefined();
+    });
+
+    it('returns helpful message when flag is ON and items is empty', async () => {
+      // Create a separate app with allowEmptyItems enabled
+      const configWithFlag = configSchema.parse({
+        nodeEnv: 'test',
+        port: 8081,
+        publicBaseUrl: 'http://localhost:8081',
+        databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+        classifier: {
+          provider: 'mock',
+          apiKeys: 'test-key',
+          domainPackPath: 'src/modules/classifier/domain/home-resale.json',
+        },
+        assistant: {
+          provider: 'mock',
+          apiKeys: 'assist-key',
+          allowEmptyItems: true,
+        },
+        vision: {
+          enabled: true,
+          provider: 'mock',
+        },
+        ebay: {
+          env: 'sandbox',
+          clientId: 'client',
+          clientSecret: 'client-secret-minimum-length-please',
+          scopes: 'scope',
+          tokenEncryptionKey: 'x'.repeat(32),
+        },
+        sessionSigningSecret: 'x'.repeat(64),
+        security: {
+          enforceHttps: false,
+          enableHsts: false,
+          apiKeyRotationEnabled: false,
+          apiKeyExpirationDays: 90,
+          logApiKeyUsage: false,
+        },
+        corsOrigins: 'http://localhost',
+      });
+
+      const appWithFlag = await buildApp(configWithFlag);
+
+      try {
+        const res = await appWithFlag.inject({
+          method: 'POST',
+          url: '/v1/assist/chat',
+          headers: { 'x-api-key': 'assist-key' },
+          payload: {
+            items: [],
+            message: 'Help me with my listing',
+          },
+        });
+
+        expect(res.statusCode).toBe(200);
+        const body = JSON.parse(res.body);
+        expect(body.reply).toBe('Assistant is enabled. Add an item to get listing advice.');
+        expect(body.actions).toEqual([]);
+        expect(body.citationsMetadata).toEqual({});
+        expect(body.safety).toBeDefined();
+        expect(body.safety.blocked).toBe(false);
+        expect(body.correlationId).toBeDefined();
+      } finally {
+        await appWithFlag.close();
+      }
+    });
+
+    it('still requires API key when flag is ON', async () => {
+      const configWithFlag = configSchema.parse({
+        nodeEnv: 'test',
+        port: 8082,
+        publicBaseUrl: 'http://localhost:8082',
+        databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+        classifier: {
+          provider: 'mock',
+          apiKeys: 'test-key',
+          domainPackPath: 'src/modules/classifier/domain/home-resale.json',
+        },
+        assistant: {
+          provider: 'mock',
+          apiKeys: 'assist-key',
+          allowEmptyItems: true,
+        },
+        vision: {
+          enabled: true,
+          provider: 'mock',
+        },
+        ebay: {
+          env: 'sandbox',
+          clientId: 'client',
+          clientSecret: 'client-secret-minimum-length-please',
+          scopes: 'scope',
+          tokenEncryptionKey: 'x'.repeat(32),
+        },
+        sessionSigningSecret: 'x'.repeat(64),
+        security: {
+          enforceHttps: false,
+          enableHsts: false,
+          apiKeyRotationEnabled: false,
+          apiKeyExpirationDays: 90,
+          logApiKeyUsage: false,
+        },
+        corsOrigins: 'http://localhost',
+      });
+
+      const appWithFlag = await buildApp(configWithFlag);
+
+      try {
+        const res = await appWithFlag.inject({
+          method: 'POST',
+          url: '/v1/assist/chat',
+          payload: {
+            items: [],
+            message: 'Help me',
+          },
+        });
+
+        expect(res.statusCode).toBe(401);
+      } finally {
+        await appWithFlag.close();
+      }
+    });
+  });
+
   it('returns assistant response for mock provider', async () => {
     const app = await appPromise;
     const res = await app.inject({

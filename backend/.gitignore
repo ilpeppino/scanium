@@ -40,6 +40,7 @@ coverage/
 # Uploads and cache
 uploads/
 cache/
+!src/infra/cache/
 temp/
 
 # Prisma
