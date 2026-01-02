@@ -370,6 +370,29 @@ class ItemsViewModel
             return listingManager.getListingStatus(itemId)
         }
 
+        // ==================== Item Edit Operations (Delegated to StateManager) ====================
+
+        /**
+         * Updates user-editable fields of a scanned item.
+         * @see ItemsStateManager.updateItemFields
+         */
+        fun updateItemFields(
+            itemId: String,
+            labelText: String? = null,
+            recognizedText: String? = null,
+            barcodeValue: String? = null,
+        ) {
+            stateManager.updateItemFields(itemId, labelText, recognizedText, barcodeValue)
+        }
+
+        /**
+         * Updates multiple items at once with their new field values.
+         * @see ItemsStateManager.updateItemsFields
+         */
+        fun updateItemsFields(updates: Map<String, com.scanium.app.items.state.ItemFieldUpdate>) {
+            stateManager.updateItemsFields(updates)
+        }
+
         // ==================== Threshold Operations (Delegated to StateManager) ====================
 
         /**

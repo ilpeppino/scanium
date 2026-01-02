@@ -19,6 +19,7 @@ import com.scanium.app.billing.ui.PaywallScreen
 import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.camera.CameraScreen
 import com.scanium.app.camera.CameraViewModel
+import com.scanium.app.items.EditItemsScreen
 import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.selling.assistant.AssistantScreen
@@ -47,6 +48,7 @@ import com.scanium.app.ui.settings.TermsScreen
 object Routes {
     const val CAMERA = "camera"
     const val ITEMS_LIST = "items_list"
+    const val EDIT_ITEMS = "items/edit"
     const val SELL_ON_EBAY = "sell_on_ebay"
     const val DRAFT_REVIEW = "draft_review"
     const val POSTING_ASSIST = "posting_assist"
@@ -215,9 +217,35 @@ fun ScaniumNavGraph(
                         navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
                     }
                 },
+                onNavigateToEdit = { ids ->
+                    if (ids.isNotEmpty()) {
+                        val encoded = Uri.encode(ids.joinToString(","))
+                        navController.navigate("${Routes.EDIT_ITEMS}?ids=$encoded")
+                    }
+                },
                 draftStore = draftStore,
                 itemsViewModel = itemsViewModel,
                 tourViewModel = tourViewModel,
+            )
+        }
+
+        composable(
+            route = "${Routes.EDIT_ITEMS}?ids={ids}",
+            arguments = listOf(
+                navArgument("ids") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+            ),
+        ) { backStackEntry ->
+            val ids = backStackEntry.arguments?.getString("ids")
+                ?.split(",")
+                ?.filter { it.isNotBlank() }
+                ?: emptyList()
+            EditItemsScreen(
+                itemIds = ids,
+                onBack = { navController.popBackStack() },
+                itemsViewModel = itemsViewModel,
             )
         }
 
