@@ -1419,6 +1419,11 @@ private fun PreflightStatusBadge(status: PreflightStatus) {
             "Not Configured",
             Icons.Default.Settings,
         )
+        PreflightStatus.ENDPOINT_NOT_FOUND -> Triple(
+            Color(0xFFF44336),
+            "Endpoint Not Found (check base URL / tunnel route)",
+            Icons.Default.LinkOff,
+        )
         PreflightStatus.UNKNOWN -> Triple(
             Color(0xFF9E9E9E),
             "Unknown",
@@ -1491,6 +1496,7 @@ private fun getPreflightStatusColor(status: PreflightStatus): Color {
         PreflightStatus.RATE_LIMITED -> Color(0xFFFF9800)
         PreflightStatus.UNAUTHORIZED -> Color(0xFFF44336)
         PreflightStatus.NOT_CONFIGURED -> Color(0xFF9E9E9E)
+        PreflightStatus.ENDPOINT_NOT_FOUND -> Color(0xFFF44336)
         PreflightStatus.UNKNOWN -> Color(0xFF9E9E9E)
     }
 }

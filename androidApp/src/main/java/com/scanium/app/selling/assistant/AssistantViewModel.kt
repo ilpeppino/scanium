@@ -122,6 +122,8 @@ enum class UnavailableReason {
     UNAUTHORIZED,
     /** Backend not configured */
     NOT_CONFIGURED,
+    /** Endpoint not found (404) - wrong base URL or tunnel route */
+    ENDPOINT_NOT_FOUND,
     /** Request validation error */
     VALIDATION_ERROR,
     /** Currently processing a request */
@@ -176,6 +178,7 @@ data class AssistantUiState(
                 UnavailableReason.RATE_LIMITED -> "Rate limited. Please wait."
                 UnavailableReason.UNAUTHORIZED -> "Authorization required."
                 UnavailableReason.NOT_CONFIGURED -> "Assistant not configured."
+                UnavailableReason.ENDPOINT_NOT_FOUND -> "Endpoint not found (check base URL / tunnel route)"
                 UnavailableReason.BACKEND_ERROR -> "Assistant temporarily unavailable."
                 UnavailableReason.VALIDATION_ERROR -> "Service error. Try again."
                 UnavailableReason.LOADING -> "Processing..."
@@ -737,6 +740,10 @@ class AssistantViewModel
                 )
                 PreflightStatus.NOT_CONFIGURED -> AssistantAvailability.Unavailable(
                     reason = UnavailableReason.NOT_CONFIGURED,
+                    canRetry = false,
+                )
+                PreflightStatus.ENDPOINT_NOT_FOUND -> AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.ENDPOINT_NOT_FOUND,
                     canRetry = false,
                 )
             }
