@@ -64,6 +64,8 @@ object BackendStatusClassifier {
 
     /**
      * Gets a user-friendly status message for the given result.
+     * Includes HTTP status code for server errors (5xx) to distinguish
+     * between different failure modes (500, 502, 530 Cloudflare, etc.).
      */
     fun getStatusMessage(result: ConnectionTestResult): String =
         when (result) {
@@ -72,9 +74,15 @@ object BackendStatusClassifier {
                 when (result.errorType) {
                     ConnectionTestErrorType.NETWORK_UNREACHABLE -> "Backend Unreachable"
                     ConnectionTestErrorType.TIMEOUT -> "Backend Unreachable (Timeout)"
-                    ConnectionTestErrorType.UNAUTHORIZED -> "Backend Reachable — Invalid API Key"
-                    ConnectionTestErrorType.SERVER_ERROR -> "Backend Reachable — Server Error"
-                    ConnectionTestErrorType.NOT_FOUND -> "Backend Reachable — Endpoint Not Found"
+                    ConnectionTestErrorType.UNAUTHORIZED ->
+                        result.httpStatus?.let { "Backend Reachable — Unauthorized ($it)" }
+                            ?: "Backend Reachable — Invalid API Key"
+                    ConnectionTestErrorType.SERVER_ERROR ->
+                        result.httpStatus?.let { "Backend Reachable — Server Error ($it)" }
+                            ?: "Backend Reachable — Server Error"
+                    ConnectionTestErrorType.NOT_FOUND ->
+                        result.httpStatus?.let { "Backend Reachable — Endpoint Not Found ($it)" }
+                            ?: "Backend Reachable — Endpoint Not Found"
                     ConnectionTestErrorType.NOT_CONFIGURED -> "Backend Not Configured"
                 }
         }
