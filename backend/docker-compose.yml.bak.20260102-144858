@@ -26,8 +26,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: scanium-api
-    env_file:
-      - .env
     restart: unless-stopped
     depends_on:
       postgres:
@@ -36,7 +34,7 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 8080
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scanium}:${POSTGRES_PASSWORD:-scanium}@postgres:5432/${POSTGRES_DB:-scanium}
       SCANIUM_API_KEYS: ${SCANIUM_API_KEYS}
       SCANIUM_CLASSIFIER_PROVIDER: ${SCANIUM_CLASSIFIER_PROVIDER:-mock}
       VISION_FEATURE: ${VISION_FEATURE:-LABEL_DETECTION}
@@ -57,9 +55,6 @@ services:
       EBAY_SCOPES: ${EBAY_SCOPES}
       SESSION_SIGNING_SECRET: ${SESSION_SIGNING_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-scanium://}
-    volumes:
-      - ./secrets:/secrets:ro
-
     networks:
       - scanium-network
     # Note: Port not exposed externally - accessed via Cloudflare Tunnel
@@ -77,15 +72,29 @@ services:
     image: cloudflare/cloudflared:2025.11.1
     container_name: scanium-cloudflared
     restart: unless-stopped
-    command:
-      ["tunnel","--no-autoupdate","--loglevel","debug","--transport-loglevel","debug","run","--token","${CLOUDFLARED_TOKEN}"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+    # Use the token explicitly (most reliable)
+    command: >
+      tunnel --no-autoupdate run
+      --token ${CLOUDFLARED_TOKEN}
+      --loglevel info
+
+  # If you want deeper logs while debugging:
+  # command: >
+  #   tunnel --no-autoupdate run
+  #   --token ${CLOUDFLARED_TOKEN}
+  #   --loglevel debug
+  #   --transport-loglevel debug
+
     networks:
-      - backend_scanium-network
+      - scanium-network
 
 networks:
-  backend_scanium-network:
-    external: true
-    name: backend_scanium-network
+  scanium-network:
+    driver: bridge
 
 volumes:
   postgres_data:

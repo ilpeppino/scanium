@@ -1,16 +1,16 @@
 services:
   grafana:
-    image: grafana/grafana:11.3.0
+    image: grafana/grafana:latest
     container_name: scanium-grafana
-    restart: "no"
+    restart: unless-stopped
     env_file:
       - ../env/monitoring.env
     ports:
       - "3000:3000"
     volumes:
       - /volume1/docker/scanium/monitoring/grafana:/var/lib/grafana
-      # Optional provisioning (uncomment if you have them in-repo):
-      # - ${REPO_ROOT}/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      # If you already have provisioning/dashboards in-repo, you can mount them read-only:
+      # - ./../../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - loki
       - tempo
@@ -24,54 +24,55 @@ services:
       - scanium_net
 
   loki:
-    image: grafana/loki:3.2.1
+    image: grafana/loki:latest
     container_name: scanium-loki
-    restart: "no"
+    restart: unless-stopped
     command: ["-config.file=/etc/loki/loki.yaml"]
     volumes:
       - /volume1/docker/scanium/monitoring/loki:/loki
-      - ${REPO_ROOT}/monitoring/loki/loki.yaml:/etc/loki/loki.yaml:ro
+      - ./../../monitoring/loki/loki.yaml:/etc/loki/loki.yaml:ro
     networks:
       - scanium_net
 
   tempo:
-    image: grafana/tempo:2.6.1
+    image: grafana/tempo:latest
     container_name: scanium-tempo
-    restart: "no"
+    restart: unless-stopped
     command: ["-config.file=/etc/tempo/tempo.yaml"]
     volumes:
       - /volume1/docker/scanium/monitoring/tempo:/var/tempo
-      - ${REPO_ROOT}/monitoring/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - ./../../monitoring/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
     networks:
       - scanium_net
 
   mimir:
-    image: grafana/mimir:2.17.4
+    image: grafana/mimir:latest
     container_name: scanium-mimir
-    restart: "no"
+    restart: unless-stopped
     command: ["-config.file=/etc/mimir/mimir.yaml"]
     volumes:
       - /volume1/docker/scanium/monitoring/mimir:/data
-      - ${REPO_ROOT}/monitoring/mimir/mimir.yaml:/etc/mimir/mimir.yaml:ro
+      - ./../../monitoring/mimir/mimir.yaml:/etc/mimir/mimir.yaml:ro
     networks:
       - scanium_net
 
   alloy:
-    image: grafana/alloy:v1.5.0
+    image: grafana/alloy:latest
     container_name: scanium-alloy
-    restart: "no"
+    restart: unless-stopped
     command:
       - run
       - --server.http.listen-addr=0.0.0.0:12345
       - /etc/alloy/config.alloy
     ports:
+      # Alloy UI / metrics endpoint
       - "12345:12345"
+
+      # Optional: expose OTLP to LAN (remove if you don't need LAN access)
       - "4317:4317"
       - "4318:4318"
     volumes:
-      - ${REPO_ROOT}/monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
-      # Optional: persist Alloy WAL so restarts don't drop buffered remote_write
-      # - /volume1/docker/scanium/monitoring/alloy:/var/lib/alloy
+      - ./../../monitoring/alloy/alloy.hcl:/etc/alloy/config.alloy:ro
     depends_on:
       - loki
       - tempo
@@ -79,9 +80,6 @@ services:
     networks:
       - scanium_net
 
-
 networks:
   scanium_net:
-    name: compose_scanium_net
     driver: bridge
-    attachable: true

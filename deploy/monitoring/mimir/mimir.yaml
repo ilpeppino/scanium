@@ -1,0 +1,44 @@
+multitenancy_enabled: false
+
+server:
+  http_listen_port: 9009
+  grpc_listen_port: 9095
+
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /data/ruler-storage
+
+blocks_storage:
+  backend: filesystem
+  filesystem:
+    dir: /data/blocks
+
+compactor:
+  data_dir: /data/compactor
+
+# Optional (safe). Useful only if you later introduce memberlist-based KV/rings.
+memberlist:
+  join_members: []
+
+ingester:
+  ring:
+    kvstore:
+      store: inmemory
+
+distributor:
+  ring:
+    kvstore:
+      store: inmemory
+
+store_gateway:
+  sharding_ring:
+    kvstore:
+      store: inmemory
+
+ruler:
+  rule_path: /data/rules
+  ring:
+    kvstore:
+      store: inmemory

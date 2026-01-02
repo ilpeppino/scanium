@@ -79,9 +79,7 @@ services:
     networks:
       - scanium_net
 
-
 networks:
   scanium_net:
-    name: compose_scanium_net
+    name: scanium_net
     driver: bridge
-    attachable: true
