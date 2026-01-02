@@ -1,5 +1,6 @@
 package com.scanium.app.data
 
+import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.model.config.AssistantPrerequisite
@@ -170,6 +171,14 @@ class AndroidFeatureFlagRepository(
             val endpoint = "/health"
             val method = "GET"
 
+            // DIAG: Log connection test parameters
+            Log.d("ScaniumNet", "FeatureFlags: testAssistantConnection baseUrl=$baseUrl")
+            if (apiKey != null) {
+                Log.d("ScaniumAuth", "FeatureFlags: apiKey present len=${apiKey.length} prefix=${apiKey.take(6)}...")
+            } else {
+                Log.w("ScaniumAuth", "FeatureFlags: apiKey is NULL")
+            }
+
             if (baseUrl.isBlank()) {
                 return@withContext ConnectionTestResult.Failure(
                     errorType = ConnectionTestErrorType.NOT_CONFIGURED,
@@ -189,8 +198,10 @@ class AndroidFeatureFlagRepository(
             }
 
             val healthEndpoint = "${baseUrl.trimEnd('/')}$endpoint"
+            Log.d("ScaniumNet", "FeatureFlags: healthEndpoint=$healthEndpoint")
 
             try {
+                Log.d("ScaniumAuth", "FeatureFlags: Adding X-API-Key header to health check")
                 val request =
                     Request.Builder()
                         .url(healthEndpoint)
