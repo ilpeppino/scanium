@@ -43,7 +43,7 @@ data class ScannedItemEntity(
     val classificationStatus: String,
     val domainCategoryId: String?,
     val classificationErrorMessage: String?,
-    val classificationRequestId: String?
+    val classificationRequestId: String?,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -81,47 +81,52 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         classificationStatus = classificationStatus,
         domainCategoryId = domainCategoryId,
         classificationErrorMessage = classificationErrorMessage,
-        classificationRequestId = classificationRequestId
+        classificationRequestId = classificationRequestId,
     )
 }
 
 fun ScannedItemEntity.toModel(): ScannedItem {
-    val categoryValue = runCatching { ItemCategory.valueOf(category) }
-        .getOrElse { ItemCategory.UNKNOWN }
-    val listingStatusValue = runCatching { ItemListingStatus.valueOf(listingStatus) }
-        .getOrElse { ItemListingStatus.NOT_LISTED }
-    val boundingBoxValue = if (
-        boundingBoxLeft != null &&
-        boundingBoxTop != null &&
-        boundingBoxRight != null &&
-        boundingBoxBottom != null
-    ) {
-        NormalizedRect(
-            left = boundingBoxLeft,
-            top = boundingBoxTop,
-            right = boundingBoxRight,
-            bottom = boundingBoxBottom
-        )
-    } else {
-        null
-    }
+    val categoryValue =
+        runCatching { ItemCategory.valueOf(category) }
+            .getOrElse { ItemCategory.UNKNOWN }
+    val listingStatusValue =
+        runCatching { ItemListingStatus.valueOf(listingStatus) }
+            .getOrElse { ItemListingStatus.NOT_LISTED }
+    val boundingBoxValue =
+        if (
+            boundingBoxLeft != null &&
+            boundingBoxTop != null &&
+            boundingBoxRight != null &&
+            boundingBoxBottom != null
+        ) {
+            NormalizedRect(
+                left = boundingBoxLeft,
+                top = boundingBoxTop,
+                right = boundingBoxRight,
+                bottom = boundingBoxBottom,
+            )
+        } else {
+            null
+        }
 
     val estimatedRange = PriceRange(Money(priceLow), Money(priceHigh))
 
     return ScannedItem(
         id = id,
-        thumbnail = imageRefFrom(
-            bytes = thumbnailBytes,
-            mimeType = thumbnailMimeType,
-            width = thumbnailWidth,
-            height = thumbnailHeight
-        ),
-        thumbnailRef = imageRefFrom(
-            bytes = thumbnailRefBytes,
-            mimeType = thumbnailRefMimeType,
-            width = thumbnailRefWidth,
-            height = thumbnailRefHeight
-        ),
+        thumbnail =
+            imageRefFrom(
+                bytes = thumbnailBytes,
+                mimeType = thumbnailMimeType,
+                width = thumbnailWidth,
+                height = thumbnailHeight,
+            ),
+        thumbnailRef =
+            imageRefFrom(
+                bytes = thumbnailRefBytes,
+                mimeType = thumbnailRefMimeType,
+                width = thumbnailRefWidth,
+                height = thumbnailRefHeight,
+            ),
         category = categoryValue,
         priceRange = priceLow to priceHigh,
         estimatedPriceRange = estimatedRange,
@@ -140,7 +145,7 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         classificationStatus = classificationStatus,
         domainCategoryId = domainCategoryId,
         classificationErrorMessage = classificationErrorMessage,
-        classificationRequestId = classificationRequestId
+        classificationRequestId = classificationRequestId,
     )
 }
 
@@ -148,7 +153,7 @@ private data class ImageFields(
     val bytes: ByteArray,
     val mimeType: String,
     val width: Int,
-    val height: Int
+    val height: Int,
 )
 
 private fun ImageRef?.toImageFields(): ImageFields? {
@@ -163,7 +168,7 @@ private fun imageRefFrom(
     bytes: ByteArray?,
     mimeType: String?,
     width: Int?,
-    height: Int?
+    height: Int?,
 ): ImageRef? {
     if (bytes == null || bytes.isEmpty()) return null
     if (mimeType.isNullOrBlank()) return null

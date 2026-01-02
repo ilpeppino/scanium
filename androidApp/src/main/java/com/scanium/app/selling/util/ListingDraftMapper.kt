@@ -25,7 +25,7 @@ object ListingDraftMapper {
             price = suggestedPrice,
             currency = "EUR",
             condition = ListingCondition.USED,
-            imageSource = ListingImageSource.DETECTION_THUMBNAIL
+            imageSource = ListingImageSource.DETECTION_THUMBNAIL,
         )
     }
 }

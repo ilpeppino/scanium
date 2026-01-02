@@ -3,32 +3,40 @@ package com.scanium.app.items.persistence
 import android.database.SQLException
 import android.util.Log
 import com.scanium.app.items.ScannedItem
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.security.MessageDigest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.security.MessageDigest
 
 interface ScannedItemStore {
     val errors: SharedFlow<PersistenceError>
+
     suspend fun loadAll(): List<ScannedItem>
+
     suspend fun upsertAll(items: List<ScannedItem>)
+
     suspend fun deleteById(itemId: String)
+
     suspend fun deleteAll()
 }
 
 object NoopScannedItemStore : ScannedItemStore {
     override val errors = MutableSharedFlow<PersistenceError>(extraBufferCapacity = 1)
+
     override suspend fun loadAll(): List<ScannedItem> = emptyList()
+
     override suspend fun upsertAll(items: List<ScannedItem>) = Unit
+
     override suspend fun deleteById(itemId: String) = Unit
+
     override suspend fun deleteAll() = Unit
 }
 
 class ScannedItemRepository(
     private val dao: ScannedItemDao,
-    private val syncer: ScannedItemSyncer = NoopScannedItemSyncer
+    private val syncer: ScannedItemSyncer = NoopScannedItemSyncer,
 ) : ScannedItemStore {
     companion object {
         private const val TAG = "ScannedItemRepository"
@@ -37,9 +45,10 @@ class ScannedItemRepository(
     private val _errors = MutableSharedFlow<PersistenceError>(extraBufferCapacity = 1)
     override val errors: SharedFlow<PersistenceError> = _errors.asSharedFlow()
 
-    override suspend fun loadAll(): List<ScannedItem> = runPersistence("load items", emptyList()) {
-        dao.getAll().map { it.toModel() }
-    }
+    override suspend fun loadAll(): List<ScannedItem> =
+        runPersistence("load items", emptyList()) {
+            dao.getAll().map { it.toModel() }
+        }
 
     override suspend fun upsertAll(items: List<ScannedItem>) {
         runPersistence("save items", Unit) {
@@ -79,12 +88,15 @@ class ScannedItemRepository(
         val ids = entities.map { it.id }
         val latestHashes = dao.getLatestHistoryHashes(ids).associate { it.itemId to it.snapshotHash }
 
-        val toInsert = entities.mapNotNull { entity ->
-            val snapshotHash = snapshotHash(entity)
-            if (snapshotHash != latestHashes[entity.id]) {
-                entity.toHistoryEntity(changedAt, snapshotHash)
-            } else null
-        }
+        val toInsert =
+            entities.mapNotNull { entity ->
+                val snapshotHash = snapshotHash(entity)
+                if (snapshotHash != latestHashes[entity.id]) {
+                    entity.toHistoryEntity(changedAt, snapshotHash)
+                } else {
+                    null
+                }
+            }
 
         if (toInsert.isNotEmpty()) {
             dao.insertHistoryBatch(toInsert)
@@ -94,7 +106,7 @@ class ScannedItemRepository(
     private suspend fun <T> runPersistence(
         operation: String,
         fallback: T,
-        block: suspend () -> T
+        block: suspend () -> T,
     ): T {
         return try {
             block()
@@ -108,7 +120,7 @@ class ScannedItemRepository(
 
 data class PersistenceError(
     val operation: String,
-    val throwable: Throwable
+    val throwable: Throwable,
 )
 
 private fun snapshotHash(entity: ScannedItemEntity): String {

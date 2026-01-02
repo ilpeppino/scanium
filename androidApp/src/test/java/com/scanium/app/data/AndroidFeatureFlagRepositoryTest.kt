@@ -9,19 +9,17 @@ import com.scanium.app.model.user.FreeEntitlements
 import com.scanium.app.model.user.ProEntitlements
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.coVerify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AndroidFeatureFlagRepositoryTest {
-
     private val settingsRepository = mockk<SettingsRepository>(relaxed = true)
     private val configProvider = mockk<ConfigProvider>(relaxed = true)
     private val connectivityStatusProvider = mockk<ConnectivityStatusProvider>(relaxed = true)
@@ -47,182 +45,196 @@ class AndroidFeatureFlagRepositoryTest {
             configProvider = configProvider,
             entitlementPolicyFlow = entitlementFlow,
             connectivityStatusProvider = connectivityStatusProvider,
-            apiKeyStore = apiKeyStore
+            apiKeyStore = apiKeyStore,
         )
     }
 
     // ==================== Cloud Classification Tests ====================
 
     @Test
-    fun `cloud classification enabled when all conditions met`() = runTest {
-        val repository = createRepository()
+    fun `cloud classification enabled when all conditions met`() =
+        runTest {
+            val repository = createRepository()
 
-        // All conditions: user pref ON, remote ON (default), entitlement OK (FreeEntitlements.canUseCloudClassification = true)
-        allowCloudFlow.value = true
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
-        entitlementFlow.value = FreeEntitlements
+            // All conditions: user pref ON, remote ON (default), entitlement OK (FreeEntitlements.canUseCloudClassification = true)
+            allowCloudFlow.value = true
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
+            entitlementFlow.value = FreeEntitlements
 
-        assertTrue(repository.isCloudClassificationEnabled.first())
-    }
-
-    @Test
-    fun `cloud classification disabled when user preference off`() = runTest {
-        val repository = createRepository()
-
-        allowCloudFlow.value = false
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
-        entitlementFlow.value = ProEntitlements
-
-        assertFalse(repository.isCloudClassificationEnabled.first())
-    }
-
-    @Test
-    fun `cloud classification disabled when remote flag off`() = runTest {
-        val repository = createRepository()
-
-        allowCloudFlow.value = true
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = false))
-        entitlementFlow.value = ProEntitlements
-
-        assertFalse(repository.isCloudClassificationEnabled.first())
-    }
-
-    @Test
-    fun `cloud classification disabled when not entitled`() = runTest {
-        val repository = createRepository()
-
-        // Create a mock entitlement that doesn't allow cloud
-        val noCloudEntitlement = object : EntitlementPolicy {
-            override val canUseCloudClassification = false
-            override val canUseAssistant = false
-            override val canBatchExport = false
-            override val maxDailyCloudClassifications = 0
-            override val isPro = false
+            assertTrue(repository.isCloudClassificationEnabled.first())
         }
 
-        allowCloudFlow.value = true
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
-        entitlementFlow.value = noCloudEntitlement
+    @Test
+    fun `cloud classification disabled when user preference off`() =
+        runTest {
+            val repository = createRepository()
 
-        assertFalse(repository.isCloudClassificationEnabled.first())
-    }
+            allowCloudFlow.value = false
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
+            entitlementFlow.value = ProEntitlements
+
+            assertFalse(repository.isCloudClassificationEnabled.first())
+        }
 
     @Test
-    fun `cloud classification available reflects remote and entitlement only`() = runTest {
-        val repository = createRepository()
+    fun `cloud classification disabled when remote flag off`() =
+        runTest {
+            val repository = createRepository()
 
-        // User pref OFF but available should still be true if remote + entitlement OK
-        allowCloudFlow.value = false
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
-        entitlementFlow.value = ProEntitlements
+            allowCloudFlow.value = true
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = false))
+            entitlementFlow.value = ProEntitlements
 
-        assertTrue(repository.isCloudClassificationAvailable.first())
-        assertFalse(repository.isCloudClassificationEnabled.first())
-    }
+            assertFalse(repository.isCloudClassificationEnabled.first())
+        }
 
     @Test
-    fun `setCloudClassificationEnabled delegates to settings repository`() = runTest {
-        val repository = createRepository()
+    fun `cloud classification disabled when not entitled`() =
+        runTest {
+            val repository = createRepository()
 
-        repository.setCloudClassificationEnabled(false)
+            // Create a mock entitlement that doesn't allow cloud
+            val noCloudEntitlement =
+                object : EntitlementPolicy {
+                    override val canUseCloudClassification = false
+                    override val canUseAssistant = false
+                    override val canBatchExport = false
+                    override val maxDailyCloudClassifications = 0
+                    override val isPro = false
+                }
 
-        coVerify { settingsRepository.setAllowCloudClassification(false) }
-    }
+            allowCloudFlow.value = true
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
+            entitlementFlow.value = noCloudEntitlement
+
+            assertFalse(repository.isCloudClassificationEnabled.first())
+        }
+
+    @Test
+    fun `cloud classification available reflects remote and entitlement only`() =
+        runTest {
+            val repository = createRepository()
+
+            // User pref OFF but available should still be true if remote + entitlement OK
+            allowCloudFlow.value = false
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableCloud = true))
+            entitlementFlow.value = ProEntitlements
+
+            assertTrue(repository.isCloudClassificationAvailable.first())
+            assertFalse(repository.isCloudClassificationEnabled.first())
+        }
+
+    @Test
+    fun `setCloudClassificationEnabled delegates to settings repository`() =
+        runTest {
+            val repository = createRepository()
+
+            repository.setCloudClassificationEnabled(false)
+
+            coVerify { settingsRepository.setAllowCloudClassification(false) }
+        }
 
     // ==================== Assistant Tests ====================
 
     @Test
-    fun `assistant enabled when all conditions met`() = runTest {
-        val repository = createRepository()
+    fun `assistant enabled when all conditions met`() =
+        runTest {
+            val repository = createRepository()
 
-        allowAssistantFlow.value = true
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
-        entitlementFlow.value = ProEntitlements // Pro has canUseAssistant = true
+            allowAssistantFlow.value = true
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+            entitlementFlow.value = ProEntitlements // Pro has canUseAssistant = true
 
-        assertTrue(repository.isAssistantEnabled.first())
-    }
-
-    @Test
-    fun `assistant disabled for free users even with flags enabled`() = runTest {
-        val repository = createRepository()
-
-        allowAssistantFlow.value = true
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
-        entitlementFlow.value = FreeEntitlements // Free has canUseAssistant = false
-
-        assertFalse(repository.isAssistantEnabled.first())
-    }
+            assertTrue(repository.isAssistantEnabled.first())
+        }
 
     @Test
-    fun `assistant available reflects remote and entitlement only`() = runTest {
-        val repository = createRepository()
+    fun `assistant disabled for free users even with flags enabled`() =
+        runTest {
+            val repository = createRepository()
 
-        // User pref OFF but available should still be true if remote + entitlement OK
-        allowAssistantFlow.value = false
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
-        entitlementFlow.value = ProEntitlements
+            allowAssistantFlow.value = true
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+            entitlementFlow.value = FreeEntitlements // Free has canUseAssistant = false
 
-        assertTrue(repository.isAssistantAvailable.first())
-        assertFalse(repository.isAssistantEnabled.first())
-    }
-
-    @Test
-    fun `setAssistantEnabled delegates to settings repository when disabling`() = runTest {
-        val repository = createRepository()
-
-        // Disabling should always work
-        val result = repository.setAssistantEnabled(false)
-
-        assertTrue(result)
-        coVerify { settingsRepository.setAllowAssistant(false) }
-    }
+            assertFalse(repository.isAssistantEnabled.first())
+        }
 
     @Test
-    fun `setAssistantEnabled succeeds when all prerequisites met`() = runTest {
-        val repository = createRepository()
+    fun `assistant available reflects remote and entitlement only`() =
+        runTest {
+            val repository = createRepository()
 
-        // Set up all prerequisites to be met
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
-        entitlementFlow.value = ProEntitlements
-        connectivityFlow.value = ConnectivityStatus.ONLINE
+            // User pref OFF but available should still be true if remote + entitlement OK
+            allowAssistantFlow.value = false
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+            entitlementFlow.value = ProEntitlements
 
-        val result = repository.setAssistantEnabled(true)
-
-        assertTrue(result)
-        coVerify { settingsRepository.setAllowAssistant(true) }
-    }
+            assertTrue(repository.isAssistantAvailable.first())
+            assertFalse(repository.isAssistantEnabled.first())
+        }
 
     @Test
-    fun `setAssistantEnabled fails when prerequisites not met`() = runTest {
-        val repository = createRepository()
+    fun `setAssistantEnabled delegates to settings repository when disabling`() =
+        runTest {
+            val repository = createRepository()
 
-        // Prerequisites not met: free user
-        remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
-        entitlementFlow.value = FreeEntitlements
-        connectivityFlow.value = ConnectivityStatus.ONLINE
+            // Disabling should always work
+            val result = repository.setAssistantEnabled(false)
 
-        val result = repository.setAssistantEnabled(true)
+            assertTrue(result)
+            coVerify { settingsRepository.setAllowAssistant(false) }
+        }
 
-        assertFalse(result)
-        coVerify(exactly = 0) { settingsRepository.setAllowAssistant(true) }
-    }
+    @Test
+    fun `setAssistantEnabled succeeds when all prerequisites met`() =
+        runTest {
+            val repository = createRepository()
+
+            // Set up all prerequisites to be met
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+            entitlementFlow.value = ProEntitlements
+            connectivityFlow.value = ConnectivityStatus.ONLINE
+
+            val result = repository.setAssistantEnabled(true)
+
+            assertTrue(result)
+            coVerify { settingsRepository.setAllowAssistant(true) }
+        }
+
+    @Test
+    fun `setAssistantEnabled fails when prerequisites not met`() =
+        runTest {
+            val repository = createRepository()
+
+            // Prerequisites not met: free user
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+            entitlementFlow.value = FreeEntitlements
+            connectivityFlow.value = ConnectivityStatus.ONLINE
+
+            val result = repository.setAssistantEnabled(true)
+
+            assertFalse(result)
+            coVerify(exactly = 0) { settingsRepository.setAllowAssistant(true) }
+        }
 
     // ==================== User Preference Flow Tests ====================
 
     @Test
-    fun `user preference flows reflect settings repository state`() = runTest {
-        val repository = createRepository()
+    fun `user preference flows reflect settings repository state`() =
+        runTest {
+            val repository = createRepository()
 
-        allowCloudFlow.value = true
-        allowAssistantFlow.value = false
+            allowCloudFlow.value = true
+            allowAssistantFlow.value = false
 
-        assertTrue(repository.cloudClassificationUserPreference.first())
-        assertFalse(repository.assistantUserPreference.first())
+            assertTrue(repository.cloudClassificationUserPreference.first())
+            assertFalse(repository.assistantUserPreference.first())
 
-        allowCloudFlow.value = false
-        allowAssistantFlow.value = true
+            allowCloudFlow.value = false
+            allowAssistantFlow.value = true
 
-        assertFalse(repository.cloudClassificationUserPreference.first())
-        assertTrue(repository.assistantUserPreference.first())
-    }
+            assertFalse(repository.cloudClassificationUserPreference.first())
+            assertTrue(repository.assistantUserPreference.first())
+        }
 }

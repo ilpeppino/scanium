@@ -10,9 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -23,8 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
-import com.scanium.app.camera.CaptureResolution
 import com.scanium.app.camera.CameraViewModel
+import com.scanium.app.camera.CaptureResolution
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.media.StorageHelper
 import com.scanium.app.ml.classification.ClassificationMode
@@ -37,7 +37,7 @@ fun SettingsCameraScreen(
     classificationViewModel: ClassificationModeViewModel,
     itemsViewModel: ItemsViewModel,
     cameraViewModel: CameraViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -48,61 +48,67 @@ fun SettingsCameraScreen(
     val lowDataMode by classificationViewModel.lowDataMode.collectAsState()
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
 
-    val dirPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri ->
-        uri?.let {
-            StorageHelper.takePersistablePermissions(context, it)
-            settingsViewModel.setSaveDirectoryUri(it.toString())
-        }
-    }
-
-    val captureOptions = CaptureResolution.values().map { resolution ->
-        SegmentOption(
-            value = resolution,
-            label = when (resolution) {
-                CaptureResolution.LOW -> stringResource(R.string.settings_resolution_low)
-                CaptureResolution.NORMAL -> stringResource(R.string.settings_resolution_normal)
-                CaptureResolution.HIGH -> stringResource(R.string.settings_resolution_high)
-            },
-            description = when (resolution) {
-                CaptureResolution.LOW -> stringResource(R.string.settings_resolution_low_desc)
-                CaptureResolution.NORMAL -> stringResource(R.string.settings_resolution_normal_desc)
-                CaptureResolution.HIGH -> stringResource(R.string.settings_resolution_high_desc)
+    val dirPickerLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocumentTree(),
+        ) { uri ->
+            uri?.let {
+                StorageHelper.takePersistablePermissions(context, it)
+                settingsViewModel.setSaveDirectoryUri(it.toString())
             }
-        )
-    }
+        }
 
-    val classificationOptions = listOf(
-        SegmentOption(
-            value = ClassificationMode.CLOUD,
-            label = stringResource(R.string.settings_classification_cloud),
-            description = stringResource(R.string.settings_classification_cloud_desc)
-        ),
-        SegmentOption(
-            value = ClassificationMode.ON_DEVICE,
-            label = stringResource(R.string.settings_classification_on_device),
-            description = stringResource(R.string.settings_classification_on_device_desc)
-        )
-    )
+    val captureOptions =
+        CaptureResolution.values().map { resolution ->
+            SegmentOption(
+                value = resolution,
+                label =
+                    when (resolution) {
+                        CaptureResolution.LOW -> stringResource(R.string.settings_resolution_low)
+                        CaptureResolution.NORMAL -> stringResource(R.string.settings_resolution_normal)
+                        CaptureResolution.HIGH -> stringResource(R.string.settings_resolution_high)
+                    },
+                description =
+                    when (resolution) {
+                        CaptureResolution.LOW -> stringResource(R.string.settings_resolution_low_desc)
+                        CaptureResolution.NORMAL -> stringResource(R.string.settings_resolution_normal_desc)
+                        CaptureResolution.HIGH -> stringResource(R.string.settings_resolution_high_desc)
+                    },
+            )
+        }
 
-    val accuracyOptions = listOf(
-        SegmentOption(
-            value = AccuracyLevel.LOW,
-            label = stringResource(R.string.settings_accuracy_low),
-            description = stringResource(R.string.settings_accuracy_low_desc)
-        ),
-        SegmentOption(
-            value = AccuracyLevel.MEDIUM,
-            label = stringResource(R.string.settings_accuracy_medium),
-            description = stringResource(R.string.settings_accuracy_medium_desc)
-        ),
-        SegmentOption(
-            value = AccuracyLevel.HIGH,
-            label = stringResource(R.string.settings_accuracy_high),
-            description = stringResource(R.string.settings_accuracy_high_desc)
+    val classificationOptions =
+        listOf(
+            SegmentOption(
+                value = ClassificationMode.CLOUD,
+                label = stringResource(R.string.settings_classification_cloud),
+                description = stringResource(R.string.settings_classification_cloud_desc),
+            ),
+            SegmentOption(
+                value = ClassificationMode.ON_DEVICE,
+                label = stringResource(R.string.settings_classification_on_device),
+                description = stringResource(R.string.settings_classification_on_device_desc),
+            ),
         )
-    )
+
+    val accuracyOptions =
+        listOf(
+            SegmentOption(
+                value = AccuracyLevel.LOW,
+                label = stringResource(R.string.settings_accuracy_low),
+                description = stringResource(R.string.settings_accuracy_low_desc),
+            ),
+            SegmentOption(
+                value = AccuracyLevel.MEDIUM,
+                label = stringResource(R.string.settings_accuracy_medium),
+                description = stringResource(R.string.settings_accuracy_medium_desc),
+            ),
+            SegmentOption(
+                value = AccuracyLevel.HIGH,
+                label = stringResource(R.string.settings_accuracy_high),
+                description = stringResource(R.string.settings_accuracy_high_desc),
+            ),
+        )
 
     Scaffold(
         topBar = {
@@ -112,14 +118,15 @@ fun SettingsCameraScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             SettingsSectionHeader(title = stringResource(R.string.settings_section_storage))
             SettingSwitchRow(
@@ -127,11 +134,12 @@ fun SettingsCameraScreen(
                 subtitle = stringResource(R.string.settings_auto_save_subtitle),
                 icon = Icons.Filled.Storage,
                 checked = autoSaveEnabled,
-                onCheckedChange = settingsViewModel::setAutoSaveEnabled
+                onCheckedChange = settingsViewModel::setAutoSaveEnabled,
             )
 
-            val folderName = saveDirectoryUri?.let { StorageHelper.getFolderDisplayName(context, Uri.parse(it)) }
-                ?: stringResource(R.string.settings_save_location_default)
+            val folderName =
+                saveDirectoryUri?.let { StorageHelper.getFolderDisplayName(context, Uri.parse(it)) }
+                    ?: stringResource(R.string.settings_save_location_default)
 
             SettingActionRow(
                 title = stringResource(R.string.settings_save_location_title),
@@ -142,7 +150,7 @@ fun SettingsCameraScreen(
                         dirPickerLauncher.launch(saveDirectoryUri?.let { Uri.parse(it) })
                     }
                 },
-                enabled = autoSaveEnabled
+                enabled = autoSaveEnabled,
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_capture))
@@ -151,7 +159,7 @@ fun SettingsCameraScreen(
                 subtitle = stringResource(R.string.settings_resolution_subtitle),
                 options = captureOptions,
                 selected = captureResolution,
-                onSelect = cameraViewModel::updateCaptureResolution
+                onSelect = cameraViewModel::updateCaptureResolution,
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_scanning))
@@ -160,14 +168,14 @@ fun SettingsCameraScreen(
                 subtitle = stringResource(R.string.settings_classification_subtitle),
                 options = classificationOptions,
                 selected = classificationMode,
-                onSelect = classificationViewModel::updateMode
+                onSelect = classificationViewModel::updateMode,
             )
 
             SettingSwitchRow(
                 title = stringResource(R.string.settings_low_data_mode_title),
                 subtitle = stringResource(R.string.settings_low_data_mode_subtitle),
                 checked = lowDataMode,
-                onCheckedChange = classificationViewModel::updateLowDataMode
+                onCheckedChange = classificationViewModel::updateLowDataMode,
             )
 
             val currentAccuracy = AccuracyLevel.fromThreshold(similarityThreshold)
@@ -178,7 +186,7 @@ fun SettingsCameraScreen(
                 selected = currentAccuracy,
                 onSelect = { level ->
                     itemsViewModel.updateSimilarityThreshold(level.threshold)
-                }
+                },
             )
         }
     }
@@ -187,7 +195,8 @@ fun SettingsCameraScreen(
 private enum class AccuracyLevel(val threshold: Float) {
     LOW(0.45f),
     MEDIUM(0.55f),
-    HIGH(0.7f);
+    HIGH(0.7f),
+    ;
 
     companion object {
         fun fromThreshold(value: Float): AccuracyLevel {

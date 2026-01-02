@@ -16,7 +16,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,15 +43,16 @@ import kotlin.math.roundToInt
 fun VerticalThresholdSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Animated value for smooth transitions
     val animatedValue by animateFloatAsState(
         targetValue = value,
         animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
-        label = "threshold_value"
+        label = "threshold_value",
     )
     val step = 0.05f
+
     fun snapToStep(raw: Float) = (raw / step).roundToInt().times(step).coerceIn(0f, 1f)
 
     // Interaction state for visual feedback
@@ -60,64 +60,66 @@ fun VerticalThresholdSlider(
 
     // Column layout: percentage on top, slider below
     Column(
-        modifier = modifier
-            .background(
-                Color.Black.copy(alpha = 0.6f),
-                shape = MaterialTheme.shapes.medium
-            )
-            .padding(horizontal = 8.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .background(
+                    Color.Black.copy(alpha = 0.6f),
+                    shape = MaterialTheme.shapes.medium,
+                )
+                .padding(horizontal = 8.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // Percentage display - fixed position on top
         Text(
             text = "${(animatedValue * 100).roundToInt()}%",
             style = MaterialTheme.typography.titleMedium,
             color = if (isDragging) CyanGlow else Color.White,
-            fontSize = 16.sp
+            fontSize = 16.sp,
         )
 
         // Vertical slider track - minimum 48dp touch target width per WCAG 2.1
         Box(
-            modifier = Modifier
-                .width(48.dp) // Touch target minimum, visual track is narrower
-                .height(280.dp) // Taller: increased from 200.dp
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        // Wait for touch down
-                        val down = awaitFirstDown()
-                        isDragging = true
+            modifier =
+                Modifier
+                    .width(48.dp) // Touch target minimum, visual track is narrower
+                    .height(280.dp) // Taller: increased from 200.dp
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            // Wait for touch down
+                            val down = awaitFirstDown()
+                            isDragging = true
 
-                        // Calculate initial value from touch position
-                        val touchY = down.position.y
-                        val height = size.height.toFloat()
-                        if (height > 0) {
-                            // Map Y position to value (0 at top = 1.0, bottom = 0.0)
-                            val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
-                            onValueChange(snapToStep(newValue))
-                        }
-
-                        // Track drag movements
-                        drag(down.id) { change ->
-                            change.consume()
-
-                            val dragY = change.position.y
+                            // Calculate initial value from touch position
+                            val touchY = down.position.y
                             val height = size.height.toFloat()
                             if (height > 0) {
                                 // Map Y position to value (0 at top = 1.0, bottom = 0.0)
-                                val newValue = (1f - (dragY / height)).coerceIn(0f, 1f)
+                                val newValue = (1f - (touchY / height)).coerceIn(0f, 1f)
                                 onValueChange(snapToStep(newValue))
                             }
-                        }
 
-                        // Drag ended
-                        isDragging = false
-                    }
-                },
-            contentAlignment = Alignment.Center
+                            // Track drag movements
+                            drag(down.id) { change ->
+                                change.consume()
+
+                                val dragY = change.position.y
+                                val height = size.height.toFloat()
+                                if (height > 0) {
+                                    // Map Y position to value (0 at top = 1.0, bottom = 0.0)
+                                    val newValue = (1f - (dragY / height)).coerceIn(0f, 1f)
+                                    onValueChange(snapToStep(newValue))
+                                }
+                            }
+
+                            // Drag ended
+                            isDragging = false
+                        }
+                    },
+            contentAlignment = Alignment.Center,
         ) {
             Canvas(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             ) {
                 val trackWidth = 6.dp.toPx() // Slimmer track
                 val centerX = size.width / 2f
@@ -128,7 +130,7 @@ fun VerticalThresholdSlider(
                     start = Offset(centerX, 0f),
                     end = Offset(centerX, size.height),
                     strokeWidth = trackWidth,
-                    cap = StrokeCap.Round
+                    cap = StrokeCap.Round,
                 )
 
                 // Active track (from bottom to current value)
@@ -138,7 +140,7 @@ fun VerticalThresholdSlider(
                     start = Offset(centerX, activeHeight),
                     end = Offset(centerX, size.height),
                     strokeWidth = trackWidth,
-                    cap = StrokeCap.Round
+                    cap = StrokeCap.Round,
                 )
 
                 // Thumb indicator
@@ -150,7 +152,7 @@ fun VerticalThresholdSlider(
                     drawCircle(
                         color = CyanGlow.copy(alpha = 0.3f),
                         radius = thumbRadius * 1.5f,
-                        center = Offset(centerX, thumbY)
+                        center = Offset(centerX, thumbY),
                     )
                 }
 
@@ -158,7 +160,7 @@ fun VerticalThresholdSlider(
                 drawCircle(
                     color = if (isDragging) CyanGlow else ScaniumBlue,
                     radius = thumbRadius,
-                    center = Offset(centerX, thumbY)
+                    center = Offset(centerX, thumbY),
                 )
 
                 // Thumb border
@@ -166,14 +168,14 @@ fun VerticalThresholdSlider(
                     color = Color.White,
                     radius = thumbRadius,
                     center = Offset(centerX, thumbY),
-                    style = Stroke(width = 2.dp.toPx())
+                    style = Stroke(width = 2.dp.toPx()),
                 )
 
                 // Inner dot
                 drawCircle(
                     color = Color.White,
                     radius = 2.5.dp.toPx(),
-                    center = Offset(centerX, thumbY)
+                    center = Offset(centerX, thumbY),
                 )
             }
         }

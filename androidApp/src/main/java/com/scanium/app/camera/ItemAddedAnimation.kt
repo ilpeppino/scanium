@@ -20,7 +20,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
@@ -33,7 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ItemAddedAnimation(
     item: ScannedItem,
-    onAnimationFinished: () -> Unit
+    onAnimationFinished: () -> Unit,
 ) {
     val scale = remember { Animatable(0.4f) }
     val alpha = remember { Animatable(0f) }
@@ -45,20 +44,20 @@ fun ItemAddedAnimation(
             alpha.snapTo(1f)
             scale.animateTo(
                 targetValue = 1.2f,
-                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
             )
             // Settle
             scale.animateTo(
                 targetValue = 1.0f,
-                animationSpec = tween(durationMillis = 100, easing = LinearEasing)
+                animationSpec = tween(durationMillis = 100, easing = LinearEasing),
             )
         }
-        
+
         launch {
             // Float up and fade out
             translationY.animateTo(
                 targetValue = -60f,
-                animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
             )
         }
 
@@ -67,33 +66,36 @@ fun ItemAddedAnimation(
             kotlinx.coroutines.delay(300)
             alpha.animateTo(
                 targetValue = 0f,
-                animationSpec = tween(durationMillis = 300, easing = LinearEasing)
+                animationSpec = tween(durationMillis = 300, easing = LinearEasing),
             )
             onAnimationFinished()
         }
     }
 
-    val thumbnailBitmap = remember(item.id) {
-        (item.thumbnailRef ?: item.thumbnail)?.toImageBitmap()
-    }
+    val thumbnailBitmap =
+        remember(item.id) {
+            (item.thumbnailRef ?: item.thumbnail)?.toImageBitmap()
+        }
 
     if (thumbnailBitmap != null) {
         Box(
-            modifier = Modifier
-                .offset { IntOffset(0, translationY.value.toInt()) }
-                .scale(scale.value)
-                .alpha(alpha.value)
-                .size(48.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .background(Color.White.copy(alpha = 0.2f)), // Border effect
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .offset { IntOffset(0, translationY.value.toInt()) }
+                    .scale(scale.value)
+                    .alpha(alpha.value)
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(Color.White.copy(alpha = 0.2f)),
+            // Border effect
+            contentAlignment = Alignment.Center,
         ) {
             Image(
                 bitmap = thumbnailBitmap,
                 contentDescription = stringResource(R.string.cd_item_thumbnail),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize()
+                modifier = Modifier.matchParentSize(),
             )
         }
     }

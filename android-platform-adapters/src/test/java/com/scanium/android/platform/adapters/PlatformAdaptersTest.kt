@@ -12,7 +12,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class PlatformAdaptersTest {
-
     @Test
     fun rectF_toNormalized_and_back_isStable() {
         val frameWidth = 200
@@ -34,8 +33,9 @@ class PlatformAdaptersTest {
 
     @Test
     fun rectF_outsideFrame_isClamped() {
-        val normalized = RectF(-10f, -5f, 250f, 150f)
-            .toNormalizedRect(frameWidth = 200, frameHeight = 100)
+        val normalized =
+            RectF(-10f, -5f, 250f, 150f)
+                .toNormalizedRect(frameWidth = 200, frameHeight = 100)
 
         assertThat(normalized.left).isAtLeast(0f)
         assertThat(normalized.top).isAtLeast(0f)

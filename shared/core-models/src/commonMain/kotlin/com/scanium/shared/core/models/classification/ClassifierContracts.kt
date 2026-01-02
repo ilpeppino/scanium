@@ -1,7 +1,7 @@
 package com.scanium.shared.core.models.classification
 
-import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Portable classifier contract. Implementations may be cloud-backed or on-device.
@@ -17,7 +17,7 @@ interface Classifier {
     suspend fun classify(
         thumbnail: ImageRef,
         hint: String? = null,
-        domainPackId: String = DEFAULT_DOMAIN_PACK_ID
+        domainPackId: String = DEFAULT_DOMAIN_PACK_ID,
     ): ClassificationResult
 
     /**
@@ -35,14 +35,14 @@ interface ClassificationRepository {
         thumbnail: ImageRef,
         hint: String? = null,
         mode: ClassificationMode = ClassificationMode.CLOUD,
-        domainPackId: String = DEFAULT_DOMAIN_PACK_ID
+        domainPackId: String = DEFAULT_DOMAIN_PACK_ID,
     ): ClassificationResult
 }
 
 enum class ClassificationMode {
     CLOUD,
     ON_DEVICE,
-    DISABLED
+    DISABLED,
 }
 
 data class ClassificationResult(
@@ -61,13 +61,13 @@ data class ClassificationResult(
 enum class ClassificationSource {
     CLOUD,
     ON_DEVICE,
-    FALLBACK
+    FALLBACK,
 }
 
 enum class ClassificationStatus {
     SUCCESS,
     FAILED,
-    SKIPPED
+    SKIPPED,
 }
 
 const val DEFAULT_DOMAIN_PACK_ID = "home_resale"

@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsAssistantScreen(
     viewModel: SettingsViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -72,88 +72,101 @@ fun SettingsAssistantScreen(
     val autoSendTranscript by viewModel.autoSendTranscript.collectAsState()
     val voiceLanguage by viewModel.voiceLanguage.collectAsState()
     val assistantPrerequisiteState by viewModel.assistantPrerequisiteState.collectAsState()
-   val showPrerequisiteDialog by viewModel.showPrerequisiteDialog.collectAsState()
-   val connectionTestState by viewModel.connectionTestState.collectAsState()
+    val showPrerequisiteDialog by viewModel.showPrerequisiteDialog.collectAsState()
+    val connectionTestState by viewModel.connectionTestState.collectAsState()
 
-    val languageOptions = listOf(
-        "EN" to stringResource(R.string.settings_language_en),
-        "NL" to stringResource(R.string.settings_language_nl),
-        "DE" to stringResource(R.string.settings_language_de),
-        "FR" to stringResource(R.string.settings_language_fr),
-        "ES" to stringResource(R.string.settings_language_es),
-        "IT" to stringResource(R.string.settings_language_it)
-    )
-    val assistantLanguageLabel = languageOptions.firstOrNull { it.first == assistantLanguage }?.second
-        ?: languageOptions.first().second
+    val languageOptions =
+        listOf(
+            "EN" to stringResource(R.string.settings_language_en),
+            "NL" to stringResource(R.string.settings_language_nl),
+            "DE" to stringResource(R.string.settings_language_de),
+            "FR" to stringResource(R.string.settings_language_fr),
+            "ES" to stringResource(R.string.settings_language_es),
+            "IT" to stringResource(R.string.settings_language_it),
+        )
+    val assistantLanguageLabel =
+        languageOptions.firstOrNull { it.first == assistantLanguage }?.second
+            ?: languageOptions.first().second
 
-    val toneOptions = AssistantTone.values().map { tone ->
-        val label = when (tone) {
-            AssistantTone.NEUTRAL -> stringResource(R.string.settings_tone_neutral)
-            AssistantTone.FRIENDLY -> stringResource(R.string.settings_tone_friendly)
-            AssistantTone.PROFESSIONAL -> stringResource(R.string.settings_tone_professional)
+    val toneOptions =
+        AssistantTone.values().map { tone ->
+            val label =
+                when (tone) {
+                    AssistantTone.NEUTRAL -> stringResource(R.string.settings_tone_neutral)
+                    AssistantTone.FRIENDLY -> stringResource(R.string.settings_tone_friendly)
+                    AssistantTone.PROFESSIONAL -> stringResource(R.string.settings_tone_professional)
+                }
+            tone.name to label
         }
-        tone.name to label
-    }
     val selectedToneLabel = toneOptions.firstOrNull { it.first == assistantTone.name }?.second ?: assistantTone.name
 
-    val regionOptions = AssistantRegion.values().map { region ->
-        val label = when (region) {
-            AssistantRegion.EU -> stringResource(R.string.settings_region_europe)
-            AssistantRegion.NL -> stringResource(R.string.settings_region_netherlands)
-            AssistantRegion.DE -> stringResource(R.string.settings_region_germany)
-            AssistantRegion.FR -> stringResource(R.string.settings_region_france)
-            AssistantRegion.BE -> stringResource(R.string.settings_region_belgium)
-            AssistantRegion.UK -> stringResource(R.string.settings_region_uk)
-            AssistantRegion.US -> stringResource(R.string.settings_region_us)
+    val regionOptions =
+        AssistantRegion.values().map { region ->
+            val label =
+                when (region) {
+                    AssistantRegion.EU -> stringResource(R.string.settings_region_europe)
+                    AssistantRegion.NL -> stringResource(R.string.settings_region_netherlands)
+                    AssistantRegion.DE -> stringResource(R.string.settings_region_germany)
+                    AssistantRegion.FR -> stringResource(R.string.settings_region_france)
+                    AssistantRegion.BE -> stringResource(R.string.settings_region_belgium)
+                    AssistantRegion.UK -> stringResource(R.string.settings_region_uk)
+                    AssistantRegion.US -> stringResource(R.string.settings_region_us)
+                }
+            region.name to label
         }
-        region.name to label
-    }
     val selectedRegionLabel = regionOptions.firstOrNull { it.first == assistantRegion.name }?.second ?: assistantRegion.name
 
-    val unitOptions = AssistantUnits.values().map { units ->
-        val label = when (units) {
-            AssistantUnits.METRIC -> stringResource(R.string.settings_units_metric)
-            AssistantUnits.IMPERIAL -> stringResource(R.string.settings_units_imperial)
+    val unitOptions =
+        AssistantUnits.values().map { units ->
+            val label =
+                when (units) {
+                    AssistantUnits.METRIC -> stringResource(R.string.settings_units_metric)
+                    AssistantUnits.IMPERIAL -> stringResource(R.string.settings_units_imperial)
+                }
+            units.name to label
         }
-        units.name to label
-    }
     val selectedUnitsLabel = unitOptions.firstOrNull { it.first == assistantUnits.name }?.second ?: assistantUnits.name
 
-    val verbosityOptions = AssistantVerbosity.values().map { verbosity ->
-        val label = when (verbosity) {
-            AssistantVerbosity.CONCISE -> stringResource(R.string.settings_verbosity_concise)
-            AssistantVerbosity.NORMAL -> stringResource(R.string.settings_verbosity_normal)
-            AssistantVerbosity.DETAILED -> stringResource(R.string.settings_verbosity_detailed)
+    val verbosityOptions =
+        AssistantVerbosity.values().map { verbosity ->
+            val label =
+                when (verbosity) {
+                    AssistantVerbosity.CONCISE -> stringResource(R.string.settings_verbosity_concise)
+                    AssistantVerbosity.NORMAL -> stringResource(R.string.settings_verbosity_normal)
+                    AssistantVerbosity.DETAILED -> stringResource(R.string.settings_verbosity_detailed)
+                }
+            verbosity.name to label
         }
-        verbosity.name to label
-    }
     val selectedVerbosityLabel = verbosityOptions.firstOrNull { it.first == assistantVerbosity.name }?.second ?: assistantVerbosity.name
 
-    val voiceLanguageOptions = listOf(
-        "" to stringResource(R.string.settings_voice_language_follow_assistant, assistantLanguageLabel),
-        "EN" to stringResource(R.string.settings_language_en),
-        "NL" to stringResource(R.string.settings_language_nl),
-        "DE" to stringResource(R.string.settings_language_de),
-        "FR" to stringResource(R.string.settings_language_fr),
-        "ES" to stringResource(R.string.settings_language_es),
-        "IT" to stringResource(R.string.settings_language_it)
-    )
-    val selectedVoiceLanguageLabel = voiceLanguageOptions.firstOrNull { it.first == voiceLanguage }?.second
-        ?: voiceLanguageOptions.first().second
+    val voiceLanguageOptions =
+        listOf(
+            "" to stringResource(R.string.settings_voice_language_follow_assistant, assistantLanguageLabel),
+            "EN" to stringResource(R.string.settings_language_en),
+            "NL" to stringResource(R.string.settings_language_nl),
+            "DE" to stringResource(R.string.settings_language_de),
+            "FR" to stringResource(R.string.settings_language_fr),
+            "ES" to stringResource(R.string.settings_language_es),
+            "IT" to stringResource(R.string.settings_language_it),
+        )
+    val selectedVoiceLanguageLabel =
+        voiceLanguageOptions.firstOrNull { it.first == voiceLanguage }?.second
+            ?: voiceLanguageOptions.first().second
 
-    val micPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            viewModel.setVoiceModeEnabled(true)
-        } else {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.settings_voice_mode_permission_denied)
-                )
+    val micPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) {
+                viewModel.setVoiceModeEnabled(true)
+            } else {
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.settings_voice_mode_permission_denied),
+                    )
+                }
             }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -163,53 +176,57 @@ fun SettingsAssistantScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
             )
         },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
         ) {
             SettingsSectionHeader(title = stringResource(R.string.settings_section_assistant_access))
             SettingSwitchRow(
                 title = stringResource(R.string.settings_assistant_toggle_title),
-                subtitle = if (assistantPrerequisiteState.allSatisfied) {
-                    stringResource(R.string.settings_assistant_toggle_subtitle_ready)
-                } else {
-                    stringResource(
-                        R.string.settings_assistant_toggle_subtitle_prereqs,
-                        assistantPrerequisiteState.unsatisfiedCount
-                    )
-                },
+                subtitle =
+                    if (assistantPrerequisiteState.allSatisfied) {
+                        stringResource(R.string.settings_assistant_toggle_subtitle_ready)
+                    } else {
+                        stringResource(
+                            R.string.settings_assistant_toggle_subtitle_prereqs,
+                            assistantPrerequisiteState.unsatisfiedCount,
+                        )
+                    },
                 icon = Icons.Filled.Cloud,
                 checked = allowAssistant,
                 onCheckedChange = { enabled ->
                     viewModel.setAllowAssistant(enabled)
-                }
+                },
             )
 
             SettingActionRow(
                 title = stringResource(R.string.settings_assistant_test_connection),
-                subtitle = when (connectionTestState) {
-                    is ConnectionTestState.Testing -> stringResource(R.string.settings_assistant_connection_testing)
-                    is ConnectionTestState.Success -> stringResource(R.string.settings_assistant_connection_success)
-                    is ConnectionTestState.Failed -> (connectionTestState as ConnectionTestState.Failed).message
-                    else -> stringResource(R.string.settings_assistant_connection_idle)
-                },
-                icon = when (connectionTestState) {
-                    is ConnectionTestState.Success -> Icons.Filled.CheckCircle
-                    is ConnectionTestState.Failed -> Icons.Filled.Warning
-                    is ConnectionTestState.Testing -> null
-                    else -> Icons.Filled.SettingsVoice
-                },
+                subtitle =
+                    when (connectionTestState) {
+                        is ConnectionTestState.Testing -> stringResource(R.string.settings_assistant_connection_testing)
+                        is ConnectionTestState.Success -> stringResource(R.string.settings_assistant_connection_success)
+                        is ConnectionTestState.Failed -> (connectionTestState as ConnectionTestState.Failed).message
+                        else -> stringResource(R.string.settings_assistant_connection_idle)
+                    },
+                icon =
+                    when (connectionTestState) {
+                        is ConnectionTestState.Success -> Icons.Filled.CheckCircle
+                        is ConnectionTestState.Failed -> Icons.Filled.Warning
+                        is ConnectionTestState.Testing -> null
+                        else -> Icons.Filled.SettingsVoice
+                    },
                 onClick = {
                     if (connectionTestState !is ConnectionTestState.Testing) {
                         viewModel.testAssistantConnection()
                     }
-                }
+                },
             )
 
             SettingSwitchRow(
@@ -218,7 +235,7 @@ fun SettingsAssistantScreen(
                 icon = Icons.Filled.Cloud,
                 checked = allowAssistantImages,
                 enabled = allowAssistant,
-                onCheckedChange = viewModel::setAllowAssistantImages
+                onCheckedChange = viewModel::setAllowAssistantImages,
             )
 
             if (allowAssistant) {
@@ -229,7 +246,7 @@ fun SettingsAssistantScreen(
                     icon = Icons.Filled.Language,
                     selectedLabel = assistantLanguageLabel,
                     options = languageOptions,
-                    onOptionSelected = viewModel::setAssistantLanguage
+                    onOptionSelected = viewModel::setAssistantLanguage,
                 )
 
                 SettingDropdownRow(
@@ -240,7 +257,7 @@ fun SettingsAssistantScreen(
                     options = toneOptions,
                     onOptionSelected = { value ->
                         viewModel.setAssistantTone(AssistantTone.valueOf(value))
-                    }
+                    },
                 )
 
                 SettingDropdownRow(
@@ -251,7 +268,7 @@ fun SettingsAssistantScreen(
                     options = regionOptions,
                     onOptionSelected = { value ->
                         viewModel.setAssistantRegion(AssistantRegion.valueOf(value))
-                    }
+                    },
                 )
 
                 SettingDropdownRow(
@@ -262,7 +279,7 @@ fun SettingsAssistantScreen(
                     options = unitOptions,
                     onOptionSelected = { value ->
                         viewModel.setAssistantUnits(AssistantUnits.valueOf(value))
-                    }
+                    },
                 )
 
                 SettingDropdownRow(
@@ -273,7 +290,7 @@ fun SettingsAssistantScreen(
                     options = verbosityOptions,
                     onOptionSelected = { value ->
                         viewModel.setAssistantVerbosity(AssistantVerbosity.valueOf(value))
-                    }
+                    },
                 )
 
                 SettingsSectionHeader(title = stringResource(R.string.settings_section_voice_mode))
@@ -284,10 +301,11 @@ fun SettingsAssistantScreen(
                     checked = voiceModeEnabled,
                     onCheckedChange = { enabled ->
                         if (enabled) {
-                            val permissionGranted = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.RECORD_AUDIO
-                            ) == PackageManager.PERMISSION_GRANTED
+                            val permissionGranted =
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.RECORD_AUDIO,
+                                ) == PackageManager.PERMISSION_GRANTED
                             if (permissionGranted) {
                                 viewModel.setVoiceModeEnabled(true)
                             } else {
@@ -296,7 +314,7 @@ fun SettingsAssistantScreen(
                         } else {
                             viewModel.setVoiceModeEnabled(false)
                         }
-                    }
+                    },
                 )
 
                 SettingSwitchRow(
@@ -304,7 +322,7 @@ fun SettingsAssistantScreen(
                     subtitle = stringResource(R.string.settings_speak_answers_subtitle),
                     icon = Icons.Filled.SettingsVoice,
                     checked = speakAnswersEnabled,
-                    onCheckedChange = viewModel::setSpeakAnswersEnabled
+                    onCheckedChange = viewModel::setSpeakAnswersEnabled,
                 )
 
                 SettingSwitchRow(
@@ -313,7 +331,7 @@ fun SettingsAssistantScreen(
                     icon = Icons.AutoMirrored.Filled.Send,
                     checked = autoSendTranscript,
                     enabled = voiceModeEnabled,
-                    onCheckedChange = viewModel::setAutoSendTranscript
+                    onCheckedChange = viewModel::setAutoSendTranscript,
                 )
 
                 SettingDropdownRow(
@@ -323,7 +341,7 @@ fun SettingsAssistantScreen(
                     selectedLabel = selectedVoiceLanguageLabel,
                     options = voiceLanguageOptions,
                     onOptionSelected = viewModel::setVoiceLanguage,
-                    enabled = voiceModeEnabled
+                    enabled = voiceModeEnabled,
                 )
             }
         }
@@ -334,7 +352,7 @@ fun SettingsAssistantScreen(
             prerequisiteState = assistantPrerequisiteState,
             connectionState = connectionTestState,
             onDismiss = viewModel::dismissPrerequisiteDialog,
-            onTestConnection = viewModel::testAssistantConnection
+            onTestConnection = viewModel::testAssistantConnection,
         )
     }
 }
@@ -344,7 +362,7 @@ private fun AssistantPrerequisiteDialog(
     prerequisiteState: AssistantPrerequisiteState,
     connectionState: ConnectionTestState,
     onDismiss: () -> Unit,
-    onTestConnection: () -> Unit
+    onTestConnection: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -354,12 +372,19 @@ private fun AssistantPrerequisiteDialog(
                 prerequisiteState.prerequisites.forEach { prerequisite ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
                     ) {
                         Icon(
                             imageVector = if (prerequisite.satisfied) Icons.Filled.CheckCircle else Icons.Filled.Warning,
-                            contentDescription = if (prerequisite.satisfied) stringResource(R.string.cd_prerequisite_satisfied) else stringResource(R.string.cd_prerequisite_not_satisfied),
-                            tint = if (prerequisite.satisfied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                            contentDescription =
+                                if (prerequisite.satisfied) {
+                                    stringResource(
+                                        R.string.cd_prerequisite_satisfied,
+                                    )
+                                } else {
+                                    stringResource(R.string.cd_prerequisite_not_satisfied)
+                                },
+                            tint = if (prerequisite.satisfied) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         )
                         Column {
                             Text(text = prerequisite.displayName, style = MaterialTheme.typography.bodyMedium)
@@ -367,7 +392,7 @@ private fun AssistantPrerequisiteDialog(
                                 Text(
                                     text = prerequisite.description,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
                         }
@@ -378,7 +403,7 @@ private fun AssistantPrerequisiteDialog(
                     is ConnectionTestState.Testing -> {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
                         ) {
                             CircularProgressIndicator(modifier = Modifier.padding(4.dp))
                             Text(text = stringResource(R.string.settings_assistant_connection_testing))
@@ -386,21 +411,29 @@ private fun AssistantPrerequisiteDialog(
                     }
                     is ConnectionTestState.Success -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.CheckCircle, contentDescription = stringResource(R.string.cd_connection_success), tint = MaterialTheme.colorScheme.primary)
+                            Icon(
+                                Icons.Filled.CheckCircle,
+                                contentDescription = stringResource(R.string.cd_connection_success),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
                             Text(
                                 text = stringResource(R.string.settings_assistant_connection_success),
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(start = 8.dp)
+                                modifier = Modifier.padding(start = 8.dp),
                             )
                         }
                     }
                     is ConnectionTestState.Failed -> {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.Warning, contentDescription = stringResource(R.string.cd_connection_failed), tint = MaterialTheme.colorScheme.error)
+                            Icon(
+                                Icons.Filled.Warning,
+                                contentDescription = stringResource(R.string.cd_connection_failed),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
                             Text(
                                 text = connectionState.message,
                                 color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.padding(start = 8.dp)
+                                modifier = Modifier.padding(start = 8.dp),
                             )
                         }
                     }
@@ -417,6 +450,6 @@ private fun AssistantPrerequisiteDialog(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.settings_dialog_close))
             }
-        }
+        },
     )
 }

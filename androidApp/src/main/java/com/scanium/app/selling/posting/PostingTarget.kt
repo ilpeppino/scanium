@@ -3,14 +3,14 @@ package com.scanium.app.selling.posting
 enum class PostingTargetType {
     URL,
     DEEPLINK,
-    APP
+    APP,
 }
 
 data class PostingTarget(
     val id: String,
     val label: String,
     val type: PostingTargetType,
-    val value: String
+    val value: String,
 )
 
 object PostingTargetDefaults {
@@ -23,14 +23,14 @@ object PostingTargetDefaults {
                 id = DEFAULT_BROWSER_ID,
                 label = "Browser",
                 type = PostingTargetType.URL,
-                value = "https://www.google.com"
+                value = "https://www.google.com",
             ),
             PostingTarget(
                 id = "marktplaats",
                 label = "Marktplaats",
                 type = PostingTargetType.URL,
-                value = "https://www.marktplaats.nl/"
-            )
+                value = "https://www.marktplaats.nl/",
+            ),
         )
     }
 
@@ -39,7 +39,7 @@ object PostingTargetDefaults {
             id = CUSTOM_TARGET_ID,
             label = "Custom URL",
             type = PostingTargetType.URL,
-            value = url
+            value = url,
         )
     }
 }

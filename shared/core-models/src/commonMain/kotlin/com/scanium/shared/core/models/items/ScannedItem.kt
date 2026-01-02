@@ -1,16 +1,19 @@
 package com.scanium.shared.core.models.items
 
 import com.scanium.shared.core.models.ml.ItemCategory
-import com.scanium.shared.core.models.pricing.PriceEstimationStatus
-import com.scanium.shared.core.models.pricing.PriceRange
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.shared.core.models.pricing.PriceEstimationStatus
+import com.scanium.shared.core.models.pricing.PriceRange
 import kotlinx.datetime.Clock
 import kotlin.random.Random
 
 private const val HEX_DIGITS = "0123456789abcdef"
 
-private fun appendByteHex(builder: StringBuilder, value: Byte) {
+private fun appendByteHex(
+    builder: StringBuilder,
+    value: Byte,
+) {
     val intVal = value.toInt() and 0xFF
     builder.append(HEX_DIGITS[intVal shr 4])
     builder.append(HEX_DIGITS[intVal and 0x0F])
@@ -83,17 +86,18 @@ data class ScannedItem<FullImageUri>(
     val domainCategoryId: String? = null,
     val classificationErrorMessage: String? = null,
     val classificationRequestId: String? = null,
-    val qualityScore: Float = 0.0f
+    val qualityScore: Float = 0.0f,
 ) {
     /**
      * Formatted price range string for display.
      * Example: "€20 - €50"
      */
     val formattedPriceRange: String
-        get() = when (val status = priceEstimationStatus) {
-            is PriceEstimationStatus.Ready -> status.priceRange.formatted()
-            else -> ""
-        }
+        get() =
+            when (val status = priceEstimationStatus) {
+                is PriceEstimationStatus.Ready -> status.priceRange.formatted()
+                else -> ""
+            }
 
     /**
      * Formatted confidence percentage for display.
@@ -106,11 +110,12 @@ data class ScannedItem<FullImageUri>(
      * Confidence level classification based on thresholds.
      */
     val confidenceLevel: ConfidenceLevel
-        get() = when {
-            confidence >= ConfidenceLevel.HIGH.threshold -> ConfidenceLevel.HIGH
-            confidence >= ConfidenceLevel.MEDIUM.threshold -> ConfidenceLevel.MEDIUM
-            else -> ConfidenceLevel.LOW
-        }
+        get() =
+            when {
+                confidence >= ConfidenceLevel.HIGH.threshold -> ConfidenceLevel.HIGH
+                confidence >= ConfidenceLevel.MEDIUM.threshold -> ConfidenceLevel.MEDIUM
+                else -> ConfidenceLevel.LOW
+            }
 
     /**
      * Preferred human-readable label prioritizing specific classification output.
@@ -138,23 +143,23 @@ private fun capitalizeDisplayLabel(value: String): String {
 enum class ConfidenceLevel(
     val threshold: Float,
     val displayName: String,
-    val description: String
+    val description: String,
 ) {
     LOW(
         threshold = 0.0f,
         displayName = "Low",
-        description = "Detection confidence is low"
+        description = "Detection confidence is low",
     ),
     MEDIUM(
         threshold = 0.5f,
         displayName = "Medium",
-        description = "Detection confidence is moderate"
+        description = "Detection confidence is moderate",
     ),
     HIGH(
         threshold = 0.75f,
         displayName = "High",
-        description = "Detection confidence is high"
-    )
+        description = "Detection confidence is high",
+    ),
 }
 
 /**
@@ -162,22 +167,22 @@ enum class ConfidenceLevel(
  */
 enum class ItemListingStatus(
     val displayName: String,
-    val description: String
+    val description: String,
 ) {
     NOT_LISTED(
         displayName = "Not Listed",
-        description = "Item has not been posted to eBay"
+        description = "Item has not been posted to eBay",
     ),
     LISTING_IN_PROGRESS(
         displayName = "Posting...",
-        description = "Item is currently being posted to eBay"
+        description = "Item is currently being posted to eBay",
     ),
     LISTED_ACTIVE(
         displayName = "Listed",
-        description = "Item is actively listed on eBay"
+        description = "Item is actively listed on eBay",
     ),
     LISTING_FAILED(
         displayName = "Failed",
-        description = "Failed to post item to eBay"
-    )
+        description = "Failed to post item to eBay",
+    ),
 }

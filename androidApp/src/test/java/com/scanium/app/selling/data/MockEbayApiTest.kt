@@ -7,10 +7,9 @@ import com.scanium.app.selling.domain.ListingDraft
 import com.scanium.app.selling.domain.ListingId
 import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
-import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.models.geometry.NormalizedRect
-import com.scanium.core.models.image.ImageRef
 import com.scanium.core.models.image.Bytes
+import com.scanium.core.models.ml.ItemCategory
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,56 +17,63 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MockEbayApiTest {
-
     private val api = MockEbayApi()
 
     @Test
-    fun `create listing returns active listing`() = runBlocking {
-        val draft = ListingDraft(
-            scannedItemId = "1",
-            originalItem = ScannedItem(
-                id = "1",
-                category = ItemCategory.FASHION,
-                priceRange = 10.0 to 20.0,
-                boundingBox = NormalizedRect(0f, 0f, 1f, 1f),
-                thumbnail = Bytes(ByteArray(4) { 1 }, "image/jpeg", 2, 2)
-            ),
-            title = "Used item",
-            description = "desc",
-            category = ItemCategory.FASHION,
-            price = 15.0,
-            currency = "EUR",
-            condition = ListingCondition.USED
-        )
-        val listing = api.createListing(draft, ListingImage(ListingImageSource.DETECTION_THUMBNAIL, "uri"))
+    fun `create listing returns active listing`() =
+        runBlocking {
+            val draft =
+                ListingDraft(
+                    scannedItemId = "1",
+                    originalItem =
+                        ScannedItem(
+                            id = "1",
+                            category = ItemCategory.FASHION,
+                            priceRange = 10.0 to 20.0,
+                            boundingBox = NormalizedRect(0f, 0f, 1f, 1f),
+                            thumbnail = Bytes(ByteArray(4) { 1 }, "image/jpeg", 2, 2),
+                        ),
+                    title = "Used item",
+                    description = "desc",
+                    category = ItemCategory.FASHION,
+                    price = 15.0,
+                    currency = "EUR",
+                    condition = ListingCondition.USED,
+                )
+            val listing = api.createListing(draft, ListingImage(ListingImageSource.DETECTION_THUMBNAIL, "uri"))
 
-        assertThat(listing.status).isEqualTo(com.scanium.app.selling.domain.ListingStatus.ACTIVE)
-        assertThat(listing.externalUrl).contains(listing.listingId.value)
-    }
+            assertThat(listing.status).isEqualTo(com.scanium.app.selling.domain.ListingStatus.ACTIVE)
+            assertThat(listing.externalUrl).contains(listing.listingId.value)
+        }
 
     @Test
-    fun `end listing transitions to ended`() = runBlocking {
-        val draft = ListingDraft(
-            scannedItemId = "1",
-            originalItem = ScannedItem(
-                id = "1",
-                category = ItemCategory.FASHION,
-                priceRange = 10.0 to 20.0,
-                boundingBox = NormalizedRect(0f, 0f, 1f, 1f),
-                thumbnail = Bytes(ByteArray(4) { 1 }, "image/jpeg", 2, 2)
-            ),
-            title = "Used item",
-            description = "desc",
-            category = ItemCategory.FASHION,
-            price = 15.0,
-            currency = "EUR",
-            condition = ListingCondition.USED
-        )
-        val listing = api.createListing(draft, ListingImage(ListingImageSource.DETECTION_THUMBNAIL, "uri"))
+    fun `end listing transitions to ended`() =
+        runBlocking {
+            val draft =
+                ListingDraft(
+                    scannedItemId = "1",
+                    originalItem =
+                        ScannedItem(
+                            id = "1",
+                            category = ItemCategory.FASHION,
+                            priceRange = 10.0 to 20.0,
+                            boundingBox = NormalizedRect(0f, 0f, 1f, 1f),
+                            thumbnail = Bytes(ByteArray(4) { 1 }, "image/jpeg", 2, 2),
+                        ),
+                    title = "Used item",
+                    description = "desc",
+                    category = ItemCategory.FASHION,
+                    price = 15.0,
+                    currency = "EUR",
+                    condition = ListingCondition.USED,
+                )
+            val listing = api.createListing(draft, ListingImage(ListingImageSource.DETECTION_THUMBNAIL, "uri"))
 
-        val status = api.endListing(listing.listingId)
+            val status = api.endListing(listing.listingId)
 
-        assertThat(status).isEqualTo(com.scanium.app.selling.domain.ListingStatus.ENDED)
-        assertThat(api.getListingStatus(ListingId(listing.listingId.value))).isEqualTo(com.scanium.app.selling.domain.ListingStatus.ENDED)
-    }
+            assertThat(status).isEqualTo(com.scanium.app.selling.domain.ListingStatus.ENDED)
+            assertThat(
+                api.getListingStatus(ListingId(listing.listingId.value)),
+            ).isEqualTo(com.scanium.app.selling.domain.ListingStatus.ENDED)
+        }
 }

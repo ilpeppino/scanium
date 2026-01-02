@@ -51,7 +51,8 @@ data class AggregatedItem(
     val firstSeenTimestamp: Long = System.currentTimeMillis(),
     var lastSeenTimestamp: Long = System.currentTimeMillis(),
     val sourceDetectionIds: MutableSet<String> = mutableSetOf(),
-    var dominantColor: Int? = null, // For future thumbnail-based similarity
+    var dominantColor: Int? = null,
+// For future thumbnail-based similarity
     var enhancedCategory: ItemCategory? = null,
     var enhancedLabelText: String? = null,
     var enhancedPriceRange: Pair<Double, Double>? = null,
@@ -59,11 +60,12 @@ data class AggregatedItem(
     var fullImageUri: Uri? = null,
     var fullImagePath: String? = null,
     // Classification status tracking (Phase 9)
-    var classificationStatus: String = "NOT_STARTED", // NOT_STARTED, PENDING, SUCCESS, FAILED
+    var classificationStatus: String = "NOT_STARTED",
+// NOT_STARTED, PENDING, SUCCESS, FAILED
     var domainCategoryId: String? = null,
     var classificationErrorMessage: String? = null,
     var classificationRequestId: String? = null,
-    var thumbnailQuality: Float = 0f
+    var thumbnailQuality: Float = 0f,
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -89,7 +91,7 @@ data class AggregatedItem(
             domainCategoryId = domainCategoryId,
             classificationErrorMessage = classificationErrorMessage,
             classificationRequestId = classificationRequestId,
-            qualityScore = thumbnailQuality
+            qualityScore = thumbnailQuality,
         )
     }
 
@@ -124,12 +126,12 @@ data class AggregatedItem(
         // If current thumbnail is missing, take the new one
         // If new one has significantly better quality score, take it
         // If quality is similar, default to high confidence check (already handled implicitly if we track maxConfidence separately? No)
-        
+
         val newThumbnail = detection.thumbnail
         if (newThumbnail != null) {
             val isBetterQuality = detection.qualityScore > thumbnailQuality
             val isFirstThumbnail = thumbnail == null
-            
+
             // Allow update if better quality OR it's the first one
             // Also consider confidence: don't replace a high-confidence sharp image with a low-confidence sharp image?
             // Actually, quality score (sharpness) is usually king for visual search.
@@ -169,7 +171,7 @@ data class AggregatedItem(
     fun getCenterPoint(): Pair<Float, Float> {
         return Pair(
             (boundingBox.left + boundingBox.right) / 2f,
-            (boundingBox.top + boundingBox.bottom) / 2f
+            (boundingBox.top + boundingBox.bottom) / 2f,
         )
     }
 
@@ -199,7 +201,10 @@ data class AggregatedItem(
         fullImageUri = null
     }
 
-    fun updatePriceEstimation(status: PriceEstimationStatus, priceRange: PriceRange?) {
+    fun updatePriceEstimation(
+        status: PriceEstimationStatus,
+        priceRange: PriceRange?,
+    ) {
         priceEstimationStatus = status
         priceRange?.let { range ->
             estimatedPriceRange = range

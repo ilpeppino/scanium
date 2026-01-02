@@ -5,7 +5,6 @@ import org.junit.Before
 import org.junit.Test
 
 class MockEbayConfigManagerTest {
-
     @Before
     fun setup() {
         // Reset to defaults before each test
@@ -71,13 +70,14 @@ class MockEbayConfigManagerTest {
 
     @Test
     fun `updateConfig replaces entire config`() {
-        val newConfig = MockEbayConfig(
-            simulateNetworkDelay = false,
-            minDelayMs = 100,
-            maxDelayMs = 500,
-            failureMode = MockFailureMode.IMAGE_TOO_SMALL,
-            failureRate = 0.3
-        )
+        val newConfig =
+            MockEbayConfig(
+                simulateNetworkDelay = false,
+                minDelayMs = 100,
+                maxDelayMs = 500,
+                failureMode = MockFailureMode.IMAGE_TOO_SMALL,
+                failureRate = 0.3,
+            )
 
         MockEbayConfigManager.updateConfig(newConfig)
 

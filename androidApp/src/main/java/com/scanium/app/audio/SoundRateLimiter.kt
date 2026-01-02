@@ -2,7 +2,7 @@ package com.scanium.app.audio
 
 internal class SoundRateLimiter(
     private val minIntervalsMs: Map<AppSound, Long>,
-    private val clock: () -> Long
+    private val clock: () -> Long,
 ) {
     private val lastPlayed = mutableMapOf<AppSound, Long>()
 

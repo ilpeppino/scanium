@@ -24,31 +24,34 @@ class BillingRepository(private val context: Context) {
         private val KEY_PURCHASE_TOKENS = stringPreferencesKey("purchase_tokens") // Basic storage for validation
     }
 
-    val entitlementState: Flow<EntitlementState> = context.billingDataStore.data.map { prefs ->
-        val status = try {
-            UserEdition.valueOf(prefs[KEY_STATUS] ?: UserEdition.FREE.name)
-        } catch (e: Exception) {
-            UserEdition.FREE
-        }
-        
-        val source = try {
-            EntitlementSource.valueOf(prefs[KEY_SOURCE] ?: EntitlementSource.LOCAL_CACHE.name)
-        } catch (e: Exception) {
-            EntitlementSource.LOCAL_CACHE
-        }
+    val entitlementState: Flow<EntitlementState> =
+        context.billingDataStore.data.map { prefs ->
+            val status =
+                try {
+                    UserEdition.valueOf(prefs[KEY_STATUS] ?: UserEdition.FREE.name)
+                } catch (e: Exception) {
+                    UserEdition.FREE
+                }
 
-        EntitlementState(
-            status = status,
-            source = source,
-            lastUpdatedAt = prefs[KEY_LAST_UPDATED] ?: 0L,
-            expiresAt = prefs[KEY_EXPIRES_AT]
-        )
-    }
+            val source =
+                try {
+                    EntitlementSource.valueOf(prefs[KEY_SOURCE] ?: EntitlementSource.LOCAL_CACHE.name)
+                } catch (e: Exception) {
+                    EntitlementSource.LOCAL_CACHE
+                }
+
+            EntitlementState(
+                status = status,
+                source = source,
+                lastUpdatedAt = prefs[KEY_LAST_UPDATED] ?: 0L,
+                expiresAt = prefs[KEY_EXPIRES_AT],
+            )
+        }
 
     suspend fun updateEntitlement(
         status: UserEdition,
         source: EntitlementSource,
-        purchaseToken: String? = null
+        purchaseToken: String? = null,
     ) {
         context.billingDataStore.edit { prefs ->
             prefs[KEY_STATUS] = status.name
@@ -62,7 +65,7 @@ class BillingRepository(private val context: Context) {
             }
         }
     }
-    
+
     suspend fun clearEntitlement() {
         context.billingDataStore.edit { prefs ->
             prefs[KEY_STATUS] = UserEdition.FREE.name

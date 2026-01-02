@@ -2,17 +2,17 @@ package com.scanium.android.platform.adapters
 
 import com.scanium.app.ml.classification.ClassificationInput
 import com.scanium.app.ml.classification.ItemClassifier
+import com.scanium.app.model.resolveBytes
+import com.scanium.app.platform.toBitmap
 import com.scanium.shared.core.models.classification.ClassificationResult
 import com.scanium.shared.core.models.classification.ClassificationSource
 import com.scanium.shared.core.models.classification.ClassificationStatus
 import com.scanium.shared.core.models.classification.Classifier
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.app.model.resolveBytes
-import com.scanium.app.platform.toBitmap
-import com.scanium.shared.core.models.ml.ItemCategory as SharedItemCategory
 import com.scanium.app.ml.ItemCategory as AndroidItemCategory
 import com.scanium.app.ml.classification.ClassificationMode as AndroidClassificationMode
 import com.scanium.app.ml.classification.ClassificationStatus as AndroidClassificationStatus
+import com.scanium.shared.core.models.ml.ItemCategory as SharedItemCategory
 
 /**
  * Adapter that bridges Android ItemClassifier to portable Classifier interface.
@@ -25,33 +25,35 @@ import com.scanium.app.ml.classification.ClassificationStatus as AndroidClassifi
  */
 class ClassifierAdapter(
     private val androidClassifier: ItemClassifier,
-    private val source: ClassificationSource
+    private val source: ClassificationSource,
 ) : Classifier {
-
     override suspend fun classify(
         thumbnail: ImageRef,
         hint: String?,
-        domainPackId: String
+        domainPackId: String,
     ): ClassificationResult {
         // Convert ImageRef to Bitmap
-        val bytes = thumbnail.resolveBytes()
-            ?: return ClassificationResult(
-                domainCategoryId = null,
-                confidence = 0f,
-                source = source,
-                label = null,
-                status = ClassificationStatus.FAILED,
-                errorMessage = "Unsupported ImageRef type: ${thumbnail::class.simpleName}"
-            )
+        val bytes =
+            thumbnail.resolveBytes()
+                ?: return ClassificationResult(
+                    domainCategoryId = null,
+                    confidence = 0f,
+                    source = source,
+                    label = null,
+                    status = ClassificationStatus.FAILED,
+                    errorMessage = "Unsupported ImageRef type: ${thumbnail::class.simpleName}",
+                )
 
         val bitmap = bytes.toBitmap()
 
         // Create Android ClassificationInput
-        val input = ClassificationInput(
-            aggregatedId = "temp_id", // Not used by classifiers
-            bitmap = bitmap,
-            boundingBox = null
-        )
+        val input =
+            ClassificationInput(
+                aggregatedId = "temp_id",
+// Not used by classifiers
+                bitmap = bitmap,
+                boundingBox = null,
+            )
 
         // Call Android classifier
         val androidResult = androidClassifier.classifySingle(input)
@@ -67,7 +69,7 @@ class ClassifierAdapter(
                 source = source,
                 label = null,
                 status = ClassificationStatus.SKIPPED,
-                errorMessage = "Classifier not configured"
+                errorMessage = "Classifier not configured",
             )
         }
     }
@@ -81,9 +83,7 @@ class ClassifierAdapter(
     /**
      * Convert Android ClassificationResult to shared ClassificationResult.
      */
-    private fun convertAndroidResult(
-        androidResult: com.scanium.app.ml.classification.ClassificationResult
-    ): ClassificationResult {
+    private fun convertAndroidResult(androidResult: com.scanium.app.ml.classification.ClassificationResult): ClassificationResult {
         return ClassificationResult(
             domainCategoryId = androidResult.domainCategoryId,
             confidence = androidResult.confidence,
@@ -94,7 +94,7 @@ class ClassifierAdapter(
             requestId = androidResult.requestId,
             latencyMs = null,
             status = androidResult.status.toSharedStatus(),
-            errorMessage = androidResult.errorMessage
+            errorMessage = androidResult.errorMessage,
         )
     }
 }
@@ -102,19 +102,21 @@ class ClassifierAdapter(
 /**
  * Convert Android ClassificationMode to shared ClassificationSource.
  */
-private fun AndroidClassificationMode.toSharedSource(): ClassificationSource = when (this) {
-    AndroidClassificationMode.CLOUD -> ClassificationSource.CLOUD
-    AndroidClassificationMode.ON_DEVICE -> ClassificationSource.ON_DEVICE
-}
+private fun AndroidClassificationMode.toSharedSource(): ClassificationSource =
+    when (this) {
+        AndroidClassificationMode.CLOUD -> ClassificationSource.CLOUD
+        AndroidClassificationMode.ON_DEVICE -> ClassificationSource.ON_DEVICE
+    }
 
 /**
  * Convert Android ClassificationStatus to shared ClassificationStatus.
  */
-private fun AndroidClassificationStatus.toSharedStatus(): ClassificationStatus = when (this) {
-    AndroidClassificationStatus.PENDING -> ClassificationStatus.SUCCESS // Map PENDING to SUCCESS for now
-    AndroidClassificationStatus.SUCCESS -> ClassificationStatus.SUCCESS
-    AndroidClassificationStatus.FAILED -> ClassificationStatus.FAILED
-}
+private fun AndroidClassificationStatus.toSharedStatus(): ClassificationStatus =
+    when (this) {
+        AndroidClassificationStatus.PENDING -> ClassificationStatus.SUCCESS // Map PENDING to SUCCESS for now
+        AndroidClassificationStatus.SUCCESS -> ClassificationStatus.SUCCESS
+        AndroidClassificationStatus.FAILED -> ClassificationStatus.FAILED
+    }
 
 /**
  * Convert Android ItemCategory to shared ItemCategory.

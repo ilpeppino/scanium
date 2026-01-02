@@ -11,18 +11,28 @@ kotlin {
     // JVM target for running tests without Android SDK (CI/container-friendly)
     jvm()
 
-    val iosArm64Target = iosArm64() {
-        binaries.framework {
-            baseName = "ScaniumDiagnostics"
-            isStatic = true
+    // iOS targets
+    val iosX64Target =
+        iosX64 {
+            binaries.framework {
+                baseName = "ScaniumDiagnostics"
+                isStatic = true
+            }
         }
-    }
-    val iosSimulatorArm64Target = iosSimulatorArm64() {
-        binaries.framework {
-            baseName = "ScaniumDiagnostics"
-            isStatic = true
+    val iosArm64Target =
+        iosArm64 {
+            binaries.framework {
+                baseName = "ScaniumDiagnostics"
+                isStatic = true
+            }
         }
-    }
+    val iosSimulatorArm64Target =
+        iosSimulatorArm64 {
+            binaries.framework {
+                baseName = "ScaniumDiagnostics"
+                isStatic = true
+            }
+        }
 
     sourceSets {
         val commonMain by getting {
@@ -30,6 +40,7 @@ kotlin {
                 implementation(project(":shared:telemetry-contract"))
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             }
         }
         val commonTest by getting {
@@ -52,9 +63,11 @@ kotlin {
             dependsOn(commonTest)
         }
 
+        iosX64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
         iosArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
         iosSimulatorArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
 
+        iosX64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
         iosArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
         iosSimulatorArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
     }

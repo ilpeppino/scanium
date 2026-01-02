@@ -14,7 +14,6 @@ import org.junit.Test
  * - All category display names are set
  */
 class ItemCategoryTest {
-
     @Test
     fun whenFashionGoodLabel_thenMapsToFashionCategory() {
         // Act & Assert

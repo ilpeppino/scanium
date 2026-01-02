@@ -1,6 +1,5 @@
 package com.scanium.app.testing
 
-import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import com.scanium.app.BuildConfig
@@ -90,12 +89,15 @@ object TestConfigOverride {
             _initialized = true
             _isTestMode.value = _baseUrl != null || _apiKey != null
 
-            Log.i(TAG, buildString {
-                append("Test config initialized: ")
-                append("baseUrl=${_baseUrl?.take(30)}..., ")
-                append("apiKey=${if (_apiKey != null) "[set]" else "[not set]"}, ")
-                append("forceCloudMode=$_forceCloudMode")
-            })
+            Log.i(
+                TAG,
+                buildString {
+                    append("Test config initialized: ")
+                    append("baseUrl=${_baseUrl?.take(30)}..., ")
+                    append("apiKey=${if (_apiKey != null) "[set]" else "[not set]"}, ")
+                    append("forceCloudMode=$_forceCloudMode")
+                },
+            )
         }
     }
 

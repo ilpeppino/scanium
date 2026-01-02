@@ -2,19 +2,18 @@ package com.scanium.telemetry
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AttributeSanitizerTest {
-
     @Test
     fun `sanitize removes PII attributes`() {
-        val attributes = mapOf(
-            "scan_duration_ms" to "1234",
-            "email" to "user@example.com",
-            "phone" to "+1234567890",
-            "password" to "secret123"
-        )
+        val attributes =
+            mapOf(
+                "scan_duration_ms" to "1234",
+                "email" to "user@example.com",
+                "phone" to "+1234567890",
+                "password" to "secret123",
+            )
 
         val sanitized = AttributeSanitizer.sanitize(attributes)
 
@@ -26,11 +25,12 @@ class AttributeSanitizerTest {
 
     @Test
     fun `sanitize is case-insensitive for PII keys`() {
-        val attributes = mapOf(
-            "EMAIL" to "user@example.com",
-            "Phone_Number" to "+1234567890",
-            "api_KEY" to "abc123"
-        )
+        val attributes =
+            mapOf(
+                "EMAIL" to "user@example.com",
+                "Phone_Number" to "+1234567890",
+                "api_KEY" to "abc123",
+            )
 
         val sanitized = AttributeSanitizer.sanitize(attributes)
 
@@ -41,11 +41,12 @@ class AttributeSanitizerTest {
 
     @Test
     fun `sanitize detects PII in composite keys`() {
-        val attributes = mapOf(
-            "user_email_address" to "user@example.com",
-            "contact_phone" to "+1234567890",
-            "oauth_token" to "token123"
-        )
+        val attributes =
+            mapOf(
+                "user_email_address" to "user@example.com",
+                "contact_phone" to "+1234567890",
+                "oauth_token" to "token123",
+            )
 
         val sanitized = AttributeSanitizer.sanitize(attributes)
 
@@ -68,12 +69,13 @@ class AttributeSanitizerTest {
 
     @Test
     fun `sanitize preserves safe attributes`() {
-        val attributes = mapOf(
-            "platform" to "android",
-            "app_version" to "1.0.0",
-            "scan_count" to "5",
-            "duration_ms" to "1234"
-        )
+        val attributes =
+            mapOf(
+                "platform" to "android",
+                "app_version" to "1.0.0",
+                "scan_count" to "5",
+                "duration_ms" to "1234",
+            )
 
         val sanitized = AttributeSanitizer.sanitize(attributes)
 
@@ -82,11 +84,12 @@ class AttributeSanitizerTest {
 
     @Test
     fun `validateRequiredAttributes detects missing fields`() {
-        val incomplete = mapOf(
-            "platform" to "android",
-            "app_version" to "1.0.0"
-            // Missing: build, env, session_id, data_region
-        )
+        val incomplete =
+            mapOf(
+                "platform" to "android",
+                "app_version" to "1.0.0",
+                // Missing: build, env, session_id, data_region
+            )
 
         val missing = AttributeSanitizer.validateRequiredAttributes(incomplete)
 
@@ -99,14 +102,15 @@ class AttributeSanitizerTest {
 
     @Test
     fun `validateRequiredAttributes returns empty for complete attributes`() {
-        val complete = mapOf(
-            "platform" to "android",
-            "app_version" to "1.0.0",
-            "build" to "42",
-            "env" to "prod",
-            "session_id" to "abc-123",
-            "data_region" to "US"
-        )
+        val complete =
+            mapOf(
+                "platform" to "android",
+                "app_version" to "1.0.0",
+                "build" to "42",
+                "env" to "prod",
+                "session_id" to "abc-123",
+                "data_region" to "US",
+            )
 
         val missing = AttributeSanitizer.validateRequiredAttributes(complete)
 
@@ -115,15 +119,17 @@ class AttributeSanitizerTest {
 
     @Test
     fun `sanitizeEvent creates sanitized copy`() {
-        val event = TelemetryEvent(
-            name = "test.event",
-            severity = TelemetrySeverity.INFO,
-            timestamp = kotlinx.datetime.Clock.System.now(),
-            attributes = mapOf(
-                "safe_field" to "value",
-                "email" to "user@example.com"
+        val event =
+            TelemetryEvent(
+                name = "test.event",
+                severity = TelemetrySeverity.INFO,
+                timestamp = kotlinx.datetime.Clock.System.now(),
+                attributes =
+                    mapOf(
+                        "safe_field" to "value",
+                        "email" to "user@example.com",
+                    ),
             )
-        )
 
         val sanitized = AttributeSanitizer.sanitizeEvent(event)
 
@@ -142,11 +148,12 @@ class AttributeSanitizerTest {
 
     @Test
     fun `sanitize redacts location data`() {
-        val attributes = mapOf(
-            "latitude" to "37.7749",
-            "longitude" to "-122.4194",
-            "gps_coordinates" to "37.7749,-122.4194"
-        )
+        val attributes =
+            mapOf(
+                "latitude" to "37.7749",
+                "longitude" to "-122.4194",
+                "gps_coordinates" to "37.7749,-122.4194",
+            )
 
         val sanitized = AttributeSanitizer.sanitize(attributes)
 
@@ -157,11 +164,12 @@ class AttributeSanitizerTest {
 
     @Test
     fun `sanitize redacts authentication tokens`() {
-        val attributes = mapOf(
-            "access_token" to "eyJhbGc...",
-            "bearer_token" to "Bearer abc123",
-            "session_token" to "session123"
-        )
+        val attributes =
+            mapOf(
+                "access_token" to "eyJhbGc...",
+                "bearer_token" to "Bearer abc123",
+                "session_token" to "session123",
+            )
 
         val sanitized = AttributeSanitizer.sanitize(attributes)
 

@@ -6,77 +6,80 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TelemetryEventNamingTest {
-
     @Test
     fun `isValidEventName accepts valid names`() {
-        val validNames = listOf(
-            "scan.started",
-            "scan.completed",
-            "ml.classification_failed",
-            "storage.export_started",
-            "error.network_timeout",
-            "ui.button_clicked",
-            "export.csv_completed"
-        )
+        val validNames =
+            listOf(
+                "scan.started",
+                "scan.completed",
+                "ml.classification_failed",
+                "storage.export_started",
+                "error.network_timeout",
+                "ui.button_clicked",
+                "export.csv_completed",
+            )
 
         validNames.forEach { name ->
             assertTrue(
                 TelemetryEventNaming.isValidEventName(name),
-                "Expected '$name' to be valid"
+                "Expected '$name' to be valid",
             )
         }
     }
 
     @Test
     fun `isValidEventName rejects invalid names`() {
-        val invalidNames = listOf(
-            "",                      // Empty
-            "scan",                  // No action
-            "SCAN.STARTED",          // Uppercase
-            "scan-started",          // Hyphen instead of dot
-            "scan started",          // Space
-            "Scan.Started",          // Mixed case
-            "   ",                   // Blank
-            "scan.",                 // Missing action
-            ".started"               // Missing prefix
-        )
+        val invalidNames =
+            listOf(
+                "", // Empty
+                "scan", // No action
+                "SCAN.STARTED", // Uppercase
+                "scan-started", // Hyphen instead of dot
+                "scan started", // Space
+                "Scan.Started", // Mixed case
+                "   ", // Blank
+                "scan.", // Missing action
+                ".started", // Missing prefix
+            )
 
         invalidNames.forEach { name ->
             assertFalse(
                 TelemetryEventNaming.isValidEventName(name),
-                "Expected '$name' to be invalid"
+                "Expected '$name' to be invalid",
             )
         }
     }
 
     @Test
     fun `isValidEventName accepts multi-level names`() {
-        val validNames = listOf(
-            "ml.inference.started",
-            "storage.sync.retry.failed",
-            "export.csv.batch.completed"
-        )
+        val validNames =
+            listOf(
+                "ml.inference.started",
+                "storage.sync.retry.failed",
+                "export.csv.batch.completed",
+            )
 
         validNames.forEach { name ->
             assertTrue(
                 TelemetryEventNaming.isValidEventName(name),
-                "Expected '$name' to be valid"
+                "Expected '$name' to be valid",
             )
         }
     }
 
     @Test
     fun `isValidEventName accepts underscores in action`() {
-        val validNames = listOf(
-            "scan.very_long_action_name",
-            "ml.model_inference_completed",
-            "error.network_connection_timeout"
-        )
+        val validNames =
+            listOf(
+                "scan.very_long_action_name",
+                "ml.model_inference_completed",
+                "error.network_connection_timeout",
+            )
 
         validNames.forEach { name ->
             assertTrue(
                 TelemetryEventNaming.isValidEventName(name),
-                "Expected '$name' to be valid"
+                "Expected '$name' to be valid",
             )
         }
     }

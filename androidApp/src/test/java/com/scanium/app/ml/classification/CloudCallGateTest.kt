@@ -11,11 +11,10 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class CloudCallGateTest {
-
     private fun createItem(
         id: String,
         mergeCount: Int = 10,
-        ageMs: Long = 1000
+        ageMs: Long = 1000,
     ): AggregatedItem {
         return AggregatedItem(
             aggregatedId = id,
@@ -27,7 +26,7 @@ class CloudCallGateTest {
             averageConfidence = 0.9f,
             priceRange = 0.0 to 0.0,
             mergeCount = mergeCount,
-            firstSeenTimestamp = System.currentTimeMillis() - ageMs
+            firstSeenTimestamp = System.currentTimeMillis() - ageMs,
         )
     }
 
@@ -41,7 +40,7 @@ class CloudCallGateTest {
     @Test
     fun `canClassify blocks unstable items`() {
         val gate = CloudCallGate(isCloudMode = { true })
-        
+
         // Low merge count (default threshold 5) AND low age
         val unstableItem = createItem("1", mergeCount = 2, ageMs = 100)
         assertThat(gate.canClassify(unstableItem, null)).isFalse()
@@ -66,7 +65,7 @@ class CloudCallGateTest {
 
         // First call allowed (stage 1)
         assertThat(gate.canClassify(item, null)).isTrue()
-        
+
         // Trigger classification
         gate.onClassificationTriggered(item, null)
 

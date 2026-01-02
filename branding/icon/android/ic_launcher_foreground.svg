@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <!-- Android Adaptive Icon Foreground -->
+  <!-- Scaled to 65% and centered for Android safe zone compliance -->
+  <!-- Content is positioned within the safe zone (inner 66% of 108dp = ~72dp) -->
+
+  <g transform="translate(17.55, 17.55) scale(0.675)">
+    <!-- Camera frame (rounded square) - white -->
+    <rect
+      x="17.2" y="17.2"
+      width="68" height="68"
+      rx="11" ry="11"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="7"/>
+
+    <!-- S Symbol: Smooth curved S - yellow -->
+    <path
+      d="M 62.8 29.5
+         C 62.8 29.5 58 24.5 51.2 24.5
+         C 42 24.5 35.5 29.5 35.5 36.5
+         C 35.5 43.5 42 47.5 51.2 49.5
+         C 60.4 51.5 66.9 55.5 66.9 63.5
+         C 66.9 71.5 60.4 77.5 51.2 77.5
+         C 44.4 77.5 39.6 72.5 39.6 72.5"
+      fill="none"
+      stroke="#FFD400"
+      stroke-width="9"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+  </g>
+</svg>

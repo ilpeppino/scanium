@@ -14,7 +14,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class DedupeHelperTest {
-
     private lateinit var helper: DedupeHelper
 
     @Before
@@ -23,7 +22,12 @@ class DedupeHelperTest {
     }
 
     // Helper to create a NormalizedRect
-    private fun rect(left: Float, top: Float, right: Float, bottom: Float): NormalizedRect {
+    private fun rect(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+    ): NormalizedRect {
         return NormalizedRect(left, top, right, bottom)
     }
 
@@ -36,8 +40,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box,
-                currentTimeMs = 0L
-            )
+                currentTimeMs = 0L,
+            ),
         )
     }
 
@@ -50,7 +54,7 @@ class DedupeHelperTest {
             detectorType = DetectorType.OBJECT,
             category = "shoe",
             boundingBox = box,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         // Same detection should be duplicate
@@ -59,8 +63,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -73,7 +77,7 @@ class DedupeHelperTest {
             detectorType = DetectorType.OBJECT,
             category = "shoe",
             boundingBox = box,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         // After default 3000ms expiry for OBJECT, should not be duplicate
@@ -82,8 +86,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box,
-                currentTimeMs = 4000L
-            )
+                currentTimeMs = 4000L,
+            ),
         )
     }
 
@@ -95,7 +99,7 @@ class DedupeHelperTest {
             detectorType = DetectorType.OBJECT,
             category = "shoe",
             boundingBox = box,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         // Different category should not be duplicate
@@ -104,8 +108,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "bag",
                 boundingBox = box,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -117,7 +121,7 @@ class DedupeHelperTest {
             detectorType = DetectorType.OBJECT,
             category = "item",
             boundingBox = box,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         // Different detector type should not be duplicate
@@ -126,8 +130,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.BARCODE,
                 category = "item",
                 boundingBox = box,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -140,7 +144,7 @@ class DedupeHelperTest {
             detectorType = DetectorType.OBJECT,
             category = "shoe",
             boundingBox = box1,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         assertTrue(
@@ -148,8 +152,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box2,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -162,7 +166,7 @@ class DedupeHelperTest {
             detectorType = DetectorType.OBJECT,
             category = "shoe",
             boundingBox = box1,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         assertFalse(
@@ -170,8 +174,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box2,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -185,8 +189,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box,
-                currentTimeMs = 0L
-            )
+                currentTimeMs = 0L,
+            ),
         )
 
         // Second call should return false (duplicate)
@@ -195,8 +199,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -208,7 +212,7 @@ class DedupeHelperTest {
             detectorType = DetectorType.OBJECT,
             category = "shoe",
             boundingBox = box,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         helper.reset(DetectorType.OBJECT)
@@ -219,8 +223,8 @@ class DedupeHelperTest {
                 detectorType = DetectorType.OBJECT,
                 category = "shoe",
                 boundingBox = box,
-                currentTimeMs = 100L
-            )
+                currentTimeMs = 100L,
+            ),
         )
     }
 
@@ -275,7 +279,7 @@ class DedupeHelperTest {
 
         // At 1600ms, should no longer be duplicate (600ms elapsed > 500ms window)
         assertFalse(localHelper.isDuplicate(DetectorType.OBJECT, "shoe", box, 1600L))
-        */
+         */
         assertTrue(true)
     }
 
@@ -300,9 +304,10 @@ class DedupeHelperTest {
         assertFalse(
             helper.isBarcodeDuplicate(
                 rawValue = "1234567890123",
-                format = 32, // EAN-13
-                currentTimeMs = 0L
-            )
+                format = 32,
+// EAN-13
+                currentTimeMs = 0L,
+            ),
         )
     }
 
@@ -311,15 +316,15 @@ class DedupeHelperTest {
         helper.recordBarcodeSeen(
             rawValue = "1234567890123",
             format = 32,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         assertTrue(
             helper.isBarcodeDuplicate(
                 rawValue = "1234567890123",
                 format = 32,
-                currentTimeMs = 2000L
-            )
+                currentTimeMs = 2000L,
+            ),
         )
     }
 
@@ -328,7 +333,7 @@ class DedupeHelperTest {
         helper.recordBarcodeSeen(
             rawValue = "1234567890123",
             format = 32,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         // Default BARCODE expiry is 5000ms
@@ -336,8 +341,8 @@ class DedupeHelperTest {
             helper.isBarcodeDuplicate(
                 rawValue = "1234567890123",
                 format = 32,
-                currentTimeMs = 6000L
-            )
+                currentTimeMs = 6000L,
+            ),
         )
     }
 
@@ -346,15 +351,15 @@ class DedupeHelperTest {
         helper.recordBarcodeSeen(
             rawValue = "1234567890123",
             format = 32,
-            currentTimeMs = 0L
+            currentTimeMs = 0L,
         )
 
         assertFalse(
             helper.isBarcodeDuplicate(
                 rawValue = "9876543210987",
                 format = 32,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -364,8 +369,8 @@ class DedupeHelperTest {
             helper.checkAndRecordBarcode(
                 rawValue = "1234567890123",
                 format = 32,
-                currentTimeMs = 0L
-            )
+                currentTimeMs = 0L,
+            ),
         )
 
         // Second call should return false (duplicate)
@@ -373,8 +378,8 @@ class DedupeHelperTest {
             helper.checkAndRecordBarcode(
                 rawValue = "1234567890123",
                 format = 32,
-                currentTimeMs = 1000L
-            )
+                currentTimeMs = 1000L,
+            ),
         )
     }
 
@@ -385,7 +390,7 @@ class DedupeHelperTest {
         helper.resetBarcodes()
 
         assertFalse(
-            helper.isBarcodeDuplicate("1234567890123", 32, currentTimeMs = 100L)
+            helper.isBarcodeDuplicate("1234567890123", 32, currentTimeMs = 100L),
         )
     }
 
@@ -420,12 +425,12 @@ class DedupeHelperTest {
 
         // Barcode value dedupe should still be new
         assertTrue(
-            helper.checkAndRecordBarcode("1234567890123", 32, currentTimeMs = 0L)
+            helper.checkAndRecordBarcode("1234567890123", 32, currentTimeMs = 0L),
         )
 
         // Spatial dedupe should still work
         assertTrue(
-            helper.isDuplicate(DetectorType.BARCODE, "barcode", box, 1000L)
+            helper.isDuplicate(DetectorType.BARCODE, "barcode", box, 1000L),
         )
     }
 
@@ -436,7 +441,7 @@ class DedupeHelperTest {
 
         // Same value scanned again should be duplicate (regardless of format change)
         assertTrue(
-            helper.isBarcodeDuplicate("https://example.com", 256, currentTimeMs = 1000L)
+            helper.isBarcodeDuplicate("https://example.com", 256, currentTimeMs = 1000L),
         )
     }
 }

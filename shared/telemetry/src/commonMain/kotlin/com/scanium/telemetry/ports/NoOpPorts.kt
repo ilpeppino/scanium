@@ -25,15 +25,27 @@ object NoOpLogPort : LogPort {
  * - Default implementation when no backend is configured
  */
 object NoOpMetricPort : MetricPort {
-    override fun counter(name: String, delta: Long, attributes: Map<String, String>) {
+    override fun counter(
+        name: String,
+        delta: Long,
+        attributes: Map<String, String>,
+    ) {
         // No-op: discard metric
     }
 
-    override fun timer(name: String, millis: Long, attributes: Map<String, String>) {
+    override fun timer(
+        name: String,
+        millis: Long,
+        attributes: Map<String, String>,
+    ) {
         // No-op: discard metric
     }
 
-    override fun gauge(name: String, value: Double, attributes: Map<String, String>) {
+    override fun gauge(
+        name: String,
+        value: Double,
+        attributes: Map<String, String>,
+    ) {
         // No-op: discard metric
     }
 }
@@ -46,11 +58,17 @@ private object NoOpSpanContext : SpanContext {
         // No-op
     }
 
-    override fun setAttribute(key: String, value: String) {
+    override fun setAttribute(
+        key: String,
+        value: String,
+    ) {
         // No-op
     }
 
-    override fun recordError(error: String, attributes: Map<String, String>) {
+    override fun recordError(
+        error: String,
+        attributes: Map<String, String>,
+    ) {
         // No-op
     }
 }
@@ -64,7 +82,10 @@ private object NoOpSpanContext : SpanContext {
  * - Default implementation when no backend is configured
  */
 object NoOpTracePort : TracePort {
-    override fun beginSpan(name: String, attributes: Map<String, String>): SpanContext {
+    override fun beginSpan(
+        name: String,
+        attributes: Map<String, String>,
+    ): SpanContext {
         return NoOpSpanContext
     }
 }
@@ -78,15 +99,24 @@ object NoOpTracePort : TracePort {
  * - Default implementation when no backend is configured
  */
 object NoOpCrashPort : CrashPort {
-    override fun setTag(key: String, value: String) {
+    override fun setTag(
+        key: String,
+        value: String,
+    ) {
         // No-op: discard tag
     }
 
-    override fun addBreadcrumb(message: String, attributes: Map<String, String>) {
+    override fun addBreadcrumb(
+        message: String,
+        attributes: Map<String, String>,
+    ) {
         // No-op: discard breadcrumb
     }
 
-    override fun captureException(throwable: Throwable, attributes: Map<String, String>) {
+    override fun captureException(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) {
         // No-op: discard exception
     }
 }

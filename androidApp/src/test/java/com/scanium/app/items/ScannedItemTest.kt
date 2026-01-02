@@ -17,7 +17,6 @@ import org.junit.Test
  * - Threshold boundary conditions
  */
 class ScannedItemTest {
-
     @Test
     fun whenConfidenceBelow50Percent_thenLowConfidence() {
         // Arrange
@@ -215,14 +214,16 @@ class ScannedItemTest {
     @Test
     fun whenDefaultItemCreated_thenHasUniqueId() {
         // Act - Create two items without specifying ID
-        val item1 = ScannedItem(
-            category = ItemCategory.FASHION,
-            priceRange = 10.0 to 20.0
-        )
-        val item2 = ScannedItem(
-            category = ItemCategory.FASHION,
-            priceRange = 10.0 to 20.0
-        )
+        val item1 =
+            ScannedItem(
+                category = ItemCategory.FASHION,
+                priceRange = 10.0 to 20.0,
+            )
+        val item2 =
+            ScannedItem(
+                category = ItemCategory.FASHION,
+                priceRange = 10.0 to 20.0,
+            )
 
         // Assert - IDs should be different (UUIDs)
         assertThat(item1.id).isNotEqualTo(item2.id)
@@ -256,16 +257,17 @@ class ScannedItemTest {
     @Test
     fun whenBoundaryTestingAllThresholds_thenCorrectClassification() {
         // Test values just above and below each threshold
-        val testCases = mapOf(
-            0.0f to ConfidenceLevel.LOW,
-            0.49f to ConfidenceLevel.LOW,
-            0.5f to ConfidenceLevel.MEDIUM,
-            0.51f to ConfidenceLevel.MEDIUM,
-            0.74f to ConfidenceLevel.MEDIUM,
-            0.75f to ConfidenceLevel.HIGH,
-            0.76f to ConfidenceLevel.HIGH,
-            1.0f to ConfidenceLevel.HIGH
-        )
+        val testCases =
+            mapOf(
+                0.0f to ConfidenceLevel.LOW,
+                0.49f to ConfidenceLevel.LOW,
+                0.5f to ConfidenceLevel.MEDIUM,
+                0.51f to ConfidenceLevel.MEDIUM,
+                0.74f to ConfidenceLevel.MEDIUM,
+                0.75f to ConfidenceLevel.HIGH,
+                0.76f to ConfidenceLevel.HIGH,
+                1.0f to ConfidenceLevel.HIGH,
+            )
 
         // Assert all test cases
         testCases.forEach { (confidence, expectedLevel) ->
@@ -281,7 +283,7 @@ class ScannedItemTest {
         category: ItemCategory = ItemCategory.FASHION,
         priceRange: Pair<Double, Double> = 10.0 to 20.0,
         confidence: Float = 0.5f,
-        timestamp: Long = System.currentTimeMillis()
+        timestamp: Long = System.currentTimeMillis(),
     ): ScannedItem {
         val range = PriceRange(Money(priceRange.first), Money(priceRange.second))
         return ScannedItem(
@@ -292,7 +294,7 @@ class ScannedItemTest {
             estimatedPriceRange = range,
             priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = confidence,
-            timestamp = timestamp
+            timestamp = timestamp,
         )
     }
 }

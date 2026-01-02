@@ -16,7 +16,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class CategoryMapperTest {
-
     @Test
     fun `toItemCategory maps valid itemCategoryName to ItemCategory`() {
         val category = createCategory(itemCategoryName = "ELECTRONICS")
@@ -37,18 +36,19 @@ class CategoryMapperTest {
 
     @Test
     fun `toItemCategory maps all valid ItemCategory enum values`() {
-        val validNames = listOf(
-            "FASHION" to ItemCategory.FASHION,
-            "HOME_GOOD" to ItemCategory.HOME_GOOD,
-            "FOOD" to ItemCategory.FOOD,
-            "PLACE" to ItemCategory.PLACE,
-            "PLANT" to ItemCategory.PLANT,
-            "ELECTRONICS" to ItemCategory.ELECTRONICS,
-            "DOCUMENT" to ItemCategory.DOCUMENT,
-            "BARCODE" to ItemCategory.BARCODE,
-            "QR_CODE" to ItemCategory.QR_CODE,
-            "UNKNOWN" to ItemCategory.UNKNOWN
-        )
+        val validNames =
+            listOf(
+                "FASHION" to ItemCategory.FASHION,
+                "HOME_GOOD" to ItemCategory.HOME_GOOD,
+                "FOOD" to ItemCategory.FOOD,
+                "PLACE" to ItemCategory.PLACE,
+                "PLANT" to ItemCategory.PLANT,
+                "ELECTRONICS" to ItemCategory.ELECTRONICS,
+                "DOCUMENT" to ItemCategory.DOCUMENT,
+                "BARCODE" to ItemCategory.BARCODE,
+                "QR_CODE" to ItemCategory.QR_CODE,
+                "UNKNOWN" to ItemCategory.UNKNOWN,
+            )
 
         validNames.forEach { (name, expected) ->
             val category = createCategory(itemCategoryName = name)
@@ -108,7 +108,7 @@ class CategoryMapperTest {
 
         assertThat(validNames).containsExactly(
             "FASHION", "HOME_GOOD", "FOOD", "PLACE", "PLANT",
-            "ELECTRONICS", "DOCUMENT", "BARCODE", "QR_CODE", "UNKNOWN"
+            "ELECTRONICS", "DOCUMENT", "BARCODE", "QR_CODE", "UNKNOWN",
         )
     }
 
@@ -125,13 +125,14 @@ class CategoryMapperTest {
     @Test
     fun `mapping works for all categories in home resale pack`() {
         // These are the actual itemCategoryName values used in home_resale_domain_pack.json
-        val usedNames = listOf(
-            "HOME_GOOD",
-            "ELECTRONICS",
-            "FASHION",
-            "UNKNOWN",
-            "PLANT"
-        )
+        val usedNames =
+            listOf(
+                "HOME_GOOD",
+                "ELECTRONICS",
+                "FASHION",
+                "UNKNOWN",
+                "PLANT",
+            )
 
         usedNames.forEach { name ->
             val category = createCategory(itemCategoryName = name)
@@ -149,7 +150,7 @@ class CategoryMapperTest {
         itemCategoryName: String,
         prompts: List<String> = listOf("test prompt"),
         priority: Int? = 10,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ) = DomainCategory(
         id = id,
         displayName = displayName,
@@ -157,6 +158,6 @@ class CategoryMapperTest {
         itemCategoryName = itemCategoryName,
         prompts = prompts,
         priority = priority,
-        enabled = enabled
+        enabled = enabled,
     )
 }

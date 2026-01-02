@@ -45,49 +45,51 @@ fun DocumentScanOverlay(
     isVisible: Boolean,
     scanState: DocumentScanState,
     onScanClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(
         visible = isVisible,
         enter = fadeIn(),
         exit = fadeOut(),
-        modifier = modifier
+        modifier = modifier,
     ) {
         val isScanning = scanState is DocumentScanState.Scanning
 
         Surface(
-            modifier = Modifier
-                .clickable(enabled = !isScanning, onClick = onScanClick)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .clickable(enabled = !isScanning, onClick = onScanClick)
+                    .padding(horizontal = 16.dp),
             shape = MaterialTheme.shapes.small,
-            color = if (isScanning) {
-                Color.Black.copy(alpha = 0.5f)
-            } else {
-                Color.Black.copy(alpha = 0.7f)
-            },
-            tonalElevation = 2.dp
+            color =
+                if (isScanning) {
+                    Color.Black.copy(alpha = 0.5f)
+                } else {
+                    Color.Black.copy(alpha = 0.7f)
+                },
+            tonalElevation = 2.dp,
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (isScanning) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color = Color.White
+                        color = Color.White,
                     )
                     Text(
                         text = "Scanning...",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.7f)
+                        color = Color.White.copy(alpha = 0.7f),
                     )
                 } else {
                     Text(
                         text = "Scan document",
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White
+                        color = Color.White,
                     )
                 }
             }

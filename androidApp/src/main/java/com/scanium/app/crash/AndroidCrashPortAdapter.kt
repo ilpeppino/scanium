@@ -5,7 +5,6 @@ import com.scanium.diagnostics.DiagnosticsPort
 import com.scanium.telemetry.ports.CrashPort
 import io.sentry.Attachment
 import io.sentry.Breadcrumb
-import io.sentry.Hint
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 
@@ -41,9 +40,8 @@ import io.sentry.SentryLevel
  * @param diagnosticsPort Optional diagnostics port for attaching diagnostic bundles to crash reports
  */
 class AndroidCrashPortAdapter(
-    private val diagnosticsPort: DiagnosticsPort? = null
+    private val diagnosticsPort: DiagnosticsPort? = null,
 ) : CrashPort {
-
     private val tag = "AndroidCrashPortAdapter"
 
     /**
@@ -55,7 +53,10 @@ class AndroidCrashPortAdapter(
      * @param key The tag key (e.g., "platform", "app_version", "session_id")
      * @param value The tag value (e.g., "android", "1.0.0", "abc-123")
      */
-    override fun setTag(key: String, value: String) {
+    override fun setTag(
+        key: String,
+        value: String,
+    ) {
         Sentry.setTag(key, value)
     }
 
@@ -71,17 +72,21 @@ class AndroidCrashPortAdapter(
      * @param message Breadcrumb message (e.g., "User started scan", "ML classification completed")
      * @param attributes Additional context as key-value pairs
      */
-    override fun addBreadcrumb(message: String, attributes: Map<String, String>) {
-        val breadcrumb = Breadcrumb().apply {
-            this.message = message
-            this.level = SentryLevel.INFO
-            this.category = "app"  // Category helps group breadcrumbs in Sentry UI
+    override fun addBreadcrumb(
+        message: String,
+        attributes: Map<String, String>,
+    ) {
+        val breadcrumb =
+            Breadcrumb().apply {
+                this.message = message
+                this.level = SentryLevel.INFO
+                this.category = "app" // Category helps group breadcrumbs in Sentry UI
 
-            // Add all attributes as breadcrumb data
-            attributes.forEach { (key, value) ->
-                this.setData(key, value)
+                // Add all attributes as breadcrumb data
+                attributes.forEach { (key, value) ->
+                    this.setData(key, value)
+                }
             }
-        }
 
         Sentry.addBreadcrumb(breadcrumb)
     }
@@ -102,7 +107,10 @@ class AndroidCrashPortAdapter(
      * @param throwable The exception to report
      * @param attributes Additional context as key-value pairs (added as Sentry "extras")
      */
-    override fun captureException(throwable: Throwable, attributes: Map<String, String>) {
+    override fun captureException(
+        throwable: Throwable,
+        attributes: Map<String, String>,
+    ) {
         Sentry.captureException(throwable) { scope ->
             // Add attributes as "extras" (additional context data in Sentry)
             attributes.forEach { (key, value) ->
@@ -122,16 +130,16 @@ class AndroidCrashPortAdapter(
                             Attachment(
                                 cappedBytes,
                                 "diagnostics-capped.json",
-                                "application/json"
-                            )
+                                "application/json",
+                            ),
                         )
                     } else {
                         scope.addAttachment(
                             Attachment(
                                 bundleBytes,
                                 "diagnostics.json",
-                                "application/json"
-                            )
+                                "application/json",
+                            ),
                         )
                         Log.d(tag, "Attached diagnostics bundle (${bundleBytes.size} bytes, ${diagnosticsPort.breadcrumbCount()} events)")
                     }
@@ -148,6 +156,6 @@ class AndroidCrashPortAdapter(
          * Maximum size for diagnostics bundle attachment (128KB).
          * This ensures we don't exceed Sentry's attachment size limits.
          */
-        const val MAX_ATTACHMENT_BYTES = 128 * 1024  // 128KB
+        const val MAX_ATTACHMENT_BYTES = 128 * 1024 // 128KB
     }
 }

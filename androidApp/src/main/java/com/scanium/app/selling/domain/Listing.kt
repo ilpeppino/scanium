@@ -14,7 +14,7 @@ data class Listing(
     val condition: ListingCondition,
     val image: ListingImage?,
     val status: ListingStatus,
-    val externalUrl: String?
+    val externalUrl: String?,
 )
 
 data class ListingDraft(
@@ -26,5 +26,5 @@ data class ListingDraft(
     val price: Double,
     val currency: String,
     val condition: ListingCondition = ListingCondition.USED,
-    val imageSource: ListingImageSource = ListingImageSource.DETECTION_THUMBNAIL
+    val imageSource: ListingImageSource = ListingImageSource.DETECTION_THUMBNAIL,
 )

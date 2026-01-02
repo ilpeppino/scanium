@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
-import com.scanium.app.listing.ListingDraft
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.shared.core.models.assistant.AssistantAction
 import com.scanium.shared.core.models.assistant.AssistantActionType
@@ -26,7 +25,7 @@ data class AssistantUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val contextItems: List<ItemContextSnapshot> = emptyList(),
-    val pendingActions: List<AssistantAction> = emptyList()
+    val pendingActions: List<AssistantAction> = emptyList(),
 )
 
 class AssistantViewModel(
@@ -34,9 +33,8 @@ class AssistantViewModel(
     private val draftStore: ListingDraftStore,
     private val itemsViewModel: ItemsViewModel,
     private val selectedItemIds: List<String> = emptyList(),
-    private val activeDraftId: String? = null
+    private val activeDraftId: String? = null,
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(AssistantUiState())
     val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
 
@@ -65,62 +63,67 @@ class AssistantViewModel(
     fun sendMessage(text: String) {
         if (text.isBlank()) return
 
-        val userMsg = AssistantMessage(
-            role = AssistantRole.USER,
-            content = text,
-            timestamp = System.currentTimeMillis()
-        )
+        val userMsg =
+            AssistantMessage(
+                role = AssistantRole.USER,
+                content = text,
+                timestamp = System.currentTimeMillis(),
+            )
 
-        _uiState.update { 
+        _uiState.update {
             it.copy(
                 messages = it.messages + userMsg,
                 isLoading = true,
-                error = null
+                error = null,
             )
         }
 
         viewModelScope.launch {
             // Use generic profile if not specified (TODO: Load real profile)
-            val exportProfile = ExportProfileDefinition(
-                id = ExportProfileId.GENERIC,
-                displayName = "Standard Listing"
-            )
+            val exportProfile =
+                ExportProfileDefinition(
+                    id = ExportProfileId.GENERIC,
+                    displayName = "Standard Listing",
+                )
 
             val currentMessages = _uiState.value.messages
-            val request = AssistantPromptBuilder.buildRequest(
-                items = _uiState.value.contextItems,
-                conversation = currentMessages,
-                userMessage = text,
-                exportProfile = exportProfile
-            )
+            val request =
+                AssistantPromptBuilder.buildRequest(
+                    items = _uiState.value.contextItems,
+                    conversation = currentMessages,
+                    userMessage = text,
+                    exportProfile = exportProfile,
+                )
 
             val result = assistantRepository.sendMessage(request)
 
             result.onSuccess { response ->
-                val assistantMsg = AssistantMessage(
-                    role = AssistantRole.ASSISTANT,
-                    content = response.text,
-                    timestamp = System.currentTimeMillis()
-                )
+                val assistantMsg =
+                    AssistantMessage(
+                        role = AssistantRole.ASSISTANT,
+                        content = response.text,
+                        timestamp = System.currentTimeMillis(),
+                    )
 
                 _uiState.update {
                     it.copy(
                         messages = it.messages + assistantMsg,
                         isLoading = false,
-                        pendingActions = response.actions
+                        pendingActions = response.actions,
                     )
                 }
             }.onFailure { error ->
                 // Use user-friendly message from AssistantException if available
-                val errorMessage = when (error) {
-                    is AssistantException -> error.userMessage
-                    else -> error.message ?: "Failed to get response"
-                }
+                val errorMessage =
+                    when (error) {
+                        is AssistantException -> error.userMessage
+                        else -> error.message ?: "Failed to get response"
+                    }
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        error = errorMessage
+                        error = errorMessage,
                     )
                 }
             }
@@ -145,15 +148,15 @@ class AssistantViewModel(
         viewModelScope.launch {
             // If we have an active draft, update it
             if (activeDraftId != null && activeDraftId == itemId) {
-                 val draft = draftStore.getByItemId(activeDraftId)
-                 if (draft != null) {
-                     var newDraft = draft
-                     if (title != null) newDraft = newDraft.copy(title = newDraft.title.copy(value = title))
-                     if (description != null) newDraft = newDraft.copy(description = newDraft.description.copy(value = description))
-                     draftStore.upsert(newDraft)
-                 }
+                val draft = draftStore.getByItemId(activeDraftId)
+                if (draft != null) {
+                    var newDraft = draft
+                    if (title != null) newDraft = newDraft.copy(title = newDraft.title.copy(value = title))
+                    if (description != null) newDraft = newDraft.copy(description = newDraft.description.copy(value = description))
+                    draftStore.upsert(newDraft)
+                }
             }
-            
+
             // Clear the action from pending
             _uiState.update { state ->
                 state.copy(pendingActions = state.pendingActions.filterNot { it == action })
@@ -166,11 +169,13 @@ private fun ScannedItem.toContextSnapshot(): ItemContextSnapshot {
     return ItemContextSnapshot(
         itemId = this.id,
         title = this.displayLabel,
-        description = null, // ScannedItem doesn't have description until drafted
+        description = null,
+// ScannedItem doesn't have description until drafted
         category = this.category.name,
         confidence = this.confidence,
-        attributes = emptyList(), // TODO: extract attributes if available
+        attributes = emptyList(),
+// TODO: extract attributes if available
         priceEstimate = this.estimatedPriceRange?.let { (it.low.amount + it.high.amount) / 2.0 },
-        photosCount = if (this.fullImageUri != null || this.thumbnail != null) 1 else 0
+        photosCount = if (this.fullImageUri != null || this.thumbnail != null) 1 else 0,
     )
 }

@@ -10,26 +10,36 @@ package com.scanium.app.aggregation
  * - REALTIME: Optimized for real-time scanning with camera movement
  */
 object AggregationPresets {
-
     /**
      * Balanced configuration (recommended default).
      *
      * Provides good balance between merging similar items and keeping distinct items separate.
      * Works well for most scanning scenarios.
      */
-    val BALANCED = AggregationConfig(
-        similarityThreshold = 0.6f,        // 60% similarity required
-        maxCenterDistanceRatio = 0.25f,    // Max 25% of frame diagonal
-        maxSizeDifferenceRatio = 0.5f,     // Max 50% size difference
-        categoryMatchRequired = true,       // Category must match
-        labelMatchRequired = false,         // Labels optional
-        weights = SimilarityWeights(
-            categoryWeight = 0.3f,          // 30% category
-            labelWeight = 0.25f,            // 25% label
-            sizeWeight = 0.20f,             // 20% size
-            distanceWeight = 0.25f          // 25% distance
+    val BALANCED =
+        AggregationConfig(
+            similarityThreshold = 0.6f,
+// 60% similarity required
+            maxCenterDistanceRatio = 0.25f,
+// Max 25% of frame diagonal
+            maxSizeDifferenceRatio = 0.5f,
+// Max 50% size difference
+            categoryMatchRequired = true,
+// Category must match
+            labelMatchRequired = false,
+// Labels optional
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.3f,
+// 30% category
+                    labelWeight = 0.25f,
+// 25% label
+                    sizeWeight = 0.20f,
+// 20% size
+                    distanceWeight = 0.25f,
+// 25% distance
+                ),
         )
-    )
 
     /**
      * Strict configuration for high precision.
@@ -42,19 +52,27 @@ object AggregationPresets {
      * - High-value items where accuracy is critical
      * - Quality control scenarios
      */
-    val STRICT = AggregationConfig(
-        similarityThreshold = 0.75f,       // 75% similarity required
-        maxCenterDistanceRatio = 0.15f,    // Max 15% of frame diagonal
-        maxSizeDifferenceRatio = 0.3f,     // Max 30% size difference
-        categoryMatchRequired = true,
-        labelMatchRequired = true,          // Labels required and must match
-        weights = SimilarityWeights(
-            categoryWeight = 0.35f,         // Higher category weight
-            labelWeight = 0.35f,            // Higher label weight
-            sizeWeight = 0.15f,
-            distanceWeight = 0.15f
+    val STRICT =
+        AggregationConfig(
+            similarityThreshold = 0.75f,
+// 75% similarity required
+            maxCenterDistanceRatio = 0.15f,
+// Max 15% of frame diagonal
+            maxSizeDifferenceRatio = 0.3f,
+// Max 30% size difference
+            categoryMatchRequired = true,
+            labelMatchRequired = true,
+// Labels required and must match
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.35f,
+// Higher category weight
+                    labelWeight = 0.35f,
+// Higher label weight
+                    sizeWeight = 0.15f,
+                    distanceWeight = 0.15f,
+                ),
         )
-    )
 
     /**
      * Loose configuration for high recall.
@@ -67,19 +85,28 @@ object AggregationPresets {
      * - Quick inventory counts
      * - When camera movement is significant
      */
-    val LOOSE = AggregationConfig(
-        similarityThreshold = 0.5f,        // 50% similarity required
-        maxCenterDistanceRatio = 0.35f,    // Max 35% of frame diagonal
-        maxSizeDifferenceRatio = 0.7f,     // Max 70% size difference
-        categoryMatchRequired = true,
-        labelMatchRequired = false,
-        weights = SimilarityWeights(
-            categoryWeight = 0.35f,         // Higher category weight
-            labelWeight = 0.2f,             // Lower label weight
-            sizeWeight = 0.15f,             // Lower size weight
-            distanceWeight = 0.3f           // Higher distance weight
+    val LOOSE =
+        AggregationConfig(
+            similarityThreshold = 0.5f,
+// 50% similarity required
+            maxCenterDistanceRatio = 0.35f,
+// Max 35% of frame diagonal
+            maxSizeDifferenceRatio = 0.7f,
+// Max 70% size difference
+            categoryMatchRequired = true,
+            labelMatchRequired = false,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.35f,
+// Higher category weight
+                    labelWeight = 0.2f,
+// Lower label weight
+                    sizeWeight = 0.15f,
+// Lower size weight
+                    distanceWeight = 0.3f,
+// Higher distance weight
+                ),
         )
-    )
 
     /**
      * Real-time optimized configuration.
@@ -92,19 +119,29 @@ object AggregationPresets {
      * - Handheld device scanning
      * - Dynamic scenes with camera movement
      */
-    val REALTIME = AggregationConfig(
-        similarityThreshold = 0.55f,       // 55% similarity (slightly loose)
-        maxCenterDistanceRatio = 0.30f,    // Max 30% of frame diagonal (tolerant of movement)
-        maxSizeDifferenceRatio = 0.6f,     // Max 60% size difference (tolerant of zoom)
-        categoryMatchRequired = true,
-        labelMatchRequired = false,         // Don't require labels (they may be inconsistent)
-        weights = SimilarityWeights(
-            categoryWeight = 0.4f,          // Higher category weight (most stable)
-            labelWeight = 0.15f,            // Lower label weight (can change)
-            sizeWeight = 0.20f,             // Medium size weight
-            distanceWeight = 0.25f          // Medium distance weight
+    val REALTIME =
+        AggregationConfig(
+            similarityThreshold = 0.55f,
+// 55% similarity (slightly loose)
+            maxCenterDistanceRatio = 0.30f,
+// Max 30% of frame diagonal (tolerant of movement)
+            maxSizeDifferenceRatio = 0.6f,
+// Max 60% size difference (tolerant of zoom)
+            categoryMatchRequired = true,
+            labelMatchRequired = false,
+// Don't require labels (they may be inconsistent)
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.4f,
+// Higher category weight (most stable)
+                    labelWeight = 0.15f,
+// Lower label weight (can change)
+                    sizeWeight = 0.20f,
+// Medium size weight
+                    distanceWeight = 0.25f,
+// Medium distance weight
+                ),
         )
-    )
 
     /**
      * Label-focused configuration.
@@ -117,19 +154,25 @@ object AggregationPresets {
      * - Barcode/text scanning scenarios
      * - When position is less reliable
      */
-    val LABEL_FOCUSED = AggregationConfig(
-        similarityThreshold = 0.65f,
-        maxCenterDistanceRatio = 0.4f,     // More tolerant of position
-        maxSizeDifferenceRatio = 0.6f,     // More tolerant of size
-        categoryMatchRequired = true,
-        labelMatchRequired = true,          // Labels required
-        weights = SimilarityWeights(
-            categoryWeight = 0.25f,
-            labelWeight = 0.45f,            // Much higher label weight
-            sizeWeight = 0.15f,
-            distanceWeight = 0.15f
+    val LABEL_FOCUSED =
+        AggregationConfig(
+            similarityThreshold = 0.65f,
+            maxCenterDistanceRatio = 0.4f,
+// More tolerant of position
+            maxSizeDifferenceRatio = 0.6f,
+// More tolerant of size
+            categoryMatchRequired = true,
+            labelMatchRequired = true,
+// Labels required
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.25f,
+                    labelWeight = 0.45f,
+// Much higher label weight
+                    sizeWeight = 0.15f,
+                    distanceWeight = 0.15f,
+                ),
         )
-    )
 
     /**
      * Spatial-focused configuration.
@@ -142,19 +185,26 @@ object AggregationPresets {
      * - Items with similar appearance
      * - When spatial stability is high
      */
-    val SPATIAL_FOCUSED = AggregationConfig(
-        similarityThreshold = 0.6f,
-        maxCenterDistanceRatio = 0.20f,    // Stricter distance requirement
-        maxSizeDifferenceRatio = 0.4f,     // Stricter size requirement
-        categoryMatchRequired = true,
-        labelMatchRequired = false,
-        weights = SimilarityWeights(
-            categoryWeight = 0.3f,
-            labelWeight = 0.1f,             // Much lower label weight
-            sizeWeight = 0.3f,              // Higher size weight
-            distanceWeight = 0.3f           // Higher distance weight
+    val SPATIAL_FOCUSED =
+        AggregationConfig(
+            similarityThreshold = 0.6f,
+            maxCenterDistanceRatio = 0.20f,
+// Stricter distance requirement
+            maxSizeDifferenceRatio = 0.4f,
+// Stricter size requirement
+            categoryMatchRequired = true,
+            labelMatchRequired = false,
+            weights =
+                SimilarityWeights(
+                    categoryWeight = 0.3f,
+                    labelWeight = 0.1f,
+// Much lower label weight
+                    sizeWeight = 0.3f,
+// Higher size weight
+                    distanceWeight = 0.3f,
+// Higher distance weight
+                ),
         )
-    )
 
     /**
      * Get configuration by name.
@@ -183,7 +233,7 @@ object AggregationPresets {
             "LOOSE",
             "REALTIME",
             "LABEL_FOCUSED",
-            "SPATIAL_FOCUSED"
+            "SPATIAL_FOCUSED",
         )
     }
 }

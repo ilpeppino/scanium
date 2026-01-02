@@ -2,8 +2,8 @@ package com.scanium.core.tracking
 
 import com.scanium.core.models.geometry.NormalizedRect
 import kotlin.math.abs
-import kotlin.math.min
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
@@ -23,9 +23,8 @@ import kotlin.math.sqrt
  * - Configurable time window and distance thresholds
  */
 class SpatialTemporalMergePolicy(
-    private val config: MergeConfig = MergeConfig.DEFAULT
+    private val config: MergeConfig = MergeConfig.DEFAULT,
 ) {
-
     /**
      * Configuration for merge decisions.
      *
@@ -40,22 +39,24 @@ class SpatialTemporalMergePolicy(
         val minIoU: Float = 0.3f,
         val maxNormalizedDistance: Float = 0.15f,
         val requireCategoryMatch: Boolean = true,
-        val useIoU: Boolean = true
+        val useIoU: Boolean = true,
     ) {
         companion object {
             val DEFAULT = MergeConfig()
-            val STRICT = MergeConfig(
-                timeWindowMs = 500L,
-                minIoU = 0.5f,
-                maxNormalizedDistance = 0.10f,
-                requireCategoryMatch = true
-            )
-            val LENIENT = MergeConfig(
-                timeWindowMs = 1200L,
-                minIoU = 0.2f,
-                maxNormalizedDistance = 0.20f,
-                requireCategoryMatch = false
-            )
+            val STRICT =
+                MergeConfig(
+                    timeWindowMs = 500L,
+                    minIoU = 0.5f,
+                    maxNormalizedDistance = 0.10f,
+                    requireCategoryMatch = true,
+                )
+            val LENIENT =
+                MergeConfig(
+                    timeWindowMs = 1200L,
+                    minIoU = 0.2f,
+                    maxNormalizedDistance = 0.20f,
+                    requireCategoryMatch = false,
+                )
         }
     }
 
@@ -74,7 +75,7 @@ class SpatialTemporalMergePolicy(
         val centerY: Float,
         val bbox: NormalizedRect,
         val lastSeenMs: Long,
-        val categoryId: Int = 0
+        val categoryId: Int = 0,
     )
 
     /**
@@ -90,7 +91,7 @@ class SpatialTemporalMergePolicy(
         newBbox: NormalizedRect,
         newTimestampMs: Long,
         newCategoryId: Int,
-        existingCandidate: CandidateMetadata
+        existingCandidate: CandidateMetadata,
     ): Boolean {
         // Time window check (fast rejection)
         val timeDiff = abs(newTimestampMs - existingCandidate.lastSeenMs)
@@ -124,7 +125,7 @@ class SpatialTemporalMergePolicy(
     fun createCandidateMetadata(
         bbox: NormalizedRect,
         timestampMs: Long,
-        categoryId: Int = 0
+        categoryId: Int = 0,
     ): CandidateMetadata {
         val centerX = (bbox.left + bbox.right) / 2f
         val centerY = (bbox.top + bbox.bottom) / 2f
@@ -133,7 +134,7 @@ class SpatialTemporalMergePolicy(
             centerY = centerY,
             bbox = bbox,
             lastSeenMs = timestampMs,
-            categoryId = categoryId
+            categoryId = categoryId,
         )
     }
 
@@ -143,7 +144,10 @@ class SpatialTemporalMergePolicy(
      *
      * @return IoU value between 0.0 and 1.0
      */
-    private fun calculateIoU(rect1: NormalizedRect, rect2: NormalizedRect): Float {
+    private fun calculateIoU(
+        rect1: NormalizedRect,
+        rect2: NormalizedRect,
+    ): Float {
         // Calculate intersection
         val intersectLeft = max(rect1.left, rect2.left)
         val intersectTop = max(rect1.top, rect2.top)
@@ -176,7 +180,10 @@ class SpatialTemporalMergePolicy(
      *
      * @return Normalized distance (0.0 = same center, 1.0+ = far apart)
      */
-    private fun calculateNormalizedCenterDistance(rect1: NormalizedRect, rect2: NormalizedRect): Float {
+    private fun calculateNormalizedCenterDistance(
+        rect1: NormalizedRect,
+        rect2: NormalizedRect,
+    ): Float {
         val center1X = (rect1.left + rect1.right) / 2f
         val center1Y = (rect1.top + rect1.bottom) / 2f
         val center2X = (rect2.left + rect2.right) / 2f
@@ -211,7 +218,7 @@ class SpatialTemporalMergePolicy(
         newBbox: NormalizedRect,
         newTimestampMs: Long,
         newCategoryId: Int,
-        candidates: List<CandidateMetadata>
+        candidates: List<CandidateMetadata>,
     ): Pair<Int, Float>? {
         var bestIndex: Int? = null
         var bestScore = 0f
@@ -227,13 +234,14 @@ class SpatialTemporalMergePolicy(
             }
 
             // Calculate spatial score
-            val score = if (config.useIoU) {
-                calculateIoU(newBbox, candidate.bbox)
-            } else {
-                // Convert distance to score (closer = higher score)
-                val distance = calculateNormalizedCenterDistance(newBbox, candidate.bbox)
-                max(0f, 1f - distance / config.maxNormalizedDistance)
-            }
+            val score =
+                if (config.useIoU) {
+                    calculateIoU(newBbox, candidate.bbox)
+                } else {
+                    // Convert distance to score (closer = higher score)
+                    val distance = calculateNormalizedCenterDistance(newBbox, candidate.bbox)
+                    max(0f, 1f - distance / config.maxNormalizedDistance)
+                }
 
             if (score > bestScore) {
                 bestScore = score

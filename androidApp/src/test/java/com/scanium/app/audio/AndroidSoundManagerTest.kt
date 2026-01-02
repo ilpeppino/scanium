@@ -18,13 +18,14 @@ class AndroidSoundManagerTest {
         val enabledFlow = MutableStateFlow(false)
         val fakePlayer = FakeTonePlayer()
         val scope = TestScope(UnconfinedTestDispatcher())
-        val manager = AndroidSoundManager(
-            soundsEnabledFlow = enabledFlow,
-            deviceSoundPolicy = FakeDeviceSoundPolicy(),
-            tonePlayer = fakePlayer,
-            rateLimiter = SoundRateLimiter(emptyMap(), clock = { 0L }),
-            scope = scope
-        )
+        val manager =
+            AndroidSoundManager(
+                soundsEnabledFlow = enabledFlow,
+                deviceSoundPolicy = FakeDeviceSoundPolicy(),
+                tonePlayer = fakePlayer,
+                rateLimiter = SoundRateLimiter(emptyMap(), clock = { 0L }),
+                scope = scope,
+            )
 
         scope.runCurrent()
         manager.play(AppSound.CAPTURE)
@@ -36,7 +37,10 @@ class AndroidSoundManagerTest {
     private class FakeTonePlayer : TonePlayer {
         var playCount = 0
 
-        override fun play(tone: Int, durationMs: Int) {
+        override fun play(
+            tone: Int,
+            durationMs: Int,
+        ) {
             playCount++
         }
 

@@ -33,7 +33,6 @@ import com.scanium.telemetry.ports.SpanContext
  * ```
  */
 object PerformanceMonitor {
-
     @Volatile
     private var telemetry: Telemetry? = null
 
@@ -81,7 +80,7 @@ object PerformanceMonitor {
      */
     fun beginSpan(
         name: String,
-        attributes: Map<String, String> = emptyMap()
+        attributes: Map<String, String> = emptyMap(),
     ): SpanContext? {
         return telemetry?.beginSpan(name, attributes)
     }
@@ -96,7 +95,7 @@ object PerformanceMonitor {
     fun recordTimer(
         name: String,
         millis: Long,
-        attributes: Map<String, String> = emptyMap()
+        attributes: Map<String, String> = emptyMap(),
     ) {
         telemetry?.timer(name, millis, attributes)
     }
@@ -111,7 +110,7 @@ object PerformanceMonitor {
     fun recordGauge(
         name: String,
         value: Double,
-        attributes: Map<String, String> = emptyMap()
+        attributes: Map<String, String> = emptyMap(),
     ) {
         telemetry?.gauge(name, value, attributes)
     }
@@ -126,7 +125,7 @@ object PerformanceMonitor {
     fun incrementCounter(
         name: String,
         delta: Long = 1,
-        attributes: Map<String, String> = emptyMap()
+        attributes: Map<String, String> = emptyMap(),
     ) {
         telemetry?.counter(name, delta, attributes)
     }
@@ -145,7 +144,7 @@ object PerformanceMonitor {
         metricName: String,
         spanName: String = metricName,
         attributes: Map<String, String> = emptyMap(),
-        block: () -> T
+        block: () -> T,
     ): T {
         val startTime = SystemClock.elapsedRealtime()
         Trace.beginSection(spanName)
@@ -173,13 +172,13 @@ object PerformanceMonitor {
      */
     inline fun <T> measureMlInference(
         detectorType: String,
-        block: () -> T
+        block: () -> T,
     ): T {
         return measure(
             metricName = Metrics.ML_INFERENCE_LATENCY_MS,
             spanName = Spans.ML_INFERENCE,
             attributes = mapOf("detector_type" to detectorType),
-            block = block
+            block = block,
         )
     }
 
@@ -192,13 +191,13 @@ object PerformanceMonitor {
      */
     inline fun <T> measureFrameAnalysis(
         scanMode: String,
-        block: () -> T
+        block: () -> T,
     ): T {
         return measure(
             metricName = Metrics.FRAME_ANALYSIS_LATENCY_MS,
             spanName = Spans.FRAME_ANALYSIS,
             attributes = mapOf("scan_mode" to scanMode),
-            block = block
+            block = block,
         )
     }
 
@@ -211,13 +210,13 @@ object PerformanceMonitor {
      */
     inline fun <T> measureAggregation(
         itemCount: Int,
-        block: () -> T
+        block: () -> T,
     ): T {
         return measure(
             metricName = Metrics.AGGREGATION_LATENCY_MS,
             spanName = Spans.AGGREGATION,
             attributes = mapOf("item_count" to itemCount.toString()),
-            block = block
+            block = block,
         )
     }
 
@@ -230,13 +229,13 @@ object PerformanceMonitor {
      */
     inline fun <T> measureBitmapDecode(
         imageSize: String = "unknown",
-        block: () -> T
+        block: () -> T,
     ): T {
         return measure(
             metricName = Metrics.BITMAP_DECODE_LATENCY_MS,
             spanName = Spans.BITMAP_DECODE,
             attributes = mapOf("image_size" to imageSize),
-            block = block
+            block = block,
         )
     }
 
@@ -249,13 +248,13 @@ object PerformanceMonitor {
      */
     inline fun <T> measureOverlayDraw(
         detectionCount: Int,
-        block: () -> T
+        block: () -> T,
     ): T {
         return measure(
             metricName = Metrics.OVERLAY_DRAW_LATENCY_MS,
             spanName = Spans.OVERLAY_DRAW,
             attributes = mapOf("detection_count" to detectionCount.toString()),
-            block = block
+            block = block,
         )
     }
 

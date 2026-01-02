@@ -24,7 +24,6 @@ import com.scanium.app.ml.ItemCategory
  * ```
  */
 interface CategoryEngine {
-
     /**
      * Map domain category ID to UI category.
      *
@@ -71,7 +70,7 @@ data class CategoryMapping(
     val iconName: String? = null,
     val tags: List<String> = emptyList(),
     val parentCategoryId: String? = null,
-    val priority: Int = 0
+    val priority: Int = 0,
 ) {
     /**
      * Check if category matches search query.
@@ -80,8 +79,8 @@ data class CategoryMapping(
     fun matches(query: String): Boolean {
         val q = query.trim().lowercase()
         return displayName.lowercase().contains(q) ||
-                tags.any { it.lowercase().contains(q) } ||
-                description?.lowercase()?.contains(q) == true
+            tags.any { it.lowercase().contains(q) } ||
+            description?.lowercase()?.contains(q) == true
     }
 }
 
@@ -90,5 +89,5 @@ data class CategoryMapping(
  */
 class CategoryMappingException(
     message: String,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : Exception(message, cause)

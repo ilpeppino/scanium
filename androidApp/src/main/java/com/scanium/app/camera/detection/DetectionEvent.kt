@@ -10,7 +10,6 @@ import com.scanium.app.ml.DetectionResult
  * while maintaining a unified event stream from the router.
  */
 sealed class DetectionEvent {
-
     /** Timestamp when this event was produced (System.currentTimeMillis()) */
     abstract val timestampMs: Long
 
@@ -25,7 +24,7 @@ sealed class DetectionEvent {
         override val timestampMs: Long,
         override val source: DetectorType = DetectorType.OBJECT,
         val items: List<ScannedItem>,
-        val detectionResults: List<DetectionResult>
+        val detectionResults: List<DetectionResult>,
     ) : DetectionEvent()
 
     /**
@@ -41,7 +40,7 @@ sealed class DetectionEvent {
         override val source: DetectorType = DetectorType.BARCODE,
         val items: List<ScannedItem>,
         val rawDetectionCount: Int = items.size,
-        val dedupedCount: Int = 0
+        val dedupedCount: Int = 0,
     ) : DetectionEvent() {
         /** True if at least one new barcode was detected */
         val hasNewBarcodes: Boolean get() = items.isNotEmpty()
@@ -57,7 +56,7 @@ sealed class DetectionEvent {
     data class DocumentDetected(
         override val timestampMs: Long,
         override val source: DetectorType = DetectorType.DOCUMENT,
-        val items: List<ScannedItem>
+        val items: List<ScannedItem>,
     ) : DetectionEvent()
 
     /**
@@ -67,7 +66,7 @@ sealed class DetectionEvent {
     data class Throttled(
         override val timestampMs: Long,
         override val source: DetectorType,
-        val reason: ThrottleReason
+        val reason: ThrottleReason,
     ) : DetectionEvent()
 }
 
@@ -82,5 +81,5 @@ enum class ThrottleReason {
     DETECTOR_BUSY,
 
     /** Frame quality too low (blur, exposure) */
-    LOW_QUALITY_FRAME
+    LOW_QUALITY_FRAME,
 }

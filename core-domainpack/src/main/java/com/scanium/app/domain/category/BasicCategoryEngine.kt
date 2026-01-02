@@ -35,9 +35,8 @@ import com.scanium.app.domain.repository.DomainPackRepository
  * @param repository Domain Pack repository for accessing category taxonomy
  */
 class BasicCategoryEngine(
-    private val repository: DomainPackRepository
+    private val repository: DomainPackRepository,
 ) : CategoryEngine {
-
     override suspend fun selectCategory(input: CategorySelectionInput): DomainCategory? {
         val pack = repository.getActiveDomainPack()
 
@@ -54,9 +53,10 @@ class BasicCategoryEngine(
         val candidates = pack.getCategoriesByPriority()
 
         // Find matching categories
-        val matches = candidates.filter { category ->
-            matchesCategory(mlKitLabel, category)
-        }
+        val matches =
+            candidates.filter { category ->
+                matchesCategory(mlKitLabel, category)
+            }
 
         if (matches.isEmpty()) {
             Log.d(TAG, "No matching categories found for label '$mlKitLabel'")
@@ -68,15 +68,13 @@ class BasicCategoryEngine(
         Log.d(
             TAG,
             "Selected category: ${selected.id} (${selected.displayName}) " +
-                    "with priority ${selected.priority}"
+                "with priority ${selected.priority}",
         )
 
         return selected
     }
 
-    override suspend fun getCandidateCategories(
-        input: CategorySelectionInput
-    ): List<Pair<DomainCategory, Float>> {
+    override suspend fun getCandidateCategories(input: CategorySelectionInput): List<Pair<DomainCategory, Float>> {
         val pack = repository.getActiveDomainPack()
 
         val mlKitLabel = input.mlKitLabel?.trim()?.lowercase()
@@ -88,14 +86,15 @@ class BasicCategoryEngine(
         val candidates = pack.getCategoriesByPriority()
 
         // Find all matches with scores
-        val matches = candidates.mapNotNull { category ->
-            val score = calculateMatchScore(mlKitLabel, category)
-            if (score > 0.0f) {
-                category to score
-            } else {
-                null
+        val matches =
+            candidates.mapNotNull { category ->
+                val score = calculateMatchScore(mlKitLabel, category)
+                if (score > 0.0f) {
+                    category to score
+                } else {
+                    null
+                }
             }
-        }
 
         // Sort by score descending
         return matches.sortedByDescending { it.second }
@@ -111,7 +110,10 @@ class BasicCategoryEngine(
      * @param category Domain category to check
      * @return true if the label matches this category
      */
-    private fun matchesCategory(mlKitLabel: String, category: DomainCategory): Boolean {
+    private fun matchesCategory(
+        mlKitLabel: String,
+        category: DomainCategory,
+    ): Boolean {
         val displayName = category.displayName.lowercase()
 
         // Check for substring match in display name
@@ -140,7 +142,10 @@ class BasicCategoryEngine(
      * @param category Domain category to score
      * @return Match score (0.0 - 1.0)
      */
-    private fun calculateMatchScore(mlKitLabel: String, category: DomainCategory): Float {
+    private fun calculateMatchScore(
+        mlKitLabel: String,
+        category: DomainCategory,
+    ): Float {
         val displayName = category.displayName.lowercase()
 
         // Exact match

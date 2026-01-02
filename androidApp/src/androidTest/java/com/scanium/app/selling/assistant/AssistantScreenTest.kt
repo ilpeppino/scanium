@@ -22,22 +22,25 @@ class AssistantScreenTest {
 
     @Test
     fun assistantScreenShowsSelectedItemContext() {
-        val item = ScannedItem(
-            id = "item-1",
-            category = ItemCategory.HOME_GOOD,
-            priceRange = 10.0 to 20.0,
-            confidence = 0.9f,
-            labelText = "Lamp",
-            timestamp = 1000L
-        )
-        val draft = ListingDraftBuilder.build(item).copy(
-            title = ListingDraftBuilder.build(item).title.copy(value = "Vintage Lamp")
-        )
+        val item =
+            ScannedItem(
+                id = "item-1",
+                category = ItemCategory.HOME_GOOD,
+                priceRange = 10.0 to 20.0,
+                confidence = 0.9f,
+                labelText = "Lamp",
+                timestamp = 1000L,
+            )
+        val draft =
+            ListingDraftBuilder.build(item).copy(
+                title = ListingDraftBuilder.build(item).title.copy(value = "Vintage Lamp"),
+            )
         val draftStore = FakeDraftStore(mapOf(item.id to draft))
-        val itemsViewModel = createAndroidTestItemsViewModel(
-            workerDispatcher = Dispatchers.Main.immediate,
-            mainDispatcher = Dispatchers.Main.immediate
-        )
+        val itemsViewModel =
+            createAndroidTestItemsViewModel(
+                workerDispatcher = Dispatchers.Main.immediate,
+                mainDispatcher = Dispatchers.Main.immediate,
+            )
 
         composeTestRule.setContent {
             AssistantScreen(
@@ -45,7 +48,7 @@ class AssistantScreenTest {
                 onBack = {},
                 onOpenPostingAssist = { _, _ -> },
                 itemsViewModel = itemsViewModel,
-                draftStore = draftStore
+                draftStore = draftStore,
             )
         }
 
@@ -54,7 +57,7 @@ class AssistantScreenTest {
     }
 
     private class FakeDraftStore(
-        private val drafts: Map<String, ListingDraft>
+        private val drafts: Map<String, ListingDraft>,
     ) : ListingDraftStore {
         override suspend fun getAll(): List<ListingDraft> = drafts.values.toList()
 

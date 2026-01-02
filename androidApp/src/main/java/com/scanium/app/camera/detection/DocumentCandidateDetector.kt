@@ -12,20 +12,20 @@ import kotlin.math.sqrt
 
 data class NormalizedPoint(
     val x: Float,
-    val y: Float
+    val y: Float,
 )
 
 data class DocumentCandidate(
     val bounds: NormalizedRect,
     val quad: List<NormalizedPoint>,
     val confidence: Float,
-    val timestampMs: Long
+    val timestampMs: Long,
 )
 
 data class DocumentCandidateState(
     val candidate: DocumentCandidate,
     val lastSeenMs: Long,
-    val averageProcessingMs: Double
+    val averageProcessingMs: Double,
 )
 
 data class DocumentCandidateDetectorConfig(
@@ -39,11 +39,11 @@ data class DocumentCandidateDetectorConfig(
     val maxAspectRatio: Float = 1.8f,
     val targetAspectRatio: Float = 1.414f,
     val enableDebugLogging: Boolean = BuildConfig.DEBUG,
-    val logEveryN: Int = 30
+    val logEveryN: Int = 30,
 )
 
 class DocumentCandidateDetector(
-    private val config: DocumentCandidateDetectorConfig = DocumentCandidateDetectorConfig()
+    private val config: DocumentCandidateDetectorConfig = DocumentCandidateDetectorConfig(),
 ) {
     companion object {
         private const val TAG = "DocumentCandidateDetector"
@@ -54,7 +54,7 @@ class DocumentCandidateDetector(
 
     fun detect(
         imageProxy: ImageProxy,
-        timestampMs: Long = SystemClock.elapsedRealtime()
+        timestampMs: Long = SystemClock.elapsedRealtime(),
     ): DocumentCandidate? {
         val startTimeMs = SystemClock.elapsedRealtime()
         var candidate: DocumentCandidate? = null
@@ -135,14 +135,23 @@ class DocumentCandidateDetector(
             val aspectRatio = bboxWidth.toFloat() / bboxHeight.toFloat()
             if (aspectRatio < config.minAspectRatio || aspectRatio > config.maxAspectRatio) return null
 
-            val areaScore = ((areaRatio - config.minAreaRatio) /
-                (config.maxAreaRatio - config.minAreaRatio)).coerceIn(0f, 1f)
-            val aspectScore = (1f - (abs(aspectRatio - config.targetAspectRatio) /
-                config.targetAspectRatio)).coerceIn(0f, 1f)
+            val areaScore =
+                (
+                    (areaRatio - config.minAreaRatio) /
+                        (config.maxAreaRatio - config.minAreaRatio)
+                ).coerceIn(0f, 1f)
+            val aspectScore =
+                (
+                    1f - (
+                        abs(aspectRatio - config.targetAspectRatio) /
+                            config.targetAspectRatio
+                    )
+                ).coerceIn(0f, 1f)
             val perimeter = (2 * (bboxWidth + bboxHeight)).coerceAtLeast(1)
             val edgeScore = (edgeCount.toFloat() / (perimeter * 2f)).coerceIn(0f, 1f)
-            val confidence = (areaScore * 0.45f + aspectScore * 0.35f + edgeScore * 0.20f)
-                .coerceIn(0f, 1f)
+            val confidence =
+                (areaScore * 0.45f + aspectScore * 0.35f + edgeScore * 0.20f)
+                    .coerceIn(0f, 1f)
 
             val leftNorm = minX.toFloat() / sampleWidth
             val topNorm = minY.toFloat() / sampleHeight
@@ -150,17 +159,19 @@ class DocumentCandidateDetector(
             val bottomNorm = (maxY + 1).toFloat() / sampleHeight
             val bounds = NormalizedRect(leftNorm, topNorm, rightNorm, bottomNorm).clampToUnit()
 
-            candidate = DocumentCandidate(
-                bounds = bounds,
-                quad = listOf(
-                    NormalizedPoint(bounds.left, bounds.top),
-                    NormalizedPoint(bounds.right, bounds.top),
-                    NormalizedPoint(bounds.right, bounds.bottom),
-                    NormalizedPoint(bounds.left, bounds.bottom)
-                ),
-                confidence = confidence,
-                timestampMs = timestampMs
-            )
+            candidate =
+                DocumentCandidate(
+                    bounds = bounds,
+                    quad =
+                        listOf(
+                            NormalizedPoint(bounds.left, bounds.top),
+                            NormalizedPoint(bounds.right, bounds.top),
+                            NormalizedPoint(bounds.right, bounds.bottom),
+                            NormalizedPoint(bounds.left, bounds.bottom),
+                        ),
+                    confidence = confidence,
+                    timestampMs = timestampMs,
+                )
         } finally {
             val durationMs = SystemClock.elapsedRealtime() - startTimeMs
             val total = totalProcessingMs.addAndGet(durationMs)

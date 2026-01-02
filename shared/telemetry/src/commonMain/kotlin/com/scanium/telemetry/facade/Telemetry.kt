@@ -75,7 +75,7 @@ class Telemetry(
     private val metricPort: MetricPort,
     private val tracePort: TracePort,
     private val crashPort: CrashPort? = null,
-    private val diagnosticsPort: DiagnosticsPort? = null
+    private val diagnosticsPort: DiagnosticsPort? = null,
 ) {
     /**
      * Emits a telemetry event with automatic sanitization and attribute merging.
@@ -95,7 +95,7 @@ class Telemetry(
     fun event(
         name: String,
         severity: TelemetrySeverity,
-        userAttributes: Map<String, String> = emptyMap()
+        userAttributes: Map<String, String> = emptyMap(),
     ) {
         // Filter by config: enabled and minSeverity
         if (!config.enabled) return
@@ -104,12 +104,13 @@ class Telemetry(
         val mergedAttributes = mergeAndSanitize(userAttributes)
         validateRequiredAttributes(mergedAttributes)
 
-        val event = TelemetryEvent(
-            name = name,
-            severity = severity,
-            timestamp = Clock.System.now(),
-            attributes = mergedAttributes
-        )
+        val event =
+            TelemetryEvent(
+                name = name,
+                severity = severity,
+                timestamp = Clock.System.now(),
+                attributes = mergedAttributes,
+            )
 
         logPort.emit(event)
 
@@ -122,7 +123,7 @@ class Telemetry(
         if (crashPort != null && (severity == TelemetrySeverity.WARN || severity == TelemetrySeverity.ERROR)) {
             crashPort.addBreadcrumb(
                 message = name,
-                attributes = filterRelevantAttributes(mergedAttributes)
+                attributes = filterRelevantAttributes(mergedAttributes),
             )
         }
     }
@@ -133,34 +134,44 @@ class Telemetry(
      * This keeps breadcrumb payloads focused and small.
      */
     private fun filterRelevantAttributes(attributes: Map<String, String>): Map<String, String> {
-        val excludeKeys = setOf(
-            TelemetryEvent.ATTR_PLATFORM,
-            TelemetryEvent.ATTR_APP_VERSION,
-            TelemetryEvent.ATTR_BUILD,
-            TelemetryEvent.ATTR_ENV,
-            TelemetryEvent.ATTR_SESSION_ID
-        )
+        val excludeKeys =
+            setOf(
+                TelemetryEvent.ATTR_PLATFORM,
+                TelemetryEvent.ATTR_APP_VERSION,
+                TelemetryEvent.ATTR_BUILD,
+                TelemetryEvent.ATTR_ENV,
+                TelemetryEvent.ATTR_SESSION_ID,
+            )
         return attributes.filterKeys { it !in excludeKeys }
     }
 
     /**
      * Convenience method for INFO-level events.
      */
-    fun info(name: String, userAttributes: Map<String, String> = emptyMap()) {
+    fun info(
+        name: String,
+        userAttributes: Map<String, String> = emptyMap(),
+    ) {
         event(name, TelemetrySeverity.INFO, userAttributes)
     }
 
     /**
      * Convenience method for WARN-level events.
      */
-    fun warn(name: String, userAttributes: Map<String, String> = emptyMap()) {
+    fun warn(
+        name: String,
+        userAttributes: Map<String, String> = emptyMap(),
+    ) {
         event(name, TelemetrySeverity.WARN, userAttributes)
     }
 
     /**
      * Convenience method for ERROR-level events.
      */
-    fun error(name: String, userAttributes: Map<String, String> = emptyMap()) {
+    fun error(
+        name: String,
+        userAttributes: Map<String, String> = emptyMap(),
+    ) {
         event(name, TelemetrySeverity.ERROR, userAttributes)
     }
 
@@ -174,7 +185,7 @@ class Telemetry(
     fun counter(
         name: String,
         delta: Long = 1,
-        userAttributes: Map<String, String> = emptyMap()
+        userAttributes: Map<String, String> = emptyMap(),
     ) {
         if (!config.enabled) return
         val mergedAttributes = mergeAndSanitize(userAttributes)
@@ -191,7 +202,7 @@ class Telemetry(
     fun timer(
         name: String,
         millis: Long,
-        userAttributes: Map<String, String> = emptyMap()
+        userAttributes: Map<String, String> = emptyMap(),
     ) {
         if (!config.enabled) return
         val mergedAttributes = mergeAndSanitize(userAttributes)
@@ -208,7 +219,7 @@ class Telemetry(
     fun gauge(
         name: String,
         value: Double,
-        userAttributes: Map<String, String> = emptyMap()
+        userAttributes: Map<String, String> = emptyMap(),
     ) {
         if (!config.enabled) return
         val mergedAttributes = mergeAndSanitize(userAttributes)
@@ -224,7 +235,7 @@ class Telemetry(
      */
     fun beginSpan(
         name: String,
-        userAttributes: Map<String, String> = emptyMap()
+        userAttributes: Map<String, String> = emptyMap(),
     ): SpanContext {
         if (!config.enabled) return tracePort.beginSpan(name, emptyMap()) // Return no-op span
         val mergedAttributes = mergeAndSanitize(userAttributes)
@@ -242,7 +253,7 @@ class Telemetry(
     inline fun <T> span(
         name: String,
         userAttributes: Map<String, String> = emptyMap(),
-        block: (SpanContext) -> T
+        block: (SpanContext) -> T,
     ): T {
         val span = beginSpan(name, userAttributes)
         return try {
@@ -261,7 +272,7 @@ class Telemetry(
      */
     private fun mergeAndSanitize(userAttributes: Map<String, String>): Map<String, String> {
         val defaultAttributes = defaultAttributesProvider.getDefaultAttributes()
-        val merged = defaultAttributes + userAttributes  // User attrs override defaults
+        val merged = defaultAttributes + userAttributes // User attrs override defaults
         return AttributeSanitizer.sanitize(merged)
     }
 
@@ -274,7 +285,7 @@ class Telemetry(
         if (missing.isNotEmpty()) {
             throw IllegalStateException(
                 "Missing required telemetry attributes: ${missing.joinToString(", ")}. " +
-                "Ensure DefaultAttributesProvider includes all required fields."
+                    "Ensure DefaultAttributesProvider includes all required fields.",
             )
         }
     }

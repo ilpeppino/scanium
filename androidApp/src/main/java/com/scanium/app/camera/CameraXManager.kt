@@ -12,7 +12,6 @@ import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
 import android.util.Size
-import android.util.Rational
 import androidx.camera.core.*
 import androidx.camera.core.CameraUnavailableException
 import androidx.camera.core.ExperimentalGetImage
@@ -21,17 +20,8 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.scanium.app.BuildConfig
-import com.scanium.app.items.ScannedItem
-import com.scanium.app.ml.BarcodeDetectorClient
-import com.scanium.app.ml.DetectionResult
-import com.scanium.app.ml.DocumentTextRecognitionClient
-import com.scanium.app.ml.ObjectDetectorClient
-import com.scanium.app.perf.PerformanceMonitor
-import com.scanium.app.tracking.ObjectTracker
-import com.scanium.app.tracking.TrackerConfig
-import com.scanium.android.platform.adapters.toNormalizedRect
 import com.google.mlkit.vision.common.InputImage
+import com.scanium.app.BuildConfig
 import com.scanium.app.camera.detection.DetectionEvent
 import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DetectionRouterConfig
@@ -40,6 +30,14 @@ import com.scanium.app.camera.detection.DocumentCandidate
 import com.scanium.app.camera.detection.DocumentCandidateDetector
 import com.scanium.app.camera.detection.DocumentCandidateState
 import com.scanium.app.camera.detection.ScanPipelineDiagnostics
+import com.scanium.app.items.ScannedItem
+import com.scanium.app.ml.BarcodeDetectorClient
+import com.scanium.app.ml.DetectionResult
+import com.scanium.app.ml.DocumentTextRecognitionClient
+import com.scanium.app.ml.ObjectDetectorClient
+import com.scanium.app.perf.PerformanceMonitor
+import com.scanium.app.tracking.ObjectTracker
+import com.scanium.app.tracking.TrackerConfig
 import com.scanium.core.models.scanning.GuidanceState
 import com.scanium.core.models.scanning.ScanGuidanceState
 import com.scanium.core.models.scanning.ScanRoi
@@ -71,7 +69,7 @@ import kotlin.coroutines.resumeWithException
 class CameraXManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
-    private val telemetry: Telemetry? = null
+    private val telemetry: Telemetry? = null,
 ) {
     companion object {
         private const val TAG = "CameraXManager"
@@ -97,17 +95,21 @@ class CameraXManager(
     data class CameraBindResult(
         val success: Boolean,
         val lensFacingUsed: Int,
-        val error: Throwable? = null
+        val error: Throwable? = null,
     )
 
     @Volatile
     private var cameraProvider: ProcessCameraProvider? = null
+
     @Volatile
     private var camera: Camera? = null
+
     @Volatile
     private var preview: Preview? = null
+
     @Volatile
     private var imageAnalysis: ImageAnalysis? = null
+
     @Volatile
     private var imageCapture: ImageCapture? = null
 
@@ -116,15 +118,18 @@ class CameraXManager(
     private val textRecognizer = DocumentTextRecognitionClient()
 
     // Detection router for throttling and future multi-detector orchestration
-    private val detectionRouter = DetectionRouter(
-        config = DetectionRouterConfig(
-            throttleIntervals = mapOf(
-                DetectorType.DOCUMENT to 400L
-            ),
-            enableVerboseLogging = BuildConfig.DEBUG,
-            enableDebugLogging = BuildConfig.DEBUG
+    private val detectionRouter =
+        DetectionRouter(
+            config =
+                DetectionRouterConfig(
+                    throttleIntervals =
+                        mapOf(
+                            DetectorType.DOCUMENT to 400L,
+                        ),
+                    enableVerboseLogging = BuildConfig.DEBUG,
+                    enableDebugLogging = BuildConfig.DEBUG,
+                ),
         )
-    )
 
     private val documentCandidateDetector = DocumentCandidateDetector()
 
@@ -132,14 +137,17 @@ class CameraXManager(
     private val scanGuidanceManager = ScanGuidanceManager()
 
     private val _analysisFps = MutableStateFlow(0.0)
+
     /** Real-time analysis FPS for performance monitoring */
     val analysisFps: StateFlow<Double> = _analysisFps.asStateFlow()
 
     private val _scanGuidanceState = MutableStateFlow(ScanGuidanceState.initial())
+
     /** Current scan guidance state for UI overlay */
     val scanGuidanceState: StateFlow<ScanGuidanceState> = _scanGuidanceState.asStateFlow()
 
     private val _scanDiagnosticsEnabled = MutableStateFlow(false)
+
     /** Whether scan diagnostics overlay should be shown */
     val scanDiagnosticsEnabled: StateFlow<Boolean> = _scanDiagnosticsEnabled.asStateFlow()
 
@@ -148,18 +156,26 @@ class CameraXManager(
 
     // Object tracker for de-duplication
     // Using very permissive thresholds to ensure items are actually promoted
-    private val objectTracker = ObjectTracker(
-        config = TrackerConfig(
-            minFramesToConfirm = 1,      // Confirm immediately (rely on session-level dedup)
-            minConfidence = 0.2f,         // Very low confidence threshold (20%)
-            minBoxArea = 0.0005f,         // Very small box area (0.05% of frame)
-            maxFrameGap = 8,              // Allow 8 frames gap for matching (more forgiving)
-            minMatchScore = 0.2f,         // Lower match score threshold for better spatial matching
-            expiryFrames = 15,            // Keep candidates longer (15 frames)
-            enableVerboseLogging = BuildConfig.DEBUG
-        ),
-        telemetry = telemetry
-    )
+    private val objectTracker =
+        ObjectTracker(
+            config =
+                TrackerConfig(
+                    minFramesToConfirm = 1,
+// Confirm immediately (rely on session-level dedup)
+                    minConfidence = 0.2f,
+// Very low confidence threshold (20%)
+                    minBoxArea = 0.0005f,
+// Very small box area (0.05% of frame)
+                    maxFrameGap = 8,
+// Allow 8 frames gap for matching (more forgiving)
+                    minMatchScore = 0.2f,
+// Lower match score threshold for better spatial matching
+                    expiryFrames = 15,
+// Keep candidates longer (15 frames)
+                    enableVerboseLogging = BuildConfig.DEBUG,
+                ),
+            telemetry = telemetry,
+        )
 
     // Executor for camera operations
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -177,6 +193,7 @@ class CameraXManager(
     // NO_FRAMES watchdog state
     @Volatile
     private var watchdogJob: Job? = null
+
     @Volatile
     private var recoveryAttempts = 0
 
@@ -192,14 +209,15 @@ class CameraXManager(
     private data class PreviewDetectionCallback(
         val onDetectionResult: (List<DetectionResult>) -> Unit,
         val onFrameSize: (Size) -> Unit,
-        val onRotation: (Int) -> Unit
+        val onRotation: (Int) -> Unit,
     )
 
-    private val lifecycleObserver = object : DefaultLifecycleObserver {
-        override fun onDestroy(owner: LifecycleOwner) {
-            shutdown()
+    private val lifecycleObserver =
+        object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                shutdown()
+            }
         }
-    }
 
     init {
         lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
@@ -311,11 +329,14 @@ class CameraXManager(
     // These variables are accessed from both Main thread (UI) and camera executor thread
     @Volatile
     private var isScanning = false
+
     @Volatile
     private var isPreviewDetectionActive = false
     private var scanJob: Job? = null
+
     @Volatile
     private var currentScanMode: ScanMode? = null
+
     @Volatile
     private var targetRotation: Int? = null
 
@@ -381,144 +402,155 @@ class CameraXManager(
     suspend fun startCamera(
         previewView: PreviewView,
         lensFacing: Int,
-        captureResolution: CaptureResolution = CaptureResolution.DEFAULT
-    ): CameraBindResult = withContext(Dispatchers.Main) {
-        if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
-            Log.e(TAG, "No camera hardware detected on this device")
-            return@withContext CameraBindResult(
-                success = false,
-                lensFacingUsed = lensFacing,
-                error = IllegalStateException("No camera hardware available")
-            )
-        }
-
-        // Ensure models are downloaded before starting camera
-        ensureModelsReady()
-
-        // Store PreviewView dimensions for viewport calculation
-        previewViewWidth = previewView.width
-        previewViewHeight = previewView.height
-
-        val provider = awaitCameraProvider(context)
-        cameraProvider = provider
-
-        if (provider.availableCameraInfos.isEmpty()) {
-            Log.e(TAG, "Camera provider returned no available camera infos")
-            return@withContext CameraBindResult(
-                success = false,
-                lensFacingUsed = lensFacing,
-                error = IllegalStateException("No available camera from provider")
-            )
-        }
-
-        // Setup preview
-        preview = Preview.Builder()
-            .build()
-            .also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-        // Setup image analysis for object detection
-        val displayRotation = previewView.display.rotation
-        targetRotation = displayRotation
-
-        imageAnalysis = ImageAnalysis.Builder()
-            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-            .setTargetRotation(displayRotation)
-            .setTargetResolution(android.util.Size(1280, 720)) // Higher resolution for better detection
-            .build()
-
-        Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
-
-        // Setup high-resolution image capture for saving high-quality item images
-        imageCapture = buildImageCapture(captureResolution, displayRotation)
-        Log.d(TAG, "ImageCapture configured for resolution: $captureResolution (rotation=$displayRotation)")
-
-        val requestedSelector = CameraSelector.Builder()
-            .requireLensFacing(lensFacing)
-            .build()
-        val fallbackLensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
-            CameraSelector.LENS_FACING_FRONT
-        } else {
-            CameraSelector.LENS_FACING_BACK
-        }
-        val fallbackSelector = CameraSelector.Builder()
-            .requireLensFacing(fallbackLensFacing)
-            .build()
-
-        val selectorToUse = when {
-            provider.hasCamera(requestedSelector) -> requestedSelector
-            provider.hasCamera(fallbackSelector) -> {
-                Log.w(TAG, "Requested lens $lensFacing not available. Falling back to $fallbackLensFacing")
-                fallbackSelector
-            }
-
-            else -> {
-                Log.e(TAG, "No available camera for requested or fallback lens")
+        captureResolution: CaptureResolution = CaptureResolution.DEFAULT,
+    ): CameraBindResult =
+        withContext(Dispatchers.Main) {
+            if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+                Log.e(TAG, "No camera hardware detected on this device")
                 return@withContext CameraBindResult(
                     success = false,
                     lensFacingUsed = lensFacing,
-                    error = IllegalStateException("No available camera for requested or fallback lens")
-                )
-            }
-        }
-
-        val resolvedLensFacing = if (selectorToUse == requestedSelector) lensFacing else fallbackLensFacing
-
-        try {
-            // Unbind any existing use cases
-            provider.unbindAll()
-            stopScanning()
-
-            // PHASE 2: Bind use cases to lifecycle
-            // NOTE: We do NOT apply ViewPort to ImageAnalysis - ML Kit needs full frame context
-            // for accurate classification. Instead, we filter detections geometrically AFTER
-            // ML Kit analysis using cropRect from Preview's ViewPort.
-            camera = provider.bindToLifecycle(
-                lifecycleOwner,
-                selectorToUse,
-                preview,
-                imageAnalysis,
-                imageCapture
-            )
-
-            // PHASE 5: Configuration log
-            if (!viewportLoggedOnce) {
-                Log.i(TAG, "[CONFIG] Camera bound: Preview=${previewView.width}x${previewView.height}, rotation=$displayRotation, edgeInset=${EDGE_INSET_MARGIN_RATIO}")
-                Log.i(TAG, "[CONFIG] ML Kit sees full frame for classification; geometry filtering applied after detection")
-                viewportLoggedOnce = true
-            }
-
-            // Update diagnostics
-            sessionController.updateCameraBound(true)
-            sessionController.logEvent("CAMERA_BIND_SUCCESS", "lens=$resolvedLensFacing")
-
-            // CRITICAL FIX: Apply any pending preview detection callback AFTER camera bind
-            // This ensures the analyzer is set on the newly created imageAnalysis instance
-            pendingPreviewDetectionCallback?.let { callback ->
-                Log.i(CAM_FRAME_TAG, "Applying pending preview detection callback after camera bind")
-                pendingPreviewDetectionCallback = null
-                applyPreviewDetectionAnalyzer(
-                    onDetectionResult = callback.onDetectionResult,
-                    onFrameSize = callback.onFrameSize,
-                    onRotation = callback.onRotation
+                    error = IllegalStateException("No camera hardware available"),
                 )
             }
 
-            // Start NO_FRAMES watchdog to detect analyzer stalls
-            startNoFramesWatchdog()
+            // Ensure models are downloaded before starting camera
+            ensureModelsReady()
 
-            CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
-        } catch (e: CameraUnavailableException) {
-            Log.e(TAG, "Camera unavailable during binding", e)
-            CameraBindResult(success = false, lensFacingUsed = resolvedLensFacing, error = e)
-        } catch (e: Exception) {
-            // Handle camera binding failure (Log.e includes full stack trace)
-            Log.e(TAG, "Failed to bind camera use cases", e)
-            CameraBindResult(success = false, lensFacingUsed = lensFacing, error = e)
+            // Store PreviewView dimensions for viewport calculation
+            previewViewWidth = previewView.width
+            previewViewHeight = previewView.height
+
+            val provider = awaitCameraProvider(context)
+            cameraProvider = provider
+
+            if (provider.availableCameraInfos.isEmpty()) {
+                Log.e(TAG, "Camera provider returned no available camera infos")
+                return@withContext CameraBindResult(
+                    success = false,
+                    lensFacingUsed = lensFacing,
+                    error = IllegalStateException("No available camera from provider"),
+                )
+            }
+
+            // Setup preview
+            preview =
+                Preview.Builder()
+                    .build()
+                    .also {
+                        it.setSurfaceProvider(previewView.surfaceProvider)
+                    }
+
+            // Setup image analysis for object detection
+            val displayRotation = previewView.display.rotation
+            targetRotation = displayRotation
+
+            imageAnalysis =
+                ImageAnalysis.Builder()
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setTargetRotation(displayRotation)
+                    .setTargetResolution(android.util.Size(1280, 720)) // Higher resolution for better detection
+                    .build()
+
+            Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
+
+            // Setup high-resolution image capture for saving high-quality item images
+            imageCapture = buildImageCapture(captureResolution, displayRotation)
+            Log.d(TAG, "ImageCapture configured for resolution: $captureResolution (rotation=$displayRotation)")
+
+            val requestedSelector =
+                CameraSelector.Builder()
+                    .requireLensFacing(lensFacing)
+                    .build()
+            val fallbackLensFacing =
+                if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                    CameraSelector.LENS_FACING_FRONT
+                } else {
+                    CameraSelector.LENS_FACING_BACK
+                }
+            val fallbackSelector =
+                CameraSelector.Builder()
+                    .requireLensFacing(fallbackLensFacing)
+                    .build()
+
+            val selectorToUse =
+                when {
+                    provider.hasCamera(requestedSelector) -> requestedSelector
+                    provider.hasCamera(fallbackSelector) -> {
+                        Log.w(TAG, "Requested lens $lensFacing not available. Falling back to $fallbackLensFacing")
+                        fallbackSelector
+                    }
+
+                    else -> {
+                        Log.e(TAG, "No available camera for requested or fallback lens")
+                        return@withContext CameraBindResult(
+                            success = false,
+                            lensFacingUsed = lensFacing,
+                            error = IllegalStateException("No available camera for requested or fallback lens"),
+                        )
+                    }
+                }
+
+            val resolvedLensFacing = if (selectorToUse == requestedSelector) lensFacing else fallbackLensFacing
+
+            try {
+                // Unbind any existing use cases
+                provider.unbindAll()
+                stopScanning()
+
+                // PHASE 2: Bind use cases to lifecycle
+                // NOTE: We do NOT apply ViewPort to ImageAnalysis - ML Kit needs full frame context
+                // for accurate classification. Instead, we filter detections geometrically AFTER
+                // ML Kit analysis using cropRect from Preview's ViewPort.
+                camera =
+                    provider.bindToLifecycle(
+                        lifecycleOwner,
+                        selectorToUse,
+                        preview,
+                        imageAnalysis,
+                        imageCapture,
+                    )
+
+                // PHASE 5: Configuration log
+                if (!viewportLoggedOnce) {
+                    Log.i(
+                        TAG,
+                        "[CONFIG] Camera bound: Preview=${previewView.width}x${previewView.height}, rotation=$displayRotation, edgeInset=${EDGE_INSET_MARGIN_RATIO}",
+                    )
+                    Log.i(TAG, "[CONFIG] ML Kit sees full frame for classification; geometry filtering applied after detection")
+                    viewportLoggedOnce = true
+                }
+
+                // Update diagnostics
+                sessionController.updateCameraBound(true)
+                sessionController.logEvent("CAMERA_BIND_SUCCESS", "lens=$resolvedLensFacing")
+
+                // CRITICAL FIX: Apply any pending preview detection callback AFTER camera bind
+                // This ensures the analyzer is set on the newly created imageAnalysis instance
+                pendingPreviewDetectionCallback?.let { callback ->
+                    Log.i(CAM_FRAME_TAG, "Applying pending preview detection callback after camera bind")
+                    pendingPreviewDetectionCallback = null
+                    applyPreviewDetectionAnalyzer(
+                        onDetectionResult = callback.onDetectionResult,
+                        onFrameSize = callback.onFrameSize,
+                        onRotation = callback.onRotation,
+                    )
+                }
+
+                // Start NO_FRAMES watchdog to detect analyzer stalls
+                startNoFramesWatchdog()
+
+                CameraBindResult(success = true, lensFacingUsed = resolvedLensFacing)
+            } catch (e: CameraUnavailableException) {
+                Log.e(TAG, "Camera unavailable during binding", e)
+                CameraBindResult(success = false, lensFacingUsed = resolvedLensFacing, error = e)
+            } catch (e: Exception) {
+                // Handle camera binding failure (Log.e includes full stack trace)
+                Log.e(TAG, "Failed to bind camera use cases", e)
+                CameraBindResult(success = false, lensFacingUsed = lensFacing, error = e)
+            }
         }
-    }
 
     /**
      * Captures a single frame and runs detection based on the current scan mode.
@@ -530,7 +562,7 @@ class CameraXManager(
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
         onDetectionEvent: (DetectionEvent) -> Unit = {},
         onFrameSize: (Size) -> Unit = {},
-        onRotation: (Int) -> Unit = {}
+        onRotation: (Int) -> Unit = {},
     ) {
         Log.d(TAG, "captureSingleFrame: Starting single frame capture with mode $scanMode")
         // Stop preview detection if running (capture takes over temporarily)
@@ -548,12 +580,13 @@ class CameraXManager(
             }
 
             // Apply viewport crop consistently
-            val cropRect = calculateVisibleViewport(
-                imageWidth = imageProxy.width,
-                imageHeight = imageProxy.height,
-                previewWidth = previewViewWidth,
-                previewHeight = previewViewHeight
-            )
+            val cropRect =
+                calculateVisibleViewport(
+                    imageWidth = imageProxy.width,
+                    imageHeight = imageProxy.height,
+                    previewWidth = previewViewWidth,
+                    previewHeight = previewViewHeight,
+                )
             imageProxy.setCropRect(cropRect)
 
             detectionScope.launch {
@@ -569,12 +602,13 @@ class CameraXManager(
                     }
 
                     // Single-frame capture uses direct detection (no candidate tracking)
-                    val (items, detections) = processImageProxy(
-                        imageProxy = imageProxy,
-                        scanMode = scanMode,
-                        useStreamMode = false,
-                        onDetectionEvent = onDetectionEvent
-                    )
+                    val (items, detections) =
+                        processImageProxy(
+                            imageProxy = imageProxy,
+                            scanMode = scanMode,
+                            useStreamMode = false,
+                            onDetectionEvent = onDetectionEvent,
+                        )
                     Log.d(TAG, "captureSingleFrame: Got ${items.size} items")
                     withContext(Dispatchers.Main) {
                         onResult(items)
@@ -601,7 +635,7 @@ class CameraXManager(
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
         onDetectionEvent: (DetectionEvent) -> Unit = {},
         onFrameSize: (Size) -> Unit = {},
-        onRotation: (Int) -> Unit = {}
+        onRotation: (Int) -> Unit = {},
     ) {
         if (isScanning) {
             Log.d(TAG, "startScanning: Already scanning, ignoring")
@@ -668,7 +702,7 @@ class CameraXManager(
             minSeenCount = 1,
             minConfidence = 0.0f,
             candidateTimeoutMs = 3000L,
-            analysisIntervalMs = initialIntervalMs
+            analysisIntervalMs = initialIntervalMs,
         )
 
         Log.i(TAG, "[METRICS] Camera session started, tracking analyzer latency and frame rate")
@@ -696,11 +730,12 @@ class CameraXManager(
                 analysisIntervalMs = analysisIntervalMs,
                 timeSinceLastAnalysis = timeSinceLastAnalysis,
                 willProcess = willProcess,
-                dropReason = when {
-                    isProcessing -> "already_processing"
-                    timeSinceLastAnalysis < analysisIntervalMs -> "throttled_motion"
-                    else -> null
-                }
+                dropReason =
+                    when {
+                        isProcessing -> "already_processing"
+                        timeSinceLastAnalysis < analysisIntervalMs -> "throttled_motion"
+                        else -> null
+                    },
             )
 
             // Only process if enough time has passed AND we're not already processing
@@ -721,11 +756,12 @@ class CameraXManager(
                 }
 
                 val rotationDegrees = imageProxy.imageInfo.rotationDegrees
-                val inputImage = com.google.mlkit.vision.common.InputImage.fromMediaImage(
-                    mediaImage,
-                    rotationDegrees
-                )
-                
+                val inputImage =
+                    com.google.mlkit.vision.common.InputImage.fromMediaImage(
+                        mediaImage,
+                        rotationDegrees,
+                    )
+
                 // CRITICAL: ML Kit does NOT honor the MediaImage's cropRect - it processes the
                 // full buffer and returns bounding boxes in full image coordinates.
                 // For edge filtering, use full image bounds.
@@ -756,11 +792,12 @@ class CameraXManager(
                             onRotation(frameRotation)
                         }
 
-                        val documentCandidate = if (detectionRouter.tryInvokeDocumentDetection(frameReceiveTime)) {
-                            documentCandidateDetector.detect(imageProxy, frameReceiveTime)
-                        } else {
-                            null
-                        }
+                        val documentCandidate =
+                            if (detectionRouter.tryInvokeDocumentDetection(frameReceiveTime)) {
+                                documentCandidateDetector.detect(imageProxy, frameReceiveTime)
+                            } else {
+                                null
+                            }
                         updateDocumentCandidateState(documentCandidate, frameReceiveTime)
 
                         // Route through detection router for metrics tracking
@@ -772,18 +809,19 @@ class CameraXManager(
                             mode = scanMode.name,
                             imageWidth = imageProxy.width,
                             imageHeight = imageProxy.height,
-                            rotationDegrees = imageProxy.imageInfo.rotationDegrees
+                            rotationDegrees = imageProxy.imageInfo.rotationDegrees,
                         )
 
                         // Use SINGLE_IMAGE_MODE for object detection with tracking during continuous scanning
                         // CRITICAL: Use SINGLE_IMAGE_MODE to avoid blinking bounding boxes
                         // STREAM_MODE produces unstable tracking IDs from ML Kit that change between frames
-                        val (items, detections) = processImageProxy(
-                            imageProxy = imageProxy,
-                            scanMode = scanMode,
-                            useStreamMode = false,
-                            onDetectionEvent = onDetectionEvent
-                        )
+                        val (items, detections) =
+                            processImageProxy(
+                                imageProxy = imageProxy,
+                                scanMode = scanMode,
+                                useStreamMode = false,
+                                onDetectionEvent = onDetectionEvent,
+                            )
 
                         // [METRICS] Calculate analyzer latency
                         val analyzerLatencyMs = SystemClock.elapsedRealtime() - frameReceiveTime
@@ -793,7 +831,7 @@ class CameraXManager(
                             detectionCount = detections.size,
                             topConfidence = detections.maxOfOrNull { it.confidence } ?: 0f,
                             inferenceTimeMs = analyzerLatencyMs,
-                            itemsAdded = items.size
+                            itemsAdded = items.size,
                         )
 
                         // Update bbox timestamp for diagnostics
@@ -827,7 +865,12 @@ class CameraXManager(
                             if (BuildConfig.DEBUG) {
                                 val adaptiveStats = detectionRouter.getAdaptiveStats()
                                 if (adaptiveStats.isThrottling) {
-                                    Log.i(TAG, "[LOW_POWER] Adaptive throttling active: multiplier=${"%.2f".format(adaptiveStats.adaptiveMultiplier)}, avgLatency=${adaptiveStats.rollingAverageMs}ms")
+                                    Log.i(
+                                        TAG,
+                                        "[LOW_POWER] Adaptive throttling active: multiplier=${"%.2f".format(
+                                            adaptiveStats.adaptiveMultiplier,
+                                        )}, avgLatency=${adaptiveStats.rollingAverageMs}ms",
+                                    )
                                 }
                             }
                         }
@@ -855,20 +898,25 @@ class CameraXManager(
      *
      * @see docs/SCAN_VS_PICTURE_ASSESSMENT.md for root cause analysis
      */
-    private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
-        motionScore <= 0.1 -> 600L   // Steady scene: was 2000ms, now 600ms (~1.7 fps)
-        motionScore <= 0.5 -> 500L   // Low motion: was 800ms, now 500ms (~2 fps)
-        else -> 400L                  // High motion: unchanged (~2.5 fps)
-    }
+    private fun analysisIntervalMsForMotion(motionScore: Double): Long =
+        when {
+            motionScore <= 0.1 -> 600L // Steady scene: was 2000ms, now 600ms (~1.7 fps)
+            motionScore <= 0.5 -> 500L // Low motion: was 800ms, now 500ms (~2 fps)
+            else -> 400L // High motion: unchanged (~2.5 fps)
+        }
 
-    private fun updateDocumentCandidateState(candidate: DocumentCandidate?, timestampMs: Long) {
+    private fun updateDocumentCandidateState(
+        candidate: DocumentCandidate?,
+        timestampMs: Long,
+    ) {
         val current = _documentCandidateState.value
         if (candidate != null && candidate.confidence >= DOCUMENT_CANDIDATE_MIN_CONFIDENCE) {
-            _documentCandidateState.value = DocumentCandidateState(
-                candidate = candidate,
-                lastSeenMs = timestampMs,
-                averageProcessingMs = documentCandidateDetector.averageProcessingMs()
-            )
+            _documentCandidateState.value =
+                DocumentCandidateState(
+                    candidate = candidate,
+                    lastSeenMs = timestampMs,
+                    averageProcessingMs = documentCandidateDetector.averageProcessingMs(),
+                )
             return
         }
 
@@ -895,7 +943,7 @@ class CameraXManager(
             lumaBufferSize = sampleSize
             currentLumaBufferIndex = 0
             hasValidPreviousLumaSample = false
-            Log.d(TAG, "Allocated luma sample buffers: ${sampleSize} bytes each")
+            Log.d(TAG, "Allocated luma sample buffers: $sampleSize bytes each")
         }
 
         // Get current buffer for writing and previous buffer for comparison
@@ -921,17 +969,19 @@ class CameraXManager(
 
         // Compute motion score by comparing with previous frame
         // Skip comparison on first frame when we don't have valid previous data
-        val motionScore = if (hasValidPreviousLumaSample) {
-            var diffSum = 0L
-            for (i in 0 until sampleIndex) {
-                diffSum += kotlin.math.abs(
-                    (currentSample[i].toInt() and 0xFF) - (previousSample[i].toInt() and 0xFF)
-                )
+        val motionScore =
+            if (hasValidPreviousLumaSample) {
+                var diffSum = 0L
+                for (i in 0 until sampleIndex) {
+                    diffSum +=
+                        kotlin.math.abs(
+                            (currentSample[i].toInt() and 0xFF) - (previousSample[i].toInt() and 0xFF),
+                        )
+                }
+                diffSum.toDouble() / (sampleIndex * 255.0)
+            } else {
+                lastMotionScore
             }
-            diffSum.toDouble() / (sampleIndex * 255.0)
-        } else {
-            lastMotionScore
-        }
 
         // Swap buffer index for next frame and mark that we now have valid data
         currentLumaBufferIndex = 1 - currentLumaBufferIndex
@@ -985,7 +1035,7 @@ class CameraXManager(
     fun startPreviewDetection(
         onDetectionResult: (List<DetectionResult>) -> Unit = {},
         onFrameSize: (Size) -> Unit = {},
-        onRotation: (Int) -> Unit = {}
+        onRotation: (Int) -> Unit = {},
     ) {
         // Don't start if already scanning (scanning takes priority)
         if (isScanning) {
@@ -1009,11 +1059,12 @@ class CameraXManager(
         // to be applied after camera binding completes
         if (imageAnalysis == null) {
             Log.i(CAM_FRAME_TAG, "startPreviewDetection: Camera not bound yet, storing callback for later")
-            pendingPreviewDetectionCallback = PreviewDetectionCallback(
-                onDetectionResult = onDetectionResult,
-                onFrameSize = onFrameSize,
-                onRotation = onRotation
-            )
+            pendingPreviewDetectionCallback =
+                PreviewDetectionCallback(
+                    onDetectionResult = onDetectionResult,
+                    onFrameSize = onFrameSize,
+                    onRotation = onRotation,
+                )
             return
         }
 
@@ -1021,7 +1072,7 @@ class CameraXManager(
         applyPreviewDetectionAnalyzer(
             onDetectionResult = onDetectionResult,
             onFrameSize = onFrameSize,
-            onRotation = onRotation
+            onRotation = onRotation,
         )
     }
 
@@ -1033,7 +1084,7 @@ class CameraXManager(
     private fun applyPreviewDetectionAnalyzer(
         onDetectionResult: (List<DetectionResult>) -> Unit,
         onFrameSize: (Size) -> Unit,
-        onRotation: (Int) -> Unit
+        onRotation: (Int) -> Unit,
     ) {
         Log.i(CAM_FRAME_TAG, "applyPreviewDetectionAnalyzer: Setting analyzer on imageAnalysis")
 
@@ -1115,13 +1166,15 @@ class CameraXManager(
 
                     // Run detection (preview only - no item creation)
                     val imageBoundsForFiltering = android.graphics.Rect(0, 0, imageProxy.width, imageProxy.height)
-                    val response = objectDetector.detectObjects(
-                        image = inputImage,
-                        sourceBitmap = { null }, // No bitmap needed for preview-only
-                        useStreamMode = false,
-                        cropRect = imageBoundsForFiltering,
-                        edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
-                    )
+                    val response =
+                        objectDetector.detectObjects(
+                            image = inputImage,
+                            sourceBitmap = { null },
+// No bitmap needed for preview-only
+                            useStreamMode = false,
+                            cropRect = imageBoundsForFiltering,
+                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
+                        )
 
                     // Update bbox timestamp for diagnostics
                     if (response.detectionResults.isNotEmpty()) {
@@ -1184,53 +1237,54 @@ class CameraXManager(
      */
     private fun startNoFramesWatchdog() {
         watchdogJob?.cancel()
-        watchdogJob = detectionScope.launch {
-            Log.i(CAM_FRAME_TAG, "WATCHDOG: Started, waiting ${WATCHDOG_INITIAL_DELAY_MS}ms for first frame")
-            delay(WATCHDOG_INITIAL_DELAY_MS)
+        watchdogJob =
+            detectionScope.launch {
+                Log.i(CAM_FRAME_TAG, "WATCHDOG: Started, waiting ${WATCHDOG_INITIAL_DELAY_MS}ms for first frame")
+                delay(WATCHDOG_INITIAL_DELAY_MS)
 
-            // Check if we've received frames
-            if (hasReceivedFirstFrame) {
-                Log.i(CAM_FRAME_TAG, "WATCHDOG: First frame already received, no stall detected")
-                return@launch
-            }
-
-            // Check if camera is still active and analyzer is attached
-            val diagnostics = sessionController.diagnostics.value
-            if (!diagnostics.isCameraBound || !diagnostics.isAnalysisAttached) {
-                Log.i(CAM_FRAME_TAG, "WATCHDOG: Camera not bound or analyzer not attached, skipping recovery")
-                return@launch
-            }
-
-            // STALL DETECTED: Analyzer attached but no frames
-            Log.w(CAM_FRAME_TAG, "WATCHDOG: STALL_NO_FRAMES detected! cameraBound=${diagnostics.isCameraBound}, analysisAttached=${diagnostics.isAnalysisAttached}, analysisFlowing=${diagnostics.isAnalysisFlowing}")
-            sessionController.updateStallReason(StallReason.NO_FRAMES)
-
-            // Attempt recovery
-            while (recoveryAttempts < MAX_RECOVERY_ATTEMPTS && !hasReceivedFirstFrame) {
-                recoveryAttempts++
-                sessionController.updateRecoveryAttempts(recoveryAttempts)
-                sessionController.updateStallReason(StallReason.RECOVERING)
-                Log.i(CAM_FRAME_TAG, "WATCHDOG: Recovery attempt $recoveryAttempts/$MAX_RECOVERY_ATTEMPTS")
-
-                // Re-apply the analyzer on the current imageAnalysis
-                rebindAnalysisPipeline()
-
-                // Wait for frames
-                delay(WATCHDOG_RETRY_DELAY_MS)
-
+                // Check if we've received frames
                 if (hasReceivedFirstFrame) {
-                    Log.i(CAM_FRAME_TAG, "WATCHDOG: Recovery successful on attempt $recoveryAttempts")
-                    sessionController.updateStallReason(StallReason.NONE)
+                    Log.i(CAM_FRAME_TAG, "WATCHDOG: First frame already received, no stall detected")
                     return@launch
                 }
-            }
 
-            // Recovery failed
-            if (!hasReceivedFirstFrame) {
-                Log.e(CAM_FRAME_TAG, "WATCHDOG: Recovery FAILED after $MAX_RECOVERY_ATTEMPTS attempts")
-                sessionController.updateStallReason(StallReason.FAILED)
+                // Check if camera is still active and analyzer is attached
+                val diagnostics = sessionController.diagnostics.value
+                if (!diagnostics.isCameraBound || !diagnostics.isAnalysisAttached) {
+                    Log.i(CAM_FRAME_TAG, "WATCHDOG: Camera not bound or analyzer not attached, skipping recovery")
+                    return@launch
+                }
+
+                // STALL DETECTED: Analyzer attached but no frames
+                Log.w(CAM_FRAME_TAG, "WATCHDOG: STALL_NO_FRAMES detected! cameraBound=${diagnostics.isCameraBound}, analysisAttached=${diagnostics.isAnalysisAttached}, analysisFlowing=${diagnostics.isAnalysisFlowing}")
+                sessionController.updateStallReason(StallReason.NO_FRAMES)
+
+                // Attempt recovery
+                while (recoveryAttempts < MAX_RECOVERY_ATTEMPTS && !hasReceivedFirstFrame) {
+                    recoveryAttempts++
+                    sessionController.updateRecoveryAttempts(recoveryAttempts)
+                    sessionController.updateStallReason(StallReason.RECOVERING)
+                    Log.i(CAM_FRAME_TAG, "WATCHDOG: Recovery attempt $recoveryAttempts/$MAX_RECOVERY_ATTEMPTS")
+
+                    // Re-apply the analyzer on the current imageAnalysis
+                    rebindAnalysisPipeline()
+
+                    // Wait for frames
+                    delay(WATCHDOG_RETRY_DELAY_MS)
+
+                    if (hasReceivedFirstFrame) {
+                        Log.i(CAM_FRAME_TAG, "WATCHDOG: Recovery successful on attempt $recoveryAttempts")
+                        sessionController.updateStallReason(StallReason.NONE)
+                        return@launch
+                    }
+                }
+
+                // Recovery failed
+                if (!hasReceivedFirstFrame) {
+                    Log.e(CAM_FRAME_TAG, "WATCHDOG: Recovery FAILED after $MAX_RECOVERY_ATTEMPTS attempts")
+                    sessionController.updateStallReason(StallReason.FAILED)
+                }
             }
-        }
     }
 
     /**
@@ -1265,7 +1319,7 @@ class CameraXManager(
             applyPreviewDetectionAnalyzer(
                 onDetectionResult = pendingCallback.onDetectionResult,
                 onFrameSize = pendingCallback.onFrameSize,
-                onRotation = pendingCallback.onRotation
+                onRotation = pendingCallback.onRotation,
             )
         } else if (isPreviewDetectionActive) {
             // No pending callback but preview detection is active
@@ -1336,22 +1390,27 @@ class CameraXManager(
         imageProxy: ImageProxy,
         scanMode: ScanMode,
         useStreamMode: Boolean = false,
-        onDetectionEvent: (DetectionEvent) -> Unit = {}
+        onDetectionEvent: (DetectionEvent) -> Unit = {},
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         var cachedBitmap: Bitmap? = null
         val frameStartTime = SystemClock.elapsedRealtime()
-        val span = telemetry?.beginSpan(PerformanceMonitor.Spans.FRAME_ANALYSIS, mapOf(
-            "scan_mode" to scanMode.name,
-            "stream_mode" to useStreamMode.toString()
-        ))
+        val span =
+            telemetry?.beginSpan(
+                PerformanceMonitor.Spans.FRAME_ANALYSIS,
+                mapOf(
+                    "scan_mode" to scanMode.name,
+                    "stream_mode" to useStreamMode.toString(),
+                ),
+            )
         return try {
             Log.i(TAG, ">>> processImageProxy: START - scanMode=$scanMode, useStreamMode=$useStreamMode, isScanning=$isScanning")
 
             // Get MediaImage from ImageProxy
-            val mediaImage = imageProxy.image ?: run {
-                Log.e(TAG, "processImageProxy: mediaImage is null")
-                return Pair(emptyList(), emptyList())
-            }
+            val mediaImage =
+                imageProxy.image ?: run {
+                    Log.e(TAG, "processImageProxy: mediaImage is null")
+                    return Pair(emptyList(), emptyList())
+                }
             val rotationDegrees = imageProxy.imageInfo.rotationDegrees
 
             // NOTE: We previously applied cropRect here thinking ML Kit would honor it.
@@ -1375,14 +1434,15 @@ class CameraXManager(
             // Rotating the bitmap would cause a coordinate mismatch when cropping thumbnails.
             val lazyBitmapProvider: () -> Bitmap? = {
                 if (cachedBitmap == null) {
-                    cachedBitmap = runCatching {
-                        val bitmap = imageProxy.toBitmap()
-                        Log.i(TAG, ">>> processImageProxy: [LAZY] Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees")
-                        bitmap // Keep original orientation to match ML Kit's coordinate space
-                    }.getOrElse { e ->
-                        Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
-                        null
-                    }
+                    cachedBitmap =
+                        runCatching {
+                            val bitmap = imageProxy.toBitmap()
+                            Log.i(TAG, ">>> processImageProxy: [LAZY] Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees")
+                            bitmap // Keep original orientation to match ML Kit's coordinate space
+                        }.getOrElse { e ->
+                            Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
+                            null
+                        }
                 }
                 cachedBitmap
             }
@@ -1397,31 +1457,37 @@ class CameraXManager(
                     // Use tracking pipeline when in STREAM_MODE and scanning
                     if (useStreamMode && isScanning) {
                         Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
-                        val (items, detections) = processObjectDetectionWithTracking(
-                            inputImage = inputImage,
-                            lazyBitmapProvider = lazyBitmapProvider,
-                            cropRect = imageBoundsForFiltering,
-                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
+                        val (items, detections) =
+                            processObjectDetectionWithTracking(
+                                inputImage = inputImage,
+                                lazyBitmapProvider = lazyBitmapProvider,
+                                cropRect = imageBoundsForFiltering,
+                                edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
+                            )
+                        Log.i(
+                            TAG,
+                            ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results",
                         )
-                        Log.i(TAG, ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results")
                         val event = detectionRouter.processObjectResults(items, detections)
                         onDetectionEvent(event)
                         Pair(items, detections)
                     } else {
                         // Single-shot detection without tracking
                         Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
-                        val response = objectDetector.detectObjects(
-                            image = inputImage,
-                            sourceBitmap = lazyBitmapProvider,
-                            useStreamMode = useStreamMode,
-                            cropRect = imageBoundsForFiltering,
-                            edgeInsetRatio = EDGE_INSET_MARGIN_RATIO
-                        )
+                        val response =
+                            objectDetector.detectObjects(
+                                image = inputImage,
+                                sourceBitmap = lazyBitmapProvider,
+                                useStreamMode = useStreamMode,
+                                cropRect = imageBoundsForFiltering,
+                                edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
+                            )
                         Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
-                        val event = detectionRouter.processObjectResults(
-                            response.scannedItems,
-                            response.detectionResults
-                        )
+                        val event =
+                            detectionRouter.processObjectResults(
+                                response.scannedItems,
+                                response.detectionResults,
+                            )
                         onDetectionEvent(event)
                         Pair(response.scannedItems, response.detectionResults)
                     }
@@ -1434,10 +1500,11 @@ class CameraXManager(
                         Pair(emptyList(), emptyList())
                     } else {
                         // Run barcode detection
-                        val rawItems = barcodeDetector.scanBarcodes(
-                            image = inputImage,
-                            sourceBitmap = lazyBitmapProvider
-                        )
+                        val rawItems =
+                            barcodeDetector.scanBarcodes(
+                                image = inputImage,
+                                sourceBitmap = lazyBitmapProvider,
+                            )
 
                         if (rawItems.isEmpty()) {
                             Pair(emptyList(), emptyList())
@@ -1451,10 +1518,11 @@ class CameraXManager(
                     }
                 }
                 ScanMode.DOCUMENT_TEXT -> {
-                    val items = textRecognizer.recognizeText(
-                        image = inputImage,
-                        sourceBitmap = lazyBitmapProvider
-                    )
+                    val items =
+                        textRecognizer.recognizeText(
+                            image = inputImage,
+                            sourceBitmap = lazyBitmapProvider,
+                        )
                     val event = detectionRouter.processDocumentResults(items)
                     onDetectionEvent(event)
                     Pair(items, emptyList())
@@ -1470,7 +1538,7 @@ class CameraXManager(
             PerformanceMonitor.recordTimer(
                 PerformanceMonitor.Metrics.FRAME_ANALYSIS_LATENCY_MS,
                 frameDuration,
-                mapOf("scan_mode" to scanMode.name)
+                mapOf("scan_mode" to scanMode.name),
             )
             span?.end()
 
@@ -1493,25 +1561,30 @@ class CameraXManager(
         lazyBitmapProvider: () -> Bitmap?,
         cropRect: android.graphics.Rect,
         edgeInsetRatio: Float,
-        analyzerLatencyMs: Long = 0
+        analyzerLatencyMs: Long = 0,
     ): Pair<List<ScannedItem>, List<DetectionResult>> {
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
         // SINGLE DETECTION PASS: Get both tracking metadata and overlay data together
-        val trackingResponse = objectDetector.detectObjectsWithTracking(
-            image = inputImage,
-            sourceBitmap = lazyBitmapProvider,
-            useStreamMode = true,
-            cropRect = cropRect,
-            edgeInsetRatio = edgeInsetRatio
+        val trackingResponse =
+            objectDetector.detectObjectsWithTracking(
+                image = inputImage,
+                sourceBitmap = lazyBitmapProvider,
+                useStreamMode = true,
+                cropRect = cropRect,
+                edgeInsetRatio = edgeInsetRatio,
+            )
+
+        Log.i(
+            TAG,
+            ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass",
         )
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass")
-
         // Calculate sharpness score from bitmap (for center-weighted gating)
-        val frameSharpness = lazyBitmapProvider()?.let { bitmap ->
-            SharpnessCalculator.calculateSharpness(bitmap)
-        } ?: 0f
+        val frameSharpness =
+            lazyBitmapProvider()?.let { bitmap ->
+                SharpnessCalculator.calculateSharpness(bitmap)
+            } ?: 0f
 
         // Log sharpness if diagnostics enabled
         val frameId = com.scanium.app.camera.detection.LiveScanDiagnostics.nextFrameId()
@@ -1520,7 +1593,7 @@ class CameraXManager(
                 frameId = frameId,
                 sharpnessScore = frameSharpness,
                 isBlurry = frameSharpness < SharpnessCalculator.DEFAULT_MIN_SHARPNESS,
-                threshold = SharpnessCalculator.DEFAULT_MIN_SHARPNESS
+                threshold = SharpnessCalculator.DEFAULT_MIN_SHARPNESS,
             )
         }
 
@@ -1528,46 +1601,52 @@ class CameraXManager(
         val currentRoi = scanGuidanceManager.getCurrentRoi()
 
         // Create candidate info for guidance state update (from best detection)
-        val bestCandidateInfo = trackingResponse.detectionInfos.maxByOrNull { it.confidence }?.let { detection ->
-            val boxCenterX = (detection.boundingBox.left + detection.boundingBox.right) / 2f
-            val boxCenterY = (detection.boundingBox.top + detection.boundingBox.bottom) / 2f
-            CandidateInfo(
-                trackingId = detection.trackingId,
-                boxCenterX = boxCenterX,
-                boxCenterY = boxCenterY,
-                boxArea = detection.normalizedBoxArea,
-                confidence = detection.confidence
-            )
-        }
+        val bestCandidateInfo =
+            trackingResponse.detectionInfos.maxByOrNull { it.confidence }?.let { detection ->
+                val boxCenterX = (detection.boundingBox.left + detection.boundingBox.right) / 2f
+                val boxCenterY = (detection.boundingBox.top + detection.boundingBox.bottom) / 2f
+                CandidateInfo(
+                    trackingId = detection.trackingId,
+                    boxCenterX = boxCenterX,
+                    boxCenterY = boxCenterY,
+                    boxArea = detection.normalizedBoxArea,
+                    confidence = detection.confidence,
+                )
+            }
 
         // Update guidance state (uses the last motion score for motion detection)
-        val guidanceState = scanGuidanceManager.processFrame(
-            candidate = bestCandidateInfo,
-            motionScore = lastMotionScore.toFloat(),
-            sharpnessScore = frameSharpness,
-            currentTimeMs = System.currentTimeMillis()
-        )
+        val guidanceState =
+            scanGuidanceManager.processFrame(
+                candidate = bestCandidateInfo,
+                motionScore = lastMotionScore.toFloat(),
+                sharpnessScore = frameSharpness,
+                currentTimeMs = System.currentTimeMillis(),
+            )
         _scanGuidanceState.value = guidanceState
 
         // Process detections through tracker with ROI filtering
         val trackingStartTime = SystemClock.elapsedRealtime()
-        val confirmedCandidates = objectTracker.processFrameWithRoi(
-            detections = trackingResponse.detectionInfos,
-            scanRoi = currentRoi,
-            inferenceLatencyMs = analyzerLatencyMs,
-            frameSharpness = frameSharpness
-        )
+        val confirmedCandidates =
+            objectTracker.processFrameWithRoi(
+                detections = trackingResponse.detectionInfos,
+                scanRoi = currentRoi,
+                inferenceLatencyMs = analyzerLatencyMs,
+                frameSharpness = frameSharpness,
+            )
         PerformanceMonitor.recordTimer(
             PerformanceMonitor.Metrics.TRACKING_LATENCY_MS,
             SystemClock.elapsedRealtime() - trackingStartTime,
-            mapOf("detection_count" to trackingResponse.detectionInfos.size.toString())
+            mapOf("detection_count" to trackingResponse.detectionInfos.size.toString()),
         )
 
         Log.i(TAG, ">>> processObjectDetectionWithTracking: ObjectTracker returned ${confirmedCandidates.size} newly confirmed candidates")
 
         // Log tracker stats
         val stats = objectTracker.getStats()
-        Log.i(TAG, ">>> Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}")
+        Log.i(
+            TAG,
+            ">>> Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}",
+        )
 
         // PHASE 5: Assertions for ROI enforcement and LOCKED state gating
         // Items can ONLY be added when guidance state allows it (LOCKED state)
@@ -1576,41 +1655,51 @@ class CameraXManager(
 
         // Assert: If we have confirmed candidates but guidance doesn't allow add, don't return them
         // This ensures visual preview (bbox) != item add (requires LOCKED state)
-        val itemsToAdd = if (canAddItems && isLocked) {
-            // Guidance allows add - verify candidates are inside ROI (debug assertion)
-            confirmedCandidates.mapNotNull { candidate ->
-                val bbox = candidate.boundingBoxNorm ?: return@mapNotNull null
-                val centerX = (bbox.left + bbox.right) / 2f
-                val centerY = (bbox.top + bbox.bottom) / 2f
+        val itemsToAdd =
+            if (canAddItems && isLocked) {
+                // Guidance allows add - verify candidates are inside ROI (debug assertion)
+                confirmedCandidates.mapNotNull { candidate ->
+                    val bbox = candidate.boundingBoxNorm ?: return@mapNotNull null
+                    val centerX = (bbox.left + bbox.right) / 2f
+                    val centerY = (bbox.top + bbox.bottom) / 2f
 
-                // Debug assertion: candidate should be inside ROI
-                val isInsideRoi = currentRoi.containsBoxCenter(centerX, centerY)
-                if (!isInsideRoi) {
-                    Log.e(TAG, "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (center=$centerX,$centerY, roi=${currentRoi})")
-                    // In debug builds, this could be a hard failure
-                    // In release, we skip the item to maintain UX
-                    if (com.scanium.app.BuildConfig.DEBUG) {
-                        throw IllegalStateException("Confirmed candidate outside ROI - this should never happen")
+                    // Debug assertion: candidate should be inside ROI
+                    val isInsideRoi = currentRoi.containsBoxCenter(centerX, centerY)
+                    if (!isInsideRoi) {
+                        Log.e(
+                            TAG,
+                            "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (center=$centerX,$centerY, roi=$currentRoi)",
+                        )
+                        // In debug builds, this could be a hard failure
+                        // In release, we skip the item to maintain UX
+                        if (com.scanium.app.BuildConfig.DEBUG) {
+                            throw IllegalStateException("Confirmed candidate outside ROI - this should never happen")
+                        }
+                        null
+                    } else {
+                        objectDetector.candidateToScannedItem(candidate)
                     }
-                    null
-                } else {
-                    objectDetector.candidateToScannedItem(candidate)
                 }
+            } else {
+                // Guidance doesn't allow add (not LOCKED) - don't add items even if tracker confirmed them
+                if (confirmedCandidates.isNotEmpty()) {
+                    Log.d(
+                        TAG,
+                        ">>> Not adding ${confirmedCandidates.size} confirmed candidates: canAddItem=$canAddItems, isLocked=$isLocked",
+                    )
+                }
+                emptyList()
             }
-        } else {
-            // Guidance doesn't allow add (not LOCKED) - don't add items even if tracker confirmed them
-            if (confirmedCandidates.isNotEmpty()) {
-                Log.d(TAG, ">>> Not adding ${confirmedCandidates.size} confirmed candidates: canAddItem=$canAddItems, isLocked=$isLocked")
-            }
-            emptyList()
-        }
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${itemsToAdd.size} ScannedItems (gated by LOCKED=${isLocked})")
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${itemsToAdd.size} ScannedItems (gated by LOCKED=$isLocked)")
         itemsToAdd.forEachIndexed { index, item ->
             Log.i(TAG, "    ScannedItem $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
         }
 
-        Log.i(TAG, ">>> processObjectDetectionWithTracking: RETURNING ${itemsToAdd.size} items and ${trackingResponse.detectionResults.size} detection results")
+        Log.i(
+            TAG,
+            ">>> processObjectDetectionWithTracking: RETURNING ${itemsToAdd.size} items and ${trackingResponse.detectionResults.size} detection results",
+        )
         return Pair(itemsToAdd, trackingResponse.detectionResults)
     }
 
@@ -1653,33 +1742,45 @@ class CameraXManager(
     /**
      * Rotates a bitmap by the specified degrees.
      */
-    private fun rotateBitmap(bitmap: Bitmap, degrees: Int): Bitmap {
+    private fun rotateBitmap(
+        bitmap: Bitmap,
+        degrees: Int,
+    ): Bitmap {
         if (degrees == 0) return bitmap
 
         val matrix = Matrix()
         matrix.postRotate(degrees.toFloat())
 
         return Bitmap.createBitmap(
-            bitmap, 0, 0,
-            bitmap.width, bitmap.height,
-            matrix, true
+            bitmap,
+            0,
+            0,
+            bitmap.width,
+            bitmap.height,
+            matrix,
+            true,
         )
     }
 
     /**
      * Builds an ImageCapture use case configured for the specified resolution.
      */
-    private fun buildImageCapture(resolution: CaptureResolution, rotation: Int): ImageCapture {
-        val builder = ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-            .setTargetRotation(rotation)
+    private fun buildImageCapture(
+        resolution: CaptureResolution,
+        rotation: Int,
+    ): ImageCapture {
+        val builder =
+            ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setTargetRotation(rotation)
 
         // Configure target resolution based on setting
-        val targetSize = when (resolution) {
-            CaptureResolution.LOW -> android.util.Size(1280, 720)      // HD
-            CaptureResolution.NORMAL -> android.util.Size(1920, 1080)  // Full HD
-            CaptureResolution.HIGH -> android.util.Size(3840, 2160)    // 4K
-        }
+        val targetSize =
+            when (resolution) {
+                CaptureResolution.LOW -> android.util.Size(1280, 720) // HD
+                CaptureResolution.NORMAL -> android.util.Size(1920, 1080) // Full HD
+                CaptureResolution.HIGH -> android.util.Size(3840, 2160) // 4K
+            }
 
         builder.setTargetResolution(targetSize)
 
@@ -1692,47 +1793,51 @@ class CameraXManager(
      *
      * @return Uri of the saved image file, or null if capture failed
      */
-    suspend fun captureHighResImage(): Uri? = withContext(Dispatchers.IO) {
-        val capture = imageCapture ?: run {
-            Log.e(TAG, "captureHighResImage: ImageCapture not initialized")
-            return@withContext null
-        }
+    suspend fun captureHighResImage(): Uri? =
+        withContext(Dispatchers.IO) {
+            val capture =
+                imageCapture ?: run {
+                    Log.e(TAG, "captureHighResImage: ImageCapture not initialized")
+                    return@withContext null
+                }
 
-        try {
-            // Create output file
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())
-            val photoFile = File(
-                context.cacheDir,
-                "SCANIUM_${timestamp}.jpg"
-            )
+            try {
+                // Create output file
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())
+                val photoFile =
+                    File(
+                        context.cacheDir,
+                        "SCANIUM_$timestamp.jpg",
+                    )
 
-            val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+                val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
-            // Capture image
-            val result = suspendCancellableCoroutine<ImageCapture.OutputFileResults> { continuation ->
-                capture.takePicture(
-                    outputOptions,
-                    cameraExecutor,
-                    object : ImageCapture.OnImageSavedCallback {
-                        override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                            continuation.resume(outputFileResults)
-                        }
+                // Capture image
+                val result =
+                    suspendCancellableCoroutine<ImageCapture.OutputFileResults> { continuation ->
+                        capture.takePicture(
+                            outputOptions,
+                            cameraExecutor,
+                            object : ImageCapture.OnImageSavedCallback {
+                                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                                    continuation.resume(outputFileResults)
+                                }
 
-                        override fun onError(exception: ImageCaptureException) {
-                            continuation.resumeWithException(exception)
-                        }
+                                override fun onError(exception: ImageCaptureException) {
+                                    continuation.resumeWithException(exception)
+                                }
+                            },
+                        )
                     }
-                )
-            }
 
-            val savedUri = result.savedUri ?: Uri.fromFile(photoFile)
-            Log.i(TAG, "High-res image captured: $savedUri (size: ${photoFile.length()} bytes)")
-            savedUri
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to capture high-res image", e)
-            null
+                val savedUri = result.savedUri ?: Uri.fromFile(photoFile)
+                Log.i(TAG, "High-res image captured: $savedUri (size: ${photoFile.length()} bytes)")
+                savedUri
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to capture high-res image", e)
+                null
+            }
         }
-    }
 
     /**
      * Result of a document scan operation.
@@ -1760,65 +1865,67 @@ class CameraXManager(
      *
      * @return DocumentScanResult containing the scanned item or error information
      */
-    suspend fun scanDocument(): DocumentScanResult = withContext(Dispatchers.IO) {
-        Log.i(TAG, "scanDocument: Starting heavy document scan")
+    suspend fun scanDocument(): DocumentScanResult =
+        withContext(Dispatchers.IO) {
+            Log.i(TAG, "scanDocument: Starting heavy document scan")
 
-        try {
-            // Step 1: Capture high-resolution image
-            val imageUri = captureHighResImage()
-            if (imageUri == null) {
-                Log.e(TAG, "scanDocument: Failed to capture high-res image")
-                return@withContext DocumentScanResult.Error("Failed to capture image")
-            }
-
-            Log.i(TAG, "scanDocument: Captured image at $imageUri")
-
-            // Step 2: Load the captured image as a bitmap for text recognition
-            val bitmap = try {
-                context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
-                    android.graphics.BitmapFactory.decodeStream(inputStream)
+            try {
+                // Step 1: Capture high-resolution image
+                val imageUri = captureHighResImage()
+                if (imageUri == null) {
+                    Log.e(TAG, "scanDocument: Failed to capture high-res image")
+                    return@withContext DocumentScanResult.Error("Failed to capture image")
                 }
+
+                Log.i(TAG, "scanDocument: Captured image at $imageUri")
+
+                // Step 2: Load the captured image as a bitmap for text recognition
+                val bitmap =
+                    try {
+                        context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
+                            android.graphics.BitmapFactory.decodeStream(inputStream)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "scanDocument: Failed to load captured image", e)
+                        return@withContext DocumentScanResult.Error("Failed to load image", e)
+                    }
+
+                if (bitmap == null) {
+                    Log.e(TAG, "scanDocument: Decoded bitmap is null")
+                    return@withContext DocumentScanResult.Error("Failed to decode image")
+                }
+
+                Log.i(TAG, "scanDocument: Loaded bitmap ${bitmap.width}x${bitmap.height}")
+
+                // Step 3: Create InputImage for ML Kit
+                val inputImage = InputImage.fromBitmap(bitmap, 0)
+
+                // Step 4: Run text recognition
+                val items = textRecognizer.recognizeText(inputImage) { bitmap }
+
+                // Recycle the bitmap after processing
+                if (!bitmap.isRecycled) {
+                    bitmap.recycle()
+                }
+
+                if (items.isEmpty()) {
+                    Log.i(TAG, "scanDocument: No text detected in document")
+                    return@withContext DocumentScanResult.NoTextDetected
+                }
+
+                // Step 5: Return the first item with the full image URI attached
+                val documentItem = items.first().copy(fullImageUri = imageUri)
+
+                Log.i(TAG, "scanDocument: Successfully scanned document with ${documentItem.recognizedText?.length ?: 0} characters")
+                DocumentScanResult.Success(documentItem, imageUri)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                Log.i(TAG, "scanDocument: Scan was cancelled")
+                DocumentScanResult.Cancelled
             } catch (e: Exception) {
-                Log.e(TAG, "scanDocument: Failed to load captured image", e)
-                return@withContext DocumentScanResult.Error("Failed to load image", e)
+                Log.e(TAG, "scanDocument: Error during document scan", e)
+                DocumentScanResult.Error(e.message ?: "Unknown error", e)
             }
-
-            if (bitmap == null) {
-                Log.e(TAG, "scanDocument: Decoded bitmap is null")
-                return@withContext DocumentScanResult.Error("Failed to decode image")
-            }
-
-            Log.i(TAG, "scanDocument: Loaded bitmap ${bitmap.width}x${bitmap.height}")
-
-            // Step 3: Create InputImage for ML Kit
-            val inputImage = InputImage.fromBitmap(bitmap, 0)
-
-            // Step 4: Run text recognition
-            val items = textRecognizer.recognizeText(inputImage) { bitmap }
-
-            // Recycle the bitmap after processing
-            if (!bitmap.isRecycled) {
-                bitmap.recycle()
-            }
-
-            if (items.isEmpty()) {
-                Log.i(TAG, "scanDocument: No text detected in document")
-                return@withContext DocumentScanResult.NoTextDetected
-            }
-
-            // Step 5: Return the first item with the full image URI attached
-            val documentItem = items.first().copy(fullImageUri = imageUri)
-
-            Log.i(TAG, "scanDocument: Successfully scanned document with ${documentItem.recognizedText?.length ?: 0} characters")
-            DocumentScanResult.Success(documentItem, imageUri)
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            Log.i(TAG, "scanDocument: Scan was cancelled")
-            DocumentScanResult.Cancelled
-        } catch (e: Exception) {
-            Log.e(TAG, "scanDocument: Error during document scan", e)
-            DocumentScanResult.Error(e.message ?: "Unknown error", e)
         }
-    }
 
     /**
      * Cleanup resources.
@@ -1924,7 +2031,7 @@ class CameraXManager(
         imageWidth: Int,
         imageHeight: Int,
         previewWidth: Int,
-        previewHeight: Int
+        previewHeight: Int,
     ): android.graphics.Rect {
         if (previewWidth == 0 || previewHeight == 0) {
             // Fallback: return full frame if preview dimensions not available
@@ -1935,17 +2042,18 @@ class CameraXManager(
         val imageAspect = imageWidth.toFloat() / imageHeight.toFloat()
         val previewAspect = previewWidth.toFloat() / previewHeight.toFloat()
 
-        val cropRect = if (imageAspect > previewAspect) {
-            // Image is wider than preview - crop sides (center crop horizontally)
-            val visibleWidth = (imageHeight * previewAspect).toInt()
-            val cropX = (imageWidth - visibleWidth) / 2
-            android.graphics.Rect(cropX, 0, cropX + visibleWidth, imageHeight)
-        } else {
-            // Image is taller than preview - crop top/bottom (center crop vertically)
-            val visibleHeight = (imageWidth / previewAspect).toInt()
-            val cropY = (imageHeight - visibleHeight) / 2
-            android.graphics.Rect(0, cropY, imageWidth, cropY + visibleHeight)
-        }
+        val cropRect =
+            if (imageAspect > previewAspect) {
+                // Image is wider than preview - crop sides (center crop horizontally)
+                val visibleWidth = (imageHeight * previewAspect).toInt()
+                val cropX = (imageWidth - visibleWidth) / 2
+                android.graphics.Rect(cropX, 0, cropX + visibleWidth, imageHeight)
+            } else {
+                // Image is taller than preview - crop top/bottom (center crop vertically)
+                val visibleHeight = (imageWidth / previewAspect).toInt()
+                val cropY = (imageHeight - visibleHeight) / 2
+                android.graphics.Rect(0, cropY, imageWidth, cropY + visibleHeight)
+            }
 
         return cropRect
     }

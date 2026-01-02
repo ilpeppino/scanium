@@ -30,10 +30,11 @@ class ThresholdPreferences(private val context: Context) {
      *
      * Emits the stored threshold, or the default if not yet set.
      */
-    val similarityThreshold: Flow<Float> = context.dataStore.data
-        .map { preferences ->
-            preferences[SIMILARITY_THRESHOLD_KEY] ?: DEFAULT_THRESHOLD
-        }
+    val similarityThreshold: Flow<Float> =
+        context.dataStore.data
+            .map { preferences ->
+                preferences[SIMILARITY_THRESHOLD_KEY] ?: DEFAULT_THRESHOLD
+            }
 
     /**
      * Save the similarity threshold to DataStore.

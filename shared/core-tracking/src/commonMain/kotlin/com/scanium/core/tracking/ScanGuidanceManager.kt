@@ -22,10 +22,11 @@ import kotlin.math.abs
  * This is the single source of truth for scan guidance, used by both UI and analyzer.
  */
 class ScanGuidanceManager(
-    private val config: ScanGuidanceConfig = ScanGuidanceConfig()
+    private val config: ScanGuidanceConfig = ScanGuidanceConfig(),
 ) {
     // PHASE 5: Metrics tracking
     val metrics = ScanConfidenceMetrics()
+
     // Current ROI state
     private var currentRoiSize: Float = config.roiConfig.initialSize
     private var targetRoiSize: Float = config.roiConfig.initialSize
@@ -52,7 +53,6 @@ class ScanGuidanceManager(
     private var averageMotionScore: Float = 0f
     private var lastInstantMotionScore: Float = 0f
 
-
     // Sharpness tracking
     private var recentSharpnessScores = mutableListOf<Float>()
     private var averageSharpness: Float = config.minSharpnessForGood
@@ -74,7 +74,7 @@ class ScanGuidanceManager(
         candidate: CandidateInfo?,
         motionScore: Float,
         sharpnessScore: Float,
-        currentTimeMs: Long = Clock.System.now().toEpochMilliseconds()
+        currentTimeMs: Long = Clock.System.now().toEpochMilliseconds(),
     ): ScanGuidanceState {
         lastUpdateTimeMs = currentTimeMs
 
@@ -113,7 +113,10 @@ class ScanGuidanceManager(
     /**
      * Evaluate what guidance state should be active based on current conditions.
      */
-    private fun evaluateState(candidate: CandidateInfo?, currentTimeMs: Long): GuidanceState {
+    private fun evaluateState(
+        candidate: CandidateInfo?,
+        currentTimeMs: Long,
+    ): GuidanceState {
         // If locked, stay locked unless conditions break
         if (currentState == GuidanceState.LOCKED && lockedCandidateId != null) {
             if (shouldBreakLock(candidate, currentTimeMs)) {
@@ -169,7 +172,11 @@ class ScanGuidanceManager(
     /**
      * Handle state transition side effects.
      */
-    private fun onStateTransition(from: GuidanceState, to: GuidanceState, currentTimeMs: Long) {
+    private fun onStateTransition(
+        from: GuidanceState,
+        to: GuidanceState,
+        currentTimeMs: Long,
+    ) {
         when (to) {
             GuidanceState.LOCKED -> {
                 // Start lock
@@ -199,13 +206,14 @@ class ScanGuidanceManager(
                 // If leaving LOCKED, break the lock
                 if (from == GuidanceState.LOCKED) {
                     // PHASE 5: Record unlock reason based on new state
-                    val reason = when (to) {
-                        GuidanceState.UNSTABLE -> UnlockReason.MOTION
-                        GuidanceState.FOCUSING -> UnlockReason.FOCUS
-                        GuidanceState.OFF_CENTER -> UnlockReason.OFF_CENTER
-                        GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR -> UnlockReason.LEFT_ROI
-                        else -> UnlockReason.CANDIDATE_LOST
-                    }
+                    val reason =
+                        when (to) {
+                            GuidanceState.UNSTABLE -> UnlockReason.MOTION
+                            GuidanceState.FOCUSING -> UnlockReason.FOCUS
+                            GuidanceState.OFF_CENTER -> UnlockReason.OFF_CENTER
+                            GuidanceState.TOO_CLOSE, GuidanceState.TOO_FAR -> UnlockReason.LEFT_ROI
+                            else -> UnlockReason.CANDIDATE_LOST
+                        }
                     metrics.recordUnlock(reason)
                     breakLock()
                 }
@@ -220,7 +228,10 @@ class ScanGuidanceManager(
     /**
      * Update the dynamic ROI size based on detected object.
      */
-    private fun updateRoiSize(candidate: CandidateInfo?, currentTimeMs: Long) {
+    private fun updateRoiSize(
+        candidate: CandidateInfo?,
+        currentTimeMs: Long,
+    ) {
         // Don't resize while locked
         if (currentState == GuidanceState.LOCKED) {
             return
@@ -231,22 +242,23 @@ class ScanGuidanceManager(
             targetRoiSize = config.roiConfig.initialSize
         } else {
             // Adjust based on object area
-            targetRoiSize = when {
-                candidate.boxArea > config.roiConfig.tooCloseAreaThreshold -> {
-                    // Too close - shrink zone
-                    (currentRoiSize - config.roiConfig.sizeAdjustmentStep)
-                        .coerceAtLeast(config.roiConfig.minSize)
+            targetRoiSize =
+                when {
+                    candidate.boxArea > config.roiConfig.tooCloseAreaThreshold -> {
+                        // Too close - shrink zone
+                        (currentRoiSize - config.roiConfig.sizeAdjustmentStep)
+                            .coerceAtLeast(config.roiConfig.minSize)
+                    }
+                    candidate.boxArea < config.roiConfig.tooFarAreaThreshold -> {
+                        // Too far - expand zone
+                        (currentRoiSize + config.roiConfig.sizeAdjustmentStep)
+                            .coerceAtMost(config.roiConfig.maxSize)
+                    }
+                    else -> {
+                        // Good distance - maintain or return to default
+                        currentRoiSize
+                    }
                 }
-                candidate.boxArea < config.roiConfig.tooFarAreaThreshold -> {
-                    // Too far - expand zone
-                    (currentRoiSize + config.roiConfig.sizeAdjustmentStep)
-                        .coerceAtMost(config.roiConfig.maxSize)
-                }
-                else -> {
-                    // Good distance - maintain or return to default
-                    currentRoiSize
-                }
-            }
         }
 
         // Animate towards target
@@ -260,17 +272,21 @@ class ScanGuidanceManager(
     /**
      * Update stability tracking for lock eligibility.
      */
-    private fun updateStabilityTracking(candidate: CandidateInfo?, currentTimeMs: Long) {
+    private fun updateStabilityTracking(
+        candidate: CandidateInfo?,
+        currentTimeMs: Long,
+    ) {
         if (candidate == null) {
             resetStabilityTracking()
             return
         }
 
         // Check if this is the same candidate as before (by proximity)
-        val isSameCandidate = lastCandidateId != null && (
-            candidate.trackingId == lastCandidateId ||
-            isSamePositionCandidate(candidate.boxCenterX, candidate.boxCenterY)
-        )
+        val isSameCandidate =
+            lastCandidateId != null && (
+                candidate.trackingId == lastCandidateId ||
+                    isSamePositionCandidate(candidate.boxCenterX, candidate.boxCenterY)
+            )
 
         if (isSameCandidate) {
             stableFrameCount++
@@ -292,7 +308,10 @@ class ScanGuidanceManager(
     /**
      * Check if candidate is same as previous based on position.
      */
-    private fun isSamePositionCandidate(centerX: Float, centerY: Float): Boolean {
+    private fun isSamePositionCandidate(
+        centerX: Float,
+        centerY: Float,
+    ): Boolean {
         val dx = abs(centerX - lastCandidateCenterX)
         val dy = abs(centerY - lastCandidateCenterY)
         return dx < config.positionMatchThreshold && dy < config.positionMatchThreshold
@@ -301,7 +320,10 @@ class ScanGuidanceManager(
     /**
      * Generate a position-based ID for candidates without tracking ID.
      */
-    private fun generatePositionId(centerX: Float, centerY: Float): String {
+    private fun generatePositionId(
+        centerX: Float,
+        centerY: Float,
+    ): String {
         return "pos_${(centerX * 100).toInt()}_${(centerY * 100).toInt()}"
     }
 
@@ -317,7 +339,10 @@ class ScanGuidanceManager(
     /**
      * Check if conditions are met to enter LOCKED state.
      */
-    private fun isEligibleForLock(candidate: CandidateInfo?, currentTimeMs: Long): Boolean {
+    private fun isEligibleForLock(
+        candidate: CandidateInfo?,
+        currentTimeMs: Long,
+    ): Boolean {
         if (candidate == null) return false
 
         // Check all lock criteria
@@ -327,7 +352,8 @@ class ScanGuidanceManager(
         val isSharp = averageSharpness >= config.minSharpnessForLock
         val isStill = averageMotionScore <= config.maxMotionForLock
         val stableTimeMs = if (stableStartTimeMs > 0) currentTimeMs - stableStartTimeMs else 0L
-        val isStableEnough = stableFrameCount >= config.minStableFramesForLock &&
+        val isStableEnough =
+            stableFrameCount >= config.minStableFramesForLock &&
                 stableTimeMs >= config.minStableTimeForLockMs
 
         return isInsideRoi && isGoodArea && isSharp && isStill && isStableEnough
@@ -336,19 +362,26 @@ class ScanGuidanceManager(
     /**
      * Check lock eligibility and transition if ready.
      */
-    private fun checkLockEligibility(candidate: CandidateInfo?, currentTimeMs: Long) {
+    private fun checkLockEligibility(
+        candidate: CandidateInfo?,
+        currentTimeMs: Long,
+    ) {
         // Handled in evaluateState
     }
 
     /**
      * Check if lock should be broken.
      */
-    private fun shouldBreakLock(candidate: CandidateInfo?, currentTimeMs: Long): Boolean {
+    private fun shouldBreakLock(
+        candidate: CandidateInfo?,
+        currentTimeMs: Long,
+    ): Boolean {
         // Break lock if:
         // 1. High motion detected (panning) - check both instant and average
         //    Instant motion catches sudden movements immediately
         if (lastInstantMotionScore > config.lockBreakMotionThreshold ||
-            averageMotionScore > config.lockBreakMotionThreshold) {
+            averageMotionScore > config.lockBreakMotionThreshold
+        ) {
             // PHASE 5: Record motion unlock (will be recorded in onStateTransition)
             return true
         }
@@ -408,7 +441,10 @@ class ScanGuidanceManager(
     /**
      * Calculate distance from center of ROI.
      */
-    private fun calculateCenterDistance(boxCenterX: Float, boxCenterY: Float): Float {
+    private fun calculateCenterDistance(
+        boxCenterX: Float,
+        boxCenterY: Float,
+    ): Float {
         val dx = boxCenterX - 0.5f
         val dy = boxCenterY - 0.5f
         return kotlin.math.sqrt(dx * dx + dy * dy)
@@ -438,7 +474,10 @@ class ScanGuidanceManager(
     /**
      * Build the full guidance state for UI consumption.
      */
-    private fun buildGuidanceState(candidate: CandidateInfo?, currentTimeMs: Long): ScanGuidanceState {
+    private fun buildGuidanceState(
+        candidate: CandidateInfo?,
+        currentTimeMs: Long,
+    ): ScanGuidanceState {
         val roi = ScanRoi.centered(currentRoiSize)
 
         // Determine hint text with rate limiting
@@ -467,7 +506,7 @@ class ScanGuidanceManager(
             stateTimeMs = currentTimeMs - stateEnteredTimeMs,
             canAddItem = currentState == GuidanceState.LOCKED,
             lockedCandidateId = lockedCandidateId,
-            distanceConfidence = distanceConfidence
+            distanceConfidence = distanceConfidence,
         )
     }
 
@@ -484,16 +523,19 @@ class ScanGuidanceManager(
      * - Auto-dismissed (controlled by shouldShowHint)
      * - Rate-limited (config.hintRateLimitMs between changes)
      */
-    private fun getHintForState(state: GuidanceState, candidate: CandidateInfo?): String? {
+    private fun getHintForState(
+        state: GuidanceState,
+        candidate: CandidateInfo?,
+    ): String? {
         return when (state) {
-            GuidanceState.SEARCHING -> null  // Eye mode - no hint needed
+            GuidanceState.SEARCHING -> null // Eye mode - no hint needed
             GuidanceState.TOO_CLOSE -> "Move back slightly"
             GuidanceState.TOO_FAR -> "Move closer"
-            GuidanceState.OFF_CENTER -> "Center to select"  // Focus mode - selection hint
+            GuidanceState.OFF_CENTER -> "Center to select" // Focus mode - selection hint
             GuidanceState.UNSTABLE -> "Hold steady"
             GuidanceState.FOCUSING -> "Focusing..."
-            GuidanceState.GOOD -> "Hold to lock"  // Focus mode - anticipatory
-            GuidanceState.LOCKED -> "Ready"  // Focus mode - brief confirmation
+            GuidanceState.GOOD -> "Hold to lock" // Focus mode - anticipatory
+            GuidanceState.LOCKED -> "Ready" // Focus mode - brief confirmation
         }
     }
 
@@ -505,7 +547,10 @@ class ScanGuidanceManager(
      * - Auto-dismiss after brief display
      * - Same hint not repeated within hintRateLimitMs (3s default)
      */
-    private fun shouldShowHint(state: GuidanceState, currentTimeMs: Long): Boolean {
+    private fun shouldShowHint(
+        state: GuidanceState,
+        currentTimeMs: Long,
+    ): Boolean {
         // Don't show hints for SEARCHING (user exploring)
         if (state == GuidanceState.SEARCHING) {
             return false
@@ -563,14 +608,16 @@ class ScanGuidanceManager(
     fun getDiagnostics(): ScanDiagnostics {
         return ScanDiagnostics(
             roiSizePercent = (currentRoiSize * 100).toInt(),
-            boxAreaPercent = null, // Set by caller with current candidate
+            boxAreaPercent = null,
+// Set by caller with current candidate
             sharpness = averageSharpness,
-            centerDistance = null, // Set by caller
+            centerDistance = null,
+// Set by caller
             lockState = if (lockedCandidateId != null) "LOCKED" else "UNLOCKED",
             stableFrames = stableFrameCount,
             stableTimeMs = if (stableStartTimeMs > 0) lastUpdateTimeMs - stableStartTimeMs else 0L,
             motionScore = averageMotionScore,
-            guidanceState = currentState.name
+            guidanceState = currentState.name,
         )
     }
 
@@ -619,7 +666,7 @@ data class CandidateInfo(
     val boxCenterX: Float,
     val boxCenterY: Float,
     val boxArea: Float,
-    val confidence: Float
+    val confidence: Float,
 )
 
 /**
@@ -628,52 +675,36 @@ data class CandidateInfo(
 data class ScanGuidanceConfig(
     /** ROI sizing configuration */
     val roiConfig: ScanRoiConfig = ScanRoiConfig(),
-
     /** Maximum motion score to consider scene stable */
     val maxMotionForStable: Float = 0.3f,
-
     /** Maximum motion score for "good" state */
     val maxMotionForGood: Float = 0.15f,
-
     /** Maximum motion score for lock eligibility */
     val maxMotionForLock: Float = 0.1f,
-
     /** Motion threshold that breaks an existing lock */
     val lockBreakMotionThreshold: Float = 0.25f,
-
     /** Minimum sharpness to consider focus acceptable */
     val minSharpnessForFocus: Float = 50f,
-
     /** Minimum sharpness for "good" state */
     val minSharpnessForGood: Float = 100f,
-
     /** Minimum sharpness for lock eligibility */
     val minSharpnessForLock: Float = 120f,
-
     /** Maximum center distance for "good" state (normalized, 0-0.707) */
     val maxCenterDistanceForGood: Float = 0.2f,
-
     /** Maximum center distance for lock eligibility */
     val maxCenterDistanceForLock: Float = 0.15f,
-
     /** Minimum consecutive stable frames for lock */
     val minStableFramesForLock: Int = 3,
-
     /** Minimum stable time for lock (ms) */
     val minStableTimeForLockMs: Long = 400L,
-
     /** Maximum lock duration before auto-release (ms) */
     val maxLockDurationMs: Long = 5000L,
-
     /** Position match threshold for stability tracking */
     val positionMatchThreshold: Float = 0.05f,
-
     /** Number of frames for motion averaging */
     val motionAverageWindow: Int = 5,
-
     /** Number of frames for sharpness averaging */
     val sharpnessAverageWindow: Int = 3,
-
     /** PHASE 6: Minimum time between hint changes (ms) - prevents flicker while being responsive */
-    val hintRateLimitMs: Long = 1500L
+    val hintRateLimitMs: Long = 1500L,
 )
