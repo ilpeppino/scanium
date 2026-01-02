@@ -249,6 +249,65 @@ class ItemsStateManager(
     }
 
     /**
+     * Updates user-editable fields of a scanned item.
+     * This updates the item directly in the items state and persists the change.
+     *
+     * @param itemId The ID of the item to update
+     * @param labelText New display label (null to keep existing)
+     * @param recognizedText New recognized text (null to keep existing)
+     * @param barcodeValue New barcode value (null to keep existing)
+     */
+    fun updateItemFields(
+        itemId: String,
+        labelText: String? = null,
+        recognizedText: String? = null,
+        barcodeValue: String? = null,
+    ) {
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        labelText = labelText ?: item.labelText,
+                        recognizedText = recognizedText ?: item.recognizedText,
+                        barcodeValue = barcodeValue ?: item.barcodeValue,
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
+
+    /**
+     * Updates multiple items at once with their new field values.
+     * More efficient than calling updateItemFields() multiple times.
+     *
+     * @param updates Map of item ID to updated field values
+     */
+    fun updateItemsFields(updates: Map<String, ItemFieldUpdate>) {
+        if (updates.isEmpty()) return
+
+        val updatedItems =
+            _items.value.map { item ->
+                val update = updates[item.id]
+                if (update != null) {
+                    item.copy(
+                        labelText = update.labelText ?: item.labelText,
+                        recognizedText = update.recognizedText ?: item.recognizedText,
+                        barcodeValue = update.barcodeValue ?: item.barcodeValue,
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
+
+    /**
      * Seed the aggregator from persisted items (used on startup).
      */
     fun seedFromScannedItems(items: List<ScannedItem>) {
@@ -494,3 +553,13 @@ class ItemsStateManager(
         }
     }
 }
+
+/**
+ * Represents field updates for a scanned item.
+ * Null values mean "keep existing value".
+ */
+data class ItemFieldUpdate(
+    val labelText: String? = null,
+    val recognizedText: String? = null,
+    val barcodeValue: String? = null,
+)
