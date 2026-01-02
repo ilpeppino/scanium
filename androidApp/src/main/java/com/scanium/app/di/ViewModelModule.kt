@@ -5,9 +5,12 @@ import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.data.PostingTargetPreferences
 import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.listing.ExportProfileRepository
+import com.scanium.app.selling.assistant.AssistantPreflightManager
+import com.scanium.app.selling.assistant.AssistantPreflightManagerImpl
 import com.scanium.app.selling.assistant.AssistantRepository
 import com.scanium.app.selling.assistant.AssistantRepositoryFactory
 import com.scanium.app.selling.assistant.LocalAssistantHelper
+import com.scanium.app.selling.assistant.local.LocalSuggestionEngine
 import com.scanium.app.selling.data.EbayApi
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.data.MockEbayApi
@@ -77,6 +80,12 @@ object ViewModelModule {
 
     @Provides
     @Singleton
+    fun provideLocalSuggestionEngine(): LocalSuggestionEngine {
+        return LocalSuggestionEngine()
+    }
+
+    @Provides
+    @Singleton
     fun provideDiagnosticsRepository(
         @ApplicationContext context: Context,
     ): DiagnosticsRepository {
@@ -96,5 +105,13 @@ object ViewModelModule {
         ebayApi: EbayApi,
     ): EbayMarketplaceService {
         return EbayMarketplaceService(context, ebayApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAssistantPreflightManager(
+        @ApplicationContext context: Context,
+    ): AssistantPreflightManager {
+        return AssistantPreflightManagerImpl(context)
     }
 }

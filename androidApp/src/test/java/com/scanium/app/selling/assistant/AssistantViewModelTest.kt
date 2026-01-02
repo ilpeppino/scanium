@@ -19,7 +19,12 @@ import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
+import com.scanium.app.selling.assistant.local.LocalSuggestionEngine
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -44,6 +49,8 @@ class AssistantViewModelTest {
     private lateinit var settingsRepository: SettingsRepository
     private lateinit var connectivityStatusProvider: FakeConnectivityStatusProvider
     private lateinit var localAssistantHelper: LocalAssistantHelper
+    private lateinit var localSuggestionEngine: LocalSuggestionEngine
+    private lateinit var preflightManager: FakeAssistantPreflightManager
 
     @Before
     fun setUp() {
@@ -56,6 +63,8 @@ class AssistantViewModelTest {
         settingsRepository = SettingsRepository(ApplicationProvider.getApplicationContext())
         connectivityStatusProvider = FakeConnectivityStatusProvider()
         localAssistantHelper = LocalAssistantHelper()
+        localSuggestionEngine = LocalSuggestionEngine()
+        preflightManager = FakeAssistantPreflightManager()
     }
 
     @After
@@ -81,7 +90,9 @@ class AssistantViewModelTest {
                     assistantRepository = repository,
                     settingsRepository = settingsRepository,
                     localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
                     connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
                 )
 
             // Initial state should be IDLE
@@ -118,7 +129,9 @@ class AssistantViewModelTest {
                     assistantRepository = repository,
                     settingsRepository = settingsRepository,
                     localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
                     connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
                 )
 
             viewModel.sendMessage("What color is this?")
@@ -147,7 +160,9 @@ class AssistantViewModelTest {
                     assistantRepository = repository,
                     settingsRepository = settingsRepository,
                     localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
                     connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
                 )
 
             viewModel.sendMessage("What color is this?")
@@ -178,7 +193,9 @@ class AssistantViewModelTest {
                     assistantRepository = repository,
                     settingsRepository = settingsRepository,
                     localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
                     connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
                 )
 
             // First send should fall back locally
@@ -231,7 +248,9 @@ class AssistantViewModelTest {
                     assistantRepository = repository,
                     settingsRepository = settingsRepository,
                     localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
                     connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
                 )
 
             // Wait for initial loadProfileAndSnapshots to complete
@@ -280,7 +299,9 @@ class AssistantViewModelTest {
                     assistantRepository = FakeAssistantRepository(),
                     settingsRepository = settingsRepository,
                     localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
                     connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
                 )
 
             val action =
@@ -388,11 +409,52 @@ class AssistantViewModelTest {
     }
 
     private class FakeConnectivityStatusProvider : ConnectivityStatusProvider {
-        private val status = kotlinx.coroutines.flow.MutableStateFlow(ConnectivityStatus.ONLINE)
+        private val status = MutableStateFlow(ConnectivityStatus.ONLINE)
         override val statusFlow = status
 
         fun setStatus(newStatus: ConnectivityStatus) {
             status.value = newStatus
+        }
+    }
+
+    /**
+     * Fake preflight manager that always returns Available status for testing.
+     */
+    private class FakeAssistantPreflightManager : AssistantPreflightManager {
+        private val _currentResult = MutableStateFlow(
+            PreflightResult(
+                status = PreflightStatus.AVAILABLE,
+                latencyMs = 10,
+            ),
+        )
+        override val currentResult: StateFlow<PreflightResult> = _currentResult
+
+        override val lastStatusFlow: Flow<PreflightResult?> = flowOf(_currentResult.value)
+
+        private var preflightResult = PreflightResult(
+            status = PreflightStatus.AVAILABLE,
+            latencyMs = 10,
+        )
+
+        override suspend fun preflight(forceRefresh: Boolean): PreflightResult {
+            _currentResult.value = preflightResult
+            return preflightResult
+        }
+
+        override suspend fun warmUp(): Boolean = true
+
+        override fun cancelWarmUp() {}
+
+        override suspend fun clearCache() {
+            _currentResult.value = PreflightResult(
+                status = PreflightStatus.UNKNOWN,
+                latencyMs = 0,
+            )
+        }
+
+        fun setPreflightResult(result: PreflightResult) {
+            preflightResult = result
+            _currentResult.value = result
         }
     }
 }

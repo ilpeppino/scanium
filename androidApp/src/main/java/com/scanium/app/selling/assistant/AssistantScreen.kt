@@ -94,6 +94,7 @@ import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
+import com.scanium.app.selling.assistant.local.LocalSuggestionsCard
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
@@ -173,9 +174,12 @@ fun AssistantScreen(
         }
     }
 
-    // Stop voice when leaving screen (dispose)
+    // Stop voice and cancel warm-up when leaving screen (dispose)
     DisposableEffect(Unit) {
-        onDispose { voiceController.shutdown() }
+        onDispose {
+            voiceController.shutdown()
+            viewModel.cancelWarmUp()
+        }
     }
 
     // Stop voice recording when app goes to background (lifecycle-aware)
@@ -190,11 +194,15 @@ fun AssistantScreen(
                         // This ensures no background mic usage
                         voiceController.stopListening()
                         voiceController.stopSpeaking()
+                        // Cancel warm-up to avoid background network activity
+                        viewModel.cancelWarmUp()
                     }
                     Lifecycle.Event.ON_RESUME -> {
                         // Re-evaluate assistant availability when returning to screen
                         // This handles cases like network reconnection while app was backgrounded
                         viewModel.refreshAvailability()
+                        // Run preflight check on resume (uses cache if recent)
+                        viewModel.runPreflight(forceRefresh = false)
                     }
                     else -> { /* No action needed for other lifecycle events */ }
                 }
@@ -344,6 +352,7 @@ fun AssistantScreen(
                 AssistantModeIndicator(
                     mode = state.assistantMode,
                     failure = state.lastBackendFailure,
+                    isChecking = state.availability is AssistantAvailability.Checking,
                 )
 
                 LazyColumn(
@@ -425,21 +434,48 @@ fun AssistantScreen(
                     item {
                         Spacer(modifier = Modifier.height(4.dp))
                     }
+
+                    // Show local suggestions when assistant is unavailable
+                    val availability = state.availability
+                    val localSuggestions = state.localSuggestions
+                    if (availability is AssistantAvailability.Unavailable &&
+                        availability.reason != UnavailableReason.LOADING &&
+                        localSuggestions != null
+                    ) {
+                        item {
+                            LocalSuggestionsCard(
+                                suggestions = localSuggestions,
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                onCopyText = { label, text ->
+                                    ListingClipboardHelper.copy(context, label, text)
+                                    scope.launch { snackbarHostState.showSnackbar("$label copied") }
+                                },
+                                onApplyDescription = { description ->
+                                    viewModel.applyLocalSuggestedDescription(description)
+                                },
+                                onApplyTitle = { title ->
+                                    viewModel.applyLocalSuggestedTitle(title)
+                                },
+                                onQuestionSelected = { question ->
+                                    // When assistant is available again, send the question
+                                    // For now, just copy it to input
+                                    inputText = question
+                                },
+                            )
+                        }
+                    }
                 }
             }
 
             // Show availability banner when assistant is unavailable (not just after a failed message)
-            val availability = state.availability
-            if (availability is AssistantAvailability.Unavailable && availability.reason != UnavailableReason.LOADING) {
+            val availabilityBanner = state.availability
+            if (availabilityBanner is AssistantAvailability.Unavailable && availabilityBanner.reason != UnavailableReason.LOADING) {
                 AssistantUnavailableBanner(
-                    availability = availability,
+                    availability = availabilityBanner,
                     failure = state.lastBackendFailure,
                     onRetry = {
-                        // Clear failure state and retry if there was a last message
-                        viewModel.clearFailureState()
-                        if (state.lastUserMessage != null) {
-                            viewModel.retryLastMessage()
-                        }
+                        // Run preflight check first, then retry message if available
+                        viewModel.runPreflight(forceRefresh = true)
                     },
                     onDismiss = {
                         // Just clear the failure state without retrying
@@ -925,11 +961,18 @@ private fun RetryBanner(onRetry: () -> Unit) {
 private fun AssistantModeIndicator(
     mode: AssistantMode,
     failure: AssistantBackendFailure? = null,
+    isChecking: Boolean = false,
 ) {
-    val isOnline = mode == AssistantMode.ONLINE
+    val isOnline = mode == AssistantMode.ONLINE && !isChecking
 
     val (label, backgroundColor, contentColor) =
         when {
+            isChecking ->
+                Triple(
+                    "Checking assistant...",
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             isOnline ->
                 Triple(
                     "Online assistant",
@@ -958,18 +1001,25 @@ private fun AssistantModeIndicator(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // Status dot indicator
-        androidx.compose.foundation.Canvas(
-            modifier = Modifier.size(8.dp),
-        ) {
-            drawCircle(
-                color =
-                    if (isOnline) {
-                        androidx.compose.ui.graphics.Color(0xFF4CAF50)
-                    } else {
-                        androidx.compose.ui.graphics.Color(0xFFFF9800)
-                    },
+        // Status dot indicator or progress indicator when checking
+        if (isChecking) {
+            androidx.compose.material3.CircularProgressIndicator(
+                modifier = Modifier.size(8.dp),
+                strokeWidth = 1.5.dp,
             )
+        } else {
+            androidx.compose.foundation.Canvas(
+                modifier = Modifier.size(8.dp),
+            ) {
+                drawCircle(
+                    color =
+                        if (isOnline) {
+                            androidx.compose.ui.graphics.Color(0xFF4CAF50)
+                        } else {
+                            androidx.compose.ui.graphics.Color(0xFFFF9800)
+                        },
+                )
+            }
         }
         Card(
             colors = CardDefaults.cardColors(containerColor = backgroundColor),
