@@ -6,6 +6,8 @@ val LocalSoundManager = staticCompositionLocalOf<SoundManager> { NoopSoundManage
 
 object NoopSoundManager : SoundManager {
     override fun preload() = Unit
+
     override fun play(sound: AppSound) = Unit
+
     override fun release() = Unit
 }

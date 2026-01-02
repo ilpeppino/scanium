@@ -14,16 +14,16 @@ import org.junit.Test
  * @see CameraXManager.analysisIntervalMsForMotion
  */
 class MotionThrottleTest {
-
     /**
      * Compute analysis interval based on motion score.
      * This mirrors the logic in CameraXManager.analysisIntervalMsForMotion.
      */
-    private fun analysisIntervalMsForMotion(motionScore: Double): Long = when {
-        motionScore <= 0.1 -> 600L   // Steady scene
-        motionScore <= 0.5 -> 500L   // Low motion
-        else -> 400L                  // High motion
-    }
+    private fun analysisIntervalMsForMotion(motionScore: Double): Long =
+        when {
+            motionScore <= 0.1 -> 600L // Steady scene
+            motionScore <= 0.5 -> 500L // Low motion
+            else -> 400L // High motion
+        }
 
     @Test
     fun `steady scene interval should be 600ms (not 2000ms)`() {
@@ -68,11 +68,11 @@ class MotionThrottleTest {
 
         assertTrue(
             "Steady interval ($steadyInterval) should be >= low motion interval ($lowMotionInterval)",
-            steadyInterval >= lowMotionInterval
+            steadyInterval >= lowMotionInterval,
         )
         assertTrue(
             "Low motion interval ($lowMotionInterval) should be >= high motion interval ($highMotionInterval)",
-            lowMotionInterval >= highMotionInterval
+            lowMotionInterval >= highMotionInterval,
         )
     }
 
@@ -83,7 +83,7 @@ class MotionThrottleTest {
         val maxInterval = listOf(0.0, 0.1, 0.5, 1.0).maxOf { analysisIntervalMsForMotion(it) }
         assertTrue(
             "Maximum interval ($maxInterval ms) should not exceed 600ms for responsiveness",
-            maxInterval <= 600L
+            maxInterval <= 600L,
         )
     }
 
@@ -93,7 +93,7 @@ class MotionThrottleTest {
         val minInterval = listOf(0.0, 0.1, 0.5, 1.0).minOf { analysisIntervalMsForMotion(it) }
         assertTrue(
             "Minimum interval ($minInterval ms) should be at least 400ms for battery efficiency",
-            minInterval >= 400L
+            minInterval >= 400L,
         )
     }
 
@@ -103,7 +103,7 @@ class MotionThrottleTest {
         val fps = 1000.0 / interval
         assertTrue(
             "Steady scene should achieve ~1.7 fps (actual: ${"%.2f".format(fps)})",
-            fps >= 1.5 && fps <= 2.0
+            fps >= 1.5 && fps <= 2.0,
         )
     }
 
@@ -113,7 +113,7 @@ class MotionThrottleTest {
         val fps = 1000.0 / interval
         assertTrue(
             "High motion should achieve ~2.5 fps (actual: ${"%.2f".format(fps)})",
-            fps >= 2.0 && fps <= 3.0
+            fps >= 2.0 && fps <= 3.0,
         )
     }
 }

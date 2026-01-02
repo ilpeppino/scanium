@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ListingDraftBuilderTest {
-
     @Test
     fun `builder is deterministic for same input`() {
         val item = sampleItem()
@@ -31,10 +30,11 @@ class ListingDraftBuilderTest {
     @Test
     fun `missing title and price reduce completeness`() {
         val item = sampleItem()
-        val draft = ListingDraftBuilder.build(item).copy(
-            title = DraftField(value = "", confidence = 0f),
-            price = DraftField(value = 0.0, confidence = 0f)
-        ).recomputeCompleteness()
+        val draft =
+            ListingDraftBuilder.build(item).copy(
+                title = DraftField(value = "", confidence = 0f),
+                price = DraftField(value = 0.0, confidence = 0f),
+            ).recomputeCompleteness()
 
         assertTrue(draft.completeness.missing.contains(DraftRequiredField.TITLE))
         assertTrue(draft.completeness.missing.contains(DraftRequiredField.PRICE))
@@ -42,10 +42,11 @@ class ListingDraftBuilderTest {
 
     @Test
     fun `field serialization is stable`() {
-        val fields = mapOf(
-            DraftFieldKey.CONDITION to DraftField(value = "Used", confidence = 1f, source = DraftProvenance.DEFAULT),
-            DraftFieldKey.CATEGORY to DraftField(value = "Fashion", confidence = 0.8f, source = DraftProvenance.DETECTED)
-        )
+        val fields =
+            mapOf(
+                DraftFieldKey.CONDITION to DraftField(value = "Used", confidence = 1f, source = DraftProvenance.DEFAULT),
+                DraftFieldKey.CATEGORY to DraftField(value = "Fashion", confidence = 0.8f, source = DraftProvenance.DETECTED),
+            )
 
         val json = DraftFieldsSerializer.toJson(fields)
         val restored = DraftFieldsSerializer.fromJson(json)
@@ -55,12 +56,13 @@ class ListingDraftBuilderTest {
     }
 
     private fun sampleItem(): ScannedItem<Any?> {
-        val image = ImageRef.Bytes(
-            bytes = ByteArray(8) { it.toByte() },
-            mimeType = "image/jpeg",
-            width = 2,
-            height = 2
-        )
+        val image =
+            ImageRef.Bytes(
+                bytes = ByteArray(8) { it.toByte() },
+                mimeType = "image/jpeg",
+                width = 2,
+                height = 2,
+            )
 
         return ScannedItem(
             id = "item-1",
@@ -70,7 +72,7 @@ class ListingDraftBuilderTest {
             labelText = "sneaker",
             thumbnail = image,
             thumbnailRef = image,
-            timestamp = 1234L
+            timestamp = 1234L,
         )
     }
 }

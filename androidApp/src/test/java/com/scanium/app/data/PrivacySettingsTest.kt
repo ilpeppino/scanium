@@ -17,7 +17,6 @@ import org.junit.Test
  * Instead, we test the state combination logic directly.
  */
 class PrivacySettingsTest {
-
     // ==================== Documented Default Values Tests ====================
 
     @Test
@@ -73,7 +72,7 @@ class PrivacySettingsTest {
     private fun isPrivacySafeModeActive(
         cloudEnabled: Boolean,
         imagesEnabled: Boolean,
-        diagnosticsEnabled: Boolean
+        diagnosticsEnabled: Boolean,
     ): Boolean {
         return !cloudEnabled && !imagesEnabled && !diagnosticsEnabled
     }
@@ -81,102 +80,122 @@ class PrivacySettingsTest {
     @Test
     fun `privacy safe mode NOT active when cloud is ON`() {
         // With defaults: cloud=ON, images=OFF, diagnostics=OFF -> NOT active
-        val result = isPrivacySafeModeActive(
-            cloudEnabled = true,
-            imagesEnabled = false,
-            diagnosticsEnabled = false
-        )
+        val result =
+            isPrivacySafeModeActive(
+                cloudEnabled = true,
+                imagesEnabled = false,
+                diagnosticsEnabled = false,
+            )
         assertFalse("Privacy safe mode should NOT be active when cloud is ON", result)
     }
 
     @Test
     fun `privacy safe mode IS active when all cloud features OFF`() {
-        val result = isPrivacySafeModeActive(
-            cloudEnabled = false,
-            imagesEnabled = false,
-            diagnosticsEnabled = false
-        )
+        val result =
+            isPrivacySafeModeActive(
+                cloudEnabled = false,
+                imagesEnabled = false,
+                diagnosticsEnabled = false,
+            )
         assertTrue("Privacy safe mode should be active when all cloud features are OFF", result)
     }
 
     @Test
     fun `privacy safe mode NOT active if images is ON`() {
-        val result = isPrivacySafeModeActive(
-            cloudEnabled = false,
-            imagesEnabled = true,
-            diagnosticsEnabled = false
-        )
+        val result =
+            isPrivacySafeModeActive(
+                cloudEnabled = false,
+                imagesEnabled = true,
+                diagnosticsEnabled = false,
+            )
         assertFalse("Privacy safe mode requires images OFF", result)
     }
 
     @Test
     fun `privacy safe mode NOT active if diagnostics is ON`() {
-        val result = isPrivacySafeModeActive(
-            cloudEnabled = false,
-            imagesEnabled = false,
-            diagnosticsEnabled = true
-        )
+        val result =
+            isPrivacySafeModeActive(
+                cloudEnabled = false,
+                imagesEnabled = false,
+                diagnosticsEnabled = true,
+            )
         assertFalse("Privacy safe mode requires diagnostics OFF", result)
     }
 
     @Test
     fun `privacy safe mode NOT active if cloud and diagnostics are ON`() {
-        val result = isPrivacySafeModeActive(
-            cloudEnabled = true,
-            imagesEnabled = false,
-            diagnosticsEnabled = true
-        )
+        val result =
+            isPrivacySafeModeActive(
+                cloudEnabled = true,
+                imagesEnabled = false,
+                diagnosticsEnabled = true,
+            )
         assertFalse("Privacy safe mode requires ALL cloud features OFF", result)
     }
 
     @Test
     fun `privacy safe mode NOT active if all cloud features are ON`() {
-        val result = isPrivacySafeModeActive(
-            cloudEnabled = true,
-            imagesEnabled = true,
-            diagnosticsEnabled = true
-        )
+        val result =
+            isPrivacySafeModeActive(
+                cloudEnabled = true,
+                imagesEnabled = true,
+                diagnosticsEnabled = true,
+            )
         assertFalse("Privacy safe mode should NOT be active when all cloud features are ON", result)
     }
 
     // ==================== Flow State Change Tests ====================
 
     @Test
-    fun `flow state changes are reflected correctly`() = runTest {
-        val flow = MutableStateFlow(false)
+    fun `flow state changes are reflected correctly`() =
+        runTest {
+            val flow = MutableStateFlow(false)
 
-        assertFalse(flow.first())
+            assertFalse(flow.first())
 
-        flow.value = true
-        assertTrue(flow.first())
+            flow.value = true
+            assertTrue(flow.first())
 
-        flow.value = false
-        assertFalse(flow.first())
-    }
+            flow.value = false
+            assertFalse(flow.first())
+        }
 
     @Test
-    fun `multiple flows can be combined for safe mode detection`() = runTest {
-        val cloudFlow = MutableStateFlow(true)
-        val imagesFlow = MutableStateFlow(false)
-        val diagnosticsFlow = MutableStateFlow(false)
+    fun `multiple flows can be combined for safe mode detection`() =
+        runTest {
+            val cloudFlow = MutableStateFlow(true)
+            val imagesFlow = MutableStateFlow(false)
+            val diagnosticsFlow = MutableStateFlow(false)
 
-        // Initial state: cloud=ON -> not safe mode
-        assertFalse(isPrivacySafeModeActive(
-            cloudFlow.value, imagesFlow.value, diagnosticsFlow.value
-        ))
+            // Initial state: cloud=ON -> not safe mode
+            assertFalse(
+                isPrivacySafeModeActive(
+                    cloudFlow.value,
+                    imagesFlow.value,
+                    diagnosticsFlow.value,
+                ),
+            )
 
-        // Disable cloud -> safe mode active
-        cloudFlow.value = false
-        assertTrue(isPrivacySafeModeActive(
-            cloudFlow.value, imagesFlow.value, diagnosticsFlow.value
-        ))
+            // Disable cloud -> safe mode active
+            cloudFlow.value = false
+            assertTrue(
+                isPrivacySafeModeActive(
+                    cloudFlow.value,
+                    imagesFlow.value,
+                    diagnosticsFlow.value,
+                ),
+            )
 
-        // Enable images -> not safe mode
-        imagesFlow.value = true
-        assertFalse(isPrivacySafeModeActive(
-            cloudFlow.value, imagesFlow.value, diagnosticsFlow.value
-        ))
-    }
+            // Enable images -> not safe mode
+            imagesFlow.value = true
+            assertFalse(
+                isPrivacySafeModeActive(
+                    cloudFlow.value,
+                    imagesFlow.value,
+                    diagnosticsFlow.value,
+                ),
+            )
+        }
 
     // ==================== Reset Privacy Settings Behavior ====================
 

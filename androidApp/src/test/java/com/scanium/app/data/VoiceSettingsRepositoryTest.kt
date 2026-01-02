@@ -29,22 +29,24 @@ class VoiceSettingsRepositoryTest {
     }
 
     @Test
-    fun voice_toggles_default_to_off() = runTest {
-        assertThat(repository.voiceModeEnabledFlow.first()).isFalse()
-        assertThat(repository.speakAnswersEnabledFlow.first()).isFalse()
-        assertThat(repository.autoSendTranscriptFlow.first()).isFalse()
-    }
+    fun voice_toggles_default_to_off() =
+        runTest {
+            assertThat(repository.voiceModeEnabledFlow.first()).isFalse()
+            assertThat(repository.speakAnswersEnabledFlow.first()).isFalse()
+            assertThat(repository.autoSendTranscriptFlow.first()).isFalse()
+        }
 
     @Test
-    fun voice_toggle_preferences_persist() = runTest {
-        repository.setVoiceModeEnabled(true)
-        repository.setSpeakAnswersEnabled(true)
-        repository.setAutoSendTranscript(true)
+    fun voice_toggle_preferences_persist() =
+        runTest {
+            repository.setVoiceModeEnabled(true)
+            repository.setSpeakAnswersEnabled(true)
+            repository.setAutoSendTranscript(true)
 
-        assertThat(repository.voiceModeEnabledFlow.first()).isTrue()
-        assertThat(repository.speakAnswersEnabledFlow.first()).isTrue()
-        assertThat(repository.autoSendTranscriptFlow.first()).isTrue()
-    }
+            assertThat(repository.voiceModeEnabledFlow.first()).isTrue()
+            assertThat(repository.speakAnswersEnabledFlow.first()).isTrue()
+            assertThat(repository.autoSendTranscriptFlow.first()).isTrue()
+        }
 }
 
 private fun Context.clearVoicePrefs() {

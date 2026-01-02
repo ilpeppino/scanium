@@ -83,19 +83,22 @@ object ScanPipelineDiagnostics {
         val fps = if (duration > 0) framesProcessed.get() * 1000.0 / duration else 0.0
         val detectionRate = if (duration > 0) detectionsRun.get() * 1000.0 / duration else 0.0
 
-        Log.i(TAG, buildString {
-            append("=== SESSION ENDED ===\n")
-            append("  Duration: ${duration}ms\n")
-            append("  Frames received: ${framesReceived.get()}\n")
-            append("  Frames processed: ${framesProcessed.get()}\n")
-            append("  Frames dropped: ${framesDropped.get()}\n")
-            append("  Frames throttled: ${framesThrottled.get()}\n")
-            append("  Effective FPS: ${"%.2f".format(fps)}\n")
-            append("  Detections run: ${detectionsRun.get()}\n")
-            append("  Detections with results: ${detectionsWithResults.get()}\n")
-            append("  Items confirmed: ${itemsConfirmed.get()}\n")
-            append("  Detection rate: ${"%.2f".format(detectionRate)}/sec")
-        })
+        Log.i(
+            TAG,
+            buildString {
+                append("=== SESSION ENDED ===\n")
+                append("  Duration: ${duration}ms\n")
+                append("  Frames received: ${framesReceived.get()}\n")
+                append("  Frames processed: ${framesProcessed.get()}\n")
+                append("  Frames dropped: ${framesDropped.get()}\n")
+                append("  Frames throttled: ${framesThrottled.get()}\n")
+                append("  Effective FPS: ${"%.2f".format(fps)}\n")
+                append("  Detections run: ${detectionsRun.get()}\n")
+                append("  Detections with results: ${detectionsWithResults.get()}\n")
+                append("  Items confirmed: ${itemsConfirmed.get()}\n")
+                append("  Detection rate: ${"%.2f".format(detectionRate)}/sec")
+            },
+        )
 
         _whyIdleReason.value = "stopped"
     }
@@ -108,7 +111,7 @@ object ScanPipelineDiagnostics {
         analysisIntervalMs: Long,
         timeSinceLastAnalysis: Long,
         willProcess: Boolean,
-        dropReason: String? = null
+        dropReason: String? = null,
     ) {
         if (!enabled) return
 
@@ -131,13 +134,16 @@ object ScanPipelineDiagnostics {
 
         // Log only occasionally to avoid spam (every 10th frame or when processing)
         if (willProcess || fid % 10 == 0L) {
-            Log.d(TAG, buildString {
-                append("[FRAME ***REMOVED***$fid] ")
-                append("motion=${"%.3f".format(motionScore)} ")
-                append("interval=${analysisIntervalMs}ms ")
-                append("sinceLast=${timeSinceLastAnalysis}ms ")
-                append(if (willProcess) "→ PROCESS" else "→ DROP ($dropReason)")
-            })
+            Log.d(
+                TAG,
+                buildString {
+                    append("[FRAME ***REMOVED***$fid] ")
+                    append("motion=${"%.3f".format(motionScore)} ")
+                    append("interval=${analysisIntervalMs}ms ")
+                    append("sinceLast=${timeSinceLastAnalysis}ms ")
+                    append(if (willProcess) "→ PROCESS" else "→ DROP ($dropReason)")
+                },
+            )
         }
 
         updateMetricsState()
@@ -150,18 +156,21 @@ object ScanPipelineDiagnostics {
         mode: String,
         imageWidth: Int,
         imageHeight: Int,
-        rotationDegrees: Int
+        rotationDegrees: Int,
     ) {
         if (!enabled) return
 
         detectionsRun.incrementAndGet()
 
-        Log.d(TAG, buildString {
-            append("[DETECT] ")
-            append("mode=$mode ")
-            append("size=${imageWidth}x${imageHeight} ")
-            append("rotation=$rotationDegrees°")
-        })
+        Log.d(
+            TAG,
+            buildString {
+                append("[DETECT] ")
+                append("mode=$mode ")
+                append("size=${imageWidth}x$imageHeight ")
+                append("rotation=$rotationDegrees°")
+            },
+        )
     }
 
     /**
@@ -171,7 +180,7 @@ object ScanPipelineDiagnostics {
         detectionCount: Int,
         topConfidence: Float,
         inferenceTimeMs: Long,
-        itemsAdded: Int
+        itemsAdded: Int,
     ) {
         if (!enabled) return
 
@@ -181,13 +190,16 @@ object ScanPipelineDiagnostics {
         itemsConfirmed.addAndGet(itemsAdded.toLong())
         lastDetectionTimeMs.set(SystemClock.elapsedRealtime())
 
-        Log.d(TAG, buildString {
-            append("[RESULT] ")
-            append("detections=$detectionCount ")
-            append("topConf=${"%.2f".format(topConfidence)} ")
-            append("inference=${inferenceTimeMs}ms ")
-            append("itemsAdded=$itemsAdded")
-        })
+        Log.d(
+            TAG,
+            buildString {
+                append("[RESULT] ")
+                append("detections=$detectionCount ")
+                append("topConf=${"%.2f".format(topConfidence)} ")
+                append("inference=${inferenceTimeMs}ms ")
+                append("itemsAdded=$itemsAdded")
+            },
+        )
 
         updateMetricsState()
     }
@@ -221,15 +233,16 @@ object ScanPipelineDiagnostics {
             msSinceLastDetection = msSinceLastDet,
             detectionCount = detectionsWithResults.get(),
             itemsConfirmed = itemsConfirmed.get(),
-            whyIdle = _whyIdleReason.value
+            whyIdle = _whyIdleReason.value,
         )
     }
 
     private fun updateMetricsState() {
-        _metricsState.value = ScanMetricsState(
-            metrics = getMetrics(),
-            timestamp = SystemClock.elapsedRealtime()
-        )
+        _metricsState.value =
+            ScanMetricsState(
+                metrics = getMetrics(),
+                timestamp = SystemClock.elapsedRealtime(),
+            )
     }
 }
 
@@ -244,22 +257,23 @@ data class ScanMetrics(
     val msSinceLastDetection: Long = -1,
     val detectionCount: Long = 0,
     val itemsConfirmed: Long = 0,
-    val whyIdle: String = "unknown"
+    val whyIdle: String = "unknown",
 ) {
     /**
      * Format for overlay display.
      */
-    fun toOverlayString(): String = buildString {
-        append("Live: fps=${"%.1f".format(effectiveFps)} ")
-        append("inf/s=${"%.1f".format(inferenceRate)} ")
-        if (msSinceLastDetection >= 0) {
-            append("lastDet=${msSinceLastDetection}ms ")
+    fun toOverlayString(): String =
+        buildString {
+            append("Live: fps=${"%.1f".format(effectiveFps)} ")
+            append("inf/s=${"%.1f".format(inferenceRate)} ")
+            if (msSinceLastDetection >= 0) {
+                append("lastDet=${msSinceLastDetection}ms ")
+            }
+            append("det=$detectionCount ")
+            if (throttledFrames > 0) {
+                append("throttled=$throttledFrames")
+            }
         }
-        append("det=$detectionCount ")
-        if (throttledFrames > 0) {
-            append("throttled=$throttledFrames")
-        }
-    }
 }
 
 /**
@@ -267,5 +281,5 @@ data class ScanMetrics(
  */
 data class ScanMetricsState(
     val metrics: ScanMetrics = ScanMetrics(),
-    val timestamp: Long = 0
+    val timestamp: Long = 0,
 )

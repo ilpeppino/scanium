@@ -16,7 +16,7 @@ data class RawDetection(
     val trackingId: String,
     val bboxNorm: NormalizedRect? = null,
     val labels: List<LabelWithConfidence>,
-    val thumbnailRef: ImageRef? = null
+    val thumbnailRef: ImageRef? = null,
 ) {
     /**
      * Returns the best (highest confidence) label.
@@ -48,7 +48,10 @@ data class RawDetection(
     /**
      * Returns normalized bounding box area (0.0 to 1.0).
      */
-    fun getNormalizedArea(imageWidth: Int = 0, imageHeight: Int = 0): Float { // parameters kept for compatibility
+    fun getNormalizedArea(
+        imageWidth: Int = 0,
+        imageHeight: Int = 0,
+    ): Float { // parameters kept for compatibility
         val box = bboxNorm ?: return 0f
         return box.area.coerceIn(0f, 1f)
     }
@@ -60,5 +63,5 @@ data class RawDetection(
 data class LabelWithConfidence(
     val text: String,
     val confidence: Float,
-    val index: Int = 0
+    val index: Int = 0,
 )

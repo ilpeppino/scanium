@@ -21,15 +21,16 @@ data class DetectionResult(
     val confidence: Float,
     val trackingId: Int? = null,
     val estimatedPriceRange: PriceRange? = null,
-    val priceEstimationStatus: PriceEstimationStatus = PriceEstimationStatus.Idle
+    val priceEstimationStatus: PriceEstimationStatus = PriceEstimationStatus.Idle,
 ) {
     /**
      * Formatted price range string for display on overlay.
      * Example: "€20 - €50"
      */
     val formattedPriceRange: String
-        get() = when (val status = priceEstimationStatus) {
-            is PriceEstimationStatus.Ready -> status.priceRange.formatted()
-            else -> ""
-        }
+        get() =
+            when (val status = priceEstimationStatus) {
+                is PriceEstimationStatus.Ready -> status.priceRange.formatted()
+                else -> ""
+            }
 }

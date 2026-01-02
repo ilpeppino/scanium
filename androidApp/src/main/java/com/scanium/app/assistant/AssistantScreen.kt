@@ -34,10 +34,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.scanium.app.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.scanium.app.R
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.voice.VoiceController
 import com.scanium.app.voice.VoiceResult
@@ -52,7 +52,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AssistantScreen(
     onNavigateBack: () -> Unit,
-    viewModel: AssistantViewModel
+    viewModel: AssistantViewModel,
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -96,10 +96,11 @@ fun AssistantScreen(
     LaunchedEffect(uiState.messages.size, uiState.isLoading, uiState.pendingActions.size) {
         if (uiState.messages.isNotEmpty()) {
             // Calculate total items including messages, loading indicator, and pending actions
-            val totalItems = uiState.messages.size +
-                (if (uiState.isLoading) 1 else 0) +
-                (if (uiState.error != null) 1 else 0) +
-                (if (uiState.pendingActions.isNotEmpty()) 1 else 0)
+            val totalItems =
+                uiState.messages.size +
+                    (if (uiState.isLoading) 1 else 0) +
+                    (if (uiState.error != null) 1 else 0) +
+                    (if (uiState.pendingActions.isNotEmpty()) 1 else 0)
 
             if (totalItems > 0) {
                 listState.animateScrollToItem(totalItems - 1)
@@ -126,17 +127,18 @@ fun AssistantScreen(
     // Stop voice recording when app goes to background (lifecycle-aware)
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
-                    // Stop any active voice recording when app goes to background
-                    // This ensures no background mic usage
-                    voiceController.stopListening()
-                    voiceController.stopSpeaking()
+        val observer =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> {
+                        // Stop any active voice recording when app goes to background
+                        // This ensures no background mic usage
+                        voiceController.stopListening()
+                        voiceController.stopSpeaking()
+                    }
+                    else -> { /* No action needed for other lifecycle events */ }
                 }
-                else -> { /* No action needed for other lifecycle events */ }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
@@ -162,15 +164,16 @@ fun AssistantScreen(
         }
     }
 
-    val micPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            voiceController.startListening(handleVoiceResult)
-        } else {
-            scope.launch { snackbarHostState.showSnackbar("Microphone permission denied") }
+    val micPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            if (granted) {
+                voiceController.startListening(handleVoiceResult)
+            } else {
+                scope.launch { snackbarHostState.showSnackbar("Microphone permission denied") }
+            }
         }
-    }
 
     Scaffold(
         topBar = {
@@ -186,47 +189,51 @@ fun AssistantScreen(
                     if (voiceState == VoiceState.SPEAKING) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.padding(end = 8.dp),
                         ) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
+                                strokeWidth = 2.dp,
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Speaking...", style = MaterialTheme.typography.labelMedium)
                             IconButton(
                                 onClick = { voiceController.stopSpeaking() },
-                                modifier = Modifier
-                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                    .semantics { contentDescription = "Stop reading aloud" }
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                        .semantics { contentDescription = "Stop reading aloud" },
                             ) {
                                 Icon(Icons.Default.Stop, contentDescription = stringResource(R.string.cd_stop_speaking))
                             }
                         }
                     }
-                }
+                },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .imePadding() // Pushes content up when keyboard opens
+            modifier =
+                Modifier
+                    .padding(padding)
+                    .fillMaxSize()
+                    .imePadding(),
+// Pushes content up when keyboard opens
         ) {
             // Context Chips
             if (uiState.contextItems.isNotEmpty()) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     uiState.contextItems.forEach { item ->
                         AssistChip(
                             onClick = {},
-                            label = { Text(item.title ?: "Item") }
+                            label = { Text(item.title ?: "Item") },
                         )
                     }
                 }
@@ -236,11 +243,12 @@ fun AssistantScreen(
             // Chat Messages
             LazyColumn(
                 state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = 16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(uiState.messages) { message ->
                     ChatMessageItem(message)
@@ -250,7 +258,7 @@ fun AssistantScreen(
                     item {
                         Box(
                             modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         }
@@ -262,7 +270,7 @@ fun AssistantScreen(
                         Text(
                             text = uiState.error ?: "",
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
                         )
                     }
                 }
@@ -286,7 +294,7 @@ fun AssistantScreen(
                 VoiceListeningIndicator(
                     state = voiceState,
                     partialTranscript = partialTranscript,
-                    onStop = { voiceController.stopListening() }
+                    onStop = { voiceController.stopListening() },
                 )
             }
 
@@ -300,7 +308,7 @@ fun AssistantScreen(
                             voiceController.startListening(handleVoiceResult)
                         }
                     },
-                    onDismiss = { voiceController.stopListening() }
+                    onDismiss = { voiceController.stopListening() },
                 )
             }
 
@@ -311,10 +319,11 @@ fun AssistantScreen(
 
             // Input Area with voice button
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextField(
                     value = inputText,
@@ -322,15 +331,16 @@ fun AssistantScreen(
                     modifier = Modifier.weight(1f),
                     placeholder = { Text("Ask about your items...") },
                     shape = RoundedCornerShape(24.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    ),
+                    colors =
+                        TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent,
+                        ),
                     trailingIcon = {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             // Voice icon button - only show if voice mode is enabled
                             if (voiceModeEnabled) {
@@ -340,13 +350,14 @@ fun AssistantScreen(
 
                                 // Animate mic button color when active
                                 val micColor by animateColorAsState(
-                                    targetValue = when {
-                                        isListening -> MaterialTheme.colorScheme.error
-                                        isTranscribing -> MaterialTheme.colorScheme.tertiary
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
+                                    targetValue =
+                                        when {
+                                            isListening -> MaterialTheme.colorScheme.error
+                                            isTranscribing -> MaterialTheme.colorScheme.tertiary
+                                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
                                     animationSpec = tween(300),
-                                    label = "micColor"
+                                    label = "micColor",
                                 )
 
                                 IconButton(
@@ -355,10 +366,11 @@ fun AssistantScreen(
                                             !speechAvailable -> Unit
                                             isActive -> voiceController.stopListening()
                                             else -> {
-                                                val hasPermission = ContextCompat.checkSelfPermission(
-                                                    context,
-                                                    Manifest.permission.RECORD_AUDIO
-                                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                                val hasPermission =
+                                                    ContextCompat.checkSelfPermission(
+                                                        context,
+                                                        Manifest.permission.RECORD_AUDIO,
+                                                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
                                                 if (hasPermission) {
                                                     voiceController.startListening(handleVoiceResult)
                                                 } else {
@@ -368,29 +380,33 @@ fun AssistantScreen(
                                         }
                                     },
                                     enabled = speechAvailable,
-                                    modifier = Modifier
-                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                        .semantics {
-                                            contentDescription = if (isActive) {
-                                                "Stop voice input"
-                                            } else {
-                                                "Start voice input"
-                                            }
-                                        }
+                                    modifier =
+                                        Modifier
+                                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                            .semantics {
+                                                contentDescription =
+                                                    if (isActive) {
+                                                        "Stop voice input"
+                                                    } else {
+                                                        "Start voice input"
+                                                    }
+                                            },
                                 ) {
-                                    val icon = when {
-                                        !speechAvailable -> Icons.Default.MicOff
-                                        isActive -> Icons.Default.Stop
-                                        else -> Icons.Default.Mic
-                                    }
+                                    val icon =
+                                        when {
+                                            !speechAvailable -> Icons.Default.MicOff
+                                            isActive -> Icons.Default.Stop
+                                            else -> Icons.Default.Mic
+                                        }
                                     Icon(
                                         imageVector = icon,
-                                        contentDescription = when {
-                                            !speechAvailable -> stringResource(R.string.cd_voice_unavailable)
-                                            isActive -> stringResource(R.string.cd_stop_speaking)
-                                            else -> "Start voice input"
-                                        },
-                                        tint = micColor
+                                        contentDescription =
+                                            when {
+                                                !speechAvailable -> stringResource(R.string.cd_voice_unavailable)
+                                                isActive -> stringResource(R.string.cd_stop_speaking)
+                                                else -> "Start voice input"
+                                            },
+                                        tint = micColor,
                                     )
                                 }
                             }
@@ -404,30 +420,33 @@ fun AssistantScreen(
                                     }
                                 },
                                 enabled = inputText.isNotBlank() && !uiState.isLoading,
-                                modifier = Modifier
-                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                    .semantics { contentDescription = "Send message" }
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                        .semantics { contentDescription = "Send message" },
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Send,
                                     contentDescription = "Send",
-                                    tint = if (inputText.isNotBlank() && !uiState.isLoading) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                    }
+                                    tint =
+                                        if (inputText.isNotBlank() && !uiState.isLoading) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        },
                                 )
                             }
                         }
                     },
                     maxLines = 3,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = {
-                        if (inputText.isNotBlank() && !uiState.isLoading) {
-                            viewModel.sendMessage(inputText)
-                            inputText = ""
-                        }
-                    })
+                    keyboardActions =
+                        KeyboardActions(onSend = {
+                            if (inputText.isNotBlank() && !uiState.isLoading) {
+                                viewModel.sendMessage(inputText)
+                                inputText = ""
+                            }
+                        }),
                 )
             }
         }
@@ -443,10 +462,11 @@ fun ChatMessageItem(message: AssistantMessage) {
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = alignment) {
         Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(containerColor)
-                .padding(12.dp)
+            modifier =
+                Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(containerColor)
+                    .padding(12.dp),
         ) {
             Text(text = message.content, color = textColor)
         }
@@ -454,26 +474,30 @@ fun ChatMessageItem(message: AssistantMessage) {
             text = if (isUser) "You" else "Assistant",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline,
-            modifier = Modifier.padding(top = 4.dp)
+            modifier = Modifier.padding(top = 4.dp),
         )
     }
 }
 
 @Composable
-fun ActionCard(action: AssistantAction, onApply: () -> Unit) {
+fun ActionCard(
+    action: AssistantAction,
+    onApply: () -> Unit,
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = when (action.type) {
-                    AssistantActionType.APPLY_DRAFT_UPDATE -> "Suggestion: Update Draft"
-                    AssistantActionType.COPY_TEXT -> "Suggestion: Copy Text"
-                    else -> "Action Available"
-                },
+                text =
+                    when (action.type) {
+                        AssistantActionType.APPLY_DRAFT_UPDATE -> "Suggestion: Update Draft"
+                        AssistantActionType.COPY_TEXT -> "Suggestion: Copy Text"
+                        else -> "Action Available"
+                    },
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
 
             if (action.type == AssistantActionType.APPLY_DRAFT_UPDATE) {
@@ -483,7 +507,7 @@ fun ActionCard(action: AssistantAction, onApply: () -> Unit) {
 
             Button(
                 onClick = onApply,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             ) {
                 Text("Apply")
             }
@@ -498,68 +522,76 @@ fun ActionCard(action: AssistantAction, onApply: () -> Unit) {
 private fun VoiceListeningIndicator(
     state: VoiceState,
     partialTranscript: String,
-    onStop: () -> Unit
+    onStop: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when (state) {
-                VoiceState.LISTENING -> MaterialTheme.colorScheme.errorContainer
-                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    when (state) {
+                        VoiceState.LISTENING -> MaterialTheme.colorScheme.errorContainer
+                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiaryContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 // Pulsing indicator
                 CircularProgressIndicator(
                     modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp,
-                    color = when (state) {
-                        VoiceState.LISTENING -> MaterialTheme.colorScheme.error
-                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiary
-                        else -> MaterialTheme.colorScheme.primary
-                    }
+                    color =
+                        when (state) {
+                            VoiceState.LISTENING -> MaterialTheme.colorScheme.error
+                            VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.tertiary
+                            else -> MaterialTheme.colorScheme.primary
+                        },
                 )
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = when (state) {
-                            VoiceState.LISTENING -> "Listening..."
-                            VoiceState.TRANSCRIBING -> "Transcribing..."
-                            else -> ""
-                        },
+                        text =
+                            when (state) {
+                                VoiceState.LISTENING -> "Listening..."
+                                VoiceState.TRANSCRIBING -> "Transcribing..."
+                                else -> ""
+                            },
                         style = MaterialTheme.typography.labelMedium,
-                        color = when (state) {
-                            VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
-                            VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        color =
+                            when (state) {
+                                VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
+                                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                     if (partialTranscript.isNotBlank()) {
                         Text(
                             text = partialTranscript,
                             style = MaterialTheme.typography.bodySmall,
-                            color = when (state) {
-                                VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
-                                VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                            },
+                            color =
+                                when (state) {
+                                    VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                                    VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                },
                             maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -567,18 +599,20 @@ private fun VoiceListeningIndicator(
 
             IconButton(
                 onClick = onStop,
-                modifier = Modifier
-                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    .semantics { contentDescription = "Stop voice input" }
+                modifier =
+                    Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .semantics { contentDescription = "Stop voice input" },
             ) {
                 Icon(
                     imageVector = Icons.Default.Stop,
                     contentDescription = stringResource(R.string.cd_stop_speaking),
-                    tint = when (state) {
-                        VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
-                        VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                    tint =
+                        when (state) {
+                            VoiceState.LISTENING -> MaterialTheme.colorScheme.onErrorContainer
+                            VoiceState.TRANSCRIBING -> MaterialTheme.colorScheme.onTertiaryContainer
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                 )
             }
         }
@@ -590,33 +624,36 @@ private fun VoiceErrorBanner(
     message: String,
     retryEnabled: Boolean,
     onRetry: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Text(
                     text = "Tap retry or edit and send manually.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -634,35 +671,38 @@ private fun VoiceErrorBanner(
 @Composable
 private fun VoiceUnavailableBanner() {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.MicOff,
                 contentDescription = stringResource(R.string.cd_voice_unavailable),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Column {
                 Text(
                     text = "Voice input unavailable on this device",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = "You can keep typing questions while we disable the mic button.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 )
             }
         }

@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.map
  * Uses DataStore Preferences to track tour completion and debug settings.
  */
 class FtueRepository(private val context: Context) {
-
     companion object {
         private val FTUE_COMPLETED_KEY = booleanPreferencesKey("ftue_completed")
         private val FTUE_FORCE_ENABLED_KEY = booleanPreferencesKey("ftue_force_enabled")
@@ -26,35 +25,39 @@ class FtueRepository(private val context: Context) {
      * Flow indicating whether the FTUE tour has been completed.
      * Defaults to false (tour not completed).
      */
-    val completedFlow: Flow<Boolean> = context.ftueDataStore.data.map { preferences ->
-        preferences[FTUE_COMPLETED_KEY] ?: false
-    }
+    val completedFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[FTUE_COMPLETED_KEY] ?: false
+        }
 
     /**
      * Flow indicating whether the FTUE tour is force-enabled for debugging.
      * When true, tour will always show regardless of completion status.
      * Defaults to false.
      */
-    val forceEnabledFlow: Flow<Boolean> = context.ftueDataStore.data.map { preferences ->
-        preferences[FTUE_FORCE_ENABLED_KEY] ?: false
-    }
+    val forceEnabledFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[FTUE_FORCE_ENABLED_KEY] ?: false
+        }
 
     /**
      * Flow indicating whether the permission education dialog has been shown.
      * This dialog explains why camera access is needed before requesting permission.
      * Defaults to false (not shown).
      */
-    val permissionEducationShownFlow: Flow<Boolean> = context.ftueDataStore.data.map { preferences ->
-        preferences[PERMISSION_EDUCATION_SHOWN_KEY] ?: false
-    }
+    val permissionEducationShownFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[PERMISSION_EDUCATION_SHOWN_KEY] ?: false
+        }
 
     /**
      * Flow indicating whether the shutter hint has been shown.
      * Defaults to false (not shown).
      */
-    val shutterHintShownFlow: Flow<Boolean> = context.ftueDataStore.data.map { preferences ->
-        preferences[SHUTTER_HINT_SHOWN_KEY] ?: false
-    }
+    val shutterHintShownFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[SHUTTER_HINT_SHOWN_KEY] ?: false
+        }
 
     /**
      * Sets the tour completion status.
@@ -118,5 +121,5 @@ class FtueRepository(private val context: Context) {
 
 // DataStore extension property for FTUE preferences
 private val Context.ftueDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "ftue_preferences"
+    name = "ftue_preferences",
 )

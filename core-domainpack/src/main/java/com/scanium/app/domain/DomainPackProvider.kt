@@ -100,10 +100,11 @@ object DomainPackProvider {
      * @throws IllegalStateException if not initialized
      */
     val repository: DomainPackRepository
-        get() = _repository ?: throw IllegalStateException(
-            "DomainPackProvider not initialized. " +
-                    "Call DomainPackProvider.initialize(context) first."
-        )
+        get() =
+            _repository ?: throw IllegalStateException(
+                "DomainPackProvider not initialized. " +
+                    "Call DomainPackProvider.initialize(context) first.",
+            )
 
     /**
      * Get the category engine.
@@ -111,10 +112,11 @@ object DomainPackProvider {
      * @throws IllegalStateException if not initialized
      */
     val categoryEngine: CategoryEngine
-        get() = _categoryEngine ?: throw IllegalStateException(
-            "DomainPackProvider not initialized. " +
-                    "Call DomainPackProvider.initialize(context) first."
-        )
+        get() =
+            _categoryEngine ?: throw IllegalStateException(
+                "DomainPackProvider not initialized. " +
+                    "Call DomainPackProvider.initialize(context) first.",
+            )
 
     /**
      * Check if the provider is initialized.

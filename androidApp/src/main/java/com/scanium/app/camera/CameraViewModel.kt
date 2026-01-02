@@ -6,8 +6,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -20,7 +20,6 @@ import kotlinx.coroutines.launch
  * Shared between CameraScreen and CameraXManager.
  */
 class CameraViewModel : ViewModel() {
-
     // Capture resolution setting
     private val _captureResolution = MutableStateFlow(CaptureResolution.DEFAULT)
     val captureResolution: StateFlow<CaptureResolution> = _captureResolution.asStateFlow()
@@ -38,7 +37,10 @@ class CameraViewModel : ViewModel() {
         }
     }
 
-    fun onPermissionStateChanged(isGranted: Boolean, isScanning: Boolean) {
+    fun onPermissionStateChanged(
+        isGranted: Boolean,
+        isScanning: Boolean,
+    ) {
         if (!isGranted && isScanning) {
             viewModelScope.launch {
                 _stopScanningRequests.emit(Unit)

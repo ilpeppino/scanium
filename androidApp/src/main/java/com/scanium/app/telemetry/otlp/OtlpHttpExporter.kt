@@ -35,21 +35,23 @@ import kotlin.math.pow
  */
 class OtlpHttpExporter(
     private val otlpConfig: OtlpConfiguration,
-    private val telemetryConfig: TelemetryConfig
+    private val telemetryConfig: TelemetryConfig,
 ) {
     private val tag = "OtlpHttpExporter"
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+            encodeDefaults = true
+        }
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
-        .writeTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
-        .readTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
-        .build()
+    private val client =
+        OkHttpClient.Builder()
+            .connectTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
+            .writeTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
+            .readTimeout(otlpConfig.httpTimeoutMs, TimeUnit.MILLISECONDS)
+            .build()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -121,15 +123,20 @@ class OtlpHttpExporter(
      * - Exponential backoff: baseMs * 2^attempt (e.g., 1s, 2s, 4s)
      * - Max retries controlled by telemetryConfig.maxRetries
      */
-    private suspend fun executeWithRetry(url: String, payload: String, signalType: String) {
+    private suspend fun executeWithRetry(
+        url: String,
+        payload: String,
+        signalType: String,
+    ) {
         var attempt = 0
         while (attempt <= telemetryConfig.maxRetries) {
             try {
-                val httpRequest = Request.Builder()
-                    .url(url)
-                    .post(payload.toRequestBody(jsonMediaType))
-                    .header("Content-Type", "application/json")
-                    .build()
+                val httpRequest =
+                    Request.Builder()
+                        .url(url)
+                        .post(payload.toRequestBody(jsonMediaType))
+                        .header("Content-Type", "application/json")
+                        .build()
 
                 client.newCall(httpRequest).execute().use { response ->
                     when {
@@ -146,7 +153,10 @@ class OtlpHttpExporter(
                         }
                         else -> {
                             // Server error or other, retry
-                            Log.w(tag, "Failed to export $signalType: HTTP ${response.code} (attempt ${attempt + 1}/${telemetryConfig.maxRetries + 1})")
+                            Log.w(
+                                tag,
+                                "Failed to export $signalType: HTTP ${response.code} (attempt ${attempt + 1}/${telemetryConfig.maxRetries + 1})",
+                            )
                         }
                     }
                 }
@@ -173,14 +183,15 @@ class OtlpHttpExporter(
      */
     fun buildResource(): Resource {
         return Resource(
-            attributes = listOf(
-                KeyValue("service.name", AnyValue.string(otlpConfig.serviceName)),
-                KeyValue("service.version", AnyValue.string(otlpConfig.serviceVersion)),
-                KeyValue("deployment.environment", AnyValue.string(otlpConfig.environment)),
-                KeyValue("telemetry.sdk.name", AnyValue.string("scanium-telemetry")),
-                KeyValue("telemetry.sdk.language", AnyValue.string("kotlin")),
-                KeyValue("telemetry.sdk.version", AnyValue.string("1.0.0"))
-            )
+            attributes =
+                listOf(
+                    KeyValue("service.name", AnyValue.string(otlpConfig.serviceName)),
+                    KeyValue("service.version", AnyValue.string(otlpConfig.serviceVersion)),
+                    KeyValue("deployment.environment", AnyValue.string(otlpConfig.environment)),
+                    KeyValue("telemetry.sdk.name", AnyValue.string("scanium-telemetry")),
+                    KeyValue("telemetry.sdk.language", AnyValue.string("kotlin")),
+                    KeyValue("telemetry.sdk.version", AnyValue.string("1.0.0")),
+                ),
         )
     }
 

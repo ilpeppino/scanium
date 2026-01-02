@@ -9,7 +9,6 @@ import org.junit.Test
  * Tests that all three modes are properly defined and have correct display names.
  */
 class ScanModeTest {
-
     @Test
     fun `verify all three scan modes exist`() {
         val modes = ScanMode.values()
@@ -56,7 +55,7 @@ class ScanModeTest {
         assertEquals(
             "All modes should have unique display names",
             modes.size,
-            displayNames.size
+            displayNames.size,
         )
     }
 }

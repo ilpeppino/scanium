@@ -31,5 +31,5 @@ enum class ExtractionMethod {
     HEURISTIC,
 
     /** Not automatically extracted; requires manual input */
-    NONE
+    NONE,
 }

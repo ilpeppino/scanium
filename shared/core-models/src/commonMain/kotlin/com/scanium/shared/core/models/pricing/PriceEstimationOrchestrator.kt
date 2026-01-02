@@ -4,17 +4,17 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class PriceEstimationOrchestrator(
     private val provider: PriceEstimatorProvider,
     private val scope: CoroutineScope,
     private val timeoutMs: Long = DEFAULT_TIMEOUT_MS,
-    private val logger: (String) -> Unit = {}
+    private val logger: (String) -> Unit = {},
 ) {
     private val statusFlows = mutableMapOf<String, MutableStateFlow<PriceEstimationStatus>>()
     private val activeJobs = mutableMapOf<String, Job>()
@@ -41,34 +41,38 @@ class PriceEstimationOrchestrator(
 
         statusFlow.value = PriceEstimationStatus.Estimating
 
-        val workerJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            logger("price_estimation_start id=${request.itemId} provider=${provider.id} category=${request.categoryId}")
-            delay(1)
-            try {
-                val priceRange = provider.estimate(request)
-                statusFlow.emit(PriceEstimationStatus.Ready(priceRange))
-                logger("price_estimation_ready id=${request.itemId} provider=${provider.id} range=${priceRange.low.amount}-${priceRange.high.amount}")
-            } catch (cancel: CancellationException) {
-                // Swallow cancellation if timeout already emitted FAILED
-                if (statusFlow.value !is PriceEstimationStatus.Failed) {
-                    logger("price_estimation_cancelled id=${request.itemId}")
+        val workerJob =
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                logger("price_estimation_start id=${request.itemId} provider=${provider.id} category=${request.categoryId}")
+                delay(1)
+                try {
+                    val priceRange = provider.estimate(request)
+                    statusFlow.emit(PriceEstimationStatus.Ready(priceRange))
+                    logger(
+                        "price_estimation_ready id=${request.itemId} provider=${provider.id} range=${priceRange.low.amount}-${priceRange.high.amount}",
+                    )
+                } catch (cancel: CancellationException) {
+                    // Swallow cancellation if timeout already emitted FAILED
+                    if (statusFlow.value !is PriceEstimationStatus.Failed) {
+                        logger("price_estimation_cancelled id=${request.itemId}")
+                    }
+                } catch (t: Throwable) {
+                    statusFlow.emit(PriceEstimationStatus.Failed(t.message))
+                    logger("price_estimation_failed id=${request.itemId} error=${t.message}")
                 }
-            } catch (t: Throwable) {
-                statusFlow.emit(PriceEstimationStatus.Failed(t.message))
-                logger("price_estimation_failed id=${request.itemId} error=${t.message}")
             }
-        }
 
         activeJobs[itemId] = workerJob
 
-        val timeoutJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            delay(timeoutMs)
-            if (workerJob.isActive) {
-                workerJob.cancel()
-                statusFlow.emit(PriceEstimationStatus.Failed("timeout"))
-                logger("price_estimation_timeout id=${request.itemId}")
+        val timeoutJob =
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                delay(timeoutMs)
+                if (workerJob.isActive) {
+                    workerJob.cancel()
+                    statusFlow.emit(PriceEstimationStatus.Failed("timeout"))
+                    logger("price_estimation_timeout id=${request.itemId}")
+                }
             }
-        }
 
         workerJob.invokeOnCompletion {
             timeoutJob.cancel()
@@ -94,7 +98,7 @@ class PriceEstimationOrchestrator(
             request.domainCategoryId,
             attributesKey,
             request.region,
-            request.currencyCode
+            request.currencyCode,
         ).joinToString("***REMOVED***")
     }
 

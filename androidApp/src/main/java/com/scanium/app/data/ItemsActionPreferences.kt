@@ -17,12 +17,13 @@ class ItemsActionPreferences(private val context: Context) {
         private val LAST_PRIMARY_ACTION_KEY = stringPreferencesKey("last_primary_action")
     }
 
-    val lastAction: Flow<SelectedItemsAction> = context.itemsActionDataStore.data
-        .map { preferences ->
-            val raw = preferences[LAST_PRIMARY_ACTION_KEY]
-            raw?.let { runCatching { SelectedItemsAction.valueOf(it) }.getOrNull() }
-                ?: SelectedItemsAction.SELL_ON_EBAY
-        }
+    val lastAction: Flow<SelectedItemsAction> =
+        context.itemsActionDataStore.data
+            .map { preferences ->
+                val raw = preferences[LAST_PRIMARY_ACTION_KEY]
+                raw?.let { runCatching { SelectedItemsAction.valueOf(it) }.getOrNull() }
+                    ?: SelectedItemsAction.SELL_ON_EBAY
+            }
 
     suspend fun setLastAction(action: SelectedItemsAction) {
         context.itemsActionDataStore.edit { preferences ->

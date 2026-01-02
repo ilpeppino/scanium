@@ -1,8 +1,8 @@
 package com.scanium.app.telemetry
 
+import com.scanium.app.telemetry.otlp.*
 import com.scanium.telemetry.TelemetryConfig
 import com.scanium.telemetry.ports.MetricPort
-import com.scanium.app.telemetry.otlp.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,9 +32,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class AndroidMetricPortOtlp(
     private val telemetryConfig: TelemetryConfig,
-    private val otlpConfig: OtlpConfiguration
+    private val otlpConfig: OtlpConfiguration,
 ) : MetricPort {
-
     private val exporter = OtlpHttpExporter(otlpConfig, telemetryConfig)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -60,7 +59,11 @@ class AndroidMetricPortOtlp(
         }
     }
 
-    override fun counter(name: String, delta: Long, attributes: Map<String, String>) {
+    override fun counter(
+        name: String,
+        delta: Long,
+        attributes: Map<String, String>,
+    ) {
         if (!otlpConfig.enabled) return
 
         val key = metricKey(name, attributes)
@@ -70,14 +73,22 @@ class AndroidMetricPortOtlp(
         }
     }
 
-    override fun timer(name: String, millis: Long, attributes: Map<String, String>) {
+    override fun timer(
+        name: String,
+        millis: Long,
+        attributes: Map<String, String>,
+    ) {
         if (!otlpConfig.enabled) return
 
         val key = metricKey(name, attributes)
         timers[key] = GaugeData(name, millis.toDouble(), attributes, System.currentTimeMillis())
     }
 
-    override fun gauge(name: String, value: Double, attributes: Map<String, String>) {
+    override fun gauge(
+        name: String,
+        value: Double,
+        attributes: Map<String, String>,
+    ) {
         if (!otlpConfig.enabled) return
 
         val key = metricKey(name, attributes)
@@ -96,20 +107,24 @@ class AndroidMetricPortOtlp(
                 Metric(
                     name = data.name,
                     unit = "1",
-                    sum = Sum(
-                        dataPoints = listOf(
-                            NumberDataPoint(
-                                timeUnixNano = (data.timestampMs * 1_000_000).toString(),
-                                asInt = data.value,
-                                attributes = data.attributes.map { (k, v) ->
-                                    KeyValue(k, AnyValue.string(v))
-                                }
-                            )
+                    sum =
+                        Sum(
+                            dataPoints =
+                                listOf(
+                                    NumberDataPoint(
+                                        timeUnixNano = (data.timestampMs * 1_000_000).toString(),
+                                        asInt = data.value,
+                                        attributes =
+                                            data.attributes.map { (k, v) ->
+                                                KeyValue(k, AnyValue.string(v))
+                                            },
+                                    ),
+                                ),
+                            aggregationTemporality = 2,
+// CUMULATIVE
+                            isMonotonic = true,
                         ),
-                        aggregationTemporality = 2, // CUMULATIVE
-                        isMonotonic = true
-                    )
-                )
+                ),
             )
         }
 
@@ -119,18 +134,21 @@ class AndroidMetricPortOtlp(
                 Metric(
                     name = data.name,
                     unit = "ms",
-                    gauge = Gauge(
-                        dataPoints = listOf(
-                            NumberDataPoint(
-                                timeUnixNano = (data.timestampMs * 1_000_000).toString(),
-                                asDouble = data.value,
-                                attributes = data.attributes.map { (k, v) ->
-                                    KeyValue(k, AnyValue.string(v))
-                                }
-                            )
-                        )
-                    )
-                )
+                    gauge =
+                        Gauge(
+                            dataPoints =
+                                listOf(
+                                    NumberDataPoint(
+                                        timeUnixNano = (data.timestampMs * 1_000_000).toString(),
+                                        asDouble = data.value,
+                                        attributes =
+                                            data.attributes.map { (k, v) ->
+                                                KeyValue(k, AnyValue.string(v))
+                                            },
+                                    ),
+                                ),
+                        ),
+                ),
             )
         }
 
@@ -139,49 +157,60 @@ class AndroidMetricPortOtlp(
             metrics.add(
                 Metric(
                     name = data.name,
-                    gauge = Gauge(
-                        dataPoints = listOf(
-                            NumberDataPoint(
-                                timeUnixNano = (data.timestampMs * 1_000_000).toString(),
-                                asDouble = data.value,
-                                attributes = data.attributes.map { (k, v) ->
-                                    KeyValue(k, AnyValue.string(v))
-                                }
-                            )
-                        )
-                    )
-                )
+                    gauge =
+                        Gauge(
+                            dataPoints =
+                                listOf(
+                                    NumberDataPoint(
+                                        timeUnixNano = (data.timestampMs * 1_000_000).toString(),
+                                        asDouble = data.value,
+                                        attributes =
+                                            data.attributes.map { (k, v) ->
+                                                KeyValue(k, AnyValue.string(v))
+                                            },
+                                    ),
+                                ),
+                        ),
+                ),
             )
         }
 
         if (metrics.isEmpty()) return
 
         // Build OTLP request
-        val request = ExportMetricsServiceRequest(
-            resourceMetrics = listOf(
-                ResourceMetrics(
-                    resource = exporter.buildResource(),
-                    scopeMetrics = listOf(
-                        ScopeMetrics(
-                            scope = InstrumentationScope(
-                                name = "com.scanium.telemetry",
-                                version = "1.0.0"
-                            ),
-                            metrics = metrics
-                        )
-                    )
-                )
+        val request =
+            ExportMetricsServiceRequest(
+                resourceMetrics =
+                    listOf(
+                        ResourceMetrics(
+                            resource = exporter.buildResource(),
+                            scopeMetrics =
+                                listOf(
+                                    ScopeMetrics(
+                                        scope =
+                                            InstrumentationScope(
+                                                name = "com.scanium.telemetry",
+                                                version = "1.0.0",
+                                            ),
+                                        metrics = metrics,
+                                    ),
+                                ),
+                        ),
+                    ),
             )
-        )
 
         // Export (async, fire-and-forget)
         exporter.exportMetrics(request)
     }
 
-    private fun metricKey(name: String, attributes: Map<String, String>): String {
-        val attrKey = attributes.entries
-            .sortedBy { it.key }
-            .joinToString(",") { "${it.key}=${it.value}" }
+    private fun metricKey(
+        name: String,
+        attributes: Map<String, String>,
+    ): String {
+        val attrKey =
+            attributes.entries
+                .sortedBy { it.key }
+                .joinToString(",") { "${it.key}=${it.value}" }
         return "$name{$attrKey}"
     }
 
@@ -189,13 +218,13 @@ class AndroidMetricPortOtlp(
         val name: String,
         val value: Long,
         val attributes: Map<String, String>,
-        val timestampMs: Long
+        val timestampMs: Long,
     )
 
     private data class GaugeData(
         val name: String,
         val value: Double,
         val attributes: Map<String, String>,
-        val timestampMs: Long
+        val timestampMs: Long,
     )
 }

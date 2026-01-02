@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PostingAssistPlanBuilderTest {
-
     @Test
     fun planIsDeterministic() {
         val draft = ListingDraftBuilder.build(sampleItem())
@@ -22,17 +21,20 @@ class PostingAssistPlanBuilderTest {
 
     @Test
     fun requiredStepsReflectProfile() {
-        val draft = ListingDraftBuilder.build(sampleItem()).copy(
-            photos = emptyList(),
-            price = DraftField(value = null)
-        )
-        val profile = sampleProfile().copy(
-            requiredFields = listOf(
-                ExportFieldKey.TITLE,
-                ExportFieldKey.PRICE,
-                ExportFieldKey.PHOTOS
+        val draft =
+            ListingDraftBuilder.build(sampleItem()).copy(
+                photos = emptyList(),
+                price = DraftField(value = null),
             )
-        )
+        val profile =
+            sampleProfile().copy(
+                requiredFields =
+                    listOf(
+                        ExportFieldKey.TITLE,
+                        ExportFieldKey.PRICE,
+                        ExportFieldKey.PHOTOS,
+                    ),
+            )
 
         val plan = PostingAssistPlanBuilder.build(draft, profile)
 
@@ -44,10 +46,11 @@ class PostingAssistPlanBuilderTest {
 
     @Test
     fun optionalFieldsDoNotBreakPlan() {
-        val draft = ListingDraftBuilder.build(sampleItem()).copy(
-            fields = emptyMap(),
-            photos = emptyList()
-        )
+        val draft =
+            ListingDraftBuilder.build(sampleItem()).copy(
+                fields = emptyMap(),
+                photos = emptyList(),
+            )
         val profile = sampleProfile().copy(requiredFields = emptyList())
 
         val plan = PostingAssistPlanBuilder.build(draft, profile)
@@ -59,10 +62,11 @@ class PostingAssistPlanBuilderTest {
 
     @Test
     fun selectNextPrefersMissingRequired() {
-        val draft = ListingDraftBuilder.build(sampleItem()).copy(
-            photos = emptyList(),
-            price = DraftField(value = null)
-        )
+        val draft =
+            ListingDraftBuilder.build(sampleItem()).copy(
+                photos = emptyList(),
+                price = DraftField(value = null),
+            )
         val plan = PostingAssistPlanBuilder.build(draft, sampleProfile())
 
         val next = PostingAssistPlanBuilder.selectNextStep(plan)
@@ -75,29 +79,31 @@ class PostingAssistPlanBuilderTest {
             id = ExportProfileId("TEST"),
             displayName = "Test",
             fieldOrdering = ExportFieldKey.defaultOrdering(),
-            requiredFields = listOf(
-                ExportFieldKey.TITLE,
-                ExportFieldKey.PRICE,
-                ExportFieldKey.CONDITION,
-                ExportFieldKey.CATEGORY
-            )
+            requiredFields =
+                listOf(
+                    ExportFieldKey.TITLE,
+                    ExportFieldKey.PRICE,
+                    ExportFieldKey.CONDITION,
+                    ExportFieldKey.CATEGORY,
+                ),
         )
     }
 
     private fun sampleItem(): ScannedItem<Nothing> {
         return ScannedItem(
             id = "item-1",
-            thumbnail = ImageRef.Bytes(
-                bytes = ByteArray(8) { it.toByte() },
-                mimeType = "image/jpeg",
-                width = 4,
-                height = 2
-            ),
+            thumbnail =
+                ImageRef.Bytes(
+                    bytes = ByteArray(8) { it.toByte() },
+                    mimeType = "image/jpeg",
+                    width = 4,
+                    height = 2,
+                ),
             category = ItemCategory.HOME_GOOD,
             priceRange = 10.0 to 20.0,
             confidence = 0.8f,
             timestamp = 1000L,
-            labelText = "Mug"
+            labelText = "Mug",
         )
     }
 }

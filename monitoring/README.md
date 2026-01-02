@@ -51,6 +51,76 @@ Complete observability infrastructure for Scanium mobile app using the **LGTM st
 
 > **Security Note:** Backend service ports (Loki, Tempo, Mimir, Alloy UI) are bound to localhost (127.0.0.1) only. OTLP ingestion ports (4317, 4318) and Grafana (3000) are publicly accessible for app telemetry.
 
+***REMOVED******REMOVED*** Deployment Options
+
+This documentation covers **local development** deployment. For NAS deployment, see:
+
+- **[deploy/nas/README.md](../deploy/nas/README.md)** - Complete NAS deployment guide (Synology DS418play)
+- **[deploy/nas/compose/docker-compose.nas.monitoring.yml](../deploy/nas/compose/docker-compose.nas.monitoring.yml)** - NAS-optimized compose file
+
+***REMOVED******REMOVED******REMOVED*** Key Differences: Local vs NAS
+
+| Aspect | Local Development | NAS Deployment |
+|--------|------------------|----------------|
+| **Grafana Auth** | Anonymous admin (open) | Password required |
+| **Resource Limits** | Unlimited | 1.2GB total (~256MB/service) |
+| **Data Paths** | `./data/` | `/volume1/docker/scanium/` |
+| **Network** | Laptop/desktop | LAN-accessible |
+| **User Permissions** | Current user | Root (`user: "0"`) for NAS volumes |
+
+***REMOVED******REMOVED*** Network Boundaries
+
+***REMOVED******REMOVED******REMOVED*** Port Exposure Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        HOST MACHINE                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  PUBLICLY ACCESSIBLE (0.0.0.0)                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Grafana    :3000  ← Dashboard UI (browser access)         │ │
+│  │ Alloy OTLP :4317  ← gRPC telemetry ingestion              │ │
+│  │ Alloy OTLP :4318  ← HTTP telemetry ingestion              │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  LOCALHOST ONLY (127.0.0.1) - Debug access from host            │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Loki       :3100  ← Log storage API                       │ │
+│  │ Tempo      :3200  ← Trace storage API                     │ │
+│  │ Mimir      :9009  ← Metrics storage API                   │ │
+│  │ Alloy UI   :12345 ← Debug/metrics UI                      │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  INTERNAL ONLY (Docker network) - Inter-container               │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │ Grafana→Loki   http://loki:3100                           │ │
+│  │ Grafana→Tempo  http://tempo:3200                          │ │
+│  │ Grafana→Mimir  http://mimir:9009/prometheus               │ │
+│  │ Alloy→Loki     http://loki:3100/loki/api/v1/push          │ │
+│  │ Alloy→Tempo    tempo:4317 (gRPC)                          │ │
+│  │ Alloy→Mimir    http://mimir:9009/api/v1/push              │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+***REMOVED******REMOVED******REMOVED*** What NOT to Do (Security)
+
+⚠️ **NEVER** expose these ports publicly (0.0.0.0):
+- **Loki (:3100)** - No authentication, allows arbitrary log injection
+- **Tempo (:3200)** - No authentication, allows trace injection
+- **Mimir (:9009)** - No authentication, allows metric injection/deletion
+- **Alloy UI (:12345)** - Exposes internal configuration
+
+✅ **Safe to expose to LAN** (for home/trusted networks):
+- **Grafana (:3000)** - Has authentication (configure password!)
+- **OTLP (:4317/:4318)** - Ingestion only, no query access
+
+⚠️ **For internet exposure**, use:
+- Cloudflare Tunnel (for Grafana UI only - NOT for OTLP ingestion)
+- VPN for full stack access
+- Reverse proxy with TLS and authentication
+
 ***REMOVED******REMOVED*** Dashboards
 
 The following DevOps dashboards are provisioned automatically:
@@ -160,9 +230,14 @@ scanium-tempo      running (healthy)   127.0.0.1:3200->3200/tcp
 
 Open http://localhost:3000 in your browser.
 
-- **Authentication:** Disabled (anonymous admin access for local dev)
+- **Authentication:** Disabled for local dev (anonymous admin access)
 - **Datasources:** Pre-configured (Loki, Tempo, Mimir)
 - **Dashboards:** Automatically provisioned from `monitoring/grafana/dashboards/`
+
+> **Note on Grafana Credentials:**
+> - **Local dev (`docker-compose.yml`):** Anonymous admin access enabled. No login required.
+> - **NAS deployment:** Password required (set via `GF_SECURITY_ADMIN_PASSWORD` env var).
+> - **Credential persistence:** Grafana stores the admin user in its SQLite database (`/var/lib/grafana/grafana.db`). After first initialization, credentials are persisted even if env vars change. To reset: delete `data/grafana/grafana.db` and restart.
 
 ***REMOVED******REMOVED******REMOVED******REMOVED*** 5. Stop the Monitoring Stack
 
@@ -540,6 +615,100 @@ docker compose up -d grafana
 ```
 
 Datasources will be re-provisioned automatically.
+
+***REMOVED******REMOVED******REMOVED*** Containers Healthy But Data Missing
+
+**Problem:** All services show "healthy" but no logs/metrics/traces appear in Grafana
+
+**Possible causes:**
+
+1. **App not sending telemetry:**
+   ```bash
+   ***REMOVED*** Check if OTLP endpoint is receiving data
+   curl -s http://localhost:12345/metrics | grep otelcol_receiver_accepted
+   ***REMOVED*** Values should be > 0 if data is flowing
+   ```
+
+2. **Wrong time range:** Grafana defaults to "Last 6 hours". If you just started, select "Last 5 minutes".
+
+3. **Label filter mismatch:** Check your query uses correct labels:
+   ```logql
+   ***REMOVED*** Wrong (if your app uses different source)
+   {source="scanium-mobile"}
+
+   ***REMOVED*** Find what labels exist
+   {job=~".+"}  ***REMOVED*** Shows all streams
+   ```
+
+4. **Alloy routing failure:**
+   ```bash
+   ***REMOVED*** Check Alloy logs for export errors
+   docker compose logs alloy | grep -i "error\|failed"
+
+   ***REMOVED*** Check exporter metrics
+   curl -s http://localhost:12345/metrics | grep otelcol_exporter_send_failed
+   ***REMOVED*** Should be 0
+   ```
+
+5. **Backend not ready:**
+   ```bash
+   ***REMOVED*** Verify all backends accept connections
+   docker exec scanium-alloy wget -qO- http://loki:3100/ready
+   docker exec scanium-alloy wget -qO- http://tempo:3200/ready
+   docker exec scanium-alloy wget -qO- http://mimir:9009/ready
+   ```
+
+***REMOVED******REMOVED******REMOVED*** DNS vs Docker Network Confusion
+
+**Problem:** Can access services from host (`localhost:3100`) but containers can't reach each other
+
+**Common mistakes:**
+
+1. **Using `localhost` in container configs:**
+   - ❌ `http://localhost:3100` (refers to container's own localhost)
+   - ✅ `http://loki:3100` (uses Docker DNS)
+
+2. **Using host IP in containers:**
+   - ❌ `http://192.168.1.100:3100` (may be blocked by Docker network)
+   - ✅ `http://loki:3100` (internal network)
+
+3. **Network not shared:**
+   ```bash
+   ***REMOVED*** Verify containers are on same network
+   docker network inspect scanium-observability | jq '.[0].Containers | keys'
+   ```
+
+**Debugging DNS resolution:**
+```bash
+***REMOVED*** Test DNS from inside a container
+docker exec scanium-grafana nslookup loki
+docker exec scanium-grafana nslookup tempo
+docker exec scanium-grafana nslookup mimir
+
+***REMOVED*** Expected output: "loki has address 172.x.x.x"
+***REMOVED*** If "can't resolve": containers not on same network
+```
+
+***REMOVED******REMOVED******REMOVED*** Grafana Login Not Working (Credential Issues)
+
+**Problem:** "Invalid username or password" despite correct env vars
+
+**Cause:** Grafana stores credentials in SQLite on first startup. Env var changes don't update stored credentials.
+
+**Solution 1 - Reset via CLI (preserves data):**
+```bash
+docker exec scanium-grafana grafana-cli admin reset-admin-password newpassword
+docker compose restart grafana
+```
+
+**Solution 2 - Reset database (loses manual dashboards):**
+```bash
+docker compose down
+rm data/grafana/grafana.db
+docker compose up -d
+```
+
+See [Grafana Credentials Note](***REMOVED***4-access-grafana) for more details.
 
 ***REMOVED******REMOVED******REMOVED*** Container Fails to Start
 
@@ -1137,3 +1306,133 @@ For issues with this observability stack:
    - [Grafana Loki](https://grafana.com/docs/loki/latest/)
    - [Grafana Tempo](https://grafana.com/docs/tempo/latest/)
    - [Grafana Mimir](https://grafana.com/docs/mimir/latest/)
+
+---
+
+***REMOVED******REMOVED*** Monitoring Stack - Single Source of Truth
+
+This section provides the canonical reference for the monitoring stack configuration. Trust these values when documentation conflicts arise.
+
+***REMOVED******REMOVED******REMOVED*** Authoritative Configuration Files
+
+| Component | Configuration Source | Notes |
+|-----------|---------------------|-------|
+| **Stack Definition (Local)** | `monitoring/docker-compose.yml` | Local development |
+| **Stack Definition (NAS)** | `deploy/nas/compose/docker-compose.nas.monitoring.yml` | Production NAS |
+| **Alloy Config** | `monitoring/alloy/alloy.hcl` | OTLP receiver & routing |
+| **Loki Config** | `monitoring/loki/loki.yaml` | Log storage |
+| **Tempo Config** | `monitoring/tempo/tempo.yaml` | Trace storage |
+| **Mimir Config** | `monitoring/mimir/mimir.yaml` | Metrics storage |
+| **Grafana Datasources** | `monitoring/grafana/provisioning/datasources/datasources.yaml` | Datasource URLs |
+| **Grafana Dashboards** | `monitoring/grafana/dashboards/*.json` | Pre-built dashboards |
+| **Alert Rules** | `monitoring/grafana/provisioning/alerting/rules.yaml` | Alert definitions |
+
+***REMOVED******REMOVED******REMOVED*** Canonical Service Configuration
+
+```yaml
+***REMOVED*** Container Names (immutable across environments)
+containers:
+  alloy: scanium-alloy
+  loki: scanium-loki
+  tempo: scanium-tempo
+  mimir: scanium-mimir
+  grafana: scanium-grafana
+
+***REMOVED*** Network
+network: scanium-observability
+
+***REMOVED*** Image Versions (as of last update)
+images:
+  alloy: grafana/alloy:v1.0.0
+  loki: grafana/loki:2.9.3
+  tempo: grafana/tempo:2.3.1
+  mimir: grafana/mimir:2.11.0
+  grafana: grafana/grafana:10.3.1
+
+***REMOVED*** Ports (internal → exposed)
+ports:
+  grafana: 3000 → 3000 (0.0.0.0)    ***REMOVED*** Public - Dashboard UI
+  alloy_grpc: 4317 → 4317 (0.0.0.0) ***REMOVED*** Public - OTLP gRPC
+  alloy_http: 4318 → 4318 (0.0.0.0) ***REMOVED*** Public - OTLP HTTP
+  alloy_ui: 12345 → 12345 (127.0.0.1)  ***REMOVED*** Localhost - Debug UI
+  loki: 3100 → 3100 (127.0.0.1)     ***REMOVED*** Localhost - Internal only
+  tempo: 3200 → 3200 (127.0.0.1)    ***REMOVED*** Localhost - Internal only
+  mimir: 9009 → 9009 (127.0.0.1)    ***REMOVED*** Localhost - Internal only
+
+***REMOVED*** Datasource UIDs (used in dashboard JSON)
+datasource_uids:
+  loki: LOKI
+  tempo: TEMPO
+  mimir: MIMIR
+
+***REMOVED*** Retention Periods
+retention:
+  loki: 336h   ***REMOVED*** 14 days
+  tempo: 168h  ***REMOVED*** 7 days
+  mimir: 15d   ***REMOVED*** 15 days
+```
+
+***REMOVED******REMOVED******REMOVED*** Data Flow Summary
+
+```
+┌─────────────────┐
+│  Mobile App     │
+│  (OTLP/HTTP)    │
+└────────┬────────┘
+         │ POST /v1/{logs,metrics,traces}
+         ▼
+┌─────────────────┐
+│     Alloy       │ ← Port 4318 (HTTP), 4317 (gRPC)
+│  (OTLP Receiver)│
+└────────┬────────┘
+         │ Batch & Route
+    ┌────┼────┬────────┐
+    │    │    │        │
+    ▼    │    ▼        ▼
+┌──────┐ │ ┌──────┐ ┌──────┐
+│ Loki │ │ │Tempo │ │Mimir │
+│:3100 │ │ │:3200 │ │:9009 │
+└──┬───┘ │ └──┬───┘ └──┬───┘
+   │     │    │        │
+   └─────┴────┴────────┘
+              │
+              ▼
+       ┌──────────┐
+       │ Grafana  │ ← Port 3000
+       │  (Query) │
+       └──────────┘
+```
+
+***REMOVED******REMOVED******REMOVED*** Cloudflare Tunnel Note
+
+Cloudflare Tunnel is used **only for Grafana UI exposure** (secure external access to dashboards). It is **NOT** used for OTLP telemetry ingestion. Mobile apps should send telemetry directly to the NAS IP over LAN.
+
+***REMOVED******REMOVED******REMOVED*** Quick Verification Commands
+
+```bash
+***REMOVED*** Check all services healthy
+docker compose -p scanium-monitoring ps
+
+***REMOVED*** Test OTLP endpoint
+curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:4318/v1/logs \
+  -H "Content-Type: application/json" -d '{"resourceLogs":[]}'
+***REMOVED*** Expected: 200
+
+***REMOVED*** Check Grafana datasources
+curl -s http://localhost:3000/api/datasources | jq '.[].name'
+***REMOVED*** Expected: "Loki", "Tempo", "Mimir"
+
+***REMOVED*** Check self-monitoring metrics
+curl -s 'http://localhost:9009/prometheus/api/v1/query' \
+  --data-urlencode 'query=up{source="pipeline"}' | jq '.data.result | length'
+***REMOVED*** Expected: 4 (alloy, loki, tempo, mimir)
+```
+
+***REMOVED******REMOVED******REMOVED*** Related Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [deploy/nas/README.md](../deploy/nas/README.md) | NAS deployment guide |
+| [grafana/DASHBOARDS.md](grafana/DASHBOARDS.md) | Dashboard inventory & metrics |
+| [docs/observability/TRIAGE_RUNBOOK.md](../docs/observability/TRIAGE_RUNBOOK.md) | Incident investigation |
+| [docs/observability/SENTRY_ALERTING.md](../docs/observability/SENTRY_ALERTING.md) | Crash reporting integration |

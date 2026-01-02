@@ -23,7 +23,6 @@ import kotlin.math.max
  * - Detailed logging for verification
  */
 class ListingImagePreparer(private val context: Context) {
-
     companion object {
         private const val TAG = "ListingImagePreparer"
 
@@ -41,9 +40,13 @@ class ListingImagePreparer(private val context: Context) {
 
     private val outputDir = File(context.cacheDir, LISTING_IMAGES_DIR)
 
-    private val memoryCache = object : LruCache<String, PrepareResult.Success>(MEMORY_CACHE_ENTRIES) {
-        override fun sizeOf(key: String, value: PrepareResult.Success): Int = 1
-    }
+    private val memoryCache =
+        object : LruCache<String, PrepareResult.Success>(MEMORY_CACHE_ENTRIES) {
+            override fun sizeOf(
+                key: String,
+                value: PrepareResult.Success,
+            ): Int = 1
+        }
 
     /**
      * Result of image preparation operation.
@@ -55,7 +58,7 @@ class ListingImagePreparer(private val context: Context) {
             val height: Int,
             val fileSizeBytes: Long,
             val quality: Int,
-            val source: String
+            val source: String,
         ) : PrepareResult()
 
         data class Failure(val reason: String) : PrepareResult()
@@ -78,62 +81,64 @@ class ListingImagePreparer(private val context: Context) {
     suspend fun prepareListingImage(
         itemId: String,
         fullImageUri: Uri? = null,
-        thumbnail: Bitmap? = null
-    ): PrepareResult = withContext(Dispatchers.IO) {
-        Log.i(TAG, "╔═══════════════════════════════════════════════════════════════")
-        Log.i(TAG, "║ PREPARING LISTING IMAGE: $itemId")
-        Log.i(TAG, "║ fullImageUri: $fullImageUri")
-        Log.i(TAG, "║ thumbnail: ${thumbnail?.width}x${thumbnail?.height}")
+        thumbnail: Bitmap? = null,
+    ): PrepareResult =
+        withContext(Dispatchers.IO) {
+            Log.i(TAG, "╔═══════════════════════════════════════════════════════════════")
+            Log.i(TAG, "║ PREPARING LISTING IMAGE: $itemId")
+            Log.i(TAG, "║ fullImageUri: $fullImageUri")
+            Log.i(TAG, "║ thumbnail: ${thumbnail?.width}x${thumbnail?.height}")
 
-        getCachedResult(itemId)?.let { cached ->
-            val memoryResult = cached.copy(source = "memory_cache:${cached.source}")
-            logResult(memoryResult)
-            return@withContext memoryResult
-        }
+            getCachedResult(itemId)?.let { cached ->
+                val memoryResult = cached.copy(source = "memory_cache:${cached.source}")
+                logResult(memoryResult)
+                return@withContext memoryResult
+            }
 
-        loadFromDiskCache(itemId)?.let { cached ->
-            cacheResult(itemId, cached)
-            logResult(cached)
-            return@withContext cached
-        }
+            loadFromDiskCache(itemId)?.let { cached ->
+                cacheResult(itemId, cached)
+                logResult(cached)
+                return@withContext cached
+            }
 
-        // Try full image URI first
-        if (fullImageUri != null) {
-            try {
-                val bitmap = loadBitmapFromUri(fullImageUri)
-                if (bitmap != null) {
-                    val result = saveBitmapAsListingImage(itemId, bitmap, "fullImageUri")
-                    bitmap.recycle()
-                    logResult(result)
-                    return@withContext result
+            // Try full image URI first
+            if (fullImageUri != null) {
+                try {
+                    val bitmap = loadBitmapFromUri(fullImageUri)
+                    if (bitmap != null) {
+                        val result = saveBitmapAsListingImage(itemId, bitmap, "fullImageUri")
+                        bitmap.recycle()
+                        logResult(result)
+                        return@withContext result
+                    }
+                    Log.w(TAG, "║ Failed to load bitmap from fullImageUri, falling back to thumbnail")
+                } catch (e: Exception) {
+                    Log.e(TAG, "║ Error loading fullImageUri: ${e.message}")
                 }
-                Log.w(TAG, "║ Failed to load bitmap from fullImageUri, falling back to thumbnail")
-            } catch (e: Exception) {
-                Log.e(TAG, "║ Error loading fullImageUri: ${e.message}")
             }
-        }
 
-        // Fall back to thumbnail
-        if (thumbnail != null) {
-            val result = if (thumbnail.width < MIN_WIDTH || thumbnail.height < MIN_HEIGHT) {
-                // Scale up thumbnail to minimum dimensions
-                Log.i(TAG, "║ Thumbnail too small (${thumbnail.width}x${thumbnail.height}), scaling up")
-                val scaledBitmap = scaleUpBitmap(thumbnail)
-                val saveResult = saveBitmapAsListingImage(itemId, scaledBitmap, "thumbnail_scaled")
-                scaledBitmap.recycle()
-                saveResult
-            } else {
-                saveBitmapAsListingImage(itemId, thumbnail, "thumbnail")
+            // Fall back to thumbnail
+            if (thumbnail != null) {
+                val result =
+                    if (thumbnail.width < MIN_WIDTH || thumbnail.height < MIN_HEIGHT) {
+                        // Scale up thumbnail to minimum dimensions
+                        Log.i(TAG, "║ Thumbnail too small (${thumbnail.width}x${thumbnail.height}), scaling up")
+                        val scaledBitmap = scaleUpBitmap(thumbnail)
+                        val saveResult = saveBitmapAsListingImage(itemId, scaledBitmap, "thumbnail_scaled")
+                        scaledBitmap.recycle()
+                        saveResult
+                    } else {
+                        saveBitmapAsListingImage(itemId, thumbnail, "thumbnail")
+                    }
+                logResult(result)
+                return@withContext result
             }
-            logResult(result)
-            return@withContext result
-        }
 
-        val failure = PrepareResult.Failure("No valid image source available")
-        Log.e(TAG, "║ FAILURE: ${(failure as PrepareResult.Failure).reason}")
-        Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")
-        failure
-    }
+            val failure = PrepareResult.Failure("No valid image source available")
+            Log.e(TAG, "║ FAILURE: ${(failure as PrepareResult.Failure).reason}")
+            Log.i(TAG, "╚═══════════════════════════════════════════════════════════════")
+            failure
+        }
 
     /**
      * Loads a bitmap from a Uri (content:// or file://).
@@ -160,7 +165,7 @@ class ListingImagePreparer(private val context: Context) {
         val newWidth = (bitmap.width * scale).toInt()
         val newHeight = (bitmap.height * scale).toInt()
 
-        Log.i(TAG, "║ Scaling: ${bitmap.width}x${bitmap.height} → ${newWidth}x${newHeight} (scale=${String.format("%.2f", scale)})")
+        Log.i(TAG, "║ Scaling: ${bitmap.width}x${bitmap.height} → ${newWidth}x$newHeight (scale=${String.format("%.2f", scale)})")
 
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
@@ -171,7 +176,7 @@ class ListingImagePreparer(private val context: Context) {
     private fun saveBitmapAsListingImage(
         itemId: String,
         bitmap: Bitmap,
-        source: String
+        source: String,
     ): PrepareResult {
         if (!outputDir.exists()) {
             outputDir.mkdirs()
@@ -187,14 +192,15 @@ class ListingImagePreparer(private val context: Context) {
             val uri = Uri.fromFile(outputFile)
             val fileSize = outputFile.length()
 
-            val success = PrepareResult.Success(
-                uri = uri,
-                width = bitmap.width,
-                height = bitmap.height,
-                fileSizeBytes = fileSize,
-                quality = JPEG_QUALITY,
-                source = source
-            )
+            val success =
+                PrepareResult.Success(
+                    uri = uri,
+                    width = bitmap.width,
+                    height = bitmap.height,
+                    fileSizeBytes = fileSize,
+                    quality = JPEG_QUALITY,
+                    source = source,
+                )
             cacheResult(itemId, success)
             success
         } catch (e: Exception) {
@@ -218,11 +224,14 @@ class ListingImagePreparer(private val context: Context) {
             height = options.outHeight,
             fileSizeBytes = outputFile.length(),
             quality = JPEG_QUALITY,
-            source = "disk_cache"
+            source = "disk_cache",
         )
     }
 
-    private fun cacheResult(itemId: String, result: PrepareResult.Success) {
+    private fun cacheResult(
+        itemId: String,
+        result: PrepareResult.Success,
+    ) {
         synchronized(memoryCache) {
             memoryCache.put(itemId, result)
         }

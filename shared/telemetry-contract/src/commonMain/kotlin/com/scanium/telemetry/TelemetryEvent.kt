@@ -47,23 +47,20 @@ data class TelemetryEvent(
      * See [TelemetryEventNaming] for prefix groups.
      */
     val name: String,
-
     /**
      * Severity level of the event.
      */
     val severity: TelemetrySeverity,
-
     /**
      * UTC timestamp when the event occurred.
      */
     val timestamp: Instant,
-
     /**
      * Event attributes as key-value pairs.
      * All attributes are sanitized to remove PII before export.
      * Maximum string value length: 1024 characters (enforced by sanitizer).
      */
-    val attributes: Map<String, String> = emptyMap()
+    val attributes: Map<String, String> = emptyMap(),
 ) {
     init {
         require(name.isNotBlank()) { "Event name must not be blank" }

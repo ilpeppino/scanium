@@ -18,6 +18,7 @@ SSH_OPTS=(
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 log_info()  { echo -e "${GREEN}[INFO]${NC} $*"; }
@@ -51,6 +52,39 @@ MAC_REPO_DIR="${MAC_REPO_DIR:-~/dev/scanium}"
 PHONE_APK_DIR="${PHONE_APK_DIR:-/storage/emulated/0/Download/scanium-apk}"
 DRY_RUN="${DRY_RUN:-0}"
 
+***REMOVED*** Flavor Selection Menu
+echo ""
+echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║   Select Build Flavor                  ║${NC}"
+echo -e "${BLUE}╠════════════════════════════════════════╣${NC}"
+echo -e "${BLUE}║  1) Dev    (com.scanium.app.dev)       ║${NC}"
+echo -e "${BLUE}║  2) Beta   (com.scanium.app.beta)      ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
+echo ""
+read -p "Enter your choice [1-2] (default: 1): " FLAVOR_CHOICE
+
+case "${FLAVOR_CHOICE:-1}" in
+  1)
+    FLAVOR="dev"
+    FLAVOR_CAPITALIZED="Dev"
+    GRADLE_TASK="assembleDevDebug"
+    ;;
+  2)
+    FLAVOR="beta"
+    FLAVOR_CAPITALIZED="Beta"
+    GRADLE_TASK="assembleBetaDebug"
+    ;;
+  *)
+    log_error "Invalid choice. Exiting."
+    exit 1
+    ;;
+esac
+
+echo ""
+log_info "Selected: ${FLAVOR_CAPITALIZED} flavor"
+log_info "Gradle task: ${GRADLE_TASK}"
+echo ""
+
 run_cmd() {
     if [[ "$DRY_RUN" == "1" ]]; then
         echo "[DRY_RUN] $*"
@@ -73,7 +107,7 @@ if ! run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "echo 'Connected to Mac'"; then
 fi
 
 ***REMOVED*** Build APK on Mac (try :androidApp first, then fall back to :app)
-log_info "Building debug APK on Mac..."
+log_info "Building ${FLAVOR_CAPITALIZED} debug APK on Mac..."
 echo ""
 
 GRADLE_LOG="tmp/termux_remote_gradle.log"
@@ -99,15 +133,16 @@ echo "=== Remote Environment Preflight ==="
 echo "JAVA_HOME=$JAVA_HOME"
 java -version 2>&1 | head -2
 echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-<not set>}"
+echo "Building: '"$GRADLE_TASK"'"
 echo "===================================="
 
 ***REMOVED*** Ensure tmp dir exists for logs
 mkdir -p tmp
 
 ***REMOVED*** Build with logging
-if ./gradlew :androidApp:assembleDebug 2>&1 | tee '"$GRADLE_LOG"'; then
+if ./gradlew :androidApp:'"$GRADLE_TASK"' 2>&1 | tee '"$GRADLE_LOG"'; then
     echo "BUILD_SUCCESS"
-elif ./gradlew assembleDebug 2>&1 | tee '"$GRADLE_LOG"'; then
+elif ./gradlew '"$GRADLE_TASK"' 2>&1 | tee '"$GRADLE_LOG"'; then
     echo "BUILD_SUCCESS"
 else
     echo ""
@@ -132,32 +167,33 @@ FIND_APK_SCRIPT='
 cd '"$MAC_REPO_DIR"'
 
 ***REMOVED*** Priority-based APK selection for arm64 devices (e.g., Samsung S24 Ultra):
-***REMOVED***   1. arm64-v8a debug APK (preferred for modern 64-bit phones)
-***REMOVED***   2. universal debug APK (if ever present)
-***REMOVED***   3. newest debug APK by mtime (fallback)
+***REMOVED***   1. arm64-v8a debug APK for selected flavor (preferred for modern 64-bit phones)
+***REMOVED***   2. universal debug APK for selected flavor (if ever present)
+***REMOVED***   3. newest debug APK for selected flavor by mtime (fallback)
 
 APK_PATH=""
 APK_ABI=""
+FLAVOR="'"$FLAVOR"'"
 
-***REMOVED*** Priority 1: arm64-v8a debug APK
-ARM64_APK=$(find . -path "*/build/outputs/apk/*" -type f -name "*arm64-v8a*debug*.apk" 2>/dev/null | head -1)
+***REMOVED*** Priority 1: arm64-v8a debug APK for selected flavor
+ARM64_APK=$(find . -path "*/build/outputs/apk/${FLAVOR}/*" -type f -name "*arm64-v8a*debug*.apk" 2>/dev/null | head -1)
 if [[ -n "$ARM64_APK" ]]; then
     APK_PATH="$ARM64_APK"
     APK_ABI="arm64-v8a"
 fi
 
-***REMOVED*** Priority 2: universal debug APK
+***REMOVED*** Priority 2: universal debug APK for selected flavor
 if [[ -z "$APK_PATH" ]]; then
-    UNIVERSAL_APK=$(find . -path "*/build/outputs/apk/*" -type f -name "*universal*debug*.apk" 2>/dev/null | head -1)
+    UNIVERSAL_APK=$(find . -path "*/build/outputs/apk/${FLAVOR}/*" -type f -name "*universal*debug*.apk" 2>/dev/null | head -1)
     if [[ -n "$UNIVERSAL_APK" ]]; then
         APK_PATH="$UNIVERSAL_APK"
         APK_ABI="universal"
     fi
 fi
 
-***REMOVED*** Priority 3: newest debug APK by mtime
+***REMOVED*** Priority 3: newest debug APK for selected flavor by mtime
 if [[ -z "$APK_PATH" ]]; then
-    NEWEST_APK=$(find . -path "*/build/outputs/apk/*" -type f -name "*debug*.apk" 2>/dev/null | \
+    NEWEST_APK=$(find . -path "*/build/outputs/apk/${FLAVOR}/*" -type f -name "*debug*.apk" 2>/dev/null | \
         xargs ls -t 2>/dev/null | head -1)
     if [[ -n "$NEWEST_APK" ]]; then
         APK_PATH="$NEWEST_APK"
@@ -204,14 +240,14 @@ FIND_RESULT=$(run_cmd ssh "${SSH_OPTS[@]}" "$MAC_SSH" "$FIND_APK_SCRIPT" || true
 if echo "$FIND_RESULT" | grep -q "^APK_FOUND:"; then
     APK_PATH=$(echo "$FIND_RESULT" | grep "^APK_FOUND:" | head -1 | sed 's/^APK_FOUND://')
     APK_ABI=$(echo "$FIND_RESULT" | grep "^APK_ABI:" | head -1 | sed 's/^APK_ABI://')
-    log_info "Found APK: $APK_PATH (ABI: $APK_ABI)"
+    log_info "Found ${FLAVOR_CAPITALIZED} APK: $APK_PATH (ABI: $APK_ABI)"
 
     ***REMOVED*** Warn if not arm64-v8a (may be incompatible with modern phones)
     if [[ "$APK_ABI" != "arm64-v8a" && "$APK_ABI" != "universal" ]]; then
         log_warn "Selected APK is $APK_ABI - may be incompatible with arm64 devices (e.g., Samsung S24)"
     fi
 else
-    log_error "No APK found on Mac"
+    log_error "No ${FLAVOR_CAPITALIZED} APK found on Mac"
     echo ""
 
     ***REMOVED*** Parse and display diagnostics from remote
@@ -236,17 +272,24 @@ fi
 ***REMOVED*** Create APK directory on phone
 run_cmd mkdir -p "$PHONE_APK_DIR"
 
-***REMOVED*** Pull APK to phone
+***REMOVED*** Pull APK to phone with flavor-specific name
 APK_NAME=$(basename "$APK_PATH")
-LOCAL_APK="$PHONE_APK_DIR/$APK_NAME"
+***REMOVED*** Rename APK to include flavor for clarity
+FLAVOR_APK_NAME="scanium-${FLAVOR}-debug-${APK_ABI}.apk"
+LOCAL_APK="$PHONE_APK_DIR/$FLAVOR_APK_NAME"
 
-log_info "Pulling APK to phone..."
+log_info "Pulling ${FLAVOR_CAPITALIZED} APK to phone..."
 run_cmd scp "${SSH_OPTS[@]}" "$MAC_SSH:$MAC_REPO_DIR/$APK_PATH" "$LOCAL_APK"
 
 echo ""
-log_info "APK ready: $LOCAL_APK"
+log_info "${FLAVOR_CAPITALIZED} APK ready: $LOCAL_APK"
 echo ""
 echo "To install:"
 echo "  1. Open Files app"
 echo "  2. Navigate to Downloads/scanium-apk/"
-echo "  3. Tap $APK_NAME to install"
+echo "  3. Tap $FLAVOR_APK_NAME to install"
+echo ""
+echo "Build details:"
+echo "  Flavor: ${FLAVOR_CAPITALIZED} (com.scanium.app.${FLAVOR})"
+echo "  ABI: ${APK_ABI}"
+echo "  Original: $APK_NAME"

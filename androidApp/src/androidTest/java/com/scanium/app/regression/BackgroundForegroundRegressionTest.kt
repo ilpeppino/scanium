@@ -1,14 +1,12 @@
 package com.scanium.app.regression
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.lifecycle.Lifecycle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.MainActivity
-import com.scanium.app.testing.TestSemantics
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume
@@ -30,7 +28,6 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 class BackgroundForegroundRegressionTest {
-
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
@@ -63,148 +60,154 @@ class BackgroundForegroundRegressionTest {
         // Skip if no camera
         Assume.assumeTrue(
             "Camera not available - skipping lifecycle tests",
-            isCameraAvailable()
+            isCameraAvailable(),
         )
 
         uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     }
 
     @Test
-    fun testBackgroundForeground_CameraResumes() = runTest {
-        // Wait for initial camera startup
-        delay(STARTUP_DELAY_MS)
+    fun testBackgroundForeground_CameraResumes() =
+        runTest {
+            // Wait for initial camera startup
+            delay(STARTUP_DELAY_MS)
 
-        // Verify app is in foreground
-        assertThat(composeTestRule.activityRule.scenario.state)
-            .isEqualTo(Lifecycle.State.RESUMED)
+            // Verify app is in foreground
+            assertThat(composeTestRule.activityRule.scenario.state)
+                .isEqualTo(Lifecycle.State.RESUMED)
 
-        // Move to background using ActivityScenario
-        composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-        delay(LIFECYCLE_TRANSITION_DELAY_MS)
+            // Move to background using ActivityScenario
+            composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+            delay(LIFECYCLE_TRANSITION_DELAY_MS)
 
-        // Move back to foreground
-        composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        delay(LIFECYCLE_TRANSITION_DELAY_MS)
-
-        // Verify app resumed
-        assertThat(composeTestRule.activityRule.scenario.state)
-            .isEqualTo(Lifecycle.State.RESUMED)
-
-        // Wait for camera to stabilize
-        delay(FRAME_UPDATE_TIMEOUT_MS)
-
-        // Test passes if we reach here without crash/ANR
-    }
-
-    @Test
-    fun testHomeButtonPress_CameraResumes() = runTest {
-        // Wait for initial camera startup
-        delay(STARTUP_DELAY_MS)
-
-        // Press home button to background
-        uiDevice.pressHome()
-        delay(LIFECYCLE_TRANSITION_DELAY_MS)
-
-        // Verify app went to background
-        // (Note: scenario state may not update immediately with UiAutomator)
-
-        // Relaunch app (bring back to foreground)
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        if (launchIntent != null) {
-            launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(launchIntent)
-        }
-
-        delay(LIFECYCLE_TRANSITION_DELAY_MS)
-
-        // Wait for camera to resume
-        delay(FRAME_UPDATE_TIMEOUT_MS)
-
-        // Test passes if camera resumes without crash
-    }
-
-    @Test
-    fun testMultipleLifecycleTransitions_NoPipelineFreeze() = runTest {
-        // Wait for initial startup
-        delay(STARTUP_DELAY_MS)
-
-        // Perform multiple lifecycle transitions
-        repeat(3) { cycle ->
-            // Background
-            composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            delay(500)
-
-            // Foreground
+            // Move back to foreground
             composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-            delay(500)
+            delay(LIFECYCLE_TRANSITION_DELAY_MS)
+
+            // Verify app resumed
+            assertThat(composeTestRule.activityRule.scenario.state)
+                .isEqualTo(Lifecycle.State.RESUMED)
+
+            // Wait for camera to stabilize
+            delay(FRAME_UPDATE_TIMEOUT_MS)
+
+            // Test passes if we reach here without crash/ANR
         }
 
-        // Final stabilization
-        delay(FRAME_UPDATE_TIMEOUT_MS)
+    @Test
+    fun testHomeButtonPress_CameraResumes() =
+        runTest {
+            // Wait for initial camera startup
+            delay(STARTUP_DELAY_MS)
 
-        // Verify still in resumed state
-        assertThat(composeTestRule.activityRule.scenario.state)
-            .isEqualTo(Lifecycle.State.RESUMED)
-    }
+            // Press home button to background
+            uiDevice.pressHome()
+            delay(LIFECYCLE_TRANSITION_DELAY_MS)
+
+            // Verify app went to background
+            // (Note: scenario state may not update immediately with UiAutomator)
+
+            // Relaunch app (bring back to foreground)
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+            if (launchIntent != null) {
+                launchIntent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(launchIntent)
+            }
+
+            delay(LIFECYCLE_TRANSITION_DELAY_MS)
+
+            // Wait for camera to resume
+            delay(FRAME_UPDATE_TIMEOUT_MS)
+
+            // Test passes if camera resumes without crash
+        }
 
     @Test
-    fun testOnStop_OnStart_CameraRecovery() = runTest {
-        // Wait for startup
-        delay(STARTUP_DELAY_MS)
+    fun testMultipleLifecycleTransitions_NoPipelineFreeze() =
+        runTest {
+            // Wait for initial startup
+            delay(STARTUP_DELAY_MS)
 
-        // Move through lifecycle states
-        composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
-        delay(LIFECYCLE_TRANSITION_DELAY_MS)
+            // Perform multiple lifecycle transitions
+            repeat(3) { cycle ->
+                // Background
+                composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+                delay(500)
 
-        // This simulates the app being fully stopped (like opening another app)
-        // The camera should release resources
+                // Foreground
+                composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                delay(500)
+            }
 
-        // Resume
-        composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-        delay(FRAME_UPDATE_TIMEOUT_MS)
+            // Final stabilization
+            delay(FRAME_UPDATE_TIMEOUT_MS)
 
-        // Camera should recover and receive frames again
-        // Test passes if no freeze/crash
-    }
+            // Verify still in resumed state
+            assertThat(composeTestRule.activityRule.scenario.state)
+                .isEqualTo(Lifecycle.State.RESUMED)
+        }
 
     @Test
-    fun testRapidLifecycleChanges_NoResourceLeak() = runTest {
-        // Wait for initial startup
-        delay(STARTUP_DELAY_MS)
+    fun testOnStop_OnStart_CameraRecovery() =
+        runTest {
+            // Wait for startup
+            delay(STARTUP_DELAY_MS)
 
-        // Rapidly cycle through states (stress test)
-        repeat(5) {
-            composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
-            delay(200)
+            // Move through lifecycle states
+            composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.CREATED)
+            delay(LIFECYCLE_TRANSITION_DELAY_MS)
+
+            // This simulates the app being fully stopped (like opening another app)
+            // The camera should release resources
+
+            // Resume
             composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
-            delay(200)
+            delay(FRAME_UPDATE_TIMEOUT_MS)
+
+            // Camera should recover and receive frames again
+            // Test passes if no freeze/crash
         }
 
-        // Final stabilization
-        delay(LIFECYCLE_TRANSITION_DELAY_MS)
+    @Test
+    fun testRapidLifecycleChanges_NoResourceLeak() =
+        runTest {
+            // Wait for initial startup
+            delay(STARTUP_DELAY_MS)
 
-        // Verify no memory/resource issues caused crash
-        assertThat(composeTestRule.activityRule.scenario.state)
-            .isEqualTo(Lifecycle.State.RESUMED)
-    }
+            // Rapidly cycle through states (stress test)
+            repeat(5) {
+                composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.STARTED)
+                delay(200)
+                composeTestRule.activityRule.scenario.moveToState(Lifecycle.State.RESUMED)
+                delay(200)
+            }
+
+            // Final stabilization
+            delay(LIFECYCLE_TRANSITION_DELAY_MS)
+
+            // Verify no memory/resource issues caused crash
+            assertThat(composeTestRule.activityRule.scenario.state)
+                .isEqualTo(Lifecycle.State.RESUMED)
+        }
 
     @Test
-    fun testConfigurationChange_CameraPreserved() = runTest {
-        // Wait for startup
-        delay(STARTUP_DELAY_MS)
+    fun testConfigurationChange_CameraPreserved() =
+        runTest {
+            // Wait for startup
+            delay(STARTUP_DELAY_MS)
 
-        // Trigger configuration change (rotation)
-        composeTestRule.activityRule.scenario.recreate()
+            // Trigger configuration change (rotation)
+            composeTestRule.activityRule.scenario.recreate()
 
-        // Wait for recreation
-        delay(LIFECYCLE_TRANSITION_DELAY_MS)
+            // Wait for recreation
+            delay(LIFECYCLE_TRANSITION_DELAY_MS)
 
-        // Camera should reinitialize after recreation
-        delay(FRAME_UPDATE_TIMEOUT_MS)
+            // Camera should reinitialize after recreation
+            delay(FRAME_UPDATE_TIMEOUT_MS)
 
-        // Verify activity is resumed after recreation
-        assertThat(composeTestRule.activityRule.scenario.state)
-            .isEqualTo(Lifecycle.State.RESUMED)
-    }
+            // Verify activity is resumed after recreation
+            assertThat(composeTestRule.activityRule.scenario.state)
+                .isEqualTo(Lifecycle.State.RESUMED)
+        }
 }

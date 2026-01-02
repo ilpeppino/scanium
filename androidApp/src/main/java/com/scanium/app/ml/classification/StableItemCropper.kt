@@ -43,8 +43,8 @@ class StableItemCropper(
     private val context: Context,
     private val paddingRatio: Float = 0.12f,
     private val maxDimension: Int = 640,
-    private val sourceMaxDimension: Int = 1536
-): ClassificationThumbnailProvider {
+    private val sourceMaxDimension: Int = 1536,
+) : ClassificationThumbnailProvider {
     companion object {
         private const val TAG = "StableItemCropper"
     }
@@ -54,55 +54,59 @@ class StableItemCropper(
      *
      * @return Cropped ImageRef or the existing thumbnail if cropping fails.
      */
-    override suspend fun prepare(item: AggregatedItem): ImageRef? = withContext(Dispatchers.IO) {
-        val sourceBitmap = loadSourceBitmap(item.fullImageUri, item.thumbnail)
-            ?: return@withContext item.thumbnail
+    override suspend fun prepare(item: AggregatedItem): ImageRef? =
+        withContext(Dispatchers.IO) {
+            val sourceBitmap =
+                loadSourceBitmap(item.fullImageUri, item.thumbnail)
+                    ?: return@withContext item.thumbnail
 
-        val normalizedRect = item.boundingBox
-        val rectF = normalizedRect.toRectF(sourceBitmap.width, sourceBitmap.height)
-        val cropRect = calculateCropRect(sourceBitmap.width, sourceBitmap.height, rectF)
-        val croppedBitmap = runCatching {
-            Bitmap.createBitmap(
-                sourceBitmap,
-                cropRect.left,
-                cropRect.top,
-                cropRect.width(),
-                cropRect.height()
-            )
-        }.getOrElse { error ->
-            Log.w(TAG, "Failed to crop stable item bitmap: ${error.message}")
-            if (!sourceBitmap.isRecycled) {
+            val normalizedRect = item.boundingBox
+            val rectF = normalizedRect.toRectF(sourceBitmap.width, sourceBitmap.height)
+            val cropRect = calculateCropRect(sourceBitmap.width, sourceBitmap.height, rectF)
+            val croppedBitmap =
+                runCatching {
+                    Bitmap.createBitmap(
+                        sourceBitmap,
+                        cropRect.left,
+                        cropRect.top,
+                        cropRect.width(),
+                        cropRect.height(),
+                    )
+                }.getOrElse { error ->
+                    Log.w(TAG, "Failed to crop stable item bitmap: ${error.message}")
+                    if (!sourceBitmap.isRecycled) {
+                        sourceBitmap.recycle()
+                    }
+                    return@withContext item.thumbnail
+                }
+
+            // Scale down to reasonable classification size
+            val scaledBitmap = scaleIfNeeded(croppedBitmap)
+            if (sourceBitmap != croppedBitmap && !sourceBitmap.isRecycled) {
                 sourceBitmap.recycle()
             }
-            return@withContext item.thumbnail
-        }
+            if (scaledBitmap != croppedBitmap && !croppedBitmap.isRecycled) {
+                croppedBitmap.recycle()
+            }
 
-        // Scale down to reasonable classification size
-        val scaledBitmap = scaleIfNeeded(croppedBitmap)
-        if (sourceBitmap != croppedBitmap && !sourceBitmap.isRecycled) {
-            sourceBitmap.recycle()
+            val imageRef = scaledBitmap.toImageRefJpeg(quality = 88)
+            if (!scaledBitmap.isRecycled) {
+                scaledBitmap.recycle()
+            }
+            imageRef
         }
-        if (scaledBitmap != croppedBitmap && !croppedBitmap.isRecycled) {
-            croppedBitmap.recycle()
-        }
-
-        val imageRef = scaledBitmap.toImageRefJpeg(quality = 88)
-        if (!scaledBitmap.isRecycled) {
-            scaledBitmap.recycle()
-        }
-        imageRef
-    }
 
     private suspend fun loadSourceBitmap(
         uri: Uri?,
-        fallback: ImageRef?
+        fallback: ImageRef?,
     ): Bitmap? {
         uri?.let {
-            val bitmap = ImageUtils.createThumbnailFromUri(
-                context = context,
-                uri = it,
-                maxDimension = sourceMaxDimension
-            )
+            val bitmap =
+                ImageUtils.createThumbnailFromUri(
+                    context = context,
+                    uri = it,
+                    maxDimension = sourceMaxDimension,
+                )
             if (bitmap != null) {
                 return bitmap
             }
@@ -115,7 +119,7 @@ class StableItemCropper(
     private fun calculateCropRect(
         width: Int,
         height: Int,
-        boundingBox: RectF
+        boundingBox: RectF,
     ): android.graphics.Rect {
         val rect = boundingBox.toRect(width, height)
 
@@ -133,13 +137,17 @@ class StableItemCropper(
         return android.graphics.Rect(left, top, left + clampedWidth, top + clampedHeight)
     }
 
-    private fun RectF.toRect(width: Int, height: Int): android.graphics.Rect {
-        val clamped = RectF(
-            left.coerceIn(0f, width.toFloat()),
-            top.coerceIn(0f, height.toFloat()),
-            right.coerceIn(0f, width.toFloat()),
-            bottom.coerceIn(0f, height.toFloat())
-        )
+    private fun RectF.toRect(
+        width: Int,
+        height: Int,
+    ): android.graphics.Rect {
+        val clamped =
+            RectF(
+                left.coerceIn(0f, width.toFloat()),
+                top.coerceIn(0f, height.toFloat()),
+                right.coerceIn(0f, width.toFloat()),
+                bottom.coerceIn(0f, height.toFloat()),
+            )
 
         val rectWidth = max(1, (clamped.width()).roundToInt())
         val rectHeight = max(1, (clamped.height()).roundToInt())
@@ -154,7 +162,7 @@ class StableItemCropper(
             adjustedLeft,
             adjustedTop,
             adjustedLeft + rectWidth,
-            adjustedTop + rectHeight
+            adjustedTop + rectHeight,
         )
     }
 

@@ -5,7 +5,7 @@ package com.scanium.app.ftue
  */
 enum class TourScreen {
     CAMERA,
-    ITEMS_LIST
+    ITEMS_LIST,
 }
 
 /**
@@ -20,7 +20,7 @@ enum class TourStepKey {
     ITEMS_AI_ASSISTANT,
     ITEMS_SWIPE_DELETE,
     ITEMS_SELECTION,
-    COMPLETION
+    COMPLETION,
 }
 
 /**
@@ -28,7 +28,7 @@ enum class TourStepKey {
  */
 enum class SpotlightShape {
     CIRCLE,
-    ROUNDED_RECT
+    ROUNDED_RECT,
 }
 
 /**
@@ -49,5 +49,5 @@ data class TourStep(
     val title: String,
     val description: String,
     val requiresUserAction: Boolean = false,
-    val spotlightShape: SpotlightShape = SpotlightShape.ROUNDED_RECT
+    val spotlightShape: SpotlightShape = SpotlightShape.ROUNDED_RECT,
 )

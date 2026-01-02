@@ -2,11 +2,10 @@ package com.scanium.core.models.scanning
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ScanRoiTest {
-
     // =========================================================================
     // Basic properties tests
     // =========================================================================
@@ -23,12 +22,13 @@ class ScanRoiTest {
 
     @Test
     fun `edges are calculated correctly from center and size`() {
-        val roi = ScanRoi(
-            centerXNorm = 0.5f,
-            centerYNorm = 0.5f,
-            widthNorm = 0.4f,
-            heightNorm = 0.4f
-        )
+        val roi =
+            ScanRoi(
+                centerXNorm = 0.5f,
+                centerYNorm = 0.5f,
+                widthNorm = 0.4f,
+                heightNorm = 0.4f,
+            )
 
         assertEquals(0.3f, roi.left, 0.001f)
         assertEquals(0.3f, roi.top, 0.001f)
@@ -38,12 +38,15 @@ class ScanRoiTest {
 
     @Test
     fun `edges are clamped to valid range`() {
-        val roi = ScanRoi(
-            centerXNorm = 0.1f,  // Near left edge
-            centerYNorm = 0.1f,  // Near top edge
-            widthNorm = 0.5f,
-            heightNorm = 0.5f
-        )
+        val roi =
+            ScanRoi(
+                centerXNorm = 0.1f,
+// Near left edge
+                centerYNorm = 0.1f,
+// Near top edge
+                widthNorm = 0.5f,
+                heightNorm = 0.5f,
+            )
 
         // Left would be 0.1 - 0.25 = -0.15, should clamp to 0
         assertEquals(0f, roi.left)
@@ -52,12 +55,13 @@ class ScanRoiTest {
 
     @Test
     fun `clampedWidth and clampedHeight reflect actual dimensions`() {
-        val roi = ScanRoi(
-            centerXNorm = 0.1f,
-            centerYNorm = 0.5f,
-            widthNorm = 0.5f,
-            heightNorm = 0.4f
-        )
+        val roi =
+            ScanRoi(
+                centerXNorm = 0.1f,
+                centerYNorm = 0.5f,
+                widthNorm = 0.5f,
+                heightNorm = 0.4f,
+            )
 
         // Left is clamped to 0, right is 0.1 + 0.25 = 0.35
         assertEquals(0.35f, roi.clampedWidth, 0.001f)
@@ -178,12 +182,13 @@ class ScanRoiTest {
     fun `centerScore is in valid range`() {
         val roi = ScanRoi.DEFAULT
 
-        val scores = listOf(
-            roi.centerScore(0f, 0f),
-            roi.centerScore(1f, 1f),
-            roi.centerScore(0f, 1f),
-            roi.centerScore(1f, 0f)
-        )
+        val scores =
+            listOf(
+                roi.centerScore(0f, 0f),
+                roi.centerScore(1f, 1f),
+                roi.centerScore(0f, 1f),
+                roi.centerScore(1f, 0f),
+            )
 
         scores.forEach { score ->
             assertTrue(score in 0f..1f, "Score $score should be in 0..1")

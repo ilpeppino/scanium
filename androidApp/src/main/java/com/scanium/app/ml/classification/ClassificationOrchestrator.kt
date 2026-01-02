@@ -1,21 +1,19 @@
 package com.scanium.app.ml.classification
 
 import android.os.Trace
-import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.android.platform.adapters.AndroidLogger
 import com.scanium.android.platform.adapters.ClassifierAdapter
+import com.scanium.app.aggregation.AggregatedItem
 import com.scanium.shared.core.models.classification.ClassificationSource
 import com.scanium.shared.core.models.classification.Classifier
-import com.scanium.shared.core.models.classification.ClassificationOrchestrator as SharedOrchestrator
-import com.scanium.shared.core.models.model.ImageRef
+import com.scanium.telemetry.facade.Telemetry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-
-import com.scanium.telemetry.facade.Telemetry
+import com.scanium.shared.core.models.classification.ClassificationOrchestrator as SharedOrchestrator
 
 /**
  * Android wrapper for platform-agnostic ClassificationOrchestrator.
@@ -45,18 +43,20 @@ class ClassificationOrchestrator(
     maxConcurrency: Int = 2,
     maxRetries: Int = 3,
     delayProvider: suspend (Long) -> Unit = { delay(it) },
-    telemetry: Telemetry? = null
+    telemetry: Telemetry? = null,
 ) {
     // Adapt Android classifiers to portable Classifier interface
-    private val portableOnDeviceClassifier: Classifier = ClassifierAdapter(
-        androidClassifier = onDeviceClassifier,
-        source = ClassificationSource.ON_DEVICE
-    )
+    private val portableOnDeviceClassifier: Classifier =
+        ClassifierAdapter(
+            androidClassifier = onDeviceClassifier,
+            source = ClassificationSource.ON_DEVICE,
+        )
 
-    private val portableCloudClassifier: Classifier = ClassifierAdapter(
-        androidClassifier = cloudClassifier,
-        source = ClassificationSource.CLOUD
-    )
+    private val portableCloudClassifier: Classifier =
+        ClassifierAdapter(
+            androidClassifier = cloudClassifier,
+            source = ClassificationSource.CLOUD,
+        )
 
     // Map Android ClassificationMode to shared ClassificationMode
     private val portableModeFlow: StateFlow<com.scanium.shared.core.models.classification.ClassificationMode> =
@@ -68,24 +68,26 @@ class ClassificationOrchestrator(
         }.stateIn(
             scope = scope,
             started = SharingStarted.Lazily,
-            initialValue = when (modeFlow.value) {
-                ClassificationMode.CLOUD -> com.scanium.shared.core.models.classification.ClassificationMode.CLOUD
-                ClassificationMode.ON_DEVICE -> com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
-            }
+            initialValue =
+                when (modeFlow.value) {
+                    ClassificationMode.CLOUD -> com.scanium.shared.core.models.classification.ClassificationMode.CLOUD
+                    ClassificationMode.ON_DEVICE -> com.scanium.shared.core.models.classification.ClassificationMode.ON_DEVICE
+                },
         )
 
     // Delegate to shared orchestrator
-    private val sharedOrchestrator = SharedOrchestrator(
-        modeFlow = portableModeFlow,
-        onDeviceClassifier = portableOnDeviceClassifier,
-        cloudClassifier = portableCloudClassifier,
-        scope = scope,
-        logger = AndroidLogger(),
-        maxConcurrency = maxConcurrency,
-        maxRetries = maxRetries,
-        delayProvider = delayProvider,
-        telemetry = telemetry
-    )
+    private val sharedOrchestrator =
+        SharedOrchestrator(
+            modeFlow = portableModeFlow,
+            onDeviceClassifier = portableOnDeviceClassifier,
+            cloudClassifier = portableCloudClassifier,
+            scope = scope,
+            logger = AndroidLogger(),
+            maxConcurrency = maxConcurrency,
+            maxRetries = maxRetries,
+            delayProvider = delayProvider,
+            telemetry = telemetry,
+        )
 
     /**
      * Check if classification result exists for this item.
@@ -110,7 +112,7 @@ class ClassificationOrchestrator(
      */
     fun classify(
         items: List<AggregatedItem>,
-        onResult: (AggregatedItem, ClassificationResult) -> Unit
+        onResult: (AggregatedItem, ClassificationResult) -> Unit,
     ) {
         items.filter { it.thumbnail != null && shouldClassify(it.aggregatedId) }
             .forEach { item ->
@@ -118,7 +120,7 @@ class ClassificationOrchestrator(
 
                 // Add trace marker for profiling
                 Trace.beginSection("ClassificationOrchestrator.classify")
-                
+
                 // Track metrics
                 val startTime = System.currentTimeMillis()
                 ClassificationMetrics.recordStart()
@@ -127,16 +129,16 @@ class ClassificationOrchestrator(
                 sharedOrchestrator.classify(
                     itemId = item.aggregatedId,
                     thumbnail = thumbnail,
-                    boundingBox = item.boundingBox
+                    boundingBox = item.boundingBox,
                 ) { itemId, sharedResult ->
                     // Convert shared ClassificationResult to Android ClassificationResult
                     val androidResult = convertToAndroidResult(sharedResult)
-                    
+
                     // Update metrics
                     val latency = System.currentTimeMillis() - startTime
                     val isSuccess = sharedResult.status == com.scanium.shared.core.models.classification.ClassificationStatus.SUCCESS
                     ClassificationMetrics.recordComplete(latency, isSuccess)
-                    
+
                     onResult(item, androidResult)
                     Trace.endSection()
                 }
@@ -155,13 +157,13 @@ class ClassificationOrchestrator(
     fun retry(
         aggregatedId: String,
         item: AggregatedItem,
-        onResult: (AggregatedItem, ClassificationResult) -> Unit
+        onResult: (AggregatedItem, ClassificationResult) -> Unit,
     ) {
         val thumbnail = item.thumbnail ?: return
 
         // Add trace marker for profiling
         Trace.beginSection("ClassificationOrchestrator.retry")
-        
+
         // Track metrics
         val startTime = System.currentTimeMillis()
         ClassificationMetrics.recordStart()
@@ -169,15 +171,15 @@ class ClassificationOrchestrator(
         sharedOrchestrator.retry(
             itemId = aggregatedId,
             thumbnail = thumbnail,
-            boundingBox = item.boundingBox
+            boundingBox = item.boundingBox,
         ) { itemId, sharedResult ->
             val androidResult = convertToAndroidResult(sharedResult)
-            
+
             // Update metrics
             val latency = System.currentTimeMillis() - startTime
             val isSuccess = sharedResult.status == com.scanium.shared.core.models.classification.ClassificationStatus.SUCCESS
             ClassificationMetrics.recordComplete(latency, isSuccess)
-            
+
             onResult(item, androidResult)
             Trace.endSection()
         }
@@ -187,7 +189,7 @@ class ClassificationOrchestrator(
      * Convert shared ClassificationResult to Android ClassificationResult.
      */
     private fun convertToAndroidResult(
-        sharedResult: com.scanium.shared.core.models.classification.ClassificationResult
+        sharedResult: com.scanium.shared.core.models.classification.ClassificationResult,
     ): ClassificationResult {
         return ClassificationResult(
             label = sharedResult.label,
@@ -198,7 +200,7 @@ class ClassificationOrchestrator(
             attributes = sharedResult.attributes.takeIf { it.isNotEmpty() },
             status = convertToAndroidStatus(sharedResult.status),
             errorMessage = sharedResult.errorMessage,
-            requestId = sharedResult.requestId
+            requestId = sharedResult.requestId,
         )
     }
 
@@ -206,18 +208,14 @@ class ClassificationOrchestrator(
      * Convert shared ItemCategory to Android ItemCategory.
      * Since com.scanium.app.ml.ItemCategory is a typealias for SharedItemCategory, they're the same type.
      */
-    private fun convertToAndroidCategory(
-        sharedCategory: com.scanium.shared.core.models.ml.ItemCategory
-    ): com.scanium.app.ml.ItemCategory {
+    private fun convertToAndroidCategory(sharedCategory: com.scanium.shared.core.models.ml.ItemCategory): com.scanium.app.ml.ItemCategory {
         return sharedCategory
     }
 
     /**
      * Convert shared ClassificationSource to Android ClassificationMode.
      */
-    private fun convertToAndroidMode(
-        source: ClassificationSource
-    ): ClassificationMode {
+    private fun convertToAndroidMode(source: ClassificationSource): ClassificationMode {
         return when (source) {
             ClassificationSource.CLOUD -> ClassificationMode.CLOUD
             ClassificationSource.ON_DEVICE, ClassificationSource.FALLBACK -> ClassificationMode.ON_DEVICE
@@ -228,7 +226,7 @@ class ClassificationOrchestrator(
      * Convert shared ClassificationStatus to Android ClassificationStatus.
      */
     private fun convertToAndroidStatus(
-        sharedStatus: com.scanium.shared.core.models.classification.ClassificationStatus
+        sharedStatus: com.scanium.shared.core.models.classification.ClassificationStatus,
     ): ClassificationStatus {
         return when (sharedStatus) {
             com.scanium.shared.core.models.classification.ClassificationStatus.SUCCESS -> ClassificationStatus.SUCCESS

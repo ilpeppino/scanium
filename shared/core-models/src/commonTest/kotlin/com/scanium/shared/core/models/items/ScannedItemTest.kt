@@ -22,7 +22,6 @@ import kotlin.test.assertTrue
  * Migrated from androidApp to KMP for cross-platform testing.
  */
 class ScannedItemTest {
-
     @Test
     fun whenConfidenceBelow50Percent_thenLowConfidence() {
         // Arrange
@@ -220,14 +219,16 @@ class ScannedItemTest {
     @Test
     fun whenDefaultItemCreated_thenHasUniqueId() {
         // Act - Create two items without specifying ID
-        val item1 = ScannedItem<Any>(
-            category = ItemCategory.FASHION,
-            priceRange = 10.0 to 20.0
-        )
-        val item2 = ScannedItem<Any>(
-            category = ItemCategory.FASHION,
-            priceRange = 10.0 to 20.0
-        )
+        val item1 =
+            ScannedItem<Any>(
+                category = ItemCategory.FASHION,
+                priceRange = 10.0 to 20.0,
+            )
+        val item2 =
+            ScannedItem<Any>(
+                category = ItemCategory.FASHION,
+                priceRange = 10.0 to 20.0,
+            )
 
         // Assert - IDs should be different (UUIDs)
         assertNotEquals(item1.id, item2.id)
@@ -282,16 +283,17 @@ class ScannedItemTest {
     @Test
     fun whenBoundaryTestingAllThresholds_thenCorrectClassification() {
         // Test values just above and below each threshold
-        val testCases = mapOf(
-            0.0f to ConfidenceLevel.LOW,
-            0.49f to ConfidenceLevel.LOW,
-            0.5f to ConfidenceLevel.MEDIUM,
-            0.51f to ConfidenceLevel.MEDIUM,
-            0.74f to ConfidenceLevel.MEDIUM,
-            0.75f to ConfidenceLevel.HIGH,
-            0.76f to ConfidenceLevel.HIGH,
-            1.0f to ConfidenceLevel.HIGH
-        )
+        val testCases =
+            mapOf(
+                0.0f to ConfidenceLevel.LOW,
+                0.49f to ConfidenceLevel.LOW,
+                0.5f to ConfidenceLevel.MEDIUM,
+                0.51f to ConfidenceLevel.MEDIUM,
+                0.74f to ConfidenceLevel.MEDIUM,
+                0.75f to ConfidenceLevel.HIGH,
+                0.76f to ConfidenceLevel.HIGH,
+                1.0f to ConfidenceLevel.HIGH,
+            )
 
         // Assert all test cases
         testCases.forEach { (confidence, expectedLevel) ->
@@ -299,7 +301,7 @@ class ScannedItemTest {
             assertEquals(
                 expectedLevel,
                 item.confidenceLevel,
-                "Confidence $confidence should map to $expectedLevel"
+                "Confidence $confidence should map to $expectedLevel",
             )
         }
     }
@@ -311,7 +313,7 @@ class ScannedItemTest {
         priceRange: Pair<Double, Double> = 10.0 to 20.0,
         confidence: Float = 0.5f,
         timestamp: Long = Clock.System.now().toEpochMilliseconds(),
-        label: String? = null
+        label: String? = null,
     ): ScannedItem<Any> {
         val range = PriceRange(Money(priceRange.first), Money(priceRange.second))
         return ScannedItem(
@@ -323,7 +325,7 @@ class ScannedItemTest {
             priceEstimationStatus = PriceEstimationStatus.Ready(range),
             confidence = confidence,
             timestamp = timestamp,
-            labelText = label
+            labelText = label,
         )
     }
 }

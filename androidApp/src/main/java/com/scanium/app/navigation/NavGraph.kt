@@ -13,19 +13,26 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.scanium.app.BuildConfig
 import com.scanium.app.ScaniumApplication
+import com.scanium.app.billing.ui.PaywallScreen
+import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.camera.CameraScreen
 import com.scanium.app.camera.CameraViewModel
+import com.scanium.app.items.EditItemsScreen
 import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.settings.ClassificationModeViewModel
+import com.scanium.app.selling.assistant.AssistantScreen
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.ui.DraftReviewScreen
 import com.scanium.app.selling.ui.PostingAssistScreen
 import com.scanium.app.selling.ui.SellOnEbayScreen
-import com.scanium.app.selling.assistant.AssistantScreen
-
+import com.scanium.app.settings.ClassificationModeViewModel
+import com.scanium.app.ui.settings.DataUsageScreen
+import com.scanium.app.ui.settings.DeveloperOptionsScreen
+import com.scanium.app.ui.settings.DeveloperOptionsViewModel
+import com.scanium.app.ui.settings.PrivacyPolicyScreen
 import com.scanium.app.ui.settings.SettingsAssistantScreen
 import com.scanium.app.ui.settings.SettingsCameraScreen
 import com.scanium.app.ui.settings.SettingsFeedbackScreen
@@ -33,14 +40,7 @@ import com.scanium.app.ui.settings.SettingsGeneralScreen
 import com.scanium.app.ui.settings.SettingsHomeScreen
 import com.scanium.app.ui.settings.SettingsPrivacyScreen
 import com.scanium.app.ui.settings.SettingsViewModel
-import com.scanium.app.ui.settings.DataUsageScreen
-import com.scanium.app.ui.settings.PrivacyPolicyScreen
 import com.scanium.app.ui.settings.TermsScreen
-import com.scanium.app.ui.settings.DeveloperOptionsScreen
-import com.scanium.app.ui.settings.DeveloperOptionsViewModel
-import com.scanium.app.billing.ui.PaywallScreen
-import com.scanium.app.billing.ui.PaywallViewModel
-import com.scanium.app.BuildConfig
 
 /**
  * Navigation routes for the app.
@@ -48,6 +48,7 @@ import com.scanium.app.BuildConfig
 object Routes {
     const val CAMERA = "camera"
     const val ITEMS_LIST = "items_list"
+    const val EDIT_ITEMS = "items/edit"
     const val SELL_ON_EBAY = "sell_on_ebay"
     const val DRAFT_REVIEW = "draft_review"
     const val POSTING_ASSIST = "posting_assist"
@@ -82,11 +83,11 @@ fun ScaniumNavGraph(
     paywallViewModel: PaywallViewModel,
     marketplaceService: EbayMarketplaceService,
     draftStore: ListingDraftStore,
-    tourViewModel: com.scanium.app.ftue.TourViewModel
+    tourViewModel: com.scanium.app.ftue.TourViewModel,
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.CAMERA
+        startDestination = Routes.CAMERA,
     ) {
         composable(Routes.CAMERA) {
             CameraScreen(
@@ -98,7 +99,7 @@ fun ScaniumNavGraph(
                 },
                 itemsViewModel = itemsViewModel,
                 classificationModeViewModel = classificationModeViewModel,
-                tourViewModel = tourViewModel
+                tourViewModel = tourViewModel,
             )
         }
 
@@ -111,7 +112,7 @@ fun ScaniumNavGraph(
                 onAssistantClick = { navController.navigate(Routes.SETTINGS_ASSISTANT) },
                 onFeedbackClick = { navController.navigate(Routes.SETTINGS_FEEDBACK) },
                 onPrivacyClick = { navController.navigate(Routes.SETTINGS_PRIVACY) },
-                onDeveloperClick = { navController.navigate(Routes.SETTINGS_DEVELOPER) }
+                onDeveloperClick = { navController.navigate(Routes.SETTINGS_DEVELOPER) },
             )
         }
 
@@ -119,35 +120,36 @@ fun ScaniumNavGraph(
             SettingsGeneralScreen(
                 viewModel = settingsViewModel,
                 onNavigateBack = { navController.popBackStack() },
-                onUpgradeClick = { navController.navigate(Routes.PAYWALL) }
+                onUpgradeClick = { navController.navigate(Routes.PAYWALL) },
             )
         }
 
         composable(Routes.SETTINGS_CAMERA) {
-            val cameraEntry = remember(navController) {
-                navController.getBackStackEntry(Routes.CAMERA)
-            }
+            val cameraEntry =
+                remember(navController) {
+                    navController.getBackStackEntry(Routes.CAMERA)
+                }
             val cameraViewModel: CameraViewModel = viewModel(cameraEntry)
             SettingsCameraScreen(
                 settingsViewModel = settingsViewModel,
                 classificationViewModel = classificationModeViewModel,
                 itemsViewModel = itemsViewModel,
                 cameraViewModel = cameraViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
         composable(Routes.SETTINGS_ASSISTANT) {
             SettingsAssistantScreen(
                 viewModel = settingsViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
         composable(Routes.SETTINGS_FEEDBACK) {
             SettingsFeedbackScreen(
                 viewModel = settingsViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
@@ -158,7 +160,7 @@ fun ScaniumNavGraph(
                 onNavigateToDataUsage = { navController.navigate(Routes.DATA_USAGE) },
                 onNavigateToPrivacyPolicy = { navController.navigate(Routes.PRIVACY) },
                 onNavigateToTerms = { navController.navigate(Routes.TERMS) },
-                onNavigateToAbout = { navController.navigate(Routes.ABOUT) }
+                onNavigateToAbout = { navController.navigate(Routes.ABOUT) },
             )
         }
 
@@ -177,14 +179,14 @@ fun ScaniumNavGraph(
             DeveloperOptionsScreen(
                 viewModel = developerOptionsViewModel,
                 classificationViewModel = classificationModeViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
             )
         }
-        
+
         composable(Routes.PAYWALL) {
             PaywallScreen(
                 viewModel = paywallViewModel,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
@@ -215,43 +217,77 @@ fun ScaniumNavGraph(
                         navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
                     }
                 },
+                onNavigateToEdit = { ids ->
+                    if (ids.isNotEmpty()) {
+                        val encoded = Uri.encode(ids.joinToString(","))
+                        navController.navigate("${Routes.EDIT_ITEMS}?ids=$encoded")
+                    }
+                },
                 draftStore = draftStore,
                 itemsViewModel = itemsViewModel,
-                tourViewModel = tourViewModel
+                tourViewModel = tourViewModel,
+            )
+        }
+
+        composable(
+            route = "${Routes.EDIT_ITEMS}?ids={ids}",
+            arguments = listOf(
+                navArgument("ids") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
+            ),
+        ) { backStackEntry ->
+            val ids = backStackEntry.arguments?.getString("ids")
+                ?.split(",")
+                ?.filter { it.isNotBlank() }
+                ?: emptyList()
+            EditItemsScreen(
+                itemIds = ids,
+                onBack = { navController.popBackStack() },
+                itemsViewModel = itemsViewModel,
             )
         }
 
         composable(
             route = "${Routes.SELL_ON_EBAY}/{itemIds}",
-            arguments = listOf(navArgument("itemIds") {
-                type = NavType.StringType
-                defaultValue = ""
-            })
+            arguments =
+                listOf(
+                    navArgument("itemIds") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
         ) { backStackEntry ->
-            val ids = backStackEntry.arguments?.getString("itemIds")
-                ?.split(",")
-                ?.filter { it.isNotBlank() }
-                ?: emptyList()
+            val ids =
+                backStackEntry.arguments?.getString("itemIds")
+                    ?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?: emptyList()
             val selectedItems = itemsViewModel.items.collectAsState().value.filter { ids.contains(it.id) }
             SellOnEbayScreen(
                 onNavigateBack = { navController.popBackStack() },
                 selectedItems = selectedItems,
                 marketplaceService = marketplaceService,
-                itemsViewModel = itemsViewModel
+                itemsViewModel = itemsViewModel,
             )
         }
 
         composable(
             route = "${Routes.DRAFT_REVIEW}?itemIds={itemIds}",
-            arguments = listOf(navArgument("itemIds") {
-                type = NavType.StringType
-                defaultValue = ""
-            })
+            arguments =
+                listOf(
+                    navArgument("itemIds") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
         ) { backStackEntry ->
-            val ids = backStackEntry.arguments?.getString("itemIds")
-                ?.split(",")
-                ?.filter { it.isNotBlank() }
-                ?: emptyList()
+            val ids =
+                backStackEntry.arguments?.getString("itemIds")
+                    ?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?: emptyList()
             DraftReviewScreen(
                 itemIds = ids,
                 onBack = { navController.popBackStack() },
@@ -264,13 +300,13 @@ fun ScaniumNavGraph(
                 onOpenAssistant = { targets ->
                     val encoded = Uri.encode(targets.joinToString(","))
                     navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
-                }
+                },
             )
         }
 
         composable(
             route = "${Routes.DRAFT_REVIEW}/{itemId}",
-            arguments = listOf(navArgument("itemId") { type = NavType.StringType })
+            arguments = listOf(navArgument("itemId") { type = NavType.StringType }),
         ) { backStackEntry ->
             val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
             DraftReviewScreen(
@@ -285,27 +321,29 @@ fun ScaniumNavGraph(
                 onOpenAssistant = { ids ->
                     val encoded = Uri.encode(ids.joinToString(","))
                     navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
-                }
+                },
             )
         }
 
         composable(
             route = "${Routes.POSTING_ASSIST}?itemIds={itemIds}&index={index}",
-            arguments = listOf(
-                navArgument("itemIds") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                },
-                navArgument("index") {
-                    type = NavType.IntType
-                    defaultValue = 0
-                }
-            )
+            arguments =
+                listOf(
+                    navArgument("itemIds") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                    navArgument("index") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    },
+                ),
         ) { backStackEntry ->
-            val ids = backStackEntry.arguments?.getString("itemIds")
-                ?.split(",")
-                ?.filter { it.isNotBlank() }
-                ?: emptyList()
+            val ids =
+                backStackEntry.arguments?.getString("itemIds")
+                    ?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?: emptyList()
             val index = backStackEntry.arguments?.getInt("index") ?: 0
             PostingAssistScreen(
                 itemIds = ids,
@@ -316,27 +354,29 @@ fun ScaniumNavGraph(
                 onOpenAssistant = { ids, indexToUse ->
                     val encoded = Uri.encode(ids.joinToString(","))
                     navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded&index=$indexToUse")
-                }
+                },
             )
         }
 
         composable(
             route = "${Routes.ASSISTANT}?itemIds={itemIds}&index={index}",
-            arguments = listOf(
-                navArgument("itemIds") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                },
-                navArgument("index") {
-                    type = NavType.IntType
-                    defaultValue = 0
-                }
-            )
+            arguments =
+                listOf(
+                    navArgument("itemIds") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                    navArgument("index") {
+                        type = NavType.IntType
+                        defaultValue = 0
+                    },
+                ),
         ) { backStackEntry ->
-            val ids = backStackEntry.arguments?.getString("itemIds")
-                ?.split(",")
-                ?.filter { it.isNotBlank() }
-                ?: emptyList()
+            val ids =
+                backStackEntry.arguments?.getString("itemIds")
+                    ?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?: emptyList()
             val index = backStackEntry.arguments?.getInt("index") ?: 0
             val selectedIds = if (ids.isEmpty()) emptyList() else listOf(ids.getOrNull(index) ?: ids.first())
             AssistantScreen(
@@ -347,90 +387,108 @@ fun ScaniumNavGraph(
                     navController.navigate("${Routes.POSTING_ASSIST}?itemIds=$encoded&index=$targetIndex")
                 },
                 itemsViewModel = itemsViewModel,
-                draftStore = draftStore
+                draftStore = draftStore,
             )
         }
     }
 }
 
 // Backward compatibility alias
-@Deprecated("Use ScaniumNavGraph instead", ReplaceWith("ScaniumNavGraph(navController, itemsViewModel, classificationModeViewModel, marketplaceService)"))
+@Deprecated(
+    "Use ScaniumNavGraph instead",
+    ReplaceWith("ScaniumNavGraph(navController, itemsViewModel, classificationModeViewModel, marketplaceService)"),
+)
 @Composable
 fun ObjectaNavGraph(
     navController: NavHostController,
     itemsViewModel: ItemsViewModel,
-    classificationModeViewModel: ClassificationModeViewModel
+    classificationModeViewModel: ClassificationModeViewModel,
 ) {
     // Create marketplace service for backward compatibility
-    val marketplaceService = androidx.compose.ui.platform.LocalContext.current.let { context ->
-        androidx.compose.runtime.remember { EbayMarketplaceService(context, com.scanium.app.selling.data.MockEbayApi()) }
-    }
-    
+    val marketplaceService =
+        androidx.compose.ui.platform.LocalContext.current.let { context ->
+            androidx.compose.runtime.remember { EbayMarketplaceService(context, com.scanium.app.selling.data.MockEbayApi()) }
+        }
+
     val context = androidx.compose.ui.platform.LocalContext.current
     val application = context.applicationContext as ScaniumApplication
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val settingsRepository = androidx.compose.runtime.remember { com.scanium.app.data.SettingsRepository(context) }
     val billingRepository = androidx.compose.runtime.remember { com.scanium.app.billing.BillingRepository(context) }
     val billingProvider = androidx.compose.runtime.remember { com.scanium.app.billing.FakeBillingProvider(billingRepository) }
-    val entitlementManager = androidx.compose.runtime.remember { com.scanium.app.data.EntitlementManager(settingsRepository, billingProvider) }
+    val entitlementManager =
+        androidx.compose.runtime.remember {
+            com.scanium.app.data.EntitlementManager(
+                settingsRepository,
+                billingProvider,
+            )
+        }
     val configProvider = androidx.compose.runtime.remember { com.scanium.app.data.AndroidRemoteConfigProvider(context, scope) }
     val connectivityObserver = androidx.compose.runtime.remember { com.scanium.app.platform.ConnectivityObserver(context) }
     val apiKeyStore = androidx.compose.runtime.remember { com.scanium.app.config.SecureApiKeyStore(context) }
-    val featureFlagRepository = androidx.compose.runtime.remember {
-        com.scanium.app.data.AndroidFeatureFlagRepository(
-            settingsRepository = settingsRepository,
-            configProvider = configProvider,
-            entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
-            connectivityStatusProvider = connectivityObserver,
-            apiKeyStore = apiKeyStore
-        )
-    }
+    val featureFlagRepository =
+        androidx.compose.runtime.remember {
+            com.scanium.app.data.AndroidFeatureFlagRepository(
+                settingsRepository = settingsRepository,
+                configProvider = configProvider,
+                entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
+                connectivityStatusProvider = connectivityObserver,
+                apiKeyStore = apiKeyStore,
+            )
+        }
     val ftueRepository = androidx.compose.runtime.remember { com.scanium.app.ftue.FtueRepository(context) }
-    val settingsViewModel: SettingsViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
-                    return SettingsViewModel(
-                        settingsRepository = settingsRepository,
-                        entitlementManager = entitlementManager,
-                        configProvider = configProvider,
-                        featureFlagRepository = featureFlagRepository,
-                        ftueRepository = ftueRepository,
-                        crashPort = application.crashPort,
-                        telemetry = application.telemetry,
-                        diagnosticsPort = application.diagnosticsPort
-                    ) as T
-                }
-                throw IllegalArgumentException("Unknown ViewModel class")
-            }
-        }
-    )
-    val paywallViewModel: PaywallViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                if (modelClass.isAssignableFrom(PaywallViewModel::class.java)) {
-                    return PaywallViewModel(billingProvider) as T
-                }
-                throw IllegalArgumentException("Unknown ViewModel class")
-            }
-        }
-    )
-
-    val tourViewModelFactory = androidx.compose.runtime.remember(ftueRepository) {
-        object : com.scanium.app.ftue.TourViewModel.Factory {
-            override fun create(itemsViewModel: ItemsViewModel): com.scanium.app.ftue.TourViewModel {
-                return com.scanium.app.ftue.TourViewModel(ftueRepository, itemsViewModel)
-            }
-        }
-    }
-    val tourViewModel: com.scanium.app.ftue.TourViewModel = viewModel(
-        factory = com.scanium.app.ftue.TourViewModel.provideFactory(
-            assistedFactory = tourViewModelFactory,
-            itemsViewModel = itemsViewModel
+    val settingsViewModel: SettingsViewModel =
+        viewModel(
+            factory =
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
+                            return SettingsViewModel(
+                                settingsRepository = settingsRepository,
+                                entitlementManager = entitlementManager,
+                                configProvider = configProvider,
+                                featureFlagRepository = featureFlagRepository,
+                                ftueRepository = ftueRepository,
+                                crashPort = application.crashPort,
+                                telemetry = application.telemetry,
+                                diagnosticsPort = application.diagnosticsPort,
+                            ) as T
+                        }
+                        throw IllegalArgumentException("Unknown ViewModel class")
+                    }
+                },
         )
-    )
+    val paywallViewModel: PaywallViewModel =
+        viewModel(
+            factory =
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        if (modelClass.isAssignableFrom(PaywallViewModel::class.java)) {
+                            return PaywallViewModel(billingProvider) as T
+                        }
+                        throw IllegalArgumentException("Unknown ViewModel class")
+                    }
+                },
+        )
+
+    val tourViewModelFactory =
+        androidx.compose.runtime.remember(ftueRepository) {
+            object : com.scanium.app.ftue.TourViewModel.Factory {
+                override fun create(itemsViewModel: ItemsViewModel): com.scanium.app.ftue.TourViewModel {
+                    return com.scanium.app.ftue.TourViewModel(ftueRepository, itemsViewModel)
+                }
+            }
+        }
+    val tourViewModel: com.scanium.app.ftue.TourViewModel =
+        viewModel(
+            factory =
+                com.scanium.app.ftue.TourViewModel.provideFactory(
+                    assistedFactory = tourViewModelFactory,
+                    itemsViewModel = itemsViewModel,
+                ),
+        )
 
     ScaniumNavGraph(
         navController = navController,
@@ -440,6 +498,6 @@ fun ObjectaNavGraph(
         paywallViewModel = paywallViewModel,
         marketplaceService = marketplaceService,
         draftStore = com.scanium.app.selling.persistence.NoopListingDraftStore,
-        tourViewModel = tourViewModel
+        tourViewModel = tourViewModel,
     )
 }

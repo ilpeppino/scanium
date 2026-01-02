@@ -1,6 +1,5 @@
 package com.scanium.app.camera.detection
 
-import android.graphics.Bitmap
 import android.util.Log
 import com.scanium.core.models.geometry.NormalizedRect
 import java.util.concurrent.atomic.AtomicBoolean
@@ -47,7 +46,7 @@ object LiveScanDiagnostics {
         val centerDistance: Float,
         val centerScore: Float,
         val selected: Boolean,
-        val rejectionReason: String? = null
+        val rejectionReason: String? = null,
     )
 
     /**
@@ -65,7 +64,7 @@ object LiveScanDiagnostics {
         val selectedCandidate: CandidateInfo?,
         val rejectedCandidates: List<CandidateInfo>,
         val classificationTriggered: Boolean,
-        val itemAdded: Boolean
+        val itemAdded: Boolean,
     )
 
     /**
@@ -104,9 +103,11 @@ object LiveScanDiagnostics {
         if (diagnostics.rejectedCandidates.isNotEmpty()) {
             sb.appendLine("  REJECTED (${diagnostics.rejectedCandidates.size}):")
             diagnostics.rejectedCandidates.take(3).forEach { rej ->
-                sb.appendLine("    - ${rej.category}: area=${String.format("%.4f", rej.normalizedArea)}, " +
+                sb.appendLine(
+                    "    - ${rej.category}: area=${String.format("%.4f", rej.normalizedArea)}, " +
                         "centerDist=${String.format("%.3f", rej.centerDistance)}, " +
-                        "reason=${rej.rejectionReason ?: "lower_score"}")
+                        "reason=${rej.rejectionReason ?: "lower_score"}",
+                )
             }
             if (diagnostics.rejectedCandidates.size > 3) {
                 sb.appendLine("    ... and ${diagnostics.rejectedCandidates.size - 3} more")
@@ -129,17 +130,23 @@ object LiveScanDiagnostics {
         selectedCenterDist: Float,
         selectedArea: Float,
         totalCandidates: Int,
-        rejectionReasons: Map<String, String>
+        rejectionReasons: Map<String, String>,
     ) {
         if (!enabled) return
 
-        val reasons = if (rejectionReasons.isNotEmpty()) {
-            rejectionReasons.entries.take(3).joinToString("; ") { "${it.key}:${it.value}" }
-        } else "none"
+        val reasons =
+            if (rejectionReasons.isNotEmpty()) {
+                rejectionReasons.entries.take(3).joinToString("; ") { "${it.key}:${it.value}" }
+            } else {
+                "none"
+            }
 
-        Log.d(TAG, "[FRAME ***REMOVED***$frameId] SELECT: id=$selectedId, score=${String.format("%.3f", selectedScore)}, " +
+        Log.d(
+            TAG,
+            "[FRAME ***REMOVED***$frameId] SELECT: id=$selectedId, score=${String.format("%.3f", selectedScore)}, " +
                 "centerDist=${String.format("%.3f", selectedCenterDist)}, area=${String.format("%.4f", selectedArea)}, " +
-                "total=$totalCandidates, rejected=$reasons")
+                "total=$totalCandidates, rejected=$reasons",
+        )
     }
 
     /**
@@ -152,15 +159,18 @@ object LiveScanDiagnostics {
         confidence: Float,
         centerDistance: Float,
         area: Float,
-        sharpness: Float
+        sharpness: Float,
     ) {
         if (!enabled) return
 
-        Log.i(TAG, "[FRAME ***REMOVED***$frameId] ITEM_ADDED: id=$candidateId, cat=$category, " +
+        Log.i(
+            TAG,
+            "[FRAME ***REMOVED***$frameId] ITEM_ADDED: id=$candidateId, cat=$category, " +
                 "conf=${String.format("%.2f", confidence)}, " +
                 "centerDist=${String.format("%.3f", centerDistance)}, " +
                 "area=${String.format("%.4f", area)}, " +
-                "sharpness=${String.format("%.1f", sharpness)}")
+                "sharpness=${String.format("%.1f", sharpness)}",
+        )
     }
 
     /**
@@ -171,12 +181,15 @@ object LiveScanDiagnostics {
         candidateId: String?,
         reason: String,
         value: Float,
-        threshold: Float
+        threshold: Float,
     ) {
         if (!enabled) return
 
-        Log.d(TAG, "[FRAME ***REMOVED***$frameId] GATING_REJECT: id=$candidateId, reason=$reason, " +
-                "value=${String.format("%.3f", value)}, threshold=${String.format("%.3f", threshold)}")
+        Log.d(
+            TAG,
+            "[FRAME ***REMOVED***$frameId] GATING_REJECT: id=$candidateId, reason=$reason, " +
+                "value=${String.format("%.3f", value)}, threshold=${String.format("%.3f", threshold)}",
+        )
     }
 
     /**
@@ -189,14 +202,17 @@ object LiveScanDiagnostics {
         requiredFrames: Int,
         stableTimeMs: Long,
         requiredTimeMs: Long,
-        isStable: Boolean
+        isStable: Boolean,
     ) {
         if (!enabled) return
 
-        Log.d(TAG, "[FRAME ***REMOVED***$frameId] STABILITY: id=$candidateId, " +
+        Log.d(
+            TAG,
+            "[FRAME ***REMOVED***$frameId] STABILITY: id=$candidateId, " +
                 "frames=$consecutiveFrames/$requiredFrames, " +
                 "time=${stableTimeMs}ms/${requiredTimeMs}ms, " +
-                "stable=$isStable")
+                "stable=$isStable",
+        )
     }
 
     /**
@@ -206,12 +222,15 @@ object LiveScanDiagnostics {
         frameId: Long,
         sharpnessScore: Float,
         isBlurry: Boolean,
-        threshold: Float
+        threshold: Float,
     ) {
         if (!enabled) return
 
-        Log.d(TAG, "[FRAME ***REMOVED***$frameId] SHARPNESS: score=${String.format("%.1f", sharpnessScore)}, " +
-                "blurry=$isBlurry, threshold=${String.format("%.1f", threshold)}")
+        Log.d(
+            TAG,
+            "[FRAME ***REMOVED***$frameId] SHARPNESS: score=${String.format("%.1f", sharpnessScore)}, " +
+                "blurry=$isBlurry, threshold=${String.format("%.1f", threshold)}",
+        )
     }
 
     /**

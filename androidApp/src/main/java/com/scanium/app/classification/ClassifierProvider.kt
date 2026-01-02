@@ -11,10 +11,9 @@ import com.scanium.shared.core.models.config.CloudConfigProvider
  * implementations when wiring the pipeline.
  */
 object ClassifierProvider {
-
     fun provide(
         context: Context,
-        configProvider: CloudConfigProvider = AndroidCloudConfigProvider(context)
+        configProvider: CloudConfigProvider = AndroidCloudConfigProvider(context),
     ): Classifier {
         val config = configProvider.current()
         // When cloud config is missing, stay non-blocking with NoOp.

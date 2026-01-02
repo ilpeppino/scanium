@@ -16,7 +16,6 @@ import kotlin.test.assertTrue
  * Migrated from androidApp to KMP for cross-platform testing.
  */
 class ItemCategoryTest {
-
     @Test
     fun whenFashionGoodLabel_thenMapsToFashionCategory() {
         // Act & Assert
@@ -152,7 +151,7 @@ class ItemCategoryTest {
             assertEquals(
                 ItemCategory.FASHION,
                 ItemCategory.fromMlKitLabel(label),
-                "Label '$label' should map to FASHION"
+                "Label '$label' should map to FASHION",
             )
         }
 
@@ -161,7 +160,7 @@ class ItemCategoryTest {
             assertEquals(
                 ItemCategory.HOME_GOOD,
                 ItemCategory.fromMlKitLabel(label),
-                "Label '$label' should map to HOME_GOOD"
+                "Label '$label' should map to HOME_GOOD",
             )
         }
 
@@ -170,7 +169,7 @@ class ItemCategoryTest {
             assertEquals(
                 ItemCategory.ELECTRONICS,
                 ItemCategory.fromMlKitLabel(label),
-                "Label '$label' should map to ELECTRONICS"
+                "Label '$label' should map to ELECTRONICS",
             )
         }
     }

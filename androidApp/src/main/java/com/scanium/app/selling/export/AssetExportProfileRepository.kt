@@ -12,11 +12,11 @@ import kotlinx.serialization.json.Json
 
 class AssetExportProfileRepository(
     private val context: Context,
-    private val json: Json = Json { ignoreUnknownKeys = true }
+    private val json: Json = Json { ignoreUnknownKeys = true },
 ) : ExportProfileRepository {
-
     @Volatile
     private var cachedProfiles: List<ExportProfileDefinition>? = null
+
     @Volatile
     private var cachedDefaultId: ExportProfileId? = null
 
@@ -40,21 +40,24 @@ class AssetExportProfileRepository(
 
         return withContext(Dispatchers.IO) {
             val fallback = listOf(ExportProfiles.generic())
-            val result: Pair<List<ExportProfileDefinition>, ExportProfileId> = runCatching {
-                val indexJson = readAssetText(INDEX_PATH)
-                val index = json.decodeFromString<ExportProfilesIndex>(indexJson)
-                val definitions = index.profiles.mapNotNull { fileName ->
-                    runCatching {
-                        val content = readAssetText("export_profiles/$fileName")
-                        json.decodeFromString<ExportProfileDefinition>(content)
-                    }.getOrNull()
-                }.ifEmpty { fallback }
-                val defaultProfileId = index.defaultProfileId
-                    .takeIf { it.isNotBlank() }
-                    ?.let { ExportProfileId(it) }
-                    ?: ExportProfiles.generic().id
-                definitions to defaultProfileId
-            }.getOrElse { fallback to ExportProfiles.generic().id }
+            val result: Pair<List<ExportProfileDefinition>, ExportProfileId> =
+                runCatching {
+                    val indexJson = readAssetText(INDEX_PATH)
+                    val index = json.decodeFromString<ExportProfilesIndex>(indexJson)
+                    val definitions =
+                        index.profiles.mapNotNull { fileName ->
+                            runCatching {
+                                val content = readAssetText("export_profiles/$fileName")
+                                json.decodeFromString<ExportProfileDefinition>(content)
+                            }.getOrNull()
+                        }.ifEmpty { fallback }
+                    val defaultProfileId =
+                        index.defaultProfileId
+                            .takeIf { it.isNotBlank() }
+                            ?.let { ExportProfileId(it) }
+                            ?: ExportProfiles.generic().id
+                    definitions to defaultProfileId
+                }.getOrElse { fallback to ExportProfiles.generic().id }
 
             cachedProfiles = result.first
             cachedDefaultId = result.second
@@ -74,5 +77,5 @@ class AssetExportProfileRepository(
 @Serializable
 data class ExportProfilesIndex(
     val defaultProfileId: String,
-    val profiles: List<String>
+    val profiles: List<String>,
 )

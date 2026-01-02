@@ -5,9 +5,12 @@ import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.data.PostingTargetPreferences
 import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.listing.ExportProfileRepository
+import com.scanium.app.selling.assistant.AssistantPreflightManager
+import com.scanium.app.selling.assistant.AssistantPreflightManagerImpl
 import com.scanium.app.selling.assistant.AssistantRepository
 import com.scanium.app.selling.assistant.AssistantRepositoryFactory
 import com.scanium.app.selling.assistant.LocalAssistantHelper
+import com.scanium.app.selling.assistant.local.LocalSuggestionEngine
 import com.scanium.app.selling.data.EbayApi
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.data.MockEbayApi
@@ -31,11 +34,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object ViewModelModule {
-
     @Provides
     @Singleton
     fun provideExportProfilePreferences(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ExportProfilePreferences {
         return ExportProfilePreferences(context)
     }
@@ -43,7 +45,7 @@ object ViewModelModule {
     @Provides
     @Singleton
     fun providePostingTargetPreferences(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): PostingTargetPreferences {
         return PostingTargetPreferences(context)
     }
@@ -51,23 +53,21 @@ object ViewModelModule {
     @Provides
     @Singleton
     fun provideExportProfileRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ExportProfileRepository {
         return AssetExportProfileRepository(context)
     }
 
     @Provides
     @Singleton
-    fun provideListingDraftStore(
-        listingDraftRepository: ListingDraftRepository
-    ): ListingDraftStore {
+    fun provideListingDraftStore(listingDraftRepository: ListingDraftRepository): ListingDraftStore {
         return listingDraftRepository
     }
 
     @Provides
     @Singleton
     fun provideAssistantRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): AssistantRepository {
         return AssistantRepositoryFactory(context).create()
     }
@@ -80,8 +80,14 @@ object ViewModelModule {
 
     @Provides
     @Singleton
+    fun provideLocalSuggestionEngine(): LocalSuggestionEngine {
+        return LocalSuggestionEngine()
+    }
+
+    @Provides
+    @Singleton
     fun provideDiagnosticsRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): DiagnosticsRepository {
         return DiagnosticsRepository(context)
     }
@@ -96,8 +102,16 @@ object ViewModelModule {
     @Singleton
     fun provideEbayMarketplaceService(
         @ApplicationContext context: Context,
-        ebayApi: EbayApi
+        ebayApi: EbayApi,
     ): EbayMarketplaceService {
         return EbayMarketplaceService(context, ebayApi)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAssistantPreflightManager(
+        @ApplicationContext context: Context,
+    ): AssistantPreflightManager {
+        return AssistantPreflightManagerImpl(context)
     }
 }

@@ -24,7 +24,8 @@ interface ScannedItemDao {
     @Query("SELECT snapshotHash FROM scanned_item_history WHERE itemId = :itemId ORDER BY changedAt DESC LIMIT 1")
     suspend fun getLatestHistoryHash(itemId: String): String?
 
-    @Query("""
+    @Query(
+        """
         SELECT h.itemId, h.snapshotHash
         FROM scanned_item_history h
         INNER JOIN (
@@ -33,7 +34,8 @@ interface ScannedItemDao {
             WHERE itemId IN (:itemIds)
             GROUP BY itemId
         ) latest ON h.itemId = latest.itemId AND h.changedAt = latest.maxChangedAt
-    """)
+    """,
+    )
     suspend fun getLatestHistoryHashes(itemIds: List<String>): List<ItemHashPair>
 
     @Query("DELETE FROM scanned_items WHERE id = :itemId")

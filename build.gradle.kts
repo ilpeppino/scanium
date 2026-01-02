@@ -76,8 +76,8 @@ tasks.register("checkPortableModules") {
         if (violations.isNotEmpty()) {
             throw GradleException(
                 "Portability violation: core modules must not import Android platform types.\n" +
-                "Found forbidden imports:\n  ${violations.joinToString("\n  ")}\n" +
-                "See CLAUDE.md 'Shared Code Rules' for guidance."
+                    "Found forbidden imports:\n  ${violations.joinToString("\n  ")}\n" +
+                    "See CLAUDE.md 'Shared Code Rules' for guidance.",
             )
         }
 
@@ -90,33 +90,36 @@ tasks.register("checkNoLegacyImports") {
     group = "verification"
 
     doLast {
-        val legacyPatterns = listOf(
-            "import com.scanium.app.tracking.ObjectTracker",
-            "import com.scanium.app.aggregation",
-            "import com.scanium.app.items.ScannedItem",
-            "import com.scanium.app.model.NormalizedRect",
-            "import com.scanium.app.ml.ItemCategory"
-        )
+        val legacyPatterns =
+            listOf(
+                "import com.scanium.app.tracking.ObjectTracker",
+                "import com.scanium.app.aggregation",
+                "import com.scanium.app.items.ScannedItem",
+                "import com.scanium.app.model.NormalizedRect",
+                "import com.scanium.app.ml.ItemCategory",
+            )
 
-        val offendingFiles = fileTree("androidApp/src") {
-            include("**/*.kt")
-        }.mapNotNull { sourceFile ->
-            val matchedImports = legacyPatterns.filter { pattern ->
-                sourceFile.readText().contains(pattern)
-            }
+        val offendingFiles =
+            fileTree("androidApp/src") {
+                include("**/*.kt")
+            }.mapNotNull { sourceFile ->
+                val matchedImports =
+                    legacyPatterns.filter { pattern ->
+                        sourceFile.readText().contains(pattern)
+                    }
 
-            if (matchedImports.isNotEmpty()) {
-                "${sourceFile.relativeTo(rootDir)} -> ${matchedImports.joinToString(", ")}"
-            } else {
-                null
+                if (matchedImports.isNotEmpty()) {
+                    "${sourceFile.relativeTo(rootDir)} -> ${matchedImports.joinToString(", ")}"
+                } else {
+                    null
+                }
             }
-        }
 
         if (offendingFiles.isNotEmpty()) {
             throw GradleException(
                 "Found legacy com.scanium.app.* imports in Android sources:\n" +
                     offendingFiles.joinToString("\n") +
-                    "\nUpdate imports to shared KMP modules (com.scanium.core.*)."
+                    "\nUpdate imports to shared KMP modules (com.scanium.core.*).",
             )
         }
 
@@ -133,15 +136,17 @@ tasks.register("prePushJvmCheck") {
         ":shared:core-tracking:jvmTest",
         ":shared:test-utils:jvmTest",
         "checkPortableModules",
-        "checkNoLegacyImports"
+        "checkNoLegacyImports",
     )
 
     doLast {
-        println("""
+        println(
+            """
             ✓ Pre-push JVM checks passed:
               - JVM tests for shared modules
               - Portability checks
               - Legacy import checks
-        """.trimIndent())
+            """.trimIndent(),
+        )
     }
 }

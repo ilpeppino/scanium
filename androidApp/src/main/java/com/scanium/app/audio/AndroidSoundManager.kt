@@ -9,8 +9,8 @@ import android.os.SystemClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 class AndroidSoundManager internal constructor(
@@ -18,18 +18,17 @@ class AndroidSoundManager internal constructor(
     private val deviceSoundPolicy: DeviceSoundPolicy,
     private val tonePlayer: TonePlayer,
     private val rateLimiter: SoundRateLimiter,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
 ) : SoundManager {
-
     constructor(
         context: Context,
-        soundsEnabledFlow: Flow<Boolean>
+        soundsEnabledFlow: Flow<Boolean>,
     ) : this(
         soundsEnabledFlow = soundsEnabledFlow,
         deviceSoundPolicy = AndroidDeviceSoundPolicy(context),
         tonePlayer = ToneGeneratorPlayer(),
         rateLimiter = SoundRateLimiter(DEFAULT_RATE_LIMITS, SystemClock::elapsedRealtime),
-        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
     )
 
     private val soundsEnabled = SoundEnabledState()
@@ -65,33 +64,36 @@ class AndroidSoundManager internal constructor(
 
     companion object {
         private const val DEFAULT_DURATION_MS = 80
-        private val SOUND_TONES = mapOf(
-            AppSound.CAPTURE to ToneGenerator.TONE_PROP_BEEP,
-            AppSound.ITEM_ADDED to ToneGenerator.TONE_PROP_BEEP2,
-            AppSound.SELECT to ToneGenerator.TONE_PROP_BEEP2,
-            AppSound.DELETE to ToneGenerator.TONE_PROP_NACK,
-            AppSound.ERROR to ToneGenerator.TONE_SUP_ERROR,
-            AppSound.SEND to ToneGenerator.TONE_PROP_ACK,
-            AppSound.RECEIVED to ToneGenerator.TONE_PROP_BEEP2,
-            AppSound.EXPORT to ToneGenerator.TONE_PROP_ACK
-        )
+        private val SOUND_TONES =
+            mapOf(
+                AppSound.CAPTURE to ToneGenerator.TONE_PROP_BEEP,
+                AppSound.ITEM_ADDED to ToneGenerator.TONE_PROP_BEEP2,
+                AppSound.SELECT to ToneGenerator.TONE_PROP_BEEP2,
+                AppSound.DELETE to ToneGenerator.TONE_PROP_NACK,
+                AppSound.ERROR to ToneGenerator.TONE_SUP_ERROR,
+                AppSound.SEND to ToneGenerator.TONE_PROP_ACK,
+                AppSound.RECEIVED to ToneGenerator.TONE_PROP_BEEP2,
+                AppSound.EXPORT to ToneGenerator.TONE_PROP_ACK,
+            )
 
-        private val SOUND_DURATIONS = mapOf(
-            AppSound.CAPTURE to 120,
-            AppSound.ITEM_ADDED to 60,
-            AppSound.SELECT to 50,
-            AppSound.DELETE to 90,
-            AppSound.ERROR to 140,
-            AppSound.SEND to 70,
-            AppSound.RECEIVED to 90,
-            AppSound.EXPORT to 80
-        )
+        private val SOUND_DURATIONS =
+            mapOf(
+                AppSound.CAPTURE to 120,
+                AppSound.ITEM_ADDED to 60,
+                AppSound.SELECT to 50,
+                AppSound.DELETE to 90,
+                AppSound.ERROR to 140,
+                AppSound.SEND to 70,
+                AppSound.RECEIVED to 90,
+                AppSound.EXPORT to 80,
+            )
 
-        private val DEFAULT_RATE_LIMITS = mapOf(
-            AppSound.ITEM_ADDED to 800L,
-            AppSound.SELECT to 150L,
-            AppSound.RECEIVED to 500L
-        )
+        private val DEFAULT_RATE_LIMITS =
+            mapOf(
+                AppSound.ITEM_ADDED to 800L,
+                AppSound.SELECT to 150L,
+                AppSound.RECEIVED to 500L,
+            )
     }
 }
 
@@ -114,14 +116,21 @@ internal class AndroidDeviceSoundPolicy(context: Context) : DeviceSoundPolicy {
 }
 
 internal interface TonePlayer {
-    fun play(tone: Int, durationMs: Int)
+    fun play(
+        tone: Int,
+        durationMs: Int,
+    )
+
     fun release()
 }
 
 private class ToneGeneratorPlayer : TonePlayer {
     private val toneGenerator = ToneGenerator(AudioManager.STREAM_SYSTEM, VOLUME_PERCENT)
 
-    override fun play(tone: Int, durationMs: Int) {
+    override fun play(
+        tone: Int,
+        durationMs: Int,
+    ) {
         toneGenerator.startTone(tone, durationMs)
     }
 

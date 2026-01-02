@@ -21,5 +21,5 @@ enum class TelemetrySeverity {
     ERROR,
 
     /** Critical failures requiring immediate attention */
-    FATAL
+    FATAL,
 }

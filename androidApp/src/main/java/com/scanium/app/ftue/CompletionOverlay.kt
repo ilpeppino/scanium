@@ -36,29 +36,31 @@ import com.scanium.app.R
 @Composable
 fun CompletionOverlay(
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f)),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.85f)),
+        contentAlignment = Alignment.Center,
     ) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
         ) {
             Column(
                 modifier = Modifier.padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 // Success icon
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = stringResource(R.string.cd_setup_complete),
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier.size(80.dp),
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -69,7 +71,7 @@ fun CompletionOverlay(
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -79,7 +81,7 @@ fun CompletionOverlay(
                     text = "You're all set to start scanning and cataloging objects. Happy scanning!",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -87,7 +89,7 @@ fun CompletionOverlay(
                 // Dismiss button
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Get Started")
                 }

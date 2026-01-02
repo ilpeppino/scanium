@@ -1,12 +1,12 @@
 package com.scanium.app.di
 
 import android.content.Context
+import com.scanium.app.billing.BillingRepository
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.data.AndroidFeatureFlagRepository
 import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.SettingsRepository
-import com.scanium.app.billing.BillingRepository
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.model.billing.BillingProvider
 import com.scanium.app.model.config.ConfigProvider
@@ -26,11 +26,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
-
     @Provides
     @Singleton
     fun provideSettingsRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): SettingsRepository {
         return SettingsRepository(context)
     }
@@ -38,7 +37,7 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideBillingRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): BillingRepository {
         return BillingRepository(context)
     }
@@ -46,7 +45,7 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideFtueRepository(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): FtueRepository {
         return FtueRepository(context)
     }
@@ -54,7 +53,7 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideClassificationPreferences(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ClassificationPreferences {
         return ClassificationPreferences(context)
     }
@@ -63,7 +62,7 @@ object RepositoryModule {
     @Singleton
     fun provideEntitlementManager(
         settingsRepository: SettingsRepository,
-        billingProvider: BillingProvider
+        billingProvider: BillingProvider,
     ): EntitlementManager {
         return EntitlementManager(settingsRepository, billingProvider)
     }
@@ -75,14 +74,14 @@ object RepositoryModule {
         configProvider: ConfigProvider,
         entitlementManager: EntitlementManager,
         connectivityStatusProvider: ConnectivityStatusProvider,
-        apiKeyStore: SecureApiKeyStore
+        apiKeyStore: SecureApiKeyStore,
     ): FeatureFlagRepository {
         return AndroidFeatureFlagRepository(
             settingsRepository = settingsRepository,
             configProvider = configProvider,
             entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
             connectivityStatusProvider = connectivityStatusProvider,
-            apiKeyStore = apiKeyStore
+            apiKeyStore = apiKeyStore,
         )
     }
 }

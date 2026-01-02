@@ -17,11 +17,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,7 +36,7 @@ data class SettingsCategory(
     val description: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val onClick: () -> Unit,
-    val visible: Boolean = true
+    val visible: Boolean = true,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,52 +49,53 @@ fun SettingsHomeScreen(
     onAssistantClick: () -> Unit,
     onFeedbackClick: () -> Unit,
     onPrivacyClick: () -> Unit,
-    onDeveloperClick: () -> Unit
+    onDeveloperClick: () -> Unit,
 ) {
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
     // DEV_MODE_ENABLED is false in beta builds, completely hiding Developer Options
     // In dev builds, it's shown if either DEBUG build type or user enabled developer mode
     val showDeveloper = BuildConfig.DEV_MODE_ENABLED && (BuildConfig.DEBUG || isDeveloperMode)
 
-    val categories = listOf(
-        SettingsCategory(
-            title = stringResource(R.string.settings_category_general_title),
-            description = stringResource(R.string.settings_category_general_desc),
-            icon = Icons.Filled.Settings,
-            onClick = onGeneralClick
-        ),
-        SettingsCategory(
-            title = stringResource(R.string.settings_category_camera_title),
-            description = stringResource(R.string.settings_category_camera_desc),
-            icon = Icons.Filled.CameraAlt,
-            onClick = onCameraClick
-        ),
-        SettingsCategory(
-            title = stringResource(R.string.settings_category_assistant_title),
-            description = stringResource(R.string.settings_category_assistant_desc),
-            icon = Icons.Rounded.AutoAwesome,
-            onClick = onAssistantClick
-        ),
-        SettingsCategory(
-            title = stringResource(R.string.settings_category_feedback_title),
-            description = stringResource(R.string.settings_category_feedback_desc),
-            icon = Icons.AutoMirrored.Filled.VolumeUp,
-            onClick = onFeedbackClick
-        ),
-        SettingsCategory(
-            title = stringResource(R.string.settings_category_privacy_title),
-            description = stringResource(R.string.settings_category_privacy_desc),
-            icon = Icons.Filled.PrivacyTip,
-            onClick = onPrivacyClick
-        ),
-        SettingsCategory(
-            title = stringResource(R.string.settings_category_developer_title),
-            description = stringResource(R.string.settings_category_developer_desc),
-            icon = Icons.Filled.BugReport,
-            onClick = onDeveloperClick,
-            visible = showDeveloper
-        )
-    ).filter { it.visible }
+    val categories =
+        listOf(
+            SettingsCategory(
+                title = stringResource(R.string.settings_category_general_title),
+                description = stringResource(R.string.settings_category_general_desc),
+                icon = Icons.Filled.Settings,
+                onClick = onGeneralClick,
+            ),
+            SettingsCategory(
+                title = stringResource(R.string.settings_category_camera_title),
+                description = stringResource(R.string.settings_category_camera_desc),
+                icon = Icons.Filled.CameraAlt,
+                onClick = onCameraClick,
+            ),
+            SettingsCategory(
+                title = stringResource(R.string.settings_category_assistant_title),
+                description = stringResource(R.string.settings_category_assistant_desc),
+                icon = Icons.Rounded.AutoAwesome,
+                onClick = onAssistantClick,
+            ),
+            SettingsCategory(
+                title = stringResource(R.string.settings_category_feedback_title),
+                description = stringResource(R.string.settings_category_feedback_desc),
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
+                onClick = onFeedbackClick,
+            ),
+            SettingsCategory(
+                title = stringResource(R.string.settings_category_privacy_title),
+                description = stringResource(R.string.settings_category_privacy_desc),
+                icon = Icons.Filled.PrivacyTip,
+                onClick = onPrivacyClick,
+            ),
+            SettingsCategory(
+                title = stringResource(R.string.settings_category_developer_title),
+                description = stringResource(R.string.settings_category_developer_desc),
+                icon = Icons.Filled.BugReport,
+                onClick = onDeveloperClick,
+                visible = showDeveloper,
+            ),
+        ).filter { it.visible }
 
     Scaffold(
         topBar = {
@@ -104,26 +105,27 @@ fun SettingsHomeScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = R.string.settings_back)
+                            contentDescription = stringResource(id = R.string.settings_back),
                         )
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
             contentPadding = PaddingValues(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Text(
                     text = stringResource(R.string.settings_home_description),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
 
@@ -132,20 +134,21 @@ fun SettingsHomeScreen(
                     title = category.title,
                     subtitle = category.description,
                     icon = category.icon,
-                    onClick = category.onClick
+                    onClick = category.onClick,
                 )
             }
 
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = stringResource(
-                            R.string.settings_version,
-                            BuildConfig.VERSION_NAME,
-                            BuildConfig.VERSION_CODE
-                        ),
+                        text =
+                            stringResource(
+                                R.string.settings_version,
+                                BuildConfig.VERSION_NAME,
+                                BuildConfig.VERSION_CODE,
+                            ),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

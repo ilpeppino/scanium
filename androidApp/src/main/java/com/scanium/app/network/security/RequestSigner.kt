@@ -52,7 +52,7 @@ object RequestSigner {
         request: Request,
         apiKey: String,
         requestBody: String,
-        timestampMs: Long = System.currentTimeMillis()
+        timestampMs: Long = System.currentTimeMillis(),
     ): Request {
         if (apiKey.isBlank()) {
             return request
@@ -80,7 +80,7 @@ object RequestSigner {
         builder: Request.Builder,
         apiKey: String,
         requestBody: String,
-        timestampMs: Long = System.currentTimeMillis()
+        timestampMs: Long = System.currentTimeMillis(),
     ) {
         if (apiKey.isBlank()) {
             return
@@ -108,7 +108,7 @@ object RequestSigner {
         apiKey: String,
         params: Map<String, String>,
         binaryContentSize: Long,
-        timestampMs: Long = System.currentTimeMillis()
+        timestampMs: Long = System.currentTimeMillis(),
     ) {
         if (apiKey.isBlank()) {
             return
@@ -126,7 +126,10 @@ object RequestSigner {
      * Format: "key1=value1&key2=value2&_size=<binarySize>"
      * Keys are sorted alphabetically for deterministic ordering.
      */
-    private fun buildCanonicalMultipartBody(params: Map<String, String>, binarySize: Long): String {
+    private fun buildCanonicalMultipartBody(
+        params: Map<String, String>,
+        binarySize: Long,
+    ): String {
         val sortedParams = params.entries.sortedBy { it.key }
         val paramString = sortedParams.joinToString("&") { "${it.key}=${it.value}" }
         return if (paramString.isEmpty()) {
@@ -150,7 +153,7 @@ object RequestSigner {
         builder: Request.Builder,
         apiKey: String,
         urlPath: String,
-        timestampMs: Long = System.currentTimeMillis()
+        timestampMs: Long = System.currentTimeMillis(),
     ) {
         if (apiKey.isBlank()) {
             return
@@ -174,7 +177,7 @@ object RequestSigner {
     internal fun generateSignature(
         apiKey: String,
         timestampMs: Long,
-        requestBody: String
+        requestBody: String,
     ): String {
         val message = "$timestampMs:$requestBody"
         val mac = Mac.getInstance(HMAC_SHA256)

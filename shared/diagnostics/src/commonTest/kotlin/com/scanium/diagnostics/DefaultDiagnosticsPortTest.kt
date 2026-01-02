@@ -12,23 +12,23 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class DefaultDiagnosticsPortTest {
-
     private fun createTestEvent(name: String): TelemetryEvent {
         return TelemetryEvent(
             name = name,
             severity = TelemetrySeverity.INFO,
             timestamp = Clock.System.now(),
-            attributes = mapOf("test" to "value")
+            attributes = mapOf("test" to "value"),
         )
     }
 
     @Test
     fun `port appends breadcrumbs`() {
-        val port = DefaultDiagnosticsPort(
-            contextProvider = { mapOf("platform" to "android") },
-            maxEvents = 10,
-            maxBytes = 10000
-        )
+        val port =
+            DefaultDiagnosticsPort(
+                contextProvider = { mapOf("platform" to "android") },
+                maxEvents = 10,
+                maxBytes = 10000,
+            )
 
         port.appendBreadcrumb(createTestEvent("event1"))
         port.appendBreadcrumb(createTestEvent("event2"))
@@ -38,17 +38,18 @@ class DefaultDiagnosticsPortTest {
 
     @Test
     fun `port builds bundle with context and events`() {
-        val port = DefaultDiagnosticsPort(
-            contextProvider = {
-                mapOf(
-                    "platform" to "android",
-                    "app_version" to "1.0.0",
-                    "build" to "42"
-                )
-            },
-            maxEvents = 10,
-            maxBytes = 10000
-        )
+        val port =
+            DefaultDiagnosticsPort(
+                contextProvider = {
+                    mapOf(
+                        "platform" to "android",
+                        "app_version" to "1.0.0",
+                        "build" to "42",
+                    )
+                },
+                maxEvents = 10,
+                maxBytes = 10000,
+            )
 
         port.appendBreadcrumb(createTestEvent("scan.started"))
         port.appendBreadcrumb(createTestEvent("scan.completed"))
@@ -71,11 +72,12 @@ class DefaultDiagnosticsPortTest {
 
     @Test
     fun `port clears breadcrumbs`() {
-        val port = DefaultDiagnosticsPort(
-            contextProvider = { mapOf("platform" to "android") },
-            maxEvents = 10,
-            maxBytes = 10000
-        )
+        val port =
+            DefaultDiagnosticsPort(
+                contextProvider = { mapOf("platform" to "android") },
+                maxEvents = 10,
+                maxBytes = 10000,
+            )
 
         port.appendBreadcrumb(createTestEvent("event1"))
         port.appendBreadcrumb(createTestEvent("event2"))
@@ -89,11 +91,12 @@ class DefaultDiagnosticsPortTest {
 
     @Test
     fun `port respects max events limit`() {
-        val port = DefaultDiagnosticsPort(
-            contextProvider = { mapOf("platform" to "android") },
-            maxEvents = 3,
-            maxBytes = 100000
-        )
+        val port =
+            DefaultDiagnosticsPort(
+                contextProvider = { mapOf("platform" to "android") },
+                maxEvents = 3,
+                maxBytes = 100000,
+            )
 
         for (i in 1..10) {
             port.appendBreadcrumb(createTestEvent("event$i"))
@@ -104,9 +107,10 @@ class DefaultDiagnosticsPortTest {
 
     @Test
     fun `port bundle includes generatedAt timestamp`() {
-        val port = DefaultDiagnosticsPort(
-            contextProvider = { mapOf("platform" to "android") }
-        )
+        val port =
+            DefaultDiagnosticsPort(
+                contextProvider = { mapOf("platform" to "android") },
+            )
 
         val bundle = port.buildDiagnosticsBundle()
         val jsonString = bundle.decodeToString()
@@ -120,12 +124,13 @@ class DefaultDiagnosticsPortTest {
     fun `port contextProvider is called when building bundle`() {
         var contextCallCount = 0
 
-        val port = DefaultDiagnosticsPort(
-            contextProvider = {
-                contextCallCount++
-                mapOf("platform" to "android", "call_count" to contextCallCount.toString())
-            }
-        )
+        val port =
+            DefaultDiagnosticsPort(
+                contextProvider = {
+                    contextCallCount++
+                    mapOf("platform" to "android", "call_count" to contextCallCount.toString())
+                },
+            )
 
         port.appendBreadcrumb(createTestEvent("event1"))
 
@@ -174,9 +179,10 @@ class DefaultDiagnosticsPortTest {
 
     @Test
     fun `port handles empty breadcrumbs`() {
-        val port = DefaultDiagnosticsPort(
-            contextProvider = { mapOf("platform" to "android") }
-        )
+        val port =
+            DefaultDiagnosticsPort(
+                contextProvider = { mapOf("platform" to "android") },
+            )
 
         val bundle = port.buildDiagnosticsBundle()
         val jsonString = bundle.decodeToString()

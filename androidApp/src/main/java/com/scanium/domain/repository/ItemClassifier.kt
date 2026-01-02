@@ -32,7 +32,6 @@ import com.scanium.shared.core.models.model.ImageRef
  * ```
  */
 interface ItemClassifier {
-
     /**
      * Classify a single item from its cropped image.
      *
@@ -50,7 +49,7 @@ interface ItemClassifier {
     suspend fun classifyItem(
         thumbnail: ImageRef,
         hint: String? = null,
-        domainPackId: String = "home_resale"
+        domainPackId: String = "home_resale",
     ): Result<ClassificationResult>
 
     /**
@@ -83,7 +82,7 @@ data class ClassificationResult(
     val label: String? = null,
     val itemCategory: ItemCategory = ItemCategory.UNKNOWN,
     val latencyMs: Long? = null,
-    val requestId: String? = null
+    val requestId: String? = null,
 ) {
     init {
         require(confidence in 0f..1f) { "Confidence must be between 0 and 1" }
@@ -120,5 +119,5 @@ enum class ClassificationSource {
      * Fallback/default when no classification available.
      * Lowest accuracy, used when both cloud and on-device fail.
      */
-    FALLBACK
+    FALLBACK,
 }

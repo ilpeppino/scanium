@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <!-- Scanium Adaptive Icon Monochrome (for Android 13+ themed icons) -->
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="179.2"
+        android:translateY="179.2">
+        <!-- Camera frame (rounded square) -->
+        <path
+            android:pathData="M 282 112 H 742 A 170 170 0 0 1 912 282 V 742 A 170 170 0 0 1 742 912 H 282 A 170 170 0 0 1 112 742 V 282 A 170 170 0 0 1 282 112 Z"
+            android:strokeColor="***REMOVED***FFFFFFFF"
+            android:strokeWidth="70"
+            android:fillColor="***REMOVED***00000000"/>
+        <!-- S Symbol: Smooth curved S with rounded ends -->
+        <path
+            android:pathData="M 628 295 C 628 295 580 245 512 245 C 420 245 355 295 355 365 C 355 435 420 475 512 495 C 604 515 669 555 669 635 C 669 715 604 775 512 775 C 444 775 396 725 396 725"
+            android:strokeColor="***REMOVED***FFFFFFFF"
+            android:strokeWidth="90"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:fillColor="***REMOVED***00000000"/>
+    </group>
+</vector>

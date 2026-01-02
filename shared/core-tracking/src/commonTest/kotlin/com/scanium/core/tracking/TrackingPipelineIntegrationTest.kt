@@ -9,7 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TrackingPipelineIntegrationTest {
-
     private lateinit var tracker: ObjectTracker
     private lateinit var aggregator: ItemAggregator
 
@@ -22,38 +21,39 @@ class TrackingPipelineIntegrationTest {
 
     @Test
     fun singleObjectFlowsThroughTrackerAndAggregator() {
-        val frames = listOf(
+        val frames =
             listOf(
-                testDetectionInfo(
-                    trackingId = "obj_1",
-                    boundingBox = TestFixtures.BoundingBoxes.center,
-                    confidence = 0.6f,
-                    category = ItemCategory.FASHION,
-                    labelText = "Shirt",
-                    normalizedBoxArea = 0.01f
-                )
-            ),
-            listOf(
-                testDetectionInfo(
-                    trackingId = "obj_1",
-                    boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
-                    confidence = 0.7f,
-                    category = ItemCategory.FASHION,
-                    labelText = "Shirt",
-                    normalizedBoxArea = 0.012f
-                )
-            ),
-            listOf(
-                testDetectionInfo(
-                    trackingId = "obj_1",
-                    boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.02f),
-                    confidence = 0.8f,
-                    category = ItemCategory.FASHION,
-                    labelText = "Shirt",
-                    normalizedBoxArea = 0.013f
-                )
+                listOf(
+                    testDetectionInfo(
+                        trackingId = "obj_1",
+                        boundingBox = TestFixtures.BoundingBoxes.center,
+                        confidence = 0.6f,
+                        category = ItemCategory.FASHION,
+                        labelText = "Shirt",
+                        normalizedBoxArea = 0.01f,
+                    ),
+                ),
+                listOf(
+                    testDetectionInfo(
+                        trackingId = "obj_1",
+                        boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.01f),
+                        confidence = 0.7f,
+                        category = ItemCategory.FASHION,
+                        labelText = "Shirt",
+                        normalizedBoxArea = 0.012f,
+                    ),
+                ),
+                listOf(
+                    testDetectionInfo(
+                        trackingId = "obj_1",
+                        boundingBox = TestFixtures.BoundingBoxes.slightlyShifted(TestFixtures.BoundingBoxes.center, 0.02f),
+                        confidence = 0.8f,
+                        category = ItemCategory.FASHION,
+                        labelText = "Shirt",
+                        normalizedBoxArea = 0.013f,
+                    ),
+                ),
             )
-        )
 
         frames.forEach { detections ->
             val confirmed = tracker.processFrame(detections)
@@ -68,22 +68,23 @@ class TrackingPipelineIntegrationTest {
 
     @Test
     fun multipleObjectsRemainDistinctThroughPipeline() {
-        val frame = listOf(
-            testDetectionInfo(
-                trackingId = "obj_1",
-                boundingBox = TestFixtures.BoundingBoxes.topLeft,
-                confidence = 0.7f,
-                category = ItemCategory.FASHION,
-                labelText = "Hat"
-            ),
-            testDetectionInfo(
-                trackingId = "obj_2",
-                boundingBox = TestFixtures.BoundingBoxes.bottomRight,
-                confidence = 0.75f,
-                category = ItemCategory.ELECTRONICS,
-                labelText = "Phone"
+        val frame =
+            listOf(
+                testDetectionInfo(
+                    trackingId = "obj_1",
+                    boundingBox = TestFixtures.BoundingBoxes.topLeft,
+                    confidence = 0.7f,
+                    category = ItemCategory.FASHION,
+                    labelText = "Hat",
+                ),
+                testDetectionInfo(
+                    trackingId = "obj_2",
+                    boundingBox = TestFixtures.BoundingBoxes.bottomRight,
+                    confidence = 0.75f,
+                    category = ItemCategory.ELECTRONICS,
+                    labelText = "Phone",
+                ),
             )
-        )
 
         repeat(3) {
             val confirmed = tracker.processFrame(frame)
@@ -101,7 +102,7 @@ class TrackingPipelineIntegrationTest {
             category = category,
             labelText = labelText,
             confidence = maxConfidence,
-            boundingBox = boundingBox
+            boundingBox = boundingBox,
         )
     }
 }

@@ -1,23 +1,20 @@
-/**
- * Unified Cache Layer
- *
- * Provides:
- * - In-memory caching with TTL
- * - Request deduplication (in-flight coalescing)
- * - Usage accounting (cache hits/misses)
- * - Pluggable for production (Redis, etc.)
- */
-
 import { createHash } from 'crypto';
 
-/**
- * Cache statistics for monitoring.
- */
-export type CacheStats = {
+export interface CacheOptions {
+  ttlMs: number;
+  maxEntries: number;
+  name: string;
+  enableDedup?: boolean;
+}
+
+export interface CacheStats {
+  size: number;
+>>>>>>> origin/main
   hits: number;
   misses: number;
   coalescedRequests: number;
   evictions: number;
+<<<<<<< HEAD
   size: number;
 };
 
@@ -76,10 +73,42 @@ export class UnifiedCache<T> {
   private readonly store = new Map<string, CacheEntry<T>>();
   private readonly inFlight = new Map<string, InFlightRequest<T>>();
   private readonly stats: CacheStats = {
+=======
+}
+
+export interface CacheEvent {
+  type: 'hit' | 'miss' | 'eviction' | 'set';
+  cacheName: string;
+  cacheKey: string;
+  metadata?: Record<string, unknown>;
+}
+
+export type UsageCallback = (event: CacheEvent) => void;
+
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+/**
+ * Simple in-memory cache with TTL and deduplication support.
+ */
+export class UnifiedCache<T> {
+  private readonly cache = new Map<string, CacheEntry<T>>();
+  private readonly pending = new Map<string, Promise<T>>();
+  private readonly ttlMs: number;
+  private readonly maxEntries: number;
+  private readonly name: string;
+  private readonly enableDedup: boolean;
+  private usageCallback?: UsageCallback;
+  private stats: CacheStats = {
+    size: 0,
+>>>>>>> origin/main
     hits: 0,
     misses: 0,
     coalescedRequests: 0,
     evictions: 0,
+<<<<<<< HEAD
     size: 0,
   };
   private cleanupTimer?: NodeJS.Timeout;
@@ -96,10 +125,26 @@ export class UnifiedCache<T> {
   /**
    * Set usage accounting callback.
    */
+=======
+  };
+  private cleanupInterval?: ReturnType<typeof setInterval>;
+
+  constructor(options: CacheOptions) {
+    this.ttlMs = options.ttlMs;
+    this.maxEntries = options.maxEntries;
+    this.name = options.name;
+    this.enableDedup = options.enableDedup ?? false;
+
+    // Periodic cleanup of expired entries
+    this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
+  }
+
+>>>>>>> origin/main
   setUsageCallback(callback: UsageCallback): void {
     this.usageCallback = callback;
   }
 
+<<<<<<< HEAD
   /**
    * Get a cached value.
    */
@@ -239,10 +284,117 @@ export class UnifiedCache<T> {
       this.emitUsage('error', key);
       throw error;
     }
+=======
+  get(key: string): T | undefined {
+    const cached = this.cache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      this.stats.hits++;
+      this.usageCallback?.({
+        type: 'hit',
+        cacheName: this.name,
+        cacheKey: key,
+      });
+      return cached.value;
+    }
+    return undefined;
+  }
+
+  set(key: string, value: T): void {
+    // Evict if at capacity
+    if (this.cache.size >= this.maxEntries) {
+      this.evictOldest();
+    }
+
+    this.cache.set(key, {
+      value,
+      expiresAt: Date.now() + this.ttlMs,
+    });
+    this.stats.size = this.cache.size;
+    this.usageCallback?.({
+      type: 'set',
+      cacheName: this.name,
+      cacheKey: key,
+    });
+  }
+
+  async getOrCompute(key: string, compute: () => Promise<T>): Promise<T> {
+    // Check cache first
+    const cached = this.cache.get(key);
+    if (cached && cached.expiresAt > Date.now()) {
+      this.stats.hits++;
+      this.usageCallback?.({
+        type: 'hit',
+        cacheName: this.name,
+        cacheKey: key,
+      });
+      return cached.value;
+    }
+
+    // Deduplication: if a request for this key is in flight, wait for it
+    if (this.enableDedup && this.pending.has(key)) {
+      this.stats.coalescedRequests++;
+      return this.pending.get(key)!;
+    }
+
+    this.stats.misses++;
+    this.usageCallback?.({
+      type: 'miss',
+      cacheName: this.name,
+      cacheKey: key,
+    });
+
+    // Compute the value
+    const computePromise = compute();
+
+    if (this.enableDedup) {
+      this.pending.set(key, computePromise);
+    }
+
+    try {
+      const value = await computePromise;
+
+      // Evict if at capacity
+      if (this.cache.size >= this.maxEntries) {
+        this.evictOldest();
+      }
+
+      // Store in cache
+      this.cache.set(key, {
+        value,
+        expiresAt: Date.now() + this.ttlMs,
+      });
+      this.stats.size = this.cache.size;
+      this.usageCallback?.({
+        type: 'set',
+        cacheName: this.name,
+        cacheKey: key,
+      });
+
+      return value;
+    } finally {
+      if (this.enableDedup) {
+        this.pending.delete(key);
+      }
+    }
+  }
+
+  getStats(): CacheStats {
+    return { ...this.stats, size: this.cache.size };
+  }
+
+  stop(): void {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
+    this.cache.clear();
+    this.pending.clear();
+>>>>>>> origin/main
   }
 
   private cleanup(): void {
     const now = Date.now();
+<<<<<<< HEAD
     for (const [key, entry] of this.store.entries()) {
       if (entry.expiresAt <= now) {
         this.store.delete(key);
@@ -286,12 +438,39 @@ export class UnifiedCache<T> {
         cacheKey,
         cacheName: this.options.name,
         metadata,
+=======
+    for (const [key, entry] of this.cache) {
+      if (entry.expiresAt <= now) {
+        this.cache.delete(key);
+        this.stats.evictions++;
+        this.usageCallback?.({
+          type: 'eviction',
+          cacheName: this.name,
+          cacheKey: key,
+        });
+      }
+    }
+    this.stats.size = this.cache.size;
+  }
+
+  private evictOldest(): void {
+    // Simple LRU-like: evict the first (oldest) entry
+    const firstKey = this.cache.keys().next().value;
+    if (firstKey) {
+      this.cache.delete(firstKey);
+      this.stats.evictions++;
+      this.usageCallback?.({
+        type: 'eviction',
+        cacheName: this.name,
+        cacheKey: firstKey,
+>>>>>>> origin/main
       });
     }
   }
 }
 
 /**
+<<<<<<< HEAD
  * Build a cache key from components.
  *
  * @param components - Key components to hash
@@ -310,6 +489,30 @@ export function buildCacheKey(...components: (string | number | undefined)[]): s
  *
  * @param item - Item context snapshot
  * @returns Hash string
+=======
+ * Build a cache key for assistant responses.
+ */
+export function buildAssistantCacheKey(params: {
+  promptVersion: string;
+  question: string;
+  itemSnapshotHash: string;
+  imageHashes: string[];
+  providerId: string;
+}): string {
+  const normalized = normalizeQuestion(params.question);
+  const parts = [
+    params.promptVersion,
+    params.providerId,
+    normalized,
+    params.itemSnapshotHash,
+    ...params.imageHashes.sort(),
+  ];
+  return createHash('sha256').update(parts.join('|')).digest('hex');
+}
+
+/**
+ * Build a hash for an item snapshot (for cache key generation).
+>>>>>>> origin/main
  */
 export function buildItemSnapshotHash(item: {
   itemId: string;
@@ -323,6 +526,7 @@ export function buildItemSnapshotHash(item: {
     item.category ?? '',
     ...(item.attributes ?? []).map((a) => `${a.key}:${a.value}`).sort(),
   ];
+<<<<<<< HEAD
   return buildCacheKey(...parts);
 }
 
@@ -331,6 +535,13 @@ export function buildItemSnapshotHash(item: {
  *
  * @param question - User question
  * @returns Normalized question
+=======
+  return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 16);
+}
+
+/**
+ * Normalize a question for cache key generation.
+>>>>>>> origin/main
  */
 export function normalizeQuestion(question: string): string {
   return question
@@ -339,6 +550,7 @@ export function normalizeQuestion(question: string): string {
     .replace(/\s+/g, ' ')
     .replace(/[^\w\s]/g, '');
 }
+<<<<<<< HEAD
 
 /**
  * Build an assistant response cache key.
@@ -379,3 +591,5 @@ export function buildVisionCacheKey(params: {
   const sortedImageHashes = [...params.imageHashes].sort().join(':');
   return buildCacheKey('vision', params.featureVersion, sortedImageHashes, params.mode ?? 'default');
 }
+=======
+>>>>>>> origin/main

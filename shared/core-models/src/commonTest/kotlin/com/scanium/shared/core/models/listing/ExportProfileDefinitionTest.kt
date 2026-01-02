@@ -6,11 +6,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ExportProfileDefinitionTest {
-
     @Test
     fun parsesProfileDefinitionFromJson() {
         val json = Json { ignoreUnknownKeys = true }
-        val profileJson = """
+        val profileJson =
+            """
             {
               "id": "GENERIC",
               "displayName": "Generic",
@@ -38,7 +38,7 @@ class ExportProfileDefinitionTest {
               },
               "missingFieldPolicy": "SHOW_UNKNOWN"
             }
-        """.trimIndent()
+            """.trimIndent()
 
         val parsed = json.decodeFromString<ExportProfileDefinition>(profileJson)
 

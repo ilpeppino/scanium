@@ -79,7 +79,7 @@ class ItemClassificationCoordinator(
     priceEstimatorProvider: PriceEstimatorProvider? = null,
     telemetry: Telemetry? = null,
     private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
     companion object {
         private const val TAG = "ItemClassificationCoord"
@@ -89,41 +89,46 @@ class ItemClassificationCoordinator(
 
     // Effective mode: fall back to ON_DEVICE if cloud classification is not enabled
     // cloudClassificationEnabled combines user prefs, remote config, and entitlements
-    private val effectiveClassificationMode = if (cloudClassificationEnabled != null) {
-        combine(
-            classificationModeFlow,
-            cloudClassificationEnabled
-        ) { mode, cloudEnabled ->
-            if (cloudEnabled) mode else ClassificationMode.ON_DEVICE
-        }.stateIn(scope, SharingStarted.Eagerly, ClassificationMode.ON_DEVICE)
-    } else {
-        classificationModeFlow
-    }
+    private val effectiveClassificationMode =
+        if (cloudClassificationEnabled != null) {
+            combine(
+                classificationModeFlow,
+                cloudClassificationEnabled,
+            ) { mode, cloudEnabled ->
+                if (cloudEnabled) mode else ClassificationMode.ON_DEVICE
+            }.stateIn(scope, SharingStarted.Eagerly, ClassificationMode.ON_DEVICE)
+        } else {
+            classificationModeFlow
+        }
 
-    private val classificationOrchestrator = ClassificationOrchestrator(
-        modeFlow = effectiveClassificationMode,
-        onDeviceClassifier = onDeviceClassifier,
-        cloudClassifier = cloudClassifier,
-        scope = scope,
-        telemetry = telemetry
-    )
+    private val classificationOrchestrator =
+        ClassificationOrchestrator(
+            modeFlow = effectiveClassificationMode,
+            onDeviceClassifier = onDeviceClassifier,
+            cloudClassifier = cloudClassifier,
+            scope = scope,
+            telemetry = telemetry,
+        )
 
-    private val priceEstimationRepository = PriceEstimationRepository(
-        provider = priceEstimatorProvider ?: MockPriceEstimatorProvider(),
-        scope = scope
-    )
+    private val priceEstimationRepository =
+        PriceEstimationRepository(
+            provider = priceEstimatorProvider ?: MockPriceEstimatorProvider(),
+            scope = scope,
+        )
 
-    private val cloudCallGate = CloudCallGate(
-        isCloudMode = { classificationModeFlow.value == ClassificationMode.CLOUD }
-    )
+    private val cloudCallGate =
+        CloudCallGate(
+            isCloudMode = { classificationModeFlow.value == ClassificationMode.CLOUD },
+        )
 
     private val priceStatusJobs = mutableMapOf<String, Job>()
     private val notifiedCloudErrorItems = mutableSetOf<String>()
 
     // Alert flow for cloud classification errors
-    private val _cloudClassificationAlerts = MutableSharedFlow<CloudClassificationAlert>(
-        extraBufferCapacity = 5
-    )
+    private val _cloudClassificationAlerts =
+        MutableSharedFlow<CloudClassificationAlert>(
+            extraBufferCapacity = 5,
+        )
     val cloudClassificationAlerts = _cloudClassificationAlerts.asSharedFlow()
 
     /**
@@ -133,14 +138,15 @@ class ItemClassificationCoordinator(
     fun triggerEnhancedClassification() {
         scope.launch(mainDispatcher) {
             // Stage 1: Preliminary filter (check orchestrator + gate cooldown/stability)
-            val candidates = withContext(workerDispatcher) {
-                stateManager.getAggregatedItems()
-                    .filter {
-                        (it.thumbnail != null || it.fullImageUri != null) &&
-                            classificationOrchestrator.shouldClassify(it.aggregatedId) &&
-                            cloudCallGate.canClassify(it, null)
-                    }
-            }
+            val candidates =
+                withContext(workerDispatcher) {
+                    stateManager.getAggregatedItems()
+                        .filter {
+                            (it.thumbnail != null || it.fullImageUri != null) &&
+                                classificationOrchestrator.shouldClassify(it.aggregatedId) &&
+                                cloudCallGate.canClassify(it, null)
+                        }
+                }
 
             if (candidates.isEmpty()) return@launch
 
@@ -149,9 +155,10 @@ class ItemClassificationCoordinator(
             if (preparedItems.isEmpty()) return@launch
 
             // Stage 3: Duplicate content filter (Hash check)
-            val itemsToClassify = preparedItems.filter { item ->
-                cloudCallGate.canClassify(item, item.thumbnail)
-            }
+            val itemsToClassify =
+                preparedItems.filter { item ->
+                    cloudCallGate.canClassify(item, item.thumbnail)
+                }
 
             if (itemsToClassify.isEmpty()) return@launch
 
@@ -271,19 +278,18 @@ class ItemClassificationCoordinator(
 
     // ==================== Internal Methods ====================
 
-    private suspend fun prepareThumbnailsForClassification(
-        items: List<AggregatedItem>
-    ): List<AggregatedItem> {
+    private suspend fun prepareThumbnailsForClassification(items: List<AggregatedItem>): List<AggregatedItem> {
         if (items.isEmpty()) return emptyList()
 
         return withContext(workerDispatcher) {
             items.mapNotNull { aggregatedItem ->
                 val fallbackThumbnail = resolveCachedThumbnail(aggregatedItem)
-                val preparedThumbnail = runCatching {
-                    stableItemCropper.prepare(aggregatedItem)
-                }.onFailure { error ->
-                    Log.w(TAG, "Failed to prepare stable thumbnail for ${aggregatedItem.aggregatedId}", error)
-                }.getOrNull()
+                val preparedThumbnail =
+                    runCatching {
+                        stableItemCropper.prepare(aggregatedItem)
+                    }.onFailure { error ->
+                        Log.w(TAG, "Failed to prepare stable thumbnail for ${aggregatedItem.aggregatedId}", error)
+                    }.getOrNull()
 
                 val resolvedPrepared = resolveCacheKey(preparedThumbnail)
                 val thumbnailToUse = resolvedPrepared ?: fallbackThumbnail
@@ -302,17 +308,19 @@ class ItemClassificationCoordinator(
 
     private fun handleClassificationResult(
         aggregatedItem: AggregatedItem,
-        result: ClassificationResult
+        result: ClassificationResult,
     ) {
         val sessionId = CorrelationIds.currentClassificationSessionId()
-        val shouldOverrideCategory = result.category != ItemCategory.UNKNOWN &&
-            (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN)
+        val shouldOverrideCategory =
+            result.category != ItemCategory.UNKNOWN &&
+                (result.confidence >= aggregatedItem.maxConfidence || aggregatedItem.category == ItemCategory.UNKNOWN)
 
-        val categoryOverride = if (shouldOverrideCategory) {
-            result.category
-        } else {
-            aggregatedItem.enhancedCategory ?: aggregatedItem.category
-        }
+        val categoryOverride =
+            if (shouldOverrideCategory) {
+                result.category
+            } else {
+                aggregatedItem.enhancedCategory ?: aggregatedItem.category
+            }
 
         val labelOverride = result.label?.takeUnless { it.isBlank() } ?: aggregatedItem.labelText
         val priceCategory = if (result.category != ItemCategory.UNKNOWN) result.category else aggregatedItem.category
@@ -324,7 +332,7 @@ class ItemClassificationCoordinator(
             category = categoryOverride,
             label = labelOverride,
             priceRange = priceRange,
-            classificationConfidence = result.confidence
+            classificationConfidence = result.confidence,
         )
 
         stateManager.updateClassificationStatus(
@@ -332,7 +340,7 @@ class ItemClassificationCoordinator(
             status = result.status.name,
             domainCategoryId = result.domainCategoryId,
             errorMessage = result.errorMessage,
-            requestId = result.requestId
+            requestId = result.requestId,
         )
 
         if (result.status == ClassificationStatus.FAILED && result.mode == ClassificationMode.CLOUD) {
@@ -342,8 +350,8 @@ class ItemClassificationCoordinator(
                     _cloudClassificationAlerts.emit(
                         CloudClassificationAlert(
                             itemId = aggregatedItem.aggregatedId,
-                            message = "Cloud classification unavailable. Using on-device labels."
-                        )
+                            message = "Cloud classification unavailable. Using on-device labels.",
+                        ),
                     )
                 }
             }
@@ -357,7 +365,7 @@ class ItemClassificationCoordinator(
             if (BuildConfig.DEBUG) {
                 ScaniumLog.d(
                     TAG,
-                    "Classification result item=${aggregatedItem.aggregatedId} session=$sessionId mode=${result.mode} status=${result.status} confidence=${result.confidence} requestId=${result.requestId}"
+                    "Classification result item=${aggregatedItem.aggregatedId} session=$sessionId mode=${result.mode} status=${result.status} confidence=${result.confidence} requestId=${result.requestId}",
                 )
             }
         }
@@ -367,16 +375,17 @@ class ItemClassificationCoordinator(
         if (priceStatusJobs.containsKey(itemId)) return
 
         val statusFlow = priceEstimationRepository.observeStatus(itemId)
-        priceStatusJobs[itemId] = scope.launch {
-            statusFlow.collect { status ->
-                stateManager.updatePriceEstimation(
-                    aggregatedId = itemId,
-                    status = status,
-                    priceRange = (status as? PriceEstimationStatus.Ready)?.priceRange
-                )
-                stateManager.refreshItemsFromAggregator()
+        priceStatusJobs[itemId] =
+            scope.launch {
+                statusFlow.collect { status ->
+                    stateManager.updatePriceEstimation(
+                        aggregatedId = itemId,
+                        status = status,
+                        priceRange = (status as? PriceEstimationStatus.Ready)?.priceRange,
+                    )
+                    stateManager.refreshItemsFromAggregator()
+                }
             }
-        }
     }
 
     private fun resolveCachedThumbnail(item: AggregatedItem): ImageRef? {

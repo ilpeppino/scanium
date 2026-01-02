@@ -34,19 +34,23 @@ private val localProperties by lazy(LazyThreadSafetyMode.NONE) {
  * When androidApp is opened standalone, rootProject points to /androidApp so we fall
  * back to the parent directory to locate the shared local.properties file.
  */
-private fun findLocalPropertiesFile() = sequenceOf(
-    rootProject.file("local.properties"),
-    rootProject.projectDir.parentFile?.resolve("local.properties")
-).firstOrNull { file ->
-    file?.exists() == true
-}?.also { file ->
-    if (file.parentFile != rootProject.projectDir) {
-        logger.info("Loading local.properties from ${file.parentFile}")
+private fun findLocalPropertiesFile() =
+    sequenceOf(
+        rootProject.file("local.properties"),
+        rootProject.projectDir.parentFile?.resolve("local.properties"),
+    ).firstOrNull { file ->
+        file?.exists() == true
+    }?.also { file ->
+        if (file.parentFile != rootProject.projectDir) {
+            logger.info("Loading local.properties from ${file.parentFile}")
+        }
     }
-}
 
-private fun localPropertyOrEnv(key: String, envKey: String, defaultValue: String = ""): String =
-    localProperties.getProperty(key) ?: System.getenv(envKey) ?: defaultValue
+private fun localPropertyOrEnv(
+    key: String,
+    envKey: String,
+    defaultValue: String = "",
+): String = localProperties.getProperty(key) ?: System.getenv(envKey) ?: defaultValue
 
 val saveClassifierCropsDebug = localPropertyOrEnv("scanium.classifier.save_crops.debug", envKey = "", defaultValue = "false").toBoolean()
 
@@ -58,19 +62,25 @@ android {
         applicationId = "com.scanium.app"
         minSdk = 24
         targetSdk = 34
-        
+
         val versionCodeEnv = localPropertyOrEnv("scanium.version.code", "SCANIUM_VERSION_CODE", "1").toInt()
         val versionNameEnv = localPropertyOrEnv("scanium.version.name", "SCANIUM_VERSION_NAME", "1.0")
-        
+
         versionCode = versionCodeEnv
         versionName = versionNameEnv
 
         // Cloud classification API configuration
         // Base URL read from local.properties (dev) or environment variables (CI/production)
         // API keys are provisioned at runtime and stored in the Android Keystore.
-        // Required key in local.properties:
-        //   scanium.api.base.url=https://your-backend.com/api/v1
+        //
+        // For dual-mode configuration (LAN + Remote):
+        //   scanium.api.base.url=https://your-public-backend.com  ***REMOVED*** Remote/production URL
+        //   scanium.api.base.url.debug=http://192.168.1.100:3000  ***REMOVED*** LAN URL for debug builds
+        //
+        // Debug builds will use .debug URL if set, otherwise fall back to main URL
+        // Release builds always use the main URL (scanium.api.base.url)
         val apiBaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val apiBaseUrlDebug = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", apiBaseUrl)
         val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
         // SEC-002: Sentry DSN Security Consideration
         // The DSN is intentionally embedded in the APK as this is Sentry's designed behavior.
@@ -85,11 +95,12 @@ android {
         //
         // See: docs/observability/SENTRY_ALERTING.md for configuration details
         val sentryDsn = localPropertyOrEnv("scanium.sentry.dsn", "SCANIUM_SENTRY_DSN")
-        val telemetryDataRegion = localPropertyOrEnv(
-            "scanium.telemetry.data_region",
-            "SCANIUM_TELEMETRY_DATA_REGION",
-            "US"
-        )
+        val telemetryDataRegion =
+            localPropertyOrEnv(
+                "scanium.telemetry.data_region",
+                "SCANIUM_TELEMETRY_DATA_REGION",
+                "US",
+            )
 
         // OTLP (OpenTelemetry Protocol) configuration
         val otlpEndpoint = localPropertyOrEnv("scanium.otlp.endpoint", "SCANIUM_OTLP_ENDPOINT", "")
@@ -102,7 +113,8 @@ android {
         //   openssl s_client -servername <host> -connect <host>:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
         val certificatePin = localPropertyOrEnv("scanium.api.certificate.pin", "SCANIUM_API_CERTIFICATE_PIN", "")
 
-        buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$apiBaseUrl\"")
+        // Note: SCANIUM_API_BASE_URL and CLOUD_CLASSIFIER_URL are set per-buildType (debug/release)
+        // to support different URLs for LAN (debug) vs Remote (release) modes
         buildConfigField("String", "SCANIUM_API_KEY", "\"$apiKey\"")
         buildConfigField("String", "SCANIUM_API_CERTIFICATE_PIN", "\"$certificatePin\"")
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"") // SEC-002: Semi-public by design
@@ -110,8 +122,7 @@ android {
         buildConfigField("boolean", "OTLP_ENABLED", otlpEnabled)
         buildConfigField("String", "TELEMETRY_DATA_REGION", "\"$telemetryDataRegion\"")
 
-        // Legacy fields for backward compatibility (deprecated)
-        buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$apiBaseUrl/classify\"")
+        // Legacy field for backward compatibility (deprecated)
         buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"$apiKey\"")
 
         // ARCH-001: Use Hilt test runner for instrumented tests
@@ -154,6 +165,13 @@ android {
 
     buildTypes {
         debug {
+            // Debug builds use LAN base URL if configured, otherwise fall back to remote URL
+            val debugUrl = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", "")
+            val effectiveDebugUrl = debugUrl.ifEmpty {
+                localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+            }
+            buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$effectiveDebugUrl\"")
+            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$effectiveDebugUrl/v1/classify\"")
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", saveClassifierCropsDebug.toString())
         }
         release {
@@ -162,8 +180,12 @@ android {
             isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
+            // Release builds always use the main (remote) base URL
+            val releaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+            buildConfigField("String", "SCANIUM_API_BASE_URL", "\"$releaseUrl\"")
+            buildConfigField("String", "CLOUD_CLASSIFIER_URL", "\"$releaseUrl/v1/classify\"")
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
 
             // Only sign if we have a valid configuration
@@ -277,6 +299,7 @@ dependencies {
 
     // AndroidX Core
     implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.documentfile:documentfile:1.0.1")
@@ -351,6 +374,7 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.2.0") // For LiveData/Flow testing
     testImplementation("org.robolectric:robolectric:4.11.1") // For Android framework classes in unit tests
     testImplementation("androidx.test:core:1.5.0") // For ApplicationProvider
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0") // For HTTP request testing
     testImplementation(project(":shared:test-utils"))
 
     // Testing - Instrumented Tests
@@ -397,6 +421,102 @@ koverReport {
     }
 }
 
+// ============================================================================
+// Backend Configuration Validation
+// ============================================================================
+// Validates and prints backend URL configuration at build time.
+// Fails devDebug builds if SCANIUM_API_BASE_URL_DEBUG is blank.
+
+/**
+ * Masks sensitive values for safe printing (shows first 8 chars only).
+ */
+fun maskSecret(value: String): String = when {
+    value.isEmpty() -> "(not set)"
+    value.length <= 8 -> "***"
+    else -> "${value.take(8)}..."
+}
+
+// Create validation task for backend configuration
+tasks.register("validateBackendConfig") {
+    group = "verification"
+    description = "Validates backend API URL configuration and prints resolved values"
+
+    doLast {
+        val debugUrl = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", "")
+        val releaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val effectiveDebugUrl = debugUrl.ifEmpty { releaseUrl }
+        val apiKey = localPropertyOrEnv("scanium.api.key", "SCANIUM_API_KEY")
+
+        println("")
+        println("┌─────────────────────────────────────────────────────────────┐")
+        println("│  Scanium Backend Configuration                             │")
+        println("├─────────────────────────────────────────────────────────────┤")
+        println("│  Debug URL (effective):  ${effectiveDebugUrl.padEnd(36)}│")
+        println("│  Release URL:            ${releaseUrl.ifEmpty { "(not set)" }.padEnd(36)}│")
+        println("│  API Key:                ${maskSecret(apiKey).padEnd(36)}│")
+        println("└─────────────────────────────────────────────────────────────┘")
+        println("")
+
+        // Validation warnings
+        if (releaseUrl.isEmpty()) {
+            logger.warn("⚠️  WARNING: scanium.api.base.url is not set. Release builds will have no backend URL.")
+        }
+        if (effectiveDebugUrl.isEmpty()) {
+            logger.warn("⚠️  WARNING: No backend URL configured for debug builds.")
+        }
+        if (apiKey.isEmpty()) {
+            logger.warn("⚠️  WARNING: scanium.api.key is not set. API authentication will fail.")
+        }
+    }
+}
+
+// Task to validate devDebug configuration and fail if URL is missing
+tasks.register("validateDevDebugBackendConfig") {
+    group = "verification"
+    description = "Validates backend URL is configured for devDebug builds"
+
+    doLast {
+        val debugUrl = localPropertyOrEnv("scanium.api.base.url.debug", "SCANIUM_API_BASE_URL_DEBUG", "")
+        val releaseUrl = localPropertyOrEnv("scanium.api.base.url", "SCANIUM_API_BASE_URL")
+        val effectiveDebugUrl = debugUrl.ifEmpty { releaseUrl }
+
+        if (effectiveDebugUrl.isEmpty()) {
+            throw GradleException(
+                """
+                |
+                |╔═══════════════════════════════════════════════════════════════════════╗
+                |║  ERROR: Backend URL not configured for devDebug build                 ║
+                |╠═══════════════════════════════════════════════════════════════════════╣
+                |║                                                                       ║
+                |║  Cloud features require a backend URL. Please configure one of:       ║
+                |║                                                                       ║
+                |║  Option 1: In local.properties (recommended for development)          ║
+                |║    scanium.api.base.url.debug=http://192.168.1.100:3000               ║
+                |║    ***REMOVED*** or                                                               ║
+                |║    scanium.api.base.url=https://your-backend.example.com              ║
+                |║                                                                       ║
+                |║  Option 2: Via environment variables                                  ║
+                |║    export SCANIUM_API_BASE_URL_DEBUG=http://192.168.1.100:3000        ║
+                |║    ***REMOVED*** or                                                               ║
+                |║    export SCANIUM_API_BASE_URL=https://your-backend.example.com       ║
+                |║                                                                       ║
+                |║  Run: scripts/android-configure-backend-dev.sh for guided setup       ║
+                |║  See: docs/DEV_BACKEND_CONNECTIVITY.md for detailed instructions      ║
+                |║                                                                       ║
+                |╚═══════════════════════════════════════════════════════════════════════╝
+                """.trimMargin()
+            )
+        }
+
+        println("✓ Backend URL validated: $effectiveDebugUrl")
+    }
+}
+
+// Hook validation into devDebug builds
+tasks.matching { it.name == "assembleDevDebug" || it.name == "installDevDebug" }.configureEach {
+    dependsOn("validateDevDebugBackendConfig")
+}
+
 // Jacoco HTML report for androidApp unit tests
 tasks.register<JacocoReport>("jacocoTestReport") {
     dependsOn("testDebugUnitTest")
@@ -414,6 +534,6 @@ tasks.register<JacocoReport>("jacocoTestReport") {
     classDirectories.setFrom(
         fileTree("$buildDir/tmp/kotlin-classes/debug") {
             exclude("**/R.class", "**/R$*.class", "**/BuildConfig.*", "**/Manifest*.*")
-        }
+        },
     )
 }

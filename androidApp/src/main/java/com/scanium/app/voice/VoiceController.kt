@@ -70,15 +70,16 @@ class VoiceController(context: Context) {
      * @param languageCode Language code (e.g., "EN", "NL", "DE")
      */
     fun setLanguage(languageCode: String) {
-        currentLanguage = when (languageCode.uppercase()) {
-            "EN" -> Locale.ENGLISH
-            "NL" -> Locale("nl", "NL")
-            "DE" -> Locale.GERMAN
-            "FR" -> Locale.FRENCH
-            "ES" -> Locale("es", "ES")
-            "IT" -> Locale.ITALIAN
-            else -> Locale.getDefault()
-        }
+        currentLanguage =
+            when (languageCode.uppercase()) {
+                "EN" -> Locale.ENGLISH
+                "NL" -> Locale("nl", "NL")
+                "DE" -> Locale.GERMAN
+                "FR" -> Locale.FRENCH
+                "ES" -> Locale("es", "ES")
+                "IT" -> Locale.ITALIAN
+                else -> Locale.getDefault()
+            }
         tts?.language = currentLanguage
         logDebug { "Language set to: $currentLanguage" }
     }
@@ -93,36 +94,42 @@ class VoiceController(context: Context) {
             return
         }
 
-        tts = TextToSpeech(appContext) { status ->
-            ttsReady = status == TextToSpeech.SUCCESS
-            if (ttsReady) {
-                tts?.language = currentLanguage
-                tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                    override fun onStart(utteranceId: String?) {
-                        stateMachine.onSpeaking()
-                    }
+        tts =
+            TextToSpeech(appContext) { status ->
+                ttsReady = status == TextToSpeech.SUCCESS
+                if (ttsReady) {
+                    tts?.language = currentLanguage
+                    tts?.setOnUtteranceProgressListener(
+                        object : UtteranceProgressListener() {
+                            override fun onStart(utteranceId: String?) {
+                                stateMachine.onSpeaking()
+                            }
 
-                    override fun onDone(utteranceId: String?) {
-                        stateMachine.onIdle()
-                    }
+                            override fun onDone(utteranceId: String?) {
+                                stateMachine.onIdle()
+                            }
 
-                    @Deprecated("Deprecated in API 21")
-                    override fun onError(utteranceId: String?) {
-                        stateMachine.onIdle()
-                        Log.e(TAG, "TTS error for utterance: $utteranceId")
-                    }
+                            @Deprecated("Deprecated in API 21")
+                            override fun onError(utteranceId: String?) {
+                                stateMachine.onIdle()
+                                Log.e(TAG, "TTS error for utterance: $utteranceId")
+                            }
 
-                    override fun onError(utteranceId: String?, errorCode: Int) {
-                        stateMachine.onIdle()
-                        Log.e(TAG, "TTS error code $errorCode for utterance: $utteranceId")
-                    }
-                })
-                logDebug { "TTS initialized successfully" }
-                onReady()
-            } else {
-                Log.e(TAG, "TTS initialization failed with status: $status")
+                            override fun onError(
+                                utteranceId: String?,
+                                errorCode: Int,
+                            ) {
+                                stateMachine.onIdle()
+                                Log.e(TAG, "TTS error code $errorCode for utterance: $utteranceId")
+                            }
+                        },
+                    )
+                    logDebug { "TTS initialized successfully" }
+                    onReady()
+                } else {
+                    Log.e(TAG, "TTS initialization failed with status: $status")
+                }
             }
-        }
     }
 
     /**
@@ -151,75 +158,81 @@ class VoiceController(context: Context) {
             speechRecognizer = SpeechRecognizer.createSpeechRecognizer(appContext)
         }
 
-        speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {
-                logDebug { "Ready for speech" }
-            }
-
-            override fun onBeginningOfSpeech() {
-                logDebug { "Beginning of speech detected" }
-            }
-
-            override fun onRmsChanged(rmsdB: Float) {
-                // Could use this for visual feedback (mic level indicator)
-            }
-
-            override fun onBufferReceived(buffer: ByteArray?) {
-                // Raw audio buffer - we don't store this (privacy)
-            }
-
-            override fun onEndOfSpeech() {
-                logDebug { "End of speech" }
-                stateMachine.onTranscribing()
-            }
-
-            override fun onError(error: Int) {
-                val errorMessage = getErrorMessage(error)
-                Log.e(TAG, "Recognition error: $errorMessage (code: $error)")
-                stateMachine.onError(errorMessage)
-
-                onResultCallback?.invoke(VoiceResult.Error(errorMessage, error))
-                onResultCallback = null
-            }
-
-            override fun onResults(results: Bundle?) {
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val confidences = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
-
-                val transcript = matches?.firstOrNull { it.isNotBlank() }
-                val confidence = confidences?.firstOrNull() ?: 0.8f
-
-                if (transcript != null) {
-                    logDebug { "Recognition result length=${transcript.length} (confidence: $confidence)" }
-                    stateMachine.onIdle()
-                    onResultCallback?.invoke(VoiceResult.Success(transcript, confidence))
-                } else {
-                    Log.w(TAG, "No speech recognized")
-                    stateMachine.onIdle()
-                    onResultCallback?.invoke(VoiceResult.Error(COULD_NOT_UNDERSTAND_MESSAGE, 0))
+        speechRecognizer?.setRecognitionListener(
+            object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) {
+                    logDebug { "Ready for speech" }
                 }
-                onResultCallback = null
-            }
 
-            override fun onPartialResults(partialResults: Bundle?) {
-                val partials = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                partials?.firstOrNull()?.let { partial ->
-                    _partialTranscript.value = partial
+                override fun onBeginningOfSpeech() {
+                    logDebug { "Beginning of speech detected" }
                 }
-            }
 
-            override fun onEvent(eventType: Int, params: Bundle?) {
-                logDebug { "Recognition event: $eventType" }
-            }
-        })
+                override fun onRmsChanged(rmsdB: Float) {
+                    // Could use this for visual feedback (mic level indicator)
+                }
 
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentLanguage.toLanguageTag())
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-            // Don't show prompt - we handle UI ourselves
-        }
+                override fun onBufferReceived(buffer: ByteArray?) {
+                    // Raw audio buffer - we don't store this (privacy)
+                }
+
+                override fun onEndOfSpeech() {
+                    logDebug { "End of speech" }
+                    stateMachine.onTranscribing()
+                }
+
+                override fun onError(error: Int) {
+                    val errorMessage = getErrorMessage(error)
+                    Log.e(TAG, "Recognition error: $errorMessage (code: $error)")
+                    stateMachine.onError(errorMessage)
+
+                    onResultCallback?.invoke(VoiceResult.Error(errorMessage, error))
+                    onResultCallback = null
+                }
+
+                override fun onResults(results: Bundle?) {
+                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    val confidences = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+
+                    val transcript = matches?.firstOrNull { it.isNotBlank() }
+                    val confidence = confidences?.firstOrNull() ?: 0.8f
+
+                    if (transcript != null) {
+                        logDebug { "Recognition result length=${transcript.length} (confidence: $confidence)" }
+                        stateMachine.onIdle()
+                        onResultCallback?.invoke(VoiceResult.Success(transcript, confidence))
+                    } else {
+                        Log.w(TAG, "No speech recognized")
+                        stateMachine.onIdle()
+                        onResultCallback?.invoke(VoiceResult.Error(COULD_NOT_UNDERSTAND_MESSAGE, 0))
+                    }
+                    onResultCallback = null
+                }
+
+                override fun onPartialResults(partialResults: Bundle?) {
+                    val partials = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    partials?.firstOrNull()?.let { partial ->
+                        _partialTranscript.value = partial
+                    }
+                }
+
+                override fun onEvent(
+                    eventType: Int,
+                    params: Bundle?,
+                ) {
+                    logDebug { "Recognition event: $eventType" }
+                }
+            },
+        )
+
+        val intent =
+            Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentLanguage.toLanguageTag())
+                putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                // Don't show prompt - we handle UI ourselves
+            }
 
         try {
             speechRecognizer?.startListening(intent)
@@ -252,7 +265,10 @@ class VoiceController(context: Context) {
      * @param text Text to speak
      * @param onComplete Optional callback when speech is done
      */
-    fun speak(text: String, onComplete: (() -> Unit)? = null) {
+    fun speak(
+        text: String,
+        onComplete: (() -> Unit)? = null,
+    ) {
         if (!ttsReady) {
             initializeTts {
                 doSpeak(text, onComplete)
@@ -262,18 +278,22 @@ class VoiceController(context: Context) {
         doSpeak(text, onComplete)
     }
 
-    private fun doSpeak(text: String, onComplete: (() -> Unit)?) {
+    private fun doSpeak(
+        text: String,
+        onComplete: (() -> Unit)?,
+    ) {
         if (!ttsReady) {
             Log.w(TAG, "TTS not ready, cannot speak")
             return
         }
 
         // Request audio focus
-        val focusResult = audioManager.requestAudioFocus(
-            { /* focus change listener */ },
-            AudioManager.STREAM_MUSIC,
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
-        )
+        val focusResult =
+            audioManager.requestAudioFocus(
+                { /* focus change listener */ },
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
+            )
 
         if (focusResult != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             Log.w(TAG, "Could not get audio focus")
@@ -282,9 +302,10 @@ class VoiceController(context: Context) {
         // Clean text for TTS (remove markdown, excessive punctuation)
         val cleanedText = cleanTextForTts(text)
 
-        val params = Bundle().apply {
-            putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC)
-        }
+        val params =
+            Bundle().apply {
+                putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC)
+            }
 
         tts?.speak(cleanedText, TextToSpeech.QUEUE_FLUSH, params, TTS_UTTERANCE_ID)
         logDebug { "Speaking ${cleanedText.length} chars" }

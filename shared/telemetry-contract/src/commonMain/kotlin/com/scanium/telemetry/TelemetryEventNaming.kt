@@ -81,8 +81,8 @@ object TelemetryEventNaming {
         val action = parts.drop(1).joinToString(".")
 
         return prefix.isNotEmpty() &&
-               action.isNotEmpty() &&
-               name.all { it.isLowerCase() || it.isDigit() || it == '.' || it == '_' }
+            action.isNotEmpty() &&
+            name.all { it.isLowerCase() || it.isDigit() || it == '.' || it == '_' }
     }
 
     /**

@@ -28,21 +28,23 @@ data class ListingDraft(
     val status: DraftStatus = DraftStatus.DRAFT,
     val createdAt: Long,
     val updatedAt: Long,
-    val completeness: DraftCompleteness = DraftCompleteness.compute(
-        title = title,
-        fields = fields,
-        price = price,
-        photos = photos
-    )
+    val completeness: DraftCompleteness =
+        DraftCompleteness.compute(
+            title = title,
+            fields = fields,
+            price = price,
+            photos = photos,
+        ),
 ) {
     fun recomputeCompleteness(): ListingDraft {
         return copy(
-            completeness = DraftCompleteness.compute(
-                title = title,
-                fields = fields,
-                price = price,
-                photos = photos
-            )
+            completeness =
+                DraftCompleteness.compute(
+                    title = title,
+                    fields = fields,
+                    price = price,
+                    photos = photos,
+                ),
         )
     }
 }
@@ -53,7 +55,7 @@ data class ListingDraft(
 data class DraftField<T>(
     val value: T?,
     val confidence: Float = 0f,
-    val source: DraftProvenance = DraftProvenance.UNKNOWN
+    val source: DraftProvenance = DraftProvenance.UNKNOWN,
 )
 
 /**
@@ -63,7 +65,7 @@ enum class DraftProvenance {
     DETECTED,
     USER_EDITED,
     DEFAULT,
-    UNKNOWN
+    UNKNOWN,
 }
 
 enum class DraftFieldKey(val wireValue: String) {
@@ -71,7 +73,8 @@ enum class DraftFieldKey(val wireValue: String) {
     CONDITION("condition"),
     BRAND("brand"),
     MODEL("model"),
-    COLOR("color");
+    COLOR("color"),
+    ;
 
     companion object {
         fun fromWireValue(value: String): DraftFieldKey? {
@@ -94,7 +97,10 @@ object ExportProfileIdSerializer : KSerializer<ExportProfileId> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("ExportProfileId", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: ExportProfileId) {
+    override fun serialize(
+        encoder: Encoder,
+        value: ExportProfileId,
+    ) {
         encoder.encodeString(value.value)
     }
 
@@ -105,12 +111,12 @@ object ExportProfileIdSerializer : KSerializer<ExportProfileId> {
 
 enum class DraftStatus {
     DRAFT,
-    SAVED
+    SAVED,
 }
 
 data class DraftPhotoRef(
     val image: ImageRef,
-    val source: DraftProvenance = DraftProvenance.UNKNOWN
+    val source: DraftProvenance = DraftProvenance.UNKNOWN,
 )
 
 enum class DraftRequiredField {
@@ -118,19 +124,19 @@ enum class DraftRequiredField {
     CATEGORY,
     CONDITION,
     PRICE,
-    PHOTO
+    PHOTO,
 }
 
 data class DraftCompleteness(
     val score: Int,
-    val missing: Set<DraftRequiredField>
+    val missing: Set<DraftRequiredField>,
 ) {
     companion object {
         fun compute(
             title: DraftField<String>,
             fields: Map<DraftFieldKey, DraftField<String>>,
             price: DraftField<Double>,
-            photos: List<DraftPhotoRef>
+            photos: List<DraftPhotoRef>,
         ): DraftCompleteness {
             val missing = mutableSetOf<DraftRequiredField>()
 
@@ -166,21 +172,24 @@ object ListingDraftBuilder {
         val photos = buildPhotos(item)
         val priceValue = (item.priceRange.first + item.priceRange.second) / 2.0
 
-        val titleField = DraftField(
-            value = titleValue,
-            confidence = item.confidence,
-            source = DraftProvenance.DETECTED
-        )
-        val descriptionField = DraftField(
-            value = descriptionValue,
-            confidence = item.confidence,
-            source = DraftProvenance.DEFAULT
-        )
-        val priceField = DraftField(
-            value = priceValue,
-            confidence = item.confidence,
-            source = DraftProvenance.DETECTED
-        )
+        val titleField =
+            DraftField(
+                value = titleValue,
+                confidence = item.confidence,
+                source = DraftProvenance.DETECTED,
+            )
+        val descriptionField =
+            DraftField(
+                value = descriptionValue,
+                confidence = item.confidence,
+                source = DraftProvenance.DEFAULT,
+            )
+        val priceField =
+            DraftField(
+                value = priceValue,
+                confidence = item.confidence,
+                source = DraftProvenance.DETECTED,
+            )
 
         val timestamp = item.timestamp
         val draftId = "draft_${item.id}"
@@ -196,7 +205,7 @@ object ListingDraftBuilder {
             photos = photos,
             status = DraftStatus.DRAFT,
             createdAt = timestamp,
-            updatedAt = timestamp
+            updatedAt = timestamp,
         ).recomputeCompleteness()
     }
 
@@ -218,23 +227,26 @@ object ListingDraftBuilder {
 
     private fun buildFields(item: ScannedItem<*>): Map<DraftFieldKey, DraftField<String>> {
         val fields = LinkedHashMap<DraftFieldKey, DraftField<String>>()
-        fields[DraftFieldKey.CATEGORY] = DraftField(
-            value = item.category.displayName,
-            confidence = item.confidence,
-            source = DraftProvenance.DETECTED
-        )
-        fields[DraftFieldKey.CONDITION] = DraftField(
-            value = "Used",
-            confidence = 1f,
-            source = DraftProvenance.DEFAULT
-        )
+        fields[DraftFieldKey.CATEGORY] =
+            DraftField(
+                value = item.category.displayName,
+                confidence = item.confidence,
+                source = DraftProvenance.DETECTED,
+            )
+        fields[DraftFieldKey.CONDITION] =
+            DraftField(
+                value = "Used",
+                confidence = 1f,
+                source = DraftProvenance.DEFAULT,
+            )
 
         item.labelText?.takeIf { it.isNotBlank() }?.let { label ->
-            fields[DraftFieldKey.BRAND] = DraftField(
-                value = label,
-                confidence = item.confidence,
-                source = DraftProvenance.DETECTED
-            )
+            fields[DraftFieldKey.BRAND] =
+                DraftField(
+                    value = label,
+                    confidence = item.confidence,
+                    source = DraftProvenance.DETECTED,
+                )
         }
 
         return fields

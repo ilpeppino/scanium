@@ -9,7 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ObjectTrackerTest {
-
     private lateinit var tracker: ObjectTracker
     private lateinit var config: TrackerConfig
 
@@ -21,13 +20,14 @@ class ObjectTrackerTest {
 
     @Test
     fun firstDetectionCreatesCandidateButDoesNotConfirm() {
-        val detections = listOf(
-            testDetectionInfo(
-                trackingId = "track_1",
-                boundingBox = TestFixtures.BoundingBoxes.center,
-                confidence = 0.5f
+        val detections =
+            listOf(
+                testDetectionInfo(
+                    trackingId = "track_1",
+                    boundingBox = TestFixtures.BoundingBoxes.center,
+                    confidence = 0.5f,
+                ),
             )
-        )
 
         val confirmed = tracker.processFrame(detections)
 
@@ -44,9 +44,10 @@ class ObjectTrackerTest {
             tracker.processFrame(listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f)))
         }
 
-        val confirmed = tracker.processFrame(
-            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f))
-        )
+        val confirmed =
+            tracker.processFrame(
+                listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f)),
+            )
 
         assertEquals(1, confirmed.size)
         assertEquals(trackingId, confirmed.first().internalId)
@@ -57,16 +58,17 @@ class ObjectTrackerTest {
     fun trackingIdMaintainsSameCandidate() {
         val trackingId = "track_1"
         tracker.processFrame(
-            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = TestFixtures.BoundingBoxes.topLeft, confidence = 0.4f))
+            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = TestFixtures.BoundingBoxes.topLeft, confidence = 0.4f)),
         )
 
         tracker.processFrame(
-            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = TestFixtures.BoundingBoxes.center, confidence = 0.6f))
+            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = TestFixtures.BoundingBoxes.center, confidence = 0.6f)),
         )
 
-        val confirmed = tracker.processFrame(
-            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = TestFixtures.BoundingBoxes.center, confidence = 0.7f))
-        )
+        val confirmed =
+            tracker.processFrame(
+                listOf(testDetectionInfo(trackingId = trackingId, boundingBox = TestFixtures.BoundingBoxes.center, confidence = 0.7f)),
+            )
 
         assertEquals(1, confirmed.size)
         assertEquals(3, confirmed.first().seenCount)
@@ -81,9 +83,10 @@ class ObjectTrackerTest {
         tracker.processFrame(listOf(testDetectionInfo(trackingId = null, boundingBox = baseBox, confidence = 0.5f)))
         tracker.processFrame(listOf(testDetectionInfo(trackingId = null, boundingBox = shiftedBox, confidence = 0.6f)))
 
-        val confirmed = tracker.processFrame(
-            listOf(testDetectionInfo(trackingId = null, boundingBox = shiftedBox, confidence = 0.7f))
-        )
+        val confirmed =
+            tracker.processFrame(
+                listOf(testDetectionInfo(trackingId = null, boundingBox = shiftedBox, confidence = 0.7f)),
+            )
 
         assertEquals(1, confirmed.size)
         assertTrackerStats(tracker.getStats(), expectedActiveCandidates = 1, expectedConfirmedCandidates = 1)
@@ -121,9 +124,9 @@ class ObjectTrackerTest {
                     boundingBox = box,
                     confidence = 0.4f,
                     category = ItemCategory.FASHION,
-                    labelText = "Shirt"
-                )
-            )
+                    labelText = "Shirt",
+                ),
+            ),
         )
 
         tracker.processFrame(
@@ -133,22 +136,23 @@ class ObjectTrackerTest {
                     boundingBox = box,
                     confidence = 0.7f,
                     category = ItemCategory.HOME_GOOD,
-                    labelText = "Vase"
-                )
-            )
+                    labelText = "Vase",
+                ),
+            ),
         )
 
-        val confirmed = tracker.processFrame(
-            listOf(
-                testDetectionInfo(
-                    trackingId = trackingId,
-                    boundingBox = box,
-                    confidence = 0.5f,
-                    category = ItemCategory.HOME_GOOD,
-                    labelText = "Vase"
-                )
+        val confirmed =
+            tracker.processFrame(
+                listOf(
+                    testDetectionInfo(
+                        trackingId = trackingId,
+                        boundingBox = box,
+                        confidence = 0.5f,
+                        category = ItemCategory.HOME_GOOD,
+                        labelText = "Vase",
+                    ),
+                ),
             )
-        )
 
         assertEquals(ItemCategory.HOME_GOOD, confirmed.first().category)
         assertEquals("Vase", confirmed.first().labelText)
@@ -159,12 +163,17 @@ class ObjectTrackerTest {
         val trackingId = "track_area"
         val box = TestFixtures.BoundingBoxes.center
 
-        tracker.processFrame(listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f, normalizedBoxArea = 0.01f)))
-        tracker.processFrame(listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f, normalizedBoxArea = 0.02f)))
-
-        val confirmed = tracker.processFrame(
-            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f, normalizedBoxArea = 0.03f))
+        tracker.processFrame(
+            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f, normalizedBoxArea = 0.01f)),
         )
+        tracker.processFrame(
+            listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f, normalizedBoxArea = 0.02f)),
+        )
+
+        val confirmed =
+            tracker.processFrame(
+                listOf(testDetectionInfo(trackingId = trackingId, boundingBox = box, confidence = 0.5f, normalizedBoxArea = 0.03f)),
+            )
 
         assertEquals(0.02f, confirmed.first().averageBoxArea, 0.001f)
     }
@@ -179,22 +188,24 @@ class ObjectTrackerTest {
 
     @Test
     fun customConfigChangesConfirmationBehavior() {
-        val strictTracker = ObjectTracker(
-            TrackerConfig(
-                minFramesToConfirm = 5,
-                minConfidence = 0.7f,
-                minBoxArea = 0.01f,
-                maxFrameGap = 2,
-                minMatchScore = 0.5f,
-                expiryFrames = 5
+        val strictTracker =
+            ObjectTracker(
+                TrackerConfig(
+                    minFramesToConfirm = 5,
+                    minConfidence = 0.7f,
+                    minBoxArea = 0.01f,
+                    maxFrameGap = 2,
+                    minMatchScore = 0.5f,
+                    expiryFrames = 5,
+                ),
             )
-        )
-        val detection = testDetectionInfo(
-            trackingId = "strict",
-            boundingBox = TestFixtures.BoundingBoxes.center,
-            confidence = 0.8f,
-            normalizedBoxArea = 0.02f
-        )
+        val detection =
+            testDetectionInfo(
+                trackingId = "strict",
+                boundingBox = TestFixtures.BoundingBoxes.center,
+                confidence = 0.8f,
+                normalizedBoxArea = 0.02f,
+            )
 
         repeat(4) { strictTracker.processFrame(listOf(detection)) }
 

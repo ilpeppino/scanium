@@ -44,79 +44,74 @@ object AttributeSanitizer {
      * PII denylist: attribute keys that should be redacted.
      * Keys are matched case-insensitively and as substrings.
      */
-    private val PII_DENYLIST = setOf(
-        // Personal identifiers
-        "email",
-        "phone",
-        "address",
-        "full_name",
-        "fullname",
-        "username",
-        "user_id",
-        "userid",
-        "name",
-
-        // Authentication & authorization
-        "token",
-        "auth",
-        "password",
-        "passwd",
-        "pwd",
-        "api_key",
-        "apikey",
-        "secret",
-        "credentials",
-        "cookie",
-        "session_token",
-        "access_token",
-        "refresh_token",
-        "bearer",
-
-        // Location data
-        "gps",
-        "latitude",
-        "lat",
-        "longitude",
-        "lon",
-        "location",
-        "coordinates",
-        "coord",
-        "geolocation",
-
-        // Biometric
-        "fingerprint",
-        "face_id",
-        "faceid",
-        "biometric",
-
-        // Payment
-        "credit_card",
-        "creditcard",
-        "card_number",
-        "cardnumber",
-        "cvv",
-        "billing",
-        "payment",
-
-        // Device identifiers
-        "imei",
-        "device_id",
-        "deviceid",
-        "mac_address",
-        "macaddress",
-        "serial_number",
-        "serialnumber",
-        "uuid",
-
-        // Other sensitive
-        "ssn",
-        "social_security",
-        "passport",
-        "license",
-        "ip_address",
-        "ipaddress",
-        "ip"
-    )
+    private val PII_DENYLIST =
+        setOf(
+            // Personal identifiers
+            "email",
+            "phone",
+            "address",
+            "full_name",
+            "fullname",
+            "username",
+            "user_id",
+            "userid",
+            "name",
+            // Authentication & authorization
+            "token",
+            "auth",
+            "password",
+            "passwd",
+            "pwd",
+            "api_key",
+            "apikey",
+            "secret",
+            "credentials",
+            "cookie",
+            "session_token",
+            "access_token",
+            "refresh_token",
+            "bearer",
+            // Location data
+            "gps",
+            "latitude",
+            "lat",
+            "longitude",
+            "lon",
+            "location",
+            "coordinates",
+            "coord",
+            "geolocation",
+            // Biometric
+            "fingerprint",
+            "face_id",
+            "faceid",
+            "biometric",
+            // Payment
+            "credit_card",
+            "creditcard",
+            "card_number",
+            "cardnumber",
+            "cvv",
+            "billing",
+            "payment",
+            // Device identifiers
+            "imei",
+            "device_id",
+            "deviceid",
+            "mac_address",
+            "macaddress",
+            "serial_number",
+            "serialnumber",
+            "uuid",
+            // Other sensitive
+            "ssn",
+            "social_security",
+            "passport",
+            "license",
+            "ip_address",
+            "ipaddress",
+            "ip",
+        )
 
     /**
      * Sanitizes a map of attributes by removing PII and enforcing value length limits.
@@ -183,14 +178,15 @@ object AttributeSanitizer {
      * @return List of missing required attribute keys (empty if all present)
      */
     fun validateRequiredAttributes(attributes: Map<String, String>): List<String> {
-        val required = listOf(
-            TelemetryEvent.ATTR_PLATFORM,
-            TelemetryEvent.ATTR_APP_VERSION,
-            TelemetryEvent.ATTR_BUILD,
-            TelemetryEvent.ATTR_ENV,
-            TelemetryEvent.ATTR_SESSION_ID,
-            TelemetryEvent.ATTR_DATA_REGION
-        )
+        val required =
+            listOf(
+                TelemetryEvent.ATTR_PLATFORM,
+                TelemetryEvent.ATTR_APP_VERSION,
+                TelemetryEvent.ATTR_BUILD,
+                TelemetryEvent.ATTR_ENV,
+                TelemetryEvent.ATTR_SESSION_ID,
+                TelemetryEvent.ATTR_DATA_REGION,
+            )
 
         return required.filter { it !in attributes }
     }

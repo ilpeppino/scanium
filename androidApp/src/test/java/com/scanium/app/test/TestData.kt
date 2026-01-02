@@ -10,9 +10,10 @@ fun RectF.toNormalizedRect(): NormalizedRect = NormalizedRect(left, top, right, 
 
 fun Bitmap.toTestImageRef(): ImageRef = toImageRefJpeg(quality = 50)
 
-fun dummyImageRef(): ImageRef = ImageRef.Bytes(
-    bytes = byteArrayOf(1),
-    mimeType = "image/jpeg",
-    width = 1,
-    height = 1
-)
+fun dummyImageRef(): ImageRef =
+    ImageRef.Bytes(
+        bytes = byteArrayOf(1),
+        mimeType = "image/jpeg",
+        width = 1,
+        height = 1,
+    )

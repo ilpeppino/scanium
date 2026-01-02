@@ -1,8 +1,8 @@
 package com.scanium.app.selling.data
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
+import com.scanium.app.model.toBitmap
 import com.scanium.app.selling.domain.Listing
 import com.scanium.app.selling.domain.ListingDraft
 import com.scanium.app.selling.domain.ListingError
@@ -11,13 +11,13 @@ import com.scanium.app.selling.domain.ListingImage
 import com.scanium.app.selling.domain.ListingImageSource
 import com.scanium.app.selling.domain.ListingStatus
 import com.scanium.app.selling.util.ListingImagePreparer
-import com.scanium.app.model.toBitmap
 
 /**
  * Result of a listing creation operation.
  */
 sealed class ListingCreationResult {
     data class Success(val listing: Listing) : ListingCreationResult()
+
     data class Error(val error: ListingError, val message: String? = null) : ListingCreationResult()
 }
 
@@ -33,7 +33,7 @@ sealed class ListingCreationResult {
 class EbayMarketplaceService(
     private val context: Context,
     private val ebayApi: EbayApi,
-    private val repository: ListingRepository = ListingRepository()
+    private val repository: ListingRepository = ListingRepository(),
 ) {
     companion object {
         private const val TAG = "EbayMarketplaceService"
@@ -66,31 +66,34 @@ class EbayMarketplaceService(
 
         // Step 1: Prepare image (runs on background thread)
         val thumbnailBitmap = draft.originalItem.thumbnail.toBitmap()
-        val imageResult = imagePreparer.prepareListingImage(
-            itemId = draft.scannedItemId,
-            fullImageUri = draft.originalItem.fullImageUri,
-            thumbnail = thumbnailBitmap
-        )
+        val imageResult =
+            imagePreparer.prepareListingImage(
+                itemId = draft.scannedItemId,
+                fullImageUri = draft.originalItem.fullImageUri,
+                thumbnail = thumbnailBitmap,
+            )
 
-        val listingImage = when (imageResult) {
-            is ListingImagePreparer.PrepareResult.Success -> {
-                ListingImage(
-                    source = when (imageResult.source) {
-                        "fullImageUri" -> ListingImageSource.HIGH_RES_CAPTURE
-                        "thumbnail_scaled" -> ListingImageSource.DETECTION_THUMBNAIL
-                        else -> ListingImageSource.DETECTION_THUMBNAIL
-                    },
-                    uri = imageResult.uri.toString()
-                )
+        val listingImage =
+            when (imageResult) {
+                is ListingImagePreparer.PrepareResult.Success -> {
+                    ListingImage(
+                        source =
+                            when (imageResult.source) {
+                                "fullImageUri" -> ListingImageSource.HIGH_RES_CAPTURE
+                                "thumbnail_scaled" -> ListingImageSource.DETECTION_THUMBNAIL
+                                else -> ListingImageSource.DETECTION_THUMBNAIL
+                            },
+                        uri = imageResult.uri.toString(),
+                    )
+                }
+                is ListingImagePreparer.PrepareResult.Failure -> {
+                    Log.e(TAG, "Image preparation failed: ${imageResult.reason}")
+                    return ListingCreationResult.Error(
+                        error = ListingError.VALIDATION_ERROR,
+                        message = imageResult.reason,
+                    )
+                }
             }
-            is ListingImagePreparer.PrepareResult.Failure -> {
-                Log.e(TAG, "Image preparation failed: ${imageResult.reason}")
-                return ListingCreationResult.Error(
-                    error = ListingError.VALIDATION_ERROR,
-                    message = imageResult.reason
-                )
-            }
-        }
 
         // Step 2: Create listing via API
         return try {
@@ -102,11 +105,12 @@ class EbayMarketplaceService(
         } catch (e: Exception) {
             Log.e(TAG, "✗ Listing creation failed: ${e.message}", e)
             Log.i(TAG, "═════════════════════════════════════════════════════")
-            val error = when {
-                e is IllegalArgumentException -> ListingError.VALIDATION_ERROR
-                e.message?.contains("timeout", ignoreCase = true) == true -> ListingError.NETWORK_ERROR
-                else -> ListingError.UNKNOWN_ERROR
-            }
+            val error =
+                when {
+                    e is IllegalArgumentException -> ListingError.VALIDATION_ERROR
+                    e.message?.contains("timeout", ignoreCase = true) == true -> ListingError.NETWORK_ERROR
+                    else -> ListingError.UNKNOWN_ERROR
+                }
             ListingCreationResult.Error(error, e.message)
         }
     }
