@@ -51,6 +51,8 @@ enum class PreflightStatus {
     UNAUTHORIZED,
     /** Backend not configured (no URL) */
     NOT_CONFIGURED,
+    /** Endpoint not found (404) - likely wrong base URL or tunnel route */
+    ENDPOINT_NOT_FOUND,
     /** Preflight check in progress */
     CHECKING,
     /** No preflight result yet */
@@ -78,13 +80,25 @@ data class PreflightResult(
 }
 
 /**
- * Response format from /v1/health endpoint.
+ * Response format from /health endpoint.
+ * Matches the backend's actual response structure.
  */
 @Serializable
 private data class HealthResponse(
     val status: String = "unknown",
-    val assistantReady: Boolean = false,
-    val correlationId: String? = null,
+    val ts: String? = null,
+    val version: String? = null,
+    val assistant: AssistantHealthStatus? = null,
+)
+
+/**
+ * Assistant-specific health status from backend.
+ */
+@Serializable
+private data class AssistantHealthStatus(
+    val providerConfigured: Boolean = false,
+    val providerReachable: Boolean = false,
+    val state: String? = null,
 )
 
 private val Context.preflightDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -342,8 +356,13 @@ class AssistantPreflightManagerImpl(
             return result
         }
 
-        // Build health check request
-        val endpoint = "$baseUrl/v1/health"
+        // Build health check request - uses /health (NOT /v1/health)
+        // The health endpoint is at the root, not under the /v1 prefix
+        val endpoint = "$baseUrl/health"
+        val parsedUrl = runCatching { java.net.URL(endpoint) }.getOrNull()
+        val host = parsedUrl?.host ?: "unknown"
+        val path = parsedUrl?.path ?: "/health"
+
         val requestBuilder = Request.Builder()
             .url(endpoint)
             .get()
@@ -365,24 +384,33 @@ class AssistantPreflightManagerImpl(
                 val latency = System.currentTimeMillis() - startTime
                 val body = response.body?.string()
 
+                // Structured log line for preflight diagnostics
+                Log.i(
+                    TAG,
+                    "Preflight: host=$host path=$path status=${response.code} latencyMs=$latency",
+                )
+
                 val result = when {
                     response.isSuccessful -> {
                         val healthResponse = body?.let {
                             runCatching { json.decodeFromString<HealthResponse>(it) }.getOrNull()
                         }
 
-                        if (healthResponse?.assistantReady == true) {
+                        // Check if assistant is ready based on backend response
+                        val assistantReady = healthResponse?.assistant?.let {
+                            it.providerConfigured && it.providerReachable
+                        } ?: false
+
+                        if (assistantReady) {
                             PreflightResult(
                                 status = PreflightStatus.AVAILABLE,
                                 latencyMs = latency,
-                                correlationId = healthResponse.correlationId,
                             )
                         } else {
                             PreflightResult(
                                 status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
                                 latencyMs = latency,
-                                correlationId = healthResponse?.correlationId,
-                                reasonCode = "assistant_not_ready",
+                                reasonCode = healthResponse?.assistant?.state ?: "assistant_not_ready",
                             )
                         }
                     }
@@ -391,6 +419,14 @@ class AssistantPreflightManagerImpl(
                             status = PreflightStatus.UNAUTHORIZED,
                             latencyMs = latency,
                             reasonCode = "http_${response.code}",
+                        )
+                    }
+                    response.code == 404 -> {
+                        // 404 means endpoint not found - likely wrong base URL or tunnel route
+                        PreflightResult(
+                            status = PreflightStatus.ENDPOINT_NOT_FOUND,
+                            latencyMs = latency,
+                            reasonCode = "endpoint_not_found",
                         )
                     }
                     response.code == 429 -> {
@@ -402,7 +438,7 @@ class AssistantPreflightManagerImpl(
                             retryAfterSeconds = retryAfter,
                         )
                     }
-                    response.code == 503 || response.code == 502 || response.code == 504 -> {
+                    response.code in 500..599 -> {
                         PreflightResult(
                             status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
                             latencyMs = latency,

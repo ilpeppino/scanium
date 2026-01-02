@@ -1199,6 +1199,11 @@ private fun AssistantUnavailableBanner(
             "The AI assistant is not available in this build. Local suggestions are available.",
             false,
         )
+        UnavailableReason.ENDPOINT_NOT_FOUND -> Triple(
+            "Endpoint not found",
+            "Preflight endpoint not found (check base URL / tunnel route). This is a configuration error.",
+            false,
+        )
         UnavailableReason.VALIDATION_ERROR -> Triple(
             "Request error",
             "There was a problem with the request. Try rephrasing your question.",
@@ -1219,6 +1224,7 @@ private fun AssistantUnavailableBanner(
     val containerColor = when (availability.reason) {
         UnavailableReason.UNAUTHORIZED,
         UnavailableReason.NOT_CONFIGURED,
+        UnavailableReason.ENDPOINT_NOT_FOUND,
         UnavailableReason.VALIDATION_ERROR -> MaterialTheme.colorScheme.errorContainer
         else -> MaterialTheme.colorScheme.tertiaryContainer
     }
@@ -1226,6 +1232,7 @@ private fun AssistantUnavailableBanner(
     val contentColor = when (availability.reason) {
         UnavailableReason.UNAUTHORIZED,
         UnavailableReason.NOT_CONFIGURED,
+        UnavailableReason.ENDPOINT_NOT_FOUND,
         UnavailableReason.VALIDATION_ERROR -> MaterialTheme.colorScheme.onErrorContainer
         else -> MaterialTheme.colorScheme.onTertiaryContainer
     }
