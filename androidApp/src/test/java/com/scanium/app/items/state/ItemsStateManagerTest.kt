@@ -3,10 +3,12 @@ package com.scanium.app.items.state
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.items.persistence.PersistenceError
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -245,7 +247,130 @@ class ItemsStateManagerTest {
             assertThat(manager.getItemCount()).isEqualTo(3)
         }
 
+    // ==================== Thumbnail Persistence Tests (Process Death) ====================
+
+    @Test
+    fun whenItemWithThumbnailPersisted_afterProcessDeath_thumbnailBytesStillAvailable() =
+        runTest {
+            // This test verifies the fix for the process death thumbnail bug.
+            // Previously, thumbnails were converted to CacheKey and persisted as null bytes.
+
+            // Arrange - Create item with thumbnail bytes
+            val thumbnailBytes = createTestThumbnailBytes()
+            val itemWithThumbnail = createTestItem(
+                id = "item-with-thumbnail",
+                category = ItemCategory.FASHION,
+            ).copy(thumbnail = thumbnailBytes)
+
+            fakeStore.seedItems(listOf(itemWithThumbnail))
+
+            // Act - Create first manager, simulating initial app launch
+            val manager1 = createManager()
+            advanceUntilIdle()
+
+            // Get the persisted item (should still have bytes)
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems).hasSize(1)
+
+            // Simulate process death: clear cache and create new manager
+            ThumbnailCache.clear()
+            val manager2 = createManager()
+            advanceUntilIdle()
+
+            // Assert - After "process death", items should still have resolvable thumbnails
+            val loadedItems = manager2.items.first()
+            assertThat(loadedItems).hasSize(1)
+
+            // The store should still have ImageRef.Bytes (not null)
+            val storeItems = fakeStore.loadAll()
+            assertThat(storeItems).hasSize(1)
+            val storedThumbnail = storeItems[0].thumbnail ?: storeItems[0].thumbnailRef
+            assertThat(storedThumbnail).isNotNull()
+            assertThat(storedThumbnail).isInstanceOf(ImageRef.Bytes::class.java)
+        }
+
+    @Test
+    fun whenMultipleItemsWithThumbnails_afterProcessDeath_allThumbnailsPreserved() =
+        runTest {
+            // Arrange - Create multiple items with thumbnail bytes
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION)
+                    .copy(thumbnail = createTestThumbnailBytes()),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS)
+                    .copy(thumbnail = createTestThumbnailBytes()),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD)
+                    .copy(thumbnail = createTestThumbnailBytes()),
+            )
+            fakeStore.seedItems(items)
+
+            // Act - Load items, simulate process death, reload
+            val manager1 = createManager()
+            advanceUntilIdle()
+
+            ThumbnailCache.clear()
+
+            val manager2 = createManager()
+            advanceUntilIdle()
+
+            // Assert - All items should have thumbnail bytes in the store
+            val storeItems = fakeStore.loadAll()
+            assertThat(storeItems).hasSize(3)
+
+            storeItems.forEach { item ->
+                val thumbnail = item.thumbnail ?: item.thumbnailRef
+                assertThat(thumbnail).isNotNull()
+                assertThat(thumbnail).isInstanceOf(ImageRef.Bytes::class.java)
+            }
+        }
+
+    @Test
+    fun whenItemAddedDuringSession_thumbnailBytesPersistedNotCacheKey() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            // Act - Add item with thumbnail bytes during session
+            val itemWithThumbnail = createTestItem(
+                id = "new-item",
+                category = ItemCategory.PLANT,
+            ).copy(thumbnail = createTestThumbnailBytes())
+
+            manager.addItem(itemWithThumbnail)
+            advanceUntilIdle()
+
+            // Assert - Persisted item should have Bytes, not CacheKey
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems).hasSize(1)
+
+            val persistedThumbnail = persistedItems[0].thumbnail ?: persistedItems[0].thumbnailRef
+            assertThat(persistedThumbnail).isNotNull()
+            assertThat(persistedThumbnail).isInstanceOf(ImageRef.Bytes::class.java)
+        }
+
     // ==================== Helper Methods ====================
+
+    private fun createTestThumbnailBytes(): ImageRef.Bytes {
+        // Create a minimal valid PNG-like byte array for testing
+        // Real PNG header + minimal data
+        val testBytes = byteArrayOf(
+            0x89.toByte(), 0x50, 0x4E, 0x47, // PNG signature
+            0x0D, 0x0A, 0x1A, 0x0A,           // PNG signature continued
+            0x00, 0x00, 0x00, 0x0D,           // IHDR chunk length
+            0x49, 0x48, 0x44, 0x52,           // "IHDR"
+            0x00, 0x00, 0x00, 0x01,           // width = 1
+            0x00, 0x00, 0x00, 0x01,           // height = 1
+            0x08, 0x02,                       // bit depth, color type
+            0x00, 0x00, 0x00,                 // compression, filter, interlace
+            0x00, 0x00, 0x00, 0x00,           // CRC placeholder
+        )
+        return ImageRef.Bytes(
+            bytes = testBytes,
+            mimeType = "image/png",
+            width = 100,
+            height = 100,
+        )
+    }
 
     private fun createManager(): ItemsStateManager {
         return ItemsStateManager(
