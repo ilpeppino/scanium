@@ -22,6 +22,10 @@ export interface CacheEvent {
   metadata?: Record<string, unknown>;
 }
 
+// Backward-compat alias for older imports
+export type CacheUsageEvent = CacheEvent;
+
+
 export type UsageCallback = (event: CacheEvent) => void;
 
 interface CacheEntry<T> {
@@ -35,14 +39,11 @@ interface CacheEntry<T> {
 export class UnifiedCache<T> {
   private readonly cache = new Map<string, CacheEntry<T>>();
   private readonly pending = new Map<string, Promise<T>>();
-
   private readonly ttlMs: number;
   private readonly maxEntries: number;
   private readonly name: string;
   private readonly enableDedup: boolean;
-
   private usageCallback?: UsageCallback;
-
   private stats: CacheStats = {
     size: 0,
     hits: 0,
@@ -50,7 +51,6 @@ export class UnifiedCache<T> {
     coalescedRequests: 0,
     evictions: 0,
   };
-
   private cleanupInterval?: ReturnType<typeof setInterval>;
 
   constructor(options: CacheOptions) {
@@ -59,7 +59,7 @@ export class UnifiedCache<T> {
     this.name = options.name;
     this.enableDedup = options.enableDedup ?? false;
 
-    // Periodic cleanup of expired entries (1 min)
+    // Periodic cleanup of expired entries
     this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
   }
 
@@ -91,9 +91,7 @@ export class UnifiedCache<T> {
       value,
       expiresAt: Date.now() + this.ttlMs,
     });
-
     this.stats.size = this.cache.size;
-
     this.usageCallback?.({
       type: 'set',
       cacheName: this.name,
@@ -127,6 +125,7 @@ export class UnifiedCache<T> {
       cacheKey: key,
     });
 
+    // Compute the value
     const computePromise = compute();
 
     if (this.enableDedup) {
@@ -146,9 +145,7 @@ export class UnifiedCache<T> {
         value,
         expiresAt: Date.now() + this.ttlMs,
       });
-
       this.stats.size = this.cache.size;
-
       this.usageCallback?.({
         type: 'set',
         cacheName: this.name,
@@ -193,8 +190,8 @@ export class UnifiedCache<T> {
   }
 
   private evictOldest(): void {
-    // Simple eviction: evict the first (oldest-in-map) entry
-    const firstKey = this.cache.keys().next().value as string | undefined;
+    // Simple LRU-like: evict the first (oldest) entry
+    const firstKey = this.cache.keys().next().value;
     if (firstKey) {
       this.cache.delete(firstKey);
       this.stats.evictions++;
@@ -205,23 +202,6 @@ export class UnifiedCache<T> {
       });
     }
   }
-}
-
-/**
- * Generic stable cache key builder (sha256 hex, optionally shortened).
- */
-export function buildCacheKey(
-  parts: Array<string | number | undefined | null>,
-  opts?: { prefix?: string; length?: number }
-): string {
-  const normalized = parts
-    .filter((p) => p !== undefined && p !== null)
-    .map((p) => String(p))
-    .join('|');
-
-  const base = (opts?.prefix ? `${opts.prefix}|` : '') + normalized;
-  const hex = createHash('sha256').update(base).digest('hex');
-  return typeof opts?.length === 'number' ? hex.slice(0, opts.length) : hex;
 }
 
 /**
@@ -272,20 +252,4 @@ export function normalizeQuestion(question: string): string {
     .trim()
     .replace(/\s+/g, ' ')
     .replace(/[^\w\s]/g, '');
-}
-
-/**
- * Build a vision facts cache key.
- * (kept from your branch: used for OCR / color / logo / vision pipelines)
- */
-export function buildVisionCacheKey(params: {
-  featureVersion: string;
-  imageHashes: string[];
-  mode?: string;
-}): string {
-  const sortedImageHashes = [...params.imageHashes].sort().join('|');
-  return buildCacheKey(
-    ['vision', params.featureVersion, sortedImageHashes, params.mode ?? 'default'],
-    { length: 32 }
-  );
 }
