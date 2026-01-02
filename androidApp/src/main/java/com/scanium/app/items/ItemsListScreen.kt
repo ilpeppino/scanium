@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -73,6 +74,7 @@ import java.util.*
 fun ItemsListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAssistant: (List<String>) -> Unit,
+    onNavigateToEdit: (List<String>) -> Unit,
     draftStore: ListingDraftStore,
     itemsViewModel: ItemsViewModel = viewModel(),
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
@@ -508,6 +510,30 @@ fun ItemsListScreen(
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
                     contentDescription = "AI assistant",
+                )
+            }
+
+            // Edit button - bottom-center
+            FloatingActionButton(
+                onClick = {
+                    val selected = selectedIds.toList()
+                    if (selected.isNotEmpty()) {
+                        onNavigateToEdit(selected)
+                    } else {
+                        scope.launch { snackbarHostState.showSnackbar("Select items to edit") }
+                    }
+                },
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(16.dp),
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit items",
                 )
             }
 
