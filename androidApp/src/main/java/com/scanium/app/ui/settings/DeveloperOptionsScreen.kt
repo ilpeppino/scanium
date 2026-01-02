@@ -829,15 +829,19 @@ private fun AssistantDiagnosticsSection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Overall status badge with debug detail
-        val debugDetail = when (val result = state.connectionTestResult) {
-            is ConnectionTestResult.Success -> "GET ${result.endpoint} -> ${result.httpStatus}"
-            is ConnectionTestResult.Failure -> result.debugDetail
+        // Overall status badge with debug detail and status message
+        val connectionResult = state.connectionTestResult
+        val debugDetail = when (connectionResult) {
+            is ConnectionTestResult.Success -> "GET ${connectionResult.endpoint} -> ${connectionResult.httpStatus}"
+            is ConnectionTestResult.Failure -> connectionResult.debugDetail
             null -> null
         }
+        // Use BackendStatusClassifier for accurate status messages with HTTP codes
+        val statusMessage = connectionResult?.let { BackendStatusClassifier.getStatusMessage(it) }
         AssistantOverallStatusBadge(
             readiness = state.overallReadiness,
             debugDetail = debugDetail,
+            statusMessage = statusMessage,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -971,13 +975,15 @@ private fun AssistantDiagnosticsSection(
 /**
  * Overall status badge for assistant readiness.
  * Shows accurate status messages distinguishing unreachable vs unauthorized vs server errors.
+ * When [statusMessage] is provided, uses it for backend-related error states to include HTTP codes.
  */
 @Composable
 private fun AssistantOverallStatusBadge(
     readiness: AssistantReadiness,
     debugDetail: String? = null,
+    statusMessage: String? = null,
 ) {
-    val (color, text, icon) =
+    val (color, defaultText, icon) =
         when (readiness) {
             AssistantReadiness.READY ->
                 Triple(
@@ -1040,6 +1046,16 @@ private fun AssistantOverallStatusBadge(
                     Icons.Default.Help,
                 )
         }
+
+    // Use statusMessage from BackendStatusClassifier for backend-related states (includes HTTP codes)
+    val text = when (readiness) {
+        AssistantReadiness.BACKEND_UNREACHABLE,
+        AssistantReadiness.BACKEND_UNAUTHORIZED,
+        AssistantReadiness.BACKEND_SERVER_ERROR,
+        AssistantReadiness.BACKEND_NOT_FOUND,
+        AssistantReadiness.BACKEND_NOT_CONFIGURED -> statusMessage ?: defaultText
+        else -> defaultText
+    }
 
     Surface(
         color = color.copy(alpha = 0.15f),
