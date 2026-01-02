@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - backend_scanium-network
+      - scanium-network
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-scanium}']
       interval: 10s
@@ -61,7 +61,7 @@ services:
       - ./secrets:/secrets:ro
 
     networks:
-      - backend_scanium-network
+      - scanium-network
     ***REMOVED*** Note: Port not exposed externally - accessed via Cloudflare Tunnel
     expose:
       - '8080'
