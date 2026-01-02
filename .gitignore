@@ -40,6 +40,8 @@ scripts/termux/remote_env
 # Backend environment files (secrets)
 backend/.env
 backend/.env.*
+backend/.env.backup
+backend/.env.last
 !backend/.env.example
 
 # NAS deployment environment files (secrets)
