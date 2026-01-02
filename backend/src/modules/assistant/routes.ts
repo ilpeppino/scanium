@@ -465,6 +465,22 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       );
     }
 
+    // Handle empty items when feature flag is enabled
+    if (parsed.data.items.length === 0) {
+      if (config.assistant.allowEmptyItems) {
+        // Return helpful response for empty items when flag is ON
+        request.log.info({ correlationId }, 'Empty items allowed by feature flag');
+        return reply.status(200).send({
+          reply: 'Assistant is enabled. Add an item to get listing advice.',
+          actions: [],
+          citationsMetadata: {},
+          safety: buildSafetyResponse(false, null, requestId),
+          correlationId,
+        });
+      }
+      // Default behavior: proceed to provider which will return the standard message
+    }
+
     // Apply security limits and normalize input
     const validated = validateAndSanitizeRequest(parsed.data, validationLimits);
     if (!validated.valid) {

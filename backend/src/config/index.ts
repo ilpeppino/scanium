@@ -133,6 +133,8 @@ export const configSchema = z.object({
       ebayCompsRateLimitPerMinute: z.coerce.number().int().min(1).max(100).default(10),
       /** Enable template packs for category-aware responses */
       enableTemplatePacks: z.coerce.boolean().default(true),
+      /** Allow empty items in assistant requests (feature flag for testing) */
+      allowEmptyItems: z.coerce.boolean().default(false),
       /** Default assistant language */
       defaultLanguage: z.string().default('EN'),
       /** Default assistant tone */
@@ -298,6 +300,7 @@ export function loadConfig(): Config {
       responseCacheMaxEntries: process.env.ASSIST_RESPONSE_CACHE_MAX_ENTRIES,
       enableRequestDedup: process.env.ASSIST_ENABLE_REQUEST_DEDUP,
       stagedResponseTimeoutMs: process.env.ASSIST_STAGED_RESPONSE_TIMEOUT_MS,
+      allowEmptyItems: process.env.SCANIUM_ASSISTANT_ALLOW_EMPTY_ITEMS,
     },
     vision: {
       enabled: process.env.VISION_ENABLED,
