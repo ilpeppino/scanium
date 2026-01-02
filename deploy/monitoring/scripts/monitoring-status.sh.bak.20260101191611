@@ -1,0 +1,39 @@
+***REMOVED***!/usr/bin/env sh
+set -eu
+
+***REMOVED*** Resolve repo root from this script's location:
+***REMOVED*** .../repo/deploy/monitoring/scripts/monitoring-status.sh -> repo root is 3 levels up from scripts/
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+REPO_ROOT="$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)"
+
+COMPOSE_FILE="$REPO_ROOT/deploy/nas/compose/docker-compose.nas.monitoring.yml"
+
+if [ ! -f "$COMPOSE_FILE" ]; then
+  echo "ERROR: Compose file not found: $COMPOSE_FILE" >&2
+  exit 1
+fi
+
+echo "▶ Repo root: $REPO_ROOT"
+echo "▶ Compose file: $COMPOSE_FILE"
+echo
+
+echo "== Containers =="
+docker-compose -f "$COMPOSE_FILE" ps || true
+echo
+
+echo "== docker ps (scanium monitoring) =="
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | egrep "scanium-(grafana|loki|mimir|tempo|alloy)" || true
+echo
+
+***REMOVED*** Pick the monitoring network if present (compose typically prefixes it)
+NET="$(docker network ls --format '{{.Name}}' | grep -E 'compose_scanium_net|scanium_net' | head -n1 || true)"
+echo "== Network =="; echo "${NET:-<not found>}"
+echo
+
+if [ -n "${NET:-}" ]; then
+  echo "== Health checks (from inside $NET) =="
+  docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -i http://mimir:9009/ready  | head -n 12 || true
+  docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -i http://loki:3100/ready   | head -n 12 || true
+  docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -i http://tempo:3200/ready  | head -n 12 || true
+  docker run --rm --network "$NET" curlimages/curl:8.6.0 -sS -i http://grafana:3000/api/health | head -n 20 || true
+fi
