@@ -26,6 +26,8 @@ import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.ItemContextSnapshotBuilder
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
+import com.scanium.app.selling.assistant.local.LocalSuggestionEngine
+import com.scanium.app.selling.assistant.local.LocalSuggestions
 import com.scanium.app.selling.persistence.ListingDraftStore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -148,6 +150,8 @@ data class AssistantUiState(
     val lastBackendFailure: AssistantBackendFailure? = null,
     /** Explicit availability state - determines if user can send messages */
     val availability: AssistantAvailability = AssistantAvailability.Available,
+    /** Local suggestions when assistant is unavailable */
+    val localSuggestions: LocalSuggestions? = null,
 ) {
     /**
      * Returns true if the text input should be enabled.
@@ -199,7 +203,9 @@ class AssistantViewModel
         private val assistantRepository: AssistantRepository,
         private val settingsRepository: SettingsRepository,
         private val localAssistantHelper: LocalAssistantHelper,
+        private val localSuggestionEngine: LocalSuggestionEngine,
         private val connectivityStatusProvider: ConnectivityStatusProvider,
+        private val preflightManager: AssistantPreflightManager,
     ) : ViewModel() {
         /**
          * Factory for creating AssistantViewModel instances with assisted injection.
@@ -213,7 +219,12 @@ class AssistantViewModel
             ): AssistantViewModel
         }
 
-        private val _uiState = MutableStateFlow(AssistantUiState(itemIds = itemIds))
+        private val _uiState = MutableStateFlow(
+            AssistantUiState(
+                itemIds = itemIds,
+                availability = AssistantAvailability.Checking,
+            ),
+        )
         val uiState: StateFlow<AssistantUiState> = _uiState.asStateFlow()
 
         private val _events = MutableSharedFlow<AssistantUiEvent>()
@@ -222,6 +233,8 @@ class AssistantViewModel
         init {
             loadProfileAndSnapshots()
             observeConnectivity()
+            observePreflightStatus()
+            runInitialPreflight()
         }
 
         fun sendMessage(text: String) {
@@ -511,6 +524,50 @@ class AssistantViewModel
             }
         }
 
+        /**
+         * Apply a suggested title from local suggestions.
+         */
+        fun applyLocalSuggestedTitle(title: String) {
+            val itemId = itemIds.firstOrNull() ?: return
+            viewModelScope.launch {
+                val draft =
+                    draftStore.getByItemId(itemId)
+                        ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
+                            ?.let { ListingDraftBuilder.build(it) }
+                if (draft == null) {
+                    _events.emit(AssistantUiEvent.ShowSnackbar("No draft available"))
+                    return@launch
+                }
+                val updated = updateDraftFromPayload(draft, mapOf("title" to title))
+                draftStore.upsert(updated)
+                ScaniumLog.i(TAG, "Local suggestion title applied itemId=$itemId")
+                _events.emit(AssistantUiEvent.ShowSnackbar("Title updated"))
+                refreshSnapshots()
+            }
+        }
+
+        /**
+         * Apply a suggested description from local suggestions.
+         */
+        fun applyLocalSuggestedDescription(description: String) {
+            val itemId = itemIds.firstOrNull() ?: return
+            viewModelScope.launch {
+                val draft =
+                    draftStore.getByItemId(itemId)
+                        ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
+                            ?.let { ListingDraftBuilder.build(it) }
+                if (draft == null) {
+                    _events.emit(AssistantUiEvent.ShowSnackbar("No draft available"))
+                    return@launch
+                }
+                val updated = updateDraftFromPayload(draft, mapOf("description" to description))
+                draftStore.upsert(updated)
+                ScaniumLog.i(TAG, "Local suggestion description applied itemId=$itemId")
+                _events.emit(AssistantUiEvent.ShowSnackbar("Description updated"))
+                refreshSnapshots()
+            }
+        }
+
         private fun loadProfileAndSnapshots() {
             viewModelScope.launch {
                 val profiles = exportProfileRepository.getProfiles().ifEmpty { listOf(ExportProfiles.generic()) }
@@ -534,7 +591,8 @@ class AssistantViewModel
                                 ?.let { ListingDraftBuilder.build(it) }
                     draft?.let { ItemContextSnapshotBuilder.fromDraft(it) }
                 }
-            _uiState.update { it.copy(snapshots = snapshots) }
+            val localSuggestions = localSuggestionEngine.generateSuggestions(snapshots)
+            _uiState.update { it.copy(snapshots = snapshots, localSuggestions = localSuggestions) }
         }
 
         private fun observeConnectivity() {
@@ -563,8 +621,133 @@ class AssistantViewModel
                         )
                     }
                     ScaniumLog.i(TAG, "Assistant connectivity status=$status availability=${availabilityDebugString(_uiState.value.availability)}")
+
+                    // When coming back online, trigger a fresh preflight check
+                    if (online) {
+                        runPreflight(forceRefresh = false)
+                    }
                 }
             }
+        }
+
+        /**
+         * Observe preflight status changes and update availability accordingly.
+         */
+        private fun observePreflightStatus() {
+            viewModelScope.launch {
+                preflightManager.currentResult.collect { result ->
+                    updateAvailabilityFromPreflight(result)
+                }
+            }
+        }
+
+        /**
+         * Run initial preflight check on ViewModel creation.
+         * Starts with Checking state, then transitions to actual state.
+         */
+        private fun runInitialPreflight() {
+            viewModelScope.launch {
+                val result = preflightManager.preflight(forceRefresh = false)
+                updateAvailabilityFromPreflight(result)
+
+                // If available, trigger warm-up in background
+                if (result.isAvailable) {
+                    preflightManager.warmUp()
+                }
+            }
+        }
+
+        /**
+         * Run a preflight check, optionally forcing a refresh.
+         * Called on retry button press or when connectivity changes.
+         */
+        fun runPreflight(forceRefresh: Boolean = true) {
+            viewModelScope.launch {
+                // Set to checking state
+                _uiState.update { it.copy(availability = AssistantAvailability.Checking) }
+
+                val result = preflightManager.preflight(forceRefresh = forceRefresh)
+                updateAvailabilityFromPreflight(result)
+
+                // If available after retry, trigger warm-up
+                if (result.isAvailable) {
+                    preflightManager.warmUp()
+                }
+            }
+        }
+
+        /**
+         * Cancel any ongoing warm-up. Call this when leaving the screen.
+         */
+        fun cancelWarmUp() {
+            preflightManager.cancelWarmUp()
+        }
+
+        /**
+         * Update the availability state based on preflight result.
+         */
+        private fun updateAvailabilityFromPreflight(result: PreflightResult) {
+            val availability = when (result.status) {
+                PreflightStatus.AVAILABLE -> AssistantAvailability.Available
+                PreflightStatus.CHECKING -> AssistantAvailability.Checking
+                PreflightStatus.UNKNOWN -> {
+                    // Unknown state - check connectivity to decide
+                    if (_uiState.value.isOnline) {
+                        AssistantAvailability.Checking
+                    } else {
+                        AssistantAvailability.Unavailable(
+                            reason = UnavailableReason.OFFLINE,
+                            canRetry = true,
+                        )
+                    }
+                }
+                PreflightStatus.OFFLINE -> AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.OFFLINE,
+                    canRetry = true,
+                )
+                PreflightStatus.TEMPORARILY_UNAVAILABLE -> AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.BACKEND_ERROR,
+                    canRetry = true,
+                )
+                PreflightStatus.RATE_LIMITED -> AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.RATE_LIMITED,
+                    canRetry = true,
+                    retryAfterSeconds = result.retryAfterSeconds,
+                )
+                PreflightStatus.UNAUTHORIZED -> AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.UNAUTHORIZED,
+                    canRetry = false,
+                )
+                PreflightStatus.NOT_CONFIGURED -> AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.NOT_CONFIGURED,
+                    canRetry = false,
+                )
+            }
+
+            val mode = when (result.status) {
+                PreflightStatus.AVAILABLE -> AssistantMode.ONLINE
+                PreflightStatus.OFFLINE -> AssistantMode.OFFLINE
+                else -> AssistantMode.LIMITED
+            }
+
+            _uiState.update { current ->
+                // Don't override if we're in loading state (user already sent a message)
+                if (current.isLoading) {
+                    current
+                } else {
+                    current.copy(
+                        availability = availability,
+                        assistantMode = mode,
+                        // Clear backend failure if preflight succeeded
+                        lastBackendFailure = if (result.isAvailable) null else current.lastBackendFailure,
+                    )
+                }
+            }
+
+            ScaniumLog.i(
+                TAG,
+                "Preflight result: status=${result.status} latency=${result.latencyMs}ms availability=${availabilityDebugString(availability)}",
+            )
         }
 
         private fun resolveMode(

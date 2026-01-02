@@ -24,6 +24,9 @@ import com.scanium.app.model.config.ConnectionTestResult
 import com.scanium.app.model.config.FeatureFlagRepository
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
+import com.scanium.app.selling.assistant.AssistantPreflightManager
+import com.scanium.app.selling.assistant.PreflightResult
+import com.scanium.app.selling.assistant.PreflightStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -54,6 +57,7 @@ class DeveloperOptionsViewModel
         private val diagnosticsRepository: DiagnosticsRepository,
         private val featureFlagRepository: FeatureFlagRepository,
         private val connectivityStatusProvider: ConnectivityStatusProvider,
+        private val preflightManager: AssistantPreflightManager,
     ) : AndroidViewModel(application) {
         // Diagnostics state
         val diagnosticsState: StateFlow<DiagnosticsState> = diagnosticsRepository.state
@@ -64,6 +68,10 @@ class DeveloperOptionsViewModel
         val assistantDiagnosticsState: StateFlow<AssistantDiagnosticsState> = _assistantDiagnosticsState.asStateFlow()
 
         private val _assistantDiagnosticsRefreshing = MutableStateFlow(false)
+
+        // Preflight diagnostics
+        val preflightState: StateFlow<PreflightResult> = preflightManager.currentResult
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreflightResult(PreflightStatus.UNKNOWN, 0))
 
         // Developer settings
         val isDeveloperMode: StateFlow<Boolean> =
@@ -178,6 +186,24 @@ class DeveloperOptionsViewModel
                     )
 
                 _assistantDiagnosticsRefreshing.value = false
+            }
+        }
+
+        /**
+         * Refresh preflight status.
+         */
+        fun refreshPreflight() {
+            viewModelScope.launch {
+                preflightManager.preflight(forceRefresh = true)
+            }
+        }
+
+        /**
+         * Clear preflight cache.
+         */
+        fun clearPreflightCache() {
+            viewModelScope.launch {
+                preflightManager.clearCache()
             }
         }
 
@@ -401,6 +427,7 @@ class DeveloperOptionsViewModel
             private val diagnosticsRepository: DiagnosticsRepository,
             private val featureFlagRepository: FeatureFlagRepository,
             private val connectivityStatusProvider: ConnectivityStatusProvider,
+            private val preflightManager: AssistantPreflightManager,
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -412,6 +439,7 @@ class DeveloperOptionsViewModel
                         diagnosticsRepository,
                         featureFlagRepository,
                         connectivityStatusProvider,
+                        preflightManager,
                     ) as T
                 }
                 throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
