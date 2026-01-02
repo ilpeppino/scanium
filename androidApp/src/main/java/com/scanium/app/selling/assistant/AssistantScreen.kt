@@ -179,6 +179,7 @@ fun AssistantScreen(
     }
 
     // Stop voice recording when app goes to background (lifecycle-aware)
+    // Also refresh availability on resume
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer =
@@ -189,6 +190,11 @@ fun AssistantScreen(
                         // This ensures no background mic usage
                         voiceController.stopListening()
                         voiceController.stopSpeaking()
+                    }
+                    Lifecycle.Event.ON_RESUME -> {
+                        // Re-evaluate assistant availability when returning to screen
+                        // This handles cases like network reconnection while app was backgrounded
+                        viewModel.refreshAvailability()
                     }
                     else -> { /* No action needed for other lifecycle events */ }
                 }
@@ -422,12 +428,23 @@ fun AssistantScreen(
                 }
             }
 
-            if (state.lastUserMessage != null && state.assistantMode != AssistantMode.ONLINE) {
-                AssistantModeBanner(
-                    mode = state.assistantMode,
+            // Show availability banner when assistant is unavailable (not just after a failed message)
+            val availability = state.availability
+            if (availability is AssistantAvailability.Unavailable && availability.reason != UnavailableReason.LOADING) {
+                AssistantUnavailableBanner(
+                    availability = availability,
                     failure = state.lastBackendFailure,
-                    retryEnabled = state.isOnline && state.lastUserMessage != null,
-                    onRetry = { viewModel.retryLastMessage() },
+                    onRetry = {
+                        // Clear failure state and retry if there was a last message
+                        viewModel.clearFailureState()
+                        if (state.lastUserMessage != null) {
+                            viewModel.retryLastMessage()
+                        }
+                    },
+                    onDismiss = {
+                        // Just clear the failure state without retrying
+                        viewModel.clearFailureState()
+                    },
                 )
             }
 
@@ -484,22 +501,29 @@ fun AssistantScreen(
             }
 
             // Smart suggested questions (context-aware)
+            // Disabled when assistant is unavailable
             SmartSuggestionsRow(
                 suggestions =
                     state.suggestedQuestions.ifEmpty {
                         listOf("Suggest a better title", "What details should I add?", "Estimate price range")
                     },
+                enabled = state.isInputEnabled,
                 onActionSelected = { actionText ->
-                    inputText = actionText
-                    soundManager.play(AppSound.SEND)
-                    viewModel.sendMessage(actionText)
+                    if (state.isInputEnabled) {
+                        inputText = actionText
+                        soundManager.play(AppSound.SEND)
+                        viewModel.sendMessage(actionText)
+                    }
                 },
             )
 
             // ChatGPT-like input field with embedded icons
+            // Disabled when assistant is unavailable (offline, error, loading)
+            val inputEnabled = state.isInputEnabled
             TextField(
                 value = inputText,
-                onValueChange = { inputText = it },
+                onValueChange = { if (inputEnabled) inputText = it },
+                enabled = inputEnabled,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -507,13 +531,24 @@ fun AssistantScreen(
                         .semantics { traversalIndex = 3f }
                         .navigationBarsPadding()
                         .imePadding(),
-                placeholder = { Text("Ask about listing improvements...") },
+                placeholder = {
+                    Text(
+                        text = state.inputPlaceholder,
+                        color = if (!inputEnabled) {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                },
                 shape = RoundedCornerShape(24.dp),
                 colors =
                     TextFieldDefaults.colors(
                         focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                         unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                         disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                     ),
                 trailingIcon = {
                     Row(
@@ -590,28 +625,33 @@ fun AssistantScreen(
                             }
                         }
 
-                        // Send icon button
+                        // Send icon button - disabled when assistant unavailable
+                        val canSend = inputText.isNotBlank() && inputEnabled
                         IconButton(
                             onClick = {
-                                val text = inputText
-                                inputText = ""
-                                if (assistantHapticsEnabled) {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                if (canSend) {
+                                    val text = inputText
+                                    inputText = ""
+                                    if (assistantHapticsEnabled) {
+                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    }
+                                    soundManager.play(AppSound.SEND)
+                                    viewModel.sendMessage(text)
                                 }
-                                soundManager.play(AppSound.SEND)
-                                viewModel.sendMessage(text)
                             },
-                            enabled = inputText.isNotBlank(),
+                            enabled = canSend,
                             modifier =
                                 Modifier
                                     .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                    .semantics { contentDescription = "Send message" },
+                                    .semantics {
+                                        contentDescription = if (inputEnabled) "Send message" else "Send unavailable"
+                                    },
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Send,
                                 contentDescription = "Send",
                                 tint =
-                                    if (inputText.isNotBlank()) {
+                                    if (canSend) {
                                         MaterialTheme.colorScheme.primary
                                     } else {
                                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -626,7 +666,8 @@ fun AssistantScreen(
                 keyboardActions =
                     KeyboardActions(
                         onSend = {
-                            if (inputText.isNotBlank()) {
+                            // Only allow send if input is enabled (assistant available)
+                            if (inputText.isNotBlank() && inputEnabled) {
                                 val text = inputText
                                 inputText = ""
                                 if (assistantHapticsEnabled) {
@@ -1073,9 +1114,135 @@ private fun AssistantModeBanner(
     }
 }
 
+/**
+ * Banner shown when assistant is unavailable.
+ * Provides clear messaging and recovery actions.
+ */
+@Composable
+private fun AssistantUnavailableBanner(
+    availability: AssistantAvailability.Unavailable,
+    failure: AssistantBackendFailure?,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val (title, detail, showRetry) = when (availability.reason) {
+        UnavailableReason.OFFLINE -> Triple(
+            "You're offline",
+            "Connect to the internet to use the AI assistant. Local suggestions are still available below.",
+            true,
+        )
+        UnavailableReason.RATE_LIMITED -> {
+            val retryText = availability.retryAfterSeconds?.let { " (wait ${it}s)" } ?: ""
+            Triple(
+                "Rate limit reached$retryText",
+                "You've sent too many requests. Local suggestions are available while you wait.",
+                true,
+            )
+        }
+        UnavailableReason.UNAUTHORIZED -> Triple(
+            "Authorization required",
+            "Check your account status or sign in again. Local suggestions are available.",
+            false,
+        )
+        UnavailableReason.NOT_CONFIGURED -> Triple(
+            "Assistant not configured",
+            "The AI assistant is not available in this build. Local suggestions are available.",
+            false,
+        )
+        UnavailableReason.VALIDATION_ERROR -> Triple(
+            "Request error",
+            "There was a problem with the request. Try rephrasing your question.",
+            false,
+        )
+        UnavailableReason.BACKEND_ERROR -> Triple(
+            "Assistant temporarily unavailable",
+            "The AI assistant is experiencing issues. Local suggestions are available.",
+            true,
+        )
+        UnavailableReason.LOADING -> Triple(
+            "Processing...",
+            "Please wait while we process your request.",
+            false,
+        )
+    }
+
+    val containerColor = when (availability.reason) {
+        UnavailableReason.UNAUTHORIZED,
+        UnavailableReason.NOT_CONFIGURED,
+        UnavailableReason.VALIDATION_ERROR -> MaterialTheme.colorScheme.errorContainer
+        else -> MaterialTheme.colorScheme.tertiaryContainer
+    }
+
+    val contentColor = when (availability.reason) {
+        UnavailableReason.UNAUTHORIZED,
+        UnavailableReason.NOT_CONFIGURED,
+        UnavailableReason.VALIDATION_ERROR -> MaterialTheme.colorScheme.onErrorContainer
+        else -> MaterialTheme.colorScheme.onTertiaryContainer
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+        ) {
+            // Status label for debugging
+            failure?.let {
+                Text(
+                    text = AssistantErrorDisplay.getStatusLabel(it),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor.copy(alpha = 0.7f),
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+            }
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = contentColor,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = contentColor.copy(alpha = 0.9f),
+            )
+
+            // Action buttons
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (showRetry && availability.canRetry) {
+                    Button(
+                        onClick = onRetry,
+                        modifier = Modifier.semantics { contentDescription = "Retry online assistant" },
+                    ) {
+                        Text("Retry")
+                    }
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.semantics { contentDescription = "Continue with local suggestions" },
+                ) {
+                    Text(if (showRetry && availability.canRetry) "Use local" else "OK")
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun SmartSuggestionsRow(
     suggestions: List<String>,
+    enabled: Boolean = true,
     onActionSelected: (String) -> Unit,
 ) {
     Row(
@@ -1087,8 +1254,18 @@ private fun SmartSuggestionsRow(
     ) {
         suggestions.forEach { suggestion ->
             AssistChip(
-                onClick = { onActionSelected(suggestion) },
-                label = { Text(suggestion) },
+                onClick = { if (enabled) onActionSelected(suggestion) },
+                enabled = enabled,
+                label = {
+                    Text(
+                        text = suggestion,
+                        color = if (enabled) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        },
+                    )
+                },
             )
         }
     }

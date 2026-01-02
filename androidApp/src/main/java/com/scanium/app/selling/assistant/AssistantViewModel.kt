@@ -68,6 +68,64 @@ enum class AssistantMode {
     LIMITED,
 }
 
+/**
+ * Explicit availability state for the AI assistant.
+ * This is a first-class concept that determines what actions the user can take.
+ */
+sealed class AssistantAvailability {
+    /**
+     * Assistant is ready to accept messages. Online AI features work.
+     */
+    data object Available : AssistantAvailability()
+
+    /**
+     * Currently checking availability (e.g., on screen entry).
+     */
+    data object Checking : AssistantAvailability()
+
+    /**
+     * Assistant is unavailable. User cannot send messages.
+     * Local suggestions may still be shown.
+     */
+    data class Unavailable(
+        val reason: UnavailableReason,
+        val canRetry: Boolean,
+        val retryAfterSeconds: Int? = null,
+    ) : AssistantAvailability()
+
+    /**
+     * Returns true if the user can currently send messages.
+     */
+    val canSendMessages: Boolean
+        get() = this is Available
+
+    /**
+     * Returns true if local-only features should be promoted.
+     */
+    val isLocalOnly: Boolean
+        get() = this !is Available
+}
+
+/**
+ * Reasons why the assistant might be unavailable.
+ */
+enum class UnavailableReason {
+    /** Device is offline */
+    OFFLINE,
+    /** Backend returned an error */
+    BACKEND_ERROR,
+    /** Rate limited - too many requests */
+    RATE_LIMITED,
+    /** Not authorized (subscription/auth issue) */
+    UNAUTHORIZED,
+    /** Backend not configured */
+    NOT_CONFIGURED,
+    /** Request validation error */
+    VALIDATION_ERROR,
+    /** Currently processing a request */
+    LOADING,
+}
+
 data class AssistantUiState(
     val itemIds: List<String> = emptyList(),
     val snapshots: List<ItemContextSnapshot> = emptyList(),
@@ -88,7 +146,36 @@ data class AssistantUiState(
     val isOnline: Boolean = true,
     /** Last backend failure for messaging */
     val lastBackendFailure: AssistantBackendFailure? = null,
-)
+    /** Explicit availability state - determines if user can send messages */
+    val availability: AssistantAvailability = AssistantAvailability.Available,
+) {
+    /**
+     * Returns true if the text input should be enabled.
+     * Input is disabled when:
+     * - Assistant is unavailable (offline, error, rate limited)
+     * - A request is currently loading
+     */
+    val isInputEnabled: Boolean
+        get() = availability.canSendMessages && !isLoading
+
+    /**
+     * Returns a user-friendly placeholder for the input field based on availability.
+     */
+    val inputPlaceholder: String
+        get() = when (availability) {
+            is AssistantAvailability.Available -> "Ask about listing improvements..."
+            is AssistantAvailability.Checking -> "Checking availability..."
+            is AssistantAvailability.Unavailable -> when (availability.reason) {
+                UnavailableReason.OFFLINE -> "You're offline. Connect to use assistant."
+                UnavailableReason.RATE_LIMITED -> "Rate limited. Please wait."
+                UnavailableReason.UNAUTHORIZED -> "Authorization required."
+                UnavailableReason.NOT_CONFIGURED -> "Assistant not configured."
+                UnavailableReason.BACKEND_ERROR -> "Assistant temporarily unavailable."
+                UnavailableReason.VALIDATION_ERROR -> "Service error. Try again."
+                UnavailableReason.LOADING -> "Processing..."
+            }
+        }
+}
 
 sealed class AssistantUiEvent {
     data class ShowSnackbar(val message: String) : AssistantUiEvent()
@@ -157,6 +244,11 @@ class AssistantViewModel
                     loadingStage = LoadingStage.VISION_PROCESSING,
                     failedMessageText = null,
                     lastUserMessage = trimmed,
+                    // Disable input while loading
+                    availability = AssistantAvailability.Unavailable(
+                        reason = UnavailableReason.LOADING,
+                        canRetry = false,
+                    ),
                 )
             }
 
@@ -231,8 +323,11 @@ class AssistantViewModel
                             suggestedQuestions = computeSuggestedQuestions(current.snapshots),
                             lastBackendFailure = null,
                             assistantMode = resolveMode(current.isOnline, null),
+                            // Success - restore availability
+                            availability = AssistantAvailability.Available,
                         )
                     }
+                    ScaniumLog.i(TAG, "Assistant availability restored: Available (success)")
 
                     ScaniumLog.i(
                         TAG,
@@ -447,12 +542,27 @@ class AssistantViewModel
                 connectivityStatusProvider.statusFlow.collect { status ->
                     val online = status == ConnectivityStatus.ONLINE
                     _uiState.update { current ->
+                        // When coming back online, clear transient failures if they were network-related
+                        val updatedFailure = if (online && current.lastBackendFailure?.type in listOf(
+                                AssistantBackendErrorType.NETWORK_TIMEOUT,
+                                AssistantBackendErrorType.NETWORK_UNREACHABLE,
+                            )
+                        ) null else current.lastBackendFailure
+
+                        val newAvailability = computeAvailability(
+                            isOnline = online,
+                            isLoading = current.isLoading,
+                            failure = updatedFailure,
+                        )
+
                         current.copy(
                             isOnline = online,
-                            assistantMode = resolveMode(online, current.lastBackendFailure),
+                            assistantMode = resolveMode(online, updatedFailure),
+                            lastBackendFailure = updatedFailure,
+                            availability = newAvailability,
                         )
                     }
-                    ScaniumLog.i(TAG, "Assistant connectivity status=$status")
+                    ScaniumLog.i(TAG, "Assistant connectivity status=$status availability=${availabilityDebugString(_uiState.value.availability)}")
                 }
             }
         }
@@ -467,6 +577,103 @@ class AssistantViewModel
                 AssistantMode.LIMITED
             } else {
                 AssistantMode.ONLINE
+            }
+        }
+
+        /**
+         * Computes the explicit availability state from current conditions.
+         */
+        private fun computeAvailability(
+            isOnline: Boolean,
+            isLoading: Boolean,
+            failure: AssistantBackendFailure?,
+        ): AssistantAvailability {
+            // Loading state - user must wait
+            if (isLoading) {
+                return AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.LOADING,
+                    canRetry = false,
+                )
+            }
+
+            // Offline - cannot send
+            if (!isOnline) {
+                return AssistantAvailability.Unavailable(
+                    reason = UnavailableReason.OFFLINE,
+                    canRetry = true,
+                )
+            }
+
+            // Map backend failures to availability
+            if (failure != null) {
+                val (reason, canRetry, retryAfter) = when (failure.type) {
+                    AssistantBackendErrorType.UNAUTHORIZED ->
+                        Triple(UnavailableReason.UNAUTHORIZED, false, null)
+                    AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->
+                        Triple(UnavailableReason.NOT_CONFIGURED, false, null)
+                    AssistantBackendErrorType.RATE_LIMITED ->
+                        Triple(UnavailableReason.RATE_LIMITED, true, failure.retryAfterSeconds)
+                    AssistantBackendErrorType.VALIDATION_ERROR ->
+                        Triple(UnavailableReason.VALIDATION_ERROR, false, null)
+                    AssistantBackendErrorType.NETWORK_TIMEOUT,
+                    AssistantBackendErrorType.NETWORK_UNREACHABLE,
+                    AssistantBackendErrorType.VISION_UNAVAILABLE,
+                    AssistantBackendErrorType.PROVIDER_UNAVAILABLE ->
+                        Triple(UnavailableReason.BACKEND_ERROR, true, null)
+                }
+                return AssistantAvailability.Unavailable(
+                    reason = reason,
+                    canRetry = canRetry,
+                    retryAfterSeconds = retryAfter,
+                )
+            }
+
+            // All good
+            return AssistantAvailability.Available
+        }
+
+        /**
+         * Clears any previous failure state and marks assistant as available.
+         * Called after successful retry or when conditions improve.
+         */
+        fun clearFailureState() {
+            _uiState.update { current ->
+                current.copy(
+                    lastBackendFailure = null,
+                    assistantMode = AssistantMode.ONLINE,
+                    availability = computeAvailability(
+                        isOnline = current.isOnline,
+                        isLoading = false,
+                        failure = null,
+                    ),
+                )
+            }
+            ScaniumLog.i(TAG, "Assistant availability cleared, now Available")
+        }
+
+        /**
+         * Re-evaluate availability based on current state.
+         * Call this on screen resume or when connectivity changes.
+         */
+        fun refreshAvailability() {
+            val current = _uiState.value
+            val newAvailability = computeAvailability(
+                isOnline = current.isOnline,
+                isLoading = current.isLoading,
+                failure = current.lastBackendFailure,
+            )
+            if (newAvailability != current.availability) {
+                _uiState.update { it.copy(availability = newAvailability) }
+                ScaniumLog.i(TAG, "Assistant availability changed: ${availabilityDebugString(newAvailability)}")
+            }
+        }
+
+        private fun availabilityDebugString(availability: AssistantAvailability): String {
+            return when (availability) {
+                is AssistantAvailability.Available -> "Available"
+                is AssistantAvailability.Checking -> "Checking"
+                is AssistantAvailability.Unavailable ->
+                    "Unavailable(${availability.reason}, canRetry=${availability.canRetry}, retryAfter=${availability.retryAfterSeconds})"
             }
         }
 
@@ -488,6 +695,11 @@ class AssistantViewModel
                     timestamp = System.currentTimeMillis(),
                     itemContextIds = itemIds,
                 )
+            val newAvailability = computeAvailability(
+                isOnline = state.isOnline,
+                isLoading = false,
+                failure = failure,
+            )
             _uiState.update { current ->
                 current.copy(
                     entries =
@@ -504,10 +716,11 @@ class AssistantViewModel
                     suggestedQuestions = computeSuggestedQuestions(current.snapshots),
                     lastBackendFailure = failure,
                     assistantMode = resolveMode(current.isOnline, failure),
+                    availability = newAvailability,
                 )
             }
             val debugReason = AssistantErrorDisplay.getDebugReason(failure)
-            ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} $debugReason")
+            ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} availability=${availabilityDebugString(newAvailability)} $debugReason")
 
             val snackbarMessage = buildFallbackSnackbarMessage(failure)
             _events.emit(AssistantUiEvent.ShowSnackbar(snackbarMessage))
