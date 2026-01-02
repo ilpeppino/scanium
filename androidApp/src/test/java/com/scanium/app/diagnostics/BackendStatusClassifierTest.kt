@@ -235,33 +235,99 @@ class BackendStatusClassifierTest {
     }
 
     @Test
-    fun `getStatusMessage for UNAUTHORIZED returns reachable with invalid key`() {
+    fun `getStatusMessage for UNAUTHORIZED with status code returns reachable with code`() {
         val result = ConnectionTestResult.Failure(
             errorType = ConnectionTestErrorType.UNAUTHORIZED,
             message = "Invalid key",
             httpStatus = 401,
             endpoint = "/health",
         )
+        assertEquals("Backend Reachable — Unauthorized (401)", BackendStatusClassifier.getStatusMessage(result))
+    }
+
+    @Test
+    fun `getStatusMessage for UNAUTHORIZED 403 returns reachable with code`() {
+        val result = ConnectionTestResult.Failure(
+            errorType = ConnectionTestErrorType.UNAUTHORIZED,
+            message = "Forbidden",
+            httpStatus = 403,
+            endpoint = "/health",
+        )
+        assertEquals("Backend Reachable — Unauthorized (403)", BackendStatusClassifier.getStatusMessage(result))
+    }
+
+    @Test
+    fun `getStatusMessage for UNAUTHORIZED without status code returns fallback`() {
+        val result = ConnectionTestResult.Failure(
+            errorType = ConnectionTestErrorType.UNAUTHORIZED,
+            message = "Invalid key",
+            httpStatus = null,
+            endpoint = "/health",
+        )
         assertEquals("Backend Reachable — Invalid API Key", BackendStatusClassifier.getStatusMessage(result))
     }
 
     @Test
-    fun `getStatusMessage for SERVER_ERROR returns reachable with server error`() {
+    fun `getStatusMessage for SERVER_ERROR 500 returns reachable with code`() {
         val result = ConnectionTestResult.Failure(
             errorType = ConnectionTestErrorType.SERVER_ERROR,
             message = "Server error",
             httpStatus = 500,
             endpoint = "/health",
         )
+        assertEquals("Backend Reachable — Server Error (500)", BackendStatusClassifier.getStatusMessage(result))
+    }
+
+    @Test
+    fun `getStatusMessage for SERVER_ERROR 502 returns reachable with code`() {
+        val result = ConnectionTestResult.Failure(
+            errorType = ConnectionTestErrorType.SERVER_ERROR,
+            message = "Bad Gateway",
+            httpStatus = 502,
+            endpoint = "/health",
+        )
+        assertEquals("Backend Reachable — Server Error (502)", BackendStatusClassifier.getStatusMessage(result))
+    }
+
+    @Test
+    fun `getStatusMessage for SERVER_ERROR 530 Cloudflare returns reachable with code`() {
+        val result = ConnectionTestResult.Failure(
+            errorType = ConnectionTestErrorType.SERVER_ERROR,
+            message = "Cloudflare origin error",
+            httpStatus = 530,
+            endpoint = "/health",
+        )
+        assertEquals("Backend Reachable — Server Error (530)", BackendStatusClassifier.getStatusMessage(result))
+    }
+
+    @Test
+    fun `getStatusMessage for SERVER_ERROR without status code returns fallback`() {
+        val result = ConnectionTestResult.Failure(
+            errorType = ConnectionTestErrorType.SERVER_ERROR,
+            message = "Server error",
+            httpStatus = null,
+            endpoint = "/health",
+        )
         assertEquals("Backend Reachable — Server Error", BackendStatusClassifier.getStatusMessage(result))
     }
 
     @Test
-    fun `getStatusMessage for NOT_FOUND returns reachable with endpoint not found`() {
+    fun `getStatusMessage for NOT_FOUND with status code returns reachable with code`() {
         val result = ConnectionTestResult.Failure(
             errorType = ConnectionTestErrorType.NOT_FOUND,
             message = "Not found",
             httpStatus = 404,
+            endpoint = "/health",
+        )
+        assertEquals("Backend Reachable — Endpoint Not Found (404)", BackendStatusClassifier.getStatusMessage(result))
+    }
+
+    @Test
+    fun `getStatusMessage for NOT_FOUND without status code returns fallback`() {
+        val result = ConnectionTestResult.Failure(
+            errorType = ConnectionTestErrorType.NOT_FOUND,
+            message = "Not found",
+            httpStatus = null,
             endpoint = "/health",
         )
         assertEquals("Backend Reachable — Endpoint Not Found", BackendStatusClassifier.getStatusMessage(result))
