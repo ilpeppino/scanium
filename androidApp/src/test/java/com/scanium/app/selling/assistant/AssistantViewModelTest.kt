@@ -8,12 +8,14 @@ import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.createTestItemsViewModel
 import com.scanium.app.listing.DraftField
+import com.scanium.app.listing.DraftPhotoRef
 import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.ExportProfileDefinition
 import com.scanium.app.listing.ExportProfileId
 import com.scanium.app.listing.ExportProfileRepository
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraft
+import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantPrefs
@@ -316,6 +318,206 @@ class AssistantViewModelTest {
             assertThat(updated?.title?.value).isEqualTo("Updated Title")
         }
 
+    @Test
+    fun sendMessage_withImagesToggleOff_sendsNoAttachments() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
+
+            // Create draft with photos
+            val draftWithPhotos = createDraftWithPhotos("item-1", 2)
+            store.upsert(draftWithPhotos)
+
+            // Ensure images toggle is OFF (default)
+            settingsRepository.setAllowAssistantImages(false)
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
+
+            advanceUntilIdle()
+
+            viewModel.sendMessage("What color is this?")
+            advanceUntilIdle()
+
+            // Verify no images were sent (toggle OFF)
+            assertThat(repository.lastImageAttachments).isEmpty()
+        }
+
+    @Test
+    fun sendMessage_withImagesToggleOn_sendsAttachments() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
+
+            // Create draft with photos
+            val draftWithPhotos = createDraftWithPhotos("item-1", 2)
+            store.upsert(draftWithPhotos)
+
+            // Enable images toggle
+            settingsRepository.setAllowAssistantImages(true)
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
+
+            advanceUntilIdle()
+
+            viewModel.sendMessage("What color is this?")
+            advanceUntilIdle()
+
+            // Verify images were sent (toggle ON)
+            assertThat(repository.lastImageAttachments).hasSize(2)
+            assertThat(repository.lastImageAttachments.all { it.itemId == "item-1" }).isTrue()
+        }
+
+    @Test
+    fun sendMessage_withImagesToggleOn_respectsMaxImagesPerItem() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
+
+            // Create draft with more than MAX_IMAGES_PER_ITEM photos
+            val draftWithManyPhotos = createDraftWithPhotos("item-1", 5)
+            store.upsert(draftWithManyPhotos)
+
+            // Enable images toggle
+            settingsRepository.setAllowAssistantImages(true)
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
+
+            advanceUntilIdle()
+
+            viewModel.sendMessage("What color is this?")
+            advanceUntilIdle()
+
+            // Verify max images per item is respected
+            assertThat(repository.lastImageAttachments).hasSize(ImageAttachmentBuilder.MAX_IMAGES_PER_ITEM)
+        }
+
+    @Test
+    fun sendMessage_withNoPhotos_sendsNoAttachments() =
+        runTest {
+            val store = FakeDraftStore()
+            val profileRepository = FakeExportProfileRepository()
+            val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+            val repository = FakeAssistantRepository()
+
+            // Create draft without photos
+            val draftWithoutPhotos =
+                ListingDraft(
+                    id = "draft-1",
+                    itemId = "item-1",
+                    profile = ExportProfileId.GENERIC,
+                    title = DraftField("Test Item", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    description = DraftField("", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    fields = emptyMap(),
+                    price = DraftField(0.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
+                    photos = emptyList(),
+                    status = com.scanium.app.listing.DraftStatus.DRAFT,
+                    createdAt = 1L,
+                    updatedAt = 1L,
+                )
+            store.upsert(draftWithoutPhotos)
+
+            // Enable images toggle
+            settingsRepository.setAllowAssistantImages(true)
+
+            val viewModel =
+                AssistantViewModel(
+                    itemIds = listOf("item-1"),
+                    itemsViewModel = itemsViewModel,
+                    draftStore = store,
+                    exportProfileRepository = profileRepository,
+                    exportProfilePreferences = profilePreferences,
+                    assistantRepository = repository,
+                    settingsRepository = settingsRepository,
+                    localAssistantHelper = localAssistantHelper,
+                    localSuggestionEngine = localSuggestionEngine,
+                    connectivityStatusProvider = connectivityStatusProvider,
+                    preflightManager = preflightManager,
+                )
+
+            advanceUntilIdle()
+
+            viewModel.sendMessage("What is this?")
+            advanceUntilIdle()
+
+            // Verify no images sent (no photos in draft)
+            assertThat(repository.lastImageAttachments).isEmpty()
+        }
+
+    /**
+     * Helper to create a draft with photos for testing.
+     */
+    private fun createDraftWithPhotos(itemId: String, photoCount: Int): ListingDraft {
+        val photos = (0 until photoCount).map { index ->
+            DraftPhotoRef(
+                image = ImageRef.Bytes(
+                    bytes = ByteArray(1024) { it.toByte() }, // 1KB test image
+                    mimeType = "image/jpeg",
+                    width = 100,
+                    height = 100,
+                ),
+                source = DraftProvenance.DETECTED,
+            )
+        }
+        return ListingDraft(
+            id = "draft-$itemId",
+            itemId = itemId,
+            profile = ExportProfileId.GENERIC,
+            title = DraftField("Test Item", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            description = DraftField("Test description", confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            fields = emptyMap(),
+            price = DraftField(10.0, confidence = 0.5f, source = DraftProvenance.DEFAULT),
+            photos = photos,
+            status = com.scanium.app.listing.DraftStatus.DRAFT,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis(),
+        )
+    }
+
     private class FakeDraftStore : com.scanium.app.selling.persistence.ListingDraftStore {
         private val drafts = mutableMapOf<String, ListingDraft>()
 
@@ -345,6 +547,10 @@ class AssistantViewModelTest {
     }
 
     private class FakeAssistantRepository : AssistantRepository {
+        /** Last image attachments sent, for test verification */
+        var lastImageAttachments: List<ItemImageAttachment> = emptyList()
+            private set
+
         override suspend fun send(
             items: List<com.scanium.app.model.ItemContextSnapshot>,
             history: List<com.scanium.app.model.AssistantMessage>,
@@ -354,6 +560,7 @@ class AssistantViewModelTest {
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
         ): com.scanium.app.model.AssistantResponse {
+            lastImageAttachments = imageAttachments
             return com.scanium.app.model.AssistantResponse("ok")
         }
     }

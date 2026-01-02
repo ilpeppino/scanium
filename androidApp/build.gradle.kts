@@ -374,6 +374,7 @@ dependencies {
     testImplementation("androidx.arch.core:core-testing:2.2.0") // For LiveData/Flow testing
     testImplementation("org.robolectric:robolectric:4.11.1") // For Android framework classes in unit tests
     testImplementation("androidx.test:core:1.5.0") // For ApplicationProvider
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0") // For HTTP request testing
     testImplementation(project(":shared:test-utils"))
 
     // Testing - Instrumented Tests
