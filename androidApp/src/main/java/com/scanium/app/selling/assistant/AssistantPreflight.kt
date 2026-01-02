@@ -1,0 +1,511 @@
+package com.scanium.app.selling.assistant
+
+import android.content.Context
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.scanium.app.BuildConfig
+import com.scanium.app.config.SecureApiKeyStore
+import com.scanium.app.logging.ScaniumLog
+import com.scanium.app.network.security.RequestSigner
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.util.concurrent.TimeUnit
+
+/**
+ * Status of the assistant backend availability from preflight check.
+ */
+enum class PreflightStatus {
+    /** Assistant backend is reachable and ready */
+    AVAILABLE,
+    /** Backend is temporarily unavailable (network, timeout, 503) */
+    TEMPORARILY_UNAVAILABLE,
+    /** Backend is unreachable (offline, DNS failure) */
+    OFFLINE,
+    /** Rate limited by backend */
+    RATE_LIMITED,
+    /** Authorization issue (401/403) */
+    UNAUTHORIZED,
+    /** Backend not configured (no URL) */
+    NOT_CONFIGURED,
+    /** Preflight check in progress */
+    CHECKING,
+    /** No preflight result yet */
+    UNKNOWN,
+}
+
+/**
+ * Result of a preflight health check.
+ */
+data class PreflightResult(
+    val status: PreflightStatus,
+    val latencyMs: Long,
+    val checkedAt: Long = System.currentTimeMillis(),
+    val correlationId: String? = null,
+    val reasonCode: String? = null,
+    val retryAfterSeconds: Int? = null,
+) {
+    val isAvailable: Boolean get() = status == PreflightStatus.AVAILABLE
+    val canRetry: Boolean
+        get() = status in listOf(
+            PreflightStatus.TEMPORARILY_UNAVAILABLE,
+            PreflightStatus.OFFLINE,
+            PreflightStatus.RATE_LIMITED,
+        )
+}
+
+/**
+ * Response format from /v1/health endpoint.
+ */
+@Serializable
+private data class HealthResponse(
+    val status: String = "unknown",
+    val assistantReady: Boolean = false,
+    val correlationId: String? = null,
+)
+
+private val Context.preflightDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "assistant_preflight",
+)
+
+/**
+ * Interface for assistant preflight health checks and warm-up.
+ */
+interface AssistantPreflightManager {
+    val currentResult: StateFlow<PreflightResult>
+    val lastStatusFlow: Flow<PreflightResult?>
+
+    suspend fun preflight(forceRefresh: Boolean = false): PreflightResult
+    suspend fun warmUp(): Boolean
+    fun cancelWarmUp()
+    suspend fun clearCache()
+}
+
+/**
+ * Default implementation of AssistantPreflightManager.
+ *
+ * Features:
+ * - Quick health check with tight timeouts (1-2s)
+ * - Result caching to avoid redundant checks
+ * - Warm-up mechanism with rate limiting
+ * - Non-blocking - does not affect camera/scanning performance
+ */
+class AssistantPreflightManagerImpl(
+    private val context: Context,
+) : AssistantPreflightManager {
+    companion object {
+        private const val TAG = "AssistantPreflight"
+
+        // Timeouts for preflight (tight to avoid blocking)
+        private const val PREFLIGHT_CONNECT_TIMEOUT_MS = 2000L
+        private const val PREFLIGHT_READ_TIMEOUT_MS = 2000L
+
+        // Cache TTL - reuse result if checked within this time
+        private const val PREFLIGHT_CACHE_TTL_MS = 30_000L // 30 seconds
+
+        // Warm-up rate limiting
+        private const val WARMUP_MIN_INTERVAL_MS = 600_000L // 10 minutes
+
+        // DataStore keys
+        private val KEY_LAST_STATUS = stringPreferencesKey("last_preflight_status")
+        private val KEY_LAST_CHECKED = longPreferencesKey("last_preflight_checked")
+        private val KEY_LAST_LATENCY = longPreferencesKey("last_preflight_latency")
+        private val KEY_LAST_REASON = stringPreferencesKey("last_preflight_reason")
+        private val KEY_LAST_WARMUP = longPreferencesKey("last_warmup_timestamp")
+    }
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(PREFLIGHT_CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .readTimeout(PREFLIGHT_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .build()
+
+    private val json = Json { ignoreUnknownKeys = true }
+
+    private val _currentResult = MutableStateFlow(
+        PreflightResult(
+            status = PreflightStatus.UNKNOWN,
+            latencyMs = 0,
+        ),
+    )
+    override val currentResult: StateFlow<PreflightResult> = _currentResult.asStateFlow()
+
+    private var warmupJob: Job? = null
+
+    private val baseUrl: String
+        get() = BuildConfig.SCANIUM_API_BASE_URL.orEmpty().trimEnd('/')
+
+    private val apiKey: String?
+        get() = SecureApiKeyStore(context).getApiKey()
+
+    init {
+        // Load persisted state on init
+        scope.launch {
+            loadPersistedState()
+        }
+    }
+
+    /**
+     * Flow of the last persisted preflight status for developer diagnostics.
+     */
+    override val lastStatusFlow: Flow<PreflightResult?> = context.preflightDataStore.data.map { prefs ->
+        val status = prefs[KEY_LAST_STATUS]?.let {
+            runCatching { PreflightStatus.valueOf(it) }.getOrNull()
+        } ?: return@map null
+
+        PreflightResult(
+            status = status,
+            latencyMs = prefs[KEY_LAST_LATENCY] ?: 0,
+            checkedAt = prefs[KEY_LAST_CHECKED] ?: 0,
+            reasonCode = prefs[KEY_LAST_REASON],
+        )
+    }
+
+    /**
+     * Perform a preflight health check.
+     *
+     * - Returns cached result if checked within [PREFLIGHT_CACHE_TTL_MS]
+     * - Uses tight timeouts to avoid blocking UI
+     * - Does not retry on failure (caller can retry if needed)
+     *
+     * @param forceRefresh If true, ignores cache and always makes a network request
+     * @return PreflightResult with availability status
+     */
+    override suspend fun preflight(forceRefresh: Boolean): PreflightResult {
+        // Check cache first
+        val cached = _currentResult.value
+        val now = System.currentTimeMillis()
+        val cacheAge = now - cached.checkedAt
+
+        if (!forceRefresh && cached.status != PreflightStatus.UNKNOWN && cacheAge < PREFLIGHT_CACHE_TTL_MS) {
+            ScaniumLog.d(TAG, "Preflight: using cached result (age=${cacheAge}ms) status=${cached.status}")
+            return cached
+        }
+
+        // Mark as checking
+        _currentResult.value = cached.copy(status = PreflightStatus.CHECKING)
+
+        return withContext(Dispatchers.IO) {
+            performPreflightCheck()
+        }
+    }
+
+    /**
+     * Perform a warm-up request to reduce first-response latency.
+     *
+     * - Only runs if preflight says Available
+     * - Rate-limited to once per 10 minutes
+     * - Runs in background, cancellable
+     *
+     * @return true if warm-up was initiated, false if skipped (rate-limited or unavailable)
+     */
+    override suspend fun warmUp(): Boolean {
+        val current = _currentResult.value
+        if (!current.isAvailable) {
+            ScaniumLog.d(TAG, "Warmup: skipped, assistant not available (status=${current.status})")
+            return false
+        }
+
+        // Check rate limit
+        val lastWarmup = context.preflightDataStore.data.first()[KEY_LAST_WARMUP] ?: 0
+        val now = System.currentTimeMillis()
+        val timeSinceWarmup = now - lastWarmup
+
+        if (timeSinceWarmup < WARMUP_MIN_INTERVAL_MS) {
+            ScaniumLog.d(TAG, "Warmup: skipped, rate limited (${timeSinceWarmup}ms since last)")
+            return false
+        }
+
+        // Cancel any existing warmup
+        warmupJob?.cancel()
+
+        warmupJob = scope.launch {
+            try {
+                performWarmUp()
+                // Update last warmup timestamp
+                context.preflightDataStore.edit { prefs ->
+                    prefs[KEY_LAST_WARMUP] = System.currentTimeMillis()
+                }
+                ScaniumLog.i(TAG, "Warmup: completed successfully")
+            } catch (e: CancellationException) {
+                ScaniumLog.d(TAG, "Warmup: cancelled")
+            } catch (e: Exception) {
+                ScaniumLog.w(TAG, "Warmup: failed", e)
+            }
+        }
+
+        return true
+    }
+
+    /**
+     * Cancel any ongoing warm-up request.
+     * Call this when user leaves assistant screen or app goes background.
+     */
+    override fun cancelWarmUp() {
+        warmupJob?.cancel()
+        warmupJob = null
+        ScaniumLog.d(TAG, "Warmup: cancelled by caller")
+    }
+
+    /**
+     * Clear cached preflight result, forcing next preflight() to make a fresh request.
+     */
+    override suspend fun clearCache() {
+        _currentResult.value = PreflightResult(
+            status = PreflightStatus.UNKNOWN,
+            latencyMs = 0,
+        )
+        context.preflightDataStore.edit { prefs ->
+            prefs.remove(KEY_LAST_STATUS)
+            prefs.remove(KEY_LAST_CHECKED)
+            prefs.remove(KEY_LAST_LATENCY)
+            prefs.remove(KEY_LAST_REASON)
+        }
+        ScaniumLog.d(TAG, "Preflight cache cleared")
+    }
+
+    private suspend fun loadPersistedState() {
+        val prefs = context.preflightDataStore.data.first()
+        val status = prefs[KEY_LAST_STATUS]?.let {
+            runCatching { PreflightStatus.valueOf(it) }.getOrNull()
+        }
+
+        if (status != null) {
+            _currentResult.value = PreflightResult(
+                status = status,
+                latencyMs = prefs[KEY_LAST_LATENCY] ?: 0,
+                checkedAt = prefs[KEY_LAST_CHECKED] ?: 0,
+                reasonCode = prefs[KEY_LAST_REASON],
+            )
+        }
+    }
+
+    private suspend fun persistResult(result: PreflightResult) {
+        context.preflightDataStore.edit { prefs ->
+            prefs[KEY_LAST_STATUS] = result.status.name
+            prefs[KEY_LAST_CHECKED] = result.checkedAt
+            prefs[KEY_LAST_LATENCY] = result.latencyMs
+            result.reasonCode?.let { prefs[KEY_LAST_REASON] = it } ?: prefs.remove(KEY_LAST_REASON)
+        }
+    }
+
+    private suspend fun performPreflightCheck(): PreflightResult {
+        val startTime = System.currentTimeMillis()
+
+        // Check configuration first
+        if (baseUrl.isBlank()) {
+            val result = PreflightResult(
+                status = PreflightStatus.NOT_CONFIGURED,
+                latencyMs = 0,
+                reasonCode = "base_url_not_configured",
+            )
+            _currentResult.value = result
+            persistResult(result)
+            ScaniumLog.w(TAG, "Preflight: NOT_CONFIGURED (no base URL)")
+            return result
+        }
+
+        val key = apiKey
+        if (key.isNullOrBlank()) {
+            val result = PreflightResult(
+                status = PreflightStatus.UNAUTHORIZED,
+                latencyMs = 0,
+                reasonCode = "api_key_missing",
+            )
+            _currentResult.value = result
+            persistResult(result)
+            ScaniumLog.w(TAG, "Preflight: UNAUTHORIZED (no API key)")
+            return result
+        }
+
+        // Build health check request
+        val endpoint = "$baseUrl/v1/health"
+        val requestBuilder = Request.Builder()
+            .url(endpoint)
+            .get()
+            .header("X-API-Key", key)
+            .header("X-Client", "Scanium-Android")
+            .header("X-App-Version", BuildConfig.VERSION_NAME)
+
+        // Add signature for consistency (even though it's a GET)
+        RequestSigner.addSignatureHeaders(
+            builder = requestBuilder,
+            apiKey = key,
+            requestBody = "",
+        )
+
+        val request = requestBuilder.build()
+
+        return try {
+            client.newCall(request).execute().use { response ->
+                val latency = System.currentTimeMillis() - startTime
+                val body = response.body?.string()
+
+                val result = when {
+                    response.isSuccessful -> {
+                        val healthResponse = body?.let {
+                            runCatching { json.decodeFromString<HealthResponse>(it) }.getOrNull()
+                        }
+
+                        if (healthResponse?.assistantReady == true) {
+                            PreflightResult(
+                                status = PreflightStatus.AVAILABLE,
+                                latencyMs = latency,
+                                correlationId = healthResponse.correlationId,
+                            )
+                        } else {
+                            PreflightResult(
+                                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                latencyMs = latency,
+                                correlationId = healthResponse?.correlationId,
+                                reasonCode = "assistant_not_ready",
+                            )
+                        }
+                    }
+                    response.code == 401 || response.code == 403 -> {
+                        PreflightResult(
+                            status = PreflightStatus.UNAUTHORIZED,
+                            latencyMs = latency,
+                            reasonCode = "http_${response.code}",
+                        )
+                    }
+                    response.code == 429 -> {
+                        val retryAfter = response.header("Retry-After")?.toIntOrNull()
+                        PreflightResult(
+                            status = PreflightStatus.RATE_LIMITED,
+                            latencyMs = latency,
+                            reasonCode = "http_429",
+                            retryAfterSeconds = retryAfter,
+                        )
+                    }
+                    response.code == 503 || response.code == 502 || response.code == 504 -> {
+                        PreflightResult(
+                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                            latencyMs = latency,
+                            reasonCode = "http_${response.code}",
+                        )
+                    }
+                    else -> {
+                        PreflightResult(
+                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                            latencyMs = latency,
+                            reasonCode = "http_${response.code}",
+                        )
+                    }
+                }
+
+                _currentResult.value = result
+                persistResult(result)
+                ScaniumLog.i(TAG, "Preflight: ${result.status} latency=${result.latencyMs}ms reason=${result.reasonCode}")
+                result
+            }
+        } catch (e: SocketTimeoutException) {
+            val latency = System.currentTimeMillis() - startTime
+            val result = PreflightResult(
+                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                latencyMs = latency,
+                reasonCode = "timeout",
+            )
+            _currentResult.value = result
+            persistResult(result)
+            ScaniumLog.w(TAG, "Preflight: TEMPORARILY_UNAVAILABLE (timeout)", e)
+            result
+        } catch (e: java.net.UnknownHostException) {
+            val latency = System.currentTimeMillis() - startTime
+            val result = PreflightResult(
+                status = PreflightStatus.OFFLINE,
+                latencyMs = latency,
+                reasonCode = "dns_failure",
+            )
+            _currentResult.value = result
+            persistResult(result)
+            ScaniumLog.w(TAG, "Preflight: OFFLINE (DNS failure)", e)
+            result
+        } catch (e: java.net.ConnectException) {
+            val latency = System.currentTimeMillis() - startTime
+            val result = PreflightResult(
+                status = PreflightStatus.OFFLINE,
+                latencyMs = latency,
+                reasonCode = "connection_refused",
+            )
+            _currentResult.value = result
+            persistResult(result)
+            ScaniumLog.w(TAG, "Preflight: OFFLINE (connection refused)", e)
+            result
+        } catch (e: IOException) {
+            val latency = System.currentTimeMillis() - startTime
+            val result = PreflightResult(
+                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                latencyMs = latency,
+                reasonCode = "io_error",
+            )
+            _currentResult.value = result
+            persistResult(result)
+            ScaniumLog.w(TAG, "Preflight: TEMPORARILY_UNAVAILABLE (IO error)", e)
+            result
+        }
+    }
+
+    private suspend fun performWarmUp() {
+        // Use the same client but with normal timeouts for warm-up
+        val warmupClient = OkHttpClient.Builder()
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.SECONDS)
+            .build()
+
+        val key = apiKey ?: return
+
+        // Warm-up by making a lightweight chat request with minimal payload
+        // This primes the connection and any backend caches
+        val endpoint = "$baseUrl/v1/assist/warmup"
+
+        val requestBuilder = Request.Builder()
+            .url(endpoint)
+            .post(ByteArray(0).toRequestBody(null))
+            .header("X-API-Key", key)
+            .header("X-Client", "Scanium-Android")
+            .header("X-App-Version", BuildConfig.VERSION_NAME)
+
+        RequestSigner.addSignatureHeaders(
+            builder = requestBuilder,
+            apiKey = key,
+            requestBody = "",
+        )
+
+        val request = requestBuilder.build()
+
+        try {
+            warmupClient.newCall(request).execute().use { response ->
+                // We don't care about the response content, just that it completed
+                ScaniumLog.d(TAG, "Warmup request completed: ${response.code}")
+            }
+        } catch (e: Exception) {
+            // Warm-up failures are not critical
+            ScaniumLog.d(TAG, "Warmup request failed: ${e.message}")
+        }
+    }
+}
