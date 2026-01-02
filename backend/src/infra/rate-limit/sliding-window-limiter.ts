@@ -93,9 +93,9 @@ type MemoryState = {
     const windowStart = now - this.windowMs;
 
     await redis.zremrangebyscore(windowKey, 0, windowStart);
-    const [blockUntilRaw, violationsRaw] = await redis.hmget(metaKey, 'blockUntil', 'violations');
+    const [blockUntilRaw, _violationsRaw] = await redis.hmget(metaKey, 'blockUntil', 'violations');
     const blockUntil = Number(blockUntilRaw ?? 0);
-    const violations = Number(violationsRaw ?? 0);
+    // Note: violations count is tracked in Redis but only used during hincrby below
 
     if (blockUntil > now) {
       return { allowed: false, retryAfterSeconds: Math.ceil((blockUntil - now) / 1000) };

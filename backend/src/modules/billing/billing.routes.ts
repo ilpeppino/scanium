@@ -8,7 +8,7 @@ const verifySchema = z.object({
 });
 
 export async function billingRoutes(app: FastifyInstance) {
-  app.post('/billing/verify/google', async (request, reply) => {
+  app.post('/billing/verify/google', async (request, _reply) => {
     // In the future, this will verify against Google Play Developer API
     // For now, it logs and returns valid
     
