@@ -513,9 +513,12 @@ class ItemsStateManager(
 
     /**
      * Refresh items state from aggregator without triggering callback.
+     * Applies thumbnail caching for UI display but does NOT persist
+     * (aggregator state already has bytes, persistence handled elsewhere).
      */
     internal fun refreshItemsFromAggregator() {
-        _items.value = itemAggregator.getScannedItems()
+        val scannedItems = itemAggregator.getScannedItems()
+        _items.value = cacheThumbnails(scannedItems)
     }
 
     private fun loadPersistedItems() {
@@ -523,10 +526,57 @@ class ItemsStateManager(
             val persistedItems = itemsStore.loadAll()
             if (persistedItems.isEmpty()) return@launch
 
+            // Dev logging: persistence diagnostics
+            if (DEBUG_LOGGING) {
+                logPersistenceStats("LOAD", persistedItems)
+            }
+
             itemAggregator.seedFromScannedItems(persistedItems)
             withContext(mainDispatcher) {
                 updateItemsState(notifyNewItems = false, triggerCallback = false)
             }
+        }
+    }
+
+    /**
+     * Log persistence statistics for debugging thumbnail rehydration.
+     */
+    private fun logPersistenceStats(operation: String, items: List<ScannedItem>) {
+        val totalItems = items.size
+        val withThumbnailBytes = items.count { it.thumbnail is ImageRef.Bytes }
+        val withThumbnailRefBytes = items.count { it.thumbnailRef is ImageRef.Bytes }
+        val withCacheKey = items.count {
+            it.thumbnail is ImageRef.CacheKey || it.thumbnailRef is ImageRef.CacheKey
+        }
+        val withNoThumbnail = items.count {
+            it.thumbnail == null && it.thumbnailRef == null
+        }
+        val missingThumbnailWithUri = items.count {
+            (it.thumbnail == null && it.thumbnailRef == null) && it.fullImageUri != null
+        }
+
+        Log.i(TAG, "┌─────────────────────────────────────────────────────────────")
+        Log.i(TAG, "│ PERSISTENCE STATS ($operation)")
+        Log.i(TAG, "├─────────────────────────────────────────────────────────────")
+        Log.i(TAG, "│ Total items: $totalItems")
+        Log.i(TAG, "│ With thumbnail Bytes: $withThumbnailBytes")
+        Log.i(TAG, "│ With thumbnailRef Bytes: $withThumbnailRefBytes")
+        Log.i(TAG, "│ With CacheKey (unexpected after load): $withCacheKey")
+        Log.i(TAG, "│ With no thumbnail: $withNoThumbnail")
+        Log.i(TAG, "│   - Recoverable (has fullImageUri): $missingThumbnailWithUri")
+        Log.i(TAG, "└─────────────────────────────────────────────────────────────")
+
+        // Warn if any items have CacheKey after load - this shouldn't happen
+        if (withCacheKey > 0) {
+            Log.w(TAG, "WARNING: $withCacheKey items have CacheKey thumbnails after DB load!")
+        }
+
+        // Log items that may have been affected by the previous bug
+        if (withNoThumbnail > 0) {
+            val affectedIds = items
+                .filter { it.thumbnail == null && it.thumbnailRef == null }
+                .map { it.id }
+            Log.w(TAG, "Items with missing thumbnails (legacy bug): $affectedIds")
         }
     }
 
@@ -536,6 +586,16 @@ class ItemsStateManager(
         }
     }
 
+    /**
+     * Cache thumbnails for UI display performance.
+     *
+     * IMPORTANT: This function does NOT mutate the aggregator's thumbnail state.
+     * The aggregator retains ImageRef.Bytes so that persistence always has
+     * access to the actual image data. CacheKey is only used for UI display.
+     *
+     * After process death, ThumbnailCache is empty but the aggregator (seeded from DB)
+     * will have ImageRef.Bytes, which will be re-cached here on next state update.
+     */
     private fun cacheThumbnails(items: List<ScannedItem>): List<ScannedItem> {
         return items.map { item ->
             val thumbnail = item.thumbnailRef ?: item.thumbnail
@@ -548,7 +608,9 @@ class ItemsStateManager(
                     width = bytesRef.width,
                     height = bytesRef.height,
                 )
-            itemAggregator.updateThumbnail(item.id, cachedRef)
+            // NOTE: Do NOT call itemAggregator.updateThumbnail() here.
+            // The aggregator must retain ImageRef.Bytes for persistence.
+            // CacheKey is only for UI display in the returned items.
             item.copy(thumbnail = cachedRef, thumbnailRef = cachedRef)
         }
     }
