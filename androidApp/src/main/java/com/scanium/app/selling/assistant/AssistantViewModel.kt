@@ -131,6 +131,8 @@ enum class UnavailableReason {
 data class AssistantUiState(
     val itemIds: List<String> = emptyList(),
     val snapshots: List<ItemContextSnapshot> = emptyList(),
+    /** Drafts by itemId, used for building image attachments */
+    val itemDrafts: Map<String, ListingDraft> = emptyMap(),
     val profile: ExportProfileDefinition = ExportProfiles.generic(),
     val entries: List<AssistantChatEntry> = emptyList(),
     val isLoading: Boolean = false,
@@ -268,14 +270,23 @@ class AssistantViewModel
             viewModelScope.launch {
                 val state = _uiState.value
 
-                ScaniumLog.i(
-                    TAG,
-                    "Assist request correlationId=$correlationId items=${state.snapshots.size} messageLength=${trimmed.length}",
+                // Check if images are allowed
+                val allowImages = settingsRepository.allowAssistantImagesFlow.first()
+
+                // Build image attachments from drafts if toggle is enabled
+                val attachmentResult = ImageAttachmentBuilder.buildAttachments(
+                    itemDrafts = state.itemDrafts,
+                    allowImages = allowImages,
                 )
 
-                // Note: Currently images are not attached in this implementation.
-                // When image support is added, check settingsRepository.allowAssistantImagesFlow
-                // and only include thumbnails if that toggle is ON.
+                ScaniumLog.i(
+                    TAG,
+                    "Assist request correlationId=$correlationId items=${state.snapshots.size} " +
+                        "messageLength=${trimmed.length} imagesEnabled=$allowImages " +
+                        "attachments=${attachmentResult.attachments.size} " +
+                        "totalBytes=${attachmentResult.totalBytes} " +
+                        "itemImageCounts=${attachmentResult.itemImageCounts}",
+                )
 
                 if (!state.isOnline) {
                     applyLocalFallback(
@@ -298,8 +309,7 @@ class AssistantViewModel
                     // Get current assistant preferences
                     val prefs = settingsRepository.assistantPrefsFlow.first()
 
-                    // Images are currently not attached (empty list).
-                    // Future implementation should only include images if allowImages is true.
+                    // Send request with image attachments (if toggle enabled and photos exist)
                     val response =
                         assistantRepository.send(
                             items = state.snapshots,
@@ -307,8 +317,7 @@ class AssistantViewModel
                             userMessage = trimmed,
                             exportProfile = state.profile,
                             correlationId = correlationId,
-                            imageAttachments = emptyList(),
-// Explicit: no images sent
+                            imageAttachments = attachmentResult.attachments,
                             assistantPrefs = prefs,
                         )
 
@@ -583,16 +592,24 @@ class AssistantViewModel
         }
 
         private suspend fun refreshSnapshots() {
+            val draftsMap = mutableMapOf<String, ListingDraft>()
             val snapshots =
                 itemIds.mapNotNull { itemId ->
                     val draft =
                         draftStore.getByItemId(itemId)
                             ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
                                 ?.let { ListingDraftBuilder.build(it) }
-                    draft?.let { ItemContextSnapshotBuilder.fromDraft(it) }
+                    draft?.also { draftsMap[itemId] = it }
+                        ?.let { ItemContextSnapshotBuilder.fromDraft(it) }
                 }
             val localSuggestions = localSuggestionEngine.generateSuggestions(snapshots)
-            _uiState.update { it.copy(snapshots = snapshots, localSuggestions = localSuggestions) }
+            _uiState.update {
+                it.copy(
+                    snapshots = snapshots,
+                    itemDrafts = draftsMap,
+                    localSuggestions = localSuggestions,
+                )
+            }
         }
 
         private fun observeConnectivity() {
