@@ -258,6 +258,10 @@ private class CloudAssistantRepository(
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("payload", payloadJson)
 
+        // Track per-item image counts and total bytes
+        val itemImageCounts = mutableMapOf<String, Int>()
+        var totalImageBytes = 0L
+
         // Add images with field naming scheme: itemImages[itemId]
         imageAttachments.forEachIndexed { index, attachment ->
             val fieldName = "itemImages[${attachment.itemId}]"
@@ -268,10 +272,19 @@ private class CloudAssistantRepository(
                 filename,
                 attachment.imageBytes.toRequestBody(mediaType),
             )
+            itemImageCounts[attachment.itemId] = (itemImageCounts[attachment.itemId] ?: 0) + 1
+            totalImageBytes += attachment.imageBytes.size
         }
 
         val multipartBody = multipartBuilder.build()
 
+        // Detailed logging (no image content, just metadata)
+        Log.i(
+            "ScaniumAssist",
+            "Multipart request: correlationId=$correlationId " +
+                "imageCount=${imageAttachments.size} totalBytes=$totalImageBytes " +
+                "itemImageCounts=$itemImageCounts",
+        )
         logger.log("Sending multipart request with ${imageAttachments.size} images")
 
         return Request.Builder()
