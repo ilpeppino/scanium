@@ -1,52 +1,72 @@
-import fastifyHelmet from '@fastify/helmet';
+import fp from 'fastify-plugin';
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { Config } from '../../../config/index.js';
 
 /**
- * Security plugin for enforcing HTTPS and adding security headers
- * Implements recommendations from SEC-003
+ * Paths exempt from HTTPS enforcement (for Docker healthchecks).
  */
-export const securityPlugin: FastifyPluginAsync<{ config: Config }> = async (
+const HTTPS_EXEMPT_PATHS = ['/health', '/healthz', '/readyz'];
+
+/**
+ * Check if a request path is exempt from HTTPS enforcement.
+ */
+function isHttpsExempt(url: string): boolean {
+  // Extract path without query string
+  const path = url.split('?')[0];
+  return HTTPS_EXEMPT_PATHS.includes(path);
+}
+
+/**
+ * Detect if request is over HTTPS via proxy headers.
+ * Supports x-forwarded-proto and Cloudflare's cf-visitor header.
+ */
+function isHttps(request: FastifyRequest): boolean {
+  // Check x-forwarded-proto first (standard proxy header)
+  const proto = request.headers['x-forwarded-proto'];
+  if (proto === 'https') return true;
+  if (proto === 'http') return false;
+
+  // Check Cloudflare cf-visitor header: {"scheme":"https"}
+  const cfVisitor = request.headers['cf-visitor'];
+  if (typeof cfVisitor === 'string') {
+    try {
+      const parsed = JSON.parse(cfVisitor);
+      if (parsed.scheme === 'https') return true;
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  // Fallback: check socket encryption
+  return !!(request.raw.socket as { encrypted?: boolean }).encrypted;
+}
+
+/**
+ * Security plugin for enforcing HTTPS and adding security headers.
+ * Uses fastify-plugin to break encapsulation and apply hooks globally.
+ */
+const securityPluginImpl: FastifyPluginAsync<{ config: Config }> = async (
   fastify,
   opts
 ) => {
   const { config } = opts;
+  const isProduction = config.nodeEnv === 'production';
+  const enableHsts = isProduction && config.security.enableHsts;
 
-  const enableHsts = config.nodeEnv === 'production' && config.security.enableHsts;
-
-  await fastify.register(fastifyHelmet, {
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        baseUri: ["'self'"],
-        formAction: ["'self'"],
-        frameAncestors: ["'none'"],
-      },
-    },
-    frameguard: { action: 'deny' },
-    hsts: enableHsts
-      ? {
-          maxAge: 31536000,
-          includeSubDomains: true,
-          preload: true,
-        }
-      : false,
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  });
-
-  // Single onRequest hook for both HTTPS enforcement and security headers
+  // HTTPS enforcement hook (runs before request handling)
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    // 1. Enforce HTTPS in production
-    if (config.nodeEnv === 'production' && config.security.enforceHttps) {
-      const proto = request.headers['x-forwarded-proto'] ||
-                    ((request.raw.socket as any).encrypted ? 'https' : 'http');
+    // Only enforce in production when enabled
+    if (isProduction && config.security.enforceHttps) {
+      // Skip enforcement for health check endpoints (Docker healthchecks)
+      if (isHttpsExempt(request.url)) {
+        return;
+      }
 
-      if (proto !== 'https') {
+      if (!isHttps(request)) {
         request.log.warn(
           {
             url: request.url,
             method: request.method,
-            protocol: proto,
             ip: request.ip,
           },
           'HTTPS required - rejecting HTTP request'
@@ -60,11 +80,40 @@ export const securityPlugin: FastifyPluginAsync<{ config: Config }> = async (
         });
       }
     }
+  });
 
-    // 2. Additional security headers not covered by helmet
+  // Security headers hook (runs after response is ready)
+  // Set headers explicitly for deterministic behavior
+  fastify.addHook('onSend', async (_request: FastifyRequest, reply: FastifyReply) => {
+    // HSTS - only in production
+    if (enableHsts) {
+      reply.header(
+        'Strict-Transport-Security',
+        'max-age=31536000; includeSubDomains; preload'
+      );
+    }
+
+    // CSP
+    reply.header(
+      'Content-Security-Policy',
+      "default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    );
+
+    // Standard security headers
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('X-Frame-Options', 'DENY');
+    reply.header('X-XSS-Protection', '1; mode=block');
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // Permissions-Policy
     reply.header(
       'Permissions-Policy',
       'camera=(), microphone=(), geolocation=(), interest-cohort=()'
     );
   });
 };
+
+// Export wrapped with fastify-plugin to break encapsulation
+export const securityPlugin = fp(securityPluginImpl, {
+  name: 'security-plugin',
+});

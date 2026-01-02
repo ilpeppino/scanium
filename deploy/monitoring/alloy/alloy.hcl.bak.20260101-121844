@@ -1,0 +1,37 @@
+logging {
+  level = "info"
+}
+
+
+// --- Metrics: scrape Alloy itself (sanity check) ---
+prometheus.scrape "alloy_self" {
+  targets = [
+    {"__address__" = "127.0.0.1:12345"},
+  ]
+  forward_to = [prometheus.remote_write.mimir.receiver]
+  scrape_interval = "15s"
+}
+
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = "http://mimir:9009/api/v1/push"
+  }
+}
+
+// --- Logs: (optional later) placeholder pipeline ---
+// You can add filelog or docker logs sources later and forward to Loki like:
+// loki.write "loki" { endpoint { url = "http://loki:3100/loki/api/v1/push" } }
+
+// --- Traces: (optional later) placeholder receiver ---
+// otelcol.receiver.otlp "default" {
+// grpc { endpoint = "0.0.0.0:4317" }
+// http { endpoint = "0.0.0.0:4318" }
+// }
+// otelcol.exporter.otlp "tempo" {
+// client { endpoint = "tempo:4317" tls { insecure = true } }
+// }
+// otelcol.service "default" {
+// pipelines {
+// traces { receivers = [otelcol.receiver.otlp.default] exporters = [otelcol.exporter.otlp.tempo] }
+// }
+// }

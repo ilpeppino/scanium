@@ -1,0 +1,44 @@
+***REMOVED***!/usr/bin/env bash
+set -euo pipefail
+
+COMPOSE_FILE="deploy/nas/compose/docker-compose.nas.monitoring.yml"
+
+echo "== Containers =="
+docker-compose -f "$COMPOSE_FILE" ps
+echo
+
+***REMOVED*** Detect network dynamically (Synology-safe)
+NET="$(docker inspect scanium-grafana --format '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' | head -n1 || true)"
+
+if [ -z "$NET" ]; then
+  echo "❌ Could not detect Docker network"
+  exit 1
+fi
+
+echo "== Docker network =="
+echo "Network: $NET"
+echo
+
+check() {
+  local name="$1"
+  local url="$2"
+
+  printf "%-10s -> " "$name"
+  docker run --rm --network "$NET" curlimages/curl:8.6.0 \
+    -sS -o /dev/null -w "%{http_code}" "$url" || echo "ERR"
+  echo
+}
+
+echo "== Service health checks =="
+check grafana "http://grafana:3000/api/health"
+check loki    "http://loki:3100/ready"
+check tempo   "http://tempo:3200/ready"
+check mimir   "http://mimir:9009/ready"
+
+echo
+echo "== Mimir metrics sanity check (query: up) =="
+docker run --rm --network "$NET" curlimages/curl:8.6.0 \
+  -sS "http://mimir:9009/prometheus/api/v1/query?query=up" | sed -n '1,120p' || true
+
+echo
+echo "✔ Status check completed"

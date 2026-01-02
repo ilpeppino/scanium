@@ -373,7 +373,7 @@ export class VisionExtractor {
               this.config.timeoutMs
             );
           }),
-        ])) as [protos.google.cloud.vision.v1.IBatchAnnotateImagesResponse];
+        ])) as [protos.google.cloud.vision.v1.IBatchAnnotateImagesResponse, ...unknown[]];
 
         if (timeoutRef) clearTimeout(timeoutRef);
 

@@ -1,0 +1,41 @@
+logging {
+  level = "info"
+}
+
+server {
+  http_listen_address = "0.0.0.0"
+  http_listen_port    = 12345
+}
+
+***REMOVED*** --- Metrics: scrape Alloy itself (sanity check) ---
+prometheus.scrape "alloy_self" {
+  targets = [
+    {"__address__" = "127.0.0.1:12345"},
+  ]
+  forward_to = [prometheus.remote_write.mimir.receiver]
+  scrape_interval = "15s"
+}
+
+prometheus.remote_write "mimir" {
+  endpoint {
+    url = "http://scanium-mimir:9009/api/v1/push"
+  }
+}
+
+***REMOVED*** --- Logs: (optional later) placeholder pipeline ---
+***REMOVED*** You can add filelog or docker logs sources later and forward to Loki like:
+***REMOVED*** loki.write "loki" { endpoint { url = "http://scanium-loki:3100/loki/api/v1/push" } }
+
+***REMOVED*** --- Traces: (optional later) placeholder receiver ---
+***REMOVED*** otelcol.receiver.otlp "default" {
+***REMOVED***   grpc { endpoint = "0.0.0.0:4317" }
+***REMOVED***   http { endpoint = "0.0.0.0:4318" }
+***REMOVED*** }
+***REMOVED*** otelcol.exporter.otlp "tempo" {
+***REMOVED***   client { endpoint = "scanium-tempo:4317" tls { insecure = true } }
+***REMOVED*** }
+***REMOVED*** otelcol.service "default" {
+***REMOVED***   pipelines {
+***REMOVED***     traces { receivers = [otelcol.receiver.otlp.default] exporters = [otelcol.exporter.otlp.tempo] }
+***REMOVED***   }
+***REMOVED*** }

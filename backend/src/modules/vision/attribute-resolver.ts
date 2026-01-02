@@ -5,7 +5,7 @@
  * with per-field confidence. Runs deterministic, evidence-based rules.
  */
 
-import { VisualFacts, DominantColor, OcrSnippet, LogoHint } from './types.js';
+import { VisualFacts } from './types.js';
 
 /**
  * Confidence tier for resolved attributes.

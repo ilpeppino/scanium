@@ -19,9 +19,11 @@ export class ConfigService {
 
   constructor(private appConfig: Config) {
     this.configPath = path.resolve(process.cwd(), 'config', 'remote-config.json');
+    // Mark appConfig as used (reserved for future configuration needs)
+    void this.appConfig;
   }
 
-  async getConfig(deviceHash?: string, region?: string): Promise<RemoteConfig> {
+  async getConfig(deviceHash?: string, _region?: string): Promise<RemoteConfig> {
     await this.ensureConfigLoaded();
     
     if (!this.currentConfig) {

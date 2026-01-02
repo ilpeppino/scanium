@@ -6,13 +6,11 @@ import {
   ConfidenceTier,
   EvidenceBullet,
   SuggestedAttribute,
-  SuggestedDraftUpdate,
   ItemContextSnapshot,
   AssistantPrefs,
   StructuredSellingHelp,
 } from './types.js';
-import { VisualFacts } from '../vision/types.js';
-import { resolveAttributes, ResolvedAttributes, ResolvedAttribute } from '../vision/attribute-resolver.js';
+import { resolveAttributes, ResolvedAttributes } from '../vision/attribute-resolver.js';
 import {
   selectTemplatePack,
   generateTitleSuggestion,
@@ -167,261 +165,6 @@ function detectVisualQuestion(message: string): {
 }
 
 /**
- * Build evidence bullets from VisualFacts.
- */
-function buildEvidence(facts: VisualFacts, questionType?: string): EvidenceBullet[] {
-  const evidence: EvidenceBullet[] = [];
-
-  // Color evidence
-  if (questionType === 'color' || !questionType) {
-    for (const color of facts.dominantColors.slice(0, 3)) {
-      evidence.push({
-        type: 'color',
-        text: `Dominant color: ${color.name} (${color.pct}%)`,
-      });
-    }
-  }
-
-  // OCR/text evidence
-  if (questionType === 'brand' || questionType === 'text' || questionType === 'model' || !questionType) {
-    for (const snippet of facts.ocrSnippets.slice(0, 5)) {
-      evidence.push({
-        type: 'ocr',
-        text: `Detected text: "${snippet.text}"`,
-      });
-    }
-  }
-
-  // Logo evidence
-  if (questionType === 'brand' && facts.logoHints) {
-    for (const logo of facts.logoHints.slice(0, 3)) {
-      evidence.push({
-        type: 'logo',
-        text: `Detected logo: ${logo.brand} (${Math.round(logo.score * 100)}% confidence)`,
-      });
-    }
-  }
-
-  // Label evidence for material/type questions
-  if (questionType === 'material' || !questionType) {
-    for (const label of facts.labelHints.slice(0, 3)) {
-      evidence.push({
-        type: 'label',
-        text: `Image label: ${label.label} (${Math.round(label.score * 100)}% confidence)`,
-      });
-    }
-  }
-
-  return evidence;
-}
-
-/**
- * Determine confidence tier based on evidence strength.
- */
-function determineConfidence(
-  facts: VisualFacts,
-  questionType?: string
-): ConfidenceTier {
-  // Check for strong evidence
-  if (questionType === 'color') {
-    const topColor = facts.dominantColors[0];
-    if (topColor && topColor.pct >= 40) return 'HIGH';
-    if (topColor && topColor.pct >= 20) return 'MED';
-    return 'LOW';
-  }
-
-  if (questionType === 'brand') {
-    // Logo detection is strongest evidence
-    if (facts.logoHints && facts.logoHints.length > 0) {
-      const topLogo = facts.logoHints[0];
-      if (topLogo.score >= 0.8) return 'HIGH';
-      if (topLogo.score >= 0.5) return 'MED';
-    }
-    // OCR text as secondary evidence
-    if (facts.ocrSnippets.length > 0) {
-      const hasConfidentOcr = facts.ocrSnippets.some((s) => (s.confidence ?? 0) >= 0.8);
-      if (hasConfidentOcr) return 'MED';
-    }
-    return 'LOW';
-  }
-
-  if (questionType === 'model' || questionType === 'text') {
-    if (facts.ocrSnippets.length >= 3) return 'HIGH';
-    if (facts.ocrSnippets.length >= 1) return 'MED';
-    return 'LOW';
-  }
-
-  // Default: base on overall evidence availability
-  const hasColors = facts.dominantColors.length > 0;
-  const hasOcr = facts.ocrSnippets.length > 0;
-  const hasLogos = facts.logoHints && facts.logoHints.length > 0;
-  const hasLabels = facts.labelHints.length > 0;
-
-  const evidenceCount = [hasColors, hasOcr, hasLogos, hasLabels].filter(Boolean).length;
-  if (evidenceCount >= 3) return 'HIGH';
-  if (evidenceCount >= 2) return 'MED';
-  return 'LOW';
-}
-
-/**
- * Build suggested attributes from VisualFacts.
- */
-function buildSuggestedAttributes(
-  facts: VisualFacts,
-  questionType?: string
-): SuggestedAttribute[] {
-  const suggestions: SuggestedAttribute[] = [];
-
-  // Suggest brand from logo or OCR
-  if (!questionType || questionType === 'brand') {
-    if (facts.logoHints && facts.logoHints.length > 0) {
-      const topLogo = facts.logoHints[0];
-      suggestions.push({
-        key: 'brand',
-        value: topLogo.brand,
-        confidence: topLogo.score >= 0.8 ? 'HIGH' : topLogo.score >= 0.5 ? 'MED' : 'LOW',
-        source: 'logo',
-      });
-    } else {
-      // Look for brand-like text in OCR
-      const brandPatterns = /^[A-Z][A-Za-z0-9]+$/;
-      const potentialBrand = facts.ocrSnippets.find(
-        (s) => brandPatterns.test(s.text) && s.text.length >= 3 && s.text.length <= 20
-      );
-      if (potentialBrand) {
-        suggestions.push({
-          key: 'brand',
-          value: potentialBrand.text,
-          confidence: 'LOW',
-          source: 'ocr',
-        });
-      }
-    }
-  }
-
-  // Suggest color
-  if (!questionType || questionType === 'color') {
-    const topColor = facts.dominantColors[0];
-    if (topColor) {
-      suggestions.push({
-        key: 'color',
-        value: topColor.name,
-        confidence: topColor.pct >= 40 ? 'HIGH' : topColor.pct >= 20 ? 'MED' : 'LOW',
-        source: 'color',
-      });
-    }
-  }
-
-  return suggestions;
-}
-
-/**
- * Generate a grounded response for color questions.
- */
-function buildColorResponse(
-  facts: VisualFacts,
-  itemTitle?: string | null
-): { content: string; confidence: ConfidenceTier } {
-  if (facts.dominantColors.length === 0) {
-    return {
-      content: 'I cannot determine the color from the available images. Could you take a well-lit photo showing the full item?',
-      confidence: 'LOW',
-    };
-  }
-
-  const colors = facts.dominantColors.slice(0, 3);
-  const primary = colors[0];
-
-  if (colors.length === 1 || primary.pct >= 60) {
-    return {
-      content: `Based on the image analysis, this ${itemTitle || 'item'} is primarily **${primary.name}** (${primary.pct}% of the visible area).`,
-      confidence: primary.pct >= 40 ? 'HIGH' : 'MED',
-    };
-  }
-
-  const colorList = colors.map((c) => `${c.name} (${c.pct}%)`).join(', ');
-  return {
-    content: `Based on the image analysis, the dominant colors are: ${colorList}.`,
-    confidence: 'MED',
-  };
-}
-
-/**
- * Generate a grounded response for brand questions.
- */
-function buildBrandResponse(
-  facts: VisualFacts,
-  itemTitle?: string | null
-): { content: string; confidence: ConfidenceTier } {
-  // Check for logo detection first
-  if (facts.logoHints && facts.logoHints.length > 0) {
-    const topLogo = facts.logoHints[0];
-    if (topLogo.score >= 0.7) {
-      return {
-        content: `I detected a **${topLogo.brand}** logo in the image with ${Math.round(topLogo.score * 100)}% confidence.`,
-        confidence: topLogo.score >= 0.8 ? 'HIGH' : 'MED',
-      };
-    }
-  }
-
-  // Check OCR for brand-like text
-  const brandPatterns = /^[A-Z][A-Za-z0-9\-]+$/;
-  const potentialBrands = facts.ocrSnippets.filter(
-    (s) => brandPatterns.test(s.text) && s.text.length >= 3 && s.text.length <= 25
-  );
-
-  if (potentialBrands.length > 0) {
-    const topBrand = potentialBrands[0];
-    return {
-      content: `I found text that might be a brand name: "**${topBrand.text}**". This was detected via OCR with ${Math.round((topBrand.confidence ?? 0.8) * 100)}% confidence. Please verify this matches the actual brand.`,
-      confidence: 'MED',
-    };
-  }
-
-  // No brand evidence found
-  return {
-    content: 'I cannot confirm the brand from the available images. Could you take a close-up photo of any brand labels, logos, or tags on the item?',
-    confidence: 'LOW',
-  };
-}
-
-/**
- * Generate a grounded response for model questions.
- */
-function buildModelResponse(
-  facts: VisualFacts,
-  itemTitle?: string | null
-): { content: string; confidence: ConfidenceTier } {
-  // Look for model number patterns in OCR
-  const modelPatterns = /^[A-Z0-9\-\.]+$/i;
-  const potentialModels = facts.ocrSnippets.filter(
-    (s) => modelPatterns.test(s.text) && s.text.length >= 3 && /\d/.test(s.text)
-  );
-
-  if (potentialModels.length > 0) {
-    const topModel = potentialModels[0];
-    return {
-      content: `I found text that might be a model number: "**${topModel.text}**". Please verify this against any documentation or the manufacturer's website.`,
-      confidence: 'MED',
-    };
-  }
-
-  // Check for any relevant text
-  if (facts.ocrSnippets.length > 0) {
-    const textList = facts.ocrSnippets.slice(0, 3).map((s) => `"${s.text}"`).join(', ');
-    return {
-      content: `I found the following text on the item: ${textList}. None of these clearly appear to be a model number. Could you take a close-up of any product labels or serial number plates?`,
-      confidence: 'LOW',
-    };
-  }
-
-  return {
-    content: 'I cannot identify the model from the available images. Could you take a close-up photo of any product labels, serial numbers, or identification plates?',
-    confidence: 'LOW',
-  };
-}
-
-/**
  * Convert ResolvedAttribute confidence to ConfidenceTier.
  */
 function toConfidenceTier(confidence: 'HIGH' | 'MED' | 'LOW'): ConfidenceTier {
@@ -538,7 +281,7 @@ function buildEvidenceFromResolved(
 function buildActionsFromResolved(
   resolved: ResolvedAttributes,
   item: ItemContextSnapshot,
-  questionType?: string
+  _questionType?: string
 ): AssistantAction[] {
   const actions: AssistantAction[] = [];
   const hasAnyAttribute = resolved.brand || resolved.model || resolved.color;
@@ -633,7 +376,7 @@ function buildActionsFromResolved(
 function buildGroundedResponseContent(
   resolved: ResolvedAttributes,
   questionType: string | undefined,
-  item: ItemContextSnapshot
+  _item: ItemContextSnapshot
 ): { content: string; confidence: ConfidenceTier } {
   if (questionType === 'color') {
     if (!resolved.color) {
@@ -773,37 +516,13 @@ function applyTone(content: string, tone?: string): string {
 }
 
 /**
- * Format currency based on region preference.
- */
-function formatCurrency(amount: number, region?: string): string {
-  const regionCurrency: Record<string, string> = {
-    NL: 'EUR', DE: 'EUR', BE: 'EUR', FR: 'EUR', EU: 'EUR',
-    UK: 'GBP', US: 'USD',
-  };
-  const currency = regionCurrency[region ?? 'EU'] ?? 'EUR';
-  const symbols: Record<string, string> = { EUR: '€', GBP: '£', USD: '$' };
-  return `${symbols[currency] ?? currency}${amount.toFixed(0)}`;
-}
-
-/**
- * Format dimensions based on units preference.
- */
-function formatDimensions(cm: number, units?: string): string {
-  if (units === 'IMPERIAL') {
-    const inches = cm / 2.54;
-    return `${inches.toFixed(1)}"`;
-  }
-  return `${cm} cm`;
-}
-
-/**
  * Build structured selling help from template pack and resolved attributes.
  */
 function buildStructuredHelp(
   pack: TemplatePack,
   item: ItemContextSnapshot,
   resolved?: ResolvedAttributes,
-  prefs?: AssistantPrefs
+  _prefs?: AssistantPrefs
 ): StructuredSellingHelp {
   const existingAttrs: Record<string, string | undefined> = {};
 
