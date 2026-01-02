@@ -14,17 +14,17 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class TelemetryTest {
-
     // Test default attributes provider
     private class TestDefaultAttributesProvider(
-        private val attributes: Map<String, String> = mapOf(
-            TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_ANDROID,
-            TelemetryEvent.ATTR_APP_VERSION to "1.0.0",
-            TelemetryEvent.ATTR_BUILD to "1",
-            TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_DEV,
-            TelemetryEvent.ATTR_SESSION_ID to "test-session-123",
-            TelemetryEvent.ATTR_DATA_REGION to "US"
-        )
+        private val attributes: Map<String, String> =
+            mapOf(
+                TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_ANDROID,
+                TelemetryEvent.ATTR_APP_VERSION to "1.0.0",
+                TelemetryEvent.ATTR_BUILD to "1",
+                TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_DEV,
+                TelemetryEvent.ATTR_SESSION_ID to "test-session-123",
+                TelemetryEvent.ATTR_DATA_REGION to "US",
+            ),
     ) : DefaultAttributesProvider {
         override fun getDefaultAttributes(): Map<String, String> = attributes
     }
@@ -44,15 +44,27 @@ class TelemetryTest {
         val timers = mutableListOf<Triple<String, Long, Map<String, String>>>()
         val gauges = mutableListOf<Triple<String, Double, Map<String, String>>>()
 
-        override fun counter(name: String, delta: Long, attributes: Map<String, String>) {
+        override fun counter(
+            name: String,
+            delta: Long,
+            attributes: Map<String, String>,
+        ) {
             counters.add(Triple(name, delta, attributes))
         }
 
-        override fun timer(name: String, millis: Long, attributes: Map<String, String>) {
+        override fun timer(
+            name: String,
+            millis: Long,
+            attributes: Map<String, String>,
+        ) {
             timers.add(Triple(name, millis, attributes))
         }
 
-        override fun gauge(name: String, value: Double, attributes: Map<String, String>) {
+        override fun gauge(
+            name: String,
+            value: Double,
+            attributes: Map<String, String>,
+        ) {
             gauges.add(Triple(name, value, attributes))
         }
     }
@@ -61,12 +73,23 @@ class TelemetryTest {
     private class CapturingTracePort : TracePort {
         val spans = mutableListOf<Pair<String, Map<String, String>>>()
 
-        override fun beginSpan(name: String, attributes: Map<String, String>): SpanContext {
+        override fun beginSpan(
+            name: String,
+            attributes: Map<String, String>,
+        ): SpanContext {
             spans.add(Pair(name, attributes))
             return object : SpanContext {
                 override fun end(additionalAttributes: Map<String, String>) {}
-                override fun setAttribute(key: String, value: String) {}
-                override fun recordError(error: String, attributes: Map<String, String>) {}
+
+                override fun setAttribute(
+                    key: String,
+                    value: String,
+                ) {}
+
+                override fun recordError(
+                    error: String,
+                    attributes: Map<String, String>,
+                ) {}
             }
         }
     }
@@ -74,21 +97,25 @@ class TelemetryTest {
     @Test
     fun `telemetry applies sanitization to user attributes`() {
         val logPort = CapturingLogPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = logPort,
-            metricPort = NoOpMetricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = logPort,
+                metricPort = NoOpMetricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.event(
             name = "test.event",
             severity = TelemetrySeverity.INFO,
-            userAttributes = mapOf(
-                "safe_attribute" to "safe_value",
-                "email" to "user@example.com",  // Should be redacted
-                "phone" to "+1234567890"         // Should be redacted
-            )
+            userAttributes =
+                mapOf(
+                    "safe_attribute" to "safe_value",
+                    // Should be redacted
+                    "email" to "user@example.com",
+                    // Should be redacted
+                    "phone" to "+1234567890",
+                ),
         )
 
         assertEquals(1, logPort.events.size)
@@ -102,17 +129,18 @@ class TelemetryTest {
     @Test
     fun `telemetry merges user attributes with defaults`() {
         val logPort = CapturingLogPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = logPort,
-            metricPort = NoOpMetricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = logPort,
+                metricPort = NoOpMetricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.event(
             name = "test.event",
             severity = TelemetrySeverity.INFO,
-            userAttributes = mapOf("custom_field" to "custom_value")
+            userAttributes = mapOf("custom_field" to "custom_value"),
         )
 
         assertEquals(1, logPort.events.size)
@@ -133,17 +161,18 @@ class TelemetryTest {
     @Test
     fun `telemetry user attributes override defaults`() {
         val logPort = CapturingLogPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = logPort,
-            metricPort = NoOpMetricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = logPort,
+                metricPort = NoOpMetricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.event(
             name = "test.event",
             severity = TelemetrySeverity.INFO,
-            userAttributes = mapOf(TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_PROD)
+            userAttributes = mapOf(TelemetryEvent.ATTR_ENV to TelemetryEvent.ENV_PROD),
         )
 
         assertEquals(1, logPort.events.size)
@@ -155,23 +184,27 @@ class TelemetryTest {
 
     @Test
     fun `telemetry fails fast when required attributes are missing`() {
-        val incompleteProvider = TestDefaultAttributesProvider(
-            attributes = mapOf(
-                TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_ANDROID
-                // Missing: app_version, build, env, session_id, data_region
+        val incompleteProvider =
+            TestDefaultAttributesProvider(
+                attributes =
+                    mapOf(
+                        TelemetryEvent.ATTR_PLATFORM to TelemetryEvent.PLATFORM_ANDROID,
+                        // Missing: app_version, build, env, session_id, data_region
+                    ),
             )
-        )
 
-        val telemetry = Telemetry(
-            defaultAttributesProvider = incompleteProvider,
-            logPort = CapturingLogPort(),
-            metricPort = NoOpMetricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = incompleteProvider,
+                logPort = CapturingLogPort(),
+                metricPort = NoOpMetricPort,
+                tracePort = NoOpTracePort,
+            )
 
-        val exception = assertFailsWith<IllegalStateException> {
-            telemetry.event("test.event", TelemetrySeverity.INFO)
-        }
+        val exception =
+            assertFailsWith<IllegalStateException> {
+                telemetry.event("test.event", TelemetrySeverity.INFO)
+            }
 
         assertTrue(exception.message!!.contains("Missing required telemetry attributes"))
         assertTrue(exception.message!!.contains(TelemetryEvent.ATTR_APP_VERSION))
@@ -184,12 +217,13 @@ class TelemetryTest {
     @Test
     fun `info convenience method creates INFO event`() {
         val logPort = CapturingLogPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = logPort,
-            metricPort = NoOpMetricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = logPort,
+                metricPort = NoOpMetricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.info("test.info", mapOf("key" to "value"))
 
@@ -201,12 +235,13 @@ class TelemetryTest {
     @Test
     fun `warn convenience method creates WARN event`() {
         val logPort = CapturingLogPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = logPort,
-            metricPort = NoOpMetricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = logPort,
+                metricPort = NoOpMetricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.warn("test.warn")
 
@@ -217,12 +252,13 @@ class TelemetryTest {
     @Test
     fun `error convenience method creates ERROR event`() {
         val logPort = CapturingLogPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = logPort,
-            metricPort = NoOpMetricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = logPort,
+                metricPort = NoOpMetricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.error("test.error")
 
@@ -233,20 +269,23 @@ class TelemetryTest {
     @Test
     fun `counter metric includes sanitized attributes`() {
         val metricPort = CapturingMetricPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = CapturingLogPort(),
-            metricPort = metricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = CapturingLogPort(),
+                metricPort = metricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.counter(
             name = "test.counter",
             delta = 5,
-            userAttributes = mapOf(
-                "metric_type" to "test",
-                "email" to "user@example.com"  // Should be redacted
-            )
+            userAttributes =
+                mapOf(
+                    "metric_type" to "test",
+                    // Should be redacted
+                    "email" to "user@example.com",
+                ),
         )
 
         assertEquals(1, metricPort.counters.size)
@@ -262,17 +301,18 @@ class TelemetryTest {
     @Test
     fun `timer metric includes sanitized attributes`() {
         val metricPort = CapturingMetricPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = CapturingLogPort(),
-            metricPort = metricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = CapturingLogPort(),
+                metricPort = metricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.timer(
             name = "test.timer",
             millis = 1234,
-            userAttributes = mapOf("operation" to "test")
+            userAttributes = mapOf("operation" to "test"),
         )
 
         assertEquals(1, metricPort.timers.size)
@@ -286,17 +326,18 @@ class TelemetryTest {
     @Test
     fun `gauge metric includes sanitized attributes`() {
         val metricPort = CapturingMetricPort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = CapturingLogPort(),
-            metricPort = metricPort,
-            tracePort = NoOpTracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = CapturingLogPort(),
+                metricPort = metricPort,
+                tracePort = NoOpTracePort,
+            )
 
         telemetry.gauge(
             name = "test.gauge",
             value = 42.5,
-            userAttributes = mapOf("unit" to "percent")
+            userAttributes = mapOf("unit" to "percent"),
         )
 
         assertEquals(1, metricPort.gauges.size)
@@ -310,20 +351,23 @@ class TelemetryTest {
     @Test
     fun `beginSpan includes sanitized attributes`() {
         val tracePort = CapturingTracePort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = CapturingLogPort(),
-            metricPort = NoOpMetricPort,
-            tracePort = tracePort
-        )
-
-        val span = telemetry.beginSpan(
-            name = "test.span",
-            userAttributes = mapOf(
-                "operation" to "test",
-                "password" to "secret123"  // Should be redacted
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = CapturingLogPort(),
+                metricPort = NoOpMetricPort,
+                tracePort = tracePort,
             )
-        )
+
+        val span =
+            telemetry.beginSpan(
+                name = "test.span",
+                userAttributes =
+                                            mapOf(
+                                                "operation" to "test",
+                                                // Should be redacted
+                                                "password" to "secret123",
+                                            ),            )
 
         assertEquals(1, tracePort.spans.size)
         val (name, attrs) = tracePort.spans[0]
@@ -338,17 +382,19 @@ class TelemetryTest {
     @Test
     fun `span helper automatically ends span`() {
         val tracePort = CapturingTracePort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = CapturingLogPort(),
-            metricPort = NoOpMetricPort,
-            tracePort = tracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = CapturingLogPort(),
+                metricPort = NoOpMetricPort,
+                tracePort = tracePort,
+            )
 
-        val result = telemetry.span("test.span") { span ->
-            // Span is active here
-            "result_value"
-        }
+        val result =
+            telemetry.span("test.span") { span ->
+                // Span is active here
+                "result_value"
+            }
 
         assertEquals("result_value", result)
         assertEquals(1, tracePort.spans.size)
@@ -357,12 +403,13 @@ class TelemetryTest {
     @Test
     fun `span helper records error on exception`() {
         val tracePort = CapturingTracePort()
-        val telemetry = Telemetry(
-            defaultAttributesProvider = TestDefaultAttributesProvider(),
-            logPort = CapturingLogPort(),
-            metricPort = NoOpMetricPort,
-            tracePort = tracePort
-        )
+        val telemetry =
+            Telemetry(
+                defaultAttributesProvider = TestDefaultAttributesProvider(),
+                logPort = CapturingLogPort(),
+                metricPort = NoOpMetricPort,
+                tracePort = tracePort,
+            )
 
         assertFailsWith<RuntimeException> {
             telemetry.span("test.span") { span ->

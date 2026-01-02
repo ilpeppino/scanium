@@ -1,6 +1,5 @@
 package com.scanium.app.classification
 
-import com.scanium.shared.core.models.classification.ClassificationMode
 import com.scanium.shared.core.models.classification.ClassificationResult
 import com.scanium.shared.core.models.classification.ClassificationSource
 import com.scanium.shared.core.models.classification.ClassificationStatus
@@ -16,7 +15,7 @@ class NoOpClassifier : Classifier {
     override suspend fun classify(
         thumbnail: ImageRef,
         hint: String?,
-        domainPackId: String
+        domainPackId: String,
     ): ClassificationResult {
         return ClassificationResult(
             domainCategoryId = null,
@@ -27,7 +26,7 @@ class NoOpClassifier : Classifier {
             requestId = null,
             latencyMs = 0,
             status = ClassificationStatus.SKIPPED,
-            errorMessage = "Classifier disabled"
+            errorMessage = "Classifier disabled",
         )
     }
 }

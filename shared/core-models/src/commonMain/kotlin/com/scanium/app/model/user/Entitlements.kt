@@ -32,8 +32,9 @@ object DeveloperEntitlements : EntitlementPolicy {
     override val isPro = true
 }
 
-fun UserEdition.toEntitlements(): EntitlementPolicy = when(this) {
-    UserEdition.FREE -> FreeEntitlements
-    UserEdition.PRO -> ProEntitlements
-    UserEdition.DEVELOPER -> DeveloperEntitlements
-}
+fun UserEdition.toEntitlements(): EntitlementPolicy =
+    when (this) {
+        UserEdition.FREE -> FreeEntitlements
+        UserEdition.PRO -> ProEntitlements
+        UserEdition.DEVELOPER -> DeveloperEntitlements
+    }

@@ -18,7 +18,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class PricingEngineTest {
-
     @Test
     fun whenFashionCategory_thenPriceInExpectedRange() {
         // Act
@@ -100,14 +99,18 @@ class PricingEngineTest {
     @Test
     fun whenLargeBoundingBoxArea_thenPriceHigherThanSmallArea() {
         // Act
-        val smallAreaPrice = PricingEngine.generatePriceRange(
-            category = ItemCategory.FASHION,
-            boundingBoxArea = 0.1f // 10% of frame
-        )
-        val largeAreaPrice = PricingEngine.generatePriceRange(
-            category = ItemCategory.FASHION,
-            boundingBoxArea = 0.9f // 90% of frame
-        )
+        val smallAreaPrice =
+            PricingEngine.generatePriceRange(
+                category = ItemCategory.FASHION,
+                boundingBoxArea = 0.1f,
+// 10% of frame
+            )
+        val largeAreaPrice =
+            PricingEngine.generatePriceRange(
+                category = ItemCategory.FASHION,
+                boundingBoxArea = 0.9f,
+// 90% of frame
+            )
 
         // Assert - Larger objects should generally cost more (allowing for randomization)
         // We can't guarantee exact comparison due to randomization, but the mechanism exists
@@ -120,10 +123,11 @@ class PricingEngineTest {
     @Test
     fun whenNullBoundingBoxArea_thenPriceStillValid() {
         // Act
-        val (low, high) = PricingEngine.generatePriceRange(
-            category = ItemCategory.FASHION,
-            boundingBoxArea = null
-        )
+        val (low, high) =
+            PricingEngine.generatePriceRange(
+                category = ItemCategory.FASHION,
+                boundingBoxArea = null,
+            )
 
         // Assert
         assertThat(low).isAtLeast(0.5)
@@ -133,10 +137,11 @@ class PricingEngineTest {
     @Test
     fun whenZeroBoundingBoxArea_thenPriceStillValid() {
         // Act
-        val (low, high) = PricingEngine.generatePriceRange(
-            category = ItemCategory.FASHION,
-            boundingBoxArea = 0.0f
-        )
+        val (low, high) =
+            PricingEngine.generatePriceRange(
+                category = ItemCategory.FASHION,
+                boundingBoxArea = 0.0f,
+            )
 
         // Assert
         assertThat(low).isAtLeast(0.5)
@@ -146,10 +151,12 @@ class PricingEngineTest {
     @Test
     fun whenMaxBoundingBoxArea_thenPriceStillValid() {
         // Act
-        val (low, high) = PricingEngine.generatePriceRange(
-            category = ItemCategory.FASHION,
-            boundingBoxArea = 1.0f // 100% of frame
-        )
+        val (low, high) =
+            PricingEngine.generatePriceRange(
+                category = ItemCategory.FASHION,
+                boundingBoxArea = 1.0f,
+// 100% of frame
+            )
 
         // Assert
         assertThat(low).isAtLeast(0.5)
@@ -159,9 +166,10 @@ class PricingEngineTest {
     @Test
     fun whenGeneratingMultiplePrices_thenAllAreValid() {
         // Act - Generate 100 prices to test randomization
-        val prices = (1..100).map {
-            PricingEngine.generatePriceRange(ItemCategory.FASHION)
-        }
+        val prices =
+            (1..100).map {
+                PricingEngine.generatePriceRange(ItemCategory.FASHION)
+            }
 
         // Assert - All should be valid
         prices.forEach { (low, high) ->
@@ -193,9 +201,10 @@ class PricingEngineTest {
     @Test
     fun whenPriceRangeGenerated_thenMinIsAtLeastHalfEuro() {
         // Act - Test all categories except non-priced ones
-        val categories = ItemCategory.values().filter {
-            it != ItemCategory.PLACE && it != ItemCategory.DOCUMENT
-        }
+        val categories =
+            ItemCategory.values().filter {
+                it != ItemCategory.PLACE && it != ItemCategory.DOCUMENT
+            }
 
         // Assert
         categories.forEach { category ->
@@ -207,9 +216,10 @@ class PricingEngineTest {
     @Test
     fun whenPriceRangeGenerated_thenMaxIsAtLeastOneEuroAboveMin() {
         // Act - Test all categories except non-priced ones
-        val categories = ItemCategory.values().filter {
-            it != ItemCategory.PLACE && it != ItemCategory.DOCUMENT
-        }
+        val categories =
+            ItemCategory.values().filter {
+                it != ItemCategory.PLACE && it != ItemCategory.DOCUMENT
+            }
 
         // Assert
         categories.forEach { category ->
@@ -221,9 +231,10 @@ class PricingEngineTest {
     @Test
     fun whenMultipleCallsForSameCategory_thenPricesVaryDueToRandomization() {
         // Act - Generate multiple prices for same category
-        val prices = (1..10).map {
-            PricingEngine.generatePriceRange(ItemCategory.ELECTRONICS)
-        }
+        val prices =
+            (1..10).map {
+                PricingEngine.generatePriceRange(ItemCategory.ELECTRONICS)
+            }
 
         // Assert - Due to randomization, at least some should differ
         // (There's a tiny chance they're all the same, but extremely unlikely)
@@ -238,15 +249,17 @@ class PricingEngineTest {
     @Test
     fun whenComparingCategoryBaseRanges_thenElectronicsMostExpensive() {
         // Act - Generate many samples to average out randomization
-        val electronicsAvg = (1..50).map {
-            val (low, high) = PricingEngine.generatePriceRange(ItemCategory.ELECTRONICS)
-            (low + high) / 2
-        }.average()
+        val electronicsAvg =
+            (1..50).map {
+                val (low, high) = PricingEngine.generatePriceRange(ItemCategory.ELECTRONICS)
+                (low + high) / 2
+            }.average()
 
-        val foodAvg = (1..50).map {
-            val (low, high) = PricingEngine.generatePriceRange(ItemCategory.FOOD)
-            (low + high) / 2
-        }.average()
+        val foodAvg =
+            (1..50).map {
+                val (low, high) = PricingEngine.generatePriceRange(ItemCategory.FOOD)
+                (low + high) / 2
+            }.average()
 
         // Assert - Electronics should be more expensive on average
         assertThat(electronicsAvg).isGreaterThan(foodAvg)
@@ -261,14 +274,16 @@ class PricingEngineTest {
         val smallArea = 0.1f
         val largeArea = 0.9f
 
-        val (smallLow, smallHigh) = PricingEngine.generatePriceRange(
-            ItemCategory.FASHION,
-            boundingBoxArea = smallArea
-        )
-        val (largeLow, largeHigh) = PricingEngine.generatePriceRange(
-            ItemCategory.FASHION,
-            boundingBoxArea = largeArea
-        )
+        val (smallLow, smallHigh) =
+            PricingEngine.generatePriceRange(
+                ItemCategory.FASHION,
+                boundingBoxArea = smallArea,
+            )
+        val (largeLow, largeHigh) =
+            PricingEngine.generatePriceRange(
+                ItemCategory.FASHION,
+                boundingBoxArea = largeArea,
+            )
 
         // Assert - All prices should be valid
         // The relationship may not be strictly monotonic due to randomization,

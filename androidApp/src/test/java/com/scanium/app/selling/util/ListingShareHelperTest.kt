@@ -10,7 +10,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ListingShareHelperTest {
-
     @Test
     fun clipboardCopiesExpectedText() {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -23,16 +22,18 @@ class ListingShareHelperTest {
     @Test
     fun shareIntentUsesSendMultipleForMultipleImages() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val uris = listOf(
-            Uri.parse("content://example/image1"),
-            Uri.parse("content://example/image2")
-        )
+        val uris =
+            listOf(
+                Uri.parse("content://example/image1"),
+                Uri.parse("content://example/image2"),
+            )
 
-        val intent = ListingShareHelper.buildShareIntent(
-            contentResolver = context.contentResolver,
-            text = "Share text",
-            imageUris = uris
-        )
+        val intent =
+            ListingShareHelper.buildShareIntent(
+                contentResolver = context.contentResolver,
+                text = "Share text",
+                imageUris = uris,
+            )
 
         assertThat(intent.action).isEqualTo(android.content.Intent.ACTION_SEND_MULTIPLE)
         assertThat(intent.type).isEqualTo("image/*")

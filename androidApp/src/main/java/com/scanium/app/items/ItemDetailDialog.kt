@@ -22,15 +22,14 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
-import com.scanium.app.model.ImageRef
 import com.scanium.app.model.toImageBitmap
-import com.scanium.shared.core.models.model.ImageRef as CoreImageRef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import com.scanium.shared.core.models.model.ImageRef as CoreImageRef
 
 /**
  * Dialog showing detailed information about a scanned item.
@@ -38,7 +37,7 @@ import java.util.*
 @Composable
 fun ItemDetailDialog(
     item: ScannedItem,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -46,27 +45,29 @@ fun ItemDetailDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = MaterialTheme.shapes.large
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            shape = MaterialTheme.shapes.large,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 // Title with Share button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = "Item Details",
-                        style = MaterialTheme.typography.headlineSmall
+                        style = MaterialTheme.typography.headlineSmall,
                     )
                     IconButton(
                         onClick = {
@@ -74,11 +75,11 @@ fun ItemDetailDialog(
                                 soundManager.play(AppSound.SELECT)
                                 shareItemImage(context, item)
                             }
-                        }
+                        },
                     ) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share item"
+                            contentDescription = "Share item",
                         )
                     }
                 }
@@ -92,25 +93,27 @@ fun ItemDetailDialog(
                     Image(
                         bitmap = bitmap,
                         contentDescription = "Item detail thumbnail",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                shape = MaterialTheme.shapes.medium
-                            ),
-                        contentScale = ContentScale.Fit
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = MaterialTheme.shapes.medium,
+                                ),
+                        contentScale = ContentScale.Fit,
                     )
                 } ?: run {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                shape = MaterialTheme.shapes.medium
-                            ),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = MaterialTheme.shapes.medium,
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text("No image", style = MaterialTheme.typography.bodyLarge)
                     }
@@ -123,7 +126,7 @@ fun ItemDetailDialog(
                 DetailRow(label = "Confidence", value = item.formattedConfidence)
                 DetailRow(
                     label = "Detected At",
-                    value = formatDetailTimestamp(item.timestamp)
+                    value = formatDetailTimestamp(item.timestamp),
                 )
                 item.domainCategoryId?.let { id ->
                     DetailRow(label = "Domain Category", value = formatDomainCategory(id))
@@ -135,23 +138,24 @@ fun ItemDetailDialog(
                     HorizontalDivider()
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
                             text = "Recognized Text:",
                             style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                            colors =
+                                CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                ),
                         ) {
                             Text(
                                 text = text,
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(12.dp)
+                                modifier = Modifier.padding(12.dp),
                             )
                         }
                     }
@@ -168,7 +172,7 @@ fun ItemDetailDialog(
                 // Close button
                 TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier.align(Alignment.End),
                 ) {
                     Text("Close")
                 }
@@ -181,19 +185,22 @@ fun ItemDetailDialog(
  * Row for displaying a label-value pair.
  */
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(
+    label: String,
+    value: String,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
         )
     }
 }
@@ -217,60 +224,69 @@ private fun formatDomainCategory(raw: String): String {
 /**
  * Share an item's image to external apps (WhatsApp, Messages, Email, etc.)
  */
-private suspend fun shareItemImage(context: Context, item: ScannedItem) = withContext(Dispatchers.IO) {
+private suspend fun shareItemImage(
+    context: Context,
+    item: ScannedItem,
+) = withContext(Dispatchers.IO) {
     val authority = "${context.packageName}.fileprovider"
-    val shareDir = File(context.cacheDir, "share_items").apply {
-        if (!exists()) mkdirs()
-    }
+    val shareDir =
+        File(context.cacheDir, "share_items").apply {
+            if (!exists()) mkdirs()
+        }
 
     val imageRef = item.thumbnailRef ?: item.thumbnail
-    val imageUri: Uri? = when (imageRef) {
-        is CoreImageRef.CacheKey -> {
-            val cacheFile = File(context.cacheDir, imageRef.key)
-            if (cacheFile.exists()) {
+    val imageUri: Uri? =
+        when (imageRef) {
+            is CoreImageRef.CacheKey -> {
+                val cacheFile = File(context.cacheDir, imageRef.key)
+                if (cacheFile.exists()) {
+                    val shareFile = File(shareDir, "item_${item.id.take(8)}.jpg")
+                    cacheFile.copyTo(shareFile, overwrite = true)
+                    FileProvider.getUriForFile(context, authority, shareFile)
+                } else {
+                    null
+                }
+            }
+            is CoreImageRef.Bytes -> {
                 val shareFile = File(shareDir, "item_${item.id.take(8)}.jpg")
-                cacheFile.copyTo(shareFile, overwrite = true)
+                shareFile.writeBytes(imageRef.bytes)
                 FileProvider.getUriForFile(context, authority, shareFile)
-            } else null
+            }
+            else -> null
         }
-        is CoreImageRef.Bytes -> {
-            val shareFile = File(shareDir, "item_${item.id.take(8)}.jpg")
-            shareFile.writeBytes(imageRef.bytes)
-            FileProvider.getUriForFile(context, authority, shareFile)
-        }
-        else -> null
-    }
 
     // Build share text with item details
-    val shareText = buildString {
-        appendLine(item.displayLabel)
-        if (item.formattedPriceRange.isNotBlank()) {
-            appendLine("Price: ${item.formattedPriceRange}")
+    val shareText =
+        buildString {
+            appendLine(item.displayLabel)
+            if (item.formattedPriceRange.isNotBlank()) {
+                appendLine("Price: ${item.formattedPriceRange}")
+            }
+            item.recognizedText?.let { text ->
+                appendLine()
+                appendLine(text)
+            }
+            item.barcodeValue?.let { barcode ->
+                appendLine("Barcode: $barcode")
+            }
         }
-        item.recognizedText?.let { text ->
-            appendLine()
-            appendLine(text)
-        }
-        item.barcodeValue?.let { barcode ->
-            appendLine("Barcode: $barcode")
-        }
-    }
 
-    val intent = if (imageUri != null) {
-        Intent(Intent.ACTION_SEND).apply {
-            type = "image/*"
-            putExtra(Intent.EXTRA_STREAM, imageUri)
-            putExtra(Intent.EXTRA_TEXT, shareText)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            clipData = ClipData.newUri(context.contentResolver, "Item image", imageUri)
+    val intent =
+        if (imageUri != null) {
+            Intent(Intent.ACTION_SEND).apply {
+                type = "image/*"
+                putExtra(Intent.EXTRA_STREAM, imageUri)
+                putExtra(Intent.EXTRA_TEXT, shareText)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newUri(context.contentResolver, "Item image", imageUri)
+            }
+        } else {
+            // Fallback to text-only if no image
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, shareText)
+            }
         }
-    } else {
-        // Fallback to text-only if no image
-        Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, shareText)
-        }
-    }
 
     val chooser = Intent.createChooser(intent, "Share item")
     if (context !is Activity) {

@@ -3,7 +3,6 @@ package com.scanium.app.ftue
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 
@@ -19,22 +18,23 @@ import androidx.compose.ui.layout.onGloballyPositioned
  */
 fun Modifier.tourTarget(
     key: String,
-    tourViewModel: TourViewModel
-): Modifier = composed {
-    this
-        .onGloballyPositioned { coordinates ->
-            // Get bounds in window coordinates
-            val bounds = coordinates.boundsInWindow()
+    tourViewModel: TourViewModel,
+): Modifier =
+    composed {
+        this
+            .onGloballyPositioned { coordinates ->
+                // Get bounds in window coordinates
+                val bounds = coordinates.boundsInWindow()
 
-            // Register with tour view model
-            tourViewModel.registerTargetBounds(key, bounds)
-        }
-        .also {
-            // Clean up bounds when composable is disposed
-            DisposableEffect(key) {
-                onDispose {
-                    tourViewModel.clearTargetBounds(key)
+                // Register with tour view model
+                tourViewModel.registerTargetBounds(key, bounds)
+            }
+            .also {
+                // Clean up bounds when composable is disposed
+                DisposableEffect(key) {
+                    onDispose {
+                        tourViewModel.clearTargetBounds(key)
+                    }
                 }
             }
-        }
-}
+    }

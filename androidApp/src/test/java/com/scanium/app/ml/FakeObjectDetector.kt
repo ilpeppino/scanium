@@ -1,9 +1,9 @@
 package com.scanium.app.ml
 
+import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.models.ml.LabelWithConfidence
 import com.scanium.core.models.ml.RawDetection
-import com.scanium.core.models.geometry.NormalizedRect
 
 /**
  * Fake ObjectDetector for testing purposes.
@@ -12,7 +12,6 @@ import com.scanium.core.models.geometry.NormalizedRect
  * This fake allows testing the candidate tracking pipeline without actual ML Kit dependencies.
  */
 class FakeObjectDetector {
-
     /**
      * Simulates detection of a single object with configurable properties.
      */
@@ -21,39 +20,40 @@ class FakeObjectDetector {
         confidence: Float,
         category: ItemCategory,
         categoryLabel: String,
-        boundingBox: NormalizedRect = defaultBoundingBox()
+        boundingBox: NormalizedRect = defaultBoundingBox(),
     ): RawDetection {
         return RawDetection(
             trackingId = trackingId,
             bboxNorm = boundingBox,
-            labels = listOf(
-                LabelWithConfidence(
-                    text = categoryLabel,
-                    confidence = confidence,
-                    index = 0
-                )
-            )
+            labels =
+                listOf(
+                    LabelWithConfidence(
+                        text = categoryLabel,
+                        confidence = confidence,
+                        index = 0,
+                    ),
+                ),
         )
     }
 
     /**
      * Simulates detection of multiple objects in a single frame.
      */
-    fun detectMultipleObjects(
-        detections: List<DetectionSpec>
-    ): List<RawDetection> = detections.map { spec ->
-        RawDetection(
-            trackingId = spec.trackingId,
-            bboxNorm = spec.boundingBox,
-            labels = listOf(
-                LabelWithConfidence(
-                    text = spec.categoryLabel,
-                    confidence = spec.confidence,
-                    index = 0
-                )
+    fun detectMultipleObjects(detections: List<DetectionSpec>): List<RawDetection> =
+        detections.map { spec ->
+            RawDetection(
+                trackingId = spec.trackingId,
+                bboxNorm = spec.boundingBox,
+                labels =
+                    listOf(
+                        LabelWithConfidence(
+                            text = spec.categoryLabel,
+                            confidence = spec.confidence,
+                            index = 0,
+                        ),
+                    ),
             )
-        )
-    }
+        }
 
     /**
      * Simulates a detection with no results (empty frame).
@@ -68,18 +68,20 @@ class FakeObjectDetector {
     fun detectWithMultipleLabels(
         trackingId: String,
         labels: List<LabelSpec>,
-        boundingBox: NormalizedRect = defaultBoundingBox()
-    ): RawDetection = RawDetection(
-        trackingId = trackingId,
-        bboxNorm = boundingBox,
-        labels = labels.mapIndexed { index, spec ->
-            LabelWithConfidence(
-                text = spec.text,
-                confidence = spec.confidence,
-                index = index
-            )
-        }
-    )
+        boundingBox: NormalizedRect = defaultBoundingBox(),
+    ): RawDetection =
+        RawDetection(
+            trackingId = trackingId,
+            bboxNorm = boundingBox,
+            labels =
+                labels.mapIndexed { index, spec ->
+                    LabelWithConfidence(
+                        text = spec.text,
+                        confidence = spec.confidence,
+                        index = index,
+                    )
+                },
+        )
 }
 
 /**
@@ -90,7 +92,7 @@ data class DetectionSpec(
     val confidence: Float,
     val category: ItemCategory,
     val categoryLabel: String,
-    val boundingBox: NormalizedRect = defaultBoundingBox()
+    val boundingBox: NormalizedRect = defaultBoundingBox(),
 )
 
 /**
@@ -98,14 +100,15 @@ data class DetectionSpec(
  */
 data class LabelSpec(
     val text: String,
-    val confidence: Float
+    val confidence: Float,
 )
 
-private fun defaultBoundingBox(): NormalizedRect = NormalizedRect(
-    left = 0f,
-    top = 0f,
-    right = 0.1f,
-    bottom = 0.1f
-)
+private fun defaultBoundingBox(): NormalizedRect =
+    NormalizedRect(
+        left = 0f,
+        top = 0f,
+        right = 0.1f,
+        bottom = 0.1f,
+    )
 
 // Note: LabelWithConfidence is defined in RawDetection.kt

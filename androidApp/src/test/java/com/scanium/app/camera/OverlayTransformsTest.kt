@@ -1,6 +1,5 @@
 package com.scanium.app.camera
 
-import android.graphics.RectF
 import com.google.common.truth.Truth.assertThat
 import com.scanium.core.models.geometry.NormalizedRect
 import org.junit.Test
@@ -17,7 +16,6 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class OverlayTransformsTest {
-
     // ==========================================
     // calculateTransformWithRotation tests
     // ==========================================
@@ -29,14 +27,15 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // In portrait (90°), effective dimensions should be swapped
         assertThat(transform.effectiveImageWidth).isEqualTo(sensorHeight) // 720
@@ -50,14 +49,15 @@ class OverlayTransformsTest {
         val previewWidth = 1920f
         val previewHeight = 1080f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 0,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 0,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // In landscape (0°), effective dimensions match sensor
         assertThat(transform.effectiveImageWidth).isEqualTo(sensorWidth)
@@ -76,23 +76,29 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // A tall bbox in upright space (e.g., a bottle)
         // In upright portrait (720x1280), a tall object near the top-center
-        val tallBbox = NormalizedRect(
-            left = 0.35f,   // near horizontal center
-            top = 0.1f,     // near top
-            right = 0.65f,  // near horizontal center
-            bottom = 0.7f   // tall object
-        )
+        val tallBbox =
+            NormalizedRect(
+                left = 0.35f,
+// near horizontal center
+                top = 0.1f,
+// near top
+                right = 0.65f,
+// near horizontal center
+                bottom = 0.7f,
+// tall object
+            )
 
         val screenRect = mapBboxToPreview(tallBbox, transform)
 
@@ -114,22 +120,24 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // A wide bbox in upright space (e.g., a laptop)
-        val wideBbox = NormalizedRect(
-            left = 0.1f,
-            top = 0.4f,
-            right = 0.9f,
-            bottom = 0.6f
-        )
+        val wideBbox =
+            NormalizedRect(
+                left = 0.1f,
+                top = 0.4f,
+                right = 0.9f,
+                bottom = 0.6f,
+            )
 
         val screenRect = mapBboxToPreview(wideBbox, transform)
 
@@ -144,22 +152,24 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Centered bbox in normalized space
-        val centeredBbox = NormalizedRect(
-            left = 0.4f,
-            top = 0.4f,
-            right = 0.6f,
-            bottom = 0.6f
-        )
+        val centeredBbox =
+            NormalizedRect(
+                left = 0.4f,
+                top = 0.4f,
+                right = 0.6f,
+                bottom = 0.6f,
+            )
 
         val screenRect = mapBboxToPreview(centeredBbox, transform)
 
@@ -179,22 +189,26 @@ class OverlayTransformsTest {
         val previewWidth = 1920f
         val previewHeight = 1080f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 0,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 0,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // A tall box in landscape (taller than wide)
-        val tallBbox = NormalizedRect(
-            left = 0.2f,
-            top = 0.3f,
-            right = 0.4f,  // width = 0.2
-            bottom = 0.7f  // height = 0.4
-        )
+        val tallBbox =
+            NormalizedRect(
+                left = 0.2f,
+                top = 0.3f,
+                right = 0.4f,
+// width = 0.2
+                bottom = 0.7f,
+// height = 0.4
+            )
 
         val screenRect = mapBboxToPreview(tallBbox, transform)
 
@@ -220,14 +234,15 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // FILL_CENTER should scale so image fills preview (scale >= 1 usually)
         // With effective 720x1280 image and 1080x1920 preview, scale = 1.5
@@ -246,14 +261,15 @@ class OverlayTransformsTest {
         val previewWidth = 1080f
         val previewHeight = 1920f
 
-        val transform = calculateTransformWithRotation(
-            imageWidth = sensorWidth,
-            imageHeight = sensorHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FIT_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = sensorWidth,
+                imageHeight = sensorHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FIT_CENTER,
+            )
 
         // FIT_CENTER should scale so image fits within preview
         val scaledWidth = transform.effectiveImageWidth * transform.scale
@@ -270,21 +286,23 @@ class OverlayTransformsTest {
 
     @Test
     fun `mapBboxToPreview handles bbox at origin`() {
-        val transform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 1080f,
-            previewHeight = 1920f,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
-        val originBbox = NormalizedRect(
-            left = 0f,
-            top = 0f,
-            right = 0.1f,
-            bottom = 0.1f
-        )
+        val originBbox =
+            NormalizedRect(
+                left = 0f,
+                top = 0f,
+                right = 0.1f,
+                bottom = 0.1f,
+            )
 
         val screenRect = mapBboxToPreview(originBbox, transform)
 
@@ -295,21 +313,23 @@ class OverlayTransformsTest {
 
     @Test
     fun `mapBboxToPreview handles full-frame bbox`() {
-        val transform = calculateTransformWithRotation(
-            imageWidth = 1280,
-            imageHeight = 720,
-            previewWidth = 1080f,
-            previewHeight = 1920f,
-            rotationDegrees = 90,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = 1280,
+                imageHeight = 720,
+                previewWidth = 1080f,
+                previewHeight = 1920f,
+                rotationDegrees = 90,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
-        val fullFrameBbox = NormalizedRect(
-            left = 0f,
-            top = 0f,
-            right = 1f,
-            bottom = 1f
-        )
+        val fullFrameBbox =
+            NormalizedRect(
+                left = 0f,
+                top = 0f,
+                right = 1f,
+                bottom = 1f,
+            )
 
         val screenRect = mapBboxToPreview(fullFrameBbox, transform)
 

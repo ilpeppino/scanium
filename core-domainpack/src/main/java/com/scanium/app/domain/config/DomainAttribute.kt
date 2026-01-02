@@ -26,5 +26,5 @@ data class DomainAttribute(
     val type: AttributeType,
     val extractionMethod: ExtractionMethod,
     val appliesToCategoryIds: List<String>,
-    val required: Boolean
+    val required: Boolean,
 )

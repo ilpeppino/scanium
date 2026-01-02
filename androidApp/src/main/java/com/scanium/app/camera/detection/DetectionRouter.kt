@@ -9,7 +9,6 @@ import com.scanium.app.ml.DetectionResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -30,9 +29,8 @@ import java.util.concurrent.atomic.AtomicLong
  * Thread-safety: All public methods are thread-safe.
  */
 class DetectionRouter(
-    private val config: DetectionRouterConfig = DetectionRouterConfig()
+    private val config: DetectionRouterConfig = DetectionRouterConfig(),
 ) {
-
     companion object {
         private const val TAG = "DetectionRouter"
 
@@ -208,19 +206,21 @@ class DetectionRouter(
      */
     fun routeDetection(
         scanMode: ScanMode,
-        timestampMs: Long = SystemClock.elapsedRealtime()
+        timestampMs: Long = SystemClock.elapsedRealtime(),
     ): Pair<Boolean, DetectorType> {
-        val detectorType = when (scanMode) {
-            ScanMode.OBJECT_DETECTION -> DetectorType.OBJECT
-            ScanMode.BARCODE -> DetectorType.BARCODE
-            ScanMode.DOCUMENT_TEXT -> DetectorType.DOCUMENT
-        }
+        val detectorType =
+            when (scanMode) {
+                ScanMode.OBJECT_DETECTION -> DetectorType.OBJECT
+                ScanMode.BARCODE -> DetectorType.BARCODE
+                ScanMode.DOCUMENT_TEXT -> DetectorType.DOCUMENT
+            }
 
-        val canProceed = when (detectorType) {
-            DetectorType.OBJECT -> tryInvokeObjectDetection(timestampMs)
-            DetectorType.BARCODE -> tryInvokeBarcodeDetection(timestampMs)
-            DetectorType.DOCUMENT -> tryInvokeDocumentDetection(timestampMs)
-        }
+        val canProceed =
+            when (detectorType) {
+                DetectorType.OBJECT -> tryInvokeObjectDetection(timestampMs)
+                DetectorType.BARCODE -> tryInvokeBarcodeDetection(timestampMs)
+                DetectorType.DOCUMENT -> tryInvokeDocumentDetection(timestampMs)
+            }
 
         return canProceed to detectorType
     }
@@ -234,14 +234,15 @@ class DetectionRouter(
      */
     fun processObjectResults(
         items: List<ScannedItem>,
-        detectionResults: List<DetectionResult>
+        detectionResults: List<DetectionResult>,
     ): DetectionEvent.ObjectDetected {
-        val event = DetectionEvent.ObjectDetected(
-            timestampMs = System.currentTimeMillis(),
-            source = DetectorType.OBJECT,
-            items = items,
-            detectionResults = detectionResults
-        )
+        val event =
+            DetectionEvent.ObjectDetected(
+                timestampMs = System.currentTimeMillis(),
+                source = DetectorType.OBJECT,
+                items = items,
+                detectionResults = detectionResults,
+            )
 
         _lastEvent.value = event
 
@@ -274,11 +275,12 @@ class DetectionRouter(
             val formatCode = if (item.category.name == "QR_CODE") 256 else 0
 
             // Check deduplication
-            val isNew = dedupeHelper.checkAndRecordBarcode(
-                rawValue = rawValue,
-                format = formatCode,
-                itemId = item.id
-            )
+            val isNew =
+                dedupeHelper.checkAndRecordBarcode(
+                    rawValue = rawValue,
+                    format = formatCode,
+                    itemId = item.id,
+                )
 
             if (isNew) {
                 uniqueItems.add(item)
@@ -290,17 +292,18 @@ class DetectionRouter(
         }
 
         val dedupedCount = items.size - uniqueItems.size
-        val event = DetectionEvent.BarcodeDetected(
-            timestampMs = timestampMs,
-            source = DetectorType.BARCODE,
-            items = uniqueItems,
-            rawDetectionCount = items.size,
-            dedupedCount = dedupedCount
-        )
+        val event =
+            DetectionEvent.BarcodeDetected(
+                timestampMs = timestampMs,
+                source = DetectorType.BARCODE,
+                items = uniqueItems,
+                rawDetectionCount = items.size,
+                dedupedCount = dedupedCount,
+            )
         _lastEvent.value = event
 
         if (config.enableVerboseLogging) {
-            Log.d(TAG, "[RESULT] Barcode detection: ${items.size} raw -> ${uniqueItems.size} unique (${dedupedCount} deduped)")
+            Log.d(TAG, "[RESULT] Barcode detection: ${items.size} raw -> ${uniqueItems.size} unique ($dedupedCount deduped)")
         }
 
         return event to uniqueItems
@@ -311,11 +314,12 @@ class DetectionRouter(
      * Future: Will be implemented when document detector is integrated.
      */
     fun processDocumentResults(items: List<ScannedItem>): DetectionEvent.DocumentDetected {
-        val event = DetectionEvent.DocumentDetected(
-            timestampMs = System.currentTimeMillis(),
-            source = DetectorType.DOCUMENT,
-            items = items
-        )
+        val event =
+            DetectionEvent.DocumentDetected(
+                timestampMs = System.currentTimeMillis(),
+                source = DetectorType.DOCUMENT,
+                items = items,
+            )
         _lastEvent.value = event
         return event
     }
@@ -325,19 +329,22 @@ class DetectionRouter(
      */
     fun createThrottledEvent(
         detectorType: DetectorType,
-        reason: ThrottleReason = ThrottleReason.INTERVAL_NOT_MET
+        reason: ThrottleReason = ThrottleReason.INTERVAL_NOT_MET,
     ): DetectionEvent.Throttled {
         return DetectionEvent.Throttled(
             timestampMs = System.currentTimeMillis(),
             source = detectorType,
-            reason = reason
+            reason = reason,
         )
     }
 
     /**
      * Update throttle interval for a detector.
      */
-    fun setThrottleInterval(detectorType: DetectorType, intervalMs: Long) {
+    fun setThrottleInterval(
+        detectorType: DetectorType,
+        intervalMs: Long,
+    ) {
         throttleHelper.setMinInterval(detectorType, intervalMs)
         Log.i(TAG, "Updated throttle interval for $detectorType: ${intervalMs}ms")
     }
@@ -434,18 +441,20 @@ class DetectionRouter(
      * Get current detection statistics.
      */
     fun getStats(): DetectionRouterStats {
-        val uptime = if (sessionStartTimeMs > 0) {
-            SystemClock.elapsedRealtime() - sessionStartTimeMs
-        } else {
-            0L
-        }
+        val uptime =
+            if (sessionStartTimeMs > 0) {
+                SystemClock.elapsedRealtime() - sessionStartTimeMs
+            } else {
+                0L
+            }
 
         val totalFrames = frameCounter.get()
-        val fps = if (uptime > 0) {
-            (totalFrames * 1000.0) / uptime
-        } else {
-            0.0
-        }
+        val fps =
+            if (uptime > 0) {
+                (totalFrames * 1000.0) / uptime
+            } else {
+                0.0
+            }
 
         return DetectionRouterStats(
             uptimeMs = uptime,
@@ -457,7 +466,7 @@ class DetectionRouter(
             dedupedItems = dedupedCounter.get(),
             framesPerSecond = fps,
             throttleStats = throttleHelper.getStats(),
-            dedupeStats = dedupeHelper.getStats()
+            dedupeStats = dedupeHelper.getStats(),
         )
     }
 
@@ -482,14 +491,17 @@ class DetectionRouter(
         if (!force && !config.enableDebugLogging) return
 
         val stats = getStats()
-        Log.i(TAG, buildString {
-            append("[STATS] ")
-            append("frames=${stats.totalFrames}, ")
-            append("objDet=${stats.objectDetections}, ")
-            append("throttled=${stats.throttledFrames}, ")
-            append("fps=${String.format("%.1f", stats.framesPerSecond)}, ")
-            append("uptime=${stats.uptimeMs}ms")
-        })
+        Log.i(
+            TAG,
+            buildString {
+                append("[STATS] ")
+                append("frames=${stats.totalFrames}, ")
+                append("objDet=${stats.objectDetections}, ")
+                append("throttled=${stats.throttledFrames}, ")
+                append("fps=${String.format("%.1f", stats.framesPerSecond)}, ")
+                append("uptime=${stats.uptimeMs}ms")
+            },
+        )
     }
 }
 
@@ -499,24 +511,18 @@ class DetectionRouter(
 data class DetectionRouterConfig(
     /** Custom throttle intervals per detector type (overrides defaults) */
     val throttleIntervals: Map<DetectorType, Long> = emptyMap(),
-
     /** Deduplication configuration */
     val dedupeConfig: DedupeConfig = DedupeConfig(),
-
     /** Adaptive throttle configuration for low-power mode */
     val adaptiveConfig: AdaptiveThrottleConfig = AdaptiveThrottleConfig(),
-
     /** Whether barcode/QR detection is enabled (default ON for beta) */
     val barcodeDetectionEnabled: Boolean = true,
-
     /** Whether document candidate detection is enabled (default ON for beta) */
     val documentDetectionEnabled: Boolean = true,
-
     /** Enable verbose logging for debugging */
     val enableVerboseLogging: Boolean = BuildConfig.DEBUG,
-
     /** Enable periodic debug stats logging */
-    val enableDebugLogging: Boolean = BuildConfig.DEBUG
+    val enableDebugLogging: Boolean = BuildConfig.DEBUG,
 )
 
 /**
@@ -532,5 +538,5 @@ data class DetectionRouterStats(
     val dedupedItems: Long,
     val framesPerSecond: Double,
     val throttleStats: Map<DetectorType, ThrottleStats>,
-    val dedupeStats: DedupeStats
+    val dedupeStats: DedupeStats,
 )

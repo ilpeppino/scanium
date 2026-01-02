@@ -6,26 +6,58 @@
 # Cloud Classification API Configuration
 # =============================================================================
 
-# Backend API base URL (required for cloud classification)
+# Backend API base URL (used by release builds, fallback for debug if debug URL not set)
 # Examples:
-#   Production: https://api.scanium.example.com/v1
-#   Staging:    https://staging-api.scanium.example.com/v1
-#   Local dev:  http://localhost:8080/api/v1
-scanium.api.base.url=
+#   Cloudflare:  https://scanium.gtemp1.com
+#   Production:  https://api.scanium.example.com
+#   Local dev:   http://localhost:3000
+scanium.api.base.url=https://scanium.gtemp1.com
+
+# Debug-specific backend URL (takes precedence for debug builds)
+# Set this to use a different backend for development/testing
+# Examples:
+#   Cloudflare (same as prod): https://scanium.gtemp1.com
+#   LAN direct:                http://192.168.1.100:3000
+scanium.api.base.url.debug=https://scanium.gtemp1.com
 
 # API authentication key (required for cloud classification)
-# Obtain from your backend team or developer portal
-# Format: alphanumeric string, typically 32-64 characters
-scanium.api.key=
+# Obtain from your backend configuration
+# Can be comma-separated for multiple keys
+scanium.api.key=your-api-key-here
 
-# Optional: enable DEBUG-only crop capture for troubleshooting classification
-# Set to true to save each outgoing crop under app cache (/data/data/.../cache/classifier_crops)
+# =============================================================================
+# Optional: Debug Settings
+# =============================================================================
+
+# Enable DEBUG-only crop capture for troubleshooting classification
+# Set to true to save each outgoing crop under app cache
 scanium.classifier.save_crops.debug=false
+
+# =============================================================================
+# Optional: Certificate Pinning (HTTPS only)
+# =============================================================================
+
+# SHA-256 pin for TLS certificate pinning (MITM protection)
+# Generate with:
+#   openssl s_client -servername HOST -connect HOST:443 | \
+#     openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | \
+#     openssl dgst -sha256 -binary | openssl enc -base64
+# scanium.api.certificate.pin=sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+# =============================================================================
+# Optional: Telemetry & Observability
+# =============================================================================
+
+# Sentry DSN for crash reporting
+# scanium.sentry.dsn=https://xxx@xxx.ingest.sentry.io/xxx
+
+# OpenTelemetry Protocol endpoint
+# scanium.otlp.endpoint=http://localhost:4318
+# scanium.otlp.enabled=false
 
 # =============================================================================
 # SDK Location (standard Android property)
 # =============================================================================
 
-# Android SDK path
-# Auto-detected by Android Studio, uncomment if needed:
+# Android SDK path (auto-detected by Android Studio)
 # sdk.dir=/Users/yourname/Library/Android/sdk

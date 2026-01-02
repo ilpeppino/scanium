@@ -18,7 +18,6 @@ import kotlin.math.roundToInt
  * different aspect ratios.
  */
 object RoiCoordinateMapper {
-
     /**
      * Map a normalized ROI to preview pixel coordinates.
      *
@@ -30,13 +29,13 @@ object RoiCoordinateMapper {
     fun toPreviewPixels(
         roi: ScanRoi,
         previewWidth: Int,
-        previewHeight: Int
+        previewHeight: Int,
     ): RoiPixelRect {
         return RoiPixelRect(
             left = (roi.left * previewWidth).roundToInt(),
             top = (roi.top * previewHeight).roundToInt(),
             right = (roi.right * previewWidth).roundToInt(),
-            bottom = (roi.bottom * previewHeight).roundToInt()
+            bottom = (roi.bottom * previewHeight).roundToInt(),
         )
     }
 
@@ -51,13 +50,13 @@ object RoiCoordinateMapper {
     fun toPreviewFloats(
         roi: ScanRoi,
         previewWidth: Float,
-        previewHeight: Float
+        previewHeight: Float,
     ): RoiFloatRect {
         return RoiFloatRect(
             left = roi.left * previewWidth,
             top = roi.top * previewHeight,
             right = roi.right * previewWidth,
-            bottom = roi.bottom * previewHeight
+            bottom = roi.bottom * previewHeight,
         )
     }
 
@@ -77,7 +76,7 @@ object RoiCoordinateMapper {
         roi: ScanRoi,
         analyzerWidth: Int,
         analyzerHeight: Int,
-        previewAspectRatio: Float? = null
+        previewAspectRatio: Float? = null,
     ): RoiPixelRect {
         // If no aspect ratio adjustment needed, direct mapping
         if (previewAspectRatio == null) {
@@ -90,7 +89,7 @@ object RoiCoordinateMapper {
                 left = left,
                 top = top,
                 right = right.coerceIn(left, analyzerWidth),
-                bottom = bottom.coerceIn(top, analyzerHeight)
+                bottom = bottom.coerceIn(top, analyzerHeight),
             )
         }
 
@@ -106,7 +105,7 @@ object RoiCoordinateMapper {
                 left = (cropX + roi.left * visibleWidth).roundToInt(),
                 top = (roi.top * analyzerHeight).roundToInt(),
                 right = (cropX + roi.right * visibleWidth).roundToInt(),
-                bottom = (roi.bottom * analyzerHeight).roundToInt()
+                bottom = (roi.bottom * analyzerHeight).roundToInt(),
             )
         } else {
             // Analyzer is taller - vertical cropping applied
@@ -117,7 +116,7 @@ object RoiCoordinateMapper {
                 left = (roi.left * analyzerWidth).roundToInt(),
                 top = (cropY + roi.top * visibleHeight).roundToInt(),
                 right = (roi.right * analyzerWidth).roundToInt(),
-                bottom = (cropY + roi.bottom * visibleHeight).roundToInt()
+                bottom = (cropY + roi.bottom * visibleHeight).roundToInt(),
             )
         }
     }
@@ -144,7 +143,7 @@ object RoiCoordinateMapper {
         boxBottom: Int,
         analyzerWidth: Int,
         analyzerHeight: Int,
-        previewAspectRatio: Float? = null
+        previewAspectRatio: Float? = null,
     ): NormalizedBox {
         if (analyzerWidth == 0 || analyzerHeight == 0) {
             return NormalizedBox(0f, 0f, 0f, 0f)
@@ -156,7 +155,7 @@ object RoiCoordinateMapper {
                 left = boxLeft.toFloat() / analyzerWidth,
                 top = boxTop.toFloat() / analyzerHeight,
                 right = boxRight.toFloat() / analyzerWidth,
-                bottom = boxBottom.toFloat() / analyzerHeight
+                bottom = boxBottom.toFloat() / analyzerHeight,
             )
         }
 
@@ -171,7 +170,7 @@ object RoiCoordinateMapper {
                 left = ((boxLeft - cropX) / visibleWidth).coerceIn(0f, 1f),
                 top = (boxTop.toFloat() / analyzerHeight).coerceIn(0f, 1f),
                 right = ((boxRight - cropX) / visibleWidth).coerceIn(0f, 1f),
-                bottom = (boxBottom.toFloat() / analyzerHeight).coerceIn(0f, 1f)
+                bottom = (boxBottom.toFloat() / analyzerHeight).coerceIn(0f, 1f),
             )
         } else {
             // Analyzer was taller - vertical cropping was applied
@@ -182,7 +181,7 @@ object RoiCoordinateMapper {
                 left = (boxLeft.toFloat() / analyzerWidth).coerceIn(0f, 1f),
                 top = ((boxTop - cropY) / visibleHeight).coerceIn(0f, 1f),
                 right = (boxRight.toFloat() / analyzerWidth).coerceIn(0f, 1f),
-                bottom = ((boxBottom - cropY) / visibleHeight).coerceIn(0f, 1f)
+                bottom = ((boxBottom - cropY) / visibleHeight).coerceIn(0f, 1f),
             )
         }
     }
@@ -204,7 +203,7 @@ object RoiCoordinateMapper {
         detectionCenterY: Int,
         roi: ScanRoi,
         analyzerWidth: Int,
-        analyzerHeight: Int
+        analyzerHeight: Int,
     ): Boolean {
         if (analyzerWidth == 0 || analyzerHeight == 0) return false
 
@@ -229,7 +228,7 @@ object RoiCoordinateMapper {
         detectionCenterY: Int,
         roi: ScanRoi,
         analyzerWidth: Int,
-        analyzerHeight: Int
+        analyzerHeight: Int,
     ): Float {
         if (analyzerWidth == 0 || analyzerHeight == 0) return 0f
 
@@ -255,7 +254,7 @@ object RoiCoordinateMapper {
         analyzerWidth: Int,
         analyzerHeight: Int,
         previewWidth: Int,
-        previewHeight: Int
+        previewHeight: Int,
     ): RoiPixelRect {
         if (previewWidth == 0 || previewHeight == 0) {
             return RoiPixelRect(0, 0, analyzerWidth, analyzerHeight)
@@ -285,7 +284,7 @@ data class RoiPixelRect(
     val left: Int,
     val top: Int,
     val right: Int,
-    val bottom: Int
+    val bottom: Int,
 ) {
     val width: Int get() = right - left
     val height: Int get() = bottom - top
@@ -300,7 +299,10 @@ data class RoiPixelRect(
     /**
      * Check if a point is inside this rect.
      */
-    fun contains(x: Int, y: Int): Boolean {
+    fun contains(
+        x: Int,
+        y: Int,
+    ): Boolean {
         return x in left..right && y in top..bottom
     }
 }
@@ -312,7 +314,7 @@ data class RoiFloatRect(
     val left: Float,
     val top: Float,
     val right: Float,
-    val bottom: Float
+    val bottom: Float,
 ) {
     val width: Float get() = right - left
     val height: Float get() = bottom - top
@@ -322,7 +324,10 @@ data class RoiFloatRect(
     /**
      * Check if a point is inside this rect.
      */
-    fun contains(x: Float, y: Float): Boolean {
+    fun contains(
+        x: Float,
+        y: Float,
+    ): Boolean {
         return x in left..right && y in top..bottom
     }
 }
@@ -334,7 +339,7 @@ data class NormalizedBox(
     val left: Float,
     val top: Float,
     val right: Float,
-    val bottom: Float
+    val bottom: Float,
 ) {
     val width: Float get() = right - left
     val height: Float get() = bottom - top

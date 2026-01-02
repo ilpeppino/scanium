@@ -20,7 +20,10 @@ interface SpanContext {
      * @param key Attribute key
      * @param value Attribute value
      */
-    fun setAttribute(key: String, value: String)
+    fun setAttribute(
+        key: String,
+        value: String,
+    )
 
     /**
      * Records an error/exception within this span.
@@ -28,7 +31,10 @@ interface SpanContext {
      * @param error The error message
      * @param attributes Optional error context attributes
      */
-    fun recordError(error: String, attributes: Map<String, String> = emptyMap())
+    fun recordError(
+        error: String,
+        attributes: Map<String, String> = emptyMap(),
+    )
 }
 
 /**
@@ -52,5 +58,8 @@ interface TracePort {
      * @param attributes Sanitized attributes for this span
      * @return A SpanContext that must be ended when the operation completes
      */
-    fun beginSpan(name: String, attributes: Map<String, String> = emptyMap()): SpanContext
+    fun beginSpan(
+        name: String,
+        attributes: Map<String, String> = emptyMap(),
+    ): SpanContext
 }

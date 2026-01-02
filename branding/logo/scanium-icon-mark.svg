@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Scanium Icon Mark: Symbol only, no text, for app icons and splash -->
+
+  <!-- Blue background (solid, no transparency) -->
+  <rect width="1024" height="1024" fill="#1F4BFF"/>
+
+  <!-- Camera frame (rounded square) - white -->
+  <rect
+    x="172" y="172"
+    width="680" height="680"
+    rx="110" ry="110"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="70"/>
+
+  <!-- S Symbol: Smooth curved S with subtle energy inflections - yellow -->
+  <path
+    d="M 628 295
+       C 628 295 580 245 512 245
+       C 420 245 355 295 355 365
+       C 355 435 420 475 512 495
+       C 604 515 669 555 669 635
+       C 669 715 604 775 512 775
+       C 444 775 396 725 396 725"
+    fill="none"
+    stroke="#FFD400"
+    stroke-width="90"
+    stroke-linecap="round"
+    stroke-linejoin="round"/>
+</svg>

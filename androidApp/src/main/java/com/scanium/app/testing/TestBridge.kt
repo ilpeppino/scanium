@@ -1,6 +1,5 @@
 package com.scanium.app.testing
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -51,16 +50,18 @@ object TestBridge {
     fun generateTestBitmap(
         width: Int = 200,
         height: Int = 200,
-        color: Int = 0xFF3498DB.toInt() // Default: nice blue
+        color: Int = 0xFF3498DB.toInt(),
+// Default: nice blue
     ): Bitmap? {
         if (!BuildConfig.DEBUG) return null
 
         return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
             val canvas = Canvas(this)
-            val paint = Paint().apply {
-                this.color = color
-                style = Paint.Style.FILL
-            }
+            val paint =
+                Paint().apply {
+                    this.color = color
+                    style = Paint.Style.FILL
+                }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
             // Add a diagonal stripe to make it more distinctive
@@ -81,7 +82,7 @@ object TestBridge {
         width: Int = 200,
         height: Int = 200,
         startColor: Int = 0xFF3498DB.toInt(),
-        endColor: Int = 0xFF9B59B6.toInt()
+        endColor: Int = 0xFF9B59B6.toInt(),
     ): Bitmap? {
         if (!BuildConfig.DEBUG) return null
 
@@ -120,7 +121,7 @@ object TestBridge {
         priceLow: Double = 10.0,
         priceHigh: Double = 50.0,
         bitmapColor: Int = 0xFF3498DB.toInt(),
-        classificationStatus: String = "PENDING"
+        classificationStatus: String = "PENDING",
     ): ScannedItem? {
         if (!BuildConfig.DEBUG) return null
 
@@ -131,17 +132,18 @@ object TestBridge {
             id = id,
             category = category,
             confidence = confidence,
-            thumbnail = ImageRef.Bytes(
-                bytes = thumbnailBytes,
-                mimeType = "image/jpeg",
-                width = 200,
-                height = 200
-            ),
+            thumbnail =
+                ImageRef.Bytes(
+                    bytes = thumbnailBytes,
+                    mimeType = "image/jpeg",
+                    width = 200,
+                    height = 200,
+                ),
             priceRange = priceLow to priceHigh,
             labelText = label,
             boundingBox = NormalizedRect(0.2f, 0.2f, 0.8f, 0.8f),
             timestamp = System.currentTimeMillis(),
-            classificationStatus = classificationStatus
+            classificationStatus = classificationStatus,
         )
     }
 
@@ -154,21 +156,28 @@ object TestBridge {
      */
     fun createTestItems(
         count: Int = 3,
-        categoryRotation: List<ItemCategory> = listOf(
-            ItemCategory.FASHION,
-            ItemCategory.ELECTRONICS,
-            ItemCategory.HOME_GOOD
-        )
+        categoryRotation: List<ItemCategory> =
+            listOf(
+                ItemCategory.FASHION,
+                ItemCategory.ELECTRONICS,
+                ItemCategory.HOME_GOOD,
+            ),
     ): List<ScannedItem> {
         if (!BuildConfig.DEBUG) return emptyList()
 
-        val colors = listOf(
-            0xFF3498DB.toInt(), // Blue
-            0xFF2ECC71.toInt(), // Green
-            0xFFE74C3C.toInt(), // Red
-            0xFF9B59B6.toInt(), // Purple
-            0xFFF39C12.toInt()  // Orange
-        )
+        val colors =
+            listOf(
+                0xFF3498DB.toInt(),
+// Blue
+                0xFF2ECC71.toInt(),
+// Green
+                0xFFE74C3C.toInt(),
+// Red
+                0xFF9B59B6.toInt(),
+// Purple
+                0xFFF39C12.toInt(),
+// Orange
+            )
 
         return (0 until count).mapNotNull { index ->
             createTestItem(
@@ -178,7 +187,7 @@ object TestBridge {
                 confidence = 0.75f + (index % 3) * 0.1f,
                 priceLow = 10.0 + index * 5,
                 priceHigh = 50.0 + index * 10,
-                bitmapColor = colors[index % colors.size]
+                bitmapColor = colors[index % colors.size],
             )
         }
     }
@@ -186,7 +195,10 @@ object TestBridge {
     /**
      * Convert Bitmap to JPEG bytes.
      */
-    private fun bitmapToJpegBytes(bitmap: Bitmap, quality: Int = 85): ByteArray {
+    private fun bitmapToJpegBytes(
+        bitmap: Bitmap,
+        quality: Int = 85,
+    ): ByteArray {
         val stream = java.io.ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
         return stream.toByteArray()
@@ -198,7 +210,7 @@ object TestBridge {
     fun createTestImageRef(
         width: Int = 200,
         height: Int = 200,
-        color: Int = 0xFF3498DB.toInt()
+        color: Int = 0xFF3498DB.toInt(),
     ): ImageRef.Bytes? {
         if (!BuildConfig.DEBUG) return null
 
@@ -209,7 +221,7 @@ object TestBridge {
             bytes = bytes,
             mimeType = "image/jpeg",
             width = width,
-            height = height
+            height = height,
         )
     }
 }

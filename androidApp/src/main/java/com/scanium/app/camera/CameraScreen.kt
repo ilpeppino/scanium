@@ -7,11 +7,11 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.util.Log
+import android.util.Size
 import android.view.OrientationEventListener
 import android.view.Surface
 import android.view.WindowManager
-import android.util.Log
-import android.util.Size
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.view.PreviewView
@@ -40,42 +40,43 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.scanium.app.BuildConfig
 import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.data.SettingsRepository
-import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.ml.DetectionResult
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.shouldShowRationale
-import com.scanium.app.ml.classification.ClassificationMode
-import com.scanium.app.ml.classification.ClassificationMetrics
-import com.scanium.app.settings.ClassificationModeViewModel
-import com.scanium.app.media.StorageHelper
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ftue.PermissionEducationDialog
 import com.scanium.app.ftue.tourTarget
+import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.media.StorageHelper
+import com.scanium.app.ml.classification.ClassificationMetrics
+import com.scanium.app.ml.classification.ClassificationMode
+import com.scanium.app.settings.ClassificationModeViewModel
+import com.scanium.app.ui.motion.MotionConfig
+import com.scanium.app.ui.motion.MotionEnhancedOverlay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -99,7 +100,7 @@ fun CameraScreen(
     itemsViewModel: ItemsViewModel = viewModel(),
     classificationModeViewModel: ClassificationModeViewModel,
     cameraViewModel: CameraViewModel = viewModel(),
-    tourViewModel: com.scanium.app.ftue.TourViewModel? = null
+    tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -126,6 +127,14 @@ fun CameraScreen(
     // Camera pipeline lifecycle debug
     val cameraPipelineDebugEnabled by settingsRepository.devCameraPipelineDebugEnabledFlow.collectAsState(initial = false)
 
+    // Motion overlays (scan frame appear, lightning pulse)
+    val motionOverlaysEnabled by settingsRepository.devMotionOverlaysEnabledFlow.collectAsState(initial = true)
+
+    // Sync motion overlays setting with MotionConfig
+    LaunchedEffect(motionOverlaysEnabled) {
+        MotionConfig.setMotionOverlaysEnabled(motionOverlaysEnabled)
+    }
+
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
     var showPermissionEducationDialog by remember { mutableStateOf(false) }
@@ -139,10 +148,11 @@ fun CameraScreen(
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
 
     // Initialize CameraX manager
-    val cameraManager = remember {
-        val app = context.applicationContext as? com.scanium.app.ScaniumApplication
-        CameraXManager(context, lifecycleOwner, app?.telemetry)
-    }
+    val cameraManager =
+        remember {
+            val app = context.applicationContext as? com.scanium.app.ScaniumApplication
+            CameraXManager(context, lifecycleOwner, app?.telemetry)
+        }
 
     // Pipeline diagnostics (must be after cameraManager initialization)
     val pipelineDiagnostics by cameraManager.pipelineDiagnostics.collectAsState()
@@ -178,7 +188,7 @@ fun CameraScreen(
     val verboseLogging by classificationModeViewModel.verboseLogging.collectAsState()
     val analysisFps by cameraManager.analysisFps.collectAsState()
     val shutterHintShown by ftueRepository.shutterHintShownFlow.collectAsState(initial = true)
-    
+
     // Performance metrics
     val callsStarted by ClassificationMetrics.callsStarted.collectAsState()
     val callsCompleted by ClassificationMetrics.callsCompleted.collectAsState()
@@ -195,10 +205,10 @@ fun CameraScreen(
     // Document scan state
     var documentScanState by remember { mutableStateOf<DocumentScanState>(DocumentScanState.Idle) }
     var documentScanJob by remember { mutableStateOf<Job?>(null) }
-    
+
     // Animation state for newly added items
     var lastAddedItem by remember { mutableStateOf<com.scanium.app.items.ScannedItem?>(null) }
-    
+
     LaunchedEffect(itemsViewModel) {
         itemsViewModel.itemAddedEvents.collect { item: com.scanium.app.items.ScannedItem ->
             lastAddedItem = item
@@ -209,7 +219,7 @@ fun CameraScreen(
 
     var imageSize by remember { mutableStateOf(Size(1280, 720)) }
     var previewSize by remember { mutableStateOf(Size(0, 0)) }
-    var imageRotationDegrees by remember { mutableStateOf(90) }  // Default portrait
+    var imageRotationDegrees by remember { mutableStateOf(90) } // Default portrait
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
 
@@ -233,14 +243,15 @@ fun CameraScreen(
     }
 
     DisposableEffect(view) {
-        val orientationListener = object : OrientationEventListener(context) {
-            override fun onOrientationChanged(orientation: Int) {
-                val rotation = view.display?.rotation ?: Surface.ROTATION_0
-                if (rotation != targetRotation) {
-                    targetRotation = rotation
+        val orientationListener =
+            object : OrientationEventListener(context) {
+                override fun onOrientationChanged(orientation: Int) {
+                    val rotation = view.display?.rotation ?: Surface.ROTATION_0
+                    if (rotation != targetRotation) {
+                        targetRotation = rotation
+                    }
                 }
             }
-        }
 
         if (orientationListener.canDetectOrientation()) {
             orientationListener.enable()
@@ -255,28 +266,29 @@ fun CameraScreen(
     // Fixes: frozen bboxes after backgrounding (Issue 2) or navigating away (Issue 1)
     // CRITICAL FIX: Use session-based lifecycle management to ensure scope recreation
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            // Update diagnostics with lifecycle state
-            cameraManager.updateDiagnosticsLifecycleState(event.name)
+        val observer =
+            LifecycleEventObserver { _, event ->
+                // Update diagnostics with lifecycle state
+                cameraManager.updateDiagnosticsLifecycleState(event.name)
 
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> {
-                    // Start new camera session - recreates coroutine scope
-                    cameraManager.startCameraSession()
-                    // Increment to trigger preview detection restart via LaunchedEffect
-                    lifecycleResumeCount++
-                    Log.d("CameraScreen", "ON_RESUME: started session, lifecycleResumeCount=$lifecycleResumeCount")
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> {
+                        // Start new camera session - recreates coroutine scope
+                        cameraManager.startCameraSession()
+                        // Increment to trigger preview detection restart via LaunchedEffect
+                        lifecycleResumeCount++
+                        Log.d("CameraScreen", "ON_RESUME: started session, lifecycleResumeCount=$lifecycleResumeCount")
+                    }
+                    Lifecycle.Event.ON_PAUSE -> {
+                        // Stop camera session - cancels scope and clears analyzer
+                        cameraManager.stopCameraSession()
+                        // Clear overlay to avoid stale bboxes when returning
+                        itemsViewModel.updateOverlayDetections(emptyList())
+                        Log.d("CameraScreen", "ON_PAUSE: stopped session, cleared overlays")
+                    }
+                    else -> { /* Other events handled elsewhere */ }
                 }
-                Lifecycle.Event.ON_PAUSE -> {
-                    // Stop camera session - cancels scope and clears analyzer
-                    cameraManager.stopCameraSession()
-                    // Clear overlay to avoid stale bboxes when returning
-                    itemsViewModel.updateOverlayDetections(emptyList())
-                    Log.d("CameraScreen", "ON_PAUSE: stopped session, cleared overlays")
-                }
-                else -> { /* Other events handled elsewhere */ }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
@@ -287,26 +299,27 @@ fun CameraScreen(
     // Some OEMs keep destination RESUMED across backgrounding - this is a safety guard
     DisposableEffect(Unit) {
         val processLifecycle = ProcessLifecycleOwner.get().lifecycle
-        val processObserver = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_STOP -> {
-                    // App going to background - ensure camera session is stopped
-                    Log.d("CameraScreen", "PROCESS_ON_STOP: app backgrounding, stopping session")
-                    cameraManager.stopCameraSession()
-                    itemsViewModel.updateOverlayDetections(emptyList())
-                }
-                Lifecycle.Event.ON_START -> {
-                    // App coming to foreground
-                    // Only restart if we're still the active screen (lifecycleOwner is RESUMED)
-                    if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                        Log.d("CameraScreen", "PROCESS_ON_START: app foregrounding, restarting session")
-                        cameraManager.startCameraSession()
-                        lifecycleResumeCount++
+        val processObserver =
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> {
+                        // App going to background - ensure camera session is stopped
+                        Log.d("CameraScreen", "PROCESS_ON_STOP: app backgrounding, stopping session")
+                        cameraManager.stopCameraSession()
+                        itemsViewModel.updateOverlayDetections(emptyList())
                     }
+                    Lifecycle.Event.ON_START -> {
+                        // App coming to foreground
+                        // Only restart if we're still the active screen (lifecycleOwner is RESUMED)
+                        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                            Log.d("CameraScreen", "PROCESS_ON_START: app foregrounding, restarting session")
+                            cameraManager.startCameraSession()
+                            lifecycleResumeCount++
+                        }
+                    }
+                    else -> { /* Ignore other events */ }
                 }
-                else -> { /* Ignore other events */ }
             }
-        }
         processLifecycle.addObserver(processObserver)
         onDispose {
             processLifecycle.removeObserver(processObserver)
@@ -361,7 +374,7 @@ fun CameraScreen(
             .collect { isGranted ->
                 cameraViewModel.onPermissionStateChanged(
                     isGranted = isGranted,
-                    isScanning = cameraState == CameraState.SCANNING
+                    isScanning = cameraState == CameraState.SCANNING,
                 )
             }
     }
@@ -397,7 +410,10 @@ fun CameraScreen(
     // lifecycleResumeCount triggers restart after backgrounding or navigation return
     LaunchedEffect(modelDownloadState, cameraState, isCameraBinding, lifecycleResumeCount) {
         if (modelDownloadState == ModelDownloadState.Ready && cameraState == CameraState.IDLE && !isCameraBinding) {
-            Log.d("CameraScreen", "Starting preview detection (camera idle, model ready, binding complete, resumeCount=$lifecycleResumeCount)")
+            Log.d(
+                "CameraScreen",
+                "Starting preview detection (camera idle, model ready, binding complete, resumeCount=$lifecycleResumeCount)",
+            )
             cameraManager.startPreviewDetection(
                 onDetectionResult = { detections ->
                     // Update overlay with preview detections (no ROI filtering in preview mode)
@@ -405,7 +421,7 @@ fun CameraScreen(
                         detections = detections,
                         scanRoi = scanGuidanceState.scanRoi,
                         lockedTrackingId = null,
-                        isGoodState = false
+                        isGoodState = false,
                     )
                 },
                 onFrameSize = { size ->
@@ -413,7 +429,7 @@ fun CameraScreen(
                 },
                 onRotation = { rotation ->
                     imageRotationDegrees = rotation
-                }
+                },
             )
         }
     }
@@ -424,7 +440,7 @@ fun CameraScreen(
             Toast.makeText(
                 context,
                 "Using ${classificationMode.displayName} classification",
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             ).show()
         }
         previousClassificationMode = classificationMode
@@ -452,7 +468,7 @@ fun CameraScreen(
                         itemsViewModel.updateOverlayDetections(emptyList())
                         rebindAttempts++
                     },
-                    onViewItems = onNavigateToItems
+                    onViewItems = onNavigateToItems,
                 )
             }
             cameraPermissionState.status.isGranted -> {
@@ -479,7 +495,7 @@ fun CameraScreen(
                             Toast.makeText(
                                 context,
                                 "Selected lens unavailable. Switched cameras.",
-                                Toast.LENGTH_SHORT
+                                Toast.LENGTH_SHORT,
                             ).show()
                         }
                     },
@@ -488,21 +504,23 @@ fun CameraScreen(
                         error?.let {
                             cameraManager.stopScanning()
                             cameraState = CameraState.ERROR
-                            cameraErrorState = CameraErrorState(
-                                title = "Camera unavailable",
-                                message = it.message ?: "Unable to start camera.",
-                                canRetry = true
-                            )
+                            cameraErrorState =
+                                CameraErrorState(
+                                    title = "Camera unavailable",
+                                    message = it.message ?: "Unable to start camera.",
+                                    canRetry = true,
+                                )
                             Toast.makeText(context, "Unable to start camera.", Toast.LENGTH_SHORT).show()
                             Log.e("CameraScreen", "Failed to bind camera", it)
                         }
-                    }
+                    },
                 )
 
                 // Model download loading overlay (first launch)
                 when (val state = modelDownloadState) {
                     is ModelDownloadState.Checking,
-                    is ModelDownloadState.Downloading -> {
+                    is ModelDownloadState.Downloading,
+                    -> {
                         ModelLoadingOverlay(state = state)
                     }
                     is ModelDownloadState.Error -> {
@@ -515,16 +533,17 @@ fun CameraScreen(
                                         cameraManager.ensureModelsReady()
                                         modelDownloadState = ModelDownloadState.Ready
                                     } catch (e: Exception) {
-                                        modelDownloadState = ModelDownloadState.Error(
-                                            "Error initializing ML Kit: ${e.message}"
-                                        )
+                                        modelDownloadState =
+                                            ModelDownloadState.Error(
+                                                "Error initializing ML Kit: ${e.message}",
+                                            )
                                     }
                                 }
                             },
                             onDismiss = {
                                 // User chose to exit - set to Ready to allow camera use
                                 modelDownloadState = ModelDownloadState.Ready
-                            }
+                            },
                         )
                     }
                     ModelDownloadState.Ready -> {
@@ -541,7 +560,7 @@ fun CameraScreen(
                             showDebugInfo = roiDiagnosticsEnabled || scanDiagnosticsEnabled,
                             // PHASE 6: Pass ROI filter diagnostics
                             roiFilterResult = lastRoiFilterResult,
-                            previewBboxCount = overlayTracks.size
+                            previewBboxCount = overlayTracks.size,
                         )
                     } else if (cameraState == CameraState.IDLE) {
                         CameraGuidanceOverlayIdle()
@@ -552,18 +571,19 @@ fun CameraScreen(
                 // Show when detections exist but none are inside ROI
                 if (cameraState == CameraState.SCANNING && lastRoiFilterResult?.hasDetectionsOutsideRoiOnly == true) {
                     RoiCenteringHint(
-                        modifier = Modifier.align(Alignment.TopCenter)
+                        modifier = Modifier.align(Alignment.TopCenter),
                     )
                 }
 
-                // Detection overlay - bounding boxes and labels
-                if (overlayTracks.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
-                    DetectionOverlay(
+                // Detection overlay - bounding boxes, labels, and motion animations
+                // Uses MotionEnhancedOverlay for scan frame appear + lightning pulse
+                if (previewSize.width > 0 && previewSize.height > 0) {
+                    MotionEnhancedOverlay(
                         detections = overlayTracks,
                         imageSize = imageSize,
                         previewSize = previewSize,
                         rotationDegrees = imageRotationDegrees,
-                        showGeometryDebug = bboxMappingDebugEnabled
+                        showGeometryDebug = bboxMappingDebugEnabled,
                     )
                 }
 
@@ -571,7 +591,7 @@ fun CameraScreen(
                     if (previewSize.width > 0 && previewSize.height > 0) {
                         DocumentAlignmentOverlay(
                             candidateState = candidateState,
-                            imageSize = imageSize
+                            imageSize = imageSize,
                         )
                     }
                 }
@@ -579,20 +599,21 @@ fun CameraScreen(
                 // Cloud configuration status banner
                 ConfigurationStatusBanner(
                     classificationMode = classificationMode,
-                    modifier = Modifier.align(Alignment.TopCenter)
+                    modifier = Modifier.align(Alignment.TopCenter),
                 )
-                
+
                 // DEV BUILD Indicator
                 if (com.scanium.app.BuildConfig.DEBUG) {
                     Text(
                         text = "DEV BUILD",
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = 16.dp, end = 16.dp)
-                            .background(Color.Red.copy(alpha = 0.7f), shape = MaterialTheme.shapes.extraSmall)
-                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(top = 16.dp, end = 16.dp)
+                                .background(Color.Red.copy(alpha = 0.7f), shape = MaterialTheme.shapes.extraSmall)
+                                .padding(horizontal = 4.dp, vertical = 2.dp),
                     )
                 }
 
@@ -606,9 +627,10 @@ fun CameraScreen(
                         callsFailed = callsFailed,
                         lastLatency = lastLatency,
                         queueDepth = queueDepth,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(top = 90.dp, start = 16.dp)
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = 90.dp, start = 16.dp),
                     )
                 }
 
@@ -616,9 +638,10 @@ fun CameraScreen(
                 if (cameraPipelineDebugEnabled) {
                     CameraPipelineDebugOverlay(
                         diagnostics = pipelineDiagnostics,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(top = if (verboseLogging) 250.dp else 90.dp, start = 16.dp)
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = if (verboseLogging) 250.dp else 90.dp, start = 16.dp),
                     )
                 }
 
@@ -629,9 +652,10 @@ fun CameraScreen(
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                             context.startActivity(intent)
                         },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 120.dp)
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 120.dp),
                     )
                 }
 
@@ -644,43 +668,45 @@ fun CameraScreen(
                             documentScanState = DocumentScanState.Scanning
                             hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
 
-                            documentScanJob = scope.launch {
-                                when (val result = cameraManager.scanDocument()) {
-                                    is CameraXManager.DocumentScanResult.Success -> {
-                                        // Add the scanned document to items
-                                        itemsViewModel.addItem(result.item)
-                                        Toast.makeText(
-                                            context,
-                                            "Document scanned successfully",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                            documentScanJob =
+                                scope.launch {
+                                    when (val result = cameraManager.scanDocument()) {
+                                        is CameraXManager.DocumentScanResult.Success -> {
+                                            // Add the scanned document to items
+                                            itemsViewModel.addItem(result.item)
+                                            Toast.makeText(
+                                                context,
+                                                "Document scanned successfully",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }
+                                        is CameraXManager.DocumentScanResult.NoTextDetected -> {
+                                            Toast.makeText(
+                                                context,
+                                                "No text detected in document",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }
+                                        is CameraXManager.DocumentScanResult.Cancelled -> {
+                                            // User cancelled - do nothing
+                                        }
+                                        is CameraXManager.DocumentScanResult.Error -> {
+                                            Log.e("CameraScreen", "Document scan error: ${result.message}", result.exception)
+                                            Toast.makeText(
+                                                context,
+                                                "Scan failed: ${result.message}",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
+                                        }
                                     }
-                                    is CameraXManager.DocumentScanResult.NoTextDetected -> {
-                                        Toast.makeText(
-                                            context,
-                                            "No text detected in document",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                    is CameraXManager.DocumentScanResult.Cancelled -> {
-                                        // User cancelled - do nothing
-                                    }
-                                    is CameraXManager.DocumentScanResult.Error -> {
-                                        Log.e("CameraScreen", "Document scan error: ${result.message}", result.exception)
-                                        Toast.makeText(
-                                            context,
-                                            "Scan failed: ${result.message}",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
+                                    documentScanState = DocumentScanState.Idle
                                 }
-                                documentScanState = DocumentScanState.Idle
-                            }
                         }
                     },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 160.dp)
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 160.dp),
                 )
 
                 // Overlay UI
@@ -718,7 +744,7 @@ fun CameraScreen(
                                 Toast.makeText(
                                     context,
                                     "Center object in scan zone for better accuracy",
-                                    Toast.LENGTH_SHORT
+                                    Toast.LENGTH_SHORT,
                                 ).show()
                             }
 
@@ -730,11 +756,12 @@ fun CameraScreen(
                                     cameraState = CameraState.IDLE
                                     if (items.isEmpty()) {
                                         // PHASE 3: More specific message based on what we detected
-                                        val message = if (hasOutsideRoiOnly) {
-                                            "Object detected outside scan zone. Center it for better results."
-                                        } else {
-                                            "No objects detected. Try pointing at prominent items."
-                                        }
+                                        val message =
+                                            if (hasOutsideRoiOnly) {
+                                                "Object detected outside scan zone. Center it for better results."
+                                            } else {
+                                                "No objects detected. Try pointing at prominent items."
+                                            }
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                         soundManager.play(AppSound.ERROR)
                                     } else {
@@ -745,38 +772,40 @@ fun CameraScreen(
 
                                             if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
                                                 try {
-                                                     context.contentResolver.openInputStream(highResUri)?.use { input ->
-                                                         val savedUri = StorageHelper.saveToDirectory(
-                                                             context,
-                                                             Uri.parse(saveDirectoryUri),
-                                                             input,
-                                                             "image/jpeg",
-                                                             "Scanium"
-                                                         )
-                                                         if (savedUri == null) {
-                                                             Log.e("CameraScreen", "Failed to auto-save image")
-                                                         }
-                                                     }
+                                                    context.contentResolver.openInputStream(highResUri)?.use { input ->
+                                                        val savedUri =
+                                                            StorageHelper.saveToDirectory(
+                                                                context,
+                                                                Uri.parse(saveDirectoryUri),
+                                                                input,
+                                                                "image/jpeg",
+                                                                "Scanium",
+                                                            )
+                                                        if (savedUri == null) {
+                                                            Log.e("CameraScreen", "Failed to auto-save image")
+                                                        }
+                                                    }
                                                 } catch (e: Exception) {
                                                     Log.e("CameraScreen", "Error auto-saving image", e)
                                                 }
                                             }
 
-                                            val itemsWithHighRes = if (highResUri != null) {
-                                                items.map { item ->
-                                                    item.copy(
-                                                        fullImageUri = highResUri
-                                                    )
+                                            val itemsWithHighRes =
+                                                if (highResUri != null) {
+                                                    items.map { item ->
+                                                        item.copy(
+                                                            fullImageUri = highResUri,
+                                                        )
+                                                    }
+                                                } else {
+                                                    // Fallback: use original items if high-res capture failed
+                                                    items
                                                 }
-                                            } else {
-                                                // Fallback: use original items if high-res capture failed
-                                                items
-                                            }
                                             itemsViewModel.addItems(itemsWithHighRes)
                                             Toast.makeText(
                                                 context,
                                                 "Detected ${items.size} item(s)",
-                                                Toast.LENGTH_SHORT
+                                                Toast.LENGTH_SHORT,
                                             ).show()
                                         }
                                     }
@@ -788,7 +817,7 @@ fun CameraScreen(
                                         detections = detections,
                                         scanRoi = scanGuidanceState.scanRoi,
                                         lockedTrackingId = scanGuidanceState.lockedCandidateId,
-                                        isGoodState = scanGuidanceState.state == com.scanium.core.models.scanning.GuidanceState.GOOD
+                                        isGoodState = scanGuidanceState.state == com.scanium.core.models.scanning.GuidanceState.GOOD,
                                     )
                                 },
                                 onDetectionEvent = { event ->
@@ -799,7 +828,7 @@ fun CameraScreen(
                                 },
                                 onRotation = { rotation ->
                                     imageRotationDegrees = rotation
-                                }
+                                },
                             )
                         }
                     },
@@ -818,30 +847,32 @@ fun CameraScreen(
 
                                             if (autoSaveEnabled && saveDirectoryUri != null && highResUri != null) {
                                                 try {
-                                                     context.contentResolver.openInputStream(highResUri)?.use { input ->
-                                                         val savedUri = StorageHelper.saveToDirectory(
-                                                             context,
-                                                             Uri.parse(saveDirectoryUri),
-                                                             input,
-                                                             "image/jpeg",
-                                                             "Scanium"
-                                                         )
-                                                         if (savedUri == null) {
-                                                             Log.e("CameraScreen", "Failed to auto-save image")
-                                                         }
-                                                     }
+                                                    context.contentResolver.openInputStream(highResUri)?.use { input ->
+                                                        val savedUri =
+                                                            StorageHelper.saveToDirectory(
+                                                                context,
+                                                                Uri.parse(saveDirectoryUri),
+                                                                input,
+                                                                "image/jpeg",
+                                                                "Scanium",
+                                                            )
+                                                        if (savedUri == null) {
+                                                            Log.e("CameraScreen", "Failed to auto-save image")
+                                                        }
+                                                    }
                                                 } catch (e: Exception) {
                                                     Log.e("CameraScreen", "Error auto-saving image", e)
                                                 }
                                             }
 
-                                            val itemsWithHighRes = if (highResUri != null) {
-                                                items.map { item ->
-                                                    item.copy(fullImageUri = highResUri)
+                                            val itemsWithHighRes =
+                                                if (highResUri != null) {
+                                                    items.map { item ->
+                                                        item.copy(fullImageUri = highResUri)
+                                                    }
+                                                } else {
+                                                    items
                                                 }
-                                            } else {
-                                                items
-                                            }
                                             itemsViewModel.addItems(itemsWithHighRes)
                                         }
                                     }
@@ -854,7 +885,7 @@ fun CameraScreen(
                                         detections = detections,
                                         scanRoi = scanGuidanceState.scanRoi,
                                         lockedTrackingId = scanGuidanceState.lockedCandidateId,
-                                        isGoodState = scanGuidanceState.state == com.scanium.core.models.scanning.GuidanceState.GOOD
+                                        isGoodState = scanGuidanceState.state == com.scanium.core.models.scanning.GuidanceState.GOOD,
                                     )
                                 },
                                 onDetectionEvent = { event ->
@@ -865,31 +896,32 @@ fun CameraScreen(
                                 },
                                 onRotation = { rotation ->
                                     imageRotationDegrees = rotation
-                                }
+                                },
                             )
                         }
                     },
                     onStopScanning = {
                         // Tap while scanning: stop
-                            if (cameraState == CameraState.SCANNING) {
-                                cameraState = CameraState.IDLE
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                cameraManager.stopScanning()
-                                // Clear current detections, preview detection will restart via LaunchedEffect
-                                itemsViewModel.updateOverlayDetections(emptyList())
-                            }
-                        },
-                        onFlipCamera = {
+                        if (cameraState == CameraState.SCANNING) {
                             cameraState = CameraState.IDLE
-                            itemsViewModel.updateOverlayDetections(emptyList())
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             cameraManager.stopScanning()
-                            lensFacing = if (boundLensFacing == CameraSelector.LENS_FACING_BACK) {
-                                CameraSelector.LENS_FACING_FRONT
-                        } else {
-                            CameraSelector.LENS_FACING_BACK
+                            // Clear current detections, preview detection will restart via LaunchedEffect
+                            itemsViewModel.updateOverlayDetections(emptyList())
                         }
                     },
-                    isFlipEnabled = !isCameraBinding
+                    onFlipCamera = {
+                        cameraState = CameraState.IDLE
+                        itemsViewModel.updateOverlayDetections(emptyList())
+                        cameraManager.stopScanning()
+                        lensFacing =
+                            if (boundLensFacing == CameraSelector.LENS_FACING_BACK) {
+                                CameraSelector.LENS_FACING_FRONT
+                            } else {
+                                CameraSelector.LENS_FACING_BACK
+                            }
+                    },
+                    isFlipEnabled = !isCameraBinding,
                 )
 
                 // FTUE Tour Overlays
@@ -898,12 +930,13 @@ fun CameraScreen(
                         com.scanium.app.ftue.TourStepKey.WELCOME -> {
                             com.scanium.app.ftue.WelcomeOverlay(
                                 onStart = { tourViewModel?.nextStep() },
-                                onSkip = { tourViewModel?.skipTour() }
+                                onSkip = { tourViewModel?.skipTour() },
                             )
                         }
                         com.scanium.app.ftue.TourStepKey.CAMERA_SETTINGS,
                         com.scanium.app.ftue.TourStepKey.CAMERA_SHUTTER,
-                        com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS_BUTTON -> {
+                        com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS_BUTTON,
+                        -> {
                             currentTourStep?.let { step ->
                                 val bounds = step.targetKey?.let { targetBounds[it] }
                                 if (bounds != null || step.targetKey == null) {
@@ -912,7 +945,7 @@ fun CameraScreen(
                                         targetBounds = bounds,
                                         onNext = { tourViewModel?.nextStep() },
                                         onBack = { tourViewModel?.previousStep() },
-                                        onSkip = { tourViewModel?.skipTour() }
+                                        onSkip = { tourViewModel?.skipTour() },
                                     )
                                 }
                             }
@@ -929,11 +962,12 @@ fun CameraScreen(
                         cameraPermissionState.launchPermissionRequest()
                     },
                     onOpenSettings = {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
+                        val intent =
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
                         context.startActivity(intent)
-                    }
+                    },
                 )
             }
         }
@@ -947,7 +981,7 @@ fun CameraScreen(
                         ftueRepository.setPermissionEducationShown(true)
                     }
                     cameraPermissionState.launchPermissionRequest()
-                }
+                },
             )
         }
     }
@@ -965,7 +999,7 @@ private fun CameraPreview(
     onPreviewSizeChanged: (androidx.compose.ui.unit.IntSize) -> Unit,
     onBindingStateChange: (Boolean) -> Unit,
     onLensFacingResolved: (Int) -> Unit,
-    onBindingFailed: (Throwable?) -> Unit
+    onBindingFailed: (Throwable?) -> Unit,
 ) {
     var previewView by remember { mutableStateOf<PreviewView?>(null) }
 
@@ -977,11 +1011,12 @@ private fun CameraPreview(
                 previewView = createdView
             }
         },
-        modifier = Modifier
-            .fillMaxSize()
-            .onSizeChanged { intSize ->
-                onPreviewSizeChanged(intSize)
-            }
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .onSizeChanged { intSize ->
+                    onPreviewSizeChanged(intSize)
+                },
     )
 
     // Rebind camera when lens or resolution changes
@@ -1002,15 +1037,16 @@ private fun CameraPreview(
 private fun QrUrlOverlay(
     url: String,
     onOpen: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier
-            .clickable(onClick = onOpen)
-            .padding(horizontal = 16.dp),
+        modifier =
+            modifier
+                .clickable(onClick = onOpen)
+                .padding(horizontal = 16.dp),
         shape = MaterialTheme.shapes.small,
         color = Color.Black.copy(alpha = 0.7f),
-        tonalElevation = 2.dp
+        tonalElevation = 2.dp,
     ) {
         Text(
             text = url,
@@ -1018,7 +1054,7 @@ private fun QrUrlOverlay(
             color = Color.White,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
         )
     }
 }
@@ -1042,42 +1078,44 @@ private fun BoxScope.CameraOverlay(
     onShutterLongPress: () -> Unit,
     onStopScanning: () -> Unit,
     onFlipCamera: () -> Unit,
-    isFlipEnabled: Boolean
+    isFlipEnabled: Boolean,
 ) {
     // Top bar with two-slot layout: hamburger (left), logo (right)
     Row(
-        modifier = Modifier
-            .align(Alignment.TopCenter)
-            .fillMaxWidth()
-            .padding(16.dp)
-            .semantics { traversalIndex = 0f },
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(16.dp)
+                .semantics { traversalIndex = 0f },
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // Left slot: Hamburger menu (fixed width)
         Box(
             modifier = Modifier.width(48.dp),
-            contentAlignment = Alignment.CenterStart
+            contentAlignment = Alignment.CenterStart,
         ) {
             IconButton(
                 onClick = onOpenSettings,
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        Color.Black.copy(alpha = 0.5f),
-                        shape = MaterialTheme.shapes.small
-                    )
-                    .then(
-                        if (tourViewModel != null) {
-                            Modifier.tourTarget("camera_settings", tourViewModel)
-                        } else {
-                            Modifier
-                        }
-                    )
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.5f),
+                            shape = MaterialTheme.shapes.small,
+                        )
+                        .then(
+                            if (tourViewModel != null) {
+                                Modifier.tourTarget("camera_settings", tourViewModel)
+                            } else {
+                                Modifier
+                            },
+                        ),
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
                     contentDescription = "Open settings",
-                    tint = Color.White
+                    tint = Color.White,
                 )
             }
         }
@@ -1087,22 +1125,23 @@ private fun BoxScope.CameraOverlay(
         // Right slot: Scanium logo (fixed width)
         Box(
             modifier = Modifier.width(48.dp),
-            contentAlignment = Alignment.CenterEnd
+            contentAlignment = Alignment.CenterEnd,
         ) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        Color.Black.copy(alpha = 0.5f),
-                        shape = MaterialTheme.shapes.small
-                    ),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.5f),
+                            shape = MaterialTheme.shapes.small,
+                        ),
+                contentAlignment = Alignment.Center,
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.scanium_logo),
                     contentDescription = "Scanium logo",
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
+                    contentScale = ContentScale.Fit,
                 )
             }
         }
@@ -1110,22 +1149,24 @@ private fun BoxScope.CameraOverlay(
 
     // Bottom UI: Shutter button and controls
     Column(
-        modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 24.dp)
-            .semantics { traversalIndex = 1f },
+        modifier =
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 24.dp)
+                .semantics { traversalIndex = 1f },
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
+                contentAlignment = Alignment.CenterStart,
             ) {
                 BadgedBox(
                     badge = {
@@ -1134,42 +1175,43 @@ private fun BoxScope.CameraOverlay(
                                 Text(itemsCount.toString())
                             }
                         }
-                    }
+                    },
                 ) {
                     IconButton(
                         onClick = onNavigateToItems,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                Color.Black.copy(alpha = 0.5f),
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .then(
-                                if (tourViewModel != null) {
-                                    Modifier.tourTarget("camera_items_button", tourViewModel)
-                                } else {
-                                    Modifier
-                                }
-                            )
+                        modifier =
+                            Modifier
+                                .size(48.dp)
+                                .background(
+                                    Color.Black.copy(alpha = 0.5f),
+                                    shape = MaterialTheme.shapes.small,
+                                )
+                                .then(
+                                    if (tourViewModel != null) {
+                                        Modifier.tourTarget("camera_items_button", tourViewModel)
+                                    } else {
+                                        Modifier
+                                    },
+                                ),
                     ) {
                         Icon(
                             imageVector = Icons.Default.List,
                             contentDescription = "View items",
-                            tint = Color.White
+                            tint = Color.White,
                         )
                     }
                 }
-                
+
                 // Item added animation overlay
                 lastAddedItem?.let { item ->
                     key(item.id) {
                         Box(
                             modifier = Modifier.align(Alignment.Center),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             ItemAddedAnimation(
                                 item = item,
-                                onAnimationFinished = onAnimationFinished
+                                onAnimationFinished = onAnimationFinished,
                             )
                         }
                     }
@@ -1178,7 +1220,7 @@ private fun BoxScope.CameraOverlay(
 
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 ShutterButton(
                     cameraState = cameraState,
@@ -1186,36 +1228,38 @@ private fun BoxScope.CameraOverlay(
                     onLongPress = onShutterLongPress,
                     onStopScanning = onStopScanning,
                     showHint = showShutterHint,
-                    modifier = Modifier
-                        .offset(y = 6.dp)
-                        .then(
-                            if (tourViewModel != null) {
-                                Modifier.tourTarget("camera_shutter", tourViewModel)
-                            } else {
-                                Modifier
-                            }
-                        )
+                    modifier =
+                        Modifier
+                            .offset(y = 6.dp)
+                            .then(
+                                if (tourViewModel != null) {
+                                    Modifier.tourTarget("camera_shutter", tourViewModel)
+                                } else {
+                                    Modifier
+                                },
+                            ),
                 )
             }
 
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterEnd
+                contentAlignment = Alignment.CenterEnd,
             ) {
                 IconButton(
                     onClick = onFlipCamera,
                     enabled = isFlipEnabled,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(
-                            Color.Black.copy(alpha = 0.5f),
-                            shape = MaterialTheme.shapes.small
-                        )
+                    modifier =
+                        Modifier
+                            .size(48.dp)
+                            .background(
+                                Color.Black.copy(alpha = 0.5f),
+                                shape = MaterialTheme.shapes.small,
+                            ),
                 ) {
                     Icon(
                         imageVector = Icons.Default.Cameraswitch,
                         contentDescription = "Flip camera",
-                        tint = Color.White
+                        tint = Color.White,
                     )
                 }
             }
@@ -1226,12 +1270,13 @@ private fun BoxScope.CameraOverlay(
             text = getResolutionLabel(captureResolution),
             style = MaterialTheme.typography.bodySmall,
             color = Color.White.copy(alpha = 0.7f),
-            modifier = Modifier
-                .background(
-                    Color.Black.copy(alpha = 0.4f),
-                    shape = MaterialTheme.shapes.small
-                )
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+            modifier =
+                Modifier
+                    .background(
+                        Color.Black.copy(alpha = 0.4f),
+                        shape = MaterialTheme.shapes.small,
+                    )
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
         )
     }
 }
@@ -1254,24 +1299,26 @@ private fun getResolutionLabel(resolution: CaptureResolution): String {
 private fun CameraErrorContent(
     error: CameraErrorState?,
     onRetry: () -> Unit,
-    onViewItems: () -> Unit
+    onViewItems: () -> Unit,
 ) {
-    val resolvedError = error ?: CameraErrorState(
-        title = "Camera unavailable",
-        message = "Unable to access the camera right now.",
-        canRetry = true
-    )
+    val resolvedError =
+        error ?: CameraErrorState(
+            title = "Camera unavailable",
+            message = "Unable to access the camera right now.",
+            canRetry = true,
+        )
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             text = resolvedError.title,
-            style = MaterialTheme.typography.headlineSmall
+            style = MaterialTheme.typography.headlineSmall,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -1279,7 +1326,7 @@ private fun CameraErrorContent(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -1309,24 +1356,26 @@ private fun CameraErrorContent(
 private fun PermissionDeniedContent(
     permissionState: com.google.accompanist.permissions.PermissionState,
     onRequestPermission: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
 ) {
-    val isPermanentlyDenied = !permissionState.status.shouldShowRationale &&
-                              !permissionState.status.isGranted
+    val isPermanentlyDenied =
+        !permissionState.status.shouldShowRationale &&
+            !permissionState.status.isGranted
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         // Camera icon
         Icon(
             imageVector = Icons.Default.Camera,
             contentDescription = "Camera permission required",
             modifier = Modifier.size(72.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -1335,22 +1384,23 @@ private fun PermissionDeniedContent(
         Text(
             text = "Camera Access Required",
             style = MaterialTheme.typography.headlineMedium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Description - varies based on permission state
         Text(
-            text = if (isPermanentlyDenied) {
-                "Camera access has been disabled for Scanium. To scan and catalog items, please enable camera access in your device settings."
-            } else {
-                "Scanium uses your camera to detect and catalog objects in your environment."
-            },
+            text =
+                if (isPermanentlyDenied) {
+                    "Camera access has been disabled for Scanium. To scan and catalog items, please enable camera access in your device settings."
+                } else {
+                    "Scanium uses your camera to detect and catalog objects in your environment."
+                },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 8.dp)
+            modifier = Modifier.padding(horizontal = 8.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -1358,18 +1408,19 @@ private fun PermissionDeniedContent(
         // Feature list - what camera enables
         androidx.compose.material3.Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = androidx.compose.material3.CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            colors =
+                androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = "Camera enables:",
                     style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 FeatureItem("📦", "Object detection and cataloging")
@@ -1385,7 +1436,7 @@ private fun PermissionDeniedContent(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -1395,12 +1446,12 @@ private fun PermissionDeniedContent(
             // Permission permanently denied - guide to settings
             Button(
                 onClick = onOpenSettings,
-                modifier = Modifier.fillMaxWidth(0.8f)
+                modifier = Modifier.fillMaxWidth(0.8f),
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = stringResource(R.string.cd_open_settings),
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Open Settings")
@@ -1412,13 +1463,13 @@ private fun PermissionDeniedContent(
                 text = "Tap 'Permissions' → 'Camera' → 'Allow'",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         } else {
             // Permission can still be requested
             Button(
                 onClick = onRequestPermission,
-                modifier = Modifier.fillMaxWidth(0.8f)
+                modifier = Modifier.fillMaxWidth(0.8f),
             ) {
                 Text("Grant Camera Access")
             }
@@ -1430,21 +1481,24 @@ private fun PermissionDeniedContent(
  * Helper composable for feature list items
  */
 @Composable
-private fun FeatureItem(icon: String, text: String) {
+private fun FeatureItem(
+    icon: String,
+    text: String,
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Text(
             text = icon,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.width(32.dp)
+            modifier = Modifier.width(32.dp),
         )
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -1455,33 +1509,36 @@ private fun FeatureItem(icon: String, text: String) {
 @Composable
 private fun ModelLoadingOverlay(state: ModelDownloadState) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f)),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.6f)),
+        contentAlignment = Alignment.Center,
     ) {
         androidx.compose.material3.Card(
-            modifier = Modifier
-                .padding(32.dp)
-                .fillMaxWidth(0.85f)
+            modifier =
+                Modifier
+                    .padding(32.dp)
+                    .fillMaxWidth(0.85f),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(48.dp),
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = when (state) {
-                        is ModelDownloadState.Checking -> "Preparing ML models..."
-                        is ModelDownloadState.Downloading -> "Downloading AI models..."
-                        else -> "Loading..."
-                    },
-                    style = MaterialTheme.typography.titleMedium
+                    text =
+                        when (state) {
+                            is ModelDownloadState.Checking -> "Preparing ML models..."
+                            is ModelDownloadState.Downloading -> "Downloading AI models..."
+                            else -> "Loading..."
+                        },
+                    style = MaterialTheme.typography.titleMedium,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1490,7 +1547,7 @@ private fun ModelLoadingOverlay(state: ModelDownloadState) {
                     text = "First launch requires downloading\nML Kit object detection models (~15 MB)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 )
             }
         }
@@ -1524,7 +1581,6 @@ private fun Context.findActivity(): Activity? {
     return null
 }
 
-
 /**
  * Error dialog shown when ML Kit model download fails.
  */
@@ -1532,7 +1588,7 @@ private fun Context.findActivity(): Activity? {
 private fun ModelErrorDialog(
     error: String,
     onRetry: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
@@ -1543,7 +1599,7 @@ private fun ModelErrorDialog(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     "Please ensure you have:",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Text("• Active internet connection", style = MaterialTheme.typography.bodySmall)
                 Text("• At least 20 MB free storage", style = MaterialTheme.typography.bodySmall)
@@ -1559,7 +1615,7 @@ private fun ModelErrorDialog(
             androidx.compose.material3.TextButton(onClick = onDismiss) {
                 Text("Continue Anyway")
             }
-        }
+        },
     )
 }
 
@@ -1572,7 +1628,7 @@ private fun ModelErrorDialog(
 @Composable
 private fun ConfigurationStatusBanner(
     classificationMode: ClassificationMode,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val isCloudConfigured = BuildConfig.SCANIUM_API_BASE_URL.isNotBlank()
     val showBanner = classificationMode == ClassificationMode.CLOUD && !isCloudConfigured
@@ -1581,31 +1637,32 @@ private fun ConfigurationStatusBanner(
         Surface(
             color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.95f),
             tonalElevation = 4.dp,
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(top = 72.dp, start = 16.dp, end = 16.dp)
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .padding(top = 72.dp, start = 16.dp, end = 16.dp),
         ) {
             Row(
                 modifier = Modifier.padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = "Configuration warning",
                     tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(20.dp),
                 )
                 Column {
                     Text(
                         text = "Cloud mode not configured",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onErrorContainer,
                     )
                     Text(
                         text = "Classification will use on-device processing until SCANIUM_API_BASE_URL is configured.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onErrorContainer,
                     )
                 }
             }

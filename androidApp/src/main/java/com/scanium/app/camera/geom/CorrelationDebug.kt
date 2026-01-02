@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
  * Tag: CORR (for logcat filtering)
  */
 object CorrelationDebug {
-
     private const val TAG = "CORR"
     private const val LOG_INTERVAL_MS = 1000L
 
@@ -65,7 +64,7 @@ object CorrelationDebug {
         previewWidth: Int = 0,
         previewHeight: Int = 0,
         bitmapWidth: Int = 0,
-        bitmapHeight: Int = 0
+        bitmapHeight: Int = 0,
     ) {
         if (!_enabled || normalizedBbox == null) return
 
@@ -75,37 +74,40 @@ object CorrelationDebug {
         val bboxAR = GeometryMapper.aspectRatio(normalizedBbox)
 
         // For snapshot crop, if bitmap dims are provided, calculate crop AR
-        val cropAR = if (bitmapWidth > 0 && bitmapHeight > 0) {
-            val cropRect = GeometryMapper.uprightToBitmapCrop(
-                normalizedBbox = normalizedBbox,
-                bitmapWidth = bitmapWidth,
-                bitmapHeight = bitmapHeight,
-                padding = 0f
-            )
-            GeometryMapper.aspectRatio(cropRect)
-        } else {
-            bboxAR // Assume same if no bitmap dims
-        }
+        val cropAR =
+            if (bitmapWidth > 0 && bitmapHeight > 0) {
+                val cropRect =
+                    GeometryMapper.uprightToBitmapCrop(
+                        normalizedBbox = normalizedBbox,
+                        bitmapWidth = bitmapWidth,
+                        bitmapHeight = bitmapHeight,
+                        padding = 0f,
+                    )
+                GeometryMapper.aspectRatio(cropRect)
+            } else {
+                bboxAR // Assume same if no bitmap dims
+            }
 
         val aspectRatioMatch = GeometryMapper.validateAspectRatio(bboxAR, cropAR)
 
         // Create state for overlay
-        val state = CorrelationDebugState(
-            rotationDegrees = rotationDegrees,
-            proxyWidth = proxyWidth,
-            proxyHeight = proxyHeight,
-            inputImageWidth = inputImageWidth,
-            inputImageHeight = inputImageHeight,
-            previewWidth = previewWidth,
-            previewHeight = previewHeight,
-            bitmapWidth = bitmapWidth,
-            bitmapHeight = bitmapHeight,
-            bboxNormalized = normalizedBbox,
-            bboxAspectRatio = bboxAR,
-            cropAspectRatio = cropAR,
-            aspectRatioMatch = aspectRatioMatch,
-            timestamp = now
-        )
+        val state =
+            CorrelationDebugState(
+                rotationDegrees = rotationDegrees,
+                proxyWidth = proxyWidth,
+                proxyHeight = proxyHeight,
+                inputImageWidth = inputImageWidth,
+                inputImageHeight = inputImageHeight,
+                previewWidth = previewWidth,
+                previewHeight = previewHeight,
+                bitmapWidth = bitmapWidth,
+                bitmapHeight = bitmapHeight,
+                bboxNormalized = normalizedBbox,
+                bboxAspectRatio = bboxAR,
+                cropAspectRatio = cropAR,
+                aspectRatioMatch = aspectRatioMatch,
+                timestamp = now,
+            )
 
         _currentDebugInfo.value = state
 
@@ -117,28 +119,37 @@ object CorrelationDebug {
     }
 
     private fun logCorrelation(state: CorrelationDebugState) {
-        Log.i(TAG, buildString {
-            append("rotation=${state.rotationDegrees}, ")
-            append("proxy=${state.proxyWidth}x${state.proxyHeight}, ")
-            append("input=${state.inputImageWidth}x${state.inputImageHeight}, ")
-            append("preview=${state.previewWidth}x${state.previewHeight}, ")
-            append("bitmap=${state.bitmapWidth}x${state.bitmapHeight}")
-        })
+        Log.i(
+            TAG,
+            buildString {
+                append("rotation=${state.rotationDegrees}, ")
+                append("proxy=${state.proxyWidth}x${state.proxyHeight}, ")
+                append("input=${state.inputImageWidth}x${state.inputImageHeight}, ")
+                append("preview=${state.previewWidth}x${state.previewHeight}, ")
+                append("bitmap=${state.bitmapWidth}x${state.bitmapHeight}")
+            },
+        )
 
-        Log.i(TAG, buildString {
-            append("bbox=(")
-            append("${"%.3f".format(state.bboxNormalized.left)}, ")
-            append("${"%.3f".format(state.bboxNormalized.top)}, ")
-            append("${"%.3f".format(state.bboxNormalized.right)}, ")
-            append("${"%.3f".format(state.bboxNormalized.bottom)})")
-        })
+        Log.i(
+            TAG,
+            buildString {
+                append("bbox=(")
+                append("${"%.3f".format(state.bboxNormalized.left)}, ")
+                append("${"%.3f".format(state.bboxNormalized.top)}, ")
+                append("${"%.3f".format(state.bboxNormalized.right)}, ")
+                append("${"%.3f".format(state.bboxNormalized.bottom)})")
+            },
+        )
 
         val matchIndicator = if (state.aspectRatioMatch) "OK" else "MISMATCH"
-        Log.i(TAG, buildString {
-            append("bboxAR=${"%.3f".format(state.bboxAspectRatio)}, ")
-            append("cropAR=${"%.3f".format(state.cropAspectRatio)}, ")
-            append("match=$matchIndicator")
-        })
+        Log.i(
+            TAG,
+            buildString {
+                append("bboxAR=${"%.3f".format(state.bboxAspectRatio)}, ")
+                append("cropAR=${"%.3f".format(state.cropAspectRatio)}, ")
+                append("match=$matchIndicator")
+            },
+        )
 
         if (!state.aspectRatioMatch) {
             val diff = kotlin.math.abs(state.bboxAspectRatio - state.cropAspectRatio)
@@ -171,5 +182,5 @@ data class CorrelationDebugState(
     val bboxAspectRatio: Float,
     val cropAspectRatio: Float,
     val aspectRatioMatch: Boolean,
-    val timestamp: Long
+    val timestamp: Long,
 )

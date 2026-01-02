@@ -12,8 +12,9 @@ private const val TAG = "OverlayTransforms"
 enum class PreviewScaleType {
     /** Letterbox: scales to fit entirely within the preview, may have padding */
     FIT_CENTER,
+
     /** Center-crop: scales to fill the preview, may crop edges */
-    FILL_CENTER
+    FILL_CENTER,
 }
 
 /**
@@ -23,7 +24,7 @@ data class Transform(
     val scaleX: Float,
     val scaleY: Float,
     val offsetX: Float,
-    val offsetY: Float
+    val offsetY: Float,
 )
 
 /**
@@ -36,7 +37,7 @@ data class BboxMappingTransform(
     val rotationDegrees: Int,
     val effectiveImageWidth: Int,
     val effectiveImageHeight: Int,
-    val scaleType: PreviewScaleType
+    val scaleType: PreviewScaleType,
 )
 
 /**
@@ -56,7 +57,7 @@ fun calculateTransform(
     imageWidth: Int,
     imageHeight: Int,
     previewWidth: Float,
-    previewHeight: Float
+    previewHeight: Float,
 ): Transform {
     // Calculate aspect ratios
     val imageAspect = imageWidth.toFloat() / imageHeight.toFloat()
@@ -72,14 +73,14 @@ fun calculateTransform(
     if (imageAspect > previewAspect) {
         // Image is wider than preview - scale by height to fill, crop width
         scaleY = previewHeight / imageHeight
-        scaleX = scaleY  // Uniform scale
+        scaleX = scaleY // Uniform scale
         // Center horizontally - excess image width is cropped
         offsetX = (previewWidth - imageWidth * scaleX) / 2f
         offsetY = 0f
     } else {
         // Image is taller than preview - scale by width to fill, crop height
         scaleX = previewWidth / imageWidth
-        scaleY = scaleX  // Uniform scale
+        scaleY = scaleX // Uniform scale
         // Center vertically - excess image height is cropped
         offsetX = 0f
         offsetY = (previewHeight - imageHeight * scaleY) / 2f
@@ -114,7 +115,7 @@ fun calculateTransformWithRotation(
     previewWidth: Float,
     previewHeight: Float,
     rotationDegrees: Int,
-    scaleType: PreviewScaleType = PreviewScaleType.FILL_CENTER
+    scaleType: PreviewScaleType = PreviewScaleType.FILL_CENTER,
 ): BboxMappingTransform {
     // Step 1: Determine effective image dimensions after rotation
     // When rotation is 90 or 270, width and height are swapped for display
@@ -133,26 +134,28 @@ fun calculateTransformWithRotation(
     when (scaleType) {
         PreviewScaleType.FILL_CENTER -> {
             // Center-crop: scale to FILL the preview (larger scale), crop overflow
-            scale = if (imageAspect > previewAspect) {
-                // Image is wider than preview - scale by height to fill vertically
-                previewHeight / effectiveHeight
-            } else {
-                // Image is taller than preview - scale by width to fill horizontally
-                previewWidth / effectiveWidth
-            }
+            scale =
+                if (imageAspect > previewAspect) {
+                    // Image is wider than preview - scale by height to fill vertically
+                    previewHeight / effectiveHeight
+                } else {
+                    // Image is taller than preview - scale by width to fill horizontally
+                    previewWidth / effectiveWidth
+                }
             // Center the scaled image (negative offset means cropping)
             offsetX = (previewWidth - effectiveWidth * scale) / 2f
             offsetY = (previewHeight - effectiveHeight * scale) / 2f
         }
         PreviewScaleType.FIT_CENTER -> {
             // Letterbox: scale to FIT within preview (smaller scale), add padding
-            scale = if (imageAspect > previewAspect) {
-                // Image is wider than preview - scale by width to fit horizontally
-                previewWidth / effectiveWidth
-            } else {
-                // Image is taller than preview - scale by height to fit vertically
-                previewHeight / effectiveHeight
-            }
+            scale =
+                if (imageAspect > previewAspect) {
+                    // Image is wider than preview - scale by width to fit horizontally
+                    previewWidth / effectiveWidth
+                } else {
+                    // Image is taller than preview - scale by height to fit vertically
+                    previewHeight / effectiveHeight
+                }
             // Center the scaled image (positive offset means padding)
             offsetX = (previewWidth - effectiveWidth * scale) / 2f
             offsetY = (previewHeight - effectiveHeight * scale) / 2f
@@ -166,7 +169,7 @@ fun calculateTransformWithRotation(
         rotationDegrees = rotationDegrees,
         effectiveImageWidth = effectiveWidth,
         effectiveImageHeight = effectiveHeight,
-        scaleType = scaleType
+        scaleType = scaleType,
     )
 }
 
@@ -188,7 +191,7 @@ fun calculateTransformWithRotation(
  */
 fun mapBboxToPreview(
     bboxNorm: NormalizedRect,
-    transform: BboxMappingTransform
+    transform: BboxMappingTransform,
 ): RectF {
     // NO ROTATION: bbox is already in upright coordinate space
     // ML Kit returns bboxes that match InputImage dimensions (post-rotation)
@@ -222,7 +225,7 @@ fun mapBboxToPreview(
  */
 fun rotateNormalizedRect(
     rect: NormalizedRect,
-    rotationDegrees: Int
+    rotationDegrees: Int,
 ): NormalizedRect {
     return when (rotationDegrees) {
         0 -> rect
@@ -233,7 +236,7 @@ fun rotateNormalizedRect(
                 left = rect.top,
                 top = 1f - rect.right,
                 right = rect.bottom,
-                bottom = 1f - rect.left
+                bottom = 1f - rect.left,
             )
         }
         180 -> {
@@ -242,7 +245,7 @@ fun rotateNormalizedRect(
                 left = 1f - rect.right,
                 top = 1f - rect.bottom,
                 right = 1f - rect.left,
-                bottom = 1f - rect.top
+                bottom = 1f - rect.top,
             )
         }
         270 -> {
@@ -251,7 +254,7 @@ fun rotateNormalizedRect(
                 left = 1f - rect.bottom,
                 top = rect.left,
                 right = 1f - rect.top,
-                bottom = rect.right
+                bottom = rect.right,
             )
         }
         else -> {
@@ -268,7 +271,7 @@ fun rotateNormalizedRect(
  */
 fun transformBoundingBox(
     box: RectF,
-    transform: Transform
+    transform: Transform,
 ): RectF {
     val left = box.left * transform.scaleX + transform.offsetX
     val top = box.top * transform.scaleY + transform.offsetY
@@ -289,16 +292,22 @@ fun logBboxMappingDebug(
     bboxNorm: NormalizedRect,
     transform: BboxMappingTransform,
     resultRect: RectF,
-    tag: String = "BboxMap"
+    tag: String = "BboxMap",
 ) {
     val now = System.currentTimeMillis()
     if (now - lastBboxDebugLogTime >= BBOX_DEBUG_LOG_INTERVAL_MS) {
         lastBboxDebugLogTime = now
-        Log.d(tag, "[MAPPING] rotation=${transform.rotationDegrees}°, " +
+        Log.d(
+            tag,
+            "[MAPPING] rotation=${transform.rotationDegrees}°, " +
                 "effectiveDims=${transform.effectiveImageWidth}x${transform.effectiveImageHeight}, " +
                 "scale=${transform.scale}, offset=(${transform.offsetX}, ${transform.offsetY}), " +
-                "scaleType=${transform.scaleType}")
-        Log.d(tag, "[MAPPING] input=(${bboxNorm.left},${bboxNorm.top})-(${bboxNorm.right},${bboxNorm.bottom}) " +
-                "-> output=(${resultRect.left},${resultRect.top})-(${resultRect.right},${resultRect.bottom})")
+                "scaleType=${transform.scaleType}",
+        )
+        Log.d(
+            tag,
+            "[MAPPING] input=(${bboxNorm.left},${bboxNorm.top})-(${bboxNorm.right},${bboxNorm.bottom}) " +
+                "-> output=(${resultRect.left},${resultRect.top})-(${resultRect.right},${resultRect.bottom})",
+        )
     }
 }

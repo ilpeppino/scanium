@@ -45,25 +45,24 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.di.PostingAssistViewModelFactoryEntryPoint
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraftFormatter
-import com.scanium.app.listing.PostingAssistPlanBuilder
 import com.scanium.app.listing.PostingStep
 import com.scanium.app.listing.PostingStepId
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -87,23 +86,26 @@ fun PostingAssistScreen(
     onBack: () -> Unit,
     itemsViewModel: ItemsViewModel,
     draftStore: ListingDraftStore,
-    onOpenAssistant: (List<String>, Int) -> Unit
+    onOpenAssistant: (List<String>, Int) -> Unit,
 ) {
     val context = LocalContext.current
-    val assistedFactory = remember(context) {
-        EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            PostingAssistViewModelFactoryEntryPoint::class.java
-        ).postingAssistViewModelFactory()
-    }
-    val viewModel: PostingAssistViewModel = viewModel(
-        factory = PostingAssistViewModel.provideFactory(
-            assistedFactory = assistedFactory,
-            itemIds = itemIds,
-            startIndex = startIndex,
-            itemsViewModel = itemsViewModel
+    val assistedFactory =
+        remember(context) {
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                PostingAssistViewModelFactoryEntryPoint::class.java,
+            ).postingAssistViewModelFactory()
+        }
+    val viewModel: PostingAssistViewModel =
+        viewModel(
+            factory =
+                PostingAssistViewModel.provideFactory(
+                    assistedFactory = assistedFactory,
+                    itemIds = itemIds,
+                    startIndex = startIndex,
+                    itemsViewModel = itemsViewModel,
+                ),
         )
-    )
 
     val state by viewModel.uiState.collectAsState()
     val items by itemsViewModel.items.collectAsState()
@@ -126,7 +128,7 @@ fun PostingAssistScreen(
                         Text("Posting Assist")
                         Text(
                             text = buildSubtitle(profile.displayName, state),
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                 },
@@ -139,7 +141,7 @@ fun PostingAssistScreen(
                     IconButton(
                         onClick = {
                             onOpenAssistant(state.itemIds, state.currentIndex)
-                        }
+                        },
                     ) {
                         Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "Ask assistant")
                     }
@@ -160,17 +162,17 @@ fun PostingAssistScreen(
                                     Log.d("PostingAssist", "step copied: all")
                                     scope.launch { snackbarHostState.showSnackbar("Listing copied") }
                                 }
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("Change target") },
                             onClick = {
                                 moreExpanded = false
                                 targetDialogVisible = true
-                            }
+                            },
                         )
                     }
-                }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -205,32 +207,36 @@ fun PostingAssistScreen(
                         Log.d("PostingAssist", "share invoked")
                         val currentItem = items.firstOrNull { it.id == draft.itemId }
                         val export = ListingDraftFormatter.format(draft, profile)
-                        val shareImages = draft.photos.map { it.image }.ifEmpty {
-                            listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
-                        }
-                        val imageUris = ListingShareHelper.writeShareImages(
-                            context = context,
-                            itemId = draft.itemId,
-                            images = shareImages
-                        )
-                        val intent = ListingShareHelper.buildShareIntent(
-                            contentResolver = context.contentResolver,
-                            text = export.shareText,
-                            imageUris = imageUris
-                        )
+                        val shareImages =
+                            draft.photos.map { it.image }.ifEmpty {
+                                listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
+                            }
+                        val imageUris =
+                            ListingShareHelper.writeShareImages(
+                                context = context,
+                                itemId = draft.itemId,
+                                images = shareImages,
+                            )
+                        val intent =
+                            ListingShareHelper.buildShareIntent(
+                                contentResolver = context.contentResolver,
+                                text = export.shareText,
+                                imageUris = imageUris,
+                            )
                         val chooser = Intent.createChooser(intent, "Share listing")
                         context.startActivity(chooser)
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         if (draft == null || plan == null) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                contentAlignment = Alignment.Center,
             ) {
                 Text("No draft available")
             }
@@ -254,7 +260,7 @@ fun PostingAssistScreen(
             totalCount = state.totalCount,
             onPrev = viewModel::goToPrevious,
             onNext = viewModel::goToNext,
-            missing = plan.missingRequired
+            missing = plan.missingRequired,
         )
     }
 
@@ -277,7 +283,7 @@ fun PostingAssistScreen(
                     openTarget(context, target, snackbarHostState, scope)
                 }
                 targetDialogVisible = false
-            }
+            },
         )
     }
 }
@@ -297,19 +303,19 @@ private fun PostingAssistContent(
     totalCount: Int,
     onPrev: () -> Unit,
     onNext: () -> Unit,
-    missing: List<PostingStepId>
+    missing: List<PostingStepId>,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(text = profileName, style = MaterialTheme.typography.titleMedium)
                     if (totalCount > 1) {
@@ -323,7 +329,7 @@ private fun PostingAssistContent(
                 ProfileSelector(
                     profiles = profiles,
                     selectedProfileId = selectedProfileId,
-                    onProfileSelected = onProfileClick
+                    onProfileSelected = onProfileClick,
                 )
                 ProgressHeader(plan = plan, missing = missing)
             }
@@ -340,7 +346,7 @@ private fun PostingAssistContent(
 private fun ProfileSelector(
     profiles: List<com.scanium.app.listing.ExportProfileDefinition>,
     selectedProfileId: com.scanium.app.listing.ExportProfileId,
-    onProfileSelected: (com.scanium.app.listing.ExportProfileId) -> Unit
+    onProfileSelected: (com.scanium.app.listing.ExportProfileId) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val options = profiles.ifEmpty { listOf(ExportProfiles.generic()) }
@@ -349,14 +355,15 @@ private fun ProfileSelector(
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = { expanded = true },
-        colors = CardDefaults.cardColors()
+        colors = CardDefaults.cardColors(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(selected.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
@@ -369,17 +376,20 @@ private fun ProfileSelector(
                 onClick = {
                     expanded = false
                     onProfileSelected(profile.id)
-                }
+                },
             )
         }
     }
 }
 
 @Composable
-private fun ProgressHeader(plan: com.scanium.app.listing.PostingAssistPlan, missing: List<PostingStepId>) {
+private fun ProgressHeader(
+    plan: com.scanium.app.listing.PostingAssistPlan,
+    missing: List<PostingStepId>,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Completeness", style = MaterialTheme.typography.titleMedium)
@@ -397,18 +407,23 @@ private fun ProgressHeader(plan: com.scanium.app.listing.PostingAssistPlan, miss
 }
 
 @Composable
-private fun StepCard(step: PostingStep, highlighted: Boolean, onCopy: () -> Unit) {
+private fun StepCard(
+    step: PostingStep,
+    highlighted: Boolean,
+    onCopy: () -> Unit,
+) {
     val background = if (highlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = background)
+        colors = CardDefaults.cardColors(containerColor = background),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -433,14 +448,15 @@ private fun StepCard(step: PostingStep, highlighted: Boolean, onCopy: () -> Unit
 private fun ActionRow(
     onCopyNext: () -> Unit,
     onCopyAll: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Button(onClick = onCopyNext, modifier = Modifier.weight(1f)) {
             Text("Copy Next")
@@ -464,7 +480,7 @@ private fun TargetDialog(
     onDismiss: () -> Unit,
     onTargetSelected: (String) -> Unit,
     onCustomValueChanged: (String) -> Unit,
-    onOpenTarget: () -> Unit
+    onOpenTarget: () -> Unit,
 ) {
     var customValue by remember { mutableStateOf(customTargetValue) }
     var currentSelection by remember { mutableStateOf(selectedTargetId) }
@@ -492,7 +508,7 @@ private fun TargetDialog(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(target.label)
                         TextButton(onClick = { currentSelection = target.id }) {
@@ -506,14 +522,17 @@ private fun TargetDialog(
                         customValue = it
                         currentSelection = PostingTargetDefaults.CUSTOM_TARGET_ID
                     },
-                    label = { Text("Custom URL") }
+                    label = { Text("Custom URL") },
                 )
             }
-        }
+        },
     )
 }
 
-private fun buildSubtitle(profileName: String, state: PostingAssistUiState): String {
+private fun buildSubtitle(
+    profileName: String,
+    state: PostingAssistUiState,
+): String {
     val indexPart = if (state.totalCount > 1) " • ${state.currentIndex + 1}/${state.totalCount}" else ""
     return "$profileName$indexPart"
 }
@@ -525,7 +544,7 @@ private fun copyStep(
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
     plan: com.scanium.app.listing.PostingAssistPlan,
-    onHighlightedChange: (PostingStepId) -> Unit
+    onHighlightedChange: (PostingStepId) -> Unit,
 ) {
     if (step.value.isBlank()) {
         scope.launch { snackbarHostState.showSnackbar("No ${step.label.lowercase()} to copy") }
@@ -544,17 +563,19 @@ private fun openTarget(
     context: android.content.Context,
     target: com.scanium.app.selling.posting.PostingTarget,
     snackbarHostState: SnackbarHostState,
-    scope: kotlinx.coroutines.CoroutineScope
+    scope: kotlinx.coroutines.CoroutineScope,
 ) {
     val uri = Uri.parse(target.value.ifBlank { "https://www.google.com" })
-    val intent = when (target.type) {
-        com.scanium.app.selling.posting.PostingTargetType.URL, com.scanium.app.selling.posting.PostingTargetType.DEEPLINK ->
-            Intent(Intent.ACTION_VIEW, uri)
-        com.scanium.app.selling.posting.PostingTargetType.APP ->
-            context.packageManager.getLaunchIntentForPackage(target.value)
-    }
-    val resolved = intent?.takeIf { it.resolveActivity(context.packageManager) != null }
-        ?: Intent(Intent.ACTION_VIEW, uri)
+    val intent =
+        when (target.type) {
+            com.scanium.app.selling.posting.PostingTargetType.URL, com.scanium.app.selling.posting.PostingTargetType.DEEPLINK ->
+                Intent(Intent.ACTION_VIEW, uri)
+            com.scanium.app.selling.posting.PostingTargetType.APP ->
+                context.packageManager.getLaunchIntentForPackage(target.value)
+        }
+    val resolved =
+        intent?.takeIf { it.resolveActivity(context.packageManager) != null }
+            ?: Intent(Intent.ACTION_VIEW, uri)
     if (resolved.resolveActivity(context.packageManager) != null) {
         context.startActivity(resolved)
     } else {

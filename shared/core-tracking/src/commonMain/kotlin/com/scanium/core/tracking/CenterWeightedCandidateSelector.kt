@@ -17,7 +17,7 @@ import kotlin.math.sqrt
  * while centered near objects are missed during scanning.
  */
 class CenterWeightedCandidateSelector(
-    private val config: CenterWeightedConfig = CenterWeightedConfig()
+    private val config: CenterWeightedConfig = CenterWeightedConfig(),
 ) {
     /**
      * Stability tracking for candidates.
@@ -43,40 +43,42 @@ class CenterWeightedCandidateSelector(
     fun selectBestCandidate(
         detections: List<DetectionInfo>,
         frameSharpness: Float,
-        currentTimeMs: Long
+        currentTimeMs: Long,
     ): SelectionResult {
         if (detections.isEmpty()) {
             return SelectionResult(
                 selectedCandidate = null,
                 rejectedCandidates = emptyList(),
-                selectionReason = "no_detections"
+                selectionReason = "no_detections",
             )
         }
 
         // Score and filter candidates
-        val scoredCandidates = detections.map { detection ->
-            val centerDistance = calculateCenterDistance(detection.boundingBox)
-            val area = detection.normalizedBoxArea
-            val confidence = detection.confidence
+        val scoredCandidates =
+            detections.map { detection ->
+                val centerDistance = calculateCenterDistance(detection.boundingBox)
+                val area = detection.normalizedBoxArea
+                val confidence = detection.confidence
 
-            // Calculate composite score
-            val score = calculateScore(confidence, area, centerDistance)
+                // Calculate composite score
+                val score = calculateScore(confidence, area, centerDistance)
 
-            // Apply gating rules
-            val gatingResult = applyGatingRules(
-                detection = detection,
-                centerDistance = centerDistance,
-                area = area,
-                frameSharpness = frameSharpness
-            )
+                // Apply gating rules
+                val gatingResult =
+                    applyGatingRules(
+                        detection = detection,
+                        centerDistance = centerDistance,
+                        area = area,
+                        frameSharpness = frameSharpness,
+                    )
 
-            ScoredCandidate(
-                detection = detection,
-                score = score,
-                centerDistance = centerDistance,
-                gatingResult = gatingResult
-            )
-        }
+                ScoredCandidate(
+                    detection = detection,
+                    score = score,
+                    centerDistance = centerDistance,
+                    gatingResult = gatingResult,
+                )
+            }
 
         // Filter out gated candidates
         val passedGating = scoredCandidates.filter { it.gatingResult.passed }
@@ -86,15 +88,16 @@ class CenterWeightedCandidateSelector(
             // All candidates rejected by gating
             return SelectionResult(
                 selectedCandidate = null,
-                rejectedCandidates = rejected.map {
-                    RejectedCandidate(
-                        detection = it.detection,
-                        centerDistance = it.centerDistance,
-                        score = it.score,
-                        reason = it.gatingResult.reason ?: "gating_failed"
-                    )
-                },
-                selectionReason = "all_gated"
+                rejectedCandidates =
+                    rejected.map {
+                        RejectedCandidate(
+                            detection = it.detection,
+                            centerDistance = it.centerDistance,
+                            score = it.score,
+                            reason = it.gatingResult.reason ?: "gating_failed",
+                        )
+                    },
+                selectionReason = "all_gated",
             )
         }
 
@@ -109,28 +112,30 @@ class CenterWeightedCandidateSelector(
         updateStabilityState(candidateId, currentTimeMs)
 
         // Build rejection list
-        val rejectedList = scoredCandidates
-            .filter { it != bestCandidate }
-            .map {
-                RejectedCandidate(
-                    detection = it.detection,
-                    centerDistance = it.centerDistance,
-                    score = it.score,
-                    reason = if (it.gatingResult.passed) "lower_score" else (it.gatingResult.reason ?: "gating_failed")
-                )
-            }
+        val rejectedList =
+            scoredCandidates
+                .filter { it != bestCandidate }
+                .map {
+                    RejectedCandidate(
+                        detection = it.detection,
+                        centerDistance = it.centerDistance,
+                        score = it.score,
+                        reason = if (it.gatingResult.passed) "lower_score" else (it.gatingResult.reason ?: "gating_failed"),
+                    )
+                }
 
         return SelectionResult(
-            selectedCandidate = SelectedCandidate(
-                detection = bestCandidate.detection,
-                score = bestCandidate.score,
-                centerDistance = bestCandidate.centerDistance,
-                isStable = stabilityResult.isStable,
-                consecutiveFrames = stabilityResult.consecutiveFrames,
-                stableTimeMs = stabilityResult.stableTimeMs
-            ),
+            selectedCandidate =
+                SelectedCandidate(
+                    detection = bestCandidate.detection,
+                    score = bestCandidate.score,
+                    centerDistance = bestCandidate.centerDistance,
+                    isStable = stabilityResult.isStable,
+                    consecutiveFrames = stabilityResult.consecutiveFrames,
+                    stableTimeMs = stabilityResult.stableTimeMs,
+                ),
             rejectedCandidates = rejectedList,
-            selectionReason = if (stabilityResult.isStable) "stable_selection" else "pending_stability"
+            selectionReason = if (stabilityResult.isStable) "stable_selection" else "pending_stability",
         )
     }
 
@@ -150,47 +155,49 @@ class CenterWeightedCandidateSelector(
         detections: List<DetectionInfo>,
         scanRoi: ScanRoi,
         frameSharpness: Float,
-        currentTimeMs: Long
+        currentTimeMs: Long,
     ): SelectionResult {
         if (detections.isEmpty()) {
             return SelectionResult(
                 selectedCandidate = null,
                 rejectedCandidates = emptyList(),
-                selectionReason = "no_detections"
+                selectionReason = "no_detections",
             )
         }
 
         // Score and filter candidates using ROI
-        val scoredCandidates = detections.map { detection ->
-            val boxCenterX = (detection.boundingBox.left + detection.boundingBox.right) / 2f
-            val boxCenterY = (detection.boundingBox.top + detection.boundingBox.bottom) / 2f
-            val centerDistance = calculateCenterDistance(detection.boundingBox)
-            val area = detection.normalizedBoxArea
-            val confidence = detection.confidence
+        val scoredCandidates =
+            detections.map { detection ->
+                val boxCenterX = (detection.boundingBox.left + detection.boundingBox.right) / 2f
+                val boxCenterY = (detection.boundingBox.top + detection.boundingBox.bottom) / 2f
+                val centerDistance = calculateCenterDistance(detection.boundingBox)
+                val area = detection.normalizedBoxArea
+                val confidence = detection.confidence
 
-            // Calculate center score using ROI
-            val roiCenterScore = scanRoi.centerScore(boxCenterX, boxCenterY)
+                // Calculate center score using ROI
+                val roiCenterScore = scanRoi.centerScore(boxCenterX, boxCenterY)
 
-            // Calculate score with ROI-aware center weighting
-            val score = calculateScoreWithRoi(confidence, area, roiCenterScore)
+                // Calculate score with ROI-aware center weighting
+                val score = calculateScoreWithRoi(confidence, area, roiCenterScore)
 
-            // Apply ROI-aware gating rules
-            val gatingResult = applyGatingRulesWithRoi(
-                detection = detection,
-                boxCenterX = boxCenterX,
-                boxCenterY = boxCenterY,
-                scanRoi = scanRoi,
-                area = area,
-                frameSharpness = frameSharpness
-            )
+                // Apply ROI-aware gating rules
+                val gatingResult =
+                    applyGatingRulesWithRoi(
+                        detection = detection,
+                        boxCenterX = boxCenterX,
+                        boxCenterY = boxCenterY,
+                        scanRoi = scanRoi,
+                        area = area,
+                        frameSharpness = frameSharpness,
+                    )
 
-            ScoredCandidate(
-                detection = detection,
-                score = score,
-                centerDistance = centerDistance,
-                gatingResult = gatingResult
-            )
-        }
+                ScoredCandidate(
+                    detection = detection,
+                    score = score,
+                    centerDistance = centerDistance,
+                    gatingResult = gatingResult,
+                )
+            }
 
         // Filter out gated candidates
         val passedGating = scoredCandidates.filter { it.gatingResult.passed }
@@ -199,15 +206,16 @@ class CenterWeightedCandidateSelector(
         if (passedGating.isEmpty()) {
             return SelectionResult(
                 selectedCandidate = null,
-                rejectedCandidates = rejected.map {
-                    RejectedCandidate(
-                        detection = it.detection,
-                        centerDistance = it.centerDistance,
-                        score = it.score,
-                        reason = it.gatingResult.reason ?: "gating_failed"
-                    )
-                },
-                selectionReason = "all_gated"
+                rejectedCandidates =
+                    rejected.map {
+                        RejectedCandidate(
+                            detection = it.detection,
+                            centerDistance = it.centerDistance,
+                            score = it.score,
+                            reason = it.gatingResult.reason ?: "gating_failed",
+                        )
+                    },
+                selectionReason = "all_gated",
             )
         }
 
@@ -222,28 +230,30 @@ class CenterWeightedCandidateSelector(
         updateStabilityState(candidateId, currentTimeMs)
 
         // Build rejection list
-        val rejectedList = scoredCandidates
-            .filter { it != bestCandidate }
-            .map {
-                RejectedCandidate(
-                    detection = it.detection,
-                    centerDistance = it.centerDistance,
-                    score = it.score,
-                    reason = if (it.gatingResult.passed) "lower_score" else (it.gatingResult.reason ?: "gating_failed")
-                )
-            }
+        val rejectedList =
+            scoredCandidates
+                .filter { it != bestCandidate }
+                .map {
+                    RejectedCandidate(
+                        detection = it.detection,
+                        centerDistance = it.centerDistance,
+                        score = it.score,
+                        reason = if (it.gatingResult.passed) "lower_score" else (it.gatingResult.reason ?: "gating_failed"),
+                    )
+                }
 
         return SelectionResult(
-            selectedCandidate = SelectedCandidate(
-                detection = bestCandidate.detection,
-                score = bestCandidate.score,
-                centerDistance = bestCandidate.centerDistance,
-                isStable = stabilityResult.isStable,
-                consecutiveFrames = stabilityResult.consecutiveFrames,
-                stableTimeMs = stabilityResult.stableTimeMs
-            ),
+            selectedCandidate =
+                SelectedCandidate(
+                    detection = bestCandidate.detection,
+                    score = bestCandidate.score,
+                    centerDistance = bestCandidate.centerDistance,
+                    isStable = stabilityResult.isStable,
+                    consecutiveFrames = stabilityResult.consecutiveFrames,
+                    stableTimeMs = stabilityResult.stableTimeMs,
+                ),
             rejectedCandidates = rejectedList,
-            selectionReason = if (stabilityResult.isStable) "stable_selection" else "pending_stability"
+            selectionReason = if (stabilityResult.isStable) "stable_selection" else "pending_stability",
         )
     }
 
@@ -256,15 +266,15 @@ class CenterWeightedCandidateSelector(
     private fun calculateScoreWithRoi(
         confidence: Float,
         area: Float,
-        roiCenterScore: Float
+        roiCenterScore: Float,
     ): Float {
         // Normalize area to 0-1 range (cap at 0.5 to avoid huge objects dominating)
         val normalizedArea = (area / 0.5f).coerceIn(0f, 1f)
 
         // Use Phase 5 scoring formula
         return (confidence * 0.5f) +
-                (normalizedArea * 0.2f) +
-                (roiCenterScore * 0.3f)
+            (normalizedArea * 0.2f) +
+            (roiCenterScore * 0.3f)
     }
 
     /**
@@ -276,7 +286,7 @@ class CenterWeightedCandidateSelector(
         boxCenterY: Float,
         scanRoi: ScanRoi,
         area: Float,
-        frameSharpness: Float
+        frameSharpness: Float,
     ): GatingResult {
         // Rule 1: ROI containment gate
         // Reject if center is outside ROI (unless very high confidence)
@@ -286,7 +296,7 @@ class CenterWeightedCandidateSelector(
                 passed = false,
                 reason = "outside_roi",
                 value = 0f,
-                threshold = 0f
+                threshold = 0f,
             )
         }
 
@@ -297,7 +307,7 @@ class CenterWeightedCandidateSelector(
                 passed = false,
                 reason = "min_area",
                 value = area,
-                threshold = config.minArea
+                threshold = config.minArea,
             )
         }
 
@@ -308,7 +318,7 @@ class CenterWeightedCandidateSelector(
                 passed = false,
                 reason = "sharpness_small_object",
                 value = frameSharpness,
-                threshold = config.minSharpness
+                threshold = config.minSharpness,
             )
         }
 
@@ -343,7 +353,7 @@ class CenterWeightedCandidateSelector(
     private fun calculateScore(
         confidence: Float,
         area: Float,
-        centerDistance: Float
+        centerDistance: Float,
     ): Float {
         // Normalize area to 0-1 range (cap at 0.5 to avoid huge objects dominating)
         val normalizedArea = (area / 0.5f).coerceIn(0f, 1f)
@@ -352,8 +362,8 @@ class CenterWeightedCandidateSelector(
         val normalizedCenterScore = 1f - (centerDistance / 0.707f).coerceIn(0f, 1f)
 
         return (confidence * config.confidenceWeight) +
-                (normalizedArea * config.areaWeight) +
-                (normalizedCenterScore * config.centerWeight)
+            (normalizedArea * config.areaWeight) +
+            (normalizedCenterScore * config.centerWeight)
     }
 
     /**
@@ -363,7 +373,7 @@ class CenterWeightedCandidateSelector(
         detection: DetectionInfo,
         centerDistance: Float,
         area: Float,
-        frameSharpness: Float
+        frameSharpness: Float,
     ): GatingResult {
         // Rule 1: Center distance gate
         // Reject if too far from center (unless very high confidence)
@@ -372,7 +382,7 @@ class CenterWeightedCandidateSelector(
                 passed = false,
                 reason = "center_distance",
                 value = centerDistance,
-                threshold = config.maxCenterDistance
+                threshold = config.maxCenterDistance,
             )
         }
 
@@ -383,7 +393,7 @@ class CenterWeightedCandidateSelector(
                 passed = false,
                 reason = "min_area",
                 value = area,
-                threshold = config.minArea
+                threshold = config.minArea,
             )
         }
 
@@ -394,7 +404,7 @@ class CenterWeightedCandidateSelector(
                 passed = false,
                 reason = "sharpness_small_object",
                 value = frameSharpness,
-                threshold = config.minSharpness
+                threshold = config.minSharpness,
             )
         }
 
@@ -404,14 +414,18 @@ class CenterWeightedCandidateSelector(
     /**
      * Check stability requirement for a candidate.
      */
-    private fun checkStability(candidateId: String, currentTimeMs: Long): StabilityCheckResult {
+    private fun checkStability(
+        candidateId: String,
+        currentTimeMs: Long,
+    ): StabilityCheckResult {
         val state = stabilityTracker[candidateId]
         val isConsecutiveSelection = candidateId == lastSelectedId
-        val consecutiveFrames = when {
-            state == null -> 1
-            isConsecutiveSelection -> state.consecutiveFrames + 1
-            else -> 1
-        }
+        val consecutiveFrames =
+            when {
+                state == null -> 1
+                isConsecutiveSelection -> state.consecutiveFrames + 1
+                else -> 1
+            }
         val firstSeenTime = state?.firstSeenTimeMs ?: currentTimeMs
         val timeSinceFirstSeen = currentTimeMs - firstSeenTime
         val meetsFrameRequirement = consecutiveFrames >= config.minStabilityFrames
@@ -420,22 +434,26 @@ class CenterWeightedCandidateSelector(
         return StabilityCheckResult(
             isStable = meetsFrameRequirement || meetsTimeRequirement,
             consecutiveFrames = consecutiveFrames,
-            stableTimeMs = timeSinceFirstSeen
+            stableTimeMs = timeSinceFirstSeen,
         )
     }
 
     /**
      * Update stability tracking state.
      */
-    private fun updateStabilityState(candidateId: String, currentTimeMs: Long) {
+    private fun updateStabilityState(
+        candidateId: String,
+        currentTimeMs: Long,
+    ) {
         val existing = stabilityTracker[candidateId]
 
         if (existing != null && candidateId == lastSelectedId) {
             // Same candidate selected again - increment count
-            stabilityTracker[candidateId] = existing.copy(
-                consecutiveFrames = existing.consecutiveFrames + 1,
-                lastSeenTimeMs = currentTimeMs
-            )
+            stabilityTracker[candidateId] =
+                existing.copy(
+                    consecutiveFrames = existing.consecutiveFrames + 1,
+                    lastSeenTimeMs = currentTimeMs,
+                )
         } else {
             // New candidate or different from last selection
             // Reset stability for all other candidates
@@ -447,11 +465,12 @@ class CenterWeightedCandidateSelector(
             }
 
             // Create or reset state for this candidate
-            stabilityTracker[candidateId] = StabilityState(
-                firstSeenTimeMs = existing?.firstSeenTimeMs ?: currentTimeMs,
-                lastSeenTimeMs = currentTimeMs,
-                consecutiveFrames = if (candidateId == lastSelectedId) (existing?.consecutiveFrames ?: 0) + 1 else 1
-            )
+            stabilityTracker[candidateId] =
+                StabilityState(
+                    firstSeenTimeMs = existing?.firstSeenTimeMs ?: currentTimeMs,
+                    lastSeenTimeMs = currentTimeMs,
+                    consecutiveFrames = if (candidateId == lastSelectedId) (existing?.consecutiveFrames ?: 0) + 1 else 1,
+                )
         }
 
         lastSelectedId = candidateId
@@ -465,7 +484,7 @@ class CenterWeightedCandidateSelector(
         val box = detection.boundingBox
         val centerX = ((box.left + box.right) / 2f * 100).toInt()
         val centerY = ((box.top + box.bottom) / 2f * 100).toInt()
-        return "gen_${detection.category}_${centerX}_${centerY}"
+        return "gen_${detection.category}_${centerX}_$centerY"
     }
 
     /**
@@ -492,18 +511,24 @@ data class CenterWeightedConfig(
     val confidenceWeight: Float = 0.4f,
     val areaWeight: Float = 0.3f,
     val centerWeight: Float = 0.3f,
-
     // Gating thresholds
-    val maxCenterDistance: Float = 0.35f,  // Max distance from center (0.5, 0.5)
-    val minArea: Float = 0.03f,            // Minimum box area (3% of frame)
-    val minSharpness: Float = 100f,        // Minimum sharpness score
-    val sharpnessAreaThreshold: Float = 0.10f, // Area below which sharpness is checked
-    val highConfidenceOverride: Float = 0.8f,  // Confidence that bypasses center gate
-
+    val maxCenterDistance: Float = 0.35f,
+// Max distance from center (0.5, 0.5)
+    val minArea: Float = 0.03f,
+// Minimum box area (3% of frame)
+    val minSharpness: Float = 100f,
+// Minimum sharpness score
+    val sharpnessAreaThreshold: Float = 0.10f,
+// Area below which sharpness is checked
+    val highConfidenceOverride: Float = 0.8f,
+// Confidence that bypasses center gate
     // Stability requirements
-    val minStabilityFrames: Int = 3,       // Min consecutive frames
-    val minStabilityTimeMs: Long = 400,    // Min time in milliseconds
-    val stabilityExpiryMs: Long = 1000     // Time after which stale stability is cleared
+    val minStabilityFrames: Int = 3,
+// Min consecutive frames
+    val minStabilityTimeMs: Long = 400,
+// Min time in milliseconds
+    val stabilityExpiryMs: Long = 1000,
+// Time after which stale stability is cleared
 )
 
 /**
@@ -512,7 +537,7 @@ data class CenterWeightedConfig(
 data class StabilityState(
     val firstSeenTimeMs: Long,
     val lastSeenTimeMs: Long,
-    val consecutiveFrames: Int
+    val consecutiveFrames: Int,
 )
 
 /**
@@ -521,7 +546,7 @@ data class StabilityState(
 private data class StabilityCheckResult(
     val isStable: Boolean,
     val consecutiveFrames: Int,
-    val stableTimeMs: Long
+    val stableTimeMs: Long,
 )
 
 /**
@@ -531,7 +556,7 @@ private data class GatingResult(
     val passed: Boolean,
     val reason: String? = null,
     val value: Float = 0f,
-    val threshold: Float = 0f
+    val threshold: Float = 0f,
 )
 
 /**
@@ -541,7 +566,7 @@ private data class ScoredCandidate(
     val detection: DetectionInfo,
     val score: Float,
     val centerDistance: Float,
-    val gatingResult: GatingResult
+    val gatingResult: GatingResult,
 )
 
 /**
@@ -550,7 +575,7 @@ private data class ScoredCandidate(
 data class SelectionResult(
     val selectedCandidate: SelectedCandidate?,
     val rejectedCandidates: List<RejectedCandidate>,
-    val selectionReason: String
+    val selectionReason: String,
 )
 
 /**
@@ -562,7 +587,7 @@ data class SelectedCandidate(
     val centerDistance: Float,
     val isStable: Boolean,
     val consecutiveFrames: Int,
-    val stableTimeMs: Long
+    val stableTimeMs: Long,
 )
 
 /**
@@ -572,5 +597,5 @@ data class RejectedCandidate(
     val detection: DetectionInfo,
     val centerDistance: Float,
     val score: Float,
-    val reason: String
+    val reason: String,
 )

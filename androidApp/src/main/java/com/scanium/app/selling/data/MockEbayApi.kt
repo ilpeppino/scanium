@@ -18,9 +18,8 @@ import kotlin.random.Random
  * - Debug settings for controlled failure injection
  */
 class MockEbayApi(
-    private val config: MockEbayConfig = MockEbayConfig()
+    private val config: MockEbayConfig = MockEbayConfig(),
 ) : EbayApi {
-
     companion object {
         private const val TAG = "MockEbayApi"
 
@@ -33,15 +32,19 @@ class MockEbayApi(
 
     private val listings = mutableMapOf<String, Listing>()
 
-    override suspend fun createListing(draft: ListingDraft, image: ListingImage?): Listing {
+    override suspend fun createListing(
+        draft: ListingDraft,
+        image: ListingImage?,
+    ): Listing {
         Log.i(TAG, "Creating listing for item: ${draft.scannedItemId} (title: ${draft.title})")
 
         // Simulate realistic network delay
-        val delayMs = if (config.simulateNetworkDelay) {
-            Random.nextLong(config.minDelayMs, config.maxDelayMs)
-        } else {
-            0L
-        }
+        val delayMs =
+            if (config.simulateNetworkDelay) {
+                Random.nextLong(config.minDelayMs, config.maxDelayMs)
+            } else {
+                0L
+            }
 
         if (delayMs > 0) {
             Log.d(TAG, "Simulating network delay: ${delayMs}ms")
@@ -76,19 +79,20 @@ class MockEbayApi(
 
         // Create successful listing
         val id = ListingId("EBAY-MOCK-${System.currentTimeMillis()}-${Random.nextInt(1000, 9999)}")
-        val listing = Listing(
-            listingId = id,
-            scannedItemId = draft.scannedItemId,
-            title = draft.title,
-            description = draft.description,
-            category = draft.category,
-            price = draft.price,
-            currency = draft.currency,
-            condition = draft.condition,
-            image = image,
-            status = ListingStatus.ACTIVE,
-            externalUrl = "https://mock.ebay.local/listing/${id.value}"
-        )
+        val listing =
+            Listing(
+                listingId = id,
+                scannedItemId = draft.scannedItemId,
+                title = draft.title,
+                description = draft.description,
+                category = draft.category,
+                price = draft.price,
+                currency = draft.currency,
+                condition = draft.condition,
+                image = image,
+                status = ListingStatus.ACTIVE,
+                externalUrl = "https://mock.ebay.local/listing/${id.value}",
+            )
         listings[id.value] = listing
 
         Log.i(TAG, "✓ Listing created successfully: ${id.value}")
@@ -131,12 +135,12 @@ class MockEbayApi(
             }
             draft.title.length > MAX_TITLE_LENGTH -> {
                 throw IllegalArgumentException(
-                    "Title exceeds maximum length ($MAX_TITLE_LENGTH characters): ${draft.title.length}"
+                    "Title exceeds maximum length ($MAX_TITLE_LENGTH characters): ${draft.title.length}",
                 )
             }
             !draft.title.matches(Regex("^[\\w\\s.,!?'\"()-]+$")) -> {
                 throw IllegalArgumentException(
-                    "Title contains invalid characters (alphanumeric and basic punctuation only)"
+                    "Title contains invalid characters (alphanumeric and basic punctuation only)",
                 )
             }
         }
@@ -146,7 +150,7 @@ class MockEbayApi(
             when {
                 draft.description.length > MAX_DESCRIPTION_LENGTH -> {
                     throw IllegalArgumentException(
-                        "Description exceeds maximum length ($MAX_DESCRIPTION_LENGTH characters): ${draft.description.length}"
+                        "Description exceeds maximum length ($MAX_DESCRIPTION_LENGTH characters): ${draft.description.length}",
                     )
                 }
             }
@@ -160,12 +164,12 @@ class MockEbayApi(
         when {
             priceValue < MIN_PRICE -> {
                 throw IllegalArgumentException(
-                    "Price too low (minimum: $MIN_PRICE): $priceValue"
+                    "Price too low (minimum: $MIN_PRICE): $priceValue",
                 )
             }
             priceValue > MAX_PRICE -> {
                 throw IllegalArgumentException(
-                    "Price too high (maximum: $MAX_PRICE): $priceValue"
+                    "Price too high (maximum: $MAX_PRICE): $priceValue",
                 )
             }
         }
@@ -193,7 +197,8 @@ data class MockEbayConfig(
     val minDelayMs: Long = 400,
     val maxDelayMs: Long = 1200,
     val failureMode: MockFailureMode = MockFailureMode.NONE,
-    val failureRate: Double = 0.0 // 0.0 = never fail, 1.0 = always fail
+    val failureRate: Double = 0.0,
+// 0.0 = never fail, 1.0 = always fail
 )
 
 /**
@@ -204,5 +209,5 @@ enum class MockFailureMode {
     NETWORK_TIMEOUT,
     VALIDATION_ERROR,
     IMAGE_TOO_SMALL,
-    RANDOM
+    RANDOM,
 }

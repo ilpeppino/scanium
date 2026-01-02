@@ -8,11 +8,12 @@ import kotlinx.coroutines.runBlocking
 object ListingTitleBuilder {
     private const val MAX_TITLE_LENGTH = 80
     private const val USED_PREFIX = "Used"
-    private val fallbackDomainNames = mapOf(
-        "furniture_sofa" to "Sofa",
-        "furniture_chair" to "Chair",
-        "furniture_table" to "Table"
-    )
+    private val fallbackDomainNames =
+        mapOf(
+            "furniture_sofa" to "Sofa",
+            "furniture_chair" to "Chair",
+            "furniture_table" to "Table",
+        )
 
     fun buildTitle(item: ScannedItem): String {
         val labelText = item.labelText?.trim().takeUnless { it.isNullOrEmpty() }
@@ -33,14 +34,15 @@ object ListingTitleBuilder {
         if (!DomainPackProvider.isInitialized) {
             return fallbackDomainNames[id]
         }
-        val resolvedName = runCatching {
-            runBlocking {
-                val pack = DomainPackProvider.repository.getActiveDomainPack()
-                pack.categories.firstOrNull { it.id == id }?.displayName
-            }
-        }.onFailure {
-            Log.w("ListingTitleBuilder", "Failed to resolve domain category $id", it)
-        }.getOrNull()?.takeUnless { it.isNullOrBlank() }
+        val resolvedName =
+            runCatching {
+                runBlocking {
+                    val pack = DomainPackProvider.repository.getActiveDomainPack()
+                    pack.categories.firstOrNull { it.id == id }?.displayName
+                }
+            }.onFailure {
+                Log.w("ListingTitleBuilder", "Failed to resolve domain category $id", it)
+            }.getOrNull()?.takeUnless { it.isNullOrBlank() }
 
         return resolvedName ?: fallbackDomainNames[id]
     }

@@ -7,24 +7,34 @@ kotlin {
     androidTarget()
     jvm()
 
-    val iosArm64Target = iosArm64() {
-        binaries.framework {
-            baseName = "ScaniumCoreExport"
-            isStatic = true
+    // iOS targets
+    val iosX64Target =
+        iosX64 {
+            binaries.framework {
+                baseName = "ScaniumCoreExport"
+                isStatic = true
+            }
         }
-    }
-    val iosSimulatorArm64Target = iosSimulatorArm64() {
-        binaries.framework {
-            baseName = "ScaniumCoreExport"
-            isStatic = true
+    val iosArm64Target =
+        iosArm64 {
+            binaries.framework {
+                baseName = "ScaniumCoreExport"
+                isStatic = true
+            }
         }
-    }
+    val iosSimulatorArm64Target =
+        iosSimulatorArm64 {
+            binaries.framework {
+                baseName = "ScaniumCoreExport"
+                isStatic = true
+            }
+        }
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
                 implementation(project(":shared:core-models"))
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
             }
         }
         val commonTest by getting {
@@ -47,9 +57,11 @@ kotlin {
             dependsOn(commonTest)
         }
 
+        iosX64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
         iosArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
         iosSimulatorArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
 
+        iosX64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
         iosArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
         iosSimulatorArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
     }

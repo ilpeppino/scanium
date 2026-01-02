@@ -1,6 +1,5 @@
 package com.scanium.app.camera
 
-import android.graphics.RectF
 import android.os.SystemClock
 import android.os.Trace
 import android.util.Size
@@ -17,12 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size as ComposeSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
@@ -31,13 +28,13 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.scanium.app.camera.geom.CorrelationDebug
-import com.scanium.app.camera.geom.GeometryMapper
 import com.scanium.app.perf.PerformanceMonitor
-import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.CyanGlow
+import com.scanium.app.ui.theme.DeepNavy
 import com.scanium.app.ui.theme.ScaniumBlue
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import kotlin.math.max
+import androidx.compose.ui.geometry.Size as ComposeSize
 
 /**
  * Overlay that renders bounding boxes for detected objects so users can see what the
@@ -48,6 +45,7 @@ import kotlin.math.max
  * @param previewSize Size of the preview view on screen
  * @param rotationDegrees Image rotation from ImageProxy (0, 90, 180, 270) for coordinate mapping
  */
+
 /**
  * Visual colors for bounding box states.
  *
@@ -80,9 +78,11 @@ fun DetectionOverlay(
     detections: List<OverlayTrack>,
     imageSize: Size,
     previewSize: Size,
-    rotationDegrees: Int = 90,  // Default to portrait mode (most common on phones)
-    showGeometryDebug: Boolean = false,  // Developer toggle for geometry debug overlay
-    modifier: Modifier = Modifier
+    rotationDegrees: Int = 90,
+// Default to portrait mode (most common on phones)
+    showGeometryDebug: Boolean = false,
+// Developer toggle for geometry debug overlay
+    modifier: Modifier = Modifier,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val labelTextStyle = MaterialTheme.typography.labelMedium.copy(color = Color.White)
@@ -95,11 +95,12 @@ fun DetectionOverlay(
     val animatedPulseAlpha by infiniteTransition.animateFloat(
         initialValue = 0.4f,
         targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pricePulseValue"
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "pricePulseValue",
     )
 
     // Single pulse animation for LOCKED state transition (once)
@@ -110,11 +111,11 @@ fun DetectionOverlay(
             // Brief pulse: scale up slightly then back to normal
             lockedPulseScale.animateTo(
                 targetValue = 1.15f,
-                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
             )
             lockedPulseScale.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
             )
         }
     }
@@ -132,14 +133,15 @@ fun DetectionOverlay(
         // Calculate rotation-aware transformation parameters
         // This handles: (1) rotation of bbox coordinates for portrait/landscape
         //               (2) FILL_CENTER scaling (center-crop) used by PreviewView
-        val transform = calculateTransformWithRotation(
-            imageWidth = imageSize.width,
-            imageHeight = imageSize.height,
-            previewWidth = canvasWidth,
-            previewHeight = canvasHeight,
-            rotationDegrees = rotationDegrees,
-            scaleType = PreviewScaleType.FILL_CENTER
-        )
+        val transform =
+            calculateTransformWithRotation(
+                imageWidth = imageSize.width,
+                imageHeight = imageSize.height,
+                previewWidth = canvasWidth,
+                previewHeight = canvasHeight,
+                rotationDegrees = rotationDegrees,
+                scaleType = PreviewScaleType.FILL_CENTER,
+            )
 
         // Bounding box appearance constants
         val minBoxStrokeWidth = 2.dp.toPx()
@@ -174,36 +176,54 @@ fun DetectionOverlay(
             // - SELECTED: medium stroke, accent (user intent - inside ROI)
             // - READY: medium-thick, green (conditions met, holding)
             // - LOCKED: thick, bright green with pulse (scan-ready)
-            val (outlineColor, glowColor, strokeMultiplier) = when (boxStyle) {
-                OverlayBoxStyle.LOCKED -> Triple(
-                    BboxColors.LockedOutline,
-                    BboxColors.LockedGlow,
-                    1.4f * lockedPulseScale.value  // Thick stroke with pulse effect
-                )
-                OverlayBoxStyle.READY -> Triple(
-                    BboxColors.ReadyOutline,
-                    BboxColors.ReadyGlow,
-                    1.1f  // Medium-thick stroke for ready
-                )
-                OverlayBoxStyle.SELECTED -> Triple(
-                    BboxColors.SelectedOutline,
-                    BboxColors.SelectedGlow,
-                    0.9f  // Medium stroke for selected
-                )
-                OverlayBoxStyle.EYE -> Triple(
-                    BboxColors.EyeOutline,
-                    BboxColors.EyeGlow,
-                    0.5f  // Very thin stroke for eye mode
-                )
-            }
+            val (outlineColor, glowColor, strokeMultiplier) =
+                when (boxStyle) {
+                    OverlayBoxStyle.LOCKED ->
+                        Triple(
+                            BboxColors.LockedOutline,
+                            BboxColors.LockedGlow,
+                            1.4f * lockedPulseScale.value,
+// Thick stroke with pulse effect
+                        )
+                    OverlayBoxStyle.READY ->
+                        Triple(
+                            BboxColors.ReadyOutline,
+                            BboxColors.ReadyGlow,
+                            1.1f,
+// Medium-thick stroke for ready
+                        )
+                    OverlayBoxStyle.SELECTED ->
+                        Triple(
+                            BboxColors.SelectedOutline,
+                            BboxColors.SelectedGlow,
+                            0.9f,
+// Medium stroke for selected
+                        )
+                    OverlayBoxStyle.EYE ->
+                        Triple(
+                            BboxColors.EyeOutline,
+                            BboxColors.EyeGlow,
+                            0.5f,
+// Very thin stroke for eye mode
+                        )
+                }
 
             val clampedConfidence = detection.confidence.coerceIn(0f, 1f)
-            val boxStrokeWidth = (minBoxStrokeWidth +
-                (maxBoxStrokeWidth - minBoxStrokeWidth) * clampedConfidence) * strokeMultiplier
-            val glowStrokeWidth = (minGlowStrokeWidth +
-                (maxGlowStrokeWidth - minGlowStrokeWidth) * clampedConfidence) * strokeMultiplier
-            val innerStrokeWidth = (minInnerStrokeWidth +
-                (maxInnerStrokeWidth - minInnerStrokeWidth) * clampedConfidence) * strokeMultiplier
+            val boxStrokeWidth =
+                (
+                    minBoxStrokeWidth +
+                        (maxBoxStrokeWidth - minBoxStrokeWidth) * clampedConfidence
+                ) * strokeMultiplier
+            val glowStrokeWidth =
+                (
+                    minGlowStrokeWidth +
+                        (maxGlowStrokeWidth - minGlowStrokeWidth) * clampedConfidence
+                ) * strokeMultiplier
+            val innerStrokeWidth =
+                (
+                    minInnerStrokeWidth +
+                        (maxInnerStrokeWidth - minInnerStrokeWidth) * clampedConfidence
+                ) * strokeMultiplier
 
             // Map normalized bbox to preview coordinates with rotation handling
             // This correctly handles portrait mode where sensor coords need 90° rotation
@@ -221,7 +241,7 @@ fun DetectionOverlay(
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
-                style = Stroke(width = glowStrokeWidth)
+                style = Stroke(width = glowStrokeWidth),
             )
 
             // Draw main bounding box stroke
@@ -230,7 +250,7 @@ fun DetectionOverlay(
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
-                style = Stroke(width = boxStrokeWidth)
+                style = Stroke(width = boxStrokeWidth),
             )
 
             // Draw crisp white border inside for contrast
@@ -239,24 +259,26 @@ fun DetectionOverlay(
                 topLeft = topLeft,
                 size = boxSize,
                 cornerRadius = CornerRadius(boxCornerRadius, boxCornerRadius),
-                style = Stroke(width = innerStrokeWidth)
+                style = Stroke(width = innerStrokeWidth),
             )
 
             // Category + price label near the bounding box
-            val labelText = buildString {
-                append(detection.label)
-                val price = detection.priceText
-                if (price.isNotBlank()) {
-                    append(" • ")
-                    append(price)
+            val labelText =
+                buildString {
+                    append(detection.label)
+                    val price = detection.priceText
+                    if (price.isNotBlank()) {
+                        append(" • ")
+                        append(price)
+                    }
                 }
-            }
 
             if (labelText.isNotBlank()) {
-                val textLayoutResult = textMeasurer.measure(
-                    text = AnnotatedString(labelText),
-                    style = labelTextStyle
-                )
+                val textLayoutResult =
+                    textMeasurer.measure(
+                        text = AnnotatedString(labelText),
+                        style = labelTextStyle,
+                    )
 
                 val textWidth = textLayoutResult.size.width.toFloat()
                 val textHeight = textLayoutResult.size.height.toFloat()
@@ -267,11 +289,12 @@ fun DetectionOverlay(
                 var labelLeft = transformedBox.left.coerceIn(0f, maxLabelLeft)
 
                 val preferredTop = transformedBox.top - labelMargin - labelHeight
-                var labelTop = if (preferredTop < 0f) {
-                    transformedBox.bottom + labelMargin
-                } else {
-                    preferredTop
-                }
+                var labelTop =
+                    if (preferredTop < 0f) {
+                        transformedBox.bottom + labelMargin
+                    } else {
+                        preferredTop
+                    }
                 val maxLabelTop = max(0f, canvasHeight - labelHeight)
                 labelTop = labelTop.coerceIn(0f, maxLabelTop)
 
@@ -280,90 +303,98 @@ fun DetectionOverlay(
                     color = labelBackgroundColor.copy(alpha = labelBackgroundColor.alpha * labelAlpha),
                     topLeft = Offset(labelLeft, labelTop),
                     size = ComposeSize(labelWidth, labelHeight),
-                    cornerRadius = CornerRadius(labelCornerRadius, labelCornerRadius)
+                    cornerRadius = CornerRadius(labelCornerRadius, labelCornerRadius),
                 )
 
                 // Label text with pulsing alpha when scanning/estimating
                 drawText(
                     textLayoutResult = textLayoutResult,
                     alpha = labelAlpha,
-                    topLeft = Offset(
-                        x = labelLeft + labelHorizontalPadding,
-                        y = labelTop + labelVerticalPadding
-                    )
+                    topLeft =
+                        Offset(
+                            x = labelLeft + labelHorizontalPadding,
+                            y = labelTop + labelVerticalPadding,
+                        ),
                 )
             }
         }
 
         // Geometry debug overlay (developer toggle)
         if (showGeometryDebug) {
-            val debugPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.YELLOW
-                textSize = 32f
-                isAntiAlias = true
-            }
-            val debugBgPaint = android.graphics.Paint().apply {
-                color = android.graphics.Color.argb(180, 0, 0, 0)
-                style = android.graphics.Paint.Style.FILL
-            }
+            val debugPaint =
+                android.graphics.Paint().apply {
+                    color = android.graphics.Color.YELLOW
+                    textSize = 32f
+                    isAntiAlias = true
+                }
+            val debugBgPaint =
+                android.graphics.Paint().apply {
+                    color = android.graphics.Color.argb(180, 0, 0, 0)
+                    style = android.graphics.Paint.Style.FILL
+                }
 
-            val context = DetectionGeometryMapper.GeometryContext(
-                sensorWidth = imageSize.width,
-                sensorHeight = imageSize.height,
-                rotationDegrees = rotationDegrees,
-                previewWidth = canvasWidth,
-                previewHeight = canvasHeight,
-                scaleType = PreviewScaleType.FILL_CENTER
-            )
+            val context =
+                DetectionGeometryMapper.GeometryContext(
+                    sensorWidth = imageSize.width,
+                    sensorHeight = imageSize.height,
+                    rotationDegrees = rotationDegrees,
+                    previewWidth = canvasWidth,
+                    previewHeight = canvasHeight,
+                    scaleType = PreviewScaleType.FILL_CENTER,
+                )
 
             // Get top detection info if available
             val topDetection = detections.firstOrNull()
-            val topDetectionScreen = topDetection?.let {
-                mapBboxToPreview(it.bboxNorm, transform)
-            }
+            val topDetectionScreen =
+                topDetection?.let {
+                    mapBboxToPreview(it.bboxNorm, transform)
+                }
 
             // Log debug info (rate-limited)
             DetectionGeometryMapper.logDebug(
                 context = context,
                 detectionCount = detections.size,
                 topDetectionNorm = topDetection?.bboxNorm,
-                topDetectionScreen = topDetectionScreen
+                topDetectionScreen = topDetectionScreen,
             )
 
             // Draw debug info on canvas
             drawContext.canvas.nativeCanvas.apply {
                 // Calculate bbox aspect ratio (height/width - tall objects should be > 1)
-                val bboxAspectRatio = topDetection?.let {
-                    val width = it.bboxNorm.right - it.bboxNorm.left
-                    val height = it.bboxNorm.bottom - it.bboxNorm.top
-                    if (width > 0) height / width else 0f
-                }
-                val screenAspectRatio = topDetectionScreen?.let {
-                    if (it.width() > 0) it.height() / it.width() else 0f
-                }
-
-                val lines = listOf(
-                    "UPRIGHT COORDS (fixed)",
-                    "Preview: ${canvasWidth.toInt()}x${canvasHeight.toInt()}",
-                    "Sensor: ${imageSize.width}x${imageSize.height}",
-                    "Rotation: ${rotationDegrees}°",
-                    "Effective: ${transform.effectiveImageWidth}x${transform.effectiveImageHeight}",
-                    "Scale: ${String.format("%.3f", transform.scale)}",
-                    "Offset: (${transform.offsetX.toInt()}, ${transform.offsetY.toInt()})",
-                    "Detections: ${detections.size}",
+                val bboxAspectRatio =
                     topDetection?.let {
-                        "Bbox (norm): (${String.format("%.2f", it.bboxNorm.left)}, " +
-                            "${String.format("%.2f", it.bboxNorm.top)}) - " +
-                            "(${String.format("%.2f", it.bboxNorm.right)}, " +
-                            "${String.format("%.2f", it.bboxNorm.bottom)})"
-                    } ?: "Bbox: N/A",
-                    "Bbox aspect (h/w): ${bboxAspectRatio?.let { String.format("%.2f", it) } ?: "N/A"} ${if ((bboxAspectRatio ?: 0f) > 1f) "(TALL)" else "(wide)"}",
+                        val width = it.bboxNorm.right - it.bboxNorm.left
+                        val height = it.bboxNorm.bottom - it.bboxNorm.top
+                        if (width > 0) height / width else 0f
+                    }
+                val screenAspectRatio =
                     topDetectionScreen?.let {
-                        "Screen: (${it.left.toInt()}, ${it.top.toInt()}) - " +
-                            "(${it.right.toInt()}, ${it.bottom.toInt()})"
-                    } ?: "Screen: N/A",
-                    "Screen aspect: ${screenAspectRatio?.let { String.format("%.2f", it) } ?: "N/A"}"
-                )
+                        if (it.width() > 0) it.height() / it.width() else 0f
+                    }
+
+                val lines =
+                    listOf(
+                        "UPRIGHT COORDS (fixed)",
+                        "Preview: ${canvasWidth.toInt()}x${canvasHeight.toInt()}",
+                        "Sensor: ${imageSize.width}x${imageSize.height}",
+                        "Rotation: $rotationDegrees°",
+                        "Effective: ${transform.effectiveImageWidth}x${transform.effectiveImageHeight}",
+                        "Scale: ${String.format("%.3f", transform.scale)}",
+                        "Offset: (${transform.offsetX.toInt()}, ${transform.offsetY.toInt()})",
+                        "Detections: ${detections.size}",
+                        topDetection?.let {
+                            "Bbox (norm): (${String.format("%.2f", it.bboxNorm.left)}, " +
+                                "${String.format("%.2f", it.bboxNorm.top)}) - " +
+                                "(${String.format("%.2f", it.bboxNorm.right)}, " +
+                                "${String.format("%.2f", it.bboxNorm.bottom)})"
+                        } ?: "Bbox: N/A",
+                        "Bbox aspect (h/w): ${bboxAspectRatio?.let { String.format("%.2f", it) } ?: "N/A"} ${if ((bboxAspectRatio ?: 0f) > 1f) "(TALL)" else "(wide)"}",
+                        topDetectionScreen?.let {
+                            "Screen: (${it.left.toInt()}, ${it.top.toInt()}) - " +
+                                "(${it.right.toInt()}, ${it.bottom.toInt()})"
+                        } ?: "Screen: N/A",
+                        "Screen aspect: ${screenAspectRatio?.let { String.format("%.2f", it) } ?: "N/A"}",
+                    )
 
                 val padding = 12f
                 val lineHeight = 36f
@@ -372,9 +403,11 @@ fun DetectionOverlay(
 
                 // Draw background
                 drawRect(
-                    padding, padding,
-                    padding + boxWidth, padding + boxHeight,
-                    debugBgPaint
+                    padding,
+                    padding,
+                    padding + boxWidth,
+                    padding + boxHeight,
+                    debugBgPaint,
                 )
 
                 // Draw text lines
@@ -383,16 +416,17 @@ fun DetectionOverlay(
                         line,
                         padding * 2,
                         padding + lineHeight * (index + 1),
-                        debugPaint
+                        debugPaint,
                     )
                 }
 
                 // Draw effective content rect outline (magenta)
-                val effectivePaint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.MAGENTA
-                    style = android.graphics.Paint.Style.STROKE
-                    strokeWidth = 3f
-                }
+                val effectivePaint =
+                    android.graphics.Paint().apply {
+                        color = android.graphics.Color.MAGENTA
+                        style = android.graphics.Paint.Style.STROKE
+                        strokeWidth = 3f
+                    }
                 val effectiveLeft = transform.offsetX
                 val effectiveTop = transform.offsetY
                 val effectiveRight = transform.offsetX + transform.effectiveImageWidth * transform.scale
@@ -416,7 +450,7 @@ fun DetectionOverlay(
                 // Bitmap dimensions for snapshot will be similar to capture resolution
                 // Use effective image dimensions as proxy since we don't have actual bitmap here
                 bitmapWidth = transform.effectiveImageWidth,
-                bitmapHeight = transform.effectiveImageHeight
+                bitmapHeight = transform.effectiveImageHeight,
             )
         }
 
@@ -427,7 +461,7 @@ fun DetectionOverlay(
             PerformanceMonitor.recordTimer(
                 PerformanceMonitor.Metrics.OVERLAY_DRAW_LATENCY_MS,
                 drawDuration,
-                mapOf("detection_count" to detections.size.toString())
+                mapOf("detection_count" to detections.size.toString()),
             )
         }
     }

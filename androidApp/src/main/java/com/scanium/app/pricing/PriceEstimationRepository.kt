@@ -14,24 +14,26 @@ import kotlinx.coroutines.flow.StateFlow
 class PriceEstimationRepository(
     provider: PriceEstimatorProvider = MockPriceEstimatorProvider(),
     scope: CoroutineScope,
-    timeoutMs: Long = PriceEstimationOrchestrator.DEFAULT_TIMEOUT_MS
+    timeoutMs: Long = PriceEstimationOrchestrator.DEFAULT_TIMEOUT_MS,
 ) {
-    private val orchestrator = PriceEstimationOrchestrator(
-        provider = provider,
-        scope = scope,
-        timeoutMs = timeoutMs,
-        logger = { message -> Log.d(TAG, message) }
-    )
+    private val orchestrator =
+        PriceEstimationOrchestrator(
+            provider = provider,
+            scope = scope,
+            timeoutMs = timeoutMs,
+            logger = { message -> Log.d(TAG, message) },
+        )
 
     fun ensureEstimation(item: ScannedItem) {
         if (item.category == ItemCategory.UNKNOWN) return
 
-        val request = PriceEstimationRequest(
-            itemId = item.id,
-            categoryId = item.category.name,
-            domainCategoryId = item.domainCategoryId,
-            currencyCode = DEFAULT_CURRENCY
-        )
+        val request =
+            PriceEstimationRequest(
+                itemId = item.id,
+                categoryId = item.category.name,
+                domainCategoryId = item.domainCategoryId,
+                currencyCode = DEFAULT_CURRENCY,
+            )
         orchestrator.startEstimation(request)
     }
 

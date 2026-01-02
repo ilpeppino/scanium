@@ -23,28 +23,23 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
     @Provides
     @Singleton
     fun provideScannedItemDatabase(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): ScannedItemDatabase {
         return ScannedItemDatabase.getInstance(context)
     }
 
     @Provides
     @Singleton
-    fun provideScannedItemDao(
-        database: ScannedItemDatabase
-    ): ScannedItemDao {
+    fun provideScannedItemDao(database: ScannedItemDatabase): ScannedItemDao {
         return database.scannedItemDao()
     }
 
     @Provides
     @Singleton
-    fun provideListingDraftDao(
-        database: ScannedItemDatabase
-    ): ListingDraftDao {
+    fun provideListingDraftDao(database: ScannedItemDatabase): ListingDraftDao {
         return database.listingDraftDao()
     }
 
@@ -58,24 +53,20 @@ object DatabaseModule {
     @Singleton
     fun provideScannedItemRepository(
         dao: ScannedItemDao,
-        syncer: ScannedItemSyncer
+        syncer: ScannedItemSyncer,
     ): ScannedItemRepository {
         return ScannedItemRepository(dao, syncer)
     }
 
     @Provides
     @Singleton
-    fun provideScannedItemStore(
-        repository: ScannedItemRepository
-    ): ScannedItemStore {
+    fun provideScannedItemStore(repository: ScannedItemRepository): ScannedItemStore {
         return repository
     }
 
     @Provides
     @Singleton
-    fun provideListingDraftRepository(
-        dao: ListingDraftDao
-    ): ListingDraftRepository {
+    fun provideListingDraftRepository(dao: ListingDraftDao): ListingDraftRepository {
         return ListingDraftRepository(dao)
     }
 }

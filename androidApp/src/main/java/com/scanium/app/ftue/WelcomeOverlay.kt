@@ -45,29 +45,31 @@ import com.scanium.app.R
 fun WelcomeOverlay(
     onStart: () -> Unit,
     onSkip: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.85f)),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.85f)),
+        contentAlignment = Alignment.Center,
     ) {
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(24.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.Start
+                horizontalAlignment = Alignment.Start,
             ) {
                 // Title
                 Text(
                     text = "Welcome to Scanium!",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -76,7 +78,7 @@ fun WelcomeOverlay(
                 Text(
                     text = "Let's take a quick tour of the main features:",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -85,7 +87,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.Camera,
                     contentDescription = stringResource(R.string.cd_feature_scan_items),
-                    text = "Scan items with object detection"
+                    text = "Scan items with object detection",
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -93,7 +95,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.List,
                     contentDescription = stringResource(R.string.cd_feature_view_items),
-                    text = "View all your scanned items in an organized list"
+                    text = "View all your scanned items in an organized list",
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -101,7 +103,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.ShoppingCart,
                     contentDescription = stringResource(R.string.cd_feature_export_items),
-                    text = "Select items and export them for other apps"
+                    text = "Select items and export them for other apps",
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -109,7 +111,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.AutoAwesome,
                     contentDescription = stringResource(R.string.cd_feature_ai_assistant),
-                    text = "Get pricing and export help from the AI assistant"
+                    text = "Get pricing and export help from the AI assistant",
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -117,7 +119,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.Menu,
                     contentDescription = stringResource(R.string.cd_feature_settings),
-                    text = "Customize settings and preferences from the menu"
+                    text = "Customize settings and preferences from the menu",
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -126,7 +128,7 @@ fun WelcomeOverlay(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = onSkip) {
                         Text("Skip Tour")
@@ -155,23 +157,23 @@ private fun FeatureBullet(
     icon: ImageVector,
     contentDescription: String,
     text: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(end = 12.dp)
+            modifier = Modifier.padding(end = 12.dp),
         )
 
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }

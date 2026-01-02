@@ -26,7 +26,7 @@ fun createAndroidTestItemsViewModel(
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
-    mainDispatcher: CoroutineDispatcher = workerDispatcher
+    mainDispatcher: CoroutineDispatcher = workerDispatcher,
 ): ItemsViewModel {
     return ItemsViewModel(
         classificationMode = classificationMode,
@@ -37,6 +37,6 @@ fun createAndroidTestItemsViewModel(
         stableItemCropper = stableItemCropper,
         telemetry = telemetry,
         workerDispatcher = workerDispatcher,
-        mainDispatcher = mainDispatcher
+        mainDispatcher = mainDispatcher,
     )
 }

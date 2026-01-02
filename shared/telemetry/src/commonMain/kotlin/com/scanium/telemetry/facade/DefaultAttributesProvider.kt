@@ -26,13 +26,13 @@ interface DefaultAttributesProvider {
     /**
      * Returns the default attributes to be included in all telemetry events.
      *
- * These attributes should include at minimum:
- * - platform: "android" or "ios"
- * - app_version: Semantic version (e.g., "1.2.3")
- * - build: Build number (e.g., "42")
- * - env: Environment ("dev", "staging", "prod")
- * - session_id: Unique session identifier
- * - data_region: Data residency region ("EU", "US")
+     * These attributes should include at minimum:
+     * - platform: "android" or "ios"
+     * - app_version: Semantic version (e.g., "1.2.3")
+     * - build: Build number (e.g., "42")
+     * - env: Environment ("dev", "staging", "prod")
+     * - session_id: Unique session identifier
+     * - data_region: Data residency region ("EU", "US")
      *
      * @return Map of attribute key-value pairs
      */

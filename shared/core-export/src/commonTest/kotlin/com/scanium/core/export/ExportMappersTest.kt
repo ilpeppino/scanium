@@ -12,24 +12,27 @@ import kotlin.test.assertNull
 class ExportMappersTest {
     @Test
     fun toExportItem_usesDomainCategoryAndEstimatedPrice() {
-        val item = ScannedItem(
-            category = ItemCategory.ELECTRONICS,
-            labelText = "Laptop",
-            boundingBox = com.scanium.core.models.geometry.NormalizedRect(0f, 0f, 1f, 1f),
-            thumbnail = ImageRefBytes(
-                bytes = byteArrayOf(1, 2, 3),
-                mimeType = "image/jpeg",
-                width = 10,
-                height = 10
-            )
-        ).apply {
-            domainCategoryId = "laptops"
-            enhancedLabelText = "Gaming Laptop"
-            estimatedPriceRange = PriceRange(
-                low = Money(500.0),
-                high = Money(900.0)
-            )
-        }
+        val item =
+            ScannedItem(
+                category = ItemCategory.ELECTRONICS,
+                labelText = "Laptop",
+                boundingBox = com.scanium.core.models.geometry.NormalizedRect(0f, 0f, 1f, 1f),
+                thumbnail =
+                    ImageRefBytes(
+                        bytes = byteArrayOf(1, 2, 3),
+                        mimeType = "image/jpeg",
+                        width = 10,
+                        height = 10,
+                    ),
+            ).apply {
+                domainCategoryId = "laptops"
+                enhancedLabelText = "Gaming Laptop"
+                estimatedPriceRange =
+                    PriceRange(
+                        low = Money(500.0),
+                        high = Money(900.0),
+                    )
+            }
 
         val export = item.toExportItem()
 
@@ -41,11 +44,12 @@ class ExportMappersTest {
 
     @Test
     fun toExportItem_omitsPriceWhenUnavailable() {
-        val item = ScannedItem(
-            category = ItemCategory.UNKNOWN,
-            labelText = "",
-            boundingBox = com.scanium.core.models.geometry.NormalizedRect(0f, 0f, 1f, 1f)
-        )
+        val item =
+            ScannedItem(
+                category = ItemCategory.UNKNOWN,
+                labelText = "",
+                boundingBox = com.scanium.core.models.geometry.NormalizedRect(0f, 0f, 1f, 1f),
+            )
 
         val export = item.toExportItem()
 

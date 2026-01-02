@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
  * eliminating configuration sprawl across BuildConfig, Settings, and Preferences.
  */
 interface FeatureFlagRepository {
-
     /**
      * Whether cloud classification is effectively enabled.
      * This is the single source of truth combining:
