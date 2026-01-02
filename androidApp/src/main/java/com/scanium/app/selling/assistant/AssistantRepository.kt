@@ -167,6 +167,8 @@ private class CloudAssistantRepository(
                 )
 
             val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
+            // DIAG: Log endpoint
+            Log.d("ScaniumNet", "AssistantRepo: endpoint=$endpoint")
             val payloadJson = json.encodeToString(AssistantChatRequest.serializer(), requestPayload)
 
             // Use multipart when images are attached, otherwise use JSON
@@ -284,14 +286,19 @@ private class CloudAssistantRepository(
         payloadJson: String,
         correlationId: String,
     ) {
-        apiKey?.let { key ->
-            builder.header("X-API-Key", key)
+        // DIAG: Log API key status
+        if (apiKey != null) {
+            Log.d("ScaniumAuth", "AssistantRepo: apiKey present len=${apiKey!!.length} prefix=${apiKey!!.take(6)}...")
+            Log.d("ScaniumAuth", "AssistantRepo: Adding X-API-Key header")
+            builder.header("X-API-Key", apiKey!!)
             // Add HMAC signature for replay protection (SEC-004)
             RequestSigner.addSignatureHeaders(
                 builder = builder,
-                apiKey = key,
+                apiKey = apiKey!!,
                 requestBody = payloadJson,
             )
+        } else {
+            Log.w("ScaniumAuth", "AssistantRepo: apiKey is NULL - X-API-Key header will NOT be added!")
         }
         builder.header("X-Scanium-Correlation-Id", correlationId)
         builder.header("X-Client", "Scanium-Android")

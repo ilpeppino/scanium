@@ -157,6 +157,15 @@ class CloudClassifier(
                     .addFormDataPart("domainPackId", domainPackId)
                     .build()
 
+            // DIAG: Log endpoint and API key status
+            val apiKey = config.apiKey
+            Log.d("ScaniumNet", "CloudClassifier: endpoint=$endpoint")
+            if (apiKey != null) {
+                Log.d("ScaniumAuth", "CloudClassifier: apiKey present len=${apiKey.length} prefix=${apiKey.take(6)}...")
+            } else {
+                Log.w("ScaniumAuth", "CloudClassifier: apiKey is NULL - X-API-Key header will NOT be added!")
+            }
+
             var attempt = 1
             var lastError: String? = null
             while (attempt <= maxAttempts) {
@@ -165,7 +174,8 @@ class CloudClassifier(
                         .url(endpoint)
                         .post(requestBody)
                         .apply {
-                            config.apiKey?.let { apiKey ->
+                            if (apiKey != null) {
+                                Log.d("ScaniumAuth", "CloudClassifier: Adding X-API-Key header")
                                 header("X-API-Key", apiKey)
                                 // Add HMAC signature for replay protection (SEC-004)
                                 RequestSigner.addSignatureHeaders(
@@ -174,6 +184,8 @@ class CloudClassifier(
                                     params = mapOf("domainPackId" to domainPackId),
                                     binaryContentSize = imageBytes.size.toLong(),
                                 )
+                            } else {
+                                Log.w("ScaniumAuth", "CloudClassifier: SKIPPING X-API-Key header (null)")
                             }
                             header("X-Scanium-Correlation-Id", correlationId)
                             header("X-Client", "Scanium-Android")
