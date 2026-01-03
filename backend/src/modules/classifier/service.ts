@@ -13,6 +13,7 @@ import { Config } from '../../config/index.js';
 import { CircuitBreaker } from '../../infra/resilience/circuit-breaker.js';
 import { VisionExtractor, MockVisionExtractor } from '../vision/extractor.js';
 import { resolveAttributes, ResolvedAttribute } from '../vision/attribute-resolver.js';
+import { VisualFacts } from '../vision/types.js';
 
 type ClassifierDeps = {
   config: Config;
@@ -41,12 +42,26 @@ export class ClassifierService {
       seed: deps.config.classifier.mockSeed,
     } satisfies MockClassifierOptions);
 
+    this.enableAttributeEnrichment = deps.config.classifier.enableAttributeEnrichment;
     this.vision =
       deps.config.classifier.provider === 'google'
         ? new GoogleVisionClassifier({
-            feature: deps.config.classifier.visionFeature,
+            features: deps.config.classifier.visionFeature,
             timeoutMs: deps.config.classifier.visionTimeoutMs,
             maxRetries: deps.config.classifier.visionMaxRetries,
+            enableVisualFacts: this.enableAttributeEnrichment,
+            visualFactsConfig: {
+              maxOcrSnippetLength: deps.config.vision.maxOcrSnippetLength,
+              minOcrConfidence: deps.config.vision.minOcrConfidence,
+              minLabelConfidence: deps.config.vision.minLabelConfidence,
+              minLogoConfidence: deps.config.vision.minLogoConfidence,
+            },
+            visualFactsLimits: {
+              maxOcrSnippets: deps.config.vision.maxOcrSnippets,
+              maxLabelHints: deps.config.vision.maxLabelHints,
+              maxLogoHints: deps.config.vision.maxLogoHints,
+              maxColors: deps.config.vision.maxColors,
+            },
           } satisfies GoogleVisionOptions)
         : null;
 
@@ -59,7 +74,6 @@ export class ClassifierService {
     });
 
     // Initialize VisionExtractor for attribute enrichment
-    this.enableAttributeEnrichment = deps.config.classifier.enableAttributeEnrichment;
     this.visionExtractor =
       deps.config.vision.provider === 'google'
         ? new VisionExtractor({
@@ -88,12 +102,18 @@ export class ClassifierService {
 
     // Attribute enrichment via VisionExtractor
     let enrichedAttributes: EnrichedAttributes | undefined;
+    let visualFacts: VisualFacts | undefined;
     let enrichmentMs: number | undefined;
 
     if (request.enrichAttributes && this.enableAttributeEnrichment) {
       const enrichmentStart = performance.now();
       try {
-        enrichedAttributes = await this.extractEnrichedAttributes(request);
+        const enrichmentResult = await this.extractEnrichedAttributes(
+          request,
+          providerResponse
+        );
+        enrichedAttributes = enrichmentResult?.attributes;
+        visualFacts = enrichmentResult?.visualFacts;
         enrichmentMs = Math.round(performance.now() - enrichmentStart);
 
         // Structured logging for attribute extraction (matches observability requirements)
@@ -155,6 +175,7 @@ export class ClassifierService {
       label: mapping.label,
       attributes: mapping.attributes,
       enrichedAttributes,
+      visualFacts,
       provider: providerResponse.provider,
       providerUnavailable,
       timingsMs: {
@@ -170,49 +191,56 @@ export class ClassifierService {
    * Extract enriched attributes using VisionExtractor and AttributeResolver.
    */
   private async extractEnrichedAttributes(
-    request: ClassificationRequest
-  ): Promise<EnrichedAttributes | undefined> {
-    // Convert buffer to base64 for VisionExtractor
-    const base64Data = request.buffer.toString('base64');
-    const imageInput = {
-      base64Data,
-      mimeType: request.contentType as 'image/jpeg' | 'image/png',
-      filename: request.fileName,
-    };
+    request: ClassificationRequest,
+    providerResponse: ProviderResponse
+  ): Promise<{ attributes: EnrichedAttributes; visualFacts: VisualFacts } | undefined> {
+    let visualFacts = providerResponse.visualFacts;
 
-    // Extract visual facts
-    const extractionResult = await this.visionExtractor.extractVisualFacts(
-      request.requestId,
-      [imageInput],
-      {
-        enableOcr: this.config.vision.enableOcr,
-        enableLabels: this.config.vision.enableLabels,
-        enableLogos: this.config.vision.enableLogos,
-        enableColors: this.config.vision.enableColors,
-        maxOcrSnippets: this.config.vision.maxOcrSnippets,
-        maxLabelHints: this.config.vision.maxLabelHints,
-        maxLogoHints: this.config.vision.maxLogoHints,
-        maxColors: this.config.vision.maxColors,
-      }
-    );
+    if (!visualFacts) {
+      const base64Data = request.buffer.toString('base64');
+      const imageInput = {
+        base64Data,
+        mimeType: request.contentType as 'image/jpeg' | 'image/png',
+        filename: request.fileName,
+      };
 
-    if (!extractionResult.success || !extractionResult.facts) {
-      this.logger?.debug(
+      const extractionResult = await this.visionExtractor.extractVisualFacts(
+        request.requestId,
+        [imageInput],
         {
-          requestId: request.requestId,
-          error: extractionResult.error,
-          errorCode: extractionResult.errorCode,
-        },
-        'Vision extraction failed for attribute enrichment'
+          enableOcr: this.config.vision.enableOcr,
+          enableLabels: this.config.vision.enableLabels,
+          enableLogos: this.config.vision.enableLogos,
+          enableColors: this.config.vision.enableColors,
+          maxOcrSnippets: this.config.vision.maxOcrSnippets,
+          maxLabelHints: this.config.vision.maxLabelHints,
+          maxLogoHints: this.config.vision.maxLogoHints,
+          maxColors: this.config.vision.maxColors,
+          ocrMode: this.config.vision.ocrMode,
+        }
       );
-      return undefined;
+
+      if (!extractionResult.success || !extractionResult.facts) {
+        this.logger?.debug(
+          {
+            requestId: request.requestId,
+            error: extractionResult.error,
+            errorCode: extractionResult.errorCode,
+          },
+          'Vision extraction failed for attribute enrichment'
+        );
+        return undefined;
+      }
+
+      visualFacts = extractionResult.facts;
     }
 
-    // Resolve attributes from visual facts
-    const resolved = resolveAttributes(request.requestId, extractionResult.facts);
+    const resolved = resolveAttributes(request.requestId, visualFacts);
 
-    // Convert to EnrichedAttributes type
-    return this.mapResolvedToEnriched(resolved);
+    return {
+      attributes: this.mapResolvedToEnriched(resolved),
+      visualFacts,
+    };
   }
 
   /**

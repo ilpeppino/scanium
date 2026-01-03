@@ -1,4 +1,12 @@
-export type VisionFeature = 'LABEL_DETECTION' | 'OBJECT_LOCALIZATION';
+import { VisualFacts } from '../vision/types.js';
+
+export type VisionFeature =
+  | 'LABEL_DETECTION'
+  | 'OBJECT_LOCALIZATION'
+  | 'TEXT_DETECTION'
+  | 'DOCUMENT_TEXT_DETECTION'
+  | 'IMAGE_PROPERTIES'
+  | 'LOGO_DETECTION';
 
 export type ClassificationHints = Record<string, unknown>;
 
@@ -28,6 +36,7 @@ export type ProviderResponse = {
   provider: 'google-vision' | 'mock';
   signals: ClassificationSignals;
   visionMs?: number;
+  visualFacts?: VisualFacts;
 };
 
 /** Confidence tier for extracted attributes */
@@ -71,6 +80,8 @@ export type ClassificationResult = {
   attributes: Record<string, string>;
   /** Enriched attributes extracted via VisionExtractor (when enrichAttributes=true) */
   enrichedAttributes?: EnrichedAttributes;
+  /** Raw visual facts for evidence (OCR, logos, colors, labels) */
+  visualFacts?: VisualFacts;
   provider: ProviderResponse['provider'];
   providerUnavailable?: boolean;
   cacheHit?: boolean;

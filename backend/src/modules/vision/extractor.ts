@@ -13,12 +13,12 @@ import {
   VisionImageInput,
   VisionExtractorOptions,
   VisionExtractionResult,
-  OcrSnippet,
-  LabelHint,
-  LogoHint,
-  DominantColor,
 } from './types.js';
 import { extractDominantColors } from './color-extractor.js';
+import {
+  extractVisualFactsFromResponses,
+  mergeColors,
+} from './response-mapper.js';
 
 export type VisionExtractorConfig = {
   /** Timeout for Vision API calls in ms */
@@ -56,6 +56,7 @@ const DEFAULT_OPTIONS: Required<VisionExtractorOptions> = {
   maxLabelHints: 10,
   maxLogoHints: 5,
   maxColors: 5,
+  ocrMode: 'TEXT_DETECTION',
 };
 
 /**
@@ -65,109 +66,6 @@ export function computeImageHash(base64Data: string): string {
   return createHash('sha256').update(base64Data).digest('hex').slice(0, 16);
 }
 
-/**
- * Truncate and normalize OCR text.
- * Removes excessive whitespace and limits length.
- */
-function normalizeOcrText(text: string, maxLength: number): string {
-  return text
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, maxLength);
-}
-
-/**
- * Extract high-signal text snippets from OCR response.
- * Filters out noise and keeps only meaningful text.
- */
-function extractOcrSnippets(
-  textAnnotations: protos.google.cloud.vision.v1.IEntityAnnotation[] | null | undefined,
-  options: { maxSnippets: number; maxLength: number; minConfidence: number }
-): OcrSnippet[] {
-  if (!textAnnotations || textAnnotations.length === 0) {
-    return [];
-  }
-
-  // First annotation is full text, rest are individual words/phrases
-  const snippets: OcrSnippet[] = [];
-
-  // Skip the first annotation (full text) and process individual detections
-  for (let i = 1; i < textAnnotations.length && snippets.length < options.maxSnippets; i++) {
-    const annotation = textAnnotations[i];
-    const text = annotation.description?.trim();
-
-    if (!text || text.length < 2) continue;
-
-    // Skip very short or numeric-only text (likely noise)
-    if (text.length < 3 && /^\d+$/.test(text)) continue;
-
-    const confidence = annotation.score ?? 0.8; // Default high confidence for text detection
-    if (confidence < options.minConfidence) continue;
-
-    const normalizedText = normalizeOcrText(text, options.maxLength);
-    if (normalizedText.length >= 2) {
-      snippets.push({
-        text: normalizedText,
-        confidence: Math.round(confidence * 100) / 100,
-      });
-    }
-  }
-
-  // Also extract from full text if individual snippets are sparse
-  if (snippets.length < 3 && textAnnotations[0]?.description) {
-    const fullText = textAnnotations[0].description;
-    // Split by lines and extract meaningful lines
-    const lines = fullText.split('\n')
-      .map((line) => normalizeOcrText(line, options.maxLength))
-      .filter((line) => line.length >= 3);
-
-    for (const line of lines) {
-      if (snippets.length >= options.maxSnippets) break;
-      // Avoid duplicates
-      if (!snippets.some((s) => s.text.includes(line) || line.includes(s.text))) {
-        snippets.push({ text: line, confidence: 0.8 });
-      }
-    }
-  }
-
-  return snippets.slice(0, options.maxSnippets);
-}
-
-/**
- * Extract label hints from Vision API response.
- */
-function extractLabelHints(
-  labelAnnotations: protos.google.cloud.vision.v1.IEntityAnnotation[] | null | undefined,
-  options: { maxLabels: number; minConfidence: number }
-): LabelHint[] {
-  if (!labelAnnotations) return [];
-
-  return labelAnnotations
-    .filter((label) => (label.score ?? 0) >= options.minConfidence)
-    .slice(0, options.maxLabels)
-    .map((label) => ({
-      label: label.description ?? 'unknown',
-      score: Math.round((label.score ?? 0) * 100) / 100,
-    }));
-}
-
-/**
- * Extract logo hints from Vision API response.
- */
-function extractLogoHints(
-  logoAnnotations: protos.google.cloud.vision.v1.IEntityAnnotation[] | null | undefined,
-  options: { maxLogos: number; minConfidence: number }
-): LogoHint[] {
-  if (!logoAnnotations) return [];
-
-  return logoAnnotations
-    .filter((logo) => (logo.score ?? 0) >= options.minConfidence)
-    .slice(0, options.maxLogos)
-    .map((logo) => ({
-      brand: logo.description ?? 'unknown',
-      score: Math.round((logo.score ?? 0) * 100) / 100,
-    }));
-}
 
 export class VisionExtractor {
   private readonly client: ImageAnnotatorClient;
@@ -212,7 +110,10 @@ export class VisionExtractor {
 
       if (opts.enableOcr) {
         features.push({
-          type: protos.google.cloud.vision.v1.Feature.Type.TEXT_DETECTION,
+          type:
+            opts.ocrMode === 'DOCUMENT_TEXT_DETECTION'
+              ? protos.google.cloud.vision.v1.Feature.Type.DOCUMENT_TEXT_DETECTION
+              : protos.google.cloud.vision.v1.Feature.Type.TEXT_DETECTION,
           maxResults: 50,
         });
       }
@@ -231,6 +132,12 @@ export class VisionExtractor {
         });
       }
 
+      if (opts.enableColors) {
+        features.push({
+          type: protos.google.cloud.vision.v1.Feature.Type.IMAGE_PROPERTIES,
+        });
+      }
+
       // Process all images in parallel
       const visionRequests: protos.google.cloud.vision.v1.IAnnotateImageRequest[] =
         images.map((img) => ({
@@ -243,46 +150,35 @@ export class VisionExtractor {
       const visionResponses = await this.callWithRetry(visionRequests);
       const visionTime = Math.round(performance.now() - visionStart);
 
-      // Aggregate results from all images
-      const allOcrSnippets: OcrSnippet[] = [];
-      const allLabelHints: LabelHint[] = [];
-      const allLogoHints: LogoHint[] = [];
-      const allColors: DominantColor[] = [];
-
-      // Process Vision API responses
-      for (const response of visionResponses) {
-        if (opts.enableOcr) {
-          const snippets = extractOcrSnippets(response.textAnnotations, {
-            maxSnippets: opts.maxOcrSnippets,
-            maxLength: this.config.maxOcrSnippetLength,
-            minConfidence: this.config.minOcrConfidence,
-          });
-          allOcrSnippets.push(...snippets);
+      const extracted = extractVisualFactsFromResponses(
+        visionResponses,
+        {
+          enableOcr: opts.enableOcr,
+          enableLabels: opts.enableLabels,
+          enableLogos: opts.enableLogos,
+          enableColors: opts.enableColors,
+          maxOcrSnippets: opts.maxOcrSnippets,
+          maxLabelHints: opts.maxLabelHints,
+          maxLogoHints: opts.maxLogoHints,
+          maxColors: opts.maxColors,
+          ocrMode: opts.ocrMode,
+        },
+        {
+          maxOcrSnippetLength: this.config.maxOcrSnippetLength,
+          minOcrConfidence: this.config.minOcrConfidence,
+          minLabelConfidence: this.config.minLabelConfidence,
+          minLogoConfidence: this.config.minLogoConfidence,
         }
-
-        if (opts.enableLabels) {
-          const labels = extractLabelHints(response.labelAnnotations, {
-            maxLabels: opts.maxLabelHints,
-            minConfidence: this.config.minLabelConfidence,
-          });
-          allLabelHints.push(...labels);
-        }
-
-        if (opts.enableLogos) {
-          const logos = extractLogoHints(response.logoAnnotations, {
-            maxLogos: opts.maxLogoHints,
-            minConfidence: this.config.minLogoConfidence,
-          });
-          allLogoHints.push(...logos);
-        }
-      }
+      );
 
       timings.ocr = opts.enableOcr ? visionTime : undefined;
       timings.labels = opts.enableLabels ? visionTime : undefined;
       timings.logos = opts.enableLogos ? visionTime : undefined;
+      timings.colors = opts.enableColors ? visionTime : undefined;
 
-      // Extract colors in parallel (server-side)
-      if (opts.enableColors) {
+      let dominantColors = extracted.dominantColors;
+
+      if (opts.enableColors && dominantColors.length === 0) {
         const colorStart = performance.now();
         const colorResults = await Promise.all(
           images.map((img) => {
@@ -291,27 +187,19 @@ export class VisionExtractor {
           })
         );
 
-        // Merge color results from all images
-        for (const result of colorResults) {
-          allColors.push(...result.colors);
-        }
+        const allColors = colorResults.flatMap((result) => result.colors);
+        dominantColors = mergeColors(allColors, opts.maxColors);
         timings.colors = Math.round(performance.now() - colorStart);
       }
-
-      // Deduplicate and sort results
-      const uniqueOcrSnippets = deduplicateSnippets(allOcrSnippets, opts.maxOcrSnippets);
-      const uniqueLabels = deduplicateLabels(allLabelHints, opts.maxLabelHints);
-      const uniqueLogos = deduplicateLogos(allLogoHints, opts.maxLogoHints);
-      const mergedColors = mergeColors(allColors, opts.maxColors);
 
       timings.total = Math.round(performance.now() - startTime);
 
       const facts: VisualFacts = {
         itemId,
-        dominantColors: mergedColors,
-        ocrSnippets: uniqueOcrSnippets,
-        labelHints: uniqueLabels,
-        logoHints: uniqueLogos.length > 0 ? uniqueLogos : undefined,
+        dominantColors,
+        ocrSnippets: extracted.ocrSnippets,
+        labelHints: extracted.labelHints,
+        logoHints: extracted.logoHints.length > 0 ? extracted.logoHints : undefined,
         extractionMeta: {
           provider: 'google-vision',
           timingsMs: timings,
@@ -436,97 +324,4 @@ export class MockVisionExtractor {
 
     return { success: true, facts };
   }
-}
-
-/**
- * Deduplicate OCR snippets by text similarity.
- */
-function deduplicateSnippets(snippets: OcrSnippet[], maxCount: number): OcrSnippet[] {
-  const unique: OcrSnippet[] = [];
-
-  for (const snippet of snippets) {
-    const isDuplicate = unique.some(
-      (u) =>
-        u.text.toLowerCase() === snippet.text.toLowerCase() ||
-        u.text.toLowerCase().includes(snippet.text.toLowerCase()) ||
-        snippet.text.toLowerCase().includes(u.text.toLowerCase())
-    );
-
-    if (!isDuplicate) {
-      unique.push(snippet);
-    }
-  }
-
-  // Sort by confidence (descending)
-  return unique
-    .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))
-    .slice(0, maxCount);
-}
-
-/**
- * Deduplicate labels by name.
- */
-function deduplicateLabels(labels: LabelHint[], maxCount: number): LabelHint[] {
-  const seen = new Map<string, LabelHint>();
-
-  for (const label of labels) {
-    const key = label.label.toLowerCase();
-    const existing = seen.get(key);
-    if (!existing || label.score > existing.score) {
-      seen.set(key, label);
-    }
-  }
-
-  return Array.from(seen.values())
-    .sort((a, b) => b.score - a.score)
-    .slice(0, maxCount);
-}
-
-/**
- * Deduplicate logos by brand name.
- */
-function deduplicateLogos(logos: LogoHint[], maxCount: number): LogoHint[] {
-  const seen = new Map<string, LogoHint>();
-
-  for (const logo of logos) {
-    const key = logo.brand.toLowerCase();
-    const existing = seen.get(key);
-    if (!existing || logo.score > existing.score) {
-      seen.set(key, logo);
-    }
-  }
-
-  return Array.from(seen.values())
-    .sort((a, b) => b.score - a.score)
-    .slice(0, maxCount);
-}
-
-/**
- * Merge colors from multiple images by color name.
- */
-function mergeColors(colors: DominantColor[], maxCount: number): DominantColor[] {
-  const byName = new Map<string, DominantColor & { totalPct: number; count: number }>();
-
-  for (const color of colors) {
-    const existing = byName.get(color.name);
-    if (existing) {
-      existing.totalPct += color.pct;
-      existing.count++;
-      // Keep the most representative hex value (from highest pct image)
-      if (color.pct > existing.pct) {
-        existing.rgbHex = color.rgbHex;
-      }
-    } else {
-      byName.set(color.name, { ...color, totalPct: color.pct, count: 1 });
-    }
-  }
-
-  return Array.from(byName.values())
-    .map((c) => ({
-      name: c.name,
-      rgbHex: c.rgbHex,
-      pct: Math.round(c.totalPct / c.count),
-    }))
-    .sort((a, b) => b.pct - a.pct)
-    .slice(0, maxCount);
 }

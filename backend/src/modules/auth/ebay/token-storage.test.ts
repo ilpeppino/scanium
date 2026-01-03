@@ -32,7 +32,7 @@ const baseConfig: Config = {
   databaseUrl: 'postgresql://user:pass@localhost:5432/db',
   classifier: {
     provider: 'mock',
-    visionFeature: 'LABEL_DETECTION',
+    visionFeature: ['LABEL_DETECTION'],
     maxUploadBytes: 1024,
     rateLimitPerMinute: 60,
     ipRateLimitPerMinute: 60,

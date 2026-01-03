@@ -68,7 +68,7 @@ function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: n
 /**
  * Get the basic color name for an RGB value.
  */
-function getColorName(r: number, g: number, b: number): string {
+export function getColorName(r: number, g: number, b: number): string {
   const { h, s, l } = rgbToHsl(r, g, b);
 
   for (const def of COLOR_DEFINITIONS) {
@@ -93,7 +93,7 @@ function getColorName(r: number, g: number, b: number): string {
 /**
  * Convert RGB to hex string.
  */
-function rgbToHex(r: number, g: number, b: number): string {
+export function rgbToHex(r: number, g: number, b: number): string {
   return '***REMOVED***' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
 
