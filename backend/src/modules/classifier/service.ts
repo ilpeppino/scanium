@@ -4,6 +4,8 @@ import {
   ProviderResponse,
   EnrichedAttributes,
   EnrichedAttribute,
+  VisionAttributeSummary,
+  VisionStats,
 } from './types.js';
 import { GoogleVisionClassifier, GoogleVisionOptions } from './providers/google-vision.js';
 import { MockClassifier, MockClassifierOptions } from './providers/mock-classifier.js';
@@ -11,8 +13,18 @@ import { DomainPack, loadDomainPack } from './domain/domain-pack.js';
 import { mapSignalsToDomainCategory } from './domain/mapper.js';
 import { Config } from '../../config/index.js';
 import { CircuitBreaker } from '../../infra/resilience/circuit-breaker.js';
-import { VisionExtractor, MockVisionExtractor } from '../vision/extractor.js';
-import { resolveAttributes, ResolvedAttribute } from '../vision/attribute-resolver.js';
+import {
+  VisionExtractor,
+  MockVisionExtractor,
+  VisualFactsCache,
+  buildCacheKey,
+  computeImageHash,
+} from '../vision/index.js';
+import {
+  resolveAttributes,
+  ResolvedAttribute,
+  collectAttributeCandidates,
+} from '../vision/attribute-resolver.js';
 import { VisualFacts } from '../vision/types.js';
 
 type ClassifierDeps = {
@@ -35,6 +47,8 @@ export class ClassifierService {
   private readonly visionExtractor: VisionExtractor | MockVisionExtractor;
   private readonly enableAttributeEnrichment: boolean;
   private readonly config: Config;
+  private readonly visionCache: VisualFactsCache;
+  private readonly visionFeatureKey: string;
 
   constructor(deps: ClassifierDeps) {
     this.config = deps.config;
@@ -86,6 +100,11 @@ export class ClassifierService {
             minLogoConfidence: deps.config.vision.minLogoConfidence,
           })
         : new MockVisionExtractor();
+    this.visionCache = new VisualFactsCache({
+      ttlMs: deps.config.vision.cacheTtlSeconds * 1000,
+      maxEntries: deps.config.vision.cacheMaxEntries,
+    });
+    this.visionFeatureKey = this.buildVisionFeatureKey(deps.config.vision);
 
     if (this.domainPack.id !== deps.config.classifier.domainPackId) {
       console.warn(
@@ -103,9 +122,17 @@ export class ClassifierService {
     // Attribute enrichment via VisionExtractor
     let enrichedAttributes: EnrichedAttributes | undefined;
     let visualFacts: VisualFacts | undefined;
+    let visionAttributes: VisionAttributeSummary | undefined;
+    let visionStats: VisionStats | undefined;
     let enrichmentMs: number | undefined;
 
     if (request.enrichAttributes && this.enableAttributeEnrichment) {
+      visionStats = {
+        attempted: true,
+        visionCacheHits: 0,
+        visionExtractions: 0,
+        visionErrors: 0,
+      };
       const enrichmentStart = performance.now();
       try {
         const enrichmentResult = await this.extractEnrichedAttributes(
@@ -115,6 +142,18 @@ export class ClassifierService {
         enrichedAttributes = enrichmentResult?.attributes;
         visualFacts = enrichmentResult?.visualFacts;
         enrichmentMs = Math.round(performance.now() - enrichmentStart);
+
+        if (visualFacts) {
+          const cacheHit = Boolean(visualFacts.extractionMeta.cacheHit);
+          if (cacheHit) {
+            visionStats.visionCacheHits += 1;
+          } else {
+            visionStats.visionExtractions += 1;
+          }
+          visionAttributes = this.buildVisionAttributes(visualFacts);
+        } else {
+          visionStats.visionErrors += 1;
+        }
 
         // Structured logging for attribute extraction (matches observability requirements)
         // IMPORTANT: Never log OCR text content (may contain PII)
@@ -145,13 +184,16 @@ export class ClassifierService {
             attributesExtracted,
             ...confidenceByAttribute,
             visionLatencyMs: enrichmentMs,
-            cacheHit: false,
+            cacheHit: Boolean(visualFacts?.extractionMeta.cacheHit),
             // Values logged only in debug mode to prevent PII exposure
             // attributeValues: enrichedAttributes (NOT LOGGED IN PRODUCTION)
           },
           'Attribute extraction completed'
         );
       } catch (error) {
+        if (visionStats) {
+          visionStats.visionErrors += 1;
+        }
         this.logger?.warn(
           {
             requestId: request.requestId,
@@ -176,6 +218,8 @@ export class ClassifierService {
       attributes: mapping.attributes,
       enrichedAttributes,
       visualFacts,
+      visionAttributes,
+      visionStats,
       provider: providerResponse.provider,
       providerUnavailable,
       timingsMs: {
@@ -198,41 +242,57 @@ export class ClassifierService {
 
     if (!visualFacts) {
       const base64Data = request.buffer.toString('base64');
-      const imageInput = {
-        base64Data,
-        mimeType: request.contentType as 'image/jpeg' | 'image/png',
-        filename: request.fileName,
-      };
-
-      const extractionResult = await this.visionExtractor.extractVisualFacts(
-        request.requestId,
-        [imageInput],
-        {
-          enableOcr: this.config.vision.enableOcr,
-          enableLabels: this.config.vision.enableLabels,
-          enableLogos: this.config.vision.enableLogos,
-          enableColors: this.config.vision.enableColors,
-          maxOcrSnippets: this.config.vision.maxOcrSnippets,
-          maxLabelHints: this.config.vision.maxLabelHints,
-          maxLogoHints: this.config.vision.maxLogoHints,
-          maxColors: this.config.vision.maxColors,
-          ocrMode: this.config.vision.ocrMode,
-        }
-      );
-
-      if (!extractionResult.success || !extractionResult.facts) {
+      const hash = computeImageHash(base64Data);
+      const cacheKey = this.buildVisualFactsCacheKey([hash]);
+      const cachedFacts = this.visionCache.get(cacheKey);
+      if (cachedFacts) {
         this.logger?.debug(
           {
             requestId: request.requestId,
-            error: extractionResult.error,
-            errorCode: extractionResult.errorCode,
+            correlationId: request.correlationId,
+            cacheKey: cacheKey.slice(0, 16),
           },
-          'Vision extraction failed for attribute enrichment'
+          'Vision cache hit for classifier enrichment'
         );
-        return undefined;
-      }
+        visualFacts = cachedFacts;
+      } else {
+        const imageInput = {
+          base64Data,
+          mimeType: request.contentType as 'image/jpeg' | 'image/png',
+          filename: request.fileName,
+        };
 
-      visualFacts = extractionResult.facts;
+        const extractionResult = await this.visionExtractor.extractVisualFacts(
+          request.requestId,
+          [imageInput],
+          {
+            enableOcr: this.config.vision.enableOcr,
+            enableLabels: this.config.vision.enableLabels,
+            enableLogos: this.config.vision.enableLogos,
+            enableColors: this.config.vision.enableColors,
+            maxOcrSnippets: this.config.vision.maxOcrSnippets,
+            maxLabelHints: this.config.vision.maxLabelHints,
+            maxLogoHints: this.config.vision.maxLogoHints,
+            maxColors: this.config.vision.maxColors,
+            ocrMode: this.config.vision.ocrMode,
+          }
+        );
+
+        if (!extractionResult.success || !extractionResult.facts) {
+          this.logger?.debug(
+            {
+              requestId: request.requestId,
+              error: extractionResult.error,
+              errorCode: extractionResult.errorCode,
+            },
+            'Vision extraction failed for attribute enrichment'
+          );
+          return undefined;
+        }
+
+        visualFacts = extractionResult.facts;
+        this.visionCache.set(cacheKey, visualFacts);
+      }
     }
 
     const resolved = resolveAttributes(request.requestId, visualFacts);
@@ -294,6 +354,45 @@ export class ClassifierService {
         score: ref.score,
       })),
     };
+  }
+
+  private buildVisionAttributes(visualFacts: VisualFacts): VisionAttributeSummary {
+    const { brandCandidates, modelCandidates } = collectAttributeCandidates(visualFacts);
+    const ocrText = visualFacts.ocrSnippets
+      .map((snippet) => snippet.text)
+      .filter(Boolean)
+      .slice(0, 10)
+      .join('\n')
+      .slice(0, 500);
+
+    return {
+      colors: visualFacts.dominantColors.map((color) => ({
+        name: color.name,
+        hex: color.rgbHex,
+        score: Number((color.pct / 100).toFixed(3)),
+      })),
+      ocrText,
+      logos: (visualFacts.logoHints ?? []).map((logo) => ({
+        name: logo.brand,
+        score: logo.score,
+      })),
+      brandCandidates,
+      modelCandidates,
+    };
+  }
+
+  private buildVisualFactsCacheKey(imageHashes: string[]): string {
+    return buildCacheKey(imageHashes, { featureVersion: this.visionFeatureKey, mode: 'classifier' });
+  }
+
+  private buildVisionFeatureKey(config: Config['vision']): string {
+    const parts = [
+      config.enableOcr ? `ocr:${config.ocrMode}` : null,
+      config.enableLabels ? 'labels' : null,
+      config.enableLogos ? 'logos' : null,
+      config.enableColors ? 'colors' : null,
+    ].filter(Boolean);
+    return parts.join('|') || 'none';
   }
 
   private async runProvider(

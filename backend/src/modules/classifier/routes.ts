@@ -268,7 +268,20 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
           cached.domainCategoryId ?? undefined,
           cached.confidence ?? undefined
         );
-        return reply.status(200).send({ ...cached, cacheHit: true, correlationId });
+        const cachedResponse = {
+          ...cached,
+          cacheHit: true,
+          correlationId,
+        };
+        if (cachedResponse.visionStats) {
+          cachedResponse.visionStats = {
+            attempted: false,
+            visionCacheHits: 0,
+            visionExtractions: 0,
+            visionErrors: 0,
+          };
+        }
+        return reply.status(200).send(cachedResponse);
       }
 
       // Parse enrichAttributes from query param or form field (default: true if config enabled)
@@ -342,16 +355,29 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
           userAgent: request.headers['user-agent'],
         });
 
-        request.log.info(
-          {
-            apiKeyPrefix: apiKey.substring(0, 8),
-            ip: request.ip,
-            endpoint: request.url,
-            requestId,
-          },
-          'API key usage: classification request successful'
-        );
-      }
+      request.log.info(
+        {
+          apiKeyPrefix: apiKey.substring(0, 8),
+          ip: request.ip,
+          endpoint: request.url,
+          requestId,
+        },
+        'API key usage: classification request successful'
+      );
+    }
+
+      request.log.info(
+        {
+          requestId,
+          correlationId,
+          domainCategoryId: result.domainCategoryId,
+          cacheHit: false,
+          visionExtractions: result.visionStats?.visionExtractions ?? 0,
+          visionCacheHits: result.visionStats?.visionCacheHits ?? 0,
+          visionErrors: result.visionStats?.visionErrors ?? 0,
+        },
+        'Classifier response'
+      );
 
       return reply.status(200).send({ ...result, cacheHit: false, correlationId });
     } catch (error) {

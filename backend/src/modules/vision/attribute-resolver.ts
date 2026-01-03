@@ -247,6 +247,64 @@ function resolveBrand(facts: VisualFacts): ResolvedAttribute | undefined {
   return undefined;
 }
 
+export function collectAttributeCandidates(
+  facts: VisualFacts
+): { brandCandidates: string[]; modelCandidates: string[] } {
+  const brandCandidates: string[] = [];
+  const modelCandidates: string[] = [];
+  const seenBrands = new Set<string>();
+  const seenModels = new Set<string>();
+
+  const pushBrand = (value: string) => {
+    const key = normalizeForComparison(value);
+    if (!seenBrands.has(key)) {
+      seenBrands.add(key);
+      brandCandidates.push(value);
+    }
+  };
+
+  const pushModel = (value: string) => {
+    const key = normalizeForComparison(value);
+    if (!seenModels.has(key)) {
+      seenModels.add(key);
+      modelCandidates.push(value);
+    }
+  };
+
+  if (facts.logoHints) {
+    const logos = [...facts.logoHints].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+    for (const logo of logos) {
+      const brand = logo.brand?.trim();
+      if (brand) {
+        pushBrand(brand);
+      }
+    }
+  }
+
+  const allOcrText = facts.ocrSnippets.map((snippet) => snippet.text ?? '').filter(Boolean);
+
+  for (const snippet of facts.ocrSnippets) {
+    const text = snippet.text?.trim();
+    if (!text) continue;
+
+    const matchedBrand = matchBrandDictionary(text);
+    if (matchedBrand) {
+      pushBrand(matchedBrand);
+    } else if (looksLikeBrand(text)) {
+      pushBrand(text);
+    }
+
+    if (looksLikeModel(text, allOcrText)) {
+      pushModel(text);
+    }
+  }
+
+  return {
+    brandCandidates: brandCandidates.slice(0, 5),
+    modelCandidates: modelCandidates.slice(0, 5),
+  };
+}
+
 /**
  * Resolve model attribute from VisualFacts.
  */
