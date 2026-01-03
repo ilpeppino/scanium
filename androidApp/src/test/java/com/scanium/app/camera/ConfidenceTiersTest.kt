@@ -106,7 +106,7 @@ class ConfidenceTiersTest {
             priceText = "",
             confidence = confidence,
             isReady = true,
-            priceEstimationStatus = PriceEstimationStatus.Ready,
+            priceEstimationStatus = PriceEstimationStatus.Idle,
         )
     }
 

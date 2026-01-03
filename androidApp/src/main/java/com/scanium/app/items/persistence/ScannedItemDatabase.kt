@@ -11,7 +11,7 @@ import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
     entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
@@ -35,7 +35,7 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                 ScannedItemDatabase::class.java,
                 "scanned_items.db",
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
                 .build()
@@ -118,6 +118,19 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                         )
                         """.trimIndent(),
                     )
+                }
+            }
+
+        private val MIGRATION_3_4 =
+            object : Migration(3, 4) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Add userPriceCents and condition columns to scanned_items table
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN userPriceCents INTEGER")
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN condition TEXT")
+
+                    // Add userPriceCents and condition columns to scanned_item_history table
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN userPriceCents INTEGER")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN condition TEXT")
                 }
             }
     }

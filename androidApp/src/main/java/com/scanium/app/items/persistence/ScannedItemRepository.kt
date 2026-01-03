@@ -191,6 +191,8 @@ private fun snapshotHash(entity: ScannedItemEntity): String {
     updateString(entity.domainCategoryId)
     updateString(entity.classificationErrorMessage)
     updateString(entity.classificationRequestId)
+    updateLong(entity.userPriceCents ?: -1L)
+    updateString(entity.condition)
 
     return digest.digest().joinToString("") { "%02x".format(it) }
 }

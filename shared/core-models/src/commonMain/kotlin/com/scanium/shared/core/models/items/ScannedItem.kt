@@ -87,6 +87,8 @@ data class ScannedItem<FullImageUri>(
     val classificationErrorMessage: String? = null,
     val classificationRequestId: String? = null,
     val qualityScore: Float = 0.0f,
+    val userPriceCents: Long? = null,
+    val condition: ItemCondition? = null,
 ) {
     /**
      * Formatted price range string for display.
@@ -124,6 +126,18 @@ data class ScannedItem<FullImageUri>(
         get() {
             val preferred = labelText?.trim().takeUnless { it.isNullOrEmpty() } ?: category.displayName
             return capitalizeDisplayLabel(preferred.trim())
+        }
+
+    /**
+     * Formatted user price string for display.
+     * Returns null if no user price is set.
+     * Example: "€12.50"
+     */
+    val formattedUserPrice: String?
+        get() {
+            val cents = userPriceCents ?: return null
+            val euros = cents / 100.0
+            return "€${"%.2f".format(euros)}"
         }
 }
 

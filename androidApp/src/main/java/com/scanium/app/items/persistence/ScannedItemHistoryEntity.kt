@@ -44,6 +44,8 @@ data class ScannedItemHistoryEntity(
     val domainCategoryId: String?,
     val classificationErrorMessage: String?,
     val classificationRequestId: String?,
+    val userPriceCents: Long?,
+    val condition: String?,
 )
 
 fun ScannedItemEntity.toHistoryEntity(
@@ -83,5 +85,7 @@ fun ScannedItemEntity.toHistoryEntity(
         domainCategoryId = domainCategoryId,
         classificationErrorMessage = classificationErrorMessage,
         classificationRequestId = classificationRequestId,
+        userPriceCents = userPriceCents,
+        condition = condition,
     )
 }

@@ -3,6 +3,7 @@ package com.scanium.app.items.persistence
 import android.net.Uri
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.scanium.app.items.ItemCondition
 import com.scanium.app.items.ItemListingStatus
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ml.ItemCategory
@@ -44,6 +45,8 @@ data class ScannedItemEntity(
     val domainCategoryId: String?,
     val classificationErrorMessage: String?,
     val classificationRequestId: String?,
+    val userPriceCents: Long?,
+    val condition: String?,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -82,6 +85,8 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         domainCategoryId = domainCategoryId,
         classificationErrorMessage = classificationErrorMessage,
         classificationRequestId = classificationRequestId,
+        userPriceCents = userPriceCents,
+        condition = condition?.name,
     )
 }
 
@@ -92,6 +97,10 @@ fun ScannedItemEntity.toModel(): ScannedItem {
     val listingStatusValue =
         runCatching { ItemListingStatus.valueOf(listingStatus) }
             .getOrElse { ItemListingStatus.NOT_LISTED }
+    val conditionValue =
+        condition?.let { name ->
+            runCatching { ItemCondition.valueOf(name) }.getOrNull()
+        }
     val boundingBoxValue =
         if (
             boundingBoxLeft != null &&
@@ -146,6 +155,8 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         domainCategoryId = domainCategoryId,
         classificationErrorMessage = classificationErrorMessage,
         classificationRequestId = classificationRequestId,
+        userPriceCents = userPriceCents,
+        condition = conditionValue,
     )
 }
 
