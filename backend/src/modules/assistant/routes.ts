@@ -295,6 +295,53 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     await redisClient?.quit?.();
   });
 
+  fastify.post('/assist/warmup', async (request, reply) => {
+    const requestId = randomUUID();
+    const correlationId = request.correlationId ?? requestId;
+    const timestamp = new Date().toISOString();
+
+    const apiKey = (request.headers['x-api-key'] as string | undefined)?.trim();
+    if (!apiKey || !apiKeyManager.validateKey(apiKey)) {
+      return reply.status(401).send({
+        status: 'error',
+        reason: 'UNAUTHORIZED',
+        message: 'Missing or invalid API key',
+        ts: timestamp,
+        correlationId,
+      });
+    }
+
+    const readiness = service.getReadiness();
+
+    if (!readiness.providerConfigured || config.assistant.provider === 'disabled') {
+      return reply.status(503).send({
+        status: 'error',
+        reason: 'PROVIDER_NOT_CONFIGURED',
+        message: 'Assistant provider is not configured',
+        ts: timestamp,
+        correlationId,
+      });
+    }
+
+    if (!readiness.providerReachable) {
+      return reply.status(503).send({
+        status: 'error',
+        reason: 'PROVIDER_UNAVAILABLE',
+        message: 'Assistant provider unavailable',
+        ts: timestamp,
+        correlationId,
+      });
+    }
+
+    return reply.status(200).send({
+      status: 'ok',
+      provider: readiness.providerType,
+      model: getAssistantModel(config),
+      ts: timestamp,
+      correlationId,
+    });
+  });
+
   fastify.post('/assist/chat', async (request, reply) => {
     const requestId = randomUUID();
     const correlationId = request.correlationId ?? requestId;
@@ -1023,6 +1070,19 @@ function mergeImagesIntoItems<T extends { itemId: string }>(
     }
     return item;
   });
+}
+
+function getAssistantModel(config: Config): string {
+  switch (config.assistant.provider) {
+    case 'claude':
+      return config.assistant.claudeModel;
+    case 'openai':
+      return config.assistant.openaiModel;
+    case 'mock':
+      return 'mock';
+    default:
+      return 'unknown';
+  }
 }
 
 function buildAssistantError(

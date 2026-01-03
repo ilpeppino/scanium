@@ -50,6 +50,37 @@ afterAll(async () => {
   await app.close();
 });
 
+describe('POST /v1/assist/warmup', () => {
+  it('returns readiness info when assistant is enabled', async () => {
+    const app = await appPromise;
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/assist/warmup',
+      headers: { 'x-api-key': 'assist-key' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.status).toBe('ok');
+    expect(body.provider).toBe('mock');
+    expect(body.model).toBe('mock');
+    expect(typeof body.ts).toBe('string');
+    expect(body.correlationId).toBeTruthy();
+  });
+
+  it('rejects requests without API key', async () => {
+    const app = await appPromise;
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/assist/warmup',
+    });
+
+    expect(res.statusCode).toBe(401);
+    const body = JSON.parse(res.body);
+    expect(body.reason).toBe('UNAUTHORIZED');
+  });
+});
+
 describe('POST /v1/assist/chat', () => {
   it('rejects requests without API key', async () => {
     const app = await appPromise;

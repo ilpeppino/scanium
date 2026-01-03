@@ -10,6 +10,7 @@
 
 | Endpoint | Method | Purpose | Source File |
 |----------|--------|---------|-------------|
+| `/v1/assist/warmup` | POST | Lightweight readiness probe before enabling assistant UI | `backend/src/modules/assistant/routes.ts:298` |
 | `/v1/assist/chat` | POST | Main AI assistant chat | `backend/src/modules/assistant/routes.ts:260` |
 | `/v1/assist/chat/status/:requestId` | GET | Staged request status | `backend/src/modules/assistant/routes.ts:729` |
 
