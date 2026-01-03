@@ -144,5 +144,9 @@ describe('POST /v1/classify (vision attributes)', () => {
     expect(body.visualFacts.dominantColors[0].rgbHex).toBe('***REMOVED***FF0000');
     expect(body.enrichedAttributes.brand.value).toBe('IKEA');
     expect(body.enrichedAttributes.color.value).toBe('red');
+    expect(body.visionAttributes.colors.length).toBeGreaterThan(0);
+    expect(body.visionAttributes.brandCandidates[0]).toBe('IKEA');
+    expect(body.visionStats.visionExtractions).toBe(1);
+    expect(body.visionStats.visionCacheHits).toBe(0);
   });
 });

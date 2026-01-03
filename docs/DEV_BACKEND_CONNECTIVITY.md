@@ -336,6 +336,24 @@ Example debug strings:
    ```
 3. Check backend version supports classification
 
+Example response payload (when `enrichAttributes=true`) includes structured image attributes so the app can decide whether the assistant is “online”:
+
+```json
+{
+  "domainCategoryId": "furniture_shelf",
+  "confidence": 0.81,
+  "attributes": {"segment": "storage"},
+  "visionAttributes": {
+    "colors": [{"name": "blue", "hex": "***REMOVED***1E40AF", "score": 0.44}],
+    "ocrText": "IKEA KALLAX 4X4",
+    "logos": [{"name": "IKEA", "score": 0.88}],
+    "brandCandidates": ["IKEA"],
+    "modelCandidates": ["KALLAX"]
+  },
+  "visionStats": {"attempted": true, "visionExtractions": 1, "visionCacheHits": 0, "visionErrors": 0}
+}
+```
+
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health returns 502/530 (Cloudflare errors)
 
 **Symptoms:**

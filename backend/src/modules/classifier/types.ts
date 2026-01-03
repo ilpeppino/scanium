@@ -69,6 +69,21 @@ export type EnrichedAttributes = {
   suggestedNextPhoto?: string;
 };
 
+export type VisionAttributeSummary = {
+  colors: Array<{ name: string; hex: string; score: number }>;
+  ocrText: string;
+  logos: Array<{ name: string; score: number }>;
+  brandCandidates: string[];
+  modelCandidates: string[];
+};
+
+export type VisionStats = {
+  attempted: boolean;
+  visionExtractions: number;
+  visionCacheHits: number;
+  visionErrors: number;
+};
+
 export type ClassificationResult = {
   requestId: string;
   correlationId: string;
@@ -82,6 +97,10 @@ export type ClassificationResult = {
   enrichedAttributes?: EnrichedAttributes;
   /** Raw visual facts for evidence (OCR, logos, colors, labels) */
   visualFacts?: VisualFacts;
+  /** Summary of visual attributes for clients */
+  visionAttributes?: VisionAttributeSummary;
+  /** Vision execution stats for observability */
+  visionStats?: VisionStats;
   provider: ProviderResponse['provider'];
   providerUnavailable?: boolean;
   cacheHit?: boolean;

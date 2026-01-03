@@ -37,14 +37,14 @@ Set in `.env`:
 SCANIUM_CLASSIFIER_PROVIDER=google
 SCANIUM_API_KEYS=your-key
 GOOGLE_APPLICATION_CREDENTIALS=/secrets/vision-sa.json
-VISION_FEATURE=LABEL_DETECTION   ***REMOVED*** or OBJECT_LOCALIZATION
+VISION_FEATURE=LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES   ***REMOVED*** CSV supported
 ```
 Run: `npm run build && npm start`
 
 ***REMOVED******REMOVED*** Environment variables (required unless noted)
 - `SCANIUM_API_KEYS` – comma-separated API keys for `X-API-Key`
 - `SCANIUM_CLASSIFIER_PROVIDER` – `mock` (default) | `google`
-- `VISION_FEATURE` – `LABEL_DETECTION` (default) | `OBJECT_LOCALIZATION`
+- `VISION_FEATURE` – Comma-separated Google Vision features (e.g., `TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION`)
 - `GOOGLE_APPLICATION_CREDENTIALS` – path to Service Account JSON (google mode)
 - `MAX_UPLOAD_BYTES` – request file cap (default 5 MB)
 - `CLASSIFIER_RATE_LIMIT_PER_MINUTE` – per-key limit (default 60)
@@ -66,6 +66,14 @@ Run: `npm run build && npm start`
   "domainCategoryId": "chair",
   "confidence": 0.82,
   "attributes": {"segment": "seating"},
+  "visionAttributes": {
+    "colors": [{"name": "red", "hex": "***REMOVED***FF0000", "score": 0.62}],
+    "ocrText": "IKEA KALLAX",
+    "logos": [{"name": "IKEA", "score": 0.88}],
+    "brandCandidates": ["IKEA"],
+    "modelCandidates": ["KALLAX"]
+  },
+  "visionStats": {"attempted": true, "visionExtractions": 1, "visionCacheHits": 0, "visionErrors": 0},
   "provider": "google-vision",
   "timingsMs": { "total": 180, "vision": 120, "mapping": 5 }
 }
