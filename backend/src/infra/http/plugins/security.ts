@@ -6,6 +6,7 @@ import { Config } from '../../../config/index.js';
  * Paths exempt from HTTPS enforcement (for Docker healthchecks).
  */
 const HTTPS_EXEMPT_PATHS = ['/health', '/healthz', '/readyz'];
+const LOOPBACK_HOSTS = new Set(['localhost', 'localhost.localdomain']);
 
 /**
  * Check if a request path is exempt from HTTPS enforcement.
@@ -14,6 +15,82 @@ function isHttpsExempt(url: string): boolean {
   // Extract path without query string
   const path = url.split('?')[0];
   return HTTPS_EXEMPT_PATHS.includes(path);
+}
+
+/**
+ * Normalize host header value (strip port/comma, lowercase).
+ */
+function normalizeHost(value?: string | string[]): string | undefined {
+  if (!value) return undefined;
+  const first = Array.isArray(value) ? value[0] : value;
+  if (!first) return undefined;
+  const trimmed = first.split(',')[0]?.trim();
+  if (!trimmed) return undefined;
+  if (trimmed.startsWith('[')) {
+    const closing = trimmed.indexOf(']');
+    if (closing > 1) {
+      return trimmed.slice(1, closing).toLowerCase();
+    }
+  }
+  const [hostOnly] = trimmed.split(':');
+  return hostOnly.toLowerCase();
+}
+
+/**
+ * Extract the requested hostname, preferring proxy headers.
+ */
+function getRequestHost(request: FastifyRequest): string | undefined {
+  return (
+    normalizeHost(request.headers['x-forwarded-host']) ??
+    normalizeHost(request.headers.host) ??
+    request.hostname?.toLowerCase()
+  );
+}
+
+/**
+ * Detect whether a hostname/IP is loopback or RFC1918/private.
+ */
+function isLocalNetworkHost(host?: string): boolean {
+  if (!host) return false;
+
+  if (LOOPBACK_HOSTS.has(host)) {
+    return true;
+  }
+
+  if (host.endsWith('.localhost')) {
+    return true;
+  }
+
+  if (host === '0.0.0.0') {
+    return true;
+  }
+
+  const ipv4Parts = host.split('.');
+  if (ipv4Parts.length === 4 && ipv4Parts.every((part) => /^\d+$/.test(part))) {
+    const [a, b] = ipv4Parts.map((part) => Number(part));
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 192 && b === 168) return true;
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 169 && b === 254) return true;
+  }
+
+  const normalized = host.toLowerCase();
+  if (normalized.includes(':')) {
+    if (normalized === '::1' || normalized === '::') {
+      return true;
+    }
+
+    if (normalized.startsWith('fe80:')) {
+      return true;
+    }
+
+    if (normalized.startsWith('fc') || normalized.startsWith('fd')) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -52,6 +129,7 @@ const securityPluginImpl: FastifyPluginAsync<{ config: Config }> = async (
   const { config } = opts;
   const isProduction = config.nodeEnv === 'production';
   const enableHsts = isProduction && config.security.enableHsts;
+  const allowLocalHttp = config.security.allowInsecureLocalHttp;
 
   // HTTPS enforcement hook (runs before request handling)
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -63,11 +141,29 @@ const securityPluginImpl: FastifyPluginAsync<{ config: Config }> = async (
       }
 
       if (!isHttps(request)) {
+        const host = getRequestHost(request);
+        if (allowLocalHttp && isLocalNetworkHost(host)) {
+          request.log.debug(
+            {
+              host,
+              scheme: request.protocol,
+              forwardedProto: request.headers['x-forwarded-proto'],
+              reason: 'ALLOW_INSECURE_LOCAL_HTTP',
+            },
+            'Allowing HTTP request for local host'
+          );
+          return;
+        }
+
         request.log.warn(
           {
             url: request.url,
             method: request.method,
             ip: request.ip,
+            host: host ?? 'unknown',
+            scheme: request.protocol,
+            forwardedProto: request.headers['x-forwarded-proto'],
+            reason: 'HTTPS_REQUIRED',
           },
           'HTTPS required - rejecting HTTP request'
         );

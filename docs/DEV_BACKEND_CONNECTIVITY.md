@@ -41,6 +41,21 @@ The scripts will:
 ./scripts/dev/verify-backend-config.sh devDebug
 ```
 
+## HTTPS Enforcement & Cloudflare Calls
+
+- Backend containers run with `NODE_ENV=production` by default and reject plain HTTP with `HTTPS_REQUIRED`. This keeps Cloudflare-facing endpoints TLS-only.
+- Cloudflare adds `X-Forwarded-Proto: https`, so the backend accepts public `https://scanium.gtemp1.com/v1/assist/chat` requests:
+
+```bash
+curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
+  -H "x-api-key: $SCANIUM_API_KEY" \
+  -H "content-type: application/json" \
+  --data '{"items":[],"message":"ping"}'
+```
+
+- For LAN smoke tests, set `ALLOW_INSECURE_HTTP=true` in the backend env file and call `http://localhost:8080/v1/assist/chat`. Only localhost/RFC1918 hosts are honored, and you still need `X-API-Key`.
+- Missing or invalid API keys return `401 UNAUTHORIZED`; TLS violations return `403 HTTPS_REQUIRED`. Check logs for `reason=HTTPS_REQUIRED` if your curl fails.
+
 ## Configuration Methods
 
 ### Method 1: Configuration Script (Recommended)
