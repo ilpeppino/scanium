@@ -89,6 +89,8 @@ services:
       ASSIST_DAILY_QUOTA: ${ASSIST_DAILY_QUOTA:-100}
       # Connect to monitoring stack
       OTEL_EXPORTER_OTLP_ENDPOINT: http://scanium-alloy:4318
+    volumes:
+      - ${REMOTE_CONFIG_PATH:-./config/remote-config.json}:/app/config/remote-config.json:ro
     ports:
       - "${API_HOST_PORT:-8080}:8080"
     networks:
