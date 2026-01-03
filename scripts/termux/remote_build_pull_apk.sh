@@ -278,6 +278,22 @@ APK_NAME=$(basename "$APK_PATH")
 FLAVOR_APK_NAME="scanium-${FLAVOR}-debug-${APK_ABI}.apk"
 LOCAL_APK="$PHONE_APK_DIR/$FLAVOR_APK_NAME"
 
+***REMOVED*** Delete existing APK if present (fail fast if deletion fails)
+if [[ -f "$LOCAL_APK" ]]; then
+    log_info "Found existing APK: $FLAVOR_APK_NAME"
+    log_info "Deleting existing APK..."
+    if ! run_cmd rm -f "$LOCAL_APK"; then
+        log_error "Failed to delete existing APK: $LOCAL_APK"
+        exit 1
+    fi
+    ***REMOVED*** Verify deletion succeeded
+    if [[ -f "$LOCAL_APK" ]]; then
+        log_error "Existing APK still present after deletion attempt: $LOCAL_APK"
+        exit 1
+    fi
+    log_info "Existing APK removed"
+fi
+
 log_info "Pulling ${FLAVOR_CAPITALIZED} APK to phone..."
 run_cmd scp "${SSH_OPTS[@]}" "$MAC_SSH:$MAC_REPO_DIR/$APK_PATH" "$LOCAL_APK"
 
