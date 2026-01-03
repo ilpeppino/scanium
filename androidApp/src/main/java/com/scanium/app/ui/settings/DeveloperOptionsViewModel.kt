@@ -119,6 +119,17 @@ class DeveloperOptionsViewModel
             settingsRepository.devCameraPipelineDebugEnabledFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+        /**
+         * Current step index for overlay accuracy filter.
+         * Step 0 = "All" (show all detections)
+         * Higher steps = filter to higher confidence only
+         *
+         * @see com.scanium.app.camera.ConfidenceTiers for tier definitions
+         */
+        val overlayAccuracyStep: StateFlow<Int> =
+            settingsRepository.devOverlayAccuracyStepFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
         // Auto-refresh state
         private val _autoRefreshEnabled = MutableStateFlow(false)
         val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
@@ -372,6 +383,18 @@ class DeveloperOptionsViewModel
         fun setCameraPipelineDebugEnabled(enabled: Boolean) {
             viewModelScope.launch {
                 settingsRepository.setDevCameraPipelineDebugEnabled(enabled)
+            }
+        }
+
+        /**
+         * Set the overlay accuracy filter step index.
+         *
+         * @param stepIndex Index of the tier (0 = show all, higher = more filtering)
+         * @see com.scanium.app.camera.ConfidenceTiers for tier definitions
+         */
+        fun setOverlayAccuracyStep(stepIndex: Int) {
+            viewModelScope.launch {
+                settingsRepository.setDevOverlayAccuracyStep(stepIndex)
             }
         }
 
