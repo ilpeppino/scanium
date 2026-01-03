@@ -860,11 +860,33 @@ private fun ItemRow(
                     ClassificationStatusBadge(status = item.classificationStatus)
                 }
 
-                Text(
-                    text = item.formattedPriceRange,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                // Price display: user price if set, otherwise estimated range
+                val priceText = item.formattedUserPrice ?: item.formattedPriceRange
+                if (priceText.isNotBlank()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = priceText,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (item.userPriceCents != null) {
+                                MaterialTheme.colorScheme.tertiary
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                        )
+                        // Show condition badge if set
+                        item.condition?.let { condition ->
+                            ConditionBadge(condition = condition)
+                        }
+                    }
+                } else {
+                    // Show only condition badge if no price
+                    item.condition?.let { condition ->
+                        ConditionBadge(condition = condition)
+                    }
+                }
 
                 // Timestamp and confidence percentage
                 Row(
@@ -1107,6 +1129,36 @@ private fun ClassificationStatusBadge(status: String) {
     ) {
         Text(
             text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/**
+ * Item condition badge with color coding.
+ */
+@Composable
+private fun ConditionBadge(condition: ItemCondition) {
+    val (backgroundColor, textColor) =
+        when (condition) {
+            ItemCondition.NEW ->
+                MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+            ItemCondition.AS_GOOD_AS_NEW ->
+                MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+            ItemCondition.USED ->
+                MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+            ItemCondition.REFURBISHED ->
+                MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+        }
+
+    Surface(
+        shape = MaterialTheme.shapes.extraSmall,
+        color = backgroundColor,
+    ) {
+        Text(
+            text = condition.displayName,
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

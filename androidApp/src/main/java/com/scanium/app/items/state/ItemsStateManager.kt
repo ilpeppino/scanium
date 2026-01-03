@@ -293,10 +293,22 @@ class ItemsStateManager(
             _items.value.map { item ->
                 val update = updates[item.id]
                 if (update != null) {
+                    val newUserPriceCents = when {
+                        update.clearUserPriceCents -> null
+                        update.userPriceCents != null -> update.userPriceCents
+                        else -> item.userPriceCents
+                    }
+                    val newCondition = when {
+                        update.clearCondition -> null
+                        update.condition != null -> update.condition
+                        else -> item.condition
+                    }
                     item.copy(
                         labelText = update.labelText ?: item.labelText,
                         recognizedText = update.recognizedText ?: item.recognizedText,
                         barcodeValue = update.barcodeValue ?: item.barcodeValue,
+                        userPriceCents = newUserPriceCents,
+                        condition = newCondition,
                     )
                 } else {
                     item
@@ -619,9 +631,15 @@ class ItemsStateManager(
 /**
  * Represents field updates for a scanned item.
  * Null values mean "keep existing value".
+ * Use [clearUserPriceCents] = true to explicitly clear the user price.
+ * Use [clearCondition] = true to explicitly clear the condition.
  */
 data class ItemFieldUpdate(
     val labelText: String? = null,
     val recognizedText: String? = null,
     val barcodeValue: String? = null,
+    val userPriceCents: Long? = null,
+    val clearUserPriceCents: Boolean = false,
+    val condition: com.scanium.app.items.ItemCondition? = null,
+    val clearCondition: Boolean = false,
 )
