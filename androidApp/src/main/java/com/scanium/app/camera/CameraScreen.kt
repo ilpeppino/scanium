@@ -130,6 +130,9 @@ fun CameraScreen(
     // Motion overlays (scan frame appear, lightning pulse)
     val motionOverlaysEnabled by settingsRepository.devMotionOverlaysEnabledFlow.collectAsState(initial = true)
 
+    // Overlay accuracy filter (developer debug feature - step 0 = show all)
+    val overlayAccuracyStep by settingsRepository.devOverlayAccuracyStepFlow.collectAsState(initial = 0)
+
     // Sync motion overlays setting with MotionConfig
     LaunchedEffect(motionOverlaysEnabled) {
         MotionConfig.setMotionOverlaysEnabled(motionOverlaysEnabled)
@@ -584,6 +587,7 @@ fun CameraScreen(
                         previewSize = previewSize,
                         rotationDegrees = imageRotationDegrees,
                         showGeometryDebug = bboxMappingDebugEnabled,
+                        overlayAccuracyStep = overlayAccuracyStep,
                     )
                 }
 
