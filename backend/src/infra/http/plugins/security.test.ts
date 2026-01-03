@@ -11,7 +11,7 @@ describe('Security Plugin', () => {
       databaseUrl: 'postgresql://test:test@localhost:5432/test',
       classifier: {
         provider: 'mock',
-        visionFeature: 'LABEL_DETECTION',
+        visionFeature: ['LABEL_DETECTION'],
         maxUploadBytes: 5242880,
         rateLimitPerMinute: 60,
         ipRateLimitPerMinute: 60,
@@ -36,6 +36,7 @@ describe('Security Plugin', () => {
         enabled: false,
         provider: 'mock',
         enableOcr: true,
+        ocrMode: 'TEXT_DETECTION',
         enableLabels: true,
         enableLogos: true,
         enableColors: true,

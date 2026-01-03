@@ -583,7 +583,15 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
 
         // Compute image hashes for cache key
         const imageHashes = item.itemImages.map((img) => computeImageHash(img.base64Data));
-        const cacheKey = buildCacheKey(imageHashes, { featureVersion: 'v1' });
+        const featureKey = [
+          visionConfig.enableOcr ? `ocr:${visionConfig.ocrMode}` : null,
+          visionConfig.enableLabels ? 'labels' : null,
+          visionConfig.enableLogos ? 'logos' : null,
+          visionConfig.enableColors ? 'colors' : null,
+        ]
+          .filter(Boolean)
+          .join('|') || 'none';
+        const cacheKey = buildCacheKey(imageHashes, { featureVersion: featureKey });
 
         // Check cache first
         const cachedFacts = visionCache.get(cacheKey);
@@ -610,6 +618,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             enableLabels: visionConfig.enableLabels,
             enableLogos: visionConfig.enableLogos,
             enableColors: visionConfig.enableColors,
+            ocrMode: visionConfig.ocrMode,
             maxOcrSnippets: visionConfig.maxOcrSnippets,
             maxLabelHints: visionConfig.maxLabelHints,
             maxLogoHints: visionConfig.maxLogoHints,
