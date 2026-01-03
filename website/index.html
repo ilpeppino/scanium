@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Scanium — Scan it. Price it. Share it.</title>
+    <meta
+      name="description"
+      content="Scanium is a camera-first Android app with on-device ML object detection, price estimation, and export-first sharing."
+    />
+
+    <meta property="og:title" content="Scanium — Scan it. Price it. Share it." />
+    <meta
+      property="og:description"
+      content="Camera-first Android app with on-device object detection, price estimation, and export-first sharing."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gtemp1.com" />
+    <meta property="og:image" content="https://gtemp1.com/og-image.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Scanium — Scan it. Price it. Share it." />
+    <meta
+      name="twitter:description"
+      content="Camera-first Android app with on-device object detection, price estimation, and export-first sharing."
+    />
+    <meta name="twitter:image" content="https://gtemp1.com/og-image.png" />
+
+    <link rel="icon" type="image/svg+xml" href="assets/scanium-icon-mark.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-content">
+        <img
+          class="logo"
+          src="assets/scanium-logo-primary.svg"
+          alt="Scanium logo"
+          width="180"
+          height="48"
+        />
+        <a class="pill" href="#privacy">Privacy-first</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Camera-first Android app</p>
+            <h1>Scanium</h1>
+            <p class="slogan">Scan it. Price it. Share it.</p>
+            <p class="hero-description">
+              Point your camera at everyday items and get on-device object detection, price
+              estimation, and export-first sharing built for marketplaces.
+            </p>
+            <div class="hero-actions">
+              <!-- Update PLAY_STORE_URL in website/app.js when the Play Store listing is ready. -->
+              <a class="button" data-play-store-link href="#">Get it on Google Play</a>
+              <span class="subtle">No account required. On-device by default.</span>
+            </div>
+          </div>
+          <div class="hero-card">
+            <div class="hero-card-inner">
+              <h2>Built for fast scanning</h2>
+              <ul>
+                <li>On-device ML Kit object detection &amp; classification</li>
+                <li>Price ranges generated per detected category</li>
+                <li>Export selected items to CSV/ZIP and share anywhere</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="features" id="features">
+        <div class="container">
+          <h2>Feature highlights</h2>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <h3>Real-time object detection</h3>
+              <p>Detect and classify items live with on-device ML Kit and a visual overlay.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Multiple scan modes</h3>
+              <p>Switch between object detection, barcode/QR scanning, and document OCR.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Price estimation</h3>
+              <p>Get category-based EUR price ranges for detected items.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Intelligent tracking</h3>
+              <p>Multi-frame tracking reduces duplicate detections as you scan.</p>
+            </article>
+            <article class="feature-card">
+              <h3>Export-first sharing</h3>
+              <p>Export selected items to CSV/ZIP bundles and share via Android apps.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="privacy" id="privacy">
+        <div class="container privacy-grid">
+          <div>
+            <h2>Privacy-first by design</h2>
+            <p>
+              Scanium processes camera frames on-device and discards them immediately after
+              analysis. Cloud classification is optional and only runs when you enable it.
+            </p>
+          </div>
+          <div class="privacy-card">
+            <ul>
+              <li>Scanned items and drafts stay on your device until you delete them.</li>
+              <li>On-device analysis is the default; no cloud calls required.</li>
+              <li>
+                Optional cloud classification sends cropped images transiently and discards them
+                after processing.
+              </li>
+              <li>You can disable cloud classification and clear app storage at any time.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <div>
+          <strong>Ready to scan?</strong>
+          <p>Camera-first, privacy-first, export-ready.</p>
+        </div>
+        <a class="button secondary" data-play-store-link href="#">Get it on Google Play</a>
+        <p class="footer-meta">© 2026 gtemp1.com</p>
+      </div>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
