@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.model.AssistantPrefs
@@ -71,6 +72,9 @@ class SettingsRepository(private val context: Context) {
 
         // Motion overlays toggle
         private val DEV_MOTION_OVERLAYS_ENABLED_KEY = booleanPreferencesKey("dev_motion_overlays_enabled")
+
+        // Overlay accuracy filter (developer debug feature)
+        private val DEV_OVERLAY_ACCURACY_STEP_KEY = intPreferencesKey("dev_overlay_accuracy_step")
     }
 
     val themeModeFlow: Flow<ThemeMode> =
@@ -616,6 +620,37 @@ class SettingsRepository(private val context: Context) {
     suspend fun setDevMotionOverlaysEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_MOTION_OVERLAYS_ENABLED_KEY] = enabled
+        }
+    }
+
+    // =========================================================================
+    // Overlay Accuracy Filter (Developer Debug Feature)
+    // =========================================================================
+
+    /**
+     * Current step index for overlay accuracy filter (debug feature).
+     * Controls which bboxes are shown based on confidence threshold.
+     *
+     * Step 0 = "All" (show everything)
+     * Higher steps = filter to higher confidence only
+     *
+     * Default is 0 (show all detections).
+     *
+     * @see com.scanium.app.camera.ConfidenceTiers for tier definitions
+     */
+    val devOverlayAccuracyStepFlow: Flow<Int> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[DEV_OVERLAY_ACCURACY_STEP_KEY] ?: 0
+        }
+
+    /**
+     * Set the overlay accuracy filter step index.
+     *
+     * @param stepIndex Index of the tier (0 = show all, higher = more filtering)
+     */
+    suspend fun setDevOverlayAccuracyStep(stepIndex: Int) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[DEV_OVERLAY_ACCURACY_STEP_KEY] = stepIndex
         }
     }
 }

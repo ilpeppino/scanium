@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import com.scanium.app.camera.ConfidenceTiers
 import com.scanium.app.camera.DetectionOverlay
 import com.scanium.app.camera.OverlayBoxStyle
 import com.scanium.app.camera.OverlayTrack
@@ -34,6 +35,8 @@ import com.scanium.app.camera.OverlayTrack
  * @param previewSize Size of the preview view on screen
  * @param rotationDegrees Image rotation for coordinate mapping
  * @param showGeometryDebug Developer toggle for geometry debug overlay
+ * @param overlayAccuracyStep Developer debug filter: step index for confidence filtering
+ *        (0 = show all, higher = more filtering). See [ConfidenceTiers] for tier definitions.
  * @param modifier Modifier for the container
  */
 @Composable
@@ -43,8 +46,14 @@ fun MotionEnhancedOverlay(
     previewSize: Size,
     rotationDegrees: Int = 90,
     showGeometryDebug: Boolean = false,
+    overlayAccuracyStep: Int = 0,
     modifier: Modifier = Modifier,
 ) {
+    // Apply confidence-based filtering if enabled (developer debug feature)
+    // This filters ONLY what is rendered - does NOT affect detection or aggregation logic
+    val filteredDetections = remember(detections, overlayAccuracyStep) {
+        ConfidenceTiers.filterDetections(detections, overlayAccuracyStep)
+    }
     // Track if we have any detections (for scan frame appear)
     val hasDetections by remember(detections) {
         derivedStateOf { detections.isNotEmpty() }
@@ -124,9 +133,10 @@ fun MotionEnhancedOverlay(
         }
 
         // Layer 2: Standard detection overlay (bounding boxes and labels)
-        if (detections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
+        // Uses filteredDetections to apply developer accuracy filter (visibility only)
+        if (filteredDetections.isNotEmpty() && previewSize.width > 0 && previewSize.height > 0) {
             DetectionOverlay(
-                detections = detections,
+                detections = filteredDetections,
                 imageSize = imageSize,
                 previewSize = previewSize,
                 rotationDegrees = rotationDegrees,
