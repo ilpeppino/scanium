@@ -58,16 +58,23 @@ The redesigned Settings experience is organized into six categories (General, Ca
 
 ### Build Variants (Flavors)
 
-Scanium uses two product flavors to control Developer Mode availability:
+Scanium uses three product flavors for side-by-side installation and developer control:
 
-| Flavor | App ID Suffix | Developer Options | Use Case |
-|--------|---------------|-------------------|----------|
-| **dev** | `.dev` | Available (DEBUG) or togglable (RELEASE) | Internal development |
-| **beta** | `.beta` | Completely hidden | External beta testers |
+| Flavor | App ID | App Name | Developer Options | Use Case |
+|--------|--------|----------|-------------------|----------|
+| **prod** | `com.scanium.app` | Scanium | Disabled | Production/stable release |
+| **dev** | `com.scanium.app.dev` | Scanium Dev | Available | Internal development |
+| **beta** | `com.scanium.app.beta` | Scanium Beta | Disabled | External beta testers |
+
+**Side-by-side installation:** All three variants can be installed simultaneously on the same device (different applicationId). The launcher shows distinct app names for easy identification.
 
 **Build commands:**
 
 ```bash
+# Prod builds (stable release)
+./gradlew :androidApp:assembleProdDebug     # Prod debug APK
+./gradlew :androidApp:assembleProdRelease   # Prod release APK
+
 # Dev builds (Developer Options accessible)
 ./gradlew :androidApp:assembleDevDebug      # Dev debug APK
 ./gradlew :androidApp:assembleDevRelease    # Dev release APK
@@ -78,15 +85,18 @@ Scanium uses two product flavors to control Developer Mode availability:
 ```
 
 **APK output locations:**
+- `androidApp/build/outputs/apk/prod/debug/` - Prod debug APKs
+- `androidApp/build/outputs/apk/prod/release/` - Prod release APKs
 - `androidApp/build/outputs/apk/dev/debug/` - Dev debug APKs
 - `androidApp/build/outputs/apk/dev/release/` - Dev release APKs
 - `androidApp/build/outputs/apk/beta/debug/` - Beta debug APKs
 - `androidApp/build/outputs/apk/beta/release/` - Beta release APKs
 
 **Technical implementation:**
-- `BuildConfig.DEV_MODE_ENABLED`: `true` for dev, `false` for beta
+- `BuildConfig.DEV_MODE_ENABLED`: `true` for dev, `false` for prod/beta
+- App name defined via `resValue` in each flavor (see `androidApp/build.gradle.kts`)
 - Settings home hides Developer Options when `DEV_MODE_ENABLED = false`
-- Navigation to `/settings/developer` redirects back in beta builds
+- Navigation to `/settings/developer` redirects back in prod/beta builds
 - All dev-only UI and features are gated behind this flag
 
 ### With Android SDK (Workstation / Android Studio)
