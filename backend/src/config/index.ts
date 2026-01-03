@@ -214,6 +214,7 @@ export const configSchema = z.object({
     .object({
       enforceHttps: z.coerce.boolean().default(true),
       enableHsts: z.coerce.boolean().default(true),
+      allowInsecureLocalHttp: z.coerce.boolean().default(false),
       apiKeyRotationEnabled: z.coerce.boolean().default(true),
       apiKeyExpirationDays: z.coerce.number().int().min(0).default(90),
       logApiKeyUsage: z.coerce.boolean().default(true),
@@ -342,6 +343,7 @@ export function loadConfig(): Config {
     security: {
       enforceHttps: process.env.SECURITY_ENFORCE_HTTPS,
       enableHsts: process.env.SECURITY_ENABLE_HSTS,
+      allowInsecureLocalHttp: process.env.ALLOW_INSECURE_HTTP,
       apiKeyRotationEnabled: process.env.SECURITY_API_KEY_ROTATION_ENABLED,
       apiKeyExpirationDays: process.env.SECURITY_API_KEY_EXPIRATION_DAYS,
       logApiKeyUsage: process.env.SECURITY_LOG_API_KEY_USAGE,

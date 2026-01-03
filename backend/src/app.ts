@@ -23,6 +23,7 @@ import { apiGuardPlugin } from './infra/security/api-guard.js';
  */
 export async function buildApp(config: Config): Promise<FastifyInstance> {
   const app = Fastify({
+    trustProxy: true,
     logger: {
       level: config.nodeEnv === 'development' ? 'debug' : 'info',
       redact: {
