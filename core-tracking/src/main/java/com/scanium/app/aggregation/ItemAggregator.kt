@@ -2,6 +2,7 @@ package com.scanium.app.aggregation
 
 import com.scanium.app.items.ScannedItem
 import com.scanium.core.tracking.Logger
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
@@ -154,6 +155,7 @@ class ItemAggregator(
                     domainCategoryId = item.domainCategoryId,
                     classificationErrorMessage = item.classificationErrorMessage,
                     classificationRequestId = item.classificationRequestId,
+                    enrichedAttributes = item.attributes,
                 )
             aggregatedItems[item.id] = aggregatedItem
         }
@@ -433,12 +435,14 @@ class ItemAggregator(
         label: String?,
         priceRange: Pair<Double, Double>?,
         classificationConfidence: Float? = null,
+        attributes: Map<String, ItemAttribute>? = null,
     ) {
         aggregatedItems[aggregatedId]?.let { item ->
             category?.let { item.enhancedCategory = it }
             label?.let { item.enhancedLabelText = it }
             priceRange?.let { item.enhancedPriceRange = it }
             classificationConfidence?.let { item.classificationConfidence = it }
+            attributes?.let { item.enrichedAttributes = it }
         }
     }
 

@@ -24,6 +24,8 @@ import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.selling.assistant.AssistantScreen
 import com.scanium.app.selling.data.EbayMarketplaceService
+import com.scanium.app.selling.generation.GeneratedListingScreen
+import com.scanium.app.selling.generation.ListingGenerationViewModel
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.selling.ui.DraftReviewScreen
 import com.scanium.app.selling.ui.PostingAssistScreen
@@ -53,6 +55,7 @@ object Routes {
     const val DRAFT_REVIEW = "draft_review"
     const val POSTING_ASSIST = "posting_assist"
     const val ASSISTANT = "assistant"
+    const val GENERATE_LISTING = "generate_listing"
     const val SETTINGS_HOME = "settings/home"
     const val SETTINGS_GENERAL = "settings/general"
     const val SETTINGS_CAMERA = "settings/camera"
@@ -223,6 +226,10 @@ fun ScaniumNavGraph(
                         navController.navigate("${Routes.EDIT_ITEMS}?ids=$encoded")
                     }
                 },
+                onNavigateToGenerateListing = { itemId ->
+                    val encoded = Uri.encode(itemId)
+                    navController.navigate("${Routes.GENERATE_LISTING}?itemId=$encoded")
+                },
                 draftStore = draftStore,
                 itemsViewModel = itemsViewModel,
                 tourViewModel = tourViewModel,
@@ -388,6 +395,36 @@ fun ScaniumNavGraph(
                 },
                 itemsViewModel = itemsViewModel,
                 draftStore = draftStore,
+            )
+        }
+
+        composable(
+            route = "${Routes.GENERATE_LISTING}?itemId={itemId}",
+            arguments =
+                listOf(
+                    navArgument("itemId") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
+        ) { backStackEntry ->
+            val itemId = backStackEntry.arguments?.getString("itemId").orEmpty()
+            val item = itemsViewModel.items.collectAsState().value.find { it.id == itemId }
+            val viewModel: ListingGenerationViewModel = hiltViewModel()
+
+            // Trigger generation when screen opens
+            androidx.compose.runtime.LaunchedEffect(item) {
+                item?.let { viewModel.generateListing(it) }
+            }
+
+            GeneratedListingScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onUseListing = { title, description ->
+                    // Apply the generated listing to the draft and navigate back
+                    // For now, just navigate back
+                    navController.popBackStack()
+                },
+                viewModel = viewModel,
             )
         }
     }

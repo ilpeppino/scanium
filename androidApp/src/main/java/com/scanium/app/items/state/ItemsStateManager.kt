@@ -374,6 +374,7 @@ class ItemsStateManager(
         label: String?,
         priceRange: Pair<Double, Double>?,
         classificationConfidence: Float? = null,
+        attributes: Map<String, com.scanium.shared.core.models.items.ItemAttribute>? = null,
     ) {
         itemAggregator.applyEnhancedClassification(
             aggregatedId = aggregatedId,
@@ -381,6 +382,7 @@ class ItemsStateManager(
             label = label,
             priceRange = priceRange,
             classificationConfidence = classificationConfidence,
+            attributes = attributes,
         )
     }
 
@@ -625,6 +627,45 @@ class ItemsStateManager(
             // CacheKey is only for UI display in the returned items.
             item.copy(thumbnail = cachedRef, thumbnailRef = cachedRef)
         }
+    }
+
+    /**
+     * Update a single attribute for an item.
+     * Updates the item's attributes map with the new value and persists.
+     *
+     * @param itemId The ID of the item to update
+     * @param attributeKey The key of the attribute to update (e.g., "brand", "color")
+     * @param attribute The new attribute value
+     */
+    fun updateItemAttribute(
+        itemId: String,
+        attributeKey: String,
+        attribute: com.scanium.shared.core.models.items.ItemAttribute,
+    ) {
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    val updatedAttributes = item.attributes.toMutableMap()
+                    updatedAttributes[attributeKey] = attribute
+                    item.copy(attributes = updatedAttributes)
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Also update the aggregator
+        itemAggregator.applyEnhancedClassification(
+            aggregatedId = itemId,
+            category = null,
+            label = null,
+            priceRange = null,
+            classificationConfidence = null,
+            attributes = updatedItems.find { it.id == itemId }?.attributes,
+        )
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
     }
 }
 

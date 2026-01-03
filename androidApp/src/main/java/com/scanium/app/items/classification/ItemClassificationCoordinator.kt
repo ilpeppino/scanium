@@ -333,6 +333,7 @@ class ItemClassificationCoordinator(
             label = labelOverride,
             priceRange = priceRange,
             classificationConfidence = result.confidence,
+            attributes = result.enrichedAttributes.takeIf { it.isNotEmpty() },
         )
 
         stateManager.updateClassificationStatus(
