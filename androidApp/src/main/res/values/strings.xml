@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Scanium</string>
+    <!-- app_name is defined per-flavor via resValue in build.gradle.kts -->
     <string name="settings_title">Settings</string>
     <string name="settings_back">Back</string>
     <string name="settings_home_description">Customize how Scanium looks, scans, and protects your data.</string>
