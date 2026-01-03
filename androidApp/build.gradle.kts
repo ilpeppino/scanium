@@ -144,15 +144,28 @@ android {
         }
     }
 
-    // Product flavors for internal development vs beta testing
+    // Product flavors for side-by-side installation (prod/dev/beta)
+    // Each flavor has a distinct applicationId suffix for coexistence on same device
     flavorDimensions += "distribution"
     productFlavors {
+        // Production flavor - stable release, listed first to be the default
+        create("prod") {
+            dimension = "distribution"
+            // No applicationIdSuffix - uses base applicationId (com.scanium.app)
+            // No versionNameSuffix - clean version string
+            // Production builds have Developer Mode disabled
+            buildConfigField("boolean", "DEV_MODE_ENABLED", "false")
+            // App name: "Scanium"
+            resValue("string", "app_name", "Scanium")
+        }
         create("dev") {
             dimension = "distribution"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
             // Developer Mode available - enables access to Developer Options screen
             buildConfigField("boolean", "DEV_MODE_ENABLED", "true")
+            // App name: "Scanium Dev" for side-by-side identification
+            resValue("string", "app_name", "Scanium Dev")
         }
         create("beta") {
             dimension = "distribution"
@@ -160,6 +173,8 @@ android {
             versionNameSuffix = "-beta"
             // Developer Mode disabled - hides Developer Options for external testers
             buildConfigField("boolean", "DEV_MODE_ENABLED", "false")
+            // App name: "Scanium Beta" for side-by-side identification
+            resValue("string", "app_name", "Scanium Beta")
         }
     }
 
