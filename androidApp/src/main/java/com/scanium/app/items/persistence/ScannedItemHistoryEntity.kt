@@ -46,6 +46,7 @@ data class ScannedItemHistoryEntity(
     val classificationRequestId: String?,
     val userPriceCents: Long?,
     val condition: String?,
+    val attributesJson: String?,
 )
 
 fun ScannedItemEntity.toHistoryEntity(
@@ -87,5 +88,6 @@ fun ScannedItemEntity.toHistoryEntity(
         classificationRequestId = classificationRequestId,
         userPriceCents = userPriceCents,
         condition = condition,
+        attributesJson = attributesJson,
     )
 }

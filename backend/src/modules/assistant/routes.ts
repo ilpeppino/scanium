@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { Config } from '../../config/index.js';
 import { ApiKeyManager } from '../classifier/api-key-manager.js';
 import { AssistantService } from './service.js';
-import { GroundedMockAssistantProvider } from './provider.js';
+import { GroundedMockAssistantProvider, AssistantProvider } from './provider.js';
+import { ClaudeAssistantProvider } from './claude-provider.js';
 import {
   RedisClient,
   SlidingWindowRateLimiter,
@@ -45,6 +46,16 @@ import {
   buildItemSnapshotHash,
   type CacheUsageEvent,
 } from '../../infra/cache/unified-cache.js';
+import {
+  recordAssistantRequest,
+  recordAssistantError,
+  recordRateLimitHit,
+  recordQuotaExhausted,
+  recordVisionExtraction,
+  recordVisionCost,
+  visionCacheSizeGauge,
+  assistantCacheHitRateGauge,
+} from '../../infra/observability/metrics.js';
 import {
   StagedRequestManager,
 } from './staged-request.js';
@@ -130,12 +141,41 @@ function buildSafetyResponse(
   };
 }
 
+/**
+ * Create the appropriate assistant provider based on configuration.
+ */
+function createAssistantProvider(config: Config): AssistantProvider {
+  switch (config.assistant.provider) {
+    case 'claude':
+      if (!config.assistant.claudeApiKey) {
+        throw new Error('CLAUDE_API_KEY is required when assistant.provider is "claude"');
+      }
+      return new ClaudeAssistantProvider({
+        apiKey: config.assistant.claudeApiKey,
+        model: config.assistant.claudeModel,
+        maxTokens: config.assistant.maxOutputTokens,
+        timeoutMs: config.assistant.providerTimeoutMs,
+      });
+
+    case 'openai':
+      // OpenAI provider not implemented yet - fall back to mock
+      console.warn('OpenAI provider not implemented, falling back to mock provider');
+      return new GroundedMockAssistantProvider();
+
+    case 'mock':
+    default:
+      return new GroundedMockAssistantProvider();
+  }
+}
+
 export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, opts) => {
   const { config } = opts;
   const apiKeyManager = new ApiKeyManager(config.assistant.apiKeys);
 
-  // Use GroundedMockAssistantProvider for vision-enabled responses
-  const provider = new GroundedMockAssistantProvider();
+  // Create provider based on configuration
+  const provider = createAssistantProvider(config);
+  fastify.log.info({ provider: config.assistant.provider }, 'Assistant provider initialized');
+
   const breaker = new CircuitBreaker({
     failureThreshold: config.assistant.circuitBreakerFailureThreshold,
     cooldownMs: config.assistant.circuitBreakerCooldownSeconds * 1000,
@@ -290,6 +330,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     const ipLimit = await ipRateLimiter.consume(request.ip);
     if (!ipLimit.allowed) {
       request.log.warn({ ip: request.ip, correlationId }, 'IP rate limit exceeded');
+      recordRateLimitHit('ip', '/assist/chat');
       return reply
         .status(429)
         .header('Retry-After', String(ipLimit.retryAfterSeconds))
@@ -315,6 +356,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     const apiKeyLimit = await apiKeyRateLimiter.consume(apiKey);
     if (!apiKeyLimit.allowed) {
       request.log.warn({ correlationId }, 'API key rate limit exceeded');
+      recordRateLimitHit('api_key', '/assist/chat');
       return reply
         .status(429)
         .header('Retry-After', String(apiKeyLimit.retryAfterSeconds))
@@ -342,6 +384,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       const deviceLimit = await deviceRateLimiter.consume(deviceId);
       if (!deviceLimit.allowed) {
         request.log.warn({ deviceIdHash: deviceId.slice(0, 8), correlationId }, 'Device rate limit exceeded');
+        recordRateLimitHit('device', '/assist/chat');
         return reply
           .status(429)
           .header('Retry-After', String(deviceLimit.retryAfterSeconds))
@@ -373,6 +416,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         { quotaKey: quotaKey.slice(0, 8), remaining: 0, correlationId },
         'Daily quota exceeded'
       );
+      recordQuotaExhausted('daily');
       return reply
         .status(429)
         .header('Retry-After', String(resetIn))
@@ -576,6 +620,22 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             visualFactsMap.set(item.itemId, result.facts);
             visionCache.set(cacheKey, result.facts);
             visionExtractions++;
+
+            // Record vision metrics
+            const totalLatency = result.facts.extractionMeta.timingsMs.total ?? 0;
+            const features: string[] = [];
+            if (visionConfig.enableOcr) features.push('ocr');
+            if (visionConfig.enableLabels) features.push('labels');
+            if (visionConfig.enableLogos) features.push('logos');
+            if (visionConfig.enableColors) features.push('colors');
+            recordVisionExtraction(visionConfig.provider, 'success', totalLatency, features);
+            recordVisionCost({
+              ocr: visionConfig.enableOcr,
+              labels: visionConfig.enableLabels,
+              logos: visionConfig.enableLogos,
+              colors: visionConfig.enableColors,
+            });
+
             request.log.info(
               {
                 correlationId,
@@ -591,6 +651,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
             );
           } else {
             visionErrors++;
+            recordVisionExtraction(visionConfig.provider, 'error', 0, []);
             request.log.warn(
               { correlationId, itemId: item.itemId, error: result.error, errorCode: result.errorCode },
               'Vision extraction failed'
@@ -598,6 +659,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           }
         } catch (error) {
           visionErrors++;
+          recordVisionExtraction(visionConfig.provider, 'error', 0, []);
           request.log.error(
             { correlationId, itemId: item.itemId, error },
             'Vision extraction error'
@@ -655,19 +717,31 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     });
 
     // Check response cache (with deduplication)
+    const assistantStartTime = performance.now();
     try {
       const response = await responseCache.getOrCompute(responseCacheKey, async () => {
         return await service.respond(requestWithVision);
       });
 
+      const assistantLatency = performance.now() - assistantStartTime;
       usageStore.recordAssistant(apiKey, false);
 
       // Check if this was a cache hit
       const cacheStats = responseCache.getStats();
       const fromCache = cacheStats.hits > 0;
 
+      // Record assistant metrics
+      recordAssistantRequest(config.assistant.provider, 'success', assistantLatency, fromCache);
+
+      // Update cache gauges
+      const visionCacheStats = visionCache.stats();
+      visionCacheSizeGauge.set(visionCacheStats.size);
+      if (cacheStats.hits + cacheStats.misses > 0) {
+        assistantCacheHitRateGauge.set(cacheStats.hits / (cacheStats.hits + cacheStats.misses));
+      }
+
       request.log.info(
-        { correlationId, fromCache, cacheKey: responseCacheKey.slice(0, 16) },
+        { correlationId, fromCache, cacheKey: responseCacheKey.slice(0, 16), latencyMs: Math.round(assistantLatency) },
         'Assistant response'
       );
 
@@ -694,17 +768,25 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         correlationId,
       });
     } catch (error) {
+      const assistantLatency = performance.now() - assistantStartTime;
       const errorDetails = {
         message: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
         name: error instanceof Error ? error.name : typeof error,
       };
-      request.log.error({ correlationId, error: errorDetails }, 'Assistant service error');
+      request.log.error({ correlationId, error: errorDetails, latencyMs: Math.round(assistantLatency) }, 'Assistant service error');
       usageStore.recordAssistant(apiKey, true);
 
       const isTimeout =
         error instanceof Error &&
         (error.name === 'AbortError' || error.message.toLowerCase().includes('timeout'));
+
+      // Record error metrics
+      const errorType = isTimeout ? 'timeout' : 'provider_error';
+      const reasonCode = isTimeout ? 'PROVIDER_UNAVAILABLE' : 'PROVIDER_ERROR';
+      recordAssistantRequest(config.assistant.provider, 'error', assistantLatency, false);
+      recordAssistantError(config.assistant.provider, errorType, reasonCode);
+
       const fallbackError = isTimeout
         ? buildAssistantError('network_timeout', 'temporary', true, 'PROVIDER_UNAVAILABLE', undefined, 'Assistant request timed out')
         : buildAssistantError('provider_unavailable', 'temporary', true, 'PROVIDER_UNAVAILABLE', undefined, 'Assistant provider unavailable');

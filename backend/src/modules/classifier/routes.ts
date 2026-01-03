@@ -13,6 +13,11 @@ import {
 import { sha256Hex } from '../../infra/observability/hash.js';
 import { ClassifierCache } from './cache.js';
 import { usageStore } from '../usage/usage-store.js';
+import {
+  recordClassification,
+  recordRateLimitHit,
+  recordAttributeExtraction,
+} from '../../infra/observability/metrics.js';
 
 type RouteOpts = { config: Config };
 
@@ -122,6 +127,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
 
     const ipLimit = await ipRateLimiter.consume(request.ip);
     if (!ipLimit.allowed) {
+      recordRateLimitHit('ip', '/classify');
       return reply
         .status(429)
         .header('Retry-After', String(ipLimit.retryAfterSeconds))
@@ -136,6 +142,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
 
     const apiKeyLimit = await apiKeyRateLimiter.consume(apiKey);
     if (!apiKeyLimit.allowed) {
+      recordRateLimitHit('api_key', '/classify');
       return reply
         .status(429)
         .header('Retry-After', String(apiKeyLimit.retryAfterSeconds))
@@ -152,6 +159,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
     if (deviceId) {
       const deviceLimit = await deviceRateLimiter.consume(deviceId);
       if (!deviceLimit.allowed) {
+        recordRateLimitHit('device', '/classify');
         return reply
           .status(429)
           .header('Retry-After', String(deviceLimit.retryAfterSeconds))
@@ -252,8 +260,25 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
           'Classifier cache hit'
         );
         usageStore.recordClassification(apiKey, config.classifier.visionFeature, false);
+        recordClassification(
+          config.classifier.provider,
+          'success',
+          0, // No latency for cache hit
+          true,
+          cached.domainCategoryId ?? undefined,
+          cached.confidence ?? undefined
+        );
         return reply.status(200).send({ ...cached, cacheHit: true, correlationId });
       }
+
+      // Parse enrichAttributes from query param or form field (default: true if config enabled)
+      const enrichAttributesParam =
+        (request.query as Record<string, string>)?.enrichAttributes ??
+        payload.fields.enrichAttributes;
+      const enrichAttributes =
+        enrichAttributesParam === 'true' ||
+        enrichAttributesParam === '1' ||
+        (enrichAttributesParam === undefined && config.classifier.enableAttributeEnrichment);
 
       // Images stay in-memory only. Future retention requires explicit opt-in via config.
       const requestId = randomUUID();
@@ -266,11 +291,44 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         fileName: payload.file.filename ?? 'upload',
         domainPackId,
         hints,
+        enrichAttributes,
       };
 
+      const classifyStartTime = performance.now();
       const result = await service.classify(classificationRequest);
+      const classifyLatencyMs = performance.now() - classifyStartTime;
+
       cache.set(cacheKey, result);
       usageStore.recordClassification(apiKey, config.classifier.visionFeature, false);
+
+      // Record classification metrics
+      recordClassification(
+        config.classifier.provider,
+        'success',
+        classifyLatencyMs,
+        false,
+        result.domainCategoryId ?? undefined,
+        result.confidence ?? undefined
+      );
+
+      // Record attribute extraction metrics if enriched
+      if (result.enrichedAttributes) {
+        const attrs = result.enrichedAttributes;
+        const attrEntries: Array<[string, { confidenceScore: number; evidenceRefs: Array<{ type: string }> } | undefined]> = [
+          ['brand', attrs.brand],
+          ['model', attrs.model],
+          ['color', attrs.color],
+          ['secondaryColor', attrs.secondaryColor],
+          ['material', attrs.material],
+        ];
+        for (const [key, attr] of attrEntries) {
+          if (attr) {
+            const confidence = attr.confidenceScore >= 0.8 ? 'HIGH'
+              : attr.confidenceScore >= 0.5 ? 'MED' : 'LOW';
+            recordAttributeExtraction(key, confidence, attr.evidenceRefs[0]?.type ?? 'unknown');
+          }
+        }
+      }
 
       // Log successful API key usage
       if (config.security.logApiKeyUsage) {
@@ -323,6 +381,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         if (apiKey) {
           usageStore.recordClassification(apiKey, config.classifier.visionFeature, true);
         }
+        recordClassification(config.classifier.provider, 'error', 0, false, undefined, undefined);
 
         return reply.status(413).send({
           error: {
@@ -349,6 +408,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
       if (apiKey) {
         usageStore.recordClassification(apiKey, config.classifier.visionFeature, true);
       }
+      recordClassification(config.classifier.provider, 'error', 0, false, undefined, undefined);
       throw error;
     } finally {
       decrementConcurrent(apiKey);

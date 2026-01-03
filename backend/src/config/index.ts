@@ -84,13 +84,17 @@ export const configSchema = z.object({
     circuitBreakerFailureThreshold: z.coerce.number().int().min(1).default(5),
     circuitBreakerCooldownSeconds: z.coerce.number().int().min(1).default(60),
     circuitBreakerMinimumRequests: z.coerce.number().int().min(1).default(3),
+    /** Enable attribute enrichment via VisionExtractor (OCR, logos, colors) */
+    enableAttributeEnrichment: z.coerce.boolean().default(true),
   }),
 
   assistant: z
     .object({
-      provider: z.enum(['mock', 'openai', 'disabled']).default('mock'),
+      provider: z.enum(['mock', 'openai', 'claude', 'disabled']).default('mock'),
       openaiApiKey: z.string().optional(),
       openaiModel: z.string().default('gpt-4o-mini'),
+      claudeApiKey: z.string().optional(),
+      claudeModel: z.string().default('claude-sonnet-4-20250514'),
       apiKeys: z
         .string()
         .default('')
@@ -273,11 +277,14 @@ export function loadConfig(): Config {
       circuitBreakerFailureThreshold: process.env.CLASSIFIER_CIRCUIT_FAILURE_THRESHOLD,
       circuitBreakerCooldownSeconds: process.env.CLASSIFIER_CIRCUIT_COOLDOWN_SECONDS,
       circuitBreakerMinimumRequests: process.env.CLASSIFIER_CIRCUIT_MIN_REQUESTS,
+      enableAttributeEnrichment: process.env.CLASSIFIER_ENABLE_ATTRIBUTE_ENRICHMENT,
     },
     assistant: {
       provider: process.env.SCANIUM_ASSISTANT_PROVIDER,
       openaiApiKey: process.env.OPENAI_API_KEY,
       openaiModel: process.env.OPENAI_MODEL,
+      claudeApiKey: process.env.CLAUDE_API_KEY,
+      claudeModel: process.env.CLAUDE_MODEL,
       apiKeys: process.env.SCANIUM_ASSISTANT_API_KEYS || process.env.SCANIUM_API_KEYS,
       rateLimitPerMinute: process.env.ASSIST_RATE_LIMIT_PER_MINUTE,
       ipRateLimitPerMinute: process.env.ASSIST_IP_RATE_LIMIT_PER_MINUTE,

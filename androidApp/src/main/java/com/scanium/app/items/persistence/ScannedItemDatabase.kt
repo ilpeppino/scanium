@@ -127,10 +127,14 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     // Add userPriceCents and condition columns to scanned_items table
                     db.execSQL("ALTER TABLE scanned_items ADD COLUMN userPriceCents INTEGER")
                     db.execSQL("ALTER TABLE scanned_items ADD COLUMN condition TEXT")
+                    // Add attributesJson column to scanned_items table
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN attributesJson TEXT")
 
                     // Add userPriceCents and condition columns to scanned_item_history table
                     db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN userPriceCents INTEGER")
                     db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN condition TEXT")
+                    // Add attributesJson column to history table as well
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN attributesJson TEXT")
                 }
             }
     }

@@ -62,6 +62,7 @@ private fun generateRandomId(): String {
  * @param domainCategoryId Fine-grained domain category ID from cloud classifier
  * @param classificationErrorMessage Error message if classification failed
  * @param classificationRequestId Backend request ID for debugging
+ * @param attributes Extracted attributes (brand, color, model, etc.) with confidence scores
  */
 data class ScannedItem<FullImageUri>(
     val id: String = generateRandomId(),
@@ -89,6 +90,7 @@ data class ScannedItem<FullImageUri>(
     val qualityScore: Float = 0.0f,
     val userPriceCents: Long? = null,
     val condition: ItemCondition? = null,
+    val attributes: Map<String, ItemAttribute> = emptyMap(),
 ) {
     /**
      * Formatted price range string for display.
