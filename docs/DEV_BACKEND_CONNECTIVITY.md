@@ -53,6 +53,15 @@ curl -X POST https://scanium.gtemp1.com/v1/assist/chat \
   --data '{"items":[],"message":"ping"}'
 ```
 
+- Mobile clients should first warm up the assistant to confirm that a provider is configured and reachable:
+
+```bash
+curl -X POST https://scanium.gtemp1.com/v1/assist/warmup \
+  -H "x-api-key: $SCANIUM_API_KEY"
+```
+
+  Successful responses return `{"status":"ok","provider":"claude","model":"claude-sonnet-4-20250514","ts":"..."}`. Missing keys or disabled providers return an error payload and non-200 status so the app can stay in offline mode.
+
 - For LAN smoke tests, set `ALLOW_INSECURE_HTTP=true` in the backend env file and call `http://localhost:8080/v1/assist/chat`. Only localhost/RFC1918 hosts are honored, and you still need `X-API-Key`.
 - Missing or invalid API keys return `401 UNAUTHORIZED`; TLS violations return `403 HTTPS_REQUIRED`. Check logs for `reason=HTTPS_REQUIRED` if your curl fails.
 
