@@ -106,6 +106,8 @@ export type VisionImageInput = {
 export type VisionExtractorOptions = {
   /** Enable OCR text detection */
   enableOcr?: boolean;
+  /** OCR mode (text or document OCR) */
+  ocrMode?: 'TEXT_DETECTION' | 'DOCUMENT_TEXT_DETECTION';
   /** Enable label detection */
   enableLabels?: boolean;
   /** Enable logo detection */
@@ -141,5 +143,7 @@ export type VisionExtractionResult = {
  */
 export type VisionFeatureType =
   | 'TEXT_DETECTION'
+  | 'DOCUMENT_TEXT_DETECTION'
   | 'LABEL_DETECTION'
-  | 'LOGO_DETECTION';
+  | 'LOGO_DETECTION'
+  | 'IMAGE_PROPERTIES';

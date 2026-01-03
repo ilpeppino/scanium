@@ -19,13 +19,21 @@ function makeKey(apiKey: string, date: string): UsageKey {
   return `${date}:${apiKey}`;
 }
 
+function formatFeatureKey(feature: string | string[]): string {
+  if (Array.isArray(feature)) {
+    return [...feature].sort().join('+');
+  }
+  return feature;
+}
+
 export class UsageStore {
   private readonly store = new Map<UsageKey, UsageCounters>();
 
-  recordClassification(apiKey: string, feature: string, isError: boolean) {
+  recordClassification(apiKey: string, feature: string | string[], isError: boolean) {
     const counters = this.getCounters(apiKey);
     counters.classificationRequests += 1;
-    counters.classifierFeature[feature] = (counters.classifierFeature[feature] ?? 0) + 1;
+    const featureKey = formatFeatureKey(feature);
+    counters.classifierFeature[featureKey] = (counters.classifierFeature[featureKey] ?? 0) + 1;
     if (isError) {
       counters.classificationErrors += 1;
     }

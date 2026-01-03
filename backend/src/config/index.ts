@@ -8,6 +8,49 @@ const weakSessionSecrets = [
 
 const allowedCorsProtocols = new Set(['http:', 'https:', 'scanium:']);
 
+const classifierVisionFeatureValues = [
+  'LABEL_DETECTION',
+  'OBJECT_LOCALIZATION',
+  'TEXT_DETECTION',
+  'DOCUMENT_TEXT_DETECTION',
+  'IMAGE_PROPERTIES',
+  'LOGO_DETECTION',
+] as const;
+
+function parseVisionFeatures(value: unknown): string[] | undefined {
+  if (value === undefined || value === null) return undefined;
+
+  if (Array.isArray(value)) {
+    return value.map((val) => String(val).trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed.map((val) => String(val).trim()).filter(Boolean);
+        }
+        if (typeof parsed === 'string') {
+          return [parsed.trim()].filter(Boolean);
+        }
+      } catch {
+        // Fall back to CSV parsing below
+      }
+    }
+
+    return trimmed
+      .split(',')
+      .map((val) => val.trim())
+      .filter(Boolean);
+  }
+
+  return undefined;
+}
+
 export function isValidCorsOrigin(origin: string): boolean {
   if (!origin || origin.includes('*')) {
     return false;
@@ -49,8 +92,11 @@ export const configSchema = z.object({
   classifier: z.object({
     provider: z.enum(['mock', 'google']).default('mock'),
     visionFeature: z
-      .enum(['LABEL_DETECTION', 'OBJECT_LOCALIZATION'])
-      .default('LABEL_DETECTION'),
+      .preprocess(
+        parseVisionFeatures,
+        z.array(z.enum(classifierVisionFeatureValues)).min(1)
+      )
+      .default(['LABEL_DETECTION']),
     maxUploadBytes: z
       .coerce.number()
       .int()
@@ -157,6 +203,8 @@ export const configSchema = z.object({
       provider: z.enum(['mock', 'google']).default('mock'),
       /** Enable OCR text detection */
       enableOcr: z.coerce.boolean().default(true),
+      /** OCR mode for text extraction */
+      ocrMode: z.enum(['TEXT_DETECTION', 'DOCUMENT_TEXT_DETECTION']).default('TEXT_DETECTION'),
       /** Enable label detection */
       enableLabels: z.coerce.boolean().default(true),
       /** Enable logo detection (additional cost) */
@@ -314,6 +362,7 @@ export function loadConfig(): Config {
       enabled: process.env.VISION_ENABLED,
       provider: process.env.VISION_PROVIDER,
       enableOcr: process.env.VISION_ENABLE_OCR,
+      ocrMode: process.env.VISION_OCR_MODE,
       enableLabels: process.env.VISION_ENABLE_LABELS,
       enableLogos: process.env.VISION_ENABLE_LOGOS,
       enableColors: process.env.VISION_ENABLE_COLORS,

@@ -34,9 +34,43 @@ describe('Config Schema Validation', () => {
       expect(result.data.nodeEnv).toBe('development');
       expect(result.data.port).toBe(8080);
       expect(result.data.classifier.apiKeys).toEqual(['dev-key']);
+      expect(result.data.classifier.visionFeature).toEqual(['LABEL_DETECTION']);
       expect(result.data.corsOrigins).toEqual([
         'scanium://',
         'http://localhost:3000',
+      ]);
+    }
+  });
+
+  it('should parse multi-feature vision config', () => {
+    const config = {
+      publicBaseUrl: 'http://localhost:8080',
+      databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'google',
+        visionFeature: 'OBJECT_LOCALIZATION,TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION',
+      },
+      ebay: {
+        env: 'sandbox',
+        clientId: 'test',
+        clientSecret: 'test-secret',
+        scopes: 'scope',
+      tokenEncryptionKey: 'test-token-encryption-key-minimum-length-32',
+      },
+      sessionSigningSecret:
+        'loremipsumdolorsitametconsecteturadipiscingelit0123456789ABCDEFghiJKL',
+      corsOrigins: 'http://localhost',
+    };
+
+    const result = configSchema.safeParse(config);
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.classifier.visionFeature).toEqual([
+        'OBJECT_LOCALIZATION',
+        'TEXT_DETECTION',
+        'IMAGE_PROPERTIES',
+        'LOGO_DETECTION',
       ]);
     }
   });
