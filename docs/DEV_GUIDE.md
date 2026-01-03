@@ -387,6 +387,37 @@ Text-to-Speech: Available
 Camera Lenses: Back, Front
 ```
 
+***REMOVED******REMOVED******REMOVED*** Aggregation Accuracy (Overlay Filter)
+
+A debug-only control for filtering which bounding boxes are shown on the camera overlay based on confidence threshold. This is useful for:
+
+- **Verifying detection quality**: See only high-confidence detections to assess model accuracy
+- **Debugging aggregation behavior**: Check if low-confidence detections are affecting the experience
+- **Understanding confidence distribution**: Visually see how many detections fall into each confidence tier
+
+**Location:** Developer Options → Detection & Performance section
+
+**Usage:**
+1. Open Developer Options (dev flavor builds only)
+2. Find "Aggregation Accuracy (Overlay Filter)" slider
+3. Adjust slider from left to right:
+   - **All** (leftmost): Show all detected bboxes
+   - **Low+**: Show bboxes with ≥25% confidence
+   - **Medium+**: Show bboxes with ≥50% confidence
+   - **High only** (rightmost): Show only bboxes with ≥75% confidence
+
+**Important Notes:**
+- This control affects **only visibility** (what bboxes are drawn)
+- Detection, tracking, and aggregation logic are **NOT affected**
+- Stroke widths remain exactly as they are for whatever bboxes are shown
+- Setting persists across app restarts (stored in DataStore)
+- Only available in debug/dev builds
+
+**Technical Details:**
+- Tier definitions: `ConfidenceTiers.kt` in camera package
+- Filter applied in `MotionEnhancedOverlay.kt` before passing to `DetectionOverlay`
+- Settings stored via `SettingsRepository.devOverlayAccuracyStepFlow`
+
 ---
 
 ***REMOVED******REMOVED*** Backend Development Workflow

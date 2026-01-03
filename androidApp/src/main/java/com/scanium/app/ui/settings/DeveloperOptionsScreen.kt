@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.camera.ConfidenceTiers
 import com.scanium.app.diagnostics.*
 import com.scanium.app.model.config.ConnectionTestResult
 import com.scanium.app.selling.assistant.PreflightResult
@@ -57,6 +58,7 @@ fun DeveloperOptionsScreen(
     val bboxMappingDebugEnabled by viewModel.bboxMappingDebugEnabled.collectAsState()
     val correlationDebugEnabled by viewModel.correlationDebugEnabled.collectAsState()
     val cameraPipelineDebugEnabled by viewModel.cameraPipelineDebugEnabled.collectAsState()
+    val overlayAccuracyStep by viewModel.overlayAccuracyStep.collectAsState()
     val scrollState = rememberScrollState()
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
@@ -201,6 +203,12 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.Videocam,
                 checked = cameraPipelineDebugEnabled,
                 onCheckedChange = { viewModel.setCameraPipelineDebugEnabled(it) },
+            )
+
+            // Overlay Accuracy Filter (stepped slider)
+            OverlayAccuracySliderRow(
+                currentStep = overlayAccuracyStep,
+                onStepChange = { viewModel.setOverlayAccuracyStep(it) },
             )
 
             SettingsSectionHeader("Classifier Diagnostics")
@@ -1498,5 +1506,111 @@ private fun getPreflightStatusColor(status: PreflightStatus): Color {
         PreflightStatus.NOT_CONFIGURED -> Color(0xFF9E9E9E)
         PreflightStatus.ENDPOINT_NOT_FOUND -> Color(0xFFF44336)
         PreflightStatus.UNKNOWN -> Color(0xFF9E9E9E)
+    }
+}
+
+// ==================== Overlay Accuracy Filter Slider ====================
+
+/**
+ * Stepped slider row for filtering bboxes by confidence threshold.
+ *
+ * This is a debug-only control that filters which bounding boxes are
+ * shown on the camera overlay based on confidence. Does NOT affect
+ * detection, tracking, or aggregation logic - only visibility.
+ *
+ * @param currentStep Current step index (0 = All, higher = more filtering)
+ * @param onStepChange Callback when user changes the step
+ */
+@Composable
+private fun OverlayAccuracySliderRow(
+    currentStep: Int,
+    onStepChange: (Int) -> Unit,
+) {
+    val stepCount = ConfidenceTiers.stepCount
+    val currentTier = ConfidenceTiers.getTier(currentStep)
+    val displayText = ConfidenceTiers.getDisplayText(currentStep)
+
+    // Slider value state (convert to/from Float for Slider component)
+    var sliderValue by remember(currentStep) { mutableStateOf(currentStep.toFloat()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        // Header row with icon and title
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Default.FilterList,
+                contentDescription = "Overlay accuracy filter",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
+            Column {
+                Text(
+                    text = "Aggregation Accuracy (Overlay Filter)",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                )
+                Text(
+                    text = displayText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Slider with stepped values
+        Slider(
+            value = sliderValue,
+            onValueChange = { newValue ->
+                sliderValue = newValue
+            },
+            onValueChangeFinished = {
+                // Snap to integer and notify
+                val snappedStep = sliderValue.toInt().coerceIn(0, stepCount - 1)
+                sliderValue = snappedStep.toFloat()
+                if (snappedStep != currentStep) {
+                    onStepChange(snappedStep)
+                }
+            },
+            valueRange = 0f..(stepCount - 1).toFloat(),
+            steps = stepCount - 2, // steps parameter is intermediate steps, so (count - 2)
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        // Step labels row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            ConfidenceTiers.tiers.forEachIndexed { index, tier ->
+                val isSelected = index == currentStep
+                Text(
+                    text = tier.name,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Helper text
+        Text(
+            text = "Filters which bboxes are drawn on camera overlay. Does not affect detection or aggregation.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
