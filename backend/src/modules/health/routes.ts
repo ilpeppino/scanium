@@ -2,6 +2,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { createRequire } from 'module';
 import { checkDatabaseConnection } from '../../infra/db/prisma.js';
 import { assistantReadinessRegistry } from '../assistant/readiness-registry.js';
+import { getMetrics, getMetricsContentType } from '../../infra/observability/metrics.js';
 
 const require = createRequire(import.meta.url);
 const packageJson = require('../../../package.json') as { version?: string };
@@ -81,5 +82,18 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
         lastErrorAt: assistantReadiness.lastErrorAt,
       },
     });
+  });
+
+  /**
+   * GET /metrics
+   * Prometheus metrics endpoint for monitoring and alerting.
+   * Returns all application metrics in Prometheus text format.
+   */
+  fastify.get('/metrics', async (_request, reply) => {
+    const metrics = await getMetrics();
+    return reply
+      .status(200)
+      .header('Content-Type', getMetricsContentType())
+      .send(metrics);
   });
 };

@@ -2,6 +2,8 @@ import {
   ClassificationRequest,
   ClassificationResult,
   ProviderResponse,
+  EnrichedAttributes,
+  EnrichedAttribute,
 } from './types.js';
 import { GoogleVisionClassifier, GoogleVisionOptions } from './providers/google-vision.js';
 import { MockClassifier, MockClassifierOptions } from './providers/mock-classifier.js';
@@ -9,6 +11,8 @@ import { DomainPack, loadDomainPack } from './domain/domain-pack.js';
 import { mapSignalsToDomainCategory } from './domain/mapper.js';
 import { Config } from '../../config/index.js';
 import { CircuitBreaker } from '../../infra/resilience/circuit-breaker.js';
+import { VisionExtractor, MockVisionExtractor } from '../vision/extractor.js';
+import { resolveAttributes, ResolvedAttribute } from '../vision/attribute-resolver.js';
 
 type ClassifierDeps = {
   config: Config;
@@ -27,8 +31,12 @@ export class ClassifierService {
   private readonly domainPack: DomainPack;
   private readonly visionBreaker: CircuitBreaker;
   private readonly logger?: ClassifierDeps['logger'];
+  private readonly visionExtractor: VisionExtractor | MockVisionExtractor;
+  private readonly enableAttributeEnrichment: boolean;
+  private readonly config: Config;
 
   constructor(deps: ClassifierDeps) {
+    this.config = deps.config;
     this.mock = new MockClassifier({
       seed: deps.config.classifier.mockSeed,
     } satisfies MockClassifierOptions);
@@ -50,6 +58,21 @@ export class ClassifierService {
       minimumRequests: deps.config.classifier.circuitBreakerMinimumRequests,
     });
 
+    // Initialize VisionExtractor for attribute enrichment
+    this.enableAttributeEnrichment = deps.config.classifier.enableAttributeEnrichment;
+    this.visionExtractor =
+      deps.config.vision.provider === 'google'
+        ? new VisionExtractor({
+            timeoutMs: deps.config.vision.timeoutMs,
+            maxRetries: deps.config.vision.maxRetries,
+            enableLogoDetection: deps.config.vision.enableLogos,
+            maxOcrSnippetLength: deps.config.vision.maxOcrSnippetLength,
+            minOcrConfidence: deps.config.vision.minOcrConfidence,
+            minLabelConfidence: deps.config.vision.minLabelConfidence,
+            minLogoConfidence: deps.config.vision.minLogoConfidence,
+          })
+        : new MockVisionExtractor();
+
     if (this.domainPack.id !== deps.config.classifier.domainPackId) {
       console.warn(
         `[ClassifierService] domain pack id mismatch: config=${deps.config.classifier.domainPackId}, pack=${this.domainPack.id}`
@@ -63,6 +86,66 @@ export class ClassifierService {
     const mapping = mapSignalsToDomainCategory(this.domainPack, providerResponse.signals);
     this.logSignals(request.requestId, request.correlationId, providerResponse, mapping);
 
+    // Attribute enrichment via VisionExtractor
+    let enrichedAttributes: EnrichedAttributes | undefined;
+    let enrichmentMs: number | undefined;
+
+    if (request.enrichAttributes && this.enableAttributeEnrichment) {
+      const enrichmentStart = performance.now();
+      try {
+        enrichedAttributes = await this.extractEnrichedAttributes(request);
+        enrichmentMs = Math.round(performance.now() - enrichmentStart);
+
+        // Structured logging for attribute extraction (matches observability requirements)
+        // IMPORTANT: Never log OCR text content (may contain PII)
+        const attributesExtracted = enrichedAttributes
+          ? Object.keys(enrichedAttributes).filter(k => k !== 'suggestedNextPhoto')
+          : [];
+        const confidenceByAttribute: Record<string, string | null> = {};
+        if (enrichedAttributes) {
+          const attrMap: Record<string, typeof enrichedAttributes.brand> = {
+            brand: enrichedAttributes.brand,
+            model: enrichedAttributes.model,
+            color: enrichedAttributes.color,
+            secondaryColor: enrichedAttributes.secondaryColor,
+            material: enrichedAttributes.material,
+          };
+          for (const [key, attr] of Object.entries(attrMap)) {
+            confidenceByAttribute[`${key}Confidence`] = attr
+              ? attr.confidenceScore >= 0.8 ? 'HIGH' : attr.confidenceScore >= 0.5 ? 'MED' : 'LOW'
+              : null;
+          }
+        }
+
+        this.logger?.info(
+          {
+            requestId: request.requestId,
+            correlationId: request.correlationId,
+            itemId: request.requestId, // requestId serves as item identifier
+            attributesExtracted,
+            ...confidenceByAttribute,
+            visionLatencyMs: enrichmentMs,
+            cacheHit: false,
+            // Values logged only in debug mode to prevent PII exposure
+            // attributeValues: enrichedAttributes (NOT LOGGED IN PRODUCTION)
+          },
+          'Attribute extraction completed'
+        );
+      } catch (error) {
+        this.logger?.warn(
+          {
+            requestId: request.requestId,
+            correlationId: request.correlationId,
+            itemId: request.requestId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            visionLatencyMs: Math.round(performance.now() - enrichmentStart),
+          },
+          'Attribute extraction failed'
+        );
+        enrichmentMs = Math.round(performance.now() - enrichmentStart);
+      }
+    }
+
     return {
       requestId: request.requestId,
       correlationId: request.correlationId,
@@ -71,13 +154,117 @@ export class ClassifierService {
       confidence: mapping.confidence,
       label: mapping.label,
       attributes: mapping.attributes,
+      enrichedAttributes,
       provider: providerResponse.provider,
       providerUnavailable,
       timingsMs: {
         total: Math.round(performance.now() - started),
         vision: providerResponse.visionMs,
         mapping: mapping.timingMs,
+        enrichment: enrichmentMs,
       },
+    };
+  }
+
+  /**
+   * Extract enriched attributes using VisionExtractor and AttributeResolver.
+   */
+  private async extractEnrichedAttributes(
+    request: ClassificationRequest
+  ): Promise<EnrichedAttributes | undefined> {
+    // Convert buffer to base64 for VisionExtractor
+    const base64Data = request.buffer.toString('base64');
+    const imageInput = {
+      base64Data,
+      mimeType: request.contentType as 'image/jpeg' | 'image/png',
+      filename: request.fileName,
+    };
+
+    // Extract visual facts
+    const extractionResult = await this.visionExtractor.extractVisualFacts(
+      request.requestId,
+      [imageInput],
+      {
+        enableOcr: this.config.vision.enableOcr,
+        enableLabels: this.config.vision.enableLabels,
+        enableLogos: this.config.vision.enableLogos,
+        enableColors: this.config.vision.enableColors,
+        maxOcrSnippets: this.config.vision.maxOcrSnippets,
+        maxLabelHints: this.config.vision.maxLabelHints,
+        maxLogoHints: this.config.vision.maxLogoHints,
+        maxColors: this.config.vision.maxColors,
+      }
+    );
+
+    if (!extractionResult.success || !extractionResult.facts) {
+      this.logger?.debug(
+        {
+          requestId: request.requestId,
+          error: extractionResult.error,
+          errorCode: extractionResult.errorCode,
+        },
+        'Vision extraction failed for attribute enrichment'
+      );
+      return undefined;
+    }
+
+    // Resolve attributes from visual facts
+    const resolved = resolveAttributes(request.requestId, extractionResult.facts);
+
+    // Convert to EnrichedAttributes type
+    return this.mapResolvedToEnriched(resolved);
+  }
+
+  /**
+   * Map ResolvedAttributes to EnrichedAttributes type.
+   */
+  private mapResolvedToEnriched(
+    resolved: ReturnType<typeof resolveAttributes>
+  ): EnrichedAttributes {
+    const result: EnrichedAttributes = {};
+
+    if (resolved.brand) {
+      result.brand = this.mapResolvedAttribute(resolved.brand);
+    }
+    if (resolved.model) {
+      result.model = this.mapResolvedAttribute(resolved.model);
+    }
+    if (resolved.color) {
+      result.color = this.mapResolvedAttribute(resolved.color);
+    }
+    if (resolved.secondaryColor) {
+      result.secondaryColor = this.mapResolvedAttribute(resolved.secondaryColor);
+    }
+    if (resolved.material) {
+      result.material = this.mapResolvedAttribute(resolved.material);
+    }
+    if (resolved.suggestedNextPhoto) {
+      result.suggestedNextPhoto = resolved.suggestedNextPhoto;
+    }
+
+    return result;
+  }
+
+  /**
+   * Map a single ResolvedAttribute to EnrichedAttribute.
+   */
+  private mapResolvedAttribute(attr: ResolvedAttribute): EnrichedAttribute {
+    // Convert confidence tier to numeric score
+    const confidenceScores: Record<string, number> = {
+      HIGH: 0.9,
+      MED: 0.65,
+      LOW: 0.35,
+    };
+
+    return {
+      value: attr.value,
+      confidence: attr.confidence,
+      confidenceScore: confidenceScores[attr.confidence] ?? 0.5,
+      evidenceRefs: attr.evidenceRefs.map((ref) => ({
+        type: ref.type,
+        value: ref.value,
+        score: ref.score,
+      })),
     };
   }
 

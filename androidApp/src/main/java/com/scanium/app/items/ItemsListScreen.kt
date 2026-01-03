@@ -49,9 +49,12 @@ import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.tourTarget
+import com.scanium.app.items.components.AttributeChipsRow
+import com.scanium.app.items.components.AttributeEditDialog
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
 import com.scanium.app.listing.ListingDraft
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.app.model.resolveBytes
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.persistence.ListingDraftStore
@@ -75,6 +78,7 @@ fun ItemsListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToAssistant: (List<String>) -> Unit,
     onNavigateToEdit: (List<String>) -> Unit,
+    onNavigateToGenerateListing: (String) -> Unit = {},
     draftStore: ListingDraftStore,
     itemsViewModel: ItemsViewModel = viewModel(),
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
@@ -85,6 +89,14 @@ fun ItemsListScreen(
     // Press-and-hold preview state
     var previewItem by remember { mutableStateOf<ScannedItem?>(null) }
     var previewBounds by remember { mutableStateOf<Rect?>(null) }
+
+    // Item detail sheet state
+    var detailSheetItem by remember { mutableStateOf<ScannedItem?>(null) }
+
+    // Attribute edit dialog state
+    var editingItemId by remember { mutableStateOf<String?>(null) }
+    var editingAttributeKey by remember { mutableStateOf<String?>(null) }
+    var editingAttribute by remember { mutableStateOf<ItemAttribute?>(null) }
 
     val selectedIds = remember { mutableStateListOf<String>() }
     var selectionMode by remember { mutableStateOf(false) }
@@ -466,6 +478,12 @@ fun ItemsListScreen(
                                             previewBounds = bounds
                                         },
                                         onPreviewEnd = {
+                                            // Show detail sheet if item has attributes
+                                            previewItem?.let { previewedItem ->
+                                                if (previewedItem.attributes.isNotEmpty()) {
+                                                    detailSheetItem = previewedItem
+                                                }
+                                            }
                                             previewItem = null
                                         },
                                         onRetryClassification = {
@@ -729,6 +747,58 @@ fun ItemsListScreen(
             onDismiss = { previewDraft = null },
         )
     }
+
+    // Item detail sheet for viewing all attributes
+    detailSheetItem?.let { item ->
+        ItemDetailSheet(
+            item = item,
+            onDismiss = { detailSheetItem = null },
+            onAttributeEdit = { key, attribute ->
+                // Open attribute edit dialog
+                editingItemId = item.id
+                editingAttributeKey = key
+                editingAttribute = attribute
+            },
+            onGenerateListing = if (item.attributes.isNotEmpty()) {
+                {
+                    // Navigate to generate listing screen with this item
+                    detailSheetItem = null
+                    onNavigateToGenerateListing(item.id)
+                }
+            } else {
+                null
+            },
+        )
+    }
+
+    // Attribute edit dialog
+    if (editingItemId != null && editingAttributeKey != null && editingAttribute != null) {
+        AttributeEditDialog(
+            attributeKey = editingAttributeKey!!,
+            attribute = editingAttribute!!,
+            onDismiss = {
+                editingItemId = null
+                editingAttributeKey = null
+                editingAttribute = null
+            },
+            onConfirm = { updatedAttribute ->
+                // Update the attribute in the ViewModel
+                itemsViewModel.updateItemAttribute(
+                    itemId = editingItemId!!,
+                    attributeKey = editingAttributeKey!!,
+                    attribute = updatedAttribute,
+                )
+                // Close the dialog
+                editingItemId = null
+                editingAttributeKey = null
+                editingAttribute = null
+                // Refresh the detail sheet if it's still open
+                detailSheetItem?.let { currentItem ->
+                    detailSheetItem = itemsViewModel.getItem(currentItem.id)
+                }
+            },
+        )
+    }
 }
 
 /**
@@ -886,6 +956,16 @@ private fun ItemRow(
                     item.condition?.let { condition ->
                         ConditionBadge(condition = condition)
                     }
+                }
+
+                // Attribute chips (show up to 3 attributes)
+                if (item.attributes.isNotEmpty()) {
+                    AttributeChipsRow(
+                        attributes = item.attributes,
+                        maxVisible = 3,
+                        compact = true,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                 }
 
                 // Timestamp and confidence percentage

@@ -393,6 +393,23 @@ class ItemsViewModel
             stateManager.updateItemsFields(updates)
         }
 
+        /**
+         * Updates a single attribute for an item.
+         * Used when user edits/confirms an extracted attribute.
+         *
+         * @param itemId The ID of the item to update
+         * @param attributeKey The key of the attribute (e.g., "brand", "color")
+         * @param attribute The new attribute value
+         * @see ItemsStateManager.updateItemAttribute
+         */
+        fun updateItemAttribute(
+            itemId: String,
+            attributeKey: String,
+            attribute: com.scanium.shared.core.models.items.ItemAttribute,
+        ) {
+            stateManager.updateItemAttribute(itemId, attributeKey, attribute)
+        }
+
         // ==================== Threshold Operations (Delegated to StateManager) ====================
 
         /**

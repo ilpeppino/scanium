@@ -14,6 +14,7 @@ import com.scanium.shared.core.models.config.CloudClassifierConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import com.scanium.shared.core.models.items.ItemAttribute
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.CertificatePinner
@@ -139,7 +140,7 @@ class CloudClassifier(
             }
 
             val bitmap = input.bitmap
-            val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify"
+            val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify?enrichAttributes=true"
             val correlationId = CorrelationIds.currentClassificationSessionId()
             ScaniumLog.d(TAG, "Classifying endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
 
@@ -326,6 +327,9 @@ class CloudClassifier(
                 ItemCategory.fromClassifierLabel(label)
             }
 
+        // Convert enriched attributes to ItemAttribute map
+        val enrichedAttributes = parseEnrichedAttributes(apiResponse.enrichedAttributes)
+
         return ClassificationResult(
             label = label,
             confidence = confidence,
@@ -333,9 +337,53 @@ class CloudClassifier(
             mode = ClassificationMode.CLOUD,
             domainCategoryId = domainCategoryId,
             attributes = attributes,
+            enrichedAttributes = enrichedAttributes,
             status = ClassificationStatus.SUCCESS,
             errorMessage = null,
             requestId = requestId,
+        )
+    }
+
+    /**
+     * Convert enriched attributes response to ItemAttribute map.
+     */
+    private fun parseEnrichedAttributes(
+        enriched: EnrichedAttributesResponse?
+    ): Map<String, ItemAttribute> {
+        if (enriched == null) return emptyMap()
+
+        val result = mutableMapOf<String, ItemAttribute>()
+
+        enriched.brand?.let { attr ->
+            result["brand"] = attr.toItemAttribute()
+        }
+        enriched.model?.let { attr ->
+            result["model"] = attr.toItemAttribute()
+        }
+        enriched.color?.let { attr ->
+            result["color"] = attr.toItemAttribute()
+        }
+        enriched.secondaryColor?.let { attr ->
+            result["secondaryColor"] = attr.toItemAttribute()
+        }
+        enriched.material?.let { attr ->
+            result["material"] = attr.toItemAttribute()
+        }
+
+        return result
+    }
+
+    /**
+     * Convert API response attribute to ItemAttribute.
+     */
+    private fun EnrichedAttributeResponse.toItemAttribute(): ItemAttribute {
+        // Get primary evidence source
+        val source = evidenceRefs.firstOrNull()?.type
+
+        return ItemAttribute(
+            value = value,
+            confidence = confidenceScore,
+            source = source,
         )
     }
 
@@ -406,5 +454,40 @@ private data class CloudClassificationResponse(
     val confidence: Float? = null,
     val label: String? = null,
     val attributes: Map<String, String>? = null,
+    val enrichedAttributes: EnrichedAttributesResponse? = null,
     val requestId: String? = null,
+)
+
+/**
+ * Enriched attributes from VisionExtractor.
+ */
+@Serializable
+private data class EnrichedAttributesResponse(
+    val brand: EnrichedAttributeResponse? = null,
+    val model: EnrichedAttributeResponse? = null,
+    val color: EnrichedAttributeResponse? = null,
+    val secondaryColor: EnrichedAttributeResponse? = null,
+    val material: EnrichedAttributeResponse? = null,
+    val suggestedNextPhoto: String? = null,
+)
+
+/**
+ * Single enriched attribute with confidence and evidence.
+ */
+@Serializable
+private data class EnrichedAttributeResponse(
+    val value: String,
+    val confidence: String, // "HIGH", "MED", "LOW"
+    val confidenceScore: Float,
+    val evidenceRefs: List<AttributeEvidenceResponse> = emptyList(),
+)
+
+/**
+ * Evidence reference for an extracted attribute.
+ */
+@Serializable
+private data class AttributeEvidenceResponse(
+    val type: String, // "logo", "ocr", "color", "label"
+    val value: String,
+    val score: Float? = null,
 )

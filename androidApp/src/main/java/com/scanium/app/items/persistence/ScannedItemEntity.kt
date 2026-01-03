@@ -6,12 +6,15 @@ import androidx.room.PrimaryKey
 import com.scanium.app.items.ItemCondition
 import com.scanium.app.items.ItemListingStatus
 import com.scanium.app.items.ScannedItem
+import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.ml.ItemCategory
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.shared.core.models.pricing.Money
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange
+import org.json.JSONObject
 
 @Entity(tableName = "scanned_items")
 data class ScannedItemEntity(
@@ -47,6 +50,7 @@ data class ScannedItemEntity(
     val classificationRequestId: String?,
     val userPriceCents: Long?,
     val condition: String?,
+    val attributesJson: String?,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -87,6 +91,7 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         classificationRequestId = classificationRequestId,
         userPriceCents = userPriceCents,
         condition = condition?.name,
+        attributesJson = serializeAttributes(attributes),
     )
 }
 
@@ -157,6 +162,7 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         classificationRequestId = classificationRequestId,
         userPriceCents = userPriceCents,
         condition = conditionValue,
+        attributes = deserializeAttributes(attributesJson),
     )
 }
 
@@ -185,4 +191,54 @@ private fun imageRefFrom(
     if (mimeType.isNullOrBlank()) return null
     if (width == null || height == null || width <= 0 || height <= 0) return null
     return ImageRef.Bytes(bytes = bytes, mimeType = mimeType, width = width, height = height)
+}
+
+/**
+ * Serialize attributes map to JSON string for database storage.
+ *
+ * Format: { "key": { "value": "...", "confidence": 0.85, "source": "ocr" }, ... }
+ */
+private fun serializeAttributes(attributes: Map<String, ItemAttribute>): String? {
+    if (attributes.isEmpty()) return null
+    return try {
+        val json = JSONObject()
+        for ((key, attr) in attributes) {
+            val attrJson = JSONObject().apply {
+                put("value", attr.value)
+                put("confidence", attr.confidence.toDouble())
+                if (attr.source != null) {
+                    put("source", attr.source)
+                }
+            }
+            json.put(key, attrJson)
+        }
+        json.toString()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Deserialize JSON string back to attributes map.
+ */
+private fun deserializeAttributes(json: String?): Map<String, ItemAttribute> {
+    if (json.isNullOrBlank()) return emptyMap()
+    return try {
+        val result = mutableMapOf<String, ItemAttribute>()
+        val jsonObject = JSONObject(json)
+        val keys = jsonObject.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            val attrJson = jsonObject.getJSONObject(key)
+            val attr = ItemAttribute(
+                value = attrJson.getString("value"),
+                confidence = attrJson.optDouble("confidence", 0.0).toFloat(),
+                source = attrJson.optString("source").takeIf { it.isNotBlank() },
+            )
+            result[key] = attr
+        }
+        result
+    } catch (e: Exception) {
+        emptyMap()
+    }
 }

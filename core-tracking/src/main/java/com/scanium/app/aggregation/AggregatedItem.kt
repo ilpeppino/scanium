@@ -2,6 +2,7 @@ package com.scanium.app.aggregation
 
 import android.net.Uri
 import com.scanium.app.items.ScannedItem
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
@@ -66,6 +67,8 @@ data class AggregatedItem(
     var classificationErrorMessage: String? = null,
     var classificationRequestId: String? = null,
     var thumbnailQuality: Float = 0f,
+    /** Enriched attributes from cloud classification (brand, model, color, etc.) */
+    var enrichedAttributes: Map<String, ItemAttribute> = emptyMap(),
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -92,6 +95,7 @@ data class AggregatedItem(
             classificationErrorMessage = classificationErrorMessage,
             classificationRequestId = classificationRequestId,
             qualityScore = thumbnailQuality,
+            attributes = enrichedAttributes,
         )
     }
 
