@@ -63,6 +63,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-scanium://}
     volumes:
       - ./secrets:/secrets:ro
+      - ${REMOTE_CONFIG_PATH:-./config/remote-config.json}:/app/config/remote-config.json:ro
 
     networks:
       - backend_scanium-network

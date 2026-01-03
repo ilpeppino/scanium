@@ -2,6 +2,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Config } from '../../config/index.js';
 
+type Logger = {
+  warn: (payload: Record<string, unknown>, message: string) => void;
+};
+
 export interface RemoteConfig {
   version: string;
   fetchedAt?: number;
@@ -17,7 +21,7 @@ export class ConfigService {
   private currentConfig: RemoteConfig | null = null;
   private lastLoaded: number = 0;
 
-  constructor(private appConfig: Config) {
+  constructor(private appConfig: Config, private logger?: Logger) {
     this.configPath = path.resolve(process.cwd(), 'config', 'remote-config.json');
     // Mark appConfig as used (reserved for future configuration needs)
     void this.appConfig;
@@ -61,8 +65,15 @@ export class ConfigService {
             const data = await fs.readFile(this.configPath, 'utf-8');
             this.currentConfig = JSON.parse(data);
             this.lastLoaded = Date.now();
-        } catch (e) {
-            console.error(`Error loading remote config from ${this.configPath}`, e);
+        } catch (error) {
+            this.logger?.warn(
+                {
+                    configPath: this.configPath,
+                    hint: 'Mount a config/remote-config.json volume or edit backend/config/remote-config.json',
+                    error: error instanceof Error ? error.message : String(error),
+                },
+                'Remote config missing or unreadable; using built-in defaults'
+            );
             if (!this.currentConfig) {
                 // Fallback safe default
                 this.currentConfig = {

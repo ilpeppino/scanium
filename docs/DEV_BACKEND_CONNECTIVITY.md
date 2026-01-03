@@ -354,6 +354,17 @@ Example response payload (when `enrichAttributes=true`) includes structured imag
 }
 ```
 
+***REMOVED******REMOVED******REMOVED*** Remote Config (`/v1/config`)
+
+- Default config file lives in `backend/config/remote-config.json`. Update the `version` and `ttlSeconds` fields when you change it so devices know when to invalidate cached values.
+- Both `backend/docker-compose.yml` and the NAS compose file mount `${REMOTE_CONFIG_PATH:-./config/remote-config.json}` into the container at `/app/config/remote-config.json`. This means you can edit the host file and simply restart the container—no image rebuild required.
+- **NAS override:** copy the template to `/volume1/docker/scanium/config/remote-config.json`, set `REMOTE_CONFIG_PATH=/volume1/docker/scanium/config/remote-config.json` in your `.env`, then run:
+  ```bash
+  cd /volume1/docker/scanium/backend
+  docker compose --project-name scanium up -d api
+  ```
+  The API will log a warning if the file is missing and fall back to safe defaults so you can still access `/v1/config`.
+
 ***REMOVED******REMOVED******REMOVED******REMOVED*** ✅ Health returns 502/530 (Cloudflare errors)
 
 **Symptoms:**

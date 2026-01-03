@@ -8,7 +8,7 @@ export async function configRoutes(
   options: { config: Config }
 ) {
   const { config } = options;
-  const service = new ConfigService(config);
+  const service = new ConfigService(config, app.log);
   // Reusing classifier keys for now as requested ("same scheme")
   const apiKeyManager = new ApiKeyManager(config.classifier.apiKeys);
 
