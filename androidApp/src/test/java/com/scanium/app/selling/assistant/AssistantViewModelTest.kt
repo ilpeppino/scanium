@@ -67,6 +67,13 @@ class AssistantViewModelTest {
         localAssistantHelper = LocalAssistantHelper()
         localSuggestionEngine = LocalSuggestionEngine()
         preflightManager = FakeAssistantPreflightManager()
+
+        // Pre-initialize DataStore to avoid timing issues with flow.first() calls
+        // DataStore runs on Dispatchers.IO which isn't replaced by the test dispatcher,
+        // so we need to ensure the data is written before tests run
+        kotlinx.coroutines.runBlocking {
+            settingsRepository.setAllowAssistantImages(false)
+        }
     }
 
     @After
