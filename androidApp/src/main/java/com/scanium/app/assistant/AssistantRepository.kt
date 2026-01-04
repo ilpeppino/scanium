@@ -4,6 +4,8 @@ import com.scanium.app.BuildConfig
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.network.security.RequestSigner
+import com.scanium.app.selling.assistant.network.AssistantHttpConfig
+import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import com.scanium.shared.core.models.assistant.AssistantPromptRequest
 import com.scanium.shared.core.models.assistant.AssistantResponse
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +19,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -51,23 +52,27 @@ class AssistantException(
  * - Client-side throttling to prevent accidental rapid-fire requests
  * - User-friendly error messages for different error codes
  * - Device ID header for rate limiting (hashed for privacy)
+ * - Unified timeout configuration via AssistantHttpConfig
+ *
+ * @param apiKeyProvider Provider for the API key
+ * @param getDeviceId Provider for the device ID (for rate limiting)
+ * @param httpConfig HTTP timeout and retry configuration
  */
 class AssistantRepository(
     private val apiKeyProvider: () -> String? = { null },
     private val getDeviceId: () -> String = { "" },
+    private val httpConfig: AssistantHttpConfig = AssistantHttpConfig.DEFAULT,
 ) {
     companion object {
         private const val TAG = "AssistantRepository"
-        private const val TIMEOUT_SECONDS = 30L
         private const val MIN_REQUEST_INTERVAL_MS = 1000L // 1 second minimum between requests
     }
 
-    private val client =
-        OkHttpClient.Builder()
-            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .writeTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .build()
+    private val client: OkHttpClient = AssistantOkHttpClientFactory.create(httpConfig)
+
+    init {
+        AssistantOkHttpClientFactory.logConfigurationUsage("assistant-chat", httpConfig)
+    }
 
     private val json =
         Json {

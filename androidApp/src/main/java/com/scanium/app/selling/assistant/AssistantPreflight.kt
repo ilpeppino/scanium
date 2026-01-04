@@ -11,13 +11,15 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.logging.ScaniumLog
+import com.scanium.app.network.DeviceIdProvider
 import com.scanium.app.network.security.RequestSigner
+import com.scanium.app.selling.assistant.network.AssistantHttpConfig
+import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,12 +30,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.net.SocketTimeoutException
-import java.util.concurrent.TimeUnit
 
 /**
  * Status of the assistant backend availability from preflight check.
@@ -80,25 +82,47 @@ data class PreflightResult(
 }
 
 /**
- * Response format from /health endpoint.
- * Matches the backend's actual response structure.
+ * Minimal request payload for preflight check.
+ * Uses the actual chat endpoint to verify auth and connectivity.
  */
 @Serializable
-private data class HealthResponse(
-    val status: String = "unknown",
-    val ts: String? = null,
-    val version: String? = null,
-    val assistant: AssistantHealthStatus? = null,
+private data class PreflightChatRequest(
+    val message: String = "ping",
+    val items: List<PreflightItemDto> = listOf(PreflightItemDto()),
+    val history: List<String> = emptyList(),
 )
 
 /**
- * Assistant-specific health status from backend.
+ * Minimal item DTO for preflight request.
+ * Backend requires at least one item with itemId.
  */
 @Serializable
-private data class AssistantHealthStatus(
-    val providerConfigured: Boolean = false,
-    val providerReachable: Boolean = false,
-    val state: String? = null,
+private data class PreflightItemDto(
+    val itemId: String = "preflight",
+    val title: String = "Preflight Check",
+    val description: String = "",
+    val attributes: List<String> = emptyList(),
+)
+
+/**
+ * Response format from /v1/assist/chat endpoint.
+ * We only check if the request succeeded; content is ignored.
+ */
+@Serializable
+private data class PreflightChatResponse(
+    val content: String = "",
+    val assistantError: PreflightAssistantErrorDto? = null,
+)
+
+/**
+ * Error DTO that may be present in chat response.
+ */
+@Serializable
+private data class PreflightAssistantErrorDto(
+    val type: String = "",
+    val category: String = "",
+    val retryable: Boolean = false,
+    val message: String? = null,
 )
 
 private val Context.preflightDataStore: DataStore<Preferences> by preferencesDataStore(
@@ -122,20 +146,22 @@ interface AssistantPreflightManager {
  * Default implementation of AssistantPreflightManager.
  *
  * Features:
- * - Quick health check with tight timeouts (1-2s)
+ * - Quick health check with tight timeouts (uses AssistantHttpConfig.PREFLIGHT)
  * - Result caching to avoid redundant checks
- * - Warm-up mechanism with rate limiting
+ * - Warm-up mechanism with rate limiting (uses AssistantHttpConfig.WARMUP)
  * - Non-blocking - does not affect camera/scanning performance
+ *
+ * @param context Application context
+ * @param preflightConfig HTTP config for preflight checks (tight timeouts)
+ * @param warmupConfig HTTP config for warmup requests (moderate timeouts)
  */
 class AssistantPreflightManagerImpl(
     private val context: Context,
+    private val preflightConfig: AssistantHttpConfig = AssistantHttpConfig.PREFLIGHT,
+    private val warmupConfig: AssistantHttpConfig = AssistantHttpConfig.WARMUP,
 ) : AssistantPreflightManager {
     companion object {
         private const val TAG = "AssistantPreflight"
-
-        // Timeouts for preflight (tight to avoid blocking)
-        private const val PREFLIGHT_CONNECT_TIMEOUT_MS = 2000L
-        private const val PREFLIGHT_READ_TIMEOUT_MS = 2000L
 
         // Cache TTL - reuse result if checked within this time
         private const val PREFLIGHT_CACHE_TTL_MS = 30_000L // 30 seconds
@@ -153,10 +179,24 @@ class AssistantPreflightManagerImpl(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(PREFLIGHT_CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-        .readTimeout(PREFLIGHT_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-        .build()
+    // Use factory-created clients with standardized configuration
+    private val client: OkHttpClient = AssistantOkHttpClientFactory.create(
+        config = preflightConfig,
+        logStartupPolicy = false, // Don't log for preflight, let chat client log
+    )
+
+    // Lazy-init warmup client only when needed
+    private val warmupClient: OkHttpClient by lazy {
+        AssistantOkHttpClientFactory.create(
+            config = warmupConfig,
+            logStartupPolicy = false,
+        )
+    }
+
+    init {
+        // Log preflight configuration on init
+        AssistantOkHttpClientFactory.logConfigurationUsage("preflight", preflightConfig)
+    }
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -345,36 +385,49 @@ class AssistantPreflightManagerImpl(
 
         val key = apiKey
         if (key.isNullOrBlank()) {
+            // Missing API key - mark as UNKNOWN to allow chat attempt
+            // The actual chat might work (different auth flow) or fail with clear error
             val result = PreflightResult(
-                status = PreflightStatus.UNAUTHORIZED,
+                status = PreflightStatus.UNKNOWN,
                 latencyMs = 0,
                 reasonCode = "api_key_missing",
             )
             _currentResult.value = result
             persistResult(result)
-            ScaniumLog.w(TAG, "Preflight: UNAUTHORIZED (no API key)")
+            ScaniumLog.w(TAG, "Preflight: UNKNOWN (no API key - will allow chat attempt)")
             return result
         }
 
-        // Build health check request - uses /health (NOT /v1/health)
-        // The health endpoint is at the root, not under the /v1 prefix
-        val endpoint = "$baseUrl/health"
+        // Build preflight request using the actual chat endpoint
+        // This ensures we test the exact same auth path as real chat requests
+        val endpoint = "$baseUrl/v1/assist/chat"
         val parsedUrl = runCatching { java.net.URL(endpoint) }.getOrNull()
         val host = parsedUrl?.host ?: "unknown"
-        val path = parsedUrl?.path ?: "/health"
+        val path = parsedUrl?.path ?: "/v1/assist/chat"
+
+        // Build minimal valid chat payload
+        val preflightPayload = PreflightChatRequest()
+        val payloadJson = json.encodeToString(PreflightChatRequest.serializer(), preflightPayload)
 
         val requestBuilder = Request.Builder()
             .url(endpoint)
-            .get()
+            .post(payloadJson.toRequestBody("application/json".toMediaType()))
             .header("X-API-Key", key)
             .header("X-Client", "Scanium-Android")
             .header("X-App-Version", BuildConfig.VERSION_NAME)
+            .header("X-Scanium-Preflight", "true")
 
-        // Add signature for consistency (even though it's a GET)
+        // Add device ID header for rate limiting
+        val deviceId = DeviceIdProvider.getHashedDeviceId(context)
+        if (deviceId.isNotBlank()) {
+            requestBuilder.header("X-Scanium-Device-Id", deviceId)
+        }
+
+        // Add HMAC signature for replay protection
         RequestSigner.addSignatureHeaders(
             builder = requestBuilder,
             apiKey = key,
-            requestBody = "",
+            requestBody = payloadJson,
         )
 
         val request = requestBuilder.build()
@@ -392,56 +445,50 @@ class AssistantPreflightManagerImpl(
 
                 val result = when {
                     response.isSuccessful -> {
-                        val healthResponse = body?.let {
-                            runCatching { json.decodeFromString<HealthResponse>(it) }.getOrNull()
+                        // Chat endpoint returned 200 - assistant is available
+                        // Check for embedded error in response
+                        val chatResponse = body?.let {
+                            runCatching { json.decodeFromString<PreflightChatResponse>(it) }.getOrNull()
                         }
 
-                        // Backend reachability check: If /health returns 200, backend is reachable.
-                        // The assistant feature flag (featureFlags.enableAssistant) from remote config
-                        // controls whether the assistant is enabled - that check happens in FeatureFlagRepository.
-                        // Here we only verify backend reachability, not assistant-specific configuration.
-                        //
-                        // If the backend health indicates it's "ok" or doesn't report degraded status,
-                        // consider the backend reachable and assistant available for use.
-                        val backendStatus = healthResponse?.status ?: "ok"
-                        val isBackendHealthy = backendStatus.equals("ok", ignoreCase = true) ||
-                            backendStatus.equals("healthy", ignoreCase = true)
-
-                        // If assistant section exists and explicitly reports unavailable, respect that
-                        val assistantExplicitlyUnavailable = healthResponse?.assistant?.let { assistant ->
-                            // Only mark unavailable if provider is configured but explicitly not reachable
-                            assistant.providerConfigured && !assistant.providerReachable
-                        } ?: false
-
-                        when {
-                            assistantExplicitlyUnavailable -> {
-                                PreflightResult(
-                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                                    latencyMs = latency,
-                                    reasonCode = healthResponse?.assistant?.state ?: "provider_unreachable",
-                                )
+                        if (chatResponse?.assistantError != null) {
+                            // Backend returned 200 but with embedded error
+                            val errorType = chatResponse.assistantError.type.lowercase()
+                            when {
+                                errorType.contains("provider_unavailable") ||
+                                    errorType.contains("provider_unreachable") -> {
+                                    PreflightResult(
+                                        status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                        latencyMs = latency,
+                                        reasonCode = errorType,
+                                    )
+                                }
+                                else -> {
+                                    // Other embedded errors - treat as available but log
+                                    ScaniumLog.w(TAG, "Preflight: 200 with embedded error type=$errorType")
+                                    PreflightResult(
+                                        status = PreflightStatus.AVAILABLE,
+                                        latencyMs = latency,
+                                    )
+                                }
                             }
-                            isBackendHealthy -> {
-                                PreflightResult(
-                                    status = PreflightStatus.AVAILABLE,
-                                    latencyMs = latency,
-                                )
-                            }
-                            else -> {
-                                // Backend returned 200 but status is degraded
-                                PreflightResult(
-                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                                    latencyMs = latency,
-                                    reasonCode = "backend_degraded_$backendStatus",
-                                )
-                            }
+                        } else {
+                            // Clean 200 response - assistant is available
+                            PreflightResult(
+                                status = PreflightStatus.AVAILABLE,
+                                latencyMs = latency,
+                            )
                         }
                     }
                     response.code == 401 || response.code == 403 -> {
+                        // Auth failure from preflight - log for diagnostics but mark UNKNOWN
+                        // This allows the user to still attempt a chat request, which might:
+                        // 1. Succeed if there's a different auth path
+                        // 2. Fail with a clearer error that we can show to the user
                         PreflightResult(
-                            status = PreflightStatus.UNAUTHORIZED,
+                            status = PreflightStatus.UNKNOWN,
                             latencyMs = latency,
-                            reasonCode = "http_${response.code}",
+                            reasonCode = "preflight_auth_${response.code}",
                         )
                     }
                     response.code == 404 -> {
@@ -484,14 +531,16 @@ class AssistantPreflightManagerImpl(
             }
         } catch (e: SocketTimeoutException) {
             val latency = System.currentTimeMillis() - startTime
+            // Timeout - mark as UNKNOWN to allow chat attempt
+            // The actual chat request has longer timeout and might succeed
             val result = PreflightResult(
-                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                status = PreflightStatus.UNKNOWN,
                 latencyMs = latency,
                 reasonCode = "timeout",
             )
             _currentResult.value = result
             persistResult(result)
-            ScaniumLog.w(TAG, "Preflight: TEMPORARILY_UNAVAILABLE (timeout)", e)
+            ScaniumLog.w(TAG, "Preflight: UNKNOWN (timeout - will allow chat attempt)", e)
             result
         } catch (e: java.net.UnknownHostException) {
             val latency = System.currentTimeMillis() - startTime
@@ -517,25 +566,21 @@ class AssistantPreflightManagerImpl(
             result
         } catch (e: IOException) {
             val latency = System.currentTimeMillis() - startTime
+            // IO error - mark as UNKNOWN to allow chat attempt
             val result = PreflightResult(
-                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                status = PreflightStatus.UNKNOWN,
                 latencyMs = latency,
                 reasonCode = "io_error",
             )
             _currentResult.value = result
             persistResult(result)
-            ScaniumLog.w(TAG, "Preflight: TEMPORARILY_UNAVAILABLE (IO error)", e)
+            ScaniumLog.w(TAG, "Preflight: UNKNOWN (IO error - will allow chat attempt)", e)
             result
         }
     }
 
     private suspend fun performWarmUp() {
-        // Use the same client but with normal timeouts for warm-up
-        val warmupClient = OkHttpClient.Builder()
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .build()
-
+        // Use the warmup client with moderate timeouts
         val key = apiKey ?: return
 
         // Warm-up by making a lightweight chat request with minimal payload
@@ -548,6 +593,12 @@ class AssistantPreflightManagerImpl(
             .header("X-API-Key", key)
             .header("X-Client", "Scanium-Android")
             .header("X-App-Version", BuildConfig.VERSION_NAME)
+
+        // Add device ID header for rate limiting
+        val deviceId = DeviceIdProvider.getHashedDeviceId(context)
+        if (deviceId.isNotBlank()) {
+            requestBuilder.header("X-Scanium-Device-Id", deviceId)
+        }
 
         RequestSigner.addSignatureHeaders(
             builder = requestBuilder,

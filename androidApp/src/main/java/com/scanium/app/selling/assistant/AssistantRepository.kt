@@ -13,7 +13,10 @@ import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantResponse
 import com.scanium.app.model.ExportProfileSnapshot
 import com.scanium.app.model.ItemContextSnapshot
+import com.scanium.app.network.DeviceIdProvider
 import com.scanium.app.network.security.RequestSigner
+import com.scanium.app.selling.assistant.network.AssistantHttpConfig
+import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
@@ -26,7 +29,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.net.SocketTimeoutException
-import java.util.concurrent.TimeUnit
 
 /**
  * Image data to attach to an assistant request.
@@ -106,22 +108,32 @@ private class AssistantRepositoryLogger {
     }
 }
 
+/**
+ * Factory for creating AssistantRepository instances with unified HTTP configuration.
+ *
+ * @param context Application context for accessing secure storage and device info
+ * @param httpConfig HTTP timeout and retry configuration (defaults to production settings)
+ * @param client Optional pre-configured OkHttpClient (primarily for testing)
+ */
 class AssistantRepositoryFactory(
     private val context: Context,
-    private val client: OkHttpClient =
-        OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .build(),
+    private val httpConfig: AssistantHttpConfig = AssistantHttpConfig.DEFAULT,
+    private val client: OkHttpClient = AssistantOkHttpClientFactory.create(httpConfig),
 ) {
+    init {
+        // Log configuration on factory creation for diagnostics
+        AssistantOkHttpClientFactory.logConfigurationUsage("chat", httpConfig)
+    }
+
     fun create(): AssistantRepository {
         val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.orEmpty()
         val apiKey = SecureApiKeyStore(context).getApiKey()
-        return CloudAssistantRepository(client, baseUrl, apiKey)
+        return CloudAssistantRepository(context, client, baseUrl, apiKey)
     }
 }
 
 private class CloudAssistantRepository(
+    private val context: Context,
     private val client: OkHttpClient,
     private val baseUrl: String,
     private val apiKey: String?,
@@ -316,6 +328,12 @@ private class CloudAssistantRepository(
         builder.header("X-Scanium-Correlation-Id", correlationId)
         builder.header("X-Client", "Scanium-Android")
         builder.header("X-App-Version", BuildConfig.VERSION_NAME)
+
+        // Add device ID header for rate limiting (hashed for privacy)
+        val deviceId = DeviceIdProvider.getHashedDeviceId(context)
+        if (deviceId.isNotBlank()) {
+            builder.header("X-Scanium-Device-Id", deviceId)
+        }
     }
 
     private fun mapHttpFailure(
