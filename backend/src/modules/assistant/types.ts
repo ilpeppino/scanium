@@ -235,10 +235,18 @@ export type AssistantErrorPayload = {
   reasonCode: AssistantReasonCode;
 };
 
+/**
+ * Source/provenance of an attribute value.
+ * Used to indicate whether a value is user-provided (authoritative) or system-detected.
+ */
+export type AttributeSource = 'USER' | 'DETECTED' | 'DEFAULT' | 'UNKNOWN';
+
 export type ItemAttributeSnapshot = {
   key: string;
   value: string;
   confidence?: number;
+  /** Source/provenance - USER means user-provided (authoritative) */
+  source?: AttributeSource;
 };
 
 /**

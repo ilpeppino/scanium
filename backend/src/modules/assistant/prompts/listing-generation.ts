@@ -2,6 +2,7 @@ import {
   AssistantPrefs,
   ItemContextSnapshot,
   ConfidenceTier,
+  AttributeSource,
 } from '../types.js';
 import { ResolvedAttributes } from '../../vision/attribute-resolver.js';
 import { VisualFacts } from '../../vision/types.js';
@@ -59,7 +60,7 @@ export function buildListingSystemPrompt(prefs?: AssistantPrefs): string {
     ? 'Provide comprehensive details and explanations.'
     : 'Balance detail with clarity.';
 
-  return `You are a marketplace listing assistant helping sellers create effective listings for second-hand items.
+  return `You are a marketplace listing assistant helping sellers create effective, marketplace-ready listings for second-hand items.
 
 ${langInstruction}
 ${toneInstruction}
@@ -69,29 +70,44 @@ CONTEXT:
 - Target marketplaces: ${regionCtx.marketplaces}
 - Currency: ${regionCtx.currency}
 
-CRITICAL RULES - YOU MUST FOLLOW THESE:
-1. ONLY use brand/model/attributes if confidence >= MED. If confidence is LOW, say "Unknown brand" or "Possibly [value]" and flag for user verification.
-2. NEVER invent or hallucinate specifications not provided in the input (storage, RAM, screen size, dimensions, weight, etc.).
-3. If no attributes are provided, generate a generic description and list what information is missing.
-4. Always include the evidence source when stating facts: "Brand: Dell (detected from logo)" or "Color: Silver (detected from image analysis)".
-5. Add "Please verify" warnings for any MED confidence attributes used.
-6. Be honest about uncertainty - it's better to say "I cannot determine..." than to guess.
+ATTRIBUTE HANDLING - CRITICAL:
+1. USER-PROVIDED attributes (marked [USER]) are AUTHORITATIVE - use them exactly as given without questioning.
+2. DETECTED attributes (marked [DETECTED]) with HIGH confidence - use with confidence, cite source.
+3. DETECTED attributes with MED confidence - use with "Please verify" warning.
+4. DETECTED attributes with LOW confidence - mention as "Possibly [value]" or omit.
+5. NEVER invent specifications not provided (storage, RAM, screen size, dimensions, etc.).
+
+TITLE RULES:
+- Maximum 80 characters
+- Include brand (if known) + model/type + key differentiator
+- Front-load important keywords for search visibility
+- Format: "[Brand] [Model/Type] - [Key Feature/Condition]"
+- Examples: "Dell XPS 13 Laptop - 16GB RAM, Excellent Condition" (55 chars)
+
+DESCRIPTION RULES:
+- Start with 1-2 sentence overview
+- Use bullet points (•) for features and specifications
+- Include condition details
+- End with shipping/pickup info if relevant
+- Structure: Overview → Key Features (bullets) → Condition → Notes
 
 OUTPUT FORMAT (JSON):
 {
-  "title": "Short, keyword-rich title (max 80 characters)",
-  "description": "Full listing description with bullet points for key features",
+  "title": "Keyword-rich title (max 80 chars)",
+  "description": "Full description with bullet points",
   "suggestedDraftUpdates": [
-    { "field": "title", "value": "...", "confidence": "HIGH|MED|LOW", "requiresConfirmation": true|false },
-    { "field": "description", "value": "...", "confidence": "HIGH|MED|LOW", "requiresConfirmation": true|false }
+    { "field": "title", "value": "...", "confidence": "HIGH|MED|LOW", "requiresConfirmation": false },
+    { "field": "description", "value": "...", "confidence": "HIGH|MED|LOW", "requiresConfirmation": false }
   ],
-  "warnings": ["List of items needing user verification"],
-  "missingInfo": ["List of information that would improve the listing"],
-  "suggestedNextPhoto": "Instruction for additional photo if evidence is insufficient (or null)"
+  "warnings": ["Items needing verification (only for DETECTED non-HIGH)"],
+  "missingInfo": ["Information that would improve the listing"],
+  "suggestedNextPhoto": "Photo suggestion if evidence is insufficient (or null)"
 }
 
-Ensure the title is compelling for buyers and includes key searchable terms.
-Ensure the description is scannable with bullet points for key features.`;
+CONFIDENCE ASSIGNMENT:
+- HIGH: User-provided values OR detected with strong visual evidence
+- MED: Detected with moderate evidence, needs verification
+- LOW: Speculative, insufficient evidence`;
 }
 
 /**
@@ -100,31 +116,63 @@ Ensure the description is scannable with bullet points for key features.`;
 function formatConfidence(confidence: ConfidenceTier | 'HIGH' | 'MED' | 'LOW'): string {
   switch (confidence) {
     case 'HIGH':
-      return 'HIGH (verified)';
+      return 'HIGH';
     case 'MED':
-      return 'MED (likely correct, please verify)';
+      return 'MED';
     case 'LOW':
-      return 'LOW (uncertain, needs confirmation)';
+      return 'LOW';
     default:
       return 'UNKNOWN';
   }
 }
 
 /**
+ * Format attribute source tag for prompt.
+ * USER source is marked as authoritative.
+ */
+function formatSourceTag(source?: AttributeSource): string {
+  switch (source) {
+    case 'USER':
+      return '[USER]'; // Authoritative - use as-is
+    case 'DETECTED':
+      return '[DETECTED]';
+    case 'DEFAULT':
+      return '[DEFAULT]';
+    default:
+      return '[DETECTED]'; // Treat unknown as detected for safety
+  }
+}
+
+/**
  * Format attribute for prompt inclusion.
+ * User-provided attributes are marked as authoritative.
  */
 function formatAttribute(
   key: string,
   value: string,
   confidence: ConfidenceTier | 'HIGH' | 'MED' | 'LOW',
-  source?: string
+  source?: AttributeSource | string,
+  evidenceSource?: string
 ): string {
-  const sourceNote = source ? ` (source: ${source})` : '';
-  return `- ${key}: "${value}" [${formatConfidence(confidence)}]${sourceNote}`;
+  // Determine if this is a user-provided value
+  const isUserProvided = source === 'USER';
+  const sourceTag = typeof source === 'string' && ['USER', 'DETECTED', 'DEFAULT', 'UNKNOWN'].includes(source)
+    ? formatSourceTag(source as AttributeSource)
+    : formatSourceTag(undefined);
+
+  // For user-provided values, always HIGH confidence
+  const effectiveConfidence = isUserProvided ? 'HIGH' : confidence;
+  const confidenceStr = formatConfidence(effectiveConfidence);
+
+  // Evidence note for detected values
+  const evidenceNote = evidenceSource && !isUserProvided ? ` (from: ${evidenceSource})` : '';
+
+  return `- ${key}: "${value}" ${sourceTag} [${confidenceStr}]${evidenceNote}`;
 }
 
 /**
  * Build the user prompt for listing generation with item context and visual evidence.
+ * Prioritizes user-provided attributes over detected ones.
  */
 export function buildListingUserPrompt(
   items: ItemContextSnapshot[],
@@ -136,7 +184,7 @@ export function buildListingUserPrompt(
   }
 
   const parts: string[] = [];
-  parts.push('Generate a marketplace listing for the following item(s):\n');
+  parts.push('Generate a marketplace-ready listing for the following item(s):\n');
 
   for (const item of items) {
     parts.push(`## Item: ${item.itemId}`);
@@ -158,97 +206,128 @@ export function buildListingUserPrompt(
       parts.push(`Photos attached: ${item.photosCount}`);
     }
 
-    // Existing attributes from item context
-    if (item.attributes && item.attributes.length > 0) {
-      parts.push('\nExisting attributes:');
-      for (const attr of item.attributes) {
-        const confidence = attr.confidence
-          ? attr.confidence >= 0.8 ? 'HIGH' : attr.confidence >= 0.5 ? 'MED' : 'LOW'
-          : 'MED';
-        parts.push(formatAttribute(attr.key, attr.value, confidence as ConfidenceTier));
+    // Separate user-provided from detected attributes
+    const userAttributes = item.attributes?.filter(a => a.source === 'USER') ?? [];
+    const detectedAttributes = item.attributes?.filter(a => a.source !== 'USER') ?? [];
+
+    // User-provided attributes (authoritative - show first)
+    if (userAttributes.length > 0) {
+      parts.push('\n**User-provided attributes (use as-is):**');
+      for (const attr of userAttributes) {
+        parts.push(formatAttribute(attr.key, attr.value, 'HIGH', 'USER'));
       }
     }
 
-    // Resolved attributes from vision analysis
+    // Detected attributes from item context
+    if (detectedAttributes.length > 0) {
+      parts.push('\nDetected attributes:');
+      for (const attr of detectedAttributes) {
+        const confidence = attr.confidence
+          ? attr.confidence >= 0.8 ? 'HIGH' : attr.confidence >= 0.5 ? 'MED' : 'LOW'
+          : 'MED';
+        parts.push(formatAttribute(attr.key, attr.value, confidence as ConfidenceTier, attr.source ?? 'DETECTED'));
+      }
+    }
+
+    // Resolved attributes from vision analysis (only if not already user-provided)
     const resolved = resolvedAttributes?.get(item.itemId);
     if (resolved) {
-      parts.push('\nExtracted attributes from image analysis:');
+      const userAttrKeys = new Set(userAttributes.map(a => a.key.toLowerCase()));
 
-      if (resolved.brand) {
-        parts.push(formatAttribute(
+      // Only show vision-detected attributes that weren't user-provided
+      const visionAttrs: string[] = [];
+
+      if (resolved.brand && !userAttrKeys.has('brand')) {
+        visionAttrs.push(formatAttribute(
           'brand',
           resolved.brand.value,
           resolved.brand.confidence,
+          'DETECTED',
           resolved.brand.evidenceRefs[0]?.type
         ));
       }
-      if (resolved.model) {
-        parts.push(formatAttribute(
+      if (resolved.model && !userAttrKeys.has('model')) {
+        visionAttrs.push(formatAttribute(
           'model',
           resolved.model.value,
           resolved.model.confidence,
+          'DETECTED',
           resolved.model.evidenceRefs[0]?.type
         ));
       }
-      if (resolved.color) {
-        parts.push(formatAttribute(
+      if (resolved.color && !userAttrKeys.has('color')) {
+        visionAttrs.push(formatAttribute(
           'color',
           resolved.color.value,
           resolved.color.confidence,
+          'DETECTED',
           'color extraction'
         ));
       }
-      if (resolved.secondaryColor) {
-        parts.push(formatAttribute(
+      if (resolved.secondaryColor && !userAttrKeys.has('secondary_color')) {
+        visionAttrs.push(formatAttribute(
           'secondary color',
           resolved.secondaryColor.value,
           resolved.secondaryColor.confidence,
+          'DETECTED',
           'color extraction'
         ));
       }
-      if (resolved.material) {
-        parts.push(formatAttribute(
+      if (resolved.material && !userAttrKeys.has('material')) {
+        visionAttrs.push(formatAttribute(
           'material',
           resolved.material.value,
           resolved.material.confidence,
+          'DETECTED',
           'label detection'
         ));
       }
+
+      if (visionAttrs.length > 0) {
+        parts.push('\nVision-extracted attributes:');
+        parts.push(...visionAttrs);
+      }
+
       if (resolved.suggestedNextPhoto) {
         parts.push(`\nNote: ${resolved.suggestedNextPhoto}`);
       }
     }
 
-    // Visual facts summary
+    // Visual facts summary (OCR snippets useful for context)
     const facts = visualFacts?.get(item.itemId);
     if (facts) {
-      parts.push('\nVisual evidence summary:');
+      const factParts: string[] = [];
 
       if (facts.dominantColors.length > 0) {
         const colors = facts.dominantColors.slice(0, 3).map(c => `${c.name} (${c.pct}%)`).join(', ');
-        parts.push(`- Dominant colors: ${colors}`);
+        factParts.push(`- Dominant colors: ${colors}`);
       }
 
       if (facts.ocrSnippets.length > 0) {
         const texts = facts.ocrSnippets.slice(0, 5).map(s => `"${s.text}"`).join(', ');
-        parts.push(`- Detected text: ${texts}`);
+        factParts.push(`- OCR text detected: ${texts}`);
       }
 
       if (facts.logoHints && facts.logoHints.length > 0) {
         const logos = facts.logoHints.slice(0, 3).map(l => `${l.brand} (${Math.round(l.score * 100)}%)`).join(', ');
-        parts.push(`- Detected logos: ${logos}`);
+        factParts.push(`- Detected logos: ${logos}`);
       }
 
       if (facts.labelHints.length > 0) {
         const labels = facts.labelHints.slice(0, 5).map(l => l.label).join(', ');
-        parts.push(`- Image labels: ${labels}`);
+        factParts.push(`- Image labels: ${labels}`);
+      }
+
+      if (factParts.length > 0) {
+        parts.push('\nVisual evidence (for reference):');
+        parts.push(...factParts);
       }
     }
 
     parts.push(''); // Empty line between items
   }
 
-  parts.push('\nPlease generate the listing following the output format specified in the system prompt.');
+  parts.push('\nGenerate the listing following the output format. Remember: [USER] attributes are authoritative.');
 
   return parts.join('\n');
 }

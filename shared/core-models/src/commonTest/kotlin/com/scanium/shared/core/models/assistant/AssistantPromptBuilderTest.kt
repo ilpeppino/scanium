@@ -50,8 +50,8 @@ class AssistantPromptBuilderTest {
         assertEquals(ExportProfileId.GENERIC, snapshot.exportProfileId)
         assertEquals(
             listOf(
-                ItemAttributeSnapshot("brand", "Acme", 0.7f),
-                ItemAttributeSnapshot("category", "Lighting", 0.9f),
+                ItemAttributeSnapshot("brand", "Acme", 0.7f, AttributeSource.DETECTED),
+                ItemAttributeSnapshot("category", "Lighting", 0.9f, AttributeSource.DETECTED),
             ),
             snapshot.attributes,
         )

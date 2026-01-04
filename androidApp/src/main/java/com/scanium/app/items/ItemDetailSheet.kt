@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ import com.scanium.app.items.components.AttributeChip
 import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.AttributeConfidenceTier
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.VisionAttributes
 import kotlinx.coroutines.launch
 
 /**
@@ -56,11 +58,13 @@ import kotlinx.coroutines.launch
  * - Full list of extracted attributes with confidence indicators
  * - Edit button for each attribute
  * - "Generate Listing" action button
+ * - "Refresh Attributes" button to re-run classification
  *
  * @param item The scanned item to display
  * @param onDismiss Callback when sheet is dismissed
  * @param onAttributeEdit Callback when user wants to edit an attribute
  * @param onGenerateListing Callback when user taps "Generate Listing"
+ * @param onRefreshAttributes Callback when user wants to re-run classification
  * @param sheetState State for the modal bottom sheet
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,6 +74,7 @@ fun ItemDetailSheet(
     onDismiss: () -> Unit,
     onAttributeEdit: (String, ItemAttribute) -> Unit,
     onGenerateListing: (() -> Unit)? = null,
+    onRefreshAttributes: (() -> Unit)? = null,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
 ) {
     val scope = rememberCoroutineScope()
@@ -105,14 +110,39 @@ fun ItemDetailSheet(
                 )
             }
 
-            // Generate listing button (if attributes available)
-            if (item.attributes.isNotEmpty() && onGenerateListing != null) {
+            // Vision details section (OCR, colors, candidates)
+            if (!item.visionAttributes.isEmpty) {
+                HorizontalDivider()
+                VisionDetailsSection(visionAttributes = item.visionAttributes)
+            }
+
+            // Action buttons
+            if (item.attributes.isNotEmpty() || onRefreshAttributes != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = onGenerateListing,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Generate Listing")
+
+                // Generate listing button (if attributes available)
+                if (item.attributes.isNotEmpty() && onGenerateListing != null) {
+                    Button(
+                        onClick = onGenerateListing,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Generate Listing")
+                    }
+                }
+
+                // Refresh attributes button
+                if (onRefreshAttributes != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = onRefreshAttributes,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    ) {
+                        Text("Refresh Attributes")
+                    }
                 }
             }
         }
@@ -367,5 +397,133 @@ private fun formatAttributeLabel(key: String): String {
         "secondaryColor" -> "Secondary Color"
         "material" -> "Material"
         else -> key.replaceFirstChar { it.uppercase() }
+    }
+}
+
+/**
+ * Section displaying raw vision data including OCR text, colors, and candidates.
+ */
+@Composable
+private fun VisionDetailsSection(visionAttributes: VisionAttributes) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = "Vision Details",
+            style = MaterialTheme.typography.titleMedium,
+        )
+
+        // OCR Text
+        visionAttributes.ocrText?.takeIf { it.isNotBlank() }?.let { ocrText ->
+            VisionDetailRow(
+                label = "OCR Text",
+                value = ocrText.replace("\n", " ").take(100) +
+                    if (ocrText.length > 100) "..." else "",
+            )
+        }
+
+        // Detected Colors
+        if (visionAttributes.colors.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Colors:",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                visionAttributes.colors.take(3).forEach { color ->
+                    ColorChip(name = color.name, hex = color.hex)
+                }
+            }
+        }
+
+        // Detected Labels
+        if (visionAttributes.labels.isNotEmpty()) {
+            VisionDetailRow(
+                label = "Labels",
+                value = visionAttributes.labels.take(3).joinToString(", ") { it.name },
+            )
+        }
+
+        // Brand Candidates (if not already in enriched attributes)
+        if (visionAttributes.brandCandidates.isNotEmpty()) {
+            VisionDetailRow(
+                label = "Brand Candidates",
+                value = visionAttributes.brandCandidates.take(3).joinToString(", "),
+            )
+        }
+
+        // Model Candidates
+        if (visionAttributes.modelCandidates.isNotEmpty()) {
+            VisionDetailRow(
+                label = "Model Candidates",
+                value = visionAttributes.modelCandidates.take(3).joinToString(", "),
+            )
+        }
+    }
+}
+
+@Composable
+private fun VisionDetailRow(
+    label: String,
+    value: String,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                shape = MaterialTheme.shapes.small,
+            )
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(100.dp),
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun ColorChip(
+    name: String,
+    hex: String,
+) {
+    val color = try {
+        androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(hex))
+    } catch (e: Exception) {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    Row(
+        modifier = Modifier
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.small,
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(color, shape = MaterialTheme.shapes.extraSmall),
+        )
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelSmall,
+        )
     }
 }

@@ -278,6 +278,145 @@ describe('Attribute Enrichment with Mock Providers', () => {
   });
 });
 
+/**
+ * Test: Vision enrichment is decoupled from classifier provider
+ *
+ * This test suite verifies that:
+ * - SCANIUM_CLASSIFIER_PROVIDER controls classification (mock/google)
+ * - VISION_PROVIDER controls enrichment (mock/google) independently
+ * - When classifier=mock (providerUnavailable=true), enrichment still works
+ * - Enrichment uses its own VisionExtractor, not the classifier's Vision
+ */
+describe('Vision Enrichment Decoupling', () => {
+  const config = configSchema.parse({
+    nodeEnv: 'test',
+    port: 8093,
+    publicBaseUrl: 'http://localhost:8093',
+    databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+    classifier: {
+      provider: 'mock', // Classification uses mock (simulates providerUnavailable=true)
+      apiKeys: 'test-key',
+      domainPackPath: 'src/modules/classifier/domain/home-resale.json',
+      enableAttributeEnrichment: true,
+    },
+    vision: {
+      enabled: true,
+      provider: 'mock', // Enrichment uses mock VisionExtractor (would be 'google' in prod)
+      enableOcr: true,
+      enableLabels: true,
+      enableLogos: true,
+      enableColors: true,
+    },
+    assistant: {
+      provider: 'disabled',
+      apiKeys: '',
+    },
+    ebay: {
+      env: 'sandbox',
+      clientId: 'client',
+      clientSecret: 'client-secret-minimum-length-please',
+      scopes: 'scope',
+      tokenEncryptionKey: 'x'.repeat(32),
+    },
+    sessionSigningSecret: 'x'.repeat(64),
+    security: {
+      enforceHttps: false,
+      enableHsts: false,
+      apiKeyRotationEnabled: false,
+      apiKeyExpirationDays: 90,
+      logApiKeyUsage: false,
+    },
+    corsOrigins: 'http://localhost',
+  });
+
+  const appPromise = buildApp(config);
+
+  afterAll(async () => {
+    const app = await appPromise;
+    await app.close();
+  });
+
+  it('enriches attributes even when classifier provider is unavailable', async () => {
+    const app = await appPromise;
+    const form = new FormData();
+    form.append('image', tinyPng, {
+      filename: 'decoupling-test.png',
+      contentType: 'image/png',
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/classify?enrichAttributes=true',
+      headers: {
+        ...form.getHeaders(),
+        'x-api-key': 'test-key',
+      },
+      payload: form,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+
+    // Classification uses mock provider
+    expect(body.provider).toBe('mock');
+    expect(body.providerUnavailable).toBe(true);
+
+    // BUT enrichment still works (decoupled!)
+    expect(body.visionStats).toBeDefined();
+    expect(body.visionStats.attempted).toBe(true);
+    expect(body.visionStats.visionProvider).toBe('mock'); // From vision.provider config
+    expect(body.visionStats.visionExtractions).toBeGreaterThanOrEqual(0); // Cache may hit
+
+    // Enriched attributes are populated
+    expect(body.enrichedAttributes).toBeDefined();
+    expect(body.enrichedAttributes.brand).toBeDefined();
+    expect(body.visualFacts).toBeDefined();
+    expect(body.visionAttributes).toBeDefined();
+
+    // Classification still provides domain mapping
+    expect(body.domainPackId).toBe('home_resale');
+    expect(body.domainCategoryId).toBeDefined();
+  });
+
+  it('returns enrichment data even when classification is mock fallback', async () => {
+    const app = await appPromise;
+    // Use a completely different image (2x2 PNG) to avoid cache from any prior tests
+    const uniqueImage = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAADklEQVQIW2NkYGD4z4AHAAQ2Ag/GwvvVAAAAAElFTkSuQmCC',
+      'base64'
+    );
+    const form = new FormData();
+    form.append('image', uniqueImage, {
+      filename: 'fallback-test-unique.png',
+      contentType: 'image/png',
+    });
+    form.append('enrichAttributes', 'true');
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/classify',
+      headers: {
+        ...form.getHeaders(),
+        'x-api-key': 'test-key',
+      },
+      payload: form,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+
+    // Key assertion: providerUnavailable does NOT block enrichment
+    expect(body.providerUnavailable).toBe(true);
+    expect(body.enrichedAttributes).toBeDefined();
+    expect(body.visualFacts).toBeDefined();
+
+    // Timings show enrichment was attempted (total can be 0 if very fast, but enrichment should be defined)
+    expect(body.timingsMs).toBeDefined();
+    expect(body.timingsMs.enrichment).toBeDefined();
+    expect(typeof body.timingsMs.enrichment).toBe('number');
+  });
+});
+
 describe('Invalid Image Handling', () => {
   const config = configSchema.parse({
     nodeEnv: 'test',
@@ -361,5 +500,33 @@ describe('Invalid Image Handling', () => {
     const body = JSON.parse(res.body);
     expect(body.error.code).toBe('VALIDATION_ERROR');
     expect(body.error.message).toContain('image file is required');
+  });
+
+  it('returns 400 INVALID_IMAGE for corrupted image data', async () => {
+    const app = await appPromise;
+    // Create corrupted "image" data that will fail sharp processing
+    const corruptedData = Buffer.from('not a valid image just random bytes');
+
+    const form = new FormData();
+    form.append('image', corruptedData, {
+      filename: 'corrupted.jpg',
+      contentType: 'image/jpeg', // Claims to be JPEG but isn't
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/classify',
+      headers: {
+        ...form.getHeaders(),
+        'x-api-key': 'test-key',
+      },
+      payload: form,
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body);
+    expect(body.error.code).toBe('INVALID_IMAGE');
+    expect(body.error.message).toContain('Invalid or corrupted image data');
+    expect(body.error.correlationId).toBeDefined();
   });
 });

@@ -3,6 +3,7 @@ package com.scanium.app.aggregation
 import com.scanium.app.items.ScannedItem
 import com.scanium.core.tracking.Logger
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
@@ -436,6 +437,7 @@ class ItemAggregator(
         priceRange: Pair<Double, Double>?,
         classificationConfidence: Float? = null,
         attributes: Map<String, ItemAttribute>? = null,
+        visionAttributes: VisionAttributes? = null,
     ) {
         aggregatedItems[aggregatedId]?.let { item ->
             category?.let { item.enhancedCategory = it }
@@ -443,6 +445,7 @@ class ItemAggregator(
             priceRange?.let { item.enhancedPriceRange = it }
             classificationConfidence?.let { item.classificationConfidence = it }
             attributes?.let { item.enrichedAttributes = it }
+            visionAttributes?.let { item.visionAttributes = it }
         }
     }
 

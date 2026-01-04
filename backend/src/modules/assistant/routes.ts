@@ -66,6 +66,7 @@ const itemAttributeSchema = z.object({
   key: z.string(),
   value: z.string(),
   confidence: z.number().optional().nullable().transform((v) => v ?? undefined),
+  source: z.enum(['USER', 'DETECTED', 'DEFAULT', 'UNKNOWN']).optional().nullable().transform((v) => v ?? undefined),
 });
 
 const itemContextSchema = z.object({

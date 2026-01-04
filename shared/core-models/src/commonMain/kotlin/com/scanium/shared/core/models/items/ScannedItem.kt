@@ -91,6 +91,7 @@ data class ScannedItem<FullImageUri>(
     val userPriceCents: Long? = null,
     val condition: ItemCondition? = null,
     val attributes: Map<String, ItemAttribute> = emptyMap(),
+    val visionAttributes: VisionAttributes = VisionAttributes.EMPTY,
 ) {
     /**
      * Formatted price range string for display.

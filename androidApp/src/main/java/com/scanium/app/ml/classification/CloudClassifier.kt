@@ -15,6 +15,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.VisionAttributes as SharedVisionAttributes
+import com.scanium.shared.core.models.items.VisionColor as SharedVisionColor
+import com.scanium.shared.core.models.items.VisionLabel as SharedVisionLabel
+import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.CertificatePinner
@@ -330,6 +334,9 @@ class CloudClassifier(
         // Convert enriched attributes to ItemAttribute map
         val enrichedAttributes = parseEnrichedAttributes(apiResponse.enrichedAttributes)
 
+        // Convert vision attributes
+        val visionAttributes = parseVisionAttributes(apiResponse.visionAttributes)
+
         return ClassificationResult(
             label = label,
             confidence = confidence,
@@ -338,6 +345,7 @@ class CloudClassifier(
             domainCategoryId = domainCategoryId,
             attributes = attributes,
             enrichedAttributes = enrichedAttributes,
+            visionAttributes = visionAttributes,
             status = ClassificationStatus.SUCCESS,
             errorMessage = null,
             requestId = requestId,
@@ -384,6 +392,40 @@ class CloudClassifier(
             value = value,
             confidence = confidenceScore,
             source = source,
+        )
+    }
+
+    /**
+     * Convert vision attributes response to shared VisionAttributes model.
+     */
+    private fun parseVisionAttributes(
+        visionAttrs: VisionAttributesResponse?
+    ): SharedVisionAttributes {
+        if (visionAttrs == null) return SharedVisionAttributes.EMPTY
+
+        return SharedVisionAttributes(
+            colors = visionAttrs.colors.map { color ->
+                SharedVisionColor(
+                    name = color.name,
+                    hex = color.hex,
+                    score = color.score,
+                )
+            },
+            ocrText = visionAttrs.ocrText,
+            logos = visionAttrs.logos.map { logo ->
+                SharedVisionLogo(
+                    name = logo.name,
+                    score = logo.score,
+                )
+            },
+            labels = visionAttrs.labels.map { label ->
+                SharedVisionLabel(
+                    name = label.name,
+                    score = label.score,
+                )
+            },
+            brandCandidates = visionAttrs.brandCandidates,
+            modelCandidates = visionAttrs.modelCandidates,
         )
     }
 
@@ -455,6 +497,7 @@ private data class CloudClassificationResponse(
     val label: String? = null,
     val attributes: Map<String, String>? = null,
     val enrichedAttributes: EnrichedAttributesResponse? = null,
+    val visionAttributes: VisionAttributesResponse? = null,
     val requestId: String? = null,
 )
 
@@ -490,4 +533,46 @@ private data class AttributeEvidenceResponse(
     val type: String, // "logo", "ocr", "color", "label"
     val value: String,
     val score: Float? = null,
+)
+
+/**
+ * Vision attributes from Google Vision API processing.
+ * Contains raw extracted data: colors, OCR text, logos, labels, and candidate values.
+ */
+@Serializable
+private data class VisionAttributesResponse(
+    val colors: List<VisionColorResponse> = emptyList(),
+    val ocrText: String? = null,
+    val logos: List<VisionLogoResponse> = emptyList(),
+    val labels: List<VisionLabelResponse> = emptyList(),
+    val brandCandidates: List<String> = emptyList(),
+    val modelCandidates: List<String> = emptyList(),
+)
+
+/**
+ * Color extracted from Vision API.
+ */
+@Serializable
+private data class VisionColorResponse(
+    val name: String,
+    val hex: String,
+    val score: Float,
+)
+
+/**
+ * Logo detected by Vision API.
+ */
+@Serializable
+private data class VisionLogoResponse(
+    val name: String,
+    val score: Float,
+)
+
+/**
+ * Label detected by Vision API.
+ */
+@Serializable
+private data class VisionLabelResponse(
+    val name: String,
+    val score: Float,
 )

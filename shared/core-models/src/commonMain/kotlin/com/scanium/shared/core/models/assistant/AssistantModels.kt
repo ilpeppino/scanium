@@ -1,6 +1,7 @@
 package com.scanium.shared.core.models.assistant
 
 import com.scanium.shared.core.models.listing.DraftFieldKey
+import com.scanium.shared.core.models.listing.DraftProvenance
 import com.scanium.shared.core.models.listing.ExportProfileDefinition
 import com.scanium.shared.core.models.listing.ExportProfileId
 import com.scanium.shared.core.models.listing.ListingDraft
@@ -194,11 +195,28 @@ data class AssistantResponse(
     val text: String get() = reply ?: content ?: ""
 }
 
+/**
+ * Source/provenance of an attribute value.
+ * Used to indicate whether a value is user-provided (authoritative) or system-detected.
+ */
+enum class AttributeSource {
+    /** Value was manually entered or edited by the user - use as authoritative */
+    USER,
+    /** Value was detected by ML/vision system */
+    DETECTED,
+    /** Default/system value */
+    DEFAULT,
+    /** Unknown source */
+    UNKNOWN,
+}
+
 @Serializable
 data class ItemAttributeSnapshot(
     val key: String,
     val value: String,
     val confidence: Float? = null,
+    /** Source/provenance of this attribute - USER means user-provided (authoritative) */
+    val source: AttributeSource? = null,
 )
 
 @Serializable
@@ -272,6 +290,7 @@ object ItemContextSnapshotBuilder {
                         key = key.wireValue,
                         value = value,
                         confidence = field.confidence,
+                        source = mapSource(field.source),
                     )
                 }
 
@@ -289,5 +308,18 @@ object ItemContextSnapshotBuilder {
             photosCount = draft.photos.size,
             exportProfileId = draft.profile,
         )
+    }
+
+    /**
+     * Map DraftProvenance to AttributeSource.
+     * USER_EDITED becomes USER (authoritative), all others map accordingly.
+     */
+    private fun mapSource(provenance: DraftProvenance): AttributeSource {
+        return when (provenance) {
+            DraftProvenance.USER_EDITED -> AttributeSource.USER
+            DraftProvenance.DETECTED -> AttributeSource.DETECTED
+            DraftProvenance.DEFAULT -> AttributeSource.DEFAULT
+            DraftProvenance.UNKNOWN -> AttributeSource.UNKNOWN
+        }
     }
 }

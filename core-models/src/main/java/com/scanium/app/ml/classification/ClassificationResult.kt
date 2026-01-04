@@ -2,6 +2,7 @@ package com.scanium.app.ml.classification
 
 import com.scanium.app.ml.ItemCategory
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.VisionAttributes as SharedVisionAttributes
 
 /**
  * Result returned by an [ItemClassifier].
@@ -15,6 +16,7 @@ import com.scanium.shared.core.models.items.ItemAttribute
  * @property domainCategoryId Optional fine-grained domain category ID (e.g., "furniture_sofa")
  * @property attributes Optional key-value attributes (e.g., color, material, condition) - static from domain pack
  * @property enrichedAttributes Enriched attributes from VisionExtractor (brand, model, color, etc.) with confidence
+ * @property visionAttributes Raw vision data (colors, OCR text, logos, labels, brand/model candidates)
  * @property status Classification status (PENDING, SUCCESS, FAILED)
  * @property errorMessage Error message if status is FAILED
  * @property requestId Optional backend request ID for debugging
@@ -27,6 +29,7 @@ data class ClassificationResult(
     val domainCategoryId: String? = null,
     val attributes: Map<String, String>? = null,
     val enrichedAttributes: Map<String, ItemAttribute> = emptyMap(),
+    val visionAttributes: SharedVisionAttributes = SharedVisionAttributes.EMPTY,
     val status: ClassificationStatus = ClassificationStatus.SUCCESS,
     val errorMessage: String? = null,
     val requestId: String? = null,
