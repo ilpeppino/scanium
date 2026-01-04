@@ -182,6 +182,25 @@ print_info "curl http://localhost:8080/health   ***REMOVED*** Full health with a
 print_info "curl http://localhost:8080/healthz  ***REMOVED*** Basic liveness probe"
 print_info "curl http://localhost:8080/readyz   ***REMOVED*** Readiness (includes DB check)"
 
+print_section "Assistant Endpoints"
+***REMOVED*** Note: Warmup requires API key, so we can only check it returns non-404
+WARMUP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 -X POST "http://localhost:8080/v1/assist/warmup" 2>/dev/null || echo "000")
+if [[ "$WARMUP_STATUS" == "401" || "$WARMUP_STATUS" == "200" ]]; then
+    WARMUP_RESULT="healthy"
+elif [[ "$WARMUP_STATUS" == "404" ]]; then
+    WARMUP_RESULT="unhealthy:404"
+elif [[ "$WARMUP_STATUS" == "000" ]]; then
+    WARMUP_RESULT="unreachable"
+else
+    WARMUP_RESULT="unhealthy:$WARMUP_STATUS"
+fi
+track_check "$WARMUP_RESULT"
+echo -e "  /v1/assist/warmup: $(format_status "$WARMUP_RESULT") (expects 401/200, got $WARMUP_STATUS)"
+
+echo ""
+echo -e "  ${BLUE}Manual warmup check (requires API key):${NC}"
+print_info "curl -X POST http://localhost:8080/v1/assist/warmup -H 'X-API-Key: YOUR_KEY'"
+
 print_section "Cloudflare Tunnel"
 CF_STATUS=$(get_container_status "scanium-cloudflared")
 track_check "$CF_STATUS"
