@@ -51,6 +51,7 @@ data class ScannedItemEntity(
     val userPriceCents: Long?,
     val condition: String?,
     val attributesJson: String?,
+    val detectedAttributesJson: String?,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -92,6 +93,7 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         userPriceCents = userPriceCents,
         condition = condition?.name,
         attributesJson = serializeAttributes(attributes),
+        detectedAttributesJson = serializeAttributes(detectedAttributes),
     )
 }
 
@@ -163,6 +165,7 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         userPriceCents = userPriceCents,
         condition = conditionValue,
         attributes = deserializeAttributes(attributesJson),
+        detectedAttributes = deserializeAttributes(detectedAttributesJson),
     )
 }
 

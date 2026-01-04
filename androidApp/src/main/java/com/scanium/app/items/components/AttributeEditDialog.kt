@@ -1,15 +1,20 @@
 package com.scanium.app.items.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.QuestionMark
@@ -17,6 +22,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.scanium.shared.core.models.items.AttributeConfidenceTier
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.VisionAttributes
 
 /**
  * Dialog for editing an extracted attribute value.
@@ -36,19 +44,52 @@ import com.scanium.shared.core.models.items.ItemAttribute
  * When a user confirms a value (even without changing it), the confidence
  * is upgraded to HIGH since the user has verified it.
  *
+ * Provides suggestions based on:
+ * - Brand: brandCandidates from vision + detected logos
+ * - Model: modelCandidates from vision (OCR extracted)
+ * - Color: detected colors from vision
+ *
  * @param attributeKey The key of the attribute being edited (e.g., "brand")
  * @param attribute The current attribute value and metadata
+ * @param visionAttributes Optional vision attributes for suggestions
+ * @param detectedValue Optional original detected value (shown for reference)
  * @param onDismiss Callback when dialog is dismissed without saving
  * @param onConfirm Callback with the updated attribute value when confirmed
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AttributeEditDialog(
     attributeKey: String,
     attribute: ItemAttribute,
+    visionAttributes: VisionAttributes = VisionAttributes.EMPTY,
+    detectedValue: String? = null,
     onDismiss: () -> Unit,
     onConfirm: (ItemAttribute) -> Unit,
 ) {
     var editedValue by remember { mutableStateOf(attribute.value) }
+
+    // Generate suggestions based on attribute key
+    val suggestions = remember(attributeKey, visionAttributes) {
+        when (attributeKey) {
+            "brand" -> {
+                val candidates = mutableListOf<String>()
+                // Add brand candidates from OCR analysis
+                candidates.addAll(visionAttributes.brandCandidates)
+                // Add logo names as they often indicate brand
+                candidates.addAll(visionAttributes.logos.map { it.name })
+                candidates.distinct().take(5)
+            }
+            "model" -> {
+                // Model candidates typically come from OCR
+                visionAttributes.modelCandidates.take(5)
+            }
+            "color", "secondaryColor" -> {
+                // Color suggestions from detected colors
+                visionAttributes.colors.map { it.name }.distinct().take(5)
+            }
+            else -> emptyList()
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -57,13 +98,24 @@ fun AttributeEditDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Current confidence indicator
                 CurrentConfidenceRow(attribute = attribute)
 
-                Spacer(modifier = Modifier.height(8.dp))
+                // Show original detected value if different
+                if (detectedValue != null && detectedValue != attribute.value) {
+                    Text(
+                        text = "Originally detected: $detectedValue",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
 
                 // Edit field
                 OutlinedTextField(
@@ -74,19 +126,53 @@ fun AttributeEditDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
+                // Suggestions section
+                if (suggestions.isNotEmpty()) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = "Suggestions",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            suggestions.forEach { suggestion ->
+                                SuggestionChip(
+                                    onClick = { editedValue = suggestion },
+                                    label = { Text(suggestion) },
+                                    colors = SuggestionChipDefaults.suggestionChipColors(
+                                        containerColor = if (editedValue == suggestion) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant
+                                        },
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Help text
-                if (attribute.confidenceTier != AttributeConfidenceTier.HIGH) {
+                if (attribute.confidenceTier != AttributeConfidenceTier.HIGH &&
+                    attribute.source != "user"
+                ) {
                     Text(
-                        text = "Confirming will mark this as verified (high confidence).",
+                        text = "Confirming will mark this as verified.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 // Source info
-                attribute.source?.let { source ->
+                if (attribute.source != null && attribute.source != "user") {
                     Text(
-                        text = "Originally extracted via: $source",
+                        text = "Extracted via: ${attribute.source}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

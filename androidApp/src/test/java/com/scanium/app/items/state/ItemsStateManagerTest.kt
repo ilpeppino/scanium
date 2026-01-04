@@ -8,6 +8,7 @@ import com.scanium.app.items.persistence.PersistenceError
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -245,6 +246,163 @@ class ItemsStateManagerTest {
 
             // Assert
             assertThat(manager.getItemCount()).isEqualTo(3)
+        }
+
+    // ==================== Detected Attributes Override Tests ====================
+
+    @Test
+    fun whenClassificationApplied_fromBackend_thenDetectedAttributesAreStored() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
+            manager.addItem(item)
+            advanceUntilIdle()
+
+            // Act - Apply classification from backend
+            val brandAttribute = ItemAttribute(
+                value = "Nike",
+                confidence = 0.85f,
+                source = "logo",
+            )
+            manager.applyEnhancedClassification(
+                aggregatedId = "item-1",
+                category = null,
+                label = null,
+                priceRange = null,
+                attributes = mapOf("brand" to brandAttribute),
+                isFromBackend = true,
+            )
+            // Refresh items to reflect aggregator changes
+            manager.refreshItemsFromAggregator()
+            advanceUntilIdle()
+
+            // Assert - Both attributes and detectedAttributes should have the value
+            val items = manager.items.first()
+            assertThat(items).hasSize(1)
+            assertThat(items[0].attributes["brand"]?.value).isEqualTo("Nike")
+            assertThat(items[0].detectedAttributes["brand"]?.value).isEqualTo("Nike")
+        }
+
+    @Test
+    fun whenUserEditsAttribute_thenDetectedAttributesArePreserved() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
+            manager.addItem(item)
+            advanceUntilIdle()
+
+            // Apply initial classification from backend
+            val detectedBrand = ItemAttribute(
+                value = "Nike",
+                confidence = 0.85f,
+                source = "logo",
+            )
+            manager.applyEnhancedClassification(
+                aggregatedId = "item-1",
+                category = null,
+                label = null,
+                priceRange = null,
+                attributes = mapOf("brand" to detectedBrand),
+                isFromBackend = true,
+            )
+            manager.refreshItemsFromAggregator()
+            advanceUntilIdle()
+
+            // Act - User edits the attribute
+            val userBrand = ItemAttribute(
+                value = "Adidas",
+                confidence = 1.0f,
+                source = "user",
+            )
+            manager.updateItemAttribute(
+                itemId = "item-1",
+                attributeKey = "brand",
+                attribute = userBrand,
+            )
+            advanceUntilIdle()
+
+            // Assert - attributes should have user value, detectedAttributes should have original
+            val items = manager.items.first()
+            assertThat(items).hasSize(1)
+            assertThat(items[0].attributes["brand"]?.value).isEqualTo("Adidas")
+            assertThat(items[0].attributes["brand"]?.source).isEqualTo("user")
+            assertThat(items[0].detectedAttributes["brand"]?.value).isEqualTo("Nike")
+            assertThat(items[0].detectedAttributes["brand"]?.source).isEqualTo("logo")
+        }
+
+    @Test
+    fun whenNewClassificationArrives_userOverridesAreNotReplaced() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
+            manager.addItem(item)
+            advanceUntilIdle()
+
+            // User sets a brand value
+            val userBrand = ItemAttribute(
+                value = "Adidas",
+                confidence = 1.0f,
+                source = "user",
+            )
+            manager.updateItemAttribute(
+                itemId = "item-1",
+                attributeKey = "brand",
+                attribute = userBrand,
+            )
+            advanceUntilIdle()
+
+            // Act - New classification arrives from backend
+            val detectedBrand = ItemAttribute(
+                value = "Nike",
+                confidence = 0.85f,
+                source = "logo",
+            )
+            manager.applyEnhancedClassification(
+                aggregatedId = "item-1",
+                category = null,
+                label = null,
+                priceRange = null,
+                attributes = mapOf("brand" to detectedBrand),
+                isFromBackend = true,
+            )
+            manager.refreshItemsFromAggregator()
+            advanceUntilIdle()
+
+            // Assert - User override should be preserved, but detectedAttributes updated
+            val items = manager.items.first()
+            assertThat(items).hasSize(1)
+            // User value preserved
+            assertThat(items[0].attributes["brand"]?.value).isEqualTo("Adidas")
+            assertThat(items[0].attributes["brand"]?.source).isEqualTo("user")
+            // Detected value updated
+            assertThat(items[0].detectedAttributes["brand"]?.value).isEqualTo("Nike")
+        }
+
+    @Test
+    fun whenItemHasNoDetectedAttributes_uiDoesNotCrash() =
+        runTest {
+            // Arrange - Create item without any attributes
+            val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
+            fakeStore.seedItems(listOf(item))
+
+            // Act - Create manager (simulates loading from persistence)
+            val manager = createManager()
+            advanceUntilIdle()
+
+            // Assert - Item should be loaded without crashing
+            val items = manager.items.first()
+            assertThat(items).hasSize(1)
+            assertThat(items[0].attributes).isEmpty()
+            assertThat(items[0].detectedAttributes).isEmpty()
         }
 
     // ==================== Thumbnail Persistence Tests (Process Death) ====================

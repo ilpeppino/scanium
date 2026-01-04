@@ -157,6 +157,8 @@ class ItemAggregator(
                     classificationErrorMessage = item.classificationErrorMessage,
                     classificationRequestId = item.classificationRequestId,
                     enrichedAttributes = item.attributes,
+                    visionAttributes = item.visionAttributes,
+                    detectedAttributes = item.detectedAttributes,
                 )
             aggregatedItems[item.id] = aggregatedItem
         }
@@ -428,6 +430,21 @@ class ItemAggregator(
     /**
      * Applies enhanced classification results without altering tracking behavior.
      * Thread-safe via synchronized block to prevent concurrent modification.
+     *
+     * When [isFromBackend] is true (default), this also stores the attributes in
+     * [detectedAttributes] for reference. When false (user edit), only [enrichedAttributes]
+     * is updated, preserving the original detected values for UI comparison.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param category Optional category from classification
+     * @param label Optional label from classification
+     * @param priceRange Optional price range from classification
+     * @param classificationConfidence Optional confidence score
+     * @param attributes Optional enriched attributes (brand, model, color, etc.)
+     * @param visionAttributes Optional raw vision data (OCR, colors, logos)
+     * @param isFromBackend If true, this is a backend classification result and attributes
+     *                      should be stored in detectedAttributes as well. If false, this is
+     *                      a user edit and only enrichedAttributes is updated.
      */
     @Synchronized
     fun applyEnhancedClassification(
@@ -438,13 +455,32 @@ class ItemAggregator(
         classificationConfidence: Float? = null,
         attributes: Map<String, ItemAttribute>? = null,
         visionAttributes: VisionAttributes? = null,
+        isFromBackend: Boolean = true,
     ) {
         aggregatedItems[aggregatedId]?.let { item ->
             category?.let { item.enhancedCategory = it }
             label?.let { item.enhancedLabelText = it }
             priceRange?.let { item.enhancedPriceRange = it }
             classificationConfidence?.let { item.classificationConfidence = it }
-            attributes?.let { item.enrichedAttributes = it }
+            attributes?.let { newAttrs ->
+                // If from backend, store in detectedAttributes as the original reference
+                if (isFromBackend) {
+                    item.detectedAttributes = newAttrs
+                    // Merge with existing attributes, preserving user overrides (source = "user")
+                    val mergedAttributes = item.enrichedAttributes.toMutableMap()
+                    for ((key, value) in newAttrs) {
+                        val existing = mergedAttributes[key]
+                        // Only update if not a user override
+                        if (existing?.source != "user") {
+                            mergedAttributes[key] = value
+                        }
+                    }
+                    item.enrichedAttributes = mergedAttributes
+                } else {
+                    // User edit - only update enrichedAttributes, preserve detectedAttributes
+                    item.enrichedAttributes = newAttrs
+                }
+            }
             visionAttributes?.let { item.visionAttributes = it }
         }
     }

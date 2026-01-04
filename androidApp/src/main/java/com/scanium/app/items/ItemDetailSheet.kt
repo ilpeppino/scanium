@@ -100,11 +100,12 @@ fun ItemDetailSheet(
             if (item.attributes.isNotEmpty()) {
                 AttributesSection(
                     attributes = item.attributes,
+                    detectedAttributes = item.detectedAttributes,
                     onEditAttribute = onAttributeEdit,
                 )
             } else {
                 Text(
-                    text = "No attributes extracted yet. Attributes will be extracted during cloud classification.",
+                    text = "No attributes detected yet. Attributes will be extracted during cloud classification.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -226,13 +227,14 @@ private fun ItemDetailHeader(item: ScannedItem) {
 @Composable
 private fun AttributesSection(
     attributes: Map<String, ItemAttribute>,
+    detectedAttributes: Map<String, ItemAttribute>,
     onEditAttribute: (String, ItemAttribute) -> Unit,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "Extracted Attributes",
+            text = "Detected Attributes",
             style = MaterialTheme.typography.titleMedium,
         )
 
@@ -249,9 +251,15 @@ private fun AttributesSection(
             )
 
         sortedAttributes.forEach { (key, attribute) ->
+            // Check if user has overridden the detected value
+            val detectedAttribute = detectedAttributes[key]
+            val isUserOverride = attribute.source == "user" && detectedAttribute != null &&
+                detectedAttribute.value != attribute.value
+
             AttributeRow(
                 attributeKey = key,
                 attribute = attribute,
+                detectedValue = if (isUserOverride) detectedAttribute?.value else null,
                 onEdit = { onEditAttribute(key, attribute) },
             )
         }
@@ -262,17 +270,22 @@ private fun AttributesSection(
 private fun AttributeRow(
     attributeKey: String,
     attribute: ItemAttribute,
+    detectedValue: String? = null,
     onEdit: () -> Unit,
 ) {
+    val isUserOverride = attribute.source == "user"
     val accessibilityDescription = buildString {
         append(formatAttributeLabel(attributeKey))
         append(": ")
         append(attribute.value)
         append(". ")
+        if (isUserOverride) {
+            append("User edited. ")
+        }
         append(attribute.confidenceTier.description)
-        if (attribute.source != null) {
-            append(". Source: ")
-            append(attribute.source)
+        if (detectedValue != null) {
+            append(". Originally detected as: ")
+            append(detectedValue)
         }
     }
 
@@ -280,7 +293,11 @@ private fun AttributeRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                if (isUserOverride) {
+                    MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                },
                 shape = MaterialTheme.shapes.small,
             )
             .padding(12.dp)
@@ -294,7 +311,7 @@ private fun AttributeRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Confidence indicator icon
-            ConfidenceIndicator(tier = attribute.confidenceTier)
+            ConfidenceIndicator(tier = attribute.confidenceTier, isUserOverride = isUserOverride)
 
             Column {
                 // Attribute label
@@ -310,26 +327,43 @@ private fun AttributeRow(
                     style = MaterialTheme.typography.bodyLarge,
                 )
 
+                // Show detected value if user has overridden
+                if (detectedValue != null) {
+                    Text(
+                        text = "Detected: $detectedValue",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+
                 // Source and confidence
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = attribute.confidenceTier.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = when (attribute.confidenceTier) {
-                            AttributeConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
-                            AttributeConfidenceTier.MEDIUM -> MaterialTheme.colorScheme.tertiary
-                            AttributeConfidenceTier.LOW -> MaterialTheme.colorScheme.outline
-                        },
-                    )
-
-                    attribute.source?.let { source ->
+                    if (isUserOverride) {
                         Text(
-                            text = "via $source",
+                            text = "User edited",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.tertiary,
                         )
+                    } else {
+                        Text(
+                            text = attribute.confidenceTier.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = when (attribute.confidenceTier) {
+                                AttributeConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
+                                AttributeConfidenceTier.MEDIUM -> MaterialTheme.colorScheme.tertiary
+                                AttributeConfidenceTier.LOW -> MaterialTheme.colorScheme.outline
+                            },
+                        )
+
+                        attribute.source?.let { source ->
+                            Text(
+                                text = "via $source",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
@@ -352,19 +386,27 @@ private fun AttributeRow(
 }
 
 @Composable
-private fun ConfidenceIndicator(tier: AttributeConfidenceTier) {
-    val (icon, tint, backgroundColor) = when (tier) {
-        AttributeConfidenceTier.HIGH -> Triple(
+private fun ConfidenceIndicator(
+    tier: AttributeConfidenceTier,
+    isUserOverride: Boolean = false,
+) {
+    val (icon, tint, backgroundColor) = when {
+        isUserOverride -> Triple(
+            Icons.Default.Check,
+            MaterialTheme.colorScheme.onTertiaryContainer,
+            MaterialTheme.colorScheme.tertiaryContainer,
+        )
+        tier == AttributeConfidenceTier.HIGH -> Triple(
             Icons.Default.Check,
             MaterialTheme.colorScheme.onPrimaryContainer,
             MaterialTheme.colorScheme.primaryContainer,
         )
-        AttributeConfidenceTier.MEDIUM -> Triple(
+        tier == AttributeConfidenceTier.MEDIUM -> Triple(
             Icons.Default.QuestionMark,
             MaterialTheme.colorScheme.onTertiaryContainer,
             MaterialTheme.colorScheme.tertiaryContainer,
         )
-        AttributeConfidenceTier.LOW -> Triple(
+        else -> Triple(
             Icons.Default.QuestionMark,
             MaterialTheme.colorScheme.onSurfaceVariant,
             MaterialTheme.colorScheme.surfaceVariant,
@@ -379,7 +421,7 @@ private fun ConfidenceIndicator(tier: AttributeConfidenceTier) {
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = tier.description,
+            contentDescription = if (isUserOverride) "User verified" else tier.description,
             modifier = Modifier.size(16.dp),
             tint = tint,
         )

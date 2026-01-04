@@ -72,6 +72,12 @@ data class AggregatedItem(
     var enrichedAttributes: Map<String, ItemAttribute> = emptyMap(),
     /** Raw vision attributes from Google Vision API (OCR, colors, logos, labels, candidates) */
     var visionAttributes: VisionAttributes = VisionAttributes.EMPTY,
+    /**
+     * Original detected attributes from backend classification, preserved for reference.
+     * When user edits an attribute, this retains the original detected value so the UI
+     * can show "Detected: X" alongside the user's override.
+     */
+    var detectedAttributes: Map<String, ItemAttribute> = emptyMap(),
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -100,6 +106,7 @@ data class AggregatedItem(
             qualityScore = thumbnailQuality,
             attributes = enrichedAttributes,
             visionAttributes = visionAttributes,
+            detectedAttributes = detectedAttributes,
         )
     }
 

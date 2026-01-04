@@ -368,6 +368,17 @@ class ItemsStateManager(
 
     /**
      * Apply enhanced classification results to an aggregated item.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param category Optional category from classification
+     * @param label Optional label from classification
+     * @param priceRange Optional price range from classification
+     * @param classificationConfidence Optional confidence score
+     * @param attributes Optional enriched attributes (brand, model, color, etc.)
+     * @param visionAttributes Optional raw vision data (OCR, colors, logos)
+     * @param isFromBackend If true (default), this is a backend classification result and
+     *                      attributes should be stored in detectedAttributes as well.
+     *                      If false, this is a user edit and only enrichedAttributes is updated.
      */
     fun applyEnhancedClassification(
         aggregatedId: String,
@@ -377,6 +388,7 @@ class ItemsStateManager(
         classificationConfidence: Float? = null,
         attributes: Map<String, com.scanium.shared.core.models.items.ItemAttribute>? = null,
         visionAttributes: VisionAttributes? = null,
+        isFromBackend: Boolean = true,
     ) {
         itemAggregator.applyEnhancedClassification(
             aggregatedId = aggregatedId,
@@ -386,6 +398,7 @@ class ItemsStateManager(
             classificationConfidence = classificationConfidence,
             attributes = attributes,
             visionAttributes = visionAttributes,
+            isFromBackend = isFromBackend,
         )
     }
 
@@ -636,6 +649,9 @@ class ItemsStateManager(
      * Update a single attribute for an item.
      * Updates the item's attributes map with the new value and persists.
      *
+     * This preserves the original detected attributes for reference - the UI can
+     * show "Detected: X" alongside the user's overridden value.
+     *
      * @param itemId The ID of the item to update
      * @param attributeKey The key of the attribute to update (e.g., "brand", "color")
      * @param attribute The new attribute value
@@ -650,6 +666,7 @@ class ItemsStateManager(
                 if (item.id == itemId) {
                     val updatedAttributes = item.attributes.toMutableMap()
                     updatedAttributes[attributeKey] = attribute
+                    // detectedAttributes remain unchanged - they're preserved for UI reference
                     item.copy(attributes = updatedAttributes)
                 } else {
                     item
@@ -657,7 +674,7 @@ class ItemsStateManager(
             }
         _items.value = updatedItems
 
-        // Also update the aggregator
+        // Also update the aggregator with isFromBackend=false to preserve detectedAttributes
         itemAggregator.applyEnhancedClassification(
             aggregatedId = itemId,
             category = null,
@@ -665,6 +682,7 @@ class ItemsStateManager(
             priceRange = null,
             classificationConfidence = null,
             attributes = updatedItems.find { it.id == itemId }?.attributes,
+            isFromBackend = false, // User edit - preserve detectedAttributes
         )
 
         persistItems(updatedItems)
