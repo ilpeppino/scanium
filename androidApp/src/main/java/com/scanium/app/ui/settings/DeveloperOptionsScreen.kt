@@ -1437,6 +1437,11 @@ private fun PreflightStatusBadge(status: PreflightStatus) {
             "Unknown",
             Icons.Default.Help,
         )
+        PreflightStatus.CLIENT_ERROR -> Triple(
+            Color(0xFFFF9800),
+            "Client Error (preflight schema mismatch)",
+            Icons.Default.Info,
+        )
     }
 
     Surface(
@@ -1505,6 +1510,7 @@ private fun getPreflightStatusColor(status: PreflightStatus): Color {
         PreflightStatus.UNAUTHORIZED -> Color(0xFFF44336)
         PreflightStatus.NOT_CONFIGURED -> Color(0xFF9E9E9E)
         PreflightStatus.ENDPOINT_NOT_FOUND -> Color(0xFFF44336)
+        PreflightStatus.CLIENT_ERROR -> Color(0xFFFF9800) // Orange - warning but allows chat
         PreflightStatus.UNKNOWN -> Color(0xFF9E9E9E)
     }
 }

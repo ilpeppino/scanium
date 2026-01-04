@@ -39,6 +39,10 @@ import java.net.SocketTimeoutException
 
 /**
  * Status of the assistant backend availability from preflight check.
+ *
+ * **Important**: Preflight failure should NOT block user typing.
+ * Only NOT_CONFIGURED (missing API key/base URL) should prevent sending messages.
+ * All other errors are informational - the actual chat request may succeed.
  */
 enum class PreflightStatus {
     /** Assistant backend is reachable and ready */
@@ -51,10 +55,16 @@ enum class PreflightStatus {
     RATE_LIMITED,
     /** Authorization issue (401/403) */
     UNAUTHORIZED,
-    /** Backend not configured (no URL) */
+    /** Backend not configured (no URL or no API key) */
     NOT_CONFIGURED,
     /** Endpoint not found (404) - likely wrong base URL or tunnel route */
     ENDPOINT_NOT_FOUND,
+    /**
+     * Client configuration error (400) - preflight request was malformed.
+     * This does NOT mean the assistant is unavailable - real chat may work.
+     * Input should remain enabled.
+     */
+    CLIENT_ERROR,
     /** Preflight check in progress */
     CHECKING,
     /** No preflight result yet */
@@ -78,30 +88,24 @@ data class PreflightResult(
             PreflightStatus.TEMPORARILY_UNAVAILABLE,
             PreflightStatus.OFFLINE,
             PreflightStatus.RATE_LIMITED,
+            PreflightStatus.CLIENT_ERROR, // Client error should allow chat attempt
         )
 }
 
 /**
  * Minimal request payload for preflight check.
  * Uses the actual chat endpoint to verify auth and connectivity.
+ *
+ * **IMPORTANT**: Backend validates the request schema. The minimal valid payload is:
+ * `{"message": "ping", "items": [], "history": []}`
+ *
+ * Sending items with objects causes HTTP 400. Keep items as empty list.
  */
 @Serializable
 private data class PreflightChatRequest(
     val message: String = "ping",
-    val items: List<PreflightItemDto> = listOf(PreflightItemDto()),
+    val items: List<String> = emptyList(),
     val history: List<String> = emptyList(),
-)
-
-/**
- * Minimal item DTO for preflight request.
- * Backend requires at least one item with itemId.
- */
-@Serializable
-private data class PreflightItemDto(
-    val itemId: String = "preflight",
-    val title: String = "Preflight Check",
-    val description: String = "",
-    val attributes: List<String> = emptyList(),
 )
 
 /**
@@ -418,7 +422,8 @@ class AssistantPreflightManagerImpl(
             .header("X-Scanium-Preflight", "true")
 
         // Add device ID header for rate limiting
-        val deviceId = DeviceIdProvider.getHashedDeviceId(context)
+        // Backend expects raw device ID (not hashed) in this header
+        val deviceId = DeviceIdProvider.getRawDeviceId(context)
         if (deviceId.isNotBlank()) {
             requestBuilder.header("X-Scanium-Device-Id", deviceId)
         }
@@ -508,6 +513,18 @@ class AssistantPreflightManagerImpl(
                             retryAfterSeconds = retryAfter,
                         )
                     }
+                    response.code == 400 -> {
+                        // HTTP 400 = client request was malformed.
+                        // This does NOT mean assistant is unavailable - the actual chat
+                        // request (with real items) may succeed. Input should stay enabled.
+                        ScaniumLog.w(TAG, "Preflight: CLIENT_ERROR (HTTP 400) - " +
+                            "preflight request schema mismatch, allowing chat attempt")
+                        PreflightResult(
+                            status = PreflightStatus.CLIENT_ERROR,
+                            latencyMs = latency,
+                            reasonCode = "preflight_schema_error",
+                        )
+                    }
                     response.code in 500..599 -> {
                         PreflightResult(
                             status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
@@ -516,8 +533,10 @@ class AssistantPreflightManagerImpl(
                         )
                     }
                     else -> {
+                        // Unknown error - log but allow chat attempt
+                        ScaniumLog.w(TAG, "Preflight: unknown HTTP ${response.code}, allowing chat attempt")
                         PreflightResult(
-                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                            status = PreflightStatus.UNKNOWN,
                             latencyMs = latency,
                             reasonCode = "http_${response.code}",
                         )
@@ -595,7 +614,8 @@ class AssistantPreflightManagerImpl(
             .header("X-App-Version", BuildConfig.VERSION_NAME)
 
         // Add device ID header for rate limiting
-        val deviceId = DeviceIdProvider.getHashedDeviceId(context)
+        // Backend expects raw device ID (not hashed) in this header
+        val deviceId = DeviceIdProvider.getRawDeviceId(context)
         if (deviceId.isNotBlank()) {
             requestBuilder.header("X-Scanium-Device-Id", deviceId)
         }
