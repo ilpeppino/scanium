@@ -6,6 +6,7 @@ import { ApiKeyManager } from '../classifier/api-key-manager.js';
 import { AssistantService } from './service.js';
 import { GroundedMockAssistantProvider, AssistantProvider } from './provider.js';
 import { ClaudeAssistantProvider } from './claude-provider.js';
+import { OpenAIAssistantProvider } from './openai-provider.js';
 import {
   RedisClient,
   SlidingWindowRateLimiter,
@@ -159,9 +160,15 @@ function createAssistantProvider(config: Config): AssistantProvider {
       });
 
     case 'openai':
-      // OpenAI provider not implemented yet - fall back to mock
-      console.warn('OpenAI provider not implemented, falling back to mock provider');
-      return new GroundedMockAssistantProvider();
+      if (!config.assistant.openaiApiKey) {
+        throw new Error('OPENAI_API_KEY is required when assistant.provider is "openai"');
+      }
+      return new OpenAIAssistantProvider({
+        apiKey: config.assistant.openaiApiKey,
+        model: config.assistant.openaiModel,
+        maxTokens: config.assistant.maxOutputTokens,
+        timeoutMs: config.assistant.providerTimeoutMs,
+      });
 
     case 'mock':
     default:

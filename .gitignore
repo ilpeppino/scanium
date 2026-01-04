@@ -57,3 +57,7 @@ monitoring/data/
 ***REMOVED*** NAS deploy env files (real secrets live here)
 deploy/nas/env/backend.env
 deploy/nas/env/monitoring.env
+
+***REMOVED*** NAS compose environment file (contains secrets)
+deploy/nas/compose/.env
+!deploy/nas/compose/.env.example
