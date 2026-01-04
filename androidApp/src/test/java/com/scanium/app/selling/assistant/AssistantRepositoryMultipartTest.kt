@@ -8,6 +8,8 @@ import com.scanium.app.model.AssistantResponse
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ItemAttributeSnapshot
 import com.scanium.app.model.ItemContextSnapshot
+import com.scanium.app.selling.assistant.network.AssistantHttpConfig
+import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import com.scanium.shared.core.models.listing.ExportProfileId
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType.Companion.toMediaType
@@ -22,7 +24,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import java.util.concurrent.TimeUnit
 
 /**
  * Tests for multipart request building in AssistantRepository.
@@ -38,10 +39,11 @@ class AssistantRepositoryMultipartTest {
     fun setup() {
         mockWebServer = MockWebServer()
         mockWebServer.start()
-        client = OkHttpClient.Builder()
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(5, TimeUnit.SECONDS)
-            .build()
+        // Use unified test configuration from AssistantHttpConfig
+        client = AssistantOkHttpClientFactory.create(
+            config = AssistantHttpConfig.TEST,
+            logStartupPolicy = false,
+        )
     }
 
     @After
