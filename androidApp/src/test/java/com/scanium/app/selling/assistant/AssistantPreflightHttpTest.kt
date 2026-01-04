@@ -232,6 +232,27 @@ class AssistantPreflightHttpTest {
         assertThat(result.reasonCode).isEqualTo("http_504")
     }
 
+    // ==================== HTTP 400 handling ====================
+    // HTTP 400 from preflight means the preflight request schema was malformed.
+    // This should NOT block the user - actual chat may still work.
+
+    @Test
+    fun `400 returns CLIENT_ERROR not TEMPORARILY_UNAVAILABLE`() = runTest {
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(400)
+                .setBody("""{"error": "bad request", "message": "Invalid request schema"}"""),
+        )
+
+        val result = performPreflightChat()
+
+        // HTTP 400 should return CLIENT_ERROR to allow chat attempt
+        assertThat(result.status).isEqualTo(PreflightStatus.CLIENT_ERROR)
+        assertThat(result.reasonCode).isEqualTo("preflight_schema_error")
+        // CLIENT_ERROR should allow retry (chat attempt)
+        assertThat(result.canRetry).isTrue()
+    }
+
     @Test
     fun `preflight uses correct path v1_assist_chat`() = runTest {
         mockWebServer.enqueue(
@@ -265,7 +286,7 @@ class AssistantPreflightHttpTest {
     }
 
     @Test
-    fun `preflight request includes valid JSON payload`() = runTest {
+    fun `preflight request includes valid JSON payload with empty items`() = runTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(200)
@@ -277,8 +298,8 @@ class AssistantPreflightHttpTest {
         val request = mockWebServer.takeRequest()
         val body = request.body.readUtf8()
         assertThat(body).contains("\"message\"")
-        assertThat(body).contains("\"items\"")
-        assertThat(body).contains("\"itemId\"")
+        assertThat(body).contains("\"items\":[]") // Items MUST be empty array
+        assertThat(body).contains("\"history\"")
     }
 
     // ==================== Regression tests for backend reachability fix ====================
@@ -530,8 +551,9 @@ class AssistantPreflightHttpTest {
         val endpoint = "$baseUrl/v1/assist/chat"
         val startTime = System.currentTimeMillis()
 
-        // Minimal valid payload
-        val payload = """{"message":"ping","items":[{"itemId":"preflight"}],"history":[]}"""
+        // Minimal valid payload - IMPORTANT: items MUST be empty array, not objects
+        // Backend validates schema and returns 400 if items contains objects
+        val payload = """{"message":"ping","items":[],"history":[]}"""
 
         val request = Request.Builder()
             .url(endpoint)
@@ -539,7 +561,7 @@ class AssistantPreflightHttpTest {
             .header("X-API-Key", "test-key")
             .header("X-Client", "Scanium-Android")
             .header("X-Scanium-Preflight", "true")
-            .header("X-Scanium-Device-Id", "test-device-hash")
+            .header("X-Scanium-Device-Id", "test-device-raw-id") // Raw device ID, not hashed
             .build()
 
         try {
@@ -580,6 +602,15 @@ class AssistantPreflightHttpTest {
                             )
                         }
                     }
+                    response.code == 400 -> {
+                        // HTTP 400 = preflight request schema error
+                        // This does NOT mean assistant is unavailable - allow chat attempt
+                        PreflightResult(
+                            status = PreflightStatus.CLIENT_ERROR,
+                            latencyMs = latency,
+                            reasonCode = "preflight_schema_error",
+                        )
+                    }
                     response.code == 401 || response.code == 403 -> {
                         // Auth failure from preflight - return UNKNOWN to allow chat attempt
                         PreflightResult(
@@ -612,8 +643,9 @@ class AssistantPreflightHttpTest {
                         )
                     }
                     else -> {
+                        // Unknown error - allow chat attempt
                         PreflightResult(
-                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                            status = PreflightStatus.UNKNOWN,
                             latencyMs = latency,
                             reasonCode = "http_${response.code}",
                         )

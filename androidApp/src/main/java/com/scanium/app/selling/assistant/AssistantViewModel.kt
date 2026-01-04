@@ -1109,6 +1109,16 @@ class AssistantViewModel
                         )
                     }
                 }
+                PreflightStatus.CLIENT_ERROR -> {
+                    // CLIENT_ERROR (HTTP 400) means the preflight request itself was malformed.
+                    // This does NOT mean the assistant is unavailable - the actual chat request
+                    // (with real items and proper format) may work. Always allow chat attempt.
+                    ScaniumLog.i(
+                        TAG,
+                        "Preflight CLIENT_ERROR (reason=${result.reasonCode}) - allowing chat attempt",
+                    )
+                    AssistantAvailability.Available
+                }
                 PreflightStatus.OFFLINE -> AssistantAvailability.Unavailable(
                     reason = UnavailableReason.OFFLINE,
                     canRetry = true,
@@ -1143,6 +1153,7 @@ class AssistantViewModel
 
             val mode = when (result.status) {
                 PreflightStatus.AVAILABLE -> AssistantMode.ONLINE
+                PreflightStatus.UNKNOWN, PreflightStatus.CLIENT_ERROR -> AssistantMode.ONLINE // Allow chat attempt
                 PreflightStatus.OFFLINE -> AssistantMode.OFFLINE
                 else -> AssistantMode.LIMITED
             }

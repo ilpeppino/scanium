@@ -329,8 +329,9 @@ private class CloudAssistantRepository(
         builder.header("X-Client", "Scanium-Android")
         builder.header("X-App-Version", BuildConfig.VERSION_NAME)
 
-        // Add device ID header for rate limiting (hashed for privacy)
-        val deviceId = DeviceIdProvider.getHashedDeviceId(context)
+        // Add device ID header for rate limiting
+        // Backend expects raw device ID (not hashed) in this header
+        val deviceId = DeviceIdProvider.getRawDeviceId(context)
         if (deviceId.isNotBlank()) {
             builder.header("X-Scanium-Device-Id", deviceId)
         }
