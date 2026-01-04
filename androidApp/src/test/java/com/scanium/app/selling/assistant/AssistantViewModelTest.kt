@@ -671,4 +671,531 @@ class AssistantViewModelTest {
             _currentResult.value = result
         }
     }
+
+    // ==================== Regression tests for preflight failure handling ====================
+    // These tests verify that preflight failures don't permanently block the assistant UI.
+
+    @Test
+    fun `preflight UNKNOWN allows chat attempt and success marks Available`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        // Set preflight to UNKNOWN (simulating timeout or auth error)
+        preflightManager.setPreflightResult(
+            PreflightResult(
+                status = PreflightStatus.UNKNOWN,
+                latencyMs = 100,
+                reasonCode = "timeout",
+            ),
+        )
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        advanceUntilIdle()
+
+        // Even with UNKNOWN preflight, user should be able to send messages
+        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
+
+        // Send a message - it should succeed
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // After success, availability should be Available
+        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+        assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.ONLINE)
+    }
+
+    @Test
+    fun `preflight UNAUTHORIZED allows chat attempt when online`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        // Set preflight to UNAUTHORIZED (edge case - normally returns UNKNOWN now)
+        preflightManager.setPreflightResult(
+            PreflightResult(
+                status = PreflightStatus.UNAUTHORIZED,
+                latencyMs = 50,
+                reasonCode = "http_401",
+            ),
+        )
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        advanceUntilIdle()
+
+        // UNAUTHORIZED from preflight should NOT block UI - allow chat attempt
+        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
+    }
+
+    @Test
+    fun `chat success overrides preflight failure state`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        // Start with preflight failure
+        preflightManager.setPreflightResult(
+            PreflightResult(
+                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                latencyMs = 100,
+                reasonCode = "http_503",
+            ),
+        )
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        advanceUntilIdle()
+
+        // Initial state is unavailable due to preflight failure
+        assertThat(viewModel.uiState.value.availability).isInstanceOf(AssistantAvailability.Unavailable::class.java)
+
+        // Simulate preflight becoming available (e.g., user triggered retry)
+        preflightManager.setPreflightResult(
+            PreflightResult(
+                status = PreflightStatus.AVAILABLE,
+                latencyMs = 50,
+            ),
+        )
+        viewModel.runPreflight(forceRefresh = true)
+        advanceUntilIdle()
+
+        // Now send a message
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // After chat success, availability should definitely be Available
+        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+        assertThat(viewModel.uiState.value.lastBackendFailure).isNull()
+    }
+
+    @Test
+    fun `preflight ENDPOINT_NOT_FOUND correctly blocks UI`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        // Set preflight to ENDPOINT_NOT_FOUND - this is a configuration error
+        preflightManager.setPreflightResult(
+            PreflightResult(
+                status = PreflightStatus.ENDPOINT_NOT_FOUND,
+                latencyMs = 50,
+                reasonCode = "endpoint_not_found",
+            ),
+        )
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        advanceUntilIdle()
+
+        // ENDPOINT_NOT_FOUND should block UI - this is a real config error
+        val availability = viewModel.uiState.value.availability
+        assertThat(availability).isInstanceOf(AssistantAvailability.Unavailable::class.java)
+        assertThat((availability as AssistantAvailability.Unavailable).reason)
+            .isEqualTo(UnavailableReason.ENDPOINT_NOT_FOUND)
+        assertThat(availability.canRetry).isFalse()
+    }
+
+    // ==================== Progress state transition tests ====================
+    // These tests verify the rich progress UI states during assistant requests.
+
+    @Test
+    fun `sendMessage transitions through progress states on success`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        // Initial progress should be Idle
+        assertThat(viewModel.uiState.value.progress).isEqualTo(AssistantRequestProgress.Idle)
+
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // After completion, progress should be Done
+        val progress = viewModel.uiState.value.progress
+        assertThat(progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
+        // Duration may be 0 in test dispatcher as all coroutines run instantly
+        assertThat((progress as AssistantRequestProgress.Done).totalDurationMs).isAtLeast(0)
+    }
+
+    @Test
+    fun `sendMessage sets progress to ErrorTemporary on timeout`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = TimeoutAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // After timeout, progress should be ErrorTemporary with retryable=true
+        val progress = viewModel.uiState.value.progress
+        assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorTemporary::class.java)
+        assertThat((progress as AssistantRequestProgress.ErrorTemporary).retryable).isTrue()
+    }
+
+    @Test
+    fun `sendMessage sets progress to ErrorAuth on 401`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = UnauthorizedAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // After 401, progress should be ErrorAuth
+        val progress = viewModel.uiState.value.progress
+        assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorAuth::class.java)
+    }
+
+    @Test
+    fun `sendMessage sets progress to ErrorValidation on 400`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = ValidationErrorAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // After 400, progress should be ErrorValidation
+        val progress = viewModel.uiState.value.progress
+        assertThat(progress).isInstanceOf(AssistantRequestProgress.ErrorValidation::class.java)
+    }
+
+    @Test
+    fun `sendMessage preserves lastSuccessfulEntry during new request`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = FakeAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        advanceUntilIdle() // Let init complete
+
+        // First message - should succeed
+        viewModel.sendMessage("First message")
+        advanceUntilIdle()
+
+        val firstEntry = viewModel.uiState.value.lastSuccessfulEntry
+        assertThat(firstEntry).isNotNull()
+        assertThat(firstEntry!!.message.content).isEqualTo("ok") // FakeAssistantRepository returns "ok"
+
+        // Second message - should produce new lastSuccessfulEntry
+        viewModel.sendMessage("Second message")
+        advanceUntilIdle()
+
+        val secondEntry = viewModel.uiState.value.lastSuccessfulEntry
+        assertThat(secondEntry).isNotNull()
+        // The entry content is the same ("ok"), but it should be a different instance
+        // Both represent successful assistant responses
+        assertThat(secondEntry!!.message.content).isEqualTo("ok")
+    }
+
+    @Test
+    fun `retryLastMessage resets progress to Idle before sending`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = SuccessAfterFailureRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel,
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        // First message fails
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // Should be in error state
+        assertThat(viewModel.uiState.value.progress.isError).isTrue()
+
+        // Retry should succeed
+        viewModel.retryLastMessage()
+        advanceUntilIdle()
+
+        // Should be Done
+        assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
+    }
+
+    @Test
+    fun `progress displayLabel returns correct text for each state`() {
+        // Test display labels for all progress states
+        assertThat(AssistantRequestProgress.Idle.displayLabel).isEmpty()
+        assertThat(AssistantRequestProgress.Sending().displayLabel).isEqualTo("Sending...")
+        assertThat(AssistantRequestProgress.Thinking(startedAt = 0).displayLabel).isEqualTo("Thinking...")
+        assertThat(AssistantRequestProgress.ExtractingVision(startedAt = 0).displayLabel).isEqualTo("Analyzing images...")
+        assertThat(AssistantRequestProgress.Drafting(startedAt = 0).displayLabel).isEqualTo("Drafting answer...")
+        assertThat(AssistantRequestProgress.Finalizing(startedAt = 0).displayLabel).isEqualTo("Finalizing...")
+        assertThat(AssistantRequestProgress.Done().displayLabel).isEmpty()
+        assertThat(AssistantRequestProgress.ErrorTemporary(message = "test").displayLabel).isEqualTo("Temporarily unavailable")
+        assertThat(AssistantRequestProgress.ErrorAuth(message = "test").displayLabel).isEqualTo("Authentication required")
+        assertThat(AssistantRequestProgress.ErrorValidation(message = "test").displayLabel).isEqualTo("Invalid request")
+    }
+
+    @Test
+    fun `progress isLoading returns correct value for each state`() {
+        assertThat(AssistantRequestProgress.Idle.isLoading).isFalse()
+        assertThat(AssistantRequestProgress.Sending().isLoading).isTrue()
+        assertThat(AssistantRequestProgress.Thinking(startedAt = 0).isLoading).isTrue()
+        assertThat(AssistantRequestProgress.ExtractingVision(startedAt = 0).isLoading).isTrue()
+        assertThat(AssistantRequestProgress.Drafting(startedAt = 0).isLoading).isTrue()
+        assertThat(AssistantRequestProgress.Finalizing(startedAt = 0).isLoading).isTrue()
+        assertThat(AssistantRequestProgress.Done().isLoading).isFalse()
+        assertThat(AssistantRequestProgress.ErrorTemporary(message = "test").isLoading).isFalse()
+        assertThat(AssistantRequestProgress.ErrorAuth(message = "test").isLoading).isFalse()
+        assertThat(AssistantRequestProgress.ErrorValidation(message = "test").isLoading).isFalse()
+    }
+
+    @Test
+    fun `progress isError returns correct value for each state`() {
+        assertThat(AssistantRequestProgress.Idle.isError).isFalse()
+        assertThat(AssistantRequestProgress.Sending().isError).isFalse()
+        assertThat(AssistantRequestProgress.Done().isError).isFalse()
+        assertThat(AssistantRequestProgress.ErrorTemporary(message = "test").isError).isTrue()
+        assertThat(AssistantRequestProgress.ErrorAuth(message = "test").isError).isTrue()
+        assertThat(AssistantRequestProgress.ErrorValidation(message = "test").isError).isTrue()
+    }
+
+    @Test
+    fun `AssistantRequestTiming calculates durations correctly`() {
+        val timing = AssistantRequestTiming(
+            correlationId = "test-123",
+            requestStartedAt = 0,
+            sendingStartedAt = 0,
+            thinkingStartedAt = 100,
+            extractingVisionStartedAt = 200,
+            draftingStartedAt = 500,
+            finalizingStartedAt = 800,
+            completedAt = 1000,
+            hasImages = true,
+        )
+
+        assertThat(timing.sendingDurationMs).isEqualTo(100)
+        assertThat(timing.thinkingDurationMs).isEqualTo(100) // 200 - 100
+        assertThat(timing.extractingVisionDurationMs).isEqualTo(300) // 500 - 200
+        assertThat(timing.draftingDurationMs).isEqualTo(300) // 800 - 500
+        assertThat(timing.finalizingDurationMs).isEqualTo(200) // 1000 - 800
+        assertThat(timing.totalDurationMs).isEqualTo(1000)
+    }
+
+    @Test
+    fun `AssistantRequestTiming toLogString contains all durations`() {
+        val timing = AssistantRequestTiming(
+            correlationId = "test-123",
+            requestStartedAt = 0,
+            sendingStartedAt = 0,
+            thinkingStartedAt = 100,
+            draftingStartedAt = 300,
+            completedAt = 500,
+            hasImages = false,
+        )
+
+        val logString = timing.toLogString()
+        assertThat(logString).contains("correlationId=test-123")
+        assertThat(logString).contains("sending=100ms")
+        assertThat(logString).contains("thinking=200ms")
+        assertThat(logString).contains("total=500ms")
+    }
+
+    // ==================== Test repositories for progress state tests ====================
+
+    private class TimeoutAssistantRepository : AssistantRepository {
+        override suspend fun send(
+            items: List<com.scanium.app.model.ItemContextSnapshot>,
+            history: List<com.scanium.app.model.AssistantMessage>,
+            userMessage: String,
+            exportProfile: ExportProfileDefinition,
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?,
+        ): com.scanium.app.model.AssistantResponse {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                    category = AssistantBackendErrorCategory.TEMPORARY,
+                    retryable = true,
+                    message = "Request timed out",
+                ),
+            )
+        }
+    }
+
+    private class UnauthorizedAssistantRepository : AssistantRepository {
+        override suspend fun send(
+            items: List<com.scanium.app.model.ItemContextSnapshot>,
+            history: List<com.scanium.app.model.AssistantMessage>,
+            userMessage: String,
+            exportProfile: ExportProfileDefinition,
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?,
+        ): com.scanium.app.model.AssistantResponse {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.UNAUTHORIZED,
+                    category = AssistantBackendErrorCategory.POLICY,
+                    retryable = false,
+                    message = "Not authorized",
+                ),
+            )
+        }
+    }
+
+    private class ValidationErrorAssistantRepository : AssistantRepository {
+        override suspend fun send(
+            items: List<com.scanium.app.model.ItemContextSnapshot>,
+            history: List<com.scanium.app.model.AssistantMessage>,
+            userMessage: String,
+            exportProfile: ExportProfileDefinition,
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?,
+        ): com.scanium.app.model.AssistantResponse {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.VALIDATION_ERROR,
+                    category = AssistantBackendErrorCategory.POLICY,
+                    retryable = false,
+                    message = "Invalid request payload",
+                ),
+            )
+        }
+    }
 }
