@@ -3,6 +3,7 @@ package com.scanium.app.aggregation
 import android.net.Uri
 import com.scanium.app.items.ScannedItem
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
@@ -69,6 +70,8 @@ data class AggregatedItem(
     var thumbnailQuality: Float = 0f,
     /** Enriched attributes from cloud classification (brand, model, color, etc.) */
     var enrichedAttributes: Map<String, ItemAttribute> = emptyMap(),
+    /** Raw vision attributes from Google Vision API (OCR, colors, logos, labels, candidates) */
+    var visionAttributes: VisionAttributes = VisionAttributes.EMPTY,
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -96,6 +99,7 @@ data class AggregatedItem(
             classificationRequestId = classificationRequestId,
             qualityScore = thumbnailQuality,
             attributes = enrichedAttributes,
+            visionAttributes = visionAttributes,
         )
     }
 

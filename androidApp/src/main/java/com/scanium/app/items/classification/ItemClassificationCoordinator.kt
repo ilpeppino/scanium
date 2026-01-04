@@ -334,6 +334,7 @@ class ItemClassificationCoordinator(
             priceRange = priceRange,
             classificationConfidence = result.confidence,
             attributes = result.enrichedAttributes.takeIf { it.isNotEmpty() },
+            visionAttributes = result.visionAttributes.takeIf { !it.isEmpty },
         )
 
         stateManager.updateClassificationStatus(

@@ -245,7 +245,48 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         payload.file,
         config.classifier.maxUploadBytes
       );
-      const sanitized = await sanitizeImageBuffer(buffer, payload.file.mimetype);
+
+      // Validate and sanitize image data - return 400 for invalid/corrupted images
+      let sanitized: { buffer: Buffer; normalizedType: string };
+      try {
+        sanitized = await sanitizeImageBuffer(buffer, payload.file.mimetype);
+      } catch (error) {
+        request.log.warn(
+          {
+            correlationId,
+            ip: request.ip,
+            contentType: payload.file.mimetype,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          },
+          'Invalid image data rejected'
+        );
+
+        if (config.security.logApiKeyUsage && apiKey) {
+          apiKeyManager.logUsage({
+            apiKey: apiKey.substring(0, 8) + '***',
+            timestamp: new Date(),
+            endpoint: request.url,
+            method: request.method,
+            success: false,
+            ip: request.ip,
+            userAgent: request.headers['user-agent'],
+            errorCode: 'INVALID_IMAGE',
+          });
+        }
+        if (apiKey) {
+          usageStore.recordClassification(apiKey, config.classifier.visionFeature, true);
+        }
+        recordClassification(config.classifier.provider, 'error', 0, false, undefined, undefined);
+
+        return reply.status(400).send({
+          error: {
+            code: 'INVALID_IMAGE',
+            message: 'Invalid or corrupted image data. Please upload a valid JPEG, PNG, or WebP image.',
+            correlationId,
+          },
+        });
+      }
+
       const imageHash = sha256Hex(sanitized.buffer);
       const cacheKey = `${config.classifier.provider}:${domainPackId}:${imageHash}`;
       const cached = cache.get(cacheKey);

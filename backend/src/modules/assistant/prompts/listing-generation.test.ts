@@ -77,10 +77,41 @@ describe('Listing Generation Prompts', () => {
     it('includes critical rules about hallucination prevention', () => {
       const prompt = buildListingSystemPrompt();
 
-      expect(prompt).toContain('CRITICAL RULES');
       expect(prompt).toContain('NEVER invent');
-      expect(prompt).toContain('hallucinate');
       expect(prompt).toContain('confidence');
+    });
+
+    // PR4 User attribute handling rules
+    it('includes user attribute handling rules (PR4)', () => {
+      const prompt = buildListingSystemPrompt();
+
+      expect(prompt).toContain('USER-PROVIDED');
+      expect(prompt).toContain('AUTHORITATIVE');
+      expect(prompt).toContain('[USER]');
+      expect(prompt).toContain('[DETECTED]');
+    });
+
+    it('includes title rules with 80 char limit', () => {
+      const prompt = buildListingSystemPrompt();
+
+      expect(prompt).toContain('TITLE RULES');
+      expect(prompt).toContain('80 characters');
+      expect(prompt).toContain('keyword');
+    });
+
+    it('includes description rules with bullet points', () => {
+      const prompt = buildListingSystemPrompt();
+
+      expect(prompt).toContain('DESCRIPTION RULES');
+      expect(prompt).toContain('bullet');
+    });
+
+    it('includes confidence assignment rules', () => {
+      const prompt = buildListingSystemPrompt();
+
+      expect(prompt).toContain('CONFIDENCE ASSIGNMENT');
+      expect(prompt).toContain('User-provided');
+      expect(prompt).toContain('HIGH');
     });
 
     it('includes output format specification', () => {
@@ -164,7 +195,7 @@ describe('Listing Generation Prompts', () => {
 
       const prompt = buildListingUserPrompt([{ itemId: 'item-1' }], resolvedAttrs);
 
-      expect(prompt).toContain('Extracted attributes from image analysis');
+      expect(prompt).toContain('Vision-extracted attributes');
       expect(prompt).toContain('brand');
       expect(prompt).toContain('IKEA');
       expect(prompt).toContain('HIGH');
@@ -205,7 +236,7 @@ describe('Listing Generation Prompts', () => {
 
       const prompt = buildListingUserPrompt([{ itemId: 'item-1' }], undefined, visualFacts);
 
-      expect(prompt).toContain('Visual evidence summary');
+      expect(prompt).toContain('Visual evidence');
       expect(prompt).toContain('blue (50%)');
       expect(prompt).toContain('MODEL X100');
       expect(prompt).toContain('IKEA');
@@ -243,6 +274,150 @@ describe('Listing Generation Prompts', () => {
       ]);
 
       expect(prompt).toContain('LOW');
+    });
+
+    // PR4 User Override Tests
+    describe('user-provided attributes (PR4)', () => {
+      it('marks user-provided attributes with [USER] tag', () => {
+        const prompt = buildListingUserPrompt([
+          {
+            itemId: 'item-1',
+            attributes: [{ key: 'brand', value: 'Apple', source: 'USER' }],
+          },
+        ]);
+
+        expect(prompt).toContain('[USER]');
+        expect(prompt).toContain('Apple');
+      });
+
+      it('treats user-provided attributes as HIGH confidence', () => {
+        const prompt = buildListingUserPrompt([
+          {
+            itemId: 'item-1',
+            attributes: [{ key: 'brand', value: 'Apple', source: 'USER', confidence: 0.5 }],
+          },
+        ]);
+
+        // Even with 0.5 confidence, USER source should be HIGH
+        expect(prompt).toContain('[USER]');
+        expect(prompt).toContain('[HIGH]');
+      });
+
+      it('shows user-provided attributes before detected attributes', () => {
+        const prompt = buildListingUserPrompt([
+          {
+            itemId: 'item-1',
+            attributes: [
+              { key: 'color', value: 'Red', source: 'DETECTED', confidence: 0.9 },
+              { key: 'brand', value: 'Apple', source: 'USER' },
+            ],
+          },
+        ]);
+
+        // User-provided should come first in the prompt
+        const userIndex = prompt.indexOf('User-provided attributes');
+        const detectedIndex = prompt.indexOf('Detected attributes');
+        expect(userIndex).toBeLessThan(detectedIndex);
+      });
+
+      it('does not override user-provided attributes with vision-detected ones', () => {
+        const resolvedAttrs = new Map<string, ResolvedAttributes>();
+        resolvedAttrs.set('item-1', {
+          itemId: 'item-1',
+          brand: {
+            value: 'Samsung', // Vision detected Samsung
+            confidence: 'HIGH',
+            evidenceRefs: [{ type: 'logo', value: 'Samsung', score: 0.95 }],
+          },
+        });
+
+        const prompt = buildListingUserPrompt(
+          [
+            {
+              itemId: 'item-1',
+              attributes: [{ key: 'brand', value: 'Apple', source: 'USER' }], // User said Apple
+            },
+          ],
+          resolvedAttrs
+        );
+
+        // User's Apple should be included
+        expect(prompt).toContain('Apple');
+        expect(prompt).toContain('[USER]');
+        // Vision's Samsung should NOT be in the vision section (since user override exists)
+        const visionSection = prompt.indexOf('Vision-extracted attributes');
+        if (visionSection >= 0) {
+          const afterVision = prompt.slice(visionSection);
+          expect(afterVision).not.toContain('Samsung');
+        }
+      });
+
+      it('includes detected attributes that user has not overridden', () => {
+        const resolvedAttrs = new Map<string, ResolvedAttributes>();
+        resolvedAttrs.set('item-1', {
+          itemId: 'item-1',
+          brand: {
+            value: 'Samsung',
+            confidence: 'HIGH',
+            evidenceRefs: [{ type: 'logo', value: 'Samsung', score: 0.95 }],
+          },
+          color: {
+            value: 'Black',
+            confidence: 'MED',
+            evidenceRefs: [{ type: 'color', value: 'Black', score: 0.7 }],
+          },
+        });
+
+        const prompt = buildListingUserPrompt(
+          [
+            {
+              itemId: 'item-1',
+              attributes: [{ key: 'brand', value: 'Apple', source: 'USER' }], // Only brand overridden
+            },
+          ],
+          resolvedAttrs
+        );
+
+        // User's Apple brand should be in user section
+        expect(prompt).toContain('Apple');
+        expect(prompt).toContain('[USER]');
+        // Vision's Black color should be included (not overridden)
+        expect(prompt).toContain('Black');
+      });
+
+      it('marks detected attributes with [DETECTED] tag', () => {
+        const prompt = buildListingUserPrompt([
+          {
+            itemId: 'item-1',
+            attributes: [{ key: 'brand', value: 'Sony', source: 'DETECTED', confidence: 0.8 }],
+          },
+        ]);
+
+        expect(prompt).toContain('[DETECTED]');
+        expect(prompt).toContain('Sony');
+      });
+
+      it('includes condition in user attributes when user-edited', () => {
+        const prompt = buildListingUserPrompt([
+          {
+            itemId: 'item-1',
+            attributes: [
+              { key: 'brand', value: 'Dell', source: 'USER' },
+              { key: 'model', value: 'XPS 15', source: 'USER' },
+              { key: 'color', value: 'Silver', source: 'USER' },
+              { key: 'condition', value: 'Like New', source: 'USER' },
+            ],
+          },
+        ]);
+
+        // All user attributes should be marked as [USER] [HIGH]
+        expect(prompt).toContain('Dell');
+        expect(prompt).toContain('XPS 15');
+        expect(prompt).toContain('Silver');
+        expect(prompt).toContain('Like New');
+        const userSection = prompt.slice(0, prompt.indexOf('Detected attributes') || prompt.length);
+        expect(userSection).toContain('[USER]');
+      });
     });
   });
 

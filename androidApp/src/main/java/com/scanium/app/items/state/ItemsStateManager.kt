@@ -10,6 +10,7 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
+import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
@@ -375,6 +376,7 @@ class ItemsStateManager(
         priceRange: Pair<Double, Double>?,
         classificationConfidence: Float? = null,
         attributes: Map<String, com.scanium.shared.core.models.items.ItemAttribute>? = null,
+        visionAttributes: VisionAttributes? = null,
     ) {
         itemAggregator.applyEnhancedClassification(
             aggregatedId = aggregatedId,
@@ -383,6 +385,7 @@ class ItemsStateManager(
             priceRange = priceRange,
             classificationConfidence = classificationConfidence,
             attributes = attributes,
+            visionAttributes = visionAttributes,
         )
     }
 
