@@ -19,6 +19,8 @@ data class FeatureFlags(
     val enableAssistant: Boolean = false,
     val enableProfiles: Boolean = false,
     val enablePostingAssist: Boolean = false,
+    /** Enable Vision Insights UI in assistant (displays detected colors, brands, etc.) */
+    val enableVisionInsights: Boolean = true,
 )
 
 @Serializable

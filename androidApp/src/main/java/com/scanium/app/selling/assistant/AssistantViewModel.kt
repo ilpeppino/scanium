@@ -23,6 +23,8 @@ import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
 import com.scanium.app.model.ItemContextSnapshot
+import com.scanium.app.model.SuggestedAttribute
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.app.model.ItemContextSnapshotBuilder
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
@@ -47,6 +49,8 @@ data class AssistantChatEntry(
     val confidenceTier: ConfidenceTier? = null,
     val evidence: List<EvidenceBullet> = emptyList(),
     val suggestedNextPhoto: String? = null,
+    /** Vision-derived attribute suggestions (brand, color, etc.) */
+    val suggestedAttributes: List<SuggestedAttribute> = emptyList(),
     /** Whether this entry represents a failed request */
     val isFailed: Boolean = false,
     /** Error message if failed */
@@ -55,13 +59,211 @@ data class AssistantChatEntry(
 
 /**
  * Loading stage for staged responses.
+ * @deprecated Use [AssistantRequestProgress] for richer progress tracking.
  */
+@Deprecated("Use AssistantRequestProgress instead", ReplaceWith("AssistantRequestProgress"))
 enum class LoadingStage {
     IDLE,
     VISION_PROCESSING,
     LLM_PROCESSING,
     DONE,
     ERROR,
+}
+
+/**
+ * Detailed progress states for assistant request lifecycle.
+ * Provides richer UI feedback and timing information for each stage.
+ */
+sealed class AssistantRequestProgress {
+    /** No request in progress */
+    data object Idle : AssistantRequestProgress()
+
+    /** Request is being prepared and sent to the backend */
+    data class Sending(
+        val startedAt: Long = System.currentTimeMillis(),
+        val correlationId: String? = null,
+    ) : AssistantRequestProgress()
+
+    /** Request sent, waiting for backend to start processing */
+    data class Thinking(
+        val startedAt: Long,
+        val correlationId: String? = null,
+    ) : AssistantRequestProgress()
+
+    /** Backend is processing images (only when images are attached) */
+    data class ExtractingVision(
+        val startedAt: Long,
+        val correlationId: String? = null,
+        val imageCount: Int = 0,
+    ) : AssistantRequestProgress()
+
+    /** Backend is generating response */
+    data class Drafting(
+        val startedAt: Long,
+        val correlationId: String? = null,
+    ) : AssistantRequestProgress()
+
+    /** Post-processing response (mapping suggestedDraftUpdates, etc.) */
+    data class Finalizing(
+        val startedAt: Long,
+        val correlationId: String? = null,
+    ) : AssistantRequestProgress()
+
+    /** Request completed successfully */
+    data class Done(
+        val completedAt: Long = System.currentTimeMillis(),
+        val totalDurationMs: Long = 0,
+        val correlationId: String? = null,
+    ) : AssistantRequestProgress()
+
+    /** Temporary error (timeouts, 5xx errors) - retryable */
+    data class ErrorTemporary(
+        val occurredAt: Long = System.currentTimeMillis(),
+        val message: String,
+        val correlationId: String? = null,
+        val retryable: Boolean = true,
+    ) : AssistantRequestProgress()
+
+    /** Authentication error (401) */
+    data class ErrorAuth(
+        val occurredAt: Long = System.currentTimeMillis(),
+        val message: String,
+        val correlationId: String? = null,
+    ) : AssistantRequestProgress()
+
+    /** Validation error (400) */
+    data class ErrorValidation(
+        val occurredAt: Long = System.currentTimeMillis(),
+        val message: String,
+        val correlationId: String? = null,
+    ) : AssistantRequestProgress()
+
+    /** Returns true if this is any loading state (not idle, done, or error) */
+    val isLoading: Boolean
+        get() = this is Sending || this is Thinking || this is ExtractingVision ||
+            this is Drafting || this is Finalizing
+
+    /** Returns true if this is an error state */
+    val isError: Boolean
+        get() = this is ErrorTemporary || this is ErrorAuth || this is ErrorValidation
+
+    /** User-friendly label for the current progress state */
+    val displayLabel: String
+        get() = when (this) {
+            is Idle -> ""
+            is Sending -> "Sending..."
+            is Thinking -> "Thinking..."
+            is ExtractingVision -> "Analyzing images..."
+            is Drafting -> "Drafting answer..."
+            is Finalizing -> "Finalizing..."
+            is Done -> ""
+            is ErrorTemporary -> "Temporarily unavailable"
+            is ErrorAuth -> "Authentication required"
+            is ErrorValidation -> "Invalid request"
+        }
+
+    /** Maps to legacy LoadingStage for backwards compatibility */
+    @Suppress("DEPRECATION")
+    fun toLegacyStage(): LoadingStage = when (this) {
+        is Idle -> LoadingStage.IDLE
+        is Sending, is Thinking -> LoadingStage.VISION_PROCESSING
+        is ExtractingVision -> LoadingStage.VISION_PROCESSING
+        is Drafting, is Finalizing -> LoadingStage.LLM_PROCESSING
+        is Done -> LoadingStage.DONE
+        is ErrorTemporary, is ErrorAuth, is ErrorValidation -> LoadingStage.ERROR
+    }
+
+    companion object {
+        /** Create an error progress state from a backend failure */
+        fun fromBackendFailure(
+            failure: AssistantBackendFailure,
+            correlationId: String? = null,
+        ): AssistantRequestProgress {
+            return when (failure.type) {
+                AssistantBackendErrorType.UNAUTHORIZED ->
+                    ErrorAuth(
+                        message = failure.message ?: "Authentication required",
+                        correlationId = correlationId,
+                    )
+                AssistantBackendErrorType.VALIDATION_ERROR ->
+                    ErrorValidation(
+                        message = failure.message ?: "Invalid request",
+                        correlationId = correlationId,
+                    )
+                else ->
+                    ErrorTemporary(
+                        message = failure.message ?: "Temporarily unavailable",
+                        correlationId = correlationId,
+                        retryable = failure.retryable,
+                    )
+            }
+        }
+    }
+}
+
+/**
+ * Tracks timing for each stage of the assistant request lifecycle.
+ * Used for telemetry and performance monitoring.
+ */
+data class AssistantRequestTiming(
+    val correlationId: String,
+    val requestStartedAt: Long = System.currentTimeMillis(),
+    val sendingStartedAt: Long? = null,
+    val thinkingStartedAt: Long? = null,
+    val extractingVisionStartedAt: Long? = null,
+    val draftingStartedAt: Long? = null,
+    val finalizingStartedAt: Long? = null,
+    val completedAt: Long? = null,
+    val hasImages: Boolean = false,
+) {
+    val sendingDurationMs: Long?
+        get() = if (sendingStartedAt != null && thinkingStartedAt != null) {
+            thinkingStartedAt - sendingStartedAt
+        } else null
+
+    val thinkingDurationMs: Long?
+        get() {
+            val nextStage = extractingVisionStartedAt ?: draftingStartedAt ?: completedAt
+            return if (thinkingStartedAt != null && nextStage != null) {
+                nextStage - thinkingStartedAt
+            } else null
+        }
+
+    val extractingVisionDurationMs: Long?
+        get() = if (hasImages && extractingVisionStartedAt != null && draftingStartedAt != null) {
+            draftingStartedAt - extractingVisionStartedAt
+        } else null
+
+    val draftingDurationMs: Long?
+        get() {
+            val nextStage = finalizingStartedAt ?: completedAt
+            return if (draftingStartedAt != null && nextStage != null) {
+                nextStage - draftingStartedAt
+            } else null
+        }
+
+    val finalizingDurationMs: Long?
+        get() = if (finalizingStartedAt != null && completedAt != null) {
+            completedAt - finalizingStartedAt
+        } else null
+
+    val totalDurationMs: Long?
+        get() = if (completedAt != null) completedAt - requestStartedAt else null
+
+    /** Log timing summary for telemetry */
+    fun toLogString(): String {
+        val parts = mutableListOf<String>()
+        parts.add("correlationId=$correlationId")
+        sendingDurationMs?.let { parts.add("sending=${it}ms") }
+        thinkingDurationMs?.let { parts.add("thinking=${it}ms") }
+        if (hasImages) {
+            extractingVisionDurationMs?.let { parts.add("vision=${it}ms") }
+        }
+        draftingDurationMs?.let { parts.add("drafting=${it}ms") }
+        finalizingDurationMs?.let { parts.add("finalizing=${it}ms") }
+        totalDurationMs?.let { parts.add("total=${it}ms") }
+        return parts.joinToString(" ")
+    }
 }
 
 enum class AssistantMode {
@@ -139,7 +341,10 @@ data class AssistantUiState(
     val entries: List<AssistantChatEntry> = emptyList(),
     val isLoading: Boolean = false,
     /** Current loading stage for progress indication */
+    @Suppress("DEPRECATION")
     val loadingStage: LoadingStage = LoadingStage.IDLE,
+    /** Detailed progress state for richer UI feedback */
+    val progress: AssistantRequestProgress = AssistantRequestProgress.Idle,
     /** Failed message text to preserve for retry */
     val failedMessageText: String? = null,
     /** Last user message for retry */
@@ -156,6 +361,8 @@ data class AssistantUiState(
     val availability: AssistantAvailability = AssistantAvailability.Available,
     /** Local suggestions when assistant is unavailable */
     val localSuggestions: LocalSuggestions? = null,
+    /** Last successful assistant response entry (preserved during new requests) */
+    val lastSuccessfulEntry: AssistantChatEntry? = null,
 ) {
     /**
      * Returns true if the text input should be enabled.
@@ -242,10 +449,12 @@ class AssistantViewModel
             runInitialPreflight()
         }
 
+        @Suppress("DEPRECATION")
         fun sendMessage(text: String) {
             val trimmed = text.trim()
             if (trimmed.isBlank()) return
             val correlationId = CorrelationIds.newAssistRequestId()
+            val requestStartTime = System.currentTimeMillis()
 
             val userMessage =
                 AssistantMessage(
@@ -255,13 +464,29 @@ class AssistantViewModel
                     itemContextIds = itemIds,
                 )
 
+            // Preserve last successful assistant entry
+            val lastSuccess = _uiState.value.entries
+                .lastOrNull { it.message.role == AssistantRole.ASSISTANT && !it.isFailed }
+
+            // Initialize timing tracker
+            var timing = AssistantRequestTiming(
+                correlationId = correlationId,
+                requestStartedAt = requestStartTime,
+                sendingStartedAt = requestStartTime,
+            )
+
             _uiState.update { state ->
                 state.copy(
                     entries = state.entries + AssistantChatEntry(userMessage),
                     isLoading = true,
                     loadingStage = LoadingStage.VISION_PROCESSING,
+                    progress = AssistantRequestProgress.Sending(
+                        startedAt = requestStartTime,
+                        correlationId = correlationId,
+                    ),
                     failedMessageText = null,
                     lastUserMessage = trimmed,
+                    lastSuccessfulEntry = lastSuccess,
                     // Disable input while loading
                     availability = AssistantAvailability.Unavailable(
                         reason = UnavailableReason.LOADING,
@@ -282,6 +507,9 @@ class AssistantViewModel
                     allowImages = allowImages,
                 )
 
+                val hasImages = attachmentResult.attachments.isNotEmpty()
+                timing = timing.copy(hasImages = hasImages)
+
                 ScaniumLog.i(
                     TAG,
                     "Assist request correlationId=$correlationId items=${state.snapshots.size} " +
@@ -292,22 +520,52 @@ class AssistantViewModel
                 )
 
                 if (!state.isOnline) {
+                    val failure = AssistantBackendFailure(
+                        type = AssistantBackendErrorType.NETWORK_TIMEOUT,
+                        category = AssistantBackendErrorCategory.TEMPORARY,
+                        retryable = true,
+                        message = "Offline",
+                    )
                     applyLocalFallback(
                         trimmed,
                         state,
-                        AssistantBackendFailure(
-                            type = AssistantBackendErrorType.NETWORK_TIMEOUT,
-                            category = AssistantBackendErrorCategory.TEMPORARY,
-                            retryable = true,
-                            message = "Offline",
-                        ),
+                        failure,
+                        correlationId,
                     )
                     return@launch
                 }
 
                 try {
-                    // Update stage to LLM processing
-                    _uiState.update { it.copy(loadingStage = LoadingStage.LLM_PROCESSING) }
+                    // Transition to Thinking state after request is prepared
+                    val thinkingTime = System.currentTimeMillis()
+                    timing = timing.copy(thinkingStartedAt = thinkingTime)
+                    _uiState.update {
+                        it.copy(
+                            loadingStage = LoadingStage.VISION_PROCESSING,
+                            progress = AssistantRequestProgress.Thinking(
+                                startedAt = thinkingTime,
+                                correlationId = correlationId,
+                            ),
+                        )
+                    }
+                    ScaniumLog.d(TAG, "Progress: THINKING correlationId=$correlationId")
+
+                    // If images are attached, show ExtractingVision state
+                    if (hasImages) {
+                        val visionTime = System.currentTimeMillis()
+                        timing = timing.copy(extractingVisionStartedAt = visionTime)
+                        _uiState.update {
+                            it.copy(
+                                loadingStage = LoadingStage.VISION_PROCESSING,
+                                progress = AssistantRequestProgress.ExtractingVision(
+                                    startedAt = visionTime,
+                                    correlationId = correlationId,
+                                    imageCount = attachmentResult.attachments.size,
+                                ),
+                            )
+                        }
+                        ScaniumLog.d(TAG, "Progress: EXTRACTING_VISION correlationId=$correlationId images=${attachmentResult.attachments.size}")
+                    }
 
                     // Get current assistant preferences
                     val prefs = settingsRepository.assistantPrefsFlow.first()
@@ -324,6 +582,36 @@ class AssistantViewModel
                             assistantPrefs = prefs,
                         )
 
+                    // Transition to Drafting state after receiving response
+                    val draftingTime = System.currentTimeMillis()
+                    timing = timing.copy(draftingStartedAt = draftingTime)
+                    _uiState.update {
+                        it.copy(
+                            loadingStage = LoadingStage.LLM_PROCESSING,
+                            progress = AssistantRequestProgress.Drafting(
+                                startedAt = draftingTime,
+                                correlationId = correlationId,
+                            ),
+                        )
+                    }
+                    ScaniumLog.d(TAG, "Progress: DRAFTING correlationId=$correlationId")
+
+                    // Transition to Finalizing state if there are suggestedDraftUpdates to process
+                    val hasDraftUpdates = response.suggestedDraftUpdates.isNotEmpty()
+                    if (hasDraftUpdates) {
+                        val finalizingTime = System.currentTimeMillis()
+                        timing = timing.copy(finalizingStartedAt = finalizingTime)
+                        _uiState.update {
+                            it.copy(
+                                progress = AssistantRequestProgress.Finalizing(
+                                    startedAt = finalizingTime,
+                                    correlationId = correlationId,
+                                ),
+                            )
+                        }
+                        ScaniumLog.d(TAG, "Progress: FINALIZING correlationId=$correlationId updates=${response.suggestedDraftUpdates.size}")
+                    }
+
                     val assistantMessage =
                         AssistantMessage(
                             role = AssistantRole.ASSISTANT,
@@ -332,26 +620,39 @@ class AssistantViewModel
                             itemContextIds = itemIds,
                         )
 
+                    val completedTime = System.currentTimeMillis()
+                    timing = timing.copy(completedAt = completedTime)
+
+                    val newEntry = AssistantChatEntry(
+                        message = assistantMessage,
+                        actions = response.actions,
+                        confidenceTier = response.confidenceTier,
+                        evidence = response.evidence,
+                        suggestedNextPhoto = response.suggestedNextPhoto,
+                        suggestedAttributes = response.suggestedAttributes,
+                    )
+
                     _uiState.update { current ->
                         current.copy(
-                            entries =
-                                current.entries +
-                                    AssistantChatEntry(
-                                        message = assistantMessage,
-                                        actions = response.actions,
-                                        confidenceTier = response.confidenceTier,
-                                        evidence = response.evidence,
-                                        suggestedNextPhoto = response.suggestedNextPhoto,
-                                    ),
+                            entries = current.entries + newEntry,
                             isLoading = false,
                             loadingStage = LoadingStage.DONE,
+                            progress = AssistantRequestProgress.Done(
+                                completedAt = completedTime,
+                                totalDurationMs = timing.totalDurationMs ?: 0,
+                                correlationId = correlationId,
+                            ),
                             suggestedQuestions = computeSuggestedQuestions(current.snapshots),
                             lastBackendFailure = null,
                             assistantMode = resolveMode(current.isOnline, null),
                             // Success - restore availability
                             availability = AssistantAvailability.Available,
+                            lastSuccessfulEntry = newEntry,
                         )
                     }
+
+                    // Log timing summary
+                    ScaniumLog.i(TAG, "Assist timing: ${timing.toLogString()}")
                     ScaniumLog.i(TAG, "Assistant availability restored: Available (success)")
 
                     ScaniumLog.i(
@@ -362,7 +663,7 @@ class AssistantViewModel
                     )
                 } catch (e: AssistantBackendException) {
                     ScaniumLog.w(TAG, "Assist backend failure correlationId=$correlationId type=${e.failure.type}", e)
-                    applyLocalFallback(trimmed, _uiState.value, e.failure)
+                    applyLocalFallback(trimmed, _uiState.value, e.failure, correlationId)
                 } catch (e: Exception) {
                     val failure =
                         AssistantBackendFailure(
@@ -372,7 +673,7 @@ class AssistantViewModel
                             message = "Assistant request failed",
                         )
                     ScaniumLog.e(TAG, "Assist request failed correlationId=$correlationId", e)
-                    applyLocalFallback(trimmed, _uiState.value, failure)
+                    applyLocalFallback(trimmed, _uiState.value, failure, correlationId)
                 }
             }
         }
@@ -380,6 +681,7 @@ class AssistantViewModel
         /**
          * Retry the last failed message.
          */
+        @Suppress("DEPRECATION")
         fun retryLastMessage() {
             val failedText = _uiState.value.lastUserMessage ?: return
             if (!_uiState.value.isOnline) {
@@ -388,7 +690,13 @@ class AssistantViewModel
                 }
                 return
             }
-            _uiState.update { it.copy(loadingStage = LoadingStage.IDLE, failedMessageText = null) }
+            _uiState.update {
+                it.copy(
+                    loadingStage = LoadingStage.IDLE,
+                    progress = AssistantRequestProgress.Idle,
+                    failedMessageText = null,
+                )
+            }
             sendMessage(failedText)
         }
 
@@ -533,6 +841,75 @@ class AssistantViewModel
                 )
                 _events.emit(AssistantUiEvent.ShowSnackbar("Attributes added"))
                 refreshSnapshots()
+            }
+        }
+
+        /**
+         * Apply a vision-suggested attribute to an item.
+         * @param suggestion The suggested attribute from vision analysis.
+         * @param alternativeKey Optional alternative key to use (e.g., "secondaryColor" when "color" conflicts).
+         */
+        fun applyVisionAttribute(
+            suggestion: SuggestedAttribute,
+            alternativeKey: String? = null,
+        ) {
+            val itemId = itemIds.firstOrNull() ?: return
+            val targetKey = alternativeKey ?: suggestion.key
+
+            viewModelScope.launch {
+                // Map confidence tier to float
+                val confidence = when (suggestion.confidence) {
+                    ConfidenceTier.HIGH -> 0.9f
+                    ConfidenceTier.MED -> 0.6f
+                    ConfidenceTier.LOW -> 0.3f
+                }
+
+                val attribute = ItemAttribute(
+                    value = suggestion.value,
+                    confidence = confidence,
+                    source = suggestion.source ?: "detected",
+                )
+
+                // Update via ItemsViewModel
+                itemsViewModel.updateItemAttribute(itemId, targetKey, attribute)
+
+                // Log telemetry event
+                val wasAlternative = alternativeKey != null
+                ScaniumLog.i(
+                    TAG,
+                    "Vision attribute applied itemId=$itemId key=$targetKey value=${suggestion.value} " +
+                        "source=${suggestion.source} confidence=${suggestion.confidence} wasAlternative=$wasAlternative",
+                )
+
+                val displayKey = targetKey.replaceFirstChar { it.uppercase() }
+                _events.emit(AssistantUiEvent.ShowSnackbar("$displayKey updated to ${suggestion.value}"))
+                refreshSnapshots()
+            }
+        }
+
+        /**
+         * Get an existing user-set attribute for conflict detection.
+         * @param key The attribute key to check.
+         * @return The existing attribute if set by user, null otherwise.
+         */
+        fun getExistingAttribute(key: String): ItemAttribute? {
+            val itemId = itemIds.firstOrNull() ?: return null
+            val item = itemsViewModel.items.value.firstOrNull { it.id == itemId } ?: return null
+            val attr = item.attributes[key] ?: return null
+            // Only return if it was user-set (source="user" or high confidence)
+            return if (attr.source == "user" || attr.confidence >= 0.95f) attr else null
+        }
+
+        /**
+         * Get the alternative key for an attribute when there's a conflict.
+         * Maps: color -> secondaryColor, brand -> brand2, model -> model2
+         */
+        fun getAlternativeKey(key: String): String {
+            return when (key.lowercase()) {
+                "color" -> "secondaryColor"
+                "brand" -> "brand2"
+                "model" -> "model2"
+                else -> "${key}2"
             }
         }
 
@@ -705,15 +1082,26 @@ class AssistantViewModel
 
         /**
          * Update the availability state based on preflight result.
+         *
+         * Key behavior:
+         * - UNKNOWN status (from timeout, 401, or IO errors) allows chat attempts
+         * - The actual chat request may succeed even if preflight failed
+         * - Chat success will immediately mark assistant as Available
          */
         private fun updateAvailabilityFromPreflight(result: PreflightResult) {
             val availability = when (result.status) {
                 PreflightStatus.AVAILABLE -> AssistantAvailability.Available
                 PreflightStatus.CHECKING -> AssistantAvailability.Checking
                 PreflightStatus.UNKNOWN -> {
-                    // Unknown state - check connectivity to decide
+                    // UNKNOWN means preflight couldn't determine availability (timeout, auth error, etc.)
+                    // Allow chat attempt if online - the actual chat may work
                     if (_uiState.value.isOnline) {
-                        AssistantAvailability.Checking
+                        // Log diagnostic info but allow chat
+                        ScaniumLog.i(
+                            TAG,
+                            "Preflight UNKNOWN (reason=${result.reasonCode}) - allowing chat attempt",
+                        )
+                        AssistantAvailability.Available
                     } else {
                         AssistantAvailability.Unavailable(
                             reason = UnavailableReason.OFFLINE,
@@ -734,10 +1122,15 @@ class AssistantViewModel
                     canRetry = true,
                     retryAfterSeconds = result.retryAfterSeconds,
                 )
-                PreflightStatus.UNAUTHORIZED -> AssistantAvailability.Unavailable(
-                    reason = UnavailableReason.UNAUTHORIZED,
-                    canRetry = false,
-                )
+                PreflightStatus.UNAUTHORIZED -> {
+                    // UNAUTHORIZED from preflight - this shouldn't happen now since we return UNKNOWN
+                    // But if it does, allow chat attempt (may use different auth path)
+                    ScaniumLog.w(
+                        TAG,
+                        "Preflight UNAUTHORIZED - allowing chat attempt (reason=${result.reasonCode})",
+                    )
+                    AssistantAvailability.Available
+                }
                 PreflightStatus.NOT_CONFIGURED -> AssistantAvailability.Unavailable(
                     reason = UnavailableReason.NOT_CONFIGURED,
                     canRetry = false,
@@ -884,10 +1277,12 @@ class AssistantViewModel
             }
         }
 
+        @Suppress("DEPRECATION")
         private suspend fun applyLocalFallback(
             message: String,
             state: AssistantUiState,
             failure: AssistantBackendFailure,
+            correlationId: String? = null,
         ) {
             val response =
                 localAssistantHelper.buildResponse(
@@ -907,6 +1302,10 @@ class AssistantViewModel
                 isLoading = false,
                 failure = failure,
             )
+
+            // Create error progress state from failure
+            val errorProgress = AssistantRequestProgress.fromBackendFailure(failure, correlationId)
+
             _uiState.update { current ->
                 current.copy(
                     entries =
@@ -917,9 +1316,11 @@ class AssistantViewModel
                                 confidenceTier = response.confidenceTier,
                                 evidence = response.evidence,
                                 suggestedNextPhoto = response.suggestedNextPhoto,
+                                suggestedAttributes = response.suggestedAttributes,
                             ),
                     isLoading = false,
                     loadingStage = LoadingStage.DONE,
+                    progress = errorProgress,
                     suggestedQuestions = computeSuggestedQuestions(current.snapshots),
                     lastBackendFailure = failure,
                     assistantMode = resolveMode(current.isOnline, failure),
@@ -927,7 +1328,7 @@ class AssistantViewModel
                 )
             }
             val debugReason = AssistantErrorDisplay.getDebugReason(failure)
-            ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} availability=${availabilityDebugString(newAvailability)} $debugReason")
+            ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} availability=${availabilityDebugString(newAvailability)} $debugReason correlationId=$correlationId")
 
             val snackbarMessage = buildFallbackSnackbarMessage(failure)
             _events.emit(AssistantUiEvent.ShowSnackbar(snackbarMessage))

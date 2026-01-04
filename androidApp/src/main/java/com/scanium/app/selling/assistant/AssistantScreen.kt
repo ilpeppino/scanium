@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
@@ -94,8 +95,11 @@ import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
+import com.scanium.app.selling.assistant.components.VisionConflictDialog
+import com.scanium.app.selling.assistant.components.VisionInsightsSection
 import com.scanium.app.selling.assistant.local.LocalSuggestionsCard
 import com.scanium.app.selling.persistence.ListingDraftStore
+import com.scanium.app.model.SuggestedAttribute
 import com.scanium.app.selling.util.ListingClipboardHelper
 import com.scanium.app.selling.util.ListingShareHelper
 import dagger.hilt.android.EntryPointAccessors
@@ -139,6 +143,8 @@ fun AssistantScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val soundManager = LocalSoundManager.current
     var inputText by remember { mutableStateOf("") }
+    // Vision conflict dialog state: Pair of (suggested attribute, existing value)
+    var pendingConflictAttribute by remember { mutableStateOf<Pair<SuggestedAttribute, String>?>(null) }
     val voiceController = remember { AssistantVoiceController(context) }
     var lastSpokenTimestamp by remember { mutableStateOf<Long?>(null) }
     var lastSoundedAssistantTimestamp by remember { mutableStateOf<Long?>(null) }
@@ -277,6 +283,25 @@ fun AssistantScreen(
                 scope.launch { snackbarHostState.showSnackbar("Microphone permission denied") }
             }
         }
+
+    // Vision Conflict Dialog
+    pendingConflictAttribute?.let { (attr, existingValue) ->
+        VisionConflictDialog(
+            attribute = attr,
+            existingValue = existingValue,
+            alternativeKey = viewModel.getAlternativeKey(attr.key),
+            onReplace = {
+                viewModel.applyVisionAttribute(attr)
+                pendingConflictAttribute = null
+            },
+            onAddAlternative = {
+                val altKey = viewModel.getAlternativeKey(attr.key)
+                viewModel.applyVisionAttribute(attr, alternativeKey = altKey)
+                pendingConflictAttribute = null
+            },
+            onDismiss = { pendingConflictAttribute = null },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -429,6 +454,17 @@ fun AssistantScreen(
                                     },
                                 )
                             },
+                            // Vision Insights integration
+                            onApplyVisionAttribute = { attr ->
+                                viewModel.applyVisionAttribute(attr)
+                            },
+                            onVisionAttributeConflict = { attr, existingValue ->
+                                pendingConflictAttribute = attr to existingValue
+                            },
+                            getExistingAttribute = { key ->
+                                viewModel.getExistingAttribute(key)
+                            },
+                            visionInsightsEnabled = true,
                         )
                     }
                     item {
@@ -484,31 +520,11 @@ fun AssistantScreen(
                 )
             }
 
-            // Loading stage indicator
-            when (state.loadingStage) {
-                LoadingStage.VISION_PROCESSING -> {
-                    LoadingStageIndicator(
-                        stage = "Analyzing images...",
-                        showProgress = true,
-                    )
-                }
-                LoadingStage.LLM_PROCESSING -> {
-                    LoadingStageIndicator(
-                        stage = "Drafting answer...",
-                        showProgress = true,
-                    )
-                }
-                LoadingStage.ERROR -> {
-                    RetryBanner(
-                        onRetry = { viewModel.retryLastMessage() },
-                    )
-                }
-                else -> {
-                    if (state.isLoading) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    }
-                }
-            }
+            // Rich progress indicator with animated transitions
+            ProgressIndicatorSection(
+                progress = state.progress,
+                onRetry = { viewModel.retryLastMessage() },
+            )
 
             // Voice listening indicator
             if (voiceState == VoiceState.LISTENING || voiceState == VoiceState.TRANSCRIBING) {
@@ -725,6 +741,11 @@ private fun MessageBubble(
     modifier: Modifier = Modifier,
     actionTraversalIndex: Float? = null,
     onAction: (AssistantAction) -> Unit,
+    // Vision insights callbacks
+    onApplyVisionAttribute: ((SuggestedAttribute) -> Unit)? = null,
+    onVisionAttributeConflict: ((SuggestedAttribute, String) -> Unit)? = null,
+    getExistingAttribute: ((String) -> com.scanium.shared.core.models.items.ItemAttribute?)? = null,
+    visionInsightsEnabled: Boolean = false,
 ) {
     val isUser = entry.message.role == AssistantRole.USER
     val background = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
@@ -771,6 +792,24 @@ private fun MessageBubble(
                     SuggestedPhotoHint(suggestion = suggestion)
                 }
             }
+        }
+
+        // Vision Insights section (for assistant messages with suggested attributes)
+        if (!isUser &&
+            visionInsightsEnabled &&
+            entry.suggestedAttributes.isNotEmpty() &&
+            onApplyVisionAttribute != null &&
+            onVisionAttributeConflict != null &&
+            getExistingAttribute != null
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            VisionInsightsSection(
+                suggestedAttributes = entry.suggestedAttributes,
+                onApplyAttribute = onApplyVisionAttribute,
+                onAttributeConflict = onVisionAttributeConflict,
+                getExistingAttribute = getExistingAttribute,
+                enabled = true,
+            )
         }
 
         if (entry.actions.isNotEmpty() && !isUser) {
@@ -889,6 +928,151 @@ private fun ConfirmActionDialog(
             }
         },
     )
+}
+
+/**
+ * Rich progress indicator section with animated transitions.
+ * Shows detailed progress states during assistant request lifecycle.
+ */
+@Composable
+private fun ProgressIndicatorSection(
+    progress: AssistantRequestProgress,
+    onRetry: () -> Unit,
+) {
+    // Use Crossfade for smooth transitions between progress states
+    Crossfade(
+        targetState = progress,
+        animationSpec = tween(durationMillis = 200),
+        label = "progress_crossfade",
+    ) { currentProgress ->
+        when (currentProgress) {
+            is AssistantRequestProgress.Idle,
+            is AssistantRequestProgress.Done -> {
+                // Empty spacer to maintain layout stability
+                Spacer(modifier = Modifier.height(0.dp))
+            }
+            is AssistantRequestProgress.Sending -> {
+                ProgressStageRow(
+                    label = "Sending...",
+                    showSpinner = true,
+                    showProgressBar = true,
+                )
+            }
+            is AssistantRequestProgress.Thinking -> {
+                ProgressStageRow(
+                    label = "Thinking...",
+                    showSpinner = true,
+                    showProgressBar = true,
+                )
+            }
+            is AssistantRequestProgress.ExtractingVision -> {
+                val imageText = if (currentProgress.imageCount > 1) {
+                    "Analyzing ${currentProgress.imageCount} images..."
+                } else {
+                    "Analyzing image..."
+                }
+                ProgressStageRow(
+                    label = imageText,
+                    showSpinner = true,
+                    showProgressBar = true,
+                )
+            }
+            is AssistantRequestProgress.Drafting -> {
+                ProgressStageRow(
+                    label = "Drafting answer...",
+                    showSpinner = true,
+                    showProgressBar = true,
+                )
+            }
+            is AssistantRequestProgress.Finalizing -> {
+                ProgressStageRow(
+                    label = "Finalizing...",
+                    showSpinner = true,
+                    showProgressBar = true,
+                )
+            }
+            is AssistantRequestProgress.ErrorTemporary -> {
+                if (currentProgress.retryable) {
+                    RetryBanner(onRetry = onRetry)
+                } else {
+                    ProgressErrorBanner(message = currentProgress.message)
+                }
+            }
+            is AssistantRequestProgress.ErrorAuth -> {
+                ProgressErrorBanner(message = currentProgress.message)
+            }
+            is AssistantRequestProgress.ErrorValidation -> {
+                ProgressErrorBanner(message = currentProgress.message)
+            }
+        }
+    }
+}
+
+/**
+ * A single-line progress row with optional spinner and progress bar.
+ * Maintains stable height to prevent layout jumps.
+ */
+@Composable
+private fun ProgressStageRow(
+    label: String,
+    showSpinner: Boolean,
+    showProgressBar: Boolean,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.height(20.dp), // Fixed height for stability
+        ) {
+            if (showSpinner) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
+        if (showProgressBar) {
+            Spacer(modifier = Modifier.height(4.dp))
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp),
+            )
+        }
+    }
+}
+
+/**
+ * Error banner for non-retryable errors.
+ */
+@Composable
+private fun ProgressErrorBanner(message: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+        ),
+    ) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(12.dp),
+        )
+    }
 }
 
 @Composable
