@@ -29,13 +29,14 @@
   <body>
     <header class="site-header">
       <div class="container header-content">
-        <a href="#" class="brand-lockup">
+        <a href="/" class="brand-lockup" aria-label="Scanium home">
           <img
             class="brand__logo"
             src="assets/logo/scanium-logo-primary.svg"
-            alt="Scanium Logo"
-            width="100"
-            height="100"
+            alt="Scanium logo"
+            width="240"
+            height="240"
+            decoding="async"
           />
           <span class="brand-name">Scanium</span>
         </a>
@@ -43,67 +44,35 @@
     </header>
 
     <main>
-      <section class="hero">
-        <div class="container hero-content">
-          <h1 class="hero-slogan">
-            <span class="s-initial">S</span>can it. 
-            <span class="s-initial">S</span>elect it. 
-            <span class="s-initial">S</span>ell it.
-          </h1>
-          <p class="hero-description">
-            Point your camera at everyday items and get on-device object detection, price
-            estimation, and export-first sharing built for marketplaces.
-          </p>
-          <div class="hero-actions">
-            <a href="#" class="play-badge" data-play-store-link>
-              <img 
-                src="assets/badges/google-play-badge.svg" 
-                alt="Get it on Google Play"
-                width="220"
-                height="65"
-              />
-            </a>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="container hero__layout">
+          <div class="hero__copy">
+            <p class="hero__eyebrow">Camera-first selling intelligence</p>
+            <h1 class="hero__title" id="hero-title">
+              <span class="s-initial">S</span>can it.<br />
+              <span class="s-initial">S</span>elect it.<br />
+              <span class="s-initial">S</span>ell it.
+            </h1>
+            <p class="hero__description">
+              Scanium gives sellers a calm, camera-first workspace powered by on-device machine learning for immediate detection and pricing guidance.
+              Each scan stays private, then hands you curated selections ready for your marketplace workflow.
+            </p>
+            <div class="hero__cta">
+              <a
+                class="play-badge"
+                href="https://play.google.com/store/apps/details?id=YOUR_APP_ID"
+                data-play-store-link
+              >
+                <img
+                  src="assets/badges/google-play-badge.svg"
+                  alt="Get it on Google Play"
+                  width="220"
+                  height="65"
+                  decoding="async"
+                />
+              </a>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section class="section" id="how-it-works">
-        <div class="container">
-          <h2 class="section-title">How it works</h2>
-          <div class="grid-3">
-            <article class="card">
-              <h3>Real-time Detection</h3>
-              <p>
-                Our on-device ML engine instantly identifies objects in your camera frame. 
-                No cloud upload required for basic detection.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Smart Pricing</h3>
-              <p>
-                Get instant price range estimations based on detected categories, 
-                helping you value items in seconds.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Seamless Export</h3>
-              <p>
-                Select the items you want and export them directly to CSV or ZIP bundles 
-                ready for your favorite marketplace.
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="privacy-section">
-        <div class="container privacy-content">
-          <h2 class="section-title">Privacy-first by design</h2>
-          <p>
-            Scanium processes camera frames on-device and discards them immediately after analysis. 
-            Your data stays on your phone unless you explicitly choose to share it. 
-            No accounts required.
-          </p>
         </div>
       </section>
     </main>
