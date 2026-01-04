@@ -127,8 +127,12 @@ export class ClassifierService {
     let enrichmentMs: number | undefined;
 
     if (request.enrichAttributes && this.enableAttributeEnrichment) {
+      // Determine which Vision provider will be used for enrichment
+      const visionProviderName: 'google-vision' | 'mock' =
+        this.config.vision.provider === 'google' ? 'google-vision' : 'mock';
       visionStats = {
         attempted: true,
+        visionProvider: visionProviderName,
         visionCacheHits: 0,
         visionExtractions: 0,
         visionErrors: 0,
@@ -144,6 +148,10 @@ export class ClassifierService {
         enrichmentMs = Math.round(performance.now() - enrichmentStart);
 
         if (visualFacts) {
+          // Update visionProvider based on which provider actually produced the visualFacts
+          const actualProvider = visualFacts.extractionMeta.provider;
+          visionStats.visionProvider = actualProvider === 'google-vision' ? 'google-vision' : 'mock';
+
           const cacheHit = Boolean(visualFacts.extractionMeta.cacheHit);
           if (cacheHit) {
             visionStats.visionCacheHits += 1;
@@ -375,6 +383,10 @@ export class ClassifierService {
       logos: (visualFacts.logoHints ?? []).map((logo) => ({
         name: logo.brand,
         score: logo.score,
+      })),
+      labels: visualFacts.labelHints.map((label) => ({
+        name: label.label,
+        score: label.score,
       })),
       brandCandidates,
       modelCandidates,
