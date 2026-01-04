@@ -92,6 +92,12 @@ data class ScannedItem<FullImageUri>(
     val condition: ItemCondition? = null,
     val attributes: Map<String, ItemAttribute> = emptyMap(),
     val visionAttributes: VisionAttributes = VisionAttributes.EMPTY,
+    /**
+     * Original detected attributes from backend classification, preserved for reference.
+     * When user edits an attribute, this retains the original detected value so the UI can
+     * show "Detected: X" alongside the user's override.
+     */
+    val detectedAttributes: Map<String, ItemAttribute> = emptyMap(),
 ) {
     /**
      * Formatted price range string for display.

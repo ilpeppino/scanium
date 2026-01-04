@@ -773,9 +773,16 @@ fun ItemsListScreen(
 
     // Attribute edit dialog
     if (editingItemId != null && editingAttributeKey != null && editingAttribute != null) {
+        // Get the item's vision attributes and detected value for suggestions
+        val editingItem = items.find { it.id == editingItemId }
+        val detectedValue = editingItem?.detectedAttributes?.get(editingAttributeKey)?.value
+
         AttributeEditDialog(
             attributeKey = editingAttributeKey!!,
             attribute = editingAttribute!!,
+            visionAttributes = editingItem?.visionAttributes
+                ?: com.scanium.shared.core.models.items.VisionAttributes.EMPTY,
+            detectedValue = detectedValue,
             onDismiss = {
                 editingItemId = null
                 editingAttributeKey = null
