@@ -276,6 +276,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         if (cachedResponse.visionStats) {
           cachedResponse.visionStats = {
             attempted: false,
+            visionProvider: cachedResponse.visionStats.visionProvider,
             visionCacheHits: 0,
             visionExtractions: 0,
             visionErrors: 0,
