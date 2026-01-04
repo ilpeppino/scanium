@@ -79,6 +79,64 @@ describe('POST /v1/assist/warmup', () => {
     const body = JSON.parse(res.body);
     expect(body.reason).toBe('UNAUTHORIZED');
   });
+
+  it('returns 503 when assistant is disabled', async () => {
+    const disabledConfig = configSchema.parse({
+      nodeEnv: 'test',
+      port: 8083,
+      publicBaseUrl: 'http://localhost:8083',
+      databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+        apiKeys: 'test-key',
+        domainPackPath: 'src/modules/classifier/domain/home-resale.json',
+      },
+      assistant: {
+        provider: 'disabled',
+        apiKeys: 'assist-key',
+      },
+      vision: {
+        enabled: true,
+        provider: 'mock',
+      },
+      ebay: {
+        env: 'sandbox',
+        clientId: 'client',
+        clientSecret: 'client-secret-minimum-length-please',
+        scopes: 'scope',
+        tokenEncryptionKey: 'x'.repeat(32),
+      },
+      sessionSigningSecret: 'x'.repeat(64),
+      security: {
+        enforceHttps: false,
+        enableHsts: false,
+        apiKeyRotationEnabled: false,
+        apiKeyExpirationDays: 90,
+        logApiKeyUsage: false,
+      },
+      corsOrigins: 'http://localhost',
+    });
+
+    const disabledApp = await buildApp(disabledConfig);
+
+    try {
+      const res = await disabledApp.inject({
+        method: 'POST',
+        url: '/v1/assist/warmup',
+        headers: { 'x-api-key': 'assist-key' },
+      });
+
+      expect(res.statusCode).toBe(503);
+      const body = JSON.parse(res.body);
+      expect(body.status).toBe('error');
+      expect(body.reason).toBe('PROVIDER_NOT_CONFIGURED');
+      expect(body.message).toContain('not configured');
+      expect(body.ts).toBeTruthy();
+      expect(body.correlationId).toBeTruthy();
+    } finally {
+      await disabledApp.close();
+    }
+  });
 });
 
 describe('POST /v1/assist/chat', () => {

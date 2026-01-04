@@ -163,8 +163,14 @@ describe('ClassifierService', () => {
     expect(result.enrichedAttributes?.color?.value).toBe('red');
     expect(result.visionAttributes?.colors.length).toBeGreaterThan(0);
     expect(result.visionAttributes?.brandCandidates[0]).toBe('IKEA');
+    // New: verify labels are included in visionAttributes
+    expect(result.visionAttributes?.labels).toBeDefined();
+    expect(result.visionAttributes?.labels[0]?.name).toBe('Furniture');
     expect(result.visionStats?.visionExtractions).toBe(1);
     expect(result.visionStats?.visionCacheHits).toBe(0);
+    // When classifier.provider='google', visualFacts come from GoogleVisionClassifier
+    // so visionProvider should reflect the actual provider that produced the facts
+    expect(result.visionStats?.visionProvider).toBe('google-vision');
     expect(mockBatchAnnotateImages).toHaveBeenCalledTimes(1);
   });
 
@@ -186,6 +192,7 @@ describe('ClassifierService', () => {
     });
     expect(first.visionStats?.visionExtractions).toBe(1);
     expect(first.visionStats?.visionCacheHits).toBe(0);
+    expect(first.visionStats?.visionProvider).toBe('mock');
 
     const second = await service.classify({
       ...baseRequest,
@@ -193,5 +200,54 @@ describe('ClassifierService', () => {
     });
     expect(second.visionStats?.visionCacheHits).toBe(1);
     expect(second.visionStats?.visionExtractions).toBe(0);
+    // visionProvider should still be 'mock' even on cache hit
+    expect(second.visionStats?.visionProvider).toBe('mock');
+  });
+
+  it('visionProvider reflects the actual provider used for enrichment', async () => {
+    // When classifier is mock and vision is mock, visionProvider should be 'mock'
+    const mockConfig = buildConfig({ provider: 'mock' });
+    const mockService = new ClassifierService({ config: mockConfig });
+
+    const result = await mockService.classify({
+      requestId: 'req-provider-test',
+      correlationId: 'corr-provider-test',
+      imageHash: 'hash-provider-test',
+      buffer: Buffer.from('test-image'),
+      contentType: 'image/jpeg',
+      fileName: 'test.jpg',
+      domainPackId: 'home_resale',
+      enrichAttributes: true,
+    });
+
+    expect(result.visionStats?.attempted).toBe(true);
+    expect(result.visionStats?.visionProvider).toBe('mock');
+    expect(result.visionAttributes?.labels).toBeDefined();
+    // Mock returns predetermined labels
+    expect(result.visionAttributes?.labels[0]?.name).toBe('Furniture');
+  });
+
+  it('returns labels in visionAttributes from mock extractor', async () => {
+    const service = new ClassifierService({ config: buildConfig({ provider: 'mock' }) });
+
+    const result = await service.classify({
+      requestId: 'req-labels-test',
+      correlationId: 'corr-labels-test',
+      imageHash: 'hash-labels-test',
+      buffer: Buffer.from('test-image'),
+      contentType: 'image/jpeg',
+      fileName: 'test.jpg',
+      domainPackId: 'home_resale',
+      enrichAttributes: true,
+    });
+
+    expect(result.visionAttributes).toBeDefined();
+    expect(Array.isArray(result.visionAttributes?.labels)).toBe(true);
+    expect(result.visionAttributes?.labels.length).toBeGreaterThan(0);
+    // Each label should have name and score
+    result.visionAttributes?.labels.forEach((label) => {
+      expect(typeof label.name).toBe('string');
+      expect(typeof label.score).toBe('number');
+    });
   });
 });

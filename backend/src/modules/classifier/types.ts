@@ -73,12 +73,15 @@ export type VisionAttributeSummary = {
   colors: Array<{ name: string; hex: string; score: number }>;
   ocrText: string;
   logos: Array<{ name: string; score: number }>;
+  labels: Array<{ name: string; score: number }>;
   brandCandidates: string[];
   modelCandidates: string[];
 };
 
 export type VisionStats = {
   attempted: boolean;
+  /** The Vision provider used for enrichment ('google-vision' | 'mock') */
+  visionProvider: 'google-vision' | 'mock';
   visionExtractions: number;
   visionCacheHits: number;
   visionErrors: number;
