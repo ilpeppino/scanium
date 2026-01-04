@@ -1,13 +1,17 @@
 {
-  "version": "2025-01-01",
+  "version": "2025-01-04",
   "ttlSeconds": 3600,
   "featureFlags": {
-    "assistant.online": false,
-    "cloud_classifier.required": false
+    "enableAssistant": true,
+    "enableCloud": true,
+    "enableProfiles": true,
+    "enablePostingAssist": true
   },
   "limits": {
-    "maxPhotosPerItem": 12,
-    "maxConcurrentRequests": 2
+    "cloudDailyCap": 100,
+    "assistDailyCap": 50,
+    "maxPhotosShare": 12,
+    "scanCloudCooldownMs": 1000
   },
   "experiments": {},
   "rollouts": {}
