@@ -396,22 +396,45 @@ class AssistantPreflightManagerImpl(
                             runCatching { json.decodeFromString<HealthResponse>(it) }.getOrNull()
                         }
 
-                        // Check if assistant is ready based on backend response
-                        val assistantReady = healthResponse?.assistant?.let {
-                            it.providerConfigured && it.providerReachable
+                        // Backend reachability check: If /health returns 200, backend is reachable.
+                        // The assistant feature flag (featureFlags.enableAssistant) from remote config
+                        // controls whether the assistant is enabled - that check happens in FeatureFlagRepository.
+                        // Here we only verify backend reachability, not assistant-specific configuration.
+                        //
+                        // If the backend health indicates it's "ok" or doesn't report degraded status,
+                        // consider the backend reachable and assistant available for use.
+                        val backendStatus = healthResponse?.status ?: "ok"
+                        val isBackendHealthy = backendStatus.equals("ok", ignoreCase = true) ||
+                            backendStatus.equals("healthy", ignoreCase = true)
+
+                        // If assistant section exists and explicitly reports unavailable, respect that
+                        val assistantExplicitlyUnavailable = healthResponse?.assistant?.let { assistant ->
+                            // Only mark unavailable if provider is configured but explicitly not reachable
+                            assistant.providerConfigured && !assistant.providerReachable
                         } ?: false
 
-                        if (assistantReady) {
-                            PreflightResult(
-                                status = PreflightStatus.AVAILABLE,
-                                latencyMs = latency,
-                            )
-                        } else {
-                            PreflightResult(
-                                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                                latencyMs = latency,
-                                reasonCode = healthResponse?.assistant?.state ?: "assistant_not_ready",
-                            )
+                        when {
+                            assistantExplicitlyUnavailable -> {
+                                PreflightResult(
+                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                    latencyMs = latency,
+                                    reasonCode = healthResponse?.assistant?.state ?: "provider_unreachable",
+                                )
+                            }
+                            isBackendHealthy -> {
+                                PreflightResult(
+                                    status = PreflightStatus.AVAILABLE,
+                                    latencyMs = latency,
+                                )
+                            }
+                            else -> {
+                                // Backend returned 200 but status is degraded
+                                PreflightResult(
+                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                    latencyMs = latency,
+                                    reasonCode = "backend_degraded_$backendStatus",
+                                )
+                            }
                         }
                     }
                     response.code == 401 || response.code == 403 -> {

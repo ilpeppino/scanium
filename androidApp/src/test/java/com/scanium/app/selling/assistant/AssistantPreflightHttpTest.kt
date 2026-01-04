@@ -246,6 +246,138 @@ class AssistantPreflightHttpTest {
         assertThat(request.path).doesNotContain("/v1/health")
     }
 
+    // ==================== Regression tests for backend reachability fix ====================
+    // These tests verify that the preflight only checks backend reachability,
+    // not assistant-specific configuration. The assistant feature flag is checked
+    // separately via featureFlags.enableAssistant in FeatureFlagRepository.
+
+    @Test
+    fun `200 with status ok but no assistant section returns AVAILABLE`() = runTest {
+        // This is the key regression test for the fix.
+        // Previously, missing assistant section would cause TEMPORARILY_UNAVAILABLE.
+        // After fix, 200 with status=ok means backend is reachable = AVAILABLE.
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                        "status": "ok",
+                        "ts": "2025-01-02T12:00:00Z",
+                        "version": "1.0.0"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = performPreflight()
+
+        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+        assertThat(result.isAvailable).isTrue()
+    }
+
+    @Test
+    fun `200 with status healthy returns AVAILABLE`() = runTest {
+        // Backend may report "healthy" instead of "ok"
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                        "status": "healthy",
+                        "ts": "2025-01-02T12:00:00Z"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = performPreflight()
+
+        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+        assertThat(result.isAvailable).isTrue()
+    }
+
+    @Test
+    fun `200 with assistant providerConfigured false returns AVAILABLE`() = runTest {
+        // If providerConfigured is false, we don't mark unavailable -
+        // we just consider backend reachable. The enableAssistant flag controls feature access.
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                        "status": "ok",
+                        "assistant": {
+                            "providerConfigured": false,
+                            "providerReachable": false
+                        }
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = performPreflight()
+
+        // providerConfigured=false means we don't have explicit info that provider is down
+        // so we treat backend as available (reachable)
+        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+    }
+
+    @Test
+    fun `200 with degraded status returns TEMPORARILY_UNAVAILABLE`() = runTest {
+        // If backend explicitly reports degraded status, respect that
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(
+                    """
+                    {
+                        "status": "degraded",
+                        "ts": "2025-01-02T12:00:00Z"
+                    }
+                    """.trimIndent(),
+                ),
+        )
+
+        val result = performPreflight()
+
+        assertThat(result.status).isEqualTo(PreflightStatus.TEMPORARILY_UNAVAILABLE)
+        assertThat(result.reasonCode).isEqualTo("backend_degraded_degraded")
+        assertThat(result.canRetry).isTrue()
+    }
+
+    @Test
+    fun `200 with empty body returns AVAILABLE`() = runTest {
+        // Edge case: empty body should default to available (backend responded)
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(""),
+        )
+
+        val result = performPreflight()
+
+        // Empty body means we can't parse status, defaults to "ok"
+        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+    }
+
+    @Test
+    fun `200 with malformed JSON returns AVAILABLE`() = runTest {
+        // Edge case: if JSON parsing fails, default to available (backend responded with 200)
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("not valid json"),
+        )
+
+        val result = performPreflight()
+
+        // Can't parse, healthResponse is null, backendStatus defaults to "ok"
+        assertThat(result.status).isEqualTo(PreflightStatus.AVAILABLE)
+    }
+
     /**
      * Simulates the preflight check logic.
      * This mirrors the actual implementation in AssistantPreflightManagerImpl.
@@ -275,21 +407,42 @@ class AssistantPreflightHttpTest {
                             }.getOrNull()
                         }
 
-                        val assistantReady = healthResponse?.assistant?.let {
-                            it.providerConfigured && it.providerReachable
+                        // Backend reachability check: If /health returns 200, backend is reachable.
+                        // The assistant feature flag (featureFlags.enableAssistant) from remote config
+                        // controls whether the assistant is enabled - that check happens in FeatureFlagRepository.
+                        // Here we only verify backend reachability, not assistant-specific configuration.
+                        val backendStatus = healthResponse?.status ?: "ok"
+                        val isBackendHealthy = backendStatus.equals("ok", ignoreCase = true) ||
+                            backendStatus.equals("healthy", ignoreCase = true)
+
+                        // If assistant section exists and explicitly reports unavailable, respect that
+                        val assistantExplicitlyUnavailable = healthResponse?.assistant?.let { assistant ->
+                            // Only mark unavailable if provider is configured but explicitly not reachable
+                            assistant.providerConfigured && !assistant.providerReachable
                         } ?: false
 
-                        if (assistantReady) {
-                            PreflightResult(
-                                status = PreflightStatus.AVAILABLE,
-                                latencyMs = latency,
-                            )
-                        } else {
-                            PreflightResult(
-                                status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                                latencyMs = latency,
-                                reasonCode = healthResponse?.assistant?.state ?: "assistant_not_ready",
-                            )
+                        when {
+                            assistantExplicitlyUnavailable -> {
+                                PreflightResult(
+                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                    latencyMs = latency,
+                                    reasonCode = healthResponse?.assistant?.state ?: "provider_unreachable",
+                                )
+                            }
+                            isBackendHealthy -> {
+                                PreflightResult(
+                                    status = PreflightStatus.AVAILABLE,
+                                    latencyMs = latency,
+                                )
+                            }
+                            else -> {
+                                // Backend returned 200 but status is degraded
+                                PreflightResult(
+                                    status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                                    latencyMs = latency,
+                                    reasonCode = "backend_degraded_$backendStatus",
+                                )
+                            }
                         }
                     }
                     response.code == 401 || response.code == 403 -> {
