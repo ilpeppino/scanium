@@ -192,7 +192,7 @@ fun <T> SettingSegmentedRow(
                     selected = selectedState,
                     onClick = { onSelect(option.value) },
                     label = { Text(option.label) },
-                    modifier = Modifier.weight(1f, fill = false),
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -267,6 +267,86 @@ fun SettingDropdownRow(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Settings row with icon, title, description, and segmented button controls.
+ * Provides a consistent layout matching other settings rows:
+ * - Leading icon (24dp)
+ * - Title and description
+ * - Segmented controls in a row below (equal width buttons)
+ * - Selected option description at the bottom
+ */
+@Composable
+fun <T> SettingIconSegmentedRow(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector,
+    options: List<SegmentOption<T>>,
+    selected: T,
+    onSelect: (T) -> Unit,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Header row with icon, title, and subtitle
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                modifier = Modifier.padding(top = 2.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        // Segmented controls row with equal-width buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            options.forEach { option ->
+                val selectedState = option.value == selected
+                FilterChip(
+                    selected = selectedState,
+                    onClick = { onSelect(option.value) },
+                    label = { Text(option.label) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        // Selected option description
+        options.firstOrNull { it.value == selected }?.description?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
