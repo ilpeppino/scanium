@@ -1,5 +1,5 @@
 ***REMOVED*** Tempo Configuration - Single-node development setup
-***REMOVED*** Optimized for local/NAS deployment
+***REMOVED*** Optimized for NAS deployment (Synology DS418play: 2 cores, 4 threads, 6GB RAM)
 
 server:
   http_listen_port: 3200
@@ -37,11 +37,11 @@ storage:
     local:
       path: /var/tempo/blocks
     pool:
-      max_workers: 100
-      queue_depth: 10000
+      max_workers: 4      ***REMOVED*** Matches NAS thread count (DS418play: 4 threads)
+      queue_depth: 1000   ***REMOVED*** Reduced proportionally for NAS memory constraints
 
 querier:
-  max_concurrent_queries: 20
+  max_concurrent_queries: 5   ***REMOVED*** Reduced for NAS CPU constraints
   frontend_worker:
     frontend_address: tempo:9095
 

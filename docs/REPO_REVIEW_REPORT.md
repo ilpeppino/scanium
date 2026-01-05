@@ -1,325 +1,272 @@
 ***REMOVED*** Scanium Repository Review Report
 
-**Review Date:** 2026-01-01
-**Target Environment:** Synology DS418play NAS (2 cores, 6GB RAM)
+**Review Date:** 2026-01-05
+**Target Environment:** Synology DS418play NAS (Intel Celeron J3455, 2 cores, 6GB RAM)
 **Branch:** main
-**Commit:** 6ef4273 (clean working tree except monitoring doc updates)
+**Commit:** 95fffce (clean working tree)
+**Reviewer:** Automated Codex CLI Review
 
 ---
 
 ***REMOVED******REMOVED*** A) Executive Summary - Top 10 Risks
 
-| ***REMOVED*** | Risk | Severity | Category | Status |
-|---|------|----------|----------|--------|
-| 1 | **Hardcoded secrets committed to git** (`.env`, `.env.backup`, `.env.last`) | P0 | Security | CRITICAL |
-| 2 | **Database credentials exposed** (default `scanium:scanium`) | P0 | Security | CRITICAL |
-| 3 | **Grafana anonymous admin access** in local dev compose | P1 | Security | HIGH |
-| 4 | **OTLP ports (4317/4318) exposed without auth** | P1 | Security | HIGH |
-| 5 | **Loki retention workers (150) will starve 2-core CPU** | P1 | Performance | HIGH |
-| 6 | **14-day log retention will fill NAS storage** (~40-50GB) | P1 | Performance | HIGH |
-| 7 | **Backend tests failing** (4 suites, 1 test case) | P2 | Maintainability | MEDIUM |
-| 8 | **No database connection pool limits** configured | P2 | Performance | MEDIUM |
-| 9 | **Healthcheck uses `/health` not `/readyz`** (doesn't verify DB) | P2 | Reliability | MEDIUM |
-| 10 | **Missing unified cache module** causing test suite failures | P2 | Maintainability | MEDIUM |
+| ***REMOVED*** | Risk | Severity | Category | GitHub Issue | Status |
+|---|------|----------|----------|--------------|--------|
+| 1 | **Public port exposure on NAS** (OTLP 4317/4318) | P0 | Security | ***REMOVED***360 | OPEN |
+| 2 | **Grafana anonymous admin access** in dev compose | P0 | Security | ***REMOVED***359 | OPEN |
+| 3 | **NAS monitoring containers restart: "no"** | P1 | Ops | ***REMOVED***361 | NEW |
+| 4 | **NAS Grafana auth not explicitly enforced** | P2 | Security | ***REMOVED***367 | NEW |
+| 5 | **Alloy admin UI port 12345 exposed on NAS** | P2 | Security | ***REMOVED***362 | NEW |
+| 6 | **Tempo storage pool 100 workers on 2-core NAS** | P2 | Performance | ***REMOVED***363 | NEW |
+| 7 | **Prometheus scrape interval 15s too aggressive** | P2 | Performance | ***REMOVED***364 | NEW |
+| 8 | **Backend vitest not runnable locally** | P2 | Testing | ***REMOVED***366 | NEW |
+| 9 | **Architecture docs say Express.js, code uses Fastify** | P2 | Docs | ***REMOVED***365 | NEW |
+| 10 | **Missing NAS-specific config overlays** | P3 | Ops | ***REMOVED***368 | NEW |
+
+**Summary:** 2 P0 issues (pre-existing), 1 P1 issue (new), 7 P2/P3 issues (6 new)
 
 ---
 
-***REMOVED******REMOVED*** B) Architecture Map & Drift Analysis
+***REMOVED******REMOVED*** B) Pre-Flight & Environment Status
+
+***REMOVED******REMOVED******REMOVED*** Repository State
+- **Branch:** main (up to date with origin)
+- **Git Status:** Clean working tree
+- **Remote:** git@github.com:ilpeppino/scanium.git
+
+***REMOVED******REMOVED******REMOVED*** GitHub CLI
+- **Version:** 2.83.2
+- **Auth:** Authenticated as ilpeppino
+- **Issue Creation:** Enabled
+
+***REMOVED******REMOVED******REMOVED*** Components Inventory
+| Component | Location | Technology |
+|-----------|----------|------------|
+| Android App | `androidApp/`, `android-*/` | Kotlin, Compose, ML Kit, Hilt |
+| Shared Modules | `shared/core-*` | Kotlin Multiplatform |
+| Backend API | `backend/` | Node.js 20, Fastify, Prisma |
+| Database | Docker | PostgreSQL 16 |
+| Monitoring | `monitoring/` | Grafana, Loki, Tempo, Mimir, Alloy |
+| NAS Deploy | `deploy/nas/` | Docker Compose, Cloudflare Tunnel |
+
+***REMOVED******REMOVED******REMOVED*** Baseline Signals
+| Check | Result | Notes |
+|-------|--------|-------|
+| `git status` | Clean | No uncommitted changes |
+| Backend `npm test` | FAILED | vitest not in PATH |
+| Android `./gradlew test` | Not run | Android SDK not available |
+
+---
+
+***REMOVED******REMOVED*** C) Architecture & System Review
 
 ***REMOVED******REMOVED******REMOVED*** Current Architecture (Verified)
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                       Android Application                            │
-│  Modules: androidApp, core-*, shared/*, android-*-adapters          │
-│  Tech: Kotlin 2.0, Compose, CameraX, ML Kit, Hilt DI                │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │ HTTPS/OTLP (Cloudflare Tunnel in prod)
-                         ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      Backend (NAS Docker)                            │
-│  Tech: Node.js 20, Fastify, Prisma, PostgreSQL 16                   │
-│  Endpoints: /v1/classify, /v1/assist, /auth/ebay, /healthz          │
-└────────────────────────┬────────────────────────────────────────────┘
-                         │ OTLP
-                         ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                 Observability Stack (NAS Docker)                     │
-│  Alloy → Loki (logs) / Tempo (traces) / Mimir (metrics) → Grafana  │
-│  Network: scanium-observability (bridge)                             │
-└─────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------+
+|                       Android Application                        |
+|  Modules: androidApp, core-*, shared/*, android-*-adapters      |
+|  Tech: Kotlin 2.0, Compose, CameraX, ML Kit, Hilt DI            |
++----------------------------+------------------------------------+
+                             | HTTPS/OTLP (Cloudflare Tunnel)
+                             v
++-----------------------------------------------------------------+
+|                      Backend (NAS Docker)                        |
+|  Tech: Node.js 20, Fastify, Prisma, PostgreSQL 16               |
+|  Endpoints: /v1/classify, /v1/assist, /auth/ebay, /healthz      |
++----------------------------+------------------------------------+
+                             | OTLP
+                             v
++-----------------------------------------------------------------+
+|                 Observability Stack (NAS Docker)                 |
+|  Alloy -> Loki (logs) / Tempo (traces) / Mimir (metrics)        |
+|  -> Grafana (dashboards)                                         |
+|  Network: scanium-observability (bridge)                         |
++-----------------------------------------------------------------+
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Architecture Drift Findings
 
-| Area | Documentation Says | Code Reality | Impact |
-|------|-------------------|--------------|--------|
-| **ngrok vs Cloudflare** | Docs mention ngrok for dev | NAS deployment uses Cloudflare Tunnel | Low - both supported |
-| **Unified Cache** | Referenced in routes.ts imports | File `infra/cache/unified-cache.js` missing | P2 - Breaks tests |
-| **Test Coverage** | Claims 85%+ for shared modules | Backend tests: 4 suites failing | P2 - CI unreliable |
-| **Health Endpoints** | `/healthz` and `/readyz` documented | Docker compose uses `/health` (wrong path) | P2 - Unhealthy detection |
-| **SSL/TLS** | `.env.example` says `sslmode=require` | Actual `.env` files use `sslmode=disable` | P1 - Data in transit |
+| Area | Documentation Says | Code Reality | Impact | Issue |
+|------|-------------------|--------------|--------|-------|
+| HTTP Framework | Express.js | Fastify | P2 - Docs misleading | ***REMOVED***365 |
+| Health Endpoints | `/healthz`, `/readyz` | Correctly implemented | None | - |
+| Restart Policy | Not specified | `restart: "no"` in NAS | P1 - No auto-restart | ***REMOVED***361 |
+
+***REMOVED******REMOVED******REMOVED*** Key Positive Findings
+- Security headers implemented correctly (CSP, HSTS, X-Frame-Options)
+- API key validation with rate limiting
+- CORS validation rejects wildcards
+- Session secret validation rejects weak values
+- Cloudflare Tunnel for production exposure (no direct port forwarding)
 
 ---
 
-***REMOVED******REMOVED*** C) Security Findings
+***REMOVED******REMOVED*** D) Security Findings
 
-***REMOVED******REMOVED******REMOVED*** P0 - CRITICAL (Immediate Action Required)
+***REMOVED******REMOVED******REMOVED*** P0 - CRITICAL (Pre-existing)
 
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-001: Hardcoded Secrets in Git History
+| ID | Finding | Issue | Status |
+|----|---------|-------|--------|
+| SEC-001 | Public port exposure (OTLP 4317/4318) | ***REMOVED***360 | OPEN |
+| SEC-002 | Grafana anonymous admin in dev compose | ***REMOVED***359 | OPEN |
 
-**Evidence:**
-- `backend/.env` - Contains actual API keys, tokens, secrets (committed)
-- `backend/.env.backup` - Contains credential patterns (tracked in git)
-- `backend/.env.last` - Contains credential patterns (tracked in git)
+***REMOVED******REMOVED******REMOVED*** P1 - HIGH
 
-**Git verification:**
-```bash
-$ git ls-files | grep -E "\.env"
-backend/.env.backup
-backend/.env.example
-backend/.env.last
-***REMOVED*** .env not listed but .env.backup and .env.last ARE tracked
-```
-
-**Impact:** Any attacker with git clone access can extract:
-- SCANIUM_API_KEYS (2 production keys)
-- EBAY_CLIENT_ID and EBAY_CLIENT_SECRET
-- CLOUDFLARED_TOKEN (JWT)
-- SESSION_SIGNING_SECRET
-- EBAY_TOKEN_ENCRYPTION_KEY
-
-**Remediation:**
-1. **Immediately** revoke all exposed credentials
-2. Add to `.gitignore`: `backend/.env.backup`, `backend/.env.last`
-3. Use `git filter-repo` to scrub history
-4. Rotate all secrets in production
-
----
-
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-002: Database Default Credentials
-
-**Evidence:**
-- `backend/docker-compose.yml` lines 10-12:
-  ```yaml
-  POSTGRES_USER: ${POSTGRES_USER:-scanium}
-  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scanium}
-  ```
-
-**Impact:** Default credentials `scanium:scanium` used if env not set.
-
-**Remediation:**
-1. Remove defaults: `${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}`
-2. Generate strong password: `openssl rand -base64 32`
-3. Require TLS: `sslmode=require` in DATABASE_URL
-
----
-
-***REMOVED******REMOVED******REMOVED*** P1 - HIGH (Fix Within 24-48 Hours)
-
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-003: Grafana Anonymous Admin Access
-
-**Evidence:**
-- `monitoring/docker-compose.yml` lines 103-108:
-  ```yaml
-  GF_AUTH_ANONYMOUS_ENABLED=true
-  GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-  GF_AUTH_DISABLE_LOGIN_FORM=true
-  ```
-
-**Impact:** Anyone accessing port 3000 has full admin access to observability data.
-
-**Remediation:**
-1. Set `GF_AUTH_ANONYMOUS_ENABLED=false`
-2. Set `GF_AUTH_DISABLE_LOGIN_FORM=false`
-3. Configure admin password
-
----
-
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-004: OTLP Endpoints Exposed Without Auth
-
-**Evidence:**
-- `monitoring/docker-compose.yml` lines 14-16:
-  ```yaml
-  ports:
-    - "4317:4317"  ***REMOVED*** Bound to 0.0.0.0
-    - "4318:4318"
-  ```
-
-**Impact:** Telemetry injection, DoS via log flooding, data exfiltration via logs.
-
-**Remediation:**
-1. Bind to localhost: `"127.0.0.1:4317:4317"`
-2. Or use firewall to restrict to known IPs
-3. Consider API key auth for OTLP ingestion
-
----
-
-***REMOVED******REMOVED******REMOVED******REMOVED*** SEC-005: Database SSL/TLS Disabled
-
-**Evidence:**
-- `backend/.env.backup` line 13: `sslmode=disable`
-- No TLS configuration in docker-compose
-
-**Impact:** Database traffic can be intercepted on network.
-
-**Remediation:**
-1. Set `sslmode=require` in all DATABASE_URL values
-2. Configure PostgreSQL for TLS in docker-compose
-
----
-
-***REMOVED******REMOVED******REMOVED*** P2 - MEDIUM (Fix Within 1 Week)
-
-| ID | Finding | File:Line | Remediation |
-|----|---------|-----------|-------------|
-| SEC-006 | No rate limiting on `/v1/admin/*` endpoints | `modules/admin/routes.ts:10-26` | Add IP rate limit |
-| SEC-007 | No JSON body size limit configured | `app.ts:60-65` | Add `bodyLimit: '1mb'` |
-| SEC-008 | Partial API key logged (first 8 chars) | `modules/classifier/routes.ts:84` | Hash before logging |
-| SEC-009 | HTTPS enforcement optional in prod | `plugins/security.ts:40` | Make mandatory |
-
-***REMOVED******REMOVED******REMOVED*** P3 - LOW (Track in Backlog)
-
-| ID | Finding | File:Line | Remediation |
-|----|---------|-----------|-------------|
-| SEC-010 | eBay sandbox credentials in committed file | `backend/.env:39` | Rotate sandbox creds |
-| SEC-011 | Default passwords in example files | `monitoring.env.example:6` | Document generation |
-| SEC-012 | Custom CORS scheme `scanium://` accepted | `config/index.ts:25` | Validate app signature |
-
----
-
-***REMOVED******REMOVED*** D) Performance & Reliability Findings
-
-***REMOVED******REMOVED******REMOVED*** P1 - HIGH (NAS-Critical)
-
-***REMOVED******REMOVED******REMOVED******REMOVED*** PERF-001: Loki Retention Workers Overwhelm CPU
-
-**Evidence:**
-- `monitoring/loki/loki.yaml` line 48:
-  ```yaml
-  retention_delete_worker_count: 150
-  ```
-
-**Impact:** 150 parallel workers on 2-core NAS will starve all other processes.
-
-**Remediation:** Set to `retention_delete_worker_count: 2`
-
----
-
-***REMOVED******REMOVED******REMOVED******REMOVED*** PERF-002: Log Retention Will Fill NAS Storage
-
-**Evidence:**
-- Loki: 336h (14 days) - `loki.yaml:52`
-- Tempo: 168h (7 days) - `tempo.yaml:23`
-- Mimir: 360h (15 days) - `mimir.yaml:28`
-
-**Impact:** At moderate ingestion (~10MB/min), projects to 40-50GB+ storage use.
-
-**Remediation:** Reduce all retention to 72h (3 days) for NAS:
-- `limits_config.retention_period: 72h`
-- `compactor.compaction.block_retention: 72h`
-- `limits.compactor_blocks_retention_period: 3d`
-
----
+| ID | Finding | File:Line | Issue |
+|----|---------|-----------|-------|
+| SEC-003 | NAS containers won't restart after failure | `docker-compose.nas.monitoring.yml:5,29,39,49,62` | ***REMOVED***361 |
 
 ***REMOVED******REMOVED******REMOVED*** P2 - MEDIUM
 
-| ID | Finding | File:Line | Impact | Remediation |
-|----|---------|-----------|--------|-------------|
-| PERF-003 | Scrape interval 15s too aggressive | `alloy.hcl:118` | CPU overhead | Increase to 60s |
-| PERF-004 | No database connection pool limit | `DATABASE_URL` | Connection exhaustion | Add `?connection_limit=5` |
-| PERF-005 | Healthcheck uses wrong endpoint | `docker-compose.nas.backend.yml:118` | DB failures undetected | Use `/readyz` |
-| PERF-006 | Readiness check has no timeout | `health/routes.ts:51-52` | Hangs on slow DB | Add 5s timeout |
-| PERF-007 | In-memory rate limit state lost on restart | `routes.ts:19` | State loss | Consider Redis |
-| PERF-008 | No restart backoff policy | Docker compose | Restart loop | Use `on-failure:5:30s` |
+| ID | Finding | File:Line | Issue |
+|----|---------|-----------|-------|
+| SEC-004 | NAS Grafana auth not explicitly enforced | `docker-compose.nas.monitoring.yml:3-10` | ***REMOVED***367 |
+| SEC-005 | Alloy admin UI (12345) exposed on NAS | `docker-compose.nas.monitoring.yml:68` | ***REMOVED***362 |
+
+***REMOVED******REMOVED******REMOVED*** Security Strengths Observed
+- Strong configuration validation with Zod schemas
+- API keys required for protected endpoints
+- In-memory rate limiting per identity
+- HTTPS enforcement in production
+- HSTS headers with preload
+- CSP, X-Content-Type-Options, X-Frame-Options set
+- Weak session secret detection
+- CORS origin validation (no wildcards)
 
 ---
 
-***REMOVED******REMOVED*** E) Maintainability & Future-Proofing Findings
+***REMOVED******REMOVED*** E) Performance & Reliability Findings
 
-***REMOVED******REMOVED******REMOVED*** Test Coverage Issues
+***REMOVED******REMOVED******REMOVED*** NAS-Specific Concerns
 
-| Issue | Evidence | Impact |
-|-------|----------|--------|
-| Backend tests failing | `npm test` shows 4 failed suites | CI unreliable |
-| Missing `unified-cache.js` | Import error in routes.ts | Module not created |
-| Domain pack priority test fails | `home-resale-domain-pack.test.ts:527` | Logic bug |
+| ID | Finding | Current Value | Recommended | Issue |
+|----|---------|---------------|-------------|-------|
+| PERF-001 | Tempo storage workers | 100 | 4 | ***REMOVED***363 |
+| PERF-002 | Prometheus scrape interval | 15s | 60s | ***REMOVED***364 |
+| PERF-003 | Mimir query parallelism | 32 | 4 | ***REMOVED***368 |
+| PERF-004 | Mimir index cache | 512MB | 128MB | ***REMOVED***368 |
 
-***REMOVED******REMOVED******REMOVED*** Documentation Gaps
+***REMOVED******REMOVED******REMOVED*** Retention Settings (Reasonable)
 
-| Gap | Current State | Recommended |
-|-----|---------------|-------------|
-| NAS deployment security | Scattered across files | Centralized checklist |
-| Secret rotation procedure | Not documented | Add to SECURITY.md |
-| Monitoring tuning for NAS | No NAS-specific settings | Add NAS optimization guide |
-| Database backup procedure | Not documented | Add backup script + docs |
+| Service | Retention | Assessment |
+|---------|-----------|------------|
+| Loki (logs) | 168h (7 days) | Acceptable for NAS |
+| Tempo (traces) | 168h (7 days) | Acceptable for NAS |
+| Mimir (metrics) | 360h (15 days) | Slightly high, consider 7 days |
 
----
+***REMOVED******REMOVED******REMOVED*** Reliability Concerns
 
-***REMOVED******REMOVED*** F) Next 2 Weeks Stabilization Plan
-
-**Week 1 - Critical Security:**
-1. [ ] Revoke all exposed credentials (SEC-001)
-2. [ ] Remove `.env.backup`, `.env.last` from git tracking
-3. [ ] Scrub git history with `git filter-repo`
-4. [ ] Disable Grafana anonymous access (SEC-003)
-5. [ ] Bind OTLP ports to localhost (SEC-004)
-6. [ ] Enable database TLS (SEC-005)
-
-**Week 2 - NAS Performance:**
-7. [ ] Set Loki retention workers to 2 (PERF-001)
-8. [ ] Reduce all retention to 72h (PERF-002)
-9. [ ] Increase scrape interval to 60s (PERF-003)
-10. [ ] Add database connection pool limit (PERF-004)
-11. [ ] Fix healthcheck endpoint (PERF-005)
-12. [ ] Fix failing backend tests
+| Issue | Impact | Mitigation |
+|-------|--------|------------|
+| `restart: "no"` on NAS monitoring | Services won't recover after crash/reboot | Change to `unless-stopped` |
+| In-memory rate limit state | Lost on restart | Consider Redis for distributed state |
+| No health checks in NAS monitoring | Failures may go undetected | Add healthchecks to NAS compose |
 
 ---
 
-***REMOVED******REMOVED*** G) Next 2 Months Hardening Plan
+***REMOVED******REMOVED*** F) Maintainability & Future-Proofing
 
-**Month 1 - Security Hardening:**
-- [ ] Implement API key rotation mechanism
-- [ ] Add rate limiting to admin endpoints (SEC-006)
-- [ ] Add JSON body size limits (SEC-007)
-- [ ] Hash API keys in logs (SEC-008)
-- [ ] Make HTTPS mandatory in production (SEC-009)
-- [ ] Set up automated secrets scanning in CI
+***REMOVED******REMOVED******REMOVED*** Test Coverage
 
-**Month 2 - Reliability & Observability:**
-- [ ] Implement distributed rate limiting (Redis)
-- [ ] Add restart backoff policies (PERF-008)
-- [ ] Create NAS-specific docker-compose overlay
-- [ ] Document backup/restore procedures
-- [ ] Add monitoring alerts for:
-  - Disk usage > 80%
-  - CPU usage > 90%
-  - Database connection pool exhaustion
-  - Rate limit violations
-- [ ] Penetration testing for Android network stack
+| Area | Status | Notes |
+|------|--------|-------|
+| Shared modules (core-*) | Unknown | JVM tests available |
+| Android app | Unknown | Requires Android SDK |
+| Backend | BLOCKED | vitest not runnable (***REMOVED***366) |
+
+***REMOVED******REMOVED******REMOVED*** Documentation Quality
+
+| Doc | Accuracy | Notes |
+|-----|----------|-------|
+| ARCHITECTURE.md | 95% | Express vs Fastify drift |
+| DEV_GUIDE.md | Good | Comprehensive |
+| CODEX_CONTEXT.md | Good | Feature routing accurate |
+| SECURITY.md | Basic | Could be expanded |
+| NAS README | Good | Detailed deployment guide |
+
+***REMOVED******REMOVED******REMOVED*** Readiness Assessment
+
+| Feature | Status | Gaps |
+|---------|--------|------|
+| On-device CLIP expansion | Foundation ready | No active implementation |
+| Cloud classification | Implemented | Google Vision integration |
+| B2B / inventory | Not started | Export-first approach active |
+| iOS client | Foundation ready | KMP modules prepared |
 
 ---
 
-***REMOVED******REMOVED*** Summary Statistics
+***REMOVED******REMOVED*** G) Recommendations
+
+***REMOVED******REMOVED******REMOVED*** Immediate (This Week)
+
+1. **Address P0 security issues** (***REMOVED***359, ***REMOVED***360)
+   - Bind OTLP ports to localhost or add auth
+   - Disable Grafana anonymous access in prod
+
+2. **Fix NAS reliability** (***REMOVED***361)
+   - Change `restart: "no"` to `restart: unless-stopped`
+
+3. **Fix backend tests** (***REMOVED***366)
+   - Ensure vitest is properly installed/linked
+
+***REMOVED******REMOVED******REMOVED*** Short-Term (2 Weeks)
+
+4. Update architecture docs (***REMOVED***365)
+5. Tune NAS performance settings (***REMOVED***363, ***REMOVED***364)
+6. Enforce Grafana auth on NAS (***REMOVED***367)
+7. Create NAS config overlays (***REMOVED***368)
+
+***REMOVED******REMOVED******REMOVED*** Medium-Term (2 Months)
+
+8. Add distributed rate limiting (Redis)
+9. Implement alerting (SLOs, disk usage)
+10. Document backup/restore procedures
+11. Penetration testing for production deployment
+
+---
+
+***REMOVED******REMOVED*** H) Issues Created in This Review
+
+| Issue | Title | Priority | Category |
+|-------|-------|----------|----------|
+| ***REMOVED***361 | NAS monitoring containers use 'restart: no' policy | P1 | Ops |
+| ***REMOVED***362 | NAS Alloy admin UI port 12345 exposed externally | P2 | Security |
+| ***REMOVED***363 | Tempo storage pool max_workers too high for NAS | P2 | Performance |
+| ***REMOVED***364 | Prometheus scrape interval 15s too aggressive for NAS | P2 | Performance |
+| ***REMOVED***365 | Architecture documentation says Express.js but backend uses Fastify | P2 | Docs |
+| ***REMOVED***366 | Backend tests cannot run - vitest not in PATH | P2 | Testing |
+| ***REMOVED***367 | NAS monitoring Grafana missing authentication enforcement | P2 | Security |
+| ***REMOVED***368 | Create NAS-specific configuration overlays for monitoring stack | P3 | Ops |
+
+---
+
+***REMOVED******REMOVED*** I) Summary Statistics
 
 | Category | P0 | P1 | P2 | P3 | Total |
 |----------|----|----|----|----|-------|
-| Security | 2 | 3 | 4 | 3 | 12 |
-| Performance | 0 | 2 | 6 | 0 | 8 |
-| Maintainability | 0 | 0 | 3 | 2 | 5 |
-| **Total** | **2** | **5** | **13** | **5** | **25** |
+| Security | 2 | 0 | 2 | 0 | 4 |
+| Performance | 0 | 0 | 2 | 0 | 2 |
+| Operations | 0 | 1 | 0 | 1 | 2 |
+| Documentation | 0 | 0 | 1 | 0 | 1 |
+| Testing | 0 | 0 | 1 | 0 | 1 |
+| **Total** | **2** | **1** | **6** | **1** | **10** |
+
+**New Issues Created:** 8
+**Pre-existing Issues Referenced:** 2 (***REMOVED***359, ***REMOVED***360)
 
 ---
 
-***REMOVED******REMOVED*** Commands That Could Not Be Run
+***REMOVED******REMOVED*** J) Checks Not Performed
 
-| Command | Reason |
-|---------|--------|
-| `./gradlew test` | Android SDK not available in this environment |
-| `./gradlew assembleDebug` | Android SDK required |
-| `docker compose up` | Docker commands are read-only for this review |
-| `npm audit` | Would require modifying node_modules |
+| Check | Reason |
+|-------|--------|
+| `./gradlew test` | Android SDK not available |
+| `./gradlew assembleDebug` | Android SDK not available |
+| Backend integration tests | vitest not runnable |
+| Docker container startup | Review is read-only |
+| Network security scan | Out of scope for static review |
 
 ---
 
-*Report generated by automated repository review. All findings require human verification before remediation.*
+*Report generated by automated repository review (Codex CLI). All findings require human verification before remediation.*

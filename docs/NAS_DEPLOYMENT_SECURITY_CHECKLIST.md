@@ -385,5 +385,22 @@ nc -zv NAS_IP 5432
 
 ---
 
-*Last updated: 2026-01-01*
+*Last updated: 2026-01-05*
 *Review this checklist before each deployment and quarterly thereafter.*
+
+---
+
+***REMOVED******REMOVED*** Addendum: Issues Identified in 2026-01-05 Review
+
+The following issues were identified and should be addressed:
+
+| Issue | Priority | Description |
+|-------|----------|-------------|
+| ***REMOVED***361 | P1 | NAS monitoring containers use `restart: "no"` - change to `unless-stopped` |
+| ***REMOVED***362 | P2 | Alloy admin UI port 12345 exposed - bind to localhost |
+| ***REMOVED***363 | P2 | Tempo max_workers=100 too high - reduce to 4 |
+| ***REMOVED***364 | P2 | Prometheus scrape interval 15s - increase to 60s |
+| ***REMOVED***367 | P2 | NAS Grafana auth not explicitly enforced |
+| ***REMOVED***368 | P3 | Create NAS-specific config overlays |
+
+See [REPO_REVIEW_ACTION_BACKLOG.md](REPO_REVIEW_ACTION_BACKLOG.md) for full details.

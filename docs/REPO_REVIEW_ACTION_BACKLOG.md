@@ -1,38 +1,49 @@
 ***REMOVED*** Repository Review Action Backlog
 
-**Generated:** 2026-01-01
+**Last Updated:** 2026-01-05
 **Source:** [REPO_REVIEW_REPORT.md](REPO_REVIEW_REPORT.md)
+
+---
+
+***REMOVED******REMOVED*** GitHub Issues Summary
+
+| Priority | Count | Issues |
+|----------|-------|--------|
+| P0 | 2 | ***REMOVED***359, ***REMOVED***360 |
+| P1 | 1 | ***REMOVED***361 |
+| P2 | 6 | ***REMOVED***362, ***REMOVED***363, ***REMOVED***364, ***REMOVED***365, ***REMOVED***366, ***REMOVED***367 |
+| P3 | 1 | ***REMOVED***368 |
 
 ---
 
 ***REMOVED******REMOVED*** Prioritized Action Items
 
-| ID | Priority | Area | Title | Evidence | Recommendation | Effort | Risk if Unresolved | Owner |
-|----|----------|------|-------|----------|----------------|--------|-------------------|-------|
-| SEC-001 | P0 | Security | Hardcoded secrets in git | `backend/.env`, `.env.backup`, `.env.last` tracked | Revoke keys, scrub history, add to gitignore | 4h | **CRITICAL** - Credential theft | - |
-| SEC-002 | P0 | Security | Database default credentials | `docker-compose.yml:10-12` defaults to `scanium:scanium` | Remove defaults, require explicit password | 1h | **CRITICAL** - DB compromise | - |
-| SEC-003 | P1 | Security | Grafana anonymous admin | `monitoring/docker-compose.yml:103-108` | Disable anon auth, enable login | 30m | Data exposure, config tampering | - |
-| SEC-004 | P1 | Security | OTLP ports exposed without auth | Ports 4317/4318 bound to 0.0.0.0 | Bind to 127.0.0.1 or add auth | 1h | Log injection, DoS | - |
-| SEC-005 | P1 | Security | Database TLS disabled | `.env.backup:13` uses `sslmode=disable` | Set `sslmode=require` everywhere | 1h | Data interception | - |
-| PERF-001 | P1 | Performance | Loki retention workers overwhelm CPU | `loki.yaml:48` sets 150 workers | Set to 2-4 workers | 15m | NAS CPU exhaustion | - |
-| PERF-002 | P1 | Performance | Log retention fills NAS storage | 14-day retention = 40-50GB | Reduce to 72h (3 days) | 30m | Storage exhaustion | - |
-| SEC-006 | P2 | Security | No rate limit on admin endpoints | `modules/admin/routes.ts:10-26` | Add IP rate limit (10/min) | 2h | Brute force attacks | - |
-| SEC-007 | P2 | Security | No JSON body size limit | `app.ts` missing bodyLimit | Add `bodyLimit: '1mb'` | 30m | Memory exhaustion DoS | - |
-| SEC-008 | P2 | Security | Partial API key in logs | `routes.ts:84` logs first 8 chars | Hash key before logging | 1h | Key correlation | - |
-| SEC-009 | P2 | Security | HTTPS enforcement optional | `plugins/security.ts:40` | Make mandatory in production | 1h | MitM attacks | - |
-| PERF-003 | P2 | Performance | Scrape interval too aggressive | `alloy.hcl:118` at 15s | Increase to 60s | 15m | CPU overhead | - |
-| PERF-004 | P2 | Performance | No DB connection pool limit | DATABASE_URL missing param | Add `?connection_limit=5` | 15m | Connection exhaustion | - |
-| PERF-005 | P2 | Reliability | Healthcheck wrong endpoint | Uses `/health` not `/readyz` | Change to `/readyz` | 15m | DB failures undetected | - |
-| PERF-006 | P2 | Reliability | Readiness check no timeout | `health/routes.ts:51-52` | Add 5s timeout wrapper | 30m | Hung health checks | - |
-| MAINT-001 | P2 | Maintainability | Backend tests failing | 4 suites, missing unified-cache | Create missing module | 2h | CI unreliable | - |
-| MAINT-002 | P2 | Maintainability | Domain pack test failure | `home-resale-domain-pack.test.ts:527` | Fix priority resolution logic | 1h | Incorrect categorization | - |
-| PERF-007 | P2 | Reliability | Rate limit state lost on restart | In-memory Map only | Consider Redis for distributed | 4h | Rate limits reset | - |
-| PERF-008 | P2 | Reliability | No restart backoff policy | Docker `restart: unless-stopped` | Use `on-failure:5:30s` | 15m | Restart loops | - |
-| SEC-010 | P3 | Security | eBay sandbox creds in repo | `backend/.env:39` | Rotate sandbox credentials | 1h | Test env abuse | - |
-| SEC-011 | P3 | Security | Default passwords in examples | `monitoring.env.example:6` | Document secure generation | 30m | Weak passwords used | - |
-| SEC-012 | P3 | Security | Custom CORS scheme accepted | `config/index.ts:25` scanium:// | Validate app signature | 2h | CORS bypass | - |
-| MAINT-003 | P3 | Maintainability | NAS deployment docs scattered | Multiple files | Create unified checklist | 2h | Misconfiguration | - |
-| MAINT-004 | P3 | Maintainability | No backup procedure documented | Not documented | Add backup script + docs | 4h | Data loss | - |
+| ID | Priority | Area | Title | Evidence | Recommendation | Effort | Risk | Issue |
+|----|----------|------|-------|----------|----------------|--------|------|-------|
+| 1 | P0 | Security | OTLP ports exposed without auth | `monitoring/docker-compose.yml:14-16` | Bind to 127.0.0.1 or add auth | 1h | CRITICAL | ***REMOVED***360 |
+| 2 | P0 | Security | Grafana anonymous admin access | `monitoring/docker-compose.yml:103-108` | Disable anon auth, enable login | 30m | CRITICAL | ***REMOVED***359 |
+| 3 | P1 | Ops | NAS monitoring restart policy | `docker-compose.nas.monitoring.yml:5,29,39,49,62` | Change to `unless-stopped` | 15m | HIGH | ***REMOVED***361 |
+| 4 | P2 | Security | NAS Alloy admin UI exposed | `docker-compose.nas.monitoring.yml:68` | Bind port 12345 to localhost | 15m | MEDIUM | ***REMOVED***362 |
+| 5 | P2 | Performance | Tempo workers too high for NAS | `tempo/tempo.yaml:40` max_workers: 100 | Reduce to 4 | 15m | MEDIUM | ***REMOVED***363 |
+| 6 | P2 | Performance | Scrape interval too aggressive | `alloy/alloy.hcl:118` scrape_interval: 15s | Increase to 60s | 15m | MEDIUM | ***REMOVED***364 |
+| 7 | P2 | Docs | Architecture says Express.js | `ARCHITECTURE.md:274` | Update to Fastify | 30m | LOW | ***REMOVED***365 |
+| 8 | P2 | Testing | Backend tests not runnable | `npm test` fails - vitest not found | Fix npm dependencies | 30m | MEDIUM | ***REMOVED***366 |
+| 9 | P2 | Security | NAS Grafana auth missing | `docker-compose.nas.monitoring.yml` | Add GF_AUTH_* env vars | 15m | MEDIUM | ***REMOVED***367 |
+| 10 | P3 | Ops | NAS config overlays needed | Multiple configs need NAS tuning | Create overlay configs | 2h | LOW | ***REMOVED***368 |
+
+---
+
+***REMOVED******REMOVED*** Historical Items (From Previous Reviews)
+
+The following items from the 2026-01-01 review may still be relevant:
+
+| ID | Priority | Title | Status |
+|----|----------|-------|--------|
+| SEC-001 | P0 | Hardcoded secrets in git | Check if resolved |
+| SEC-002 | P0 | Database default credentials | Check if resolved |
+| SEC-005 | P1 | Database TLS disabled | Check if resolved |
+| PERF-001 | P1 | Loki retention workers (150) | Check if resolved - Loki now 168h |
+| MAINT-001 | P2 | Backend tests failing | Still an issue (***REMOVED***366) |
 
 ---
 
@@ -41,77 +52,102 @@
 ***REMOVED******REMOVED******REMOVED*** By Priority
 
 **P0 - Critical (2 items):**
-- SEC-001, SEC-002
+- ***REMOVED***359: Grafana anonymous admin
+- ***REMOVED***360: OTLP port exposure
 
-**P1 - High (5 items):**
-- SEC-003, SEC-004, SEC-005, PERF-001, PERF-002
+**P1 - High (1 item):**
+- ***REMOVED***361: NAS restart policy
 
-**P2 - Medium (13 items):**
-- SEC-006, SEC-007, SEC-008, SEC-009
-- PERF-003, PERF-004, PERF-005, PERF-006, PERF-007, PERF-008
-- MAINT-001, MAINT-002
+**P2 - Medium (6 items):**
+- ***REMOVED***362: Alloy admin UI
+- ***REMOVED***363: Tempo workers
+- ***REMOVED***364: Scrape interval
+- ***REMOVED***365: Docs drift
+- ***REMOVED***366: Backend tests
+- ***REMOVED***367: NAS Grafana auth
 
-**P3 - Low (5 items):**
-- SEC-010, SEC-011, SEC-012, MAINT-003, MAINT-004
+**P3 - Low (1 item):**
+- ***REMOVED***368: NAS config overlays
 
 ***REMOVED******REMOVED******REMOVED*** By Area
 
-**Security (12 items):**
-- SEC-001 through SEC-012
+**Security (4 items):**
+- ***REMOVED***359, ***REMOVED***360, ***REMOVED***362, ***REMOVED***367
 
-**Performance (6 items):**
-- PERF-001 through PERF-006
+**Operations (2 items):**
+- ***REMOVED***361, ***REMOVED***368
 
-**Reliability (2 items):**
-- PERF-007, PERF-008
+**Performance (2 items):**
+- ***REMOVED***363, ***REMOVED***364
 
-**Maintainability (4 items):**
-- MAINT-001 through MAINT-004
+**Documentation (1 item):**
+- ***REMOVED***365
+
+**Testing (1 item):**
+- ***REMOVED***366
 
 ***REMOVED******REMOVED******REMOVED*** By Effort
 
-**Quick Wins (< 1h):**
-- PERF-001 (15m), PERF-002 (30m), PERF-003 (15m), PERF-004 (15m)
-- PERF-005 (15m), PERF-006 (30m), PERF-008 (15m)
-- SEC-003 (30m), SEC-007 (30m), SEC-011 (30m)
+**Quick Wins (< 30 min):**
+- ***REMOVED***361 (15m) - Change restart policy
+- ***REMOVED***362 (15m) - Bind Alloy port
+- ***REMOVED***363 (15m) - Reduce Tempo workers
+- ***REMOVED***364 (15m) - Increase scrape interval
+- ***REMOVED***367 (15m) - Add Grafana auth vars
 
-**Medium Effort (1-2h):**
-- SEC-002 (1h), SEC-004 (1h), SEC-005 (1h), SEC-008 (1h), SEC-009 (1h)
-- SEC-010 (1h), SEC-012 (2h), MAINT-002 (1h), MAINT-003 (2h)
+**Small (30 min - 1h):**
+- ***REMOVED***359 (30m) - Disable anonymous access
+- ***REMOVED***365 (30m) - Update docs
+- ***REMOVED***366 (30m) - Fix npm/vitest
 
-**Higher Effort (> 2h):**
-- SEC-001 (4h), SEC-006 (2h), MAINT-001 (2h), PERF-007 (4h), MAINT-004 (4h)
+**Medium (1-2h):**
+- ***REMOVED***360 (1h) - OTLP port binding
+- ***REMOVED***368 (2h) - Config overlays
 
 ---
 
-***REMOVED******REMOVED*** Sprint Planning Suggestions
+***REMOVED******REMOVED*** Sprint Planning
 
-***REMOVED******REMOVED******REMOVED*** Sprint 1 (Security Focus) - 16h estimated
-- [ ] SEC-001: Revoke credentials, scrub history (4h)
-- [ ] SEC-002: Remove default credentials (1h)
-- [ ] SEC-003: Disable Grafana anon access (30m)
-- [ ] SEC-004: Bind OTLP to localhost (1h)
-- [ ] SEC-005: Enable database TLS (1h)
-- [ ] PERF-001: Fix Loki retention workers (15m)
-- [ ] PERF-002: Reduce retention periods (30m)
+***REMOVED******REMOVED******REMOVED*** Sprint 1 (This Week) - Critical Security
+Focus: Fix P0 and P1 issues
 
-***REMOVED******REMOVED******REMOVED*** Sprint 2 (NAS Optimization) - 12h estimated
-- [ ] PERF-003: Increase scrape interval (15m)
-- [ ] PERF-004: Add DB connection limit (15m)
-- [ ] PERF-005: Fix healthcheck endpoint (15m)
-- [ ] PERF-006: Add readiness timeout (30m)
-- [ ] PERF-008: Add restart backoff (15m)
-- [ ] SEC-006: Rate limit admin endpoints (2h)
-- [ ] SEC-007: Add JSON body limit (30m)
-- [ ] MAINT-001: Fix backend tests (2h)
-- [ ] MAINT-002: Fix domain pack test (1h)
+- [ ] ***REMOVED***359 - Grafana anonymous access (30m)
+- [ ] ***REMOVED***360 - OTLP port exposure (1h)
+- [ ] ***REMOVED***361 - NAS restart policy (15m)
 
-***REMOVED******REMOVED******REMOVED*** Backlog (When Capacity Allows)
-- SEC-008: Hash API keys in logs
-- SEC-009: Mandatory HTTPS in prod
-- SEC-010, SEC-011, SEC-012: Low priority security
-- PERF-007: Distributed rate limiting
-- MAINT-003, MAINT-004: Documentation
+**Total: ~2 hours**
+
+***REMOVED******REMOVED******REMOVED*** Sprint 2 (Next Week) - NAS Hardening
+Focus: Security and performance tuning
+
+- [ ] ***REMOVED***362 - Alloy admin UI (15m)
+- [ ] ***REMOVED***363 - Tempo workers (15m)
+- [ ] ***REMOVED***364 - Scrape interval (15m)
+- [ ] ***REMOVED***367 - NAS Grafana auth (15m)
+- [ ] ***REMOVED***366 - Backend tests (30m)
+
+**Total: ~1.5 hours**
+
+***REMOVED******REMOVED******REMOVED*** Sprint 3 (Following) - Documentation
+Focus: Cleanup and documentation
+
+- [ ] ***REMOVED***365 - Express vs Fastify docs (30m)
+- [ ] ***REMOVED***368 - NAS config overlays (2h)
+
+**Total: ~2.5 hours**
+
+---
+
+***REMOVED******REMOVED*** Related Pre-Existing Issues
+
+| Issue | Title | Priority |
+|-------|-------|----------|
+| ***REMOVED***238 | Backend authentication and authorization | P0 |
+| ***REMOVED***239 | Production observability: alerting and SLOs | P0 |
+| ***REMOVED***240 | PostgreSQL backup and disaster recovery | P0 |
+| ***REMOVED***241 | Environment separation: dev/staging/production | P0 |
+| ***REMOVED***244 | Production TLS/SSL configuration | P0 |
+| ***REMOVED***245 | Backend integration tests and E2E suite | P1 |
 
 ---
 
@@ -119,13 +155,14 @@
 
 For each item to be considered complete:
 
-1. **Code/Config Change** implemented (if applicable)
+1. **Code/Config Change** implemented
 2. **Tests** pass (for code changes)
 3. **Documentation** updated (if behavior changes)
 4. **Deployed** to NAS environment (for infra changes)
 5. **Verified** via manual or automated check
 6. **PR** merged with review approval
+7. **GitHub Issue** closed
 
 ---
 
-*This backlog is auto-generated. Manually adjust priorities based on business context.*
+*Backlog updated from 2026-01-05 automated review. Priorities may need adjustment based on business context.*
