@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
@@ -134,12 +135,23 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Developer mode flow - clamped to false in beta/prod builds.
+     * In beta/prod, this always returns false regardless of stored preference.
+     */
     val developerModeFlow: Flow<Boolean> =
         context.settingsDataStore.data.map { preferences ->
-            preferences[DEVELOPER_MODE_KEY] ?: false
+            // Clamp to false if developer mode is not allowed by feature flags
+            if (!FeatureFlags.allowDeveloperMode) {
+                false
+            } else {
+                preferences[DEVELOPER_MODE_KEY] ?: false
+            }
         }
 
     suspend fun setDeveloperMode(enabled: Boolean) {
+        // Only persist if developer mode is allowed
+        if (!FeatureFlags.allowDeveloperMode) return
         context.settingsDataStore.edit { preferences ->
             preferences[DEVELOPER_MODE_KEY] = enabled
         }
@@ -351,14 +363,22 @@ class SettingsRepository(private val context: Context) {
 
     /**
      * Developer preference to allow screenshots.
-     * Default true to avoid disrupting debugging workflows.
+     * Default true in dev builds to avoid disrupting debugging workflows.
+     * In beta/prod builds, this is always false regardless of stored preference.
      */
     val devAllowScreenshotsFlow: Flow<Boolean> =
         context.settingsDataStore.data.map { preferences ->
-            preferences[DEV_ALLOW_SCREENSHOTS_KEY] ?: true
+            // Clamp to false if screenshots are not allowed by feature flags
+            if (!FeatureFlags.allowScreenshots) {
+                false
+            } else {
+                preferences[DEV_ALLOW_SCREENSHOTS_KEY] ?: true
+            }
         }
 
     suspend fun setDevAllowScreenshots(allowed: Boolean) {
+        // Only persist if screenshots are allowed
+        if (!FeatureFlags.allowScreenshots) return
         context.settingsDataStore.edit { preferences ->
             preferences[DEV_ALLOW_SCREENSHOTS_KEY] = allowed
         }

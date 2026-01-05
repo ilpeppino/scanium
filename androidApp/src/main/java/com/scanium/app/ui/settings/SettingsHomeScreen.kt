@@ -30,6 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
 import com.scanium.app.R
+import com.scanium.app.config.FeatureFlags
 
 data class SettingsCategory(
     val title: String,
@@ -52,9 +53,9 @@ fun SettingsHomeScreen(
     onDeveloperClick: () -> Unit,
 ) {
     val isDeveloperMode by viewModel.isDeveloperMode.collectAsState()
-    // DEV_MODE_ENABLED is false in beta builds, completely hiding Developer Options
+    // FeatureFlags.allowDeveloperMode is false in beta/prod builds, completely hiding Developer Options
     // In dev builds, it's shown if either DEBUG build type or user enabled developer mode
-    val showDeveloper = BuildConfig.DEV_MODE_ENABLED && (BuildConfig.DEBUG || isDeveloperMode)
+    val showDeveloper = FeatureFlags.allowDeveloperMode && (BuildConfig.DEBUG || isDeveloperMode)
 
     val categories =
         listOf(

@@ -2,6 +2,7 @@ package com.scanium.app.camera
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.config.FeatureFlags
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -20,8 +21,8 @@ import kotlinx.coroutines.launch
  * Shared between CameraScreen and CameraXManager.
  */
 class CameraViewModel : ViewModel() {
-    // Capture resolution setting
-    private val _captureResolution = MutableStateFlow(CaptureResolution.DEFAULT)
+    // Capture resolution setting - clamped at initialization for beta/prod
+    private val _captureResolution = MutableStateFlow(clampResolution(CaptureResolution.DEFAULT))
     val captureResolution: StateFlow<CaptureResolution> = _captureResolution.asStateFlow()
 
     private val _stopScanningRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -29,11 +30,27 @@ class CameraViewModel : ViewModel() {
 
     /**
      * Updates the capture resolution setting.
+     * In beta/prod builds, HIGH is automatically clamped to NORMAL.
      * This will trigger camera rebinding to apply the new resolution.
      */
     fun updateCaptureResolution(resolution: CaptureResolution) {
-        if (_captureResolution.value != resolution) {
-            _captureResolution.value = resolution
+        val clampedResolution = clampResolution(resolution)
+        if (_captureResolution.value != clampedResolution) {
+            _captureResolution.value = clampedResolution
+        }
+    }
+
+    companion object {
+        /**
+         * Clamps resolution based on FeatureFlags.
+         * In beta/prod builds, HIGH is clamped to NORMAL.
+         */
+        private fun clampResolution(resolution: CaptureResolution): CaptureResolution {
+            return if (resolution == CaptureResolution.HIGH && !FeatureFlags.allowHighResolution) {
+                CaptureResolution.NORMAL
+            } else {
+                resolution
+            }
         }
     }
 

@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.camera.CameraViewModel
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.camera.CaptureResolution
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.media.StorageHelper
@@ -58,8 +59,12 @@ fun SettingsCameraScreen(
             }
         }
 
+    // Filter resolution options: HIGH only available in dev builds
+    val availableResolutions = CaptureResolution.values().filter { resolution ->
+        resolution != CaptureResolution.HIGH || FeatureFlags.allowHighResolution
+    }
     val captureOptions =
-        CaptureResolution.values().map { resolution ->
+        availableResolutions.map { resolution ->
             SegmentOption(
                 value = resolution,
                 label =
