@@ -25,7 +25,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: scanium-api
+    container_name: scanium-backend
     env_file:
       - .env
     restart: unless-stopped
@@ -41,6 +41,9 @@ services:
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
       DATABASE_URL: ${DATABASE_URL}
       SCANIUM_API_KEYS: ${SCANIUM_API_KEYS}
+      SCANIUM_ASSISTANT_API_KEYS: ${SCANIUM_ASSISTANT_API_KEYS}
+      SCANIUM_ASSISTANT_PROVIDER: ${SCANIUM_ASSISTANT_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       SCANIUM_CLASSIFIER_PROVIDER: ${SCANIUM_CLASSIFIER_PROVIDER:-mock}
       ***REMOVED*** Comma-separated features: TEXT_DETECTION,IMAGE_PROPERTIES,LOGO_DETECTION,LABEL_DETECTION
       VISION_FEATURE: ${VISION_FEATURE:-LABEL_DETECTION,TEXT_DETECTION,IMAGE_PROPERTIES}
