@@ -18,9 +18,31 @@ Minimal valid JSON payload:
 ```json
 {
   "message": "ping",
-  "items": [{"itemId": "preflight", "title": "Preflight Check", "description": "", "attributes": []}],
+  "items": [],
   "history": []
 }
+```
+
+**CRITICAL: Schema Requirements**
+
+The backend Zod schema requires:
+- `message`: string with min length 1 (required)
+- `items`: array (required, can be empty `[]`)
+- `history`: array (optional, can be omitted or empty `[]`)
+
+The Android client MUST include `items` in the request even when empty. This requires
+`encodeDefaults = true` in the kotlinx.serialization Json configuration.
+
+Without `encodeDefaults = true`, default values are omitted from serialization:
+```json
+// BAD: Missing items field causes HTTP 400
+{"message": "ping"}
+```
+
+With `encodeDefaults = true`:
+```json
+// GOOD: All required fields present
+{"message": "ping", "items": [], "history": []}
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Headers
@@ -107,7 +129,7 @@ curl -X POST https://<BASE_URL>/v1/assist/chat \
   -H "X-Scanium-Device-Id: test-device-hash" \
   -H "X-Scanium-Preflight: true" \
   -H "X-Client: Scanium-Android" \
-  -d '{"message":"ping","items":[{"itemId":"preflight"}],"history":[]}'
+  -d '{"message":"ping","items":[],"history":[]}'
 ```
 
 Expected response for success:
