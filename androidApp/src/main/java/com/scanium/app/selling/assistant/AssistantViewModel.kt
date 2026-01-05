@@ -332,6 +332,16 @@ enum class UnavailableReason {
     LOADING,
 }
 
+/**
+ * Non-blocking preflight warning for display purposes.
+ * Does NOT block input - user can still type and send messages.
+ */
+data class PreflightWarning(
+    val status: PreflightStatus,
+    val reasonCode: String?,
+    val latencyMs: Long,
+)
+
 data class AssistantUiState(
     val itemIds: List<String> = emptyList(),
     val snapshots: List<ItemContextSnapshot> = emptyList(),
@@ -363,12 +373,24 @@ data class AssistantUiState(
     val localSuggestions: LocalSuggestions? = null,
     /** Last successful assistant response entry (preserved during new requests) */
     val lastSuccessfulEntry: AssistantChatEntry? = null,
+    /**
+     * Non-blocking preflight warning. When set, shows an informational banner
+     * but does NOT disable input. User can still type and attempt to send.
+     * Cleared automatically when chat succeeds.
+     */
+    val preflightWarning: PreflightWarning? = null,
 ) {
     /**
      * Returns true if the text input should be enabled.
-     * Input is disabled when:
-     * - Assistant is unavailable (offline, error, rate limited)
+     *
+     * IMPORTANT: Preflight failures do NOT disable input.
+     * Input is only disabled when:
+     * - Device is offline (no network)
      * - A request is currently loading
+     * - Backend is explicitly not configured (NOT_CONFIGURED)
+     *
+     * For CLIENT_ERROR, UNAUTHORIZED, and other preflight failures,
+     * input remains enabled so users can attempt to chat.
      */
     val isInputEnabled: Boolean
         get() = availability.canSendMessages && !isLoading
@@ -645,15 +667,17 @@ class AssistantViewModel
                             suggestedQuestions = computeSuggestedQuestions(current.snapshots),
                             lastBackendFailure = null,
                             assistantMode = resolveMode(current.isOnline, null),
-                            // Success - restore availability
+                            // Chat success - restore availability and clear any preflight warnings
+                            // This ensures successful chat always overrides preflight failures
                             availability = AssistantAvailability.Available,
+                            preflightWarning = null,
                             lastSuccessfulEntry = newEntry,
                         )
                     }
 
                     // Log timing summary
                     ScaniumLog.i(TAG, "Assist timing: ${timing.toLogString()}")
-                    ScaniumLog.i(TAG, "Assistant availability restored: Available (success)")
+                    ScaniumLog.i(TAG, "Chat success - availability=Available, preflightWarning cleared")
 
                     ScaniumLog.i(
                         TAG,
@@ -1084,19 +1108,41 @@ class AssistantViewModel
          * Update the availability state based on preflight result.
          *
          * Key behavior:
-         * - UNKNOWN status (from timeout, 401, or IO errors) allows chat attempts
-         * - The actual chat request may succeed even if preflight failed
-         * - Chat success will immediately mark assistant as Available
+         * - Preflight failure does NOT block typing or sending
+         * - CLIENT_ERROR, UNAUTHORIZED show a non-blocking warning banner
+         * - Chat success immediately clears any preflight warnings
+         * - Only OFFLINE and NOT_CONFIGURED truly block sending
          */
         private fun updateAvailabilityFromPreflight(result: PreflightResult) {
+            // Determine if this is a warning state (show banner but allow chat)
+            val isWarningState = result.status in listOf(
+                PreflightStatus.CLIENT_ERROR,
+                PreflightStatus.UNAUTHORIZED,
+                PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                PreflightStatus.RATE_LIMITED,
+            )
+
+            // Create warning for non-blocking display
+            val warning = if (isWarningState) {
+                PreflightWarning(
+                    status = result.status,
+                    reasonCode = result.reasonCode,
+                    latencyMs = result.latencyMs,
+                )
+            } else {
+                null
+            }
+
+            // Map preflight status to availability
+            // IMPORTANT: Most failures still allow chat attempts
             val availability = when (result.status) {
                 PreflightStatus.AVAILABLE -> AssistantAvailability.Available
                 PreflightStatus.CHECKING -> AssistantAvailability.Checking
+
                 PreflightStatus.UNKNOWN -> {
-                    // UNKNOWN means preflight couldn't determine availability (timeout, auth error, etc.)
-                    // Allow chat attempt if online - the actual chat may work
+                    // UNKNOWN means preflight couldn't determine availability
+                    // Allow chat attempt if online
                     if (_uiState.value.isOnline) {
-                        // Log diagnostic info but allow chat
                         ScaniumLog.i(
                             TAG,
                             "Preflight UNKNOWN (reason=${result.reasonCode}) - allowing chat attempt",
@@ -1109,53 +1155,76 @@ class AssistantViewModel
                         )
                     }
                 }
+
                 PreflightStatus.CLIENT_ERROR -> {
-                    // CLIENT_ERROR (HTTP 400) means the preflight request itself was malformed.
-                    // This does NOT mean the assistant is unavailable - the actual chat request
-                    // (with real items and proper format) may work. Always allow chat attempt.
+                    // HTTP 400 = preflight schema issue. Does NOT mean assistant unavailable.
+                    // Always allow chat attempt - real chat may work perfectly.
                     ScaniumLog.i(
                         TAG,
                         "Preflight CLIENT_ERROR (reason=${result.reasonCode}) - allowing chat attempt",
                     )
                     AssistantAvailability.Available
                 }
+
+                PreflightStatus.UNAUTHORIZED -> {
+                    // HTTP 401 = API key issue. Still allow chat attempt (different auth path may work).
+                    // Show warning banner but keep input enabled.
+                    ScaniumLog.i(
+                        TAG,
+                        "Preflight UNAUTHORIZED (reason=${result.reasonCode}) - allowing chat attempt",
+                    )
+                    AssistantAvailability.Available
+                }
+
+                PreflightStatus.TEMPORARILY_UNAVAILABLE -> {
+                    // Server error (5xx). Allow chat attempt - might be transient.
+                    ScaniumLog.i(
+                        TAG,
+                        "Preflight TEMPORARILY_UNAVAILABLE (reason=${result.reasonCode}) - allowing chat attempt",
+                    )
+                    AssistantAvailability.Available
+                }
+
+                PreflightStatus.RATE_LIMITED -> {
+                    // Rate limited. Allow chat attempt - actual chat may not be rate limited.
+                    ScaniumLog.i(
+                        TAG,
+                        "Preflight RATE_LIMITED (reason=${result.reasonCode}) - allowing chat attempt",
+                    )
+                    AssistantAvailability.Available
+                }
+
+                // Only these truly block sending:
                 PreflightStatus.OFFLINE -> AssistantAvailability.Unavailable(
                     reason = UnavailableReason.OFFLINE,
                     canRetry = true,
                 )
-                PreflightStatus.TEMPORARILY_UNAVAILABLE -> AssistantAvailability.Unavailable(
-                    reason = UnavailableReason.BACKEND_ERROR,
-                    canRetry = true,
-                )
-                PreflightStatus.RATE_LIMITED -> AssistantAvailability.Unavailable(
-                    reason = UnavailableReason.RATE_LIMITED,
-                    canRetry = true,
-                    retryAfterSeconds = result.retryAfterSeconds,
-                )
-                PreflightStatus.UNAUTHORIZED -> {
-                    // UNAUTHORIZED from preflight - this shouldn't happen now since we return UNKNOWN
-                    // But if it does, allow chat attempt (may use different auth path)
-                    ScaniumLog.w(
-                        TAG,
-                        "Preflight UNAUTHORIZED - allowing chat attempt (reason=${result.reasonCode})",
-                    )
-                    AssistantAvailability.Available
-                }
                 PreflightStatus.NOT_CONFIGURED -> AssistantAvailability.Unavailable(
                     reason = UnavailableReason.NOT_CONFIGURED,
                     canRetry = false,
                 )
-                PreflightStatus.ENDPOINT_NOT_FOUND -> AssistantAvailability.Unavailable(
-                    reason = UnavailableReason.ENDPOINT_NOT_FOUND,
-                    canRetry = false,
-                )
+                PreflightStatus.ENDPOINT_NOT_FOUND -> {
+                    // Endpoint not found is a config issue, but still allow typing
+                    ScaniumLog.w(
+                        TAG,
+                        "Preflight ENDPOINT_NOT_FOUND - allowing chat attempt (may fail)",
+                    )
+                    AssistantAvailability.Available
+                }
             }
 
+            // Mode for the indicator
             val mode = when (result.status) {
                 PreflightStatus.AVAILABLE -> AssistantMode.ONLINE
-                PreflightStatus.UNKNOWN, PreflightStatus.CLIENT_ERROR -> AssistantMode.ONLINE // Allow chat attempt
+                PreflightStatus.UNKNOWN,
+                PreflightStatus.CLIENT_ERROR,
+                PreflightStatus.UNAUTHORIZED,
+                PreflightStatus.TEMPORARILY_UNAVAILABLE,
+                PreflightStatus.RATE_LIMITED,
+                PreflightStatus.ENDPOINT_NOT_FOUND -> AssistantMode.ONLINE // Allow chat attempt
                 PreflightStatus.OFFLINE -> AssistantMode.OFFLINE
-                else -> AssistantMode.LIMITED
+                PreflightStatus.NOT_CONFIGURED,
+                PreflightStatus.CHECKING -> AssistantMode.LIMITED
             }
 
             _uiState.update { current ->
@@ -1166,6 +1235,7 @@ class AssistantViewModel
                     current.copy(
                         availability = availability,
                         assistantMode = mode,
+                        preflightWarning = warning,
                         // Clear backend failure if preflight succeeded
                         lastBackendFailure = if (result.isAvailable) null else current.lastBackendFailure,
                     )
@@ -1174,7 +1244,8 @@ class AssistantViewModel
 
             ScaniumLog.i(
                 TAG,
-                "Preflight result: status=${result.status} latency=${result.latencyMs}ms availability=${availabilityDebugString(availability)}",
+                "Preflight result: status=${result.status} latency=${result.latencyMs}ms " +
+                    "availability=${availabilityDebugString(availability)} warning=${warning != null}",
             )
         }
 
@@ -1260,6 +1331,17 @@ class AssistantViewModel
                 )
             }
             ScaniumLog.i(TAG, "Assistant availability cleared, now Available")
+        }
+
+        /**
+         * Clears the preflight warning banner.
+         * Does not affect availability state.
+         */
+        fun clearPreflightWarning() {
+            _uiState.update { current ->
+                current.copy(preflightWarning = null)
+            }
+            ScaniumLog.i(TAG, "Preflight warning cleared")
         }
 
         /**

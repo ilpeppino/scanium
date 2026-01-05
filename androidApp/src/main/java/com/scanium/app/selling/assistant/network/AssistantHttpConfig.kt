@@ -34,11 +34,12 @@ data class AssistantHttpConfig(
         const val DEFAULT_CALL_TIMEOUT_SECONDS = 75L
         const val DEFAULT_RETRY_COUNT = 1
 
-        // Preflight defaults (tight to avoid blocking)
-        const val PREFLIGHT_CONNECT_TIMEOUT_SECONDS = 3L
-        const val PREFLIGHT_READ_TIMEOUT_SECONDS = 3L
-        const val PREFLIGHT_WRITE_TIMEOUT_SECONDS = 3L
-        const val PREFLIGHT_CALL_TIMEOUT_SECONDS = 5L
+        // Preflight defaults - reasonable timeouts to avoid false negatives
+        // Must not be so short that they falsely fail on normal network variability
+        const val PREFLIGHT_CONNECT_TIMEOUT_SECONDS = 5L
+        const val PREFLIGHT_READ_TIMEOUT_SECONDS = 8L
+        const val PREFLIGHT_WRITE_TIMEOUT_SECONDS = 5L
+        const val PREFLIGHT_CALL_TIMEOUT_SECONDS = 10L
         const val PREFLIGHT_RETRY_COUNT = 0 // No retries for preflight
 
         // Warmup defaults (moderate - not time-critical)

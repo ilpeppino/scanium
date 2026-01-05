@@ -520,6 +520,18 @@ fun AssistantScreen(
                 )
             }
 
+            // Show non-blocking preflight warning banner (input still enabled)
+            // Only show if availability is Available but there's a preflight issue
+            val preflightWarning = state.preflightWarning
+            if (preflightWarning != null && availabilityBanner is AssistantAvailability.Available) {
+                PreflightWarningBanner(
+                    warning = preflightWarning,
+                    onDismiss = {
+                        viewModel.clearPreflightWarning()
+                    },
+                )
+            }
+
             // Rich progress indicator with animated transitions
             ProgressIndicatorSection(
                 progress = state.progress,
@@ -1475,6 +1487,77 @@ private fun AssistantUnavailableBanner(
                 ) {
                     Text(if (showRetry && availability.canRetry) "Use local" else "OK")
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Non-blocking warning banner for preflight issues.
+ *
+ * Unlike [AssistantUnavailableBanner], this does NOT disable input.
+ * User can still type and attempt to send messages.
+ * Shown for CLIENT_ERROR, UNAUTHORIZED, etc. when the actual chat may still work.
+ */
+@Composable
+private fun PreflightWarningBanner(
+    warning: PreflightWarning,
+    onDismiss: () -> Unit,
+) {
+    val (title, detail) = when (warning.status) {
+        PreflightStatus.CLIENT_ERROR -> Pair(
+            "Preflight check failed",
+            "There was an issue with the health check, but you can still try sending messages. (${warning.reasonCode})",
+        )
+        PreflightStatus.UNAUTHORIZED -> Pair(
+            "API key may be invalid",
+            "Check your API key in Developer Settings. You can still try sending messages. (${warning.reasonCode})",
+        )
+        PreflightStatus.TEMPORARILY_UNAVAILABLE -> Pair(
+            "Backend may be temporarily unavailable",
+            "The server reported an issue, but you can still try sending messages. (${warning.reasonCode})",
+        )
+        PreflightStatus.RATE_LIMITED -> Pair(
+            "Rate limit warning",
+            "Preflight was rate limited, but your message may still go through. (${warning.reasonCode})",
+        )
+        else -> Pair(
+            "Connection warning",
+            "There was an issue checking connectivity. You can still try sending messages. (${warning.reasonCode})",
+        )
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.7f),
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
+                )
+            }
+            TextButton(
+                onClick = onDismiss,
+            ) {
+                Text("Dismiss")
             }
         }
     }

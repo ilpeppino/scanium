@@ -108,11 +108,11 @@ class AssistantPreflightHttpTest {
     }
 
     // ==================== Auth failure handling ====================
-    // Auth failures from preflight should return UNKNOWN to allow chat attempt.
-    // The actual chat may succeed with a different auth path.
+    // Auth failures from preflight should return UNAUTHORIZED for diagnostics.
+    // The ViewModel will still allow chat attempts (input enabled).
 
     @Test
-    fun `401 returns UNKNOWN to allow chat attempt`() = runTest {
+    fun `401 returns UNAUTHORIZED with unauthorized_api_key reason`() = runTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(401)
@@ -121,14 +121,14 @@ class AssistantPreflightHttpTest {
 
         val result = performPreflightChat()
 
-        // Auth failure from preflight should return UNKNOWN, not UNAUTHORIZED
-        // This allows the user to still attempt a chat which may succeed
-        assertThat(result.status).isEqualTo(PreflightStatus.UNKNOWN)
-        assertThat(result.reasonCode).isEqualTo("preflight_auth_401")
+        // Auth failure from preflight should return UNAUTHORIZED for diagnostics
+        // The ViewModel maps this to Available (input enabled) but shows warning banner
+        assertThat(result.status).isEqualTo(PreflightStatus.UNAUTHORIZED)
+        assertThat(result.reasonCode).isEqualTo("unauthorized_api_key")
     }
 
     @Test
-    fun `403 returns UNKNOWN to allow chat attempt`() = runTest {
+    fun `403 returns UNAUTHORIZED with forbidden_access reason`() = runTest {
         mockWebServer.enqueue(
             MockResponse()
                 .setResponseCode(403)
@@ -137,9 +137,9 @@ class AssistantPreflightHttpTest {
 
         val result = performPreflightChat()
 
-        // Auth failure from preflight should return UNKNOWN, not UNAUTHORIZED
-        assertThat(result.status).isEqualTo(PreflightStatus.UNKNOWN)
-        assertThat(result.reasonCode).isEqualTo("preflight_auth_403")
+        // 403 Forbidden also returns UNAUTHORIZED but with different reason
+        assertThat(result.status).isEqualTo(PreflightStatus.UNAUTHORIZED)
+        assertThat(result.reasonCode).isEqualTo("forbidden_access")
     }
 
     @Test
@@ -611,12 +611,21 @@ class AssistantPreflightHttpTest {
                             reasonCode = "preflight_schema_error",
                         )
                     }
-                    response.code == 401 || response.code == 403 -> {
-                        // Auth failure from preflight - return UNKNOWN to allow chat attempt
+                    response.code == 401 -> {
+                        // API key invalid or missing - return UNAUTHORIZED for diagnostics
+                        // The ViewModel will still allow chat attempts
                         PreflightResult(
-                            status = PreflightStatus.UNKNOWN,
+                            status = PreflightStatus.UNAUTHORIZED,
                             latencyMs = latency,
-                            reasonCode = "preflight_auth_${response.code}",
+                            reasonCode = "unauthorized_api_key",
+                        )
+                    }
+                    response.code == 403 -> {
+                        // Forbidden - different reason for diagnostics
+                        PreflightResult(
+                            status = PreflightStatus.UNAUTHORIZED,
+                            latencyMs = latency,
+                            reasonCode = "forbidden_access",
                         )
                     }
                     response.code == 404 -> {

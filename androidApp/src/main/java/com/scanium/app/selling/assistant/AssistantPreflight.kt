@@ -96,16 +96,41 @@ data class PreflightResult(
  * Minimal request payload for preflight check.
  * Uses the actual chat endpoint to verify auth and connectivity.
  *
- * **IMPORTANT**: Backend validates the request schema. The minimal valid payload is:
+ * **IMPORTANT**: Backend validates the request schema (Zod). The minimal valid payload is:
  * `{"message": "ping", "items": [], "history": []}`
  *
- * Sending items with objects causes HTTP 400. Keep items as empty list.
+ * Schema requirements:
+ * - message: string with min length 1 (cannot be empty string)
+ * - items: array of objects with itemId (can be empty array [])
+ * - history: array of message objects (can be empty array [])
+ *
+ * Using typed empty lists ensures proper serialization.
  */
 @Serializable
 private data class PreflightChatRequest(
     val message: String = "ping",
-    val items: List<String> = emptyList(),
-    val history: List<String> = emptyList(),
+    val items: List<PreflightItemDto> = emptyList(),
+    val history: List<PreflightHistoryDto> = emptyList(),
+)
+
+/**
+ * Item DTO for preflight - matches backend schema.
+ * Not used in preflight (empty array), but defines correct type.
+ */
+@Serializable
+private data class PreflightItemDto(
+    val itemId: String,
+)
+
+/**
+ * History message DTO for preflight - matches backend schema.
+ * Not used in preflight (empty array), but defines correct type.
+ */
+@Serializable
+private data class PreflightHistoryDto(
+    val role: String,
+    val content: String,
+    val timestamp: Long,
 )
 
 /**
@@ -485,15 +510,23 @@ class AssistantPreflightManagerImpl(
                             )
                         }
                     }
-                    response.code == 401 || response.code == 403 -> {
-                        // Auth failure from preflight - log for diagnostics but mark UNKNOWN
-                        // This allows the user to still attempt a chat request, which might:
-                        // 1. Succeed if there's a different auth path
-                        // 2. Fail with a clearer error that we can show to the user
+                    response.code == 401 -> {
+                        // API key invalid or missing - mark as UNAUTHORIZED for diagnostics
+                        // The ViewModel will still allow chat attempt (input stays enabled)
+                        // but will show a banner prompting to check API key settings
                         PreflightResult(
-                            status = PreflightStatus.UNKNOWN,
+                            status = PreflightStatus.UNAUTHORIZED,
                             latencyMs = latency,
-                            reasonCode = "preflight_auth_${response.code}",
+                            reasonCode = "unauthorized_api_key",
+                        )
+                    }
+                    response.code == 403 -> {
+                        // Forbidden - different from 401, might be IP restriction or other
+                        // Mark as UNAUTHORIZED but with different reason for diagnostics
+                        PreflightResult(
+                            status = PreflightStatus.UNAUTHORIZED,
+                            latencyMs = latency,
+                            reasonCode = "forbidden_access",
                         )
                     }
                     response.code == 404 -> {
