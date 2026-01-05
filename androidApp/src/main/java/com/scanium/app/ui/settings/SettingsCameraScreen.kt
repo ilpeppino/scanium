@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -159,18 +162,20 @@ fun SettingsCameraScreen(
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_capture))
-            SettingSegmentedRow(
+            SettingIconSegmentedRow(
                 title = stringResource(R.string.settings_resolution_title),
                 subtitle = stringResource(R.string.settings_resolution_subtitle),
+                icon = Icons.Filled.HighQuality,
                 options = captureOptions,
                 selected = captureResolution,
                 onSelect = cameraViewModel::updateCaptureResolution,
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_scanning))
-            SettingSegmentedRow(
+            SettingIconSegmentedRow(
                 title = stringResource(R.string.settings_classification_title),
                 subtitle = stringResource(R.string.settings_classification_subtitle),
+                icon = Icons.Filled.Cloud,
                 options = classificationOptions,
                 selected = classificationMode,
                 onSelect = classificationViewModel::updateMode,
@@ -184,9 +189,10 @@ fun SettingsCameraScreen(
             )
 
             val currentAccuracy = AccuracyLevel.fromThreshold(similarityThreshold)
-            SettingSegmentedRow(
+            SettingIconSegmentedRow(
                 title = stringResource(R.string.settings_accuracy_title),
                 subtitle = stringResource(R.string.settings_accuracy_subtitle),
+                icon = Icons.Filled.Tune,
                 options = accuracyOptions,
                 selected = currentAccuracy,
                 onSelect = { level ->

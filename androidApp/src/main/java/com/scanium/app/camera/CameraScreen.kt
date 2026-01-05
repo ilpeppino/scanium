@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.provider.Settings
 import android.util.Log
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -1084,6 +1086,9 @@ private fun BoxScope.CameraOverlay(
     onFlipCamera: () -> Unit,
     isFlipEnabled: Boolean,
 ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
     // Top bar with two-slot layout: hamburger (left), logo (right)
     Row(
         modifier =
@@ -1151,7 +1156,64 @@ private fun BoxScope.CameraOverlay(
         }
     }
 
-    // Bottom UI: Shutter button and controls
+    if (isLandscape) {
+        // Landscape layout: Shutter on right edge, other buttons at bottom corners
+        CameraOverlayLandscape(
+            itemsCount = itemsCount,
+            lastAddedItem = lastAddedItem,
+            onAnimationFinished = onAnimationFinished,
+            cameraState = cameraState,
+            captureResolution = captureResolution,
+            onNavigateToItems = onNavigateToItems,
+            tourViewModel = tourViewModel,
+            showShutterHint = showShutterHint,
+            onShutterTap = onShutterTap,
+            onShutterLongPress = onShutterLongPress,
+            onStopScanning = onStopScanning,
+            onFlipCamera = onFlipCamera,
+            isFlipEnabled = isFlipEnabled,
+        )
+    } else {
+        // Portrait layout: Bottom-centered controls
+        CameraOverlayPortrait(
+            itemsCount = itemsCount,
+            lastAddedItem = lastAddedItem,
+            onAnimationFinished = onAnimationFinished,
+            cameraState = cameraState,
+            captureResolution = captureResolution,
+            onNavigateToItems = onNavigateToItems,
+            tourViewModel = tourViewModel,
+            showShutterHint = showShutterHint,
+            onShutterTap = onShutterTap,
+            onShutterLongPress = onShutterLongPress,
+            onStopScanning = onStopScanning,
+            onFlipCamera = onFlipCamera,
+            isFlipEnabled = isFlipEnabled,
+        )
+    }
+}
+
+/**
+ * Portrait layout for camera controls.
+ * Bottom-centered with items, shutter, and flip camera in a row.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BoxScope.CameraOverlayPortrait(
+    itemsCount: Int,
+    lastAddedItem: com.scanium.app.items.ScannedItem?,
+    onAnimationFinished: () -> Unit,
+    cameraState: CameraState,
+    captureResolution: CaptureResolution,
+    onNavigateToItems: () -> Unit,
+    tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    showShutterHint: Boolean,
+    onShutterTap: () -> Unit,
+    onShutterLongPress: () -> Unit,
+    onStopScanning: () -> Unit,
+    onFlipCamera: () -> Unit,
+    isFlipEnabled: Boolean,
+) {
     Column(
         modifier =
             Modifier
@@ -1282,6 +1344,160 @@ private fun BoxScope.CameraOverlay(
                     )
                     .padding(horizontal = 12.dp, vertical = 4.dp),
         )
+    }
+}
+
+/**
+ * Landscape layout for camera controls.
+ * - Shutter button: center-right of screen
+ * - Items button: bottom-left corner
+ * - Flip camera button: bottom-right corner
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BoxScope.CameraOverlayLandscape(
+    itemsCount: Int,
+    lastAddedItem: com.scanium.app.items.ScannedItem?,
+    onAnimationFinished: () -> Unit,
+    cameraState: CameraState,
+    captureResolution: CaptureResolution,
+    onNavigateToItems: () -> Unit,
+    tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    showShutterHint: Boolean,
+    onShutterTap: () -> Unit,
+    onShutterLongPress: () -> Unit,
+    onStopScanning: () -> Unit,
+    onFlipCamera: () -> Unit,
+    isFlipEnabled: Boolean,
+) {
+    // Shutter button: centered vertically on right edge
+    Box(
+        modifier =
+            Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 24.dp)
+                .semantics { traversalIndex = 1f },
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            ShutterButton(
+                cameraState = cameraState,
+                onTap = onShutterTap,
+                onLongPress = onShutterLongPress,
+                onStopScanning = onStopScanning,
+                showHint = showShutterHint,
+                modifier =
+                    if (tourViewModel != null) {
+                        Modifier.tourTarget("camera_shutter", tourViewModel)
+                    } else {
+                        Modifier
+                    },
+            )
+
+            // Resolution indicator below shutter
+            Text(
+                text = getResolutionLabel(captureResolution),
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.7f),
+                modifier =
+                    Modifier
+                        .background(
+                            Color.Black.copy(alpha = 0.4f),
+                            shape = MaterialTheme.shapes.small,
+                        )
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+            )
+        }
+    }
+
+    // Items button: bottom-left corner
+    Box(
+        modifier =
+            Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 24.dp, bottom = 24.dp)
+                .semantics { traversalIndex = 2f },
+        contentAlignment = Alignment.Center,
+    ) {
+        BadgedBox(
+            badge = {
+                if (itemsCount > 0) {
+                    Badge {
+                        Text(itemsCount.toString())
+                    }
+                }
+            },
+        ) {
+            IconButton(
+                onClick = onNavigateToItems,
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.5f),
+                            shape = MaterialTheme.shapes.small,
+                        )
+                        .then(
+                            if (tourViewModel != null) {
+                                Modifier.tourTarget("camera_items_button", tourViewModel)
+                            } else {
+                                Modifier
+                            },
+                        ),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.List,
+                    contentDescription = "View items",
+                    tint = Color.White,
+                )
+            }
+        }
+
+        // Item added animation overlay
+        lastAddedItem?.let { item ->
+            key(item.id) {
+                Box(
+                    modifier = Modifier.align(Alignment.Center),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ItemAddedAnimation(
+                        item = item,
+                        onAnimationFinished = onAnimationFinished,
+                    )
+                }
+            }
+        }
+    }
+
+    // Flip camera button: bottom-right corner
+    Box(
+        modifier =
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 24.dp, bottom = 24.dp)
+                .semantics { traversalIndex = 3f },
+        contentAlignment = Alignment.Center,
+    ) {
+        IconButton(
+            onClick = onFlipCamera,
+            enabled = isFlipEnabled,
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.5f),
+                        shape = MaterialTheme.shapes.small,
+                    ),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Cameraswitch,
+                contentDescription = "Flip camera",
+                tint = Color.White,
+            )
+        }
     }
 }
 
