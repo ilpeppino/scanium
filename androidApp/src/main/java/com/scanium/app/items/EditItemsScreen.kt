@@ -67,6 +67,7 @@ private data class ItemDraft(
     val barcodeValue: String,
     val priceText: String,
     val condition: ItemCondition?,
+    val category: com.scanium.app.ml.ItemCategory,
 )
 
 /**
@@ -95,14 +96,25 @@ fun EditItemsScreen(
     val drafts = remember(selectedItems) {
         mutableStateMapOf<String, ItemDraft>().apply {
             selectedItems.forEach { item ->
+                // Pre-fill label from vision attributes if empty
+                val suggestedLabel = if (item.labelText.isNullOrBlank()) {
+                    buildSuggestedLabel(item)
+                } else {
+                    item.labelText
+                }
+
+                // Pre-fill recognized text from vision attributes if empty
+                val suggestedRecognizedText = item.recognizedText ?: item.visionAttributes.ocrText ?: ""
+
                 put(
                     item.id,
                     ItemDraft(
-                        labelText = item.labelText.orEmpty(),
-                        recognizedText = item.recognizedText.orEmpty(),
+                        labelText = suggestedLabel.orEmpty(),
+                        recognizedText = suggestedRecognizedText,
                         barcodeValue = item.barcodeValue.orEmpty(),
                         priceText = item.userPriceCents?.let { formatCentsToPrice(it) } ?: "",
                         condition = item.condition,
+                        category = item.category,
                     ),
                 )
             }
@@ -180,7 +192,14 @@ fun EditItemsScreen(
                         .fillMaxWidth(),
                 ) { page ->
                     val item = selectedItems[page]
-                    val draft = drafts[item.id] ?: ItemDraft("", "", "", "", null)
+                    val draft = drafts[item.id] ?: ItemDraft(
+                        labelText = "",
+                        recognizedText = "",
+                        barcodeValue = "",
+                        priceText = "",
+                        condition = null,
+                        category = item.category,
+                    )
 
                     ItemEditPage(
                         item = item,
@@ -247,6 +266,7 @@ fun EditItemsScreen(
                                 val originalPriceCents = originalItem?.userPriceCents
                                 val originalCondition = originalItem?.condition
 
+                                val originalCategory = originalItem?.category
                                 ItemFieldUpdate(
                                     labelText = draft.labelText.ifBlank { null },
                                     recognizedText = draft.recognizedText.ifBlank { null },
@@ -255,6 +275,7 @@ fun EditItemsScreen(
                                     clearUserPriceCents = priceCents == null && originalPriceCents != null,
                                     condition = draft.condition,
                                     clearCondition = draft.condition == null && originalCondition != null,
+                                    category = if (draft.category != originalCategory) draft.category else null,
                                 )
                             }
                             itemsViewModel.updateItemsFields(updates)
@@ -322,12 +343,17 @@ private fun ItemEditPage(
             }
         }
 
-        // Category info (read-only)
-        Text(
-            text = "Category: ${item.category.displayName}",
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        // Category dropdown (editable)
+        CategoryDropdown(
+            selectedCategory = draft.category,
+            onCategorySelected = { category ->
+                onDraftChange(draft.copy(category = category))
+            },
+            modifier = Modifier.fillMaxWidth(),
         )
+
+        // Vision Attributes Display (brand, colors) if available
+        VisionAttributesDisplay(item = item)
 
         // Price and Condition in a row for compact layout
         Row(
@@ -482,5 +508,130 @@ private fun parsePriceToCents(priceText: String): Long? {
         }
     } catch (e: NumberFormatException) {
         null
+    }
+}
+
+/**
+ * Build a suggested label from vision attributes.
+ * Prioritizes: brand + model > brand > primary label from vision.
+ */
+private fun buildSuggestedLabel(item: ScannedItem): String? {
+    val brand = item.attributes["brand"]?.value ?: item.visionAttributes.primaryBrand
+    val model = item.attributes["model"]?.value ?: item.visionAttributes.primaryModel
+
+    return when {
+        !brand.isNullOrBlank() && !model.isNullOrBlank() -> "$brand $model"
+        !brand.isNullOrBlank() -> brand
+        else -> null
+    }
+}
+
+/**
+ * Dropdown menu for selecting item category.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryDropdown(
+    selectedCategory: com.scanium.app.ml.ItemCategory,
+    onCategorySelected: (com.scanium.app.ml.ItemCategory) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = selectedCategory.displayName,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Category") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth(),
+            singleLine = true,
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            com.scanium.app.ml.ItemCategory.entries.forEach { category ->
+                DropdownMenuItem(
+                    text = { Text(category.displayName) },
+                    onClick = {
+                        onCategorySelected(category)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Display vision attributes (brand, colors) as informational chips.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VisionAttributesDisplay(item: ScannedItem) {
+    val hasVisionData = !item.visionAttributes.isEmpty || item.attributes.isNotEmpty()
+
+    if (!hasVisionData) return
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "Detected Attributes",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        // Brand
+        val brand = item.attributes["brand"]?.value ?: item.visionAttributes.primaryBrand
+        if (!brand.isNullOrBlank()) {
+            androidx.compose.material3.FilterChip(
+                selected = false,
+                onClick = { /* Could allow editing */ },
+                label = { Text("Brand: $brand") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                },
+            )
+        }
+
+        // Colors
+        if (item.visionAttributes.colors.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = "Colors:",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.align(Alignment.CenterVertically),
+                )
+                item.visionAttributes.colors.take(3).forEach { visionColor ->
+                    androidx.compose.material3.FilterChip(
+                        selected = false,
+                        onClick = { /* Could allow editing */ },
+                        label = { Text(visionColor.name.replaceFirstChar { it.uppercase() }) },
+                    )
+                }
+            }
+        }
     }
 }
