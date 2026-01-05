@@ -13,12 +13,13 @@
 
 ***REMOVED******REMOVED******REMOVED*** Primary Screens
 - **Home/Camera**: `CameraScreen` hosts preview, overlays, and scan mode switching.
-- **Items list**: `ItemsListScreen` displays aggregated items from `ItemsViewModel`.
-- **Export**: `ItemsListScreen` lets users select items and export CSV/ZIP bundles for sharing.
+- **Items List**: `ItemsListScreen` displays aggregated items from `ItemsViewModel`.
+- **Edit Items**: `EditItemsScreen` allows editing item attributes and details.
 - **Assistant**: `AssistantScreen` provides an export-focused chat experience for selected items.
 - **Paywall/Billing**: `PaywallScreen` presents subscription details and purchase/restore actions.
 
-***REMOVED******REMOVED******REMOVED*** Selling Flow (temporarily disabled)
+***REMOVED******REMOVED******REMOVED*** Selling Flow (flavor-gated)
+- **Generate Listing**: `GenerateListingScreen` - AI-generated listing creation for single items.
 - **Sell on eBay**: `SellOnEbayScreen` - marketplace selection and listing initiation.
 - **Draft Review**: `DraftReviewScreen` - review and edit listing drafts.
 - **Posting Assist**: `PostingAssistScreen` - AI-assisted listing optimization.
@@ -30,7 +31,7 @@
 - **AI Assistant**: `SettingsAssistantScreen` - assistant behavior and API settings.
 - **Notifications & Feedback**: `SettingsFeedbackScreen` - notification and feedback preferences.
 - **Data & Privacy**: `SettingsPrivacyScreen` - privacy controls and data management.
-- **Developer Options**: `DeveloperOptionsScreen` - debug tools, diagnostics, and system health (debug builds only).
+- **Developer Options**: `DeveloperOptionsScreen` - debug tools, diagnostics, and system health (dev flavor only).
 
 ***REMOVED******REMOVED******REMOVED*** Legal & Info Screens
 - **Data Usage**: `DataUsageScreen` - data usage disclosure.
@@ -38,7 +39,7 @@
 - **Terms**: `TermsScreen` - terms of service.
 - **About**: `AboutScreen` - app info and version.
 
-**Total Routes:** 18 defined in `NavGraph.kt`.
+**Total Routes:** 21 defined in `NavGraph.kt`.
 
 ***REMOVED******REMOVED*** Feature flags / modes
 - Scan modes: object, barcode/QR, document (switchable in camera UI).

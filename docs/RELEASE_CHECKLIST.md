@@ -38,33 +38,55 @@ This guide documents the process for building and releasing Scanium for distribu
 
 ***REMOVED******REMOVED*** 3. Build Release Artifacts
 
-Run the build script:
+Scanium uses three product flavors: **prod** (production), **dev** (development), **beta** (external testing).
+
+**Production builds** (for Play Store or public release):
 
 ```bash
-./scripts/build.sh assembleRelease
+***REMOVED*** APK
+./scripts/build.sh assembleProdRelease
+***REMOVED*** Or: ./gradlew :androidApp:assembleProdRelease
+
+***REMOVED*** AAB (for Play Store)
+./gradlew :androidApp:bundleProdRelease
 ```
 
-Or using Gradle directly:
+**Dev builds** (internal testing with Developer Options):
 
 ```bash
-./gradlew assembleRelease
+./gradlew :androidApp:assembleDevRelease
+***REMOVED*** Or AAB: ./gradlew :androidApp:bundleDevRelease
 ```
 
-This will produce:
-*   APK: `androidApp/build/outputs/apk/release/androidApp-release.apk`
-*   AAB (for Play Store): `./gradlew bundleRelease` -> `androidApp/build/outputs/bundle/release/androidApp-release.aab`
+**Beta builds** (external testers, no Developer Options):
+
+```bash
+./gradlew :androidApp:assembleBetaRelease
+***REMOVED*** Or AAB: ./gradlew :androidApp:bundleBetaRelease
+```
+
+**Outputs:**
+*   APK: `androidApp/build/outputs/apk/{prod|dev|beta}/release/*.apk`
+*   AAB: `androidApp/build/outputs/bundle/{prod|dev|beta}Release/*.aab`
 
 ***REMOVED******REMOVED*** 4. Verification
 
 1.  **Install Release APK:**
     ```bash
-    adb install androidApp/build/outputs/apk/release/androidApp-release.apk
+    ***REMOVED*** Prod release
+    adb install androidApp/build/outputs/apk/prod/release/*.apk
+
+    ***REMOVED*** Or Dev/Beta
+    adb install androidApp/build/outputs/apk/dev/release/*.apk
+    adb install androidApp/build/outputs/apk/beta/release/*.apk
     ```
 2.  **Smoke Test:**
-    *   Launch app.
+    *   Launch app and verify correct flavor (check app name: "Scanium" for prod, "Scanium Dev" for dev, "Scanium Beta" for beta).
     *   Verify Cloud Classification works (if configured).
     *   Verify "About" screen shows correct version.
     *   Verify no crashes on basic flows.
+    *   **Dev flavor only:** Verify Developer Options is accessible in Settings.
+    *   **Beta flavor:** Verify Developer Options is NOT accessible.
 
 ***REMOVED******REMOVED*** 5. Distribution
 
