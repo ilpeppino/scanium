@@ -302,6 +302,53 @@ class AssistantPreflightHttpTest {
         assertThat(body).contains("\"history\"")
     }
 
+    // ==================== Serialization regression test ====================
+    // This test verifies that kotlinx.serialization with encodeDefaults=true
+    // produces the correct JSON payload that the backend expects.
+    // Previously, without encodeDefaults=true, the items and history fields
+    // were omitted, causing HTTP 400 "Request validation failed".
+
+    @Test
+    fun `preflight JSON serialization includes all required fields`() = runTest {
+        // Create the same Json config as AssistantPreflightManagerImpl
+        val preflightJson = Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true // This was the missing fix!
+        }
+
+        // Serialize the DTO (same structure as PreflightChatRequest)
+        val payload = TestPreflightRequest()
+        val serialized = preflightJson.encodeToString(TestPreflightRequest.serializer(), payload)
+
+        // Verify ALL required fields are present (backend Zod validation requirement)
+        assertThat(serialized).contains("\"message\":\"ping\"")
+        assertThat(serialized).contains("\"items\":[]")
+        assertThat(serialized).contains("\"history\":[]")
+
+        // Verify no extra fields that might cause issues
+        assertThat(serialized).doesNotContain("null")
+    }
+
+    @Test
+    fun `preflight JSON without encodeDefaults omits required fields - regression test`() = runTest {
+        // This test documents the bug: without encodeDefaults=true,
+        // fields with default values are NOT serialized
+        val badJson = Json {
+            ignoreUnknownKeys = true
+            // Missing: encodeDefaults = true
+        }
+
+        val payload = TestPreflightRequest()
+        val serialized = badJson.encodeToString(TestPreflightRequest.serializer(), payload)
+
+        // BUG: ALL fields are MISSING because they all have defaults
+        // This causes HTTP 400 "Request validation failed"
+        assertThat(serialized).isEqualTo("{}")
+        assertThat(serialized).doesNotContain("\"items\"")
+        assertThat(serialized).doesNotContain("\"history\"")
+        assertThat(serialized).doesNotContain("\"message\"")
+    }
+
     // ==================== Regression tests for backend reachability fix ====================
     // These tests verify that the preflight only checks backend reachability,
     // not assistant-specific configuration. The assistant feature flag is checked
@@ -708,4 +755,35 @@ private data class TestAssistantError(
     val category: String = "",
     val retryable: Boolean = false,
     val message: String? = null,
+)
+
+/**
+ * Test DTO that mirrors PreflightChatRequest in AssistantPreflight.kt.
+ * Used to verify that serialization produces the correct JSON.
+ *
+ * CRITICAL: Backend requires `items` field (not optional in Zod schema).
+ * Without encodeDefaults=true, this DTO would serialize to:
+ *   {"message":"ping"}
+ * instead of:
+ *   {"message":"ping","items":[],"history":[]}
+ *
+ * This caused the "Request validation failed" error.
+ */
+@kotlinx.serialization.Serializable
+private data class TestPreflightRequest(
+    val message: String = "ping",
+    val items: List<TestPreflightItem> = emptyList(),
+    val history: List<TestPreflightHistory> = emptyList(),
+)
+
+@kotlinx.serialization.Serializable
+private data class TestPreflightItem(
+    val itemId: String,
+)
+
+@kotlinx.serialization.Serializable
+private data class TestPreflightHistory(
+    val role: String,
+    val content: String,
+    val timestamp: Long,
 )

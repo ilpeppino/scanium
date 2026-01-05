@@ -227,7 +227,10 @@ class AssistantPreflightManagerImpl(
         AssistantOkHttpClientFactory.logConfigurationUsage("preflight", preflightConfig)
     }
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true // Required: ensures items=[] and history=[] are sent
+    }
 
     private val _currentResult = MutableStateFlow(
         PreflightResult(
