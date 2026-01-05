@@ -758,13 +758,13 @@ class AssistantViewModelTest {
     }
 
     @Test
-    fun `chat success overrides preflight failure state`() = runTest {
+    fun `chat success clears preflight warning`() = runTest {
         val store = FakeDraftStore()
         val profileRepository = FakeExportProfileRepository()
         val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
         val repository = FakeAssistantRepository()
 
-        // Start with preflight failure
+        // Start with preflight failure (which now shows warning but allows chat)
         preflightManager.setPreflightResult(
             PreflightResult(
                 status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
@@ -789,36 +789,30 @@ class AssistantViewModelTest {
 
         advanceUntilIdle()
 
-        // Initial state is unavailable due to preflight failure
-        assertThat(viewModel.uiState.value.availability).isInstanceOf(AssistantAvailability.Unavailable::class.java)
-
-        // Simulate preflight becoming available (e.g., user triggered retry)
-        preflightManager.setPreflightResult(
-            PreflightResult(
-                status = PreflightStatus.AVAILABLE,
-                latencyMs = 50,
-            ),
-        )
-        viewModel.runPreflight(forceRefresh = true)
-        advanceUntilIdle()
+        // Preflight failures now allow chat attempts (availability = Available)
+        // But show a warning banner
+        assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+        assertThat(viewModel.uiState.value.preflightWarning).isNotNull()
+        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
 
         // Now send a message
         viewModel.sendMessage("Test message")
         advanceUntilIdle()
 
-        // After chat success, availability should definitely be Available
+        // After chat success, warning should be cleared
         assertThat(viewModel.uiState.value.availability).isEqualTo(AssistantAvailability.Available)
+        assertThat(viewModel.uiState.value.preflightWarning).isNull()
         assertThat(viewModel.uiState.value.lastBackendFailure).isNull()
     }
 
     @Test
-    fun `preflight ENDPOINT_NOT_FOUND correctly blocks UI`() = runTest {
+    fun `preflight ENDPOINT_NOT_FOUND allows chat attempt with warning`() = runTest {
         val store = FakeDraftStore()
         val profileRepository = FakeExportProfileRepository()
         val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
         val repository = FakeAssistantRepository()
 
-        // Set preflight to ENDPOINT_NOT_FOUND - this is a configuration error
+        // Set preflight to ENDPOINT_NOT_FOUND - configuration error but still allow chat attempt
         preflightManager.setPreflightResult(
             PreflightResult(
                 status = PreflightStatus.ENDPOINT_NOT_FOUND,
@@ -843,12 +837,11 @@ class AssistantViewModelTest {
 
         advanceUntilIdle()
 
-        // ENDPOINT_NOT_FOUND should block UI - this is a real config error
+        // ENDPOINT_NOT_FOUND now allows chat attempt (input enabled) but will likely fail
+        // The key is that preflight NEVER blocks the UI
         val availability = viewModel.uiState.value.availability
-        assertThat(availability).isInstanceOf(AssistantAvailability.Unavailable::class.java)
-        assertThat((availability as AssistantAvailability.Unavailable).reason)
-            .isEqualTo(UnavailableReason.ENDPOINT_NOT_FOUND)
-        assertThat(availability.canRetry).isFalse()
+        assertThat(availability).isEqualTo(AssistantAvailability.Available)
+        assertThat(viewModel.uiState.value.isInputEnabled).isTrue()
     }
 
     // ==================== Progress state transition tests ====================

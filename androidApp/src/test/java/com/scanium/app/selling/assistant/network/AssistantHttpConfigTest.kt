@@ -38,14 +38,14 @@ class AssistantHttpConfigTest {
     // ==================== Preflight Configuration Tests ====================
 
     @Test
-    fun `PREFLIGHT config has tight timeouts for quick health checks`() {
+    fun `PREFLIGHT config has reasonable timeouts to avoid false negatives`() {
         val config = AssistantHttpConfig.PREFLIGHT
 
-        // Preflight should be fast - tight timeouts
-        assertThat(config.connectTimeoutSeconds).isEqualTo(3L)
-        assertThat(config.readTimeoutSeconds).isEqualTo(3L)
-        assertThat(config.writeTimeoutSeconds).isEqualTo(3L)
-        assertThat(config.callTimeoutSeconds).isEqualTo(5L)
+        // Preflight should be fast enough for health checks but not so tight that it falsely fails
+        assertThat(config.connectTimeoutSeconds).isEqualTo(5L)
+        assertThat(config.readTimeoutSeconds).isEqualTo(8L)
+        assertThat(config.writeTimeoutSeconds).isEqualTo(5L)
+        assertThat(config.callTimeoutSeconds).isEqualTo(10L)
         // No retries for preflight - it's just a health check
         assertThat(config.retryCount).isEqualTo(0)
     }
@@ -80,12 +80,16 @@ class AssistantHttpConfigTest {
         val warmup = AssistantHttpConfig.WARMUP
         val default = AssistantHttpConfig.DEFAULT
 
-        // Warmup should be slower than preflight but faster than default
-        assertThat(warmup.connectTimeoutSeconds).isGreaterThan(preflight.connectTimeoutSeconds)
-        assertThat(warmup.connectTimeoutSeconds).isLessThan(default.connectTimeoutSeconds)
-
+        // Warmup read timeout should be between preflight and default
         assertThat(warmup.readTimeoutSeconds).isGreaterThan(preflight.readTimeoutSeconds)
         assertThat(warmup.readTimeoutSeconds).isLessThan(default.readTimeoutSeconds)
+
+        // Warmup call timeout should be between preflight and default
+        assertThat(warmup.callTimeoutSeconds).isGreaterThan(preflight.callTimeoutSeconds)
+        assertThat(warmup.callTimeoutSeconds).isLessThan(default.callTimeoutSeconds)
+
+        // Connect timeout can be equal to preflight (both 5s) but should be less than default
+        assertThat(warmup.connectTimeoutSeconds).isAtMost(default.connectTimeoutSeconds)
     }
 
     // ==================== Test Configuration Tests ====================
