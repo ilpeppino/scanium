@@ -22,7 +22,7 @@ Single source of truth for how Scanium is structured and how we evolve it. Scani
                      ▼
 ┌───────────────────────────────────────────────────────────────────────┐
 │                     Backend API Server                                │
-│  • Node.js 20 + TypeScript + Express.js                              │
+│  • Node.js 20 + TypeScript + Fastify                                 │
 │  • Prisma ORM + PostgreSQL database                                  │
 │  • REST API endpoints for item sync, auth, marketplace integration   │
 │  • OpenTelemetry instrumentation                                      │
@@ -45,7 +45,7 @@ Single source of truth for how Scanium is structured and how we evolve it. Scani
 | Component | Technology | Purpose | Ports |
 |-----------|-----------|---------|-------|
 | **Android App** | Kotlin, Compose, ML Kit | Camera UI, object detection, local tracking | N/A (mobile) |
-| **Backend API** | Node.js, TypeScript, Express | REST API, business logic, persistence | 8080 (HTTP) |
+| **Backend API** | Node.js, TypeScript, Fastify | REST API, business logic, persistence | 8080 (HTTP) |
 | **PostgreSQL** | PostgreSQL 16 (Docker) | Primary database | 5432 |
 | **ngrok** | ngrok tunnel | Dev-only: Expose localhost to mobile devices | Dynamic |
 | **Grafana** | Grafana 10.3.1 (Docker) | Visualization, dashboards, alerting | 3000 (HTTP) |
@@ -272,7 +272,7 @@ flowchart LR
 
 ### Technology Stack
 - **Runtime:** Node.js 20+ with TypeScript 5.x
-- **Framework:** Express.js for HTTP server
+- **Framework:** Fastify for HTTP server
 - **ORM:** Prisma for type-safe database access
 - **Database:** PostgreSQL 16 (Alpine Docker image)
 - **Dev Tools:** ngrok for mobile device tunneling
@@ -282,13 +282,13 @@ flowchart LR
 ```
 backend/
 ├── src/
-│   ├── index.ts              # Express server entry point
+│   ├── index.ts              # Fastify server entry point
 │   ├── routes/               # API endpoint definitions
 │   │   ├── items.ts          # Item CRUD operations
 │   │   ├── auth/             # Authentication endpoints
 │   │   └── health.ts         # Health check endpoint
 │   ├── services/             # Business logic layer
-│   ├── middleware/           # Express middleware (auth, validation)
+│   ├── middleware/           # Fastify plugins (auth, validation)
 │   └── types/                # TypeScript type definitions
 ├── prisma/
 │   ├── schema.prisma         # Database schema (models, relations)

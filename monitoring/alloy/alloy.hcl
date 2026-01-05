@@ -104,6 +104,9 @@ otelcol.exporter.otlp "tempo" {
 // ============================================================================
 // Scrape metrics from Alloy itself and LGTM backend services for self-monitoring.
 // Metrics are forwarded to Mimir for dashboarding and alerting.
+//
+// NOTE: 60s scrape interval is optimized for NAS deployment (Synology DS418play).
+// For development workstations, 15s provides higher resolution if needed.
 
 // Scrape Alloy's own metrics (exposed on the HTTP server port)
 prometheus.scrape "alloy" {
@@ -115,7 +118,7 @@ prometheus.scrape "alloy" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"
   scrape_timeout  = "10s"
 }
 
@@ -129,7 +132,7 @@ prometheus.scrape "loki" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"
   scrape_timeout  = "10s"
 }
 
@@ -143,7 +146,7 @@ prometheus.scrape "tempo" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"
   scrape_timeout  = "10s"
 }
 
@@ -157,7 +160,7 @@ prometheus.scrape "mimir" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"
   scrape_timeout  = "10s"
 }
 

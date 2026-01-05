@@ -2,7 +2,7 @@ services:
   grafana:
     image: grafana/grafana:11.3.0
     container_name: scanium-grafana
-    restart: "no"
+    restart: unless-stopped
     env_file:
       - ../env/monitoring.env
     ports:
@@ -26,7 +26,7 @@ services:
   loki:
     image: grafana/loki:3.2.1
     container_name: scanium-loki
-    restart: "no"
+    restart: unless-stopped
     command: ["-config.file=/etc/loki/loki.yaml"]
     volumes:
       - /volume1/docker/scanium/monitoring/loki:/loki
@@ -37,7 +37,7 @@ services:
   tempo:
     image: grafana/tempo:2.6.1
     container_name: scanium-tempo
-    restart: "no"
+    restart: unless-stopped
     command: ["-config.file=/etc/tempo/tempo.yaml"]
     volumes:
       - /volume1/docker/scanium/monitoring/tempo:/var/tempo
@@ -48,7 +48,7 @@ services:
   mimir:
     image: grafana/mimir:2.17.4
     container_name: scanium-mimir
-    restart: "no"
+    restart: unless-stopped
     command: ["-config.file=/etc/mimir/mimir.yaml"]
     volumes:
       - /volume1/docker/scanium/monitoring/mimir:/data
@@ -59,15 +59,15 @@ services:
   alloy:
     image: grafana/alloy:v1.5.0
     container_name: scanium-alloy
-    restart: "no"
+    restart: unless-stopped
     command:
       - run
       - --server.http.listen-addr=0.0.0.0:12345
       - /etc/alloy/config.alloy
     ports:
-      - "12345:12345"
-      - "4317:4317"
-      - "4318:4318"
+      - "127.0.0.1:12345:12345"  # Admin UI - localhost only for security
+      - "4317:4317"               # OTLP gRPC - needs external access for telemetry
+      - "4318:4318"               # OTLP HTTP - needs external access for telemetry
     volumes:
       - ${REPO_ROOT}/monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
       # Optional: persist Alloy WAL so restarts don't drop buffered remote_write
