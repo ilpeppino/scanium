@@ -438,10 +438,12 @@ private data class AssistantPrefsDto(
 
 @Serializable
 private data class AssistantChatResponse(
+    @SerialName("reply")
     val content: String,
     val actions: List<AssistantActionDto> = emptyList(),
     @SerialName("citationsMetadata")
     val citationsMetadata: Map<String, String>? = null,
+    val fromCache: Boolean = false,
     val confidenceTier: String? = null,
     val evidence: List<EvidenceBulletDto> = emptyList(),
     val suggestedAttributes: List<SuggestedAttributeDto> = emptyList(),

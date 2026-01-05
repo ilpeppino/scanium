@@ -571,6 +571,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           reply: 'Assistant is enabled. Add an item to get listing advice.',
           actions: [],
           citationsMetadata: {},
+          fromCache: false,
           safety: buildSafetyResponse(false, null, requestId),
           correlationId,
         });
@@ -618,6 +619,8 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       return reply.status(200).send({
         reply: refusal.content,
         actions: refusal.actions,
+        citationsMetadata: {},
+        fromCache: false,
         safety: buildSafetyResponse(true, reasonCode, requestId),
         correlationId,
       });
@@ -812,10 +815,8 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       return reply.status(200).send({
         reply: response.content,
         actions: response.actions,
-        citationsMetadata: {
-          ...response.citationsMetadata,
-          ...(fromCache ? { fromCache: 'true' } : {}),
-        },
+        citationsMetadata: response.citationsMetadata ?? {},
+        fromCache, // Boolean indicating if response was served from cache
         assistantError: buildAssistantErrorIfNeeded(
           response.assistantError,
           visionConfig.enabled,
@@ -862,6 +863,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         confidenceTier: 'LOW',
         evidence: [],
         citationsMetadata: { providerUnavailable: 'true' },
+        fromCache: false,
         assistantError: fallbackError,
         safety: buildSafetyResponse(false, 'PROVIDER_UNAVAILABLE', requestId),
         correlationId,

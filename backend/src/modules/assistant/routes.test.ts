@@ -227,6 +227,8 @@ describe('POST /v1/assist/chat', () => {
         expect(body.reply).toBe('Assistant is enabled. Add an item to get listing advice.');
         expect(body.actions).toEqual([]);
         expect(body.citationsMetadata).toEqual({});
+        expect(body.fromCache).toBe(false); // Must be boolean, not string
+        expect(typeof body.fromCache).toBe('boolean');
         expect(body.safety).toBeDefined();
         expect(body.safety.blocked).toBe(false);
         expect(body.correlationId).toBeDefined();
