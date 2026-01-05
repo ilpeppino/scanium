@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -136,9 +137,12 @@ private data class PreflightHistoryDto(
 /**
  * Response format from /v1/assist/chat endpoint.
  * We only check if the request succeeded; content is ignored.
+ *
+ * Note: Backend sends "reply" not "content" as the field name.
  */
 @Serializable
 private data class PreflightChatResponse(
+    @SerialName("reply")
     val content: String = "",
     val assistantError: PreflightAssistantErrorDto? = null,
 )
