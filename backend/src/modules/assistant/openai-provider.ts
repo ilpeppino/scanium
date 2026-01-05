@@ -16,6 +16,11 @@ import {
   buildListingUserPrompt,
   parseListingResponse,
 } from './prompts/listing-generation.js';
+import {
+  recordOpenAIRequest,
+  recordOpenAITokens,
+  updateRateLimitState,
+} from '../../infra/telemetry/openai-metrics.js';
 
 export interface OpenAIProviderConfig {
   apiKey: string;
@@ -70,6 +75,9 @@ export class OpenAIAssistantProvider implements AssistantProvider {
       ? `${request.message}\n\n${userPrompt}`
       : userPrompt;
 
+    // Start timing for metrics
+    const startTime = Date.now();
+
     try {
       const response = await this.client.chat.completions.create({
         model: this.model,
@@ -79,6 +87,45 @@ export class OpenAIAssistantProvider implements AssistantProvider {
           { role: 'user', content: fullUserMessage },
         ],
       });
+
+      // Calculate duration
+      const durationSeconds = (Date.now() - startTime) / 1000;
+
+      // Record successful request metrics
+      recordOpenAIRequest(
+        {
+          model: this.model,
+          status: 'success',
+        },
+        durationSeconds
+      );
+
+      // Record token usage if available
+      if (response.usage) {
+        recordOpenAITokens({
+          model: this.model,
+          inputTokens: response.usage.prompt_tokens || 0,
+          outputTokens: response.usage.completion_tokens || 0,
+          totalTokens: response.usage.total_tokens || 0,
+        });
+      }
+
+      // Update rate limit state from headers if available
+      // Note: OpenAI SDK may expose these via response object or headers
+      // This is a placeholder - adjust based on actual SDK implementation
+      const rateLimitHeaders = (response as any).headers;
+      if (rateLimitHeaders) {
+        const remainingRequests = rateLimitHeaders['x-ratelimit-remaining-requests'];
+        const remainingTokens = rateLimitHeaders['x-ratelimit-remaining-tokens'];
+
+        if (remainingRequests !== undefined || remainingTokens !== undefined) {
+          updateRateLimitState({
+            model: this.model,
+            remainingRequests: remainingRequests ? parseInt(remainingRequests, 10) : undefined,
+            remainingTokens: remainingTokens ? parseInt(remainingTokens, 10) : undefined,
+          });
+        }
+      }
 
       // Extract text content from response
       const textContent = response.choices[0]?.message?.content ?? '';
@@ -281,6 +328,9 @@ export class OpenAIAssistantProvider implements AssistantProvider {
         suggestedNextPhoto: parsed.suggestedNextPhoto ?? undefined,
       };
     } catch (error) {
+      // Calculate duration for error case
+      const durationSeconds = (Date.now() - startTime) / 1000;
+
       // Map OpenAI errors to domain error structure
       const openaiError = error as { status?: number; code?: string; message?: string };
       const errorMessage = openaiError.message ?? String(error);
@@ -310,6 +360,16 @@ export class OpenAIAssistantProvider implements AssistantProvider {
         retryable = true;
         reasonCode = 'PROVIDER_UNAVAILABLE';
       }
+
+      // Record error metrics
+      recordOpenAIRequest(
+        {
+          model: this.model,
+          status: 'error',
+          errorType: reasonCode,
+        },
+        durationSeconds
+      );
 
       // Return graceful error response
       return {

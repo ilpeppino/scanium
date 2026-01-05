@@ -1,6 +1,7 @@
 import { buildApp } from './app.js';
 import { loadConfig } from './config/index.js';
 import { disconnectPrisma } from './infra/db/prisma.js';
+import { initTelemetry, shutdownTelemetry } from './infra/telemetry/index.js';
 
 /**
  * Main application entry point
@@ -13,6 +14,14 @@ async function main() {
     console.log('📝 Loading configuration...');
     const config = loadConfig();
     console.log(`✅ Configuration loaded (env: ${config.nodeEnv})`);
+
+    // Initialize OpenTelemetry
+    initTelemetry({
+      serviceName: process.env.OTEL_SERVICE_NAME || 'scanium-backend',
+      environment: config.nodeEnv,
+      otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318',
+      enabled: process.env.OTEL_ENABLED !== 'false',
+    });
 
     // Build Fastify app
     console.log('🚀 Building application...');
@@ -45,6 +54,9 @@ async function main() {
 
       await disconnectPrisma();
       console.log('✅ Database disconnected');
+
+      await shutdownTelemetry();
+      console.log('✅ Telemetry shut down');
 
       console.log('✅ Shutdown complete');
       process.exit(0);
