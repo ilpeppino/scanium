@@ -20,7 +20,7 @@ services:
 
   backend:
     volumes:
-      - /volume1/docker/scanium/repo/backend/secrets:/secrets:ro
+      - /volume1/docker/scanium/secrets/vision-sa.json:/run/secrets/vision-sa.json:ro
     # If backend/Dockerfile exists, we build it. If not, next step will add it.
     build:
       context: ../../../backend
@@ -32,7 +32,7 @@ services:
       VISION_PROVIDER: ${VISION_PROVIDER}
       SCANIUM_CLASSIFIER_PROVIDER: ${SCANIUM_CLASSIFIER_PROVIDER}
       VISION_FEATURE: ${VISION_FEATURE}
-      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/vision-sa.json
     depends_on:
       postgres:
         condition: service_healthy
