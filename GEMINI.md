@@ -25,10 +25,19 @@ This file provides essential context about the Scanium project to assist Gemini 
 ### Backend (`/backend`)
 *   **Runtime:** Node.js (v20+).
 *   **Language:** TypeScript.
-*   **Framework:** Fastify.
-*   **Database:** Prisma ORM.
-*   **External APIs:** Google Cloud Vision (via proxy).
-*   **Tools:** Docker, Vitest.
+*   **Framework:** Fastify (HTTP server).
+*   **Database:** Prisma ORM + PostgreSQL 16.
+*   **External APIs:** Google Cloud Vision (via proxy), Anthropic Claude (AI Assistant), OpenAI (Vision insights).
+*   **Telemetry:** OpenTelemetry SDK (logs, traces, metrics).
+*   **Tools:** Docker, Vitest, ngrok (dev tunneling).
+
+### Observability (`/monitoring`)
+*   **Stack:** LGTM (Loki, Grafana, Tempo, Mimir) + Grafana Alloy.
+*   **Router:** Grafana Alloy (OTLP receiver and data router).
+*   **Logs:** Loki (14-day retention).
+*   **Traces:** Tempo (7-day retention).
+*   **Metrics:** Mimir (Prometheus-compatible, 15-day retention).
+*   **Visualization:** Grafana dashboards with auto-provisioned datasources.
 
 ## 3. Project Structure
 
@@ -41,17 +50,29 @@ The project is a multi-module Gradle project with a distinct separation between 
 │   │   ├── camera/             # CameraX & Overlay UI
 │   │   ├── ml/                 # ML Kit Clients & Pricing Engine
 │   │   ├── items/              # Item List & Details UI
-│   │   ├── tracking/           # Tracking & Deduplication Logic
-│   │   └── selling/            # Mock eBay Integration
+│   │   ├── assistant/          # AI Assistant (Claude/OpenAI integration)
+│   │   ├── classification/     # Classifier providers (Mock, NoOp)
+│   │   ├── selling/            # eBay Integration (flavor-gated)
+│   │   ├── ftue/               # First Time User Experience & Tours
+│   │   ├── voice/              # Voice control & state machine
+│   │   ├── audio/              # Sound effects & audio feedback
+│   │   ├── telemetry/          # OpenTelemetry OTLP export
+│   │   ├── diagnostics/        # System health & backend connectivity
+│   │   ├── settings/           # Settings screens & preferences
+│   │   ├── ui/                 # Shared UI components & theme
+│   │   ├── navigation/         # Navigation graph
+│   │   └── di/                 # Hilt dependency injection
 ├── shared/                     # Portable Kotlin Code (KMP-ready)
 │   ├── core-models/            # Shared data models (ImageRef, NormalizedRect, ScannedItem)
 │   ├── core-tracking/          # Pure logic for object tracking & aggregation
+│   ├── core-export/            # Export models & mappers (CSV, ZIP)
 │   └── test-utils/             # Shared test helpers
 ├── core-domainpack/            # Domain configuration & category mapping
 ├── android-camera-camerax/     # CameraX wrapper libraries
 ├── android-ml-mlkit/           # ML Kit wrapper libraries
 ├── android-platform-adapters/  # Adapters for Bitmap/Rect <-> Shared Models
-└── backend/                    # Node.js Backend Service
+├── backend/                    # Fastify Backend Service
+└── monitoring/                 # LGTM Observability Stack (Grafana, Loki, Tempo, Mimir, Alloy)
 ```
 
 ## 4. Key Architectural Concepts
@@ -79,11 +100,16 @@ The project is a multi-module Gradle project with a distinct separation between 
 *   **Run Instrumented Tests:** `./gradlew connectedAndroidTest` (Requires device/emulator)
 *   **Clean:** `./gradlew clean`
 
-### Backend
+### Backend & Observability
+*   **Start Full Stack:** `scripts/backend/start-dev.sh` (backend + PostgreSQL + ngrok + monitoring)
+*   **Start Backend Only:** `scripts/backend/start-dev.sh --no-monitoring`
+*   **Stop Everything:** `scripts/backend/stop-dev.sh --with-monitoring`
 *   **Directory:** `cd backend`
 *   **Install:** `npm install`
-*   **Run Dev:** `npm run dev`
+*   **Run Dev:** `npm run dev` (or use start-dev.sh script)
 *   **Test:** `npm test`
+*   **Database Migrations:** `npm run prisma:migrate`
+*   **View URLs:** `scripts/monitoring/print-urls.sh`
 
 ### Coding Conventions
 *   **Style:** Kotlin official style. 4-space indent.
@@ -94,7 +120,13 @@ The project is a multi-module Gradle project with a distinct separation between 
 ## 6. Important Files
 *   `settings.gradle.kts`: Module definition.
 *   `androidApp/build.gradle.kts`: Main app dependencies and config.
-*   `docs/ARCHITECTURE.md`: Detailed architectural decisions.
-*   `docs/CODEX_CONTEXT.md`: Context about AI agent working on the project
-*   `AGENTS.md`: Context about AI agents working on the project.
+*   `docs/INDEX.md`: Documentation index and entry point.
+*   `docs/ARCHITECTURE.md`: Full system architecture (Android + backend + observability).
+*   `docs/CODEX_CONTEXT.md`: Agent quickmap for AI assistants.
+*   `docs/DEV_GUIDE.md`: Development workflow and setup guide.
+*   `docs/PRODUCT.md`: Current app behavior, screens, and user flows.
+*   `AGENTS.md`: Repository guidelines for AI agents.
+*   `GEMINI.md`: This file - Scanium context for Gemini.
+*   `README.md`: Project overview and quick start.
 *   `backend/package.json`: Backend dependencies and scripts.
+*   `monitoring/docker-compose.yml`: Observability stack configuration.

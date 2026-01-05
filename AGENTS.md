@@ -1,25 +1,92 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Multi-module Gradle project.
-- `androidApp/`: Android app (Jetpack Compose UI, CameraX, ML Kit wrappers, selling flow, navigation). Sources at `androidApp/src/main/java/com/scanium/app/` (camera, items, ml, selling, navigation, ui/theme, settings, data, media, platform). Resources: `androidApp/src/main/res`; manifest: `androidApp/src/main/AndroidManifest.xml`.
-- `core-models/`: Shared models (ImageRef, NormalizedRect, ScannedItem, ScanMode, domain pack config/category). Backwards-compatible aliases in `com.scanium.app.core.*`; prefer `com.scanium.app.model` in new code. `RawDetection` stays portable-only (NormalizedRect + ImageRef thumbnailRef; no android.* fields).
-- `core-tracking/`: Platform-free tracking and aggregation (ObjectTracker, ItemAggregator, AggregationPresets, Logger).
-- `core-domainpack/`: Domain pack provider, config models, repository, category engine/mapping.
-- `android-platform-adapters/`: Android adapters for Bitmap↔ImageRef and Rect/RectF↔NormalizedRect conversions.
-- Library shells (`android-ml-mlkit`, `android-camera-camerax`, `core-contracts`, `core-scan`) hold namespaces; do not add `package` attributes to their manifests.
-- Navigation entry: `androidApp/src/main/java/com/scanium/app/navigation/NavGraph.kt`; keep new screens as composables named `FeatureScreen` and add routes there.
+
+### Android Application
+- Multi-module Gradle project with Hilt DI.
+- `androidApp/`: Android app (Jetpack Compose UI, CameraX, ML Kit wrappers, AI Assistant, selling flow, navigation).
+  - Main packages at `androidApp/src/main/java/com/scanium/app/`:
+    - `camera/`: CameraX integration, detection overlay, camera UI
+    - `items/`: Item list, details, editing, persistence
+    - `ml/`: ML Kit clients (object detection, barcode, OCR), pricing engine
+    - `assistant/`: AI Assistant (Claude/OpenAI integration, multimodal input)
+    - `classification/`: Classifier providers (Mock, NoOp)
+    - `selling/`: eBay marketplace integration (flavor-gated)
+    - `ftue/`: First Time User Experience, onboarding tours
+    - `voice/`: Voice control, speech recognition, state machine
+    - `audio/`: Sound effects, audio feedback
+    - `telemetry/`: OpenTelemetry OTLP export (logs, traces, metrics)
+    - `diagnostics/`: System health checks, backend connectivity status
+    - `settings/`: Settings screens, developer options
+    - `ui/`: Shared UI components, Material 3 theme
+    - `navigation/`: Navigation graph (NavGraph.kt)
+    - `di/`: Hilt dependency injection modules
+  - Resources: `androidApp/src/main/res`
+  - Manifest: `androidApp/src/main/AndroidManifest.xml`
+
+### Shared Kotlin Modules (KMP-ready)
+- `shared/core-models/`: Portable models (ImageRef, NormalizedRect, ScannedItem, ScanMode, domain config)
+- `shared/core-tracking/`: Platform-free tracking/aggregation (ObjectTracker, ItemAggregator)
+- `shared/core-export/`: Export models and mappers (CSV, ZIP)
+- `shared/test-utils/`: Shared test helpers
+
+### Android Wrappers & Adapters
+- `core-models/`: Android wrapper for shared models (typealiases, backwards-compatible)
+- `core-tracking/`: Android wrapper for shared tracking logic
+- `core-domainpack/`: Domain pack provider, repository, category engine/mapping
+- `android-platform-adapters/`: Bitmap↔ImageRef and Rect/RectF↔NormalizedRect conversions
+- Library shells (`android-ml-mlkit`, `android-camera-camerax`, `core-contracts`, `core-scan`): Hold namespaces only
+
+### Backend Services
+- `backend/`: Fastify + TypeScript + Prisma + PostgreSQL backend
+  - `src/index.ts` or `src/main.ts`: Server entry point
+  - `src/routes/`: API endpoints (items, auth, health)
+  - `src/services/`: Business logic layer
+  - `src/modules/`: Feature modules (classifier, etc.)
+  - `prisma/schema.prisma`: Database schema
+  - `prisma/migrations/`: Version-controlled schema changes
+  - `docker-compose.yml`: PostgreSQL container
+
+### Observability Stack
+- `monitoring/`: LGTM observability stack (Grafana, Loki, Tempo, Mimir, Alloy)
+  - `docker-compose.yml`: All monitoring services
+  - `grafana/`: Dashboards and datasource provisioning
+  - `alloy/alloy.hcl`: OTLP routing configuration
+  - `loki/`, `tempo/`, `mimir/`: Backend storage configs
+
+### Development Scripts
+- `scripts/backend/start-dev.sh`: Start backend + PostgreSQL + ngrok + monitoring
+- `scripts/backend/stop-dev.sh`: Stop services
+- `scripts/monitoring/`: Monitoring stack management
+- `scripts/build.sh`: Android build with Java 17 auto-detection
 
 ## Build, Test, and Development Commands
+
+### Android
 ```bash
-./scripts/build.sh assembleDebug      # Builds with auto-detected Java 21
+./scripts/build.sh assembleDebug      # Builds with auto-detected Java 17
 ./gradlew assembleDebug               # Build debug APK
 ./gradlew installDebug                # Deploy to connected device/emulator
 ./gradlew test                        # JVM unit tests
 ./gradlew connectedAndroidTest        # Instrumented + Compose UI tests (needs device)
 ./gradlew lint                        # Android Lint across modules
+./gradlew prePushJvmCheck             # Fast pre-push validation (JVM tests + portability)
 ```
-- Use Android Studio’s “Apply Changes” for quick UI tweaks; prefer `./gradlew clean` before reproducing build issues.
+- Use Android Studio's "Apply Changes" for quick UI tweaks; prefer `./gradlew clean` before reproducing build issues.
+
+### Backend & Observability
+```bash
+scripts/backend/start-dev.sh          # Start backend + PostgreSQL + ngrok + monitoring
+scripts/backend/start-dev.sh --no-monitoring  # Backend only
+scripts/backend/stop-dev.sh           # Stop backend + PostgreSQL
+scripts/backend/stop-dev.sh --with-monitoring # Stop everything
+scripts/monitoring/print-urls.sh      # View monitoring URLs and health status
+cd backend && npm install             # Install dependencies
+cd backend && npm run dev             # Run backend in dev mode
+cd backend && npm test                # Run backend tests
+cd backend && npm run prisma:migrate  # Run database migrations
+cd backend && npm run typecheck       # TypeScript type checking
+```
 
 ## Coding Style & Naming Conventions
 - Kotlin official style, 4-space indentation; prefer expression bodies for simple functions.

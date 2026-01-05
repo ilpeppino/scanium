@@ -82,7 +82,7 @@ Scanium is a camera-first Android app that demonstrates object detection and pri
 - **Node.js + TypeScript** - Backend API server
 - **Prisma** - Database ORM and migrations
 - **PostgreSQL** - Primary database
-- **Express.js** - HTTP server framework
+- **Fastify** - HTTP server framework
 - **ngrok** - Development tunneling for mobile device testing
 - **Docker Compose** - Container orchestration for local development
 
@@ -146,9 +146,10 @@ androidApp/src/main/java/com/scanium/app/
 ```
 backend/
 ├── src/
-│   ├── index.ts            # Express server entry point
+│   ├── main.ts             # Fastify server entry point
 │   ├── routes/             # API endpoints
 │   ├── services/           # Business logic
+│   ├── modules/            # Feature modules (classifier, assistant)
 │   └── middleware/         # Auth, validation, error handling
 ├── prisma/
 │   ├── schema.prisma       # Database schema
@@ -171,7 +172,6 @@ monitoring/
 ```
 
 For detailed architecture documentation, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
-For tracking implementation details, see [TRACKING_IMPLEMENTATION.md](./md/features/TRACKING_IMPLEMENTATION.md).
 
 ### Key Architectural Decisions
 
@@ -433,39 +433,31 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 
 ## Documentation
 
-All project documentation is organized in the `md/` folder by category:
+See [docs/INDEX.md](docs/INDEX.md) for the canonical documentation set and entry point.
 
-### Architecture & Design
-- [Architecture Overview](./md/architecture/ARCHITECTURE.md) - Overall system architecture and design decisions
+### Core Documentation
+- [ARCHITECTURE](./docs/ARCHITECTURE.md) - Full system architecture (Android + backend + observability)
+- [DEV_GUIDE](./docs/DEV_GUIDE.md) - Development workflow and setup
+- [CODEX_CONTEXT](./docs/CODEX_CONTEXT.md) - Agent quickmap for AI assistants
+- [PRODUCT](./docs/PRODUCT.md) - Current app behavior, screens, and user flows
+- [SECURITY](./docs/SECURITY.md) - Privacy and security posture
 
-### Features
-- [Aggregation System](./md/features/AGGREGATION_SYSTEM.md) - Real-time item aggregation and similarity matching
-- [Threshold Slider](./md/features/THRESHOLD_SLIDER.md) - Interactive threshold tuning UI component
-- [Object Tracking](./md/features/TRACKING_IMPLEMENTATION.md) - Multi-frame object tracking system
-- [eBay Selling Integration](./md/features/EBAY_SELLING_INTEGRATION.md) - Marketplace flow with mock eBay API (currently disabled in UI)
+### Process & Operations
+- [CI_CD](./docs/CI_CD.md) - GitHub Actions, artifacts, security scans
+- [RELEASE_CHECKLIST](./docs/RELEASE_CHECKLIST.md) - Build, sign, and distribute process
+- [MANUAL_GOLDEN_RUNBOOK](./docs/MANUAL_GOLDEN_RUNBOOK.md) - QA regression test runbook
 
-### Testing
-- [Test Suite](./md/testing/TEST_SUITE.md) - Comprehensive test documentation and coverage
-- [Test Checklist](./md/testing/TEST_CHECKLIST.md) - Manual testing checklist and procedures
+### Decision Log & Reports
+- [DECISIONS](./docs/DECISIONS.md) - ADR-lite list of notable choices
+- [REVIEW_REPORT](./docs/REVIEW_REPORT.md) - Comprehensive architectural review
+- [CLEANUP_REPORT](./docs/CLEANUP_REPORT.md) - Documentation cleanup and archive locations
 
-### Bug Fixes & Solutions
-- [ML Kit Zero Detections Fix](./md/fixes/ML_KIT_ZERO_DETECTIONS_FIX.md)
-- [ML Kit Native Crash Fix](./md/fixes/ML_KIT_NATIVE_CRASH_FIX.md)
-- [Bitmap Crash Fix](./md/fixes/BITMAP_CRASH_FIX.md)
-- [Memory Crash Fix](./md/fixes/MEMORY_CRASH_FIX.md)
-- [Session Deduplication Fix](./md/fixes/SESSION_DEDUPLICATION_FIX.md)
-- [ML Kit Fix Summary](./md/fixes/ML_KIT_FIX_SUMMARY.md)
+### Repository Guidelines
+- [AGENTS.md](./AGENTS.md) - Guidelines for AI agents working on the project
+- [GEMINI.md](./GEMINI.md) - Scanium context for Gemini AI
 
-### Improvements
-- [ML Kit Improvements](./md/improvements/ML_KIT_IMPROVEMENTS.md) - Performance and accuracy enhancements
-
-### Debugging & Diagnostics
-- [Debug Investigation Guide](./md/debugging/DEBUG_INVESTIGATION.md)
-- [Diagnostic Logging Guide](./md/debugging/DIAGNOSTIC_LOG_GUIDE.md)
-
-### Other Documentation
-- [Agents Guide](./AGENTS.md) - Information about AI agents used in development
-- [Roadmap](./ROADMAP.md) - Future development plans and priorities
+### Archive
+Historical documentation and implemented features are archived under `docs/_archive/2025-12/`.
 
 ## License
 
