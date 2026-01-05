@@ -252,6 +252,12 @@ fun ScaniumNavGraph(
             EditItemsScreen(
                 itemIds = ids,
                 onBack = { navController.popBackStack() },
+                onNavigateToAssistant = { assistantItemIds ->
+                    if (assistantItemIds.isNotEmpty()) {
+                        val encoded = Uri.encode(assistantItemIds.joinToString(","))
+                        navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
+                    }
+                },
                 itemsViewModel = itemsViewModel,
             )
         }

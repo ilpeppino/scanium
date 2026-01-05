@@ -17,11 +17,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.ErrorOutline
@@ -32,11 +31,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -53,7 +49,6 @@ import com.scanium.app.items.components.AttributeChipsRow
 import com.scanium.app.items.components.AttributeEditDialog
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
-import com.scanium.app.listing.ListingDraft
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.app.model.resolveBytes
 import com.scanium.app.model.toImageBitmap
@@ -84,11 +79,6 @@ fun ItemsListScreen(
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val items by itemsViewModel.items.collectAsState()
-    var previewDraft by remember { mutableStateOf<ListingDraft?>(null) }
-
-    // Press-and-hold preview state
-    var previewItem by remember { mutableStateOf<ScannedItem?>(null) }
-    var previewBounds by remember { mutableStateOf<Rect?>(null) }
 
     // Item detail sheet state
     var detailSheetItem by remember { mutableStateOf<ScannedItem?>(null) }
@@ -148,6 +138,28 @@ fun ItemsListScreen(
             selectedIds.add(item.id)
         }
         selectionMode = selectedIds.isNotEmpty()
+        soundManager.play(AppSound.SELECT)
+    }
+
+    fun enterSelectionMode(item: ScannedItem) {
+        if (!selectionMode) {
+            selectionMode = true
+            selectedIds.clear()
+            selectedIds.add(item.id)
+            soundManager.play(AppSound.SELECT)
+        }
+    }
+
+    fun toggleSelectAll() {
+        if (selectedIds.size == items.size) {
+            // All selected - clear selection
+            selectedIds.clear()
+            selectionMode = false
+        } else {
+            // Select all
+            selectedIds.clear()
+            selectedIds.addAll(items.map { it.id })
+        }
         soundManager.play(AppSound.SELECT)
     }
 
@@ -470,21 +482,18 @@ fun ItemsListScreen(
                                     ItemRow(
                                         item = item,
                                         isSelected = selectedIds.contains(item.id),
+                                        selectionMode = selectionMode,
                                         onClick = {
-                                            toggleSelection(item)
-                                        },
-                                        onPreviewStart = { item, bounds ->
-                                            previewItem = item
-                                            previewBounds = bounds
-                                        },
-                                        onPreviewEnd = {
-                                            // Show detail sheet if item has attributes
-                                            previewItem?.let { previewedItem ->
-                                                if (previewedItem.attributes.isNotEmpty()) {
-                                                    detailSheetItem = previewedItem
-                                                }
+                                            if (selectionMode) {
+                                                toggleSelection(item)
+                                            } else {
+                                                // Navigate to edit screen for this item
+                                                onNavigateToEdit(listOf(item.id))
                                             }
-                                            previewItem = null
+                                        },
+                                        onLongPress = {
+                                            // Long press enters selection mode and selects this item
+                                            enterSelectionMode(item)
                                         },
                                         onRetryClassification = {
                                             itemsViewModel.retryClassification(item.id)
@@ -500,58 +509,61 @@ fun ItemsListScreen(
 
         // Overlay controls when items are selected
         if (selectionMode && selectedIds.isNotEmpty()) {
-            // AI Assistant button - bottom-left
+            // Select All button - bottom-left
             FloatingActionButton(
-                onClick = {
-                    val selected = selectedIds.toList()
-                    if (selected.isNotEmpty()) {
-                        onNavigateToAssistant(selected)
-                    } else {
-                        scope.launch { snackbarHostState.showSnackbar("Select items to ask about") }
-                    }
-                },
+                onClick = { toggleSelectAll() },
                 modifier =
                     Modifier
                         .align(Alignment.BottomStart)
                         .windowInsetsPadding(WindowInsets.navigationBars)
                         .padding(16.dp)
-                        .then(
-                            if (tourViewModel != null) {
-                                Modifier.tourTarget("items_ai_assistant", tourViewModel)
+                        .semantics {
+                            contentDescription = if (selectedIds.size == items.size) {
+                                "Deselect all items"
                             } else {
-                                Modifier
-                            },
-                        ),
-                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                                "Select all items"
+                            }
+                        },
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             ) {
                 Icon(
-                    imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = "AI assistant",
+                    imageVector = Icons.Default.SelectAll,
+                    contentDescription = null,
                 )
             }
 
-            // Edit button - bottom-center
+            // Delete selected items button - bottom-center
             FloatingActionButton(
                 onClick = {
                     val selected = selectedIds.toList()
                     if (selected.isNotEmpty()) {
-                        onNavigateToEdit(selected)
-                    } else {
-                        scope.launch { snackbarHostState.showSnackbar("Select items to edit") }
+                        // Delete all selected items
+                        selected.forEach { id ->
+                            items.find { it.id == id }?.let { item ->
+                                itemsViewModel.removeItem(item.id)
+                            }
+                        }
+                        selectedIds.clear()
+                        selectionMode = false
+                        soundManager.play(AppSound.DELETE)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("${selected.size} item(s) deleted")
+                        }
                     }
                 },
                 modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
                         .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(16.dp),
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        .padding(16.dp)
+                        .semantics { contentDescription = "Delete selected items" },
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
             ) {
                 Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit items",
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
                 )
             }
 
@@ -561,14 +573,7 @@ fun ItemsListScreen(
                     Modifier
                         .align(Alignment.BottomEnd)
                         .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(16.dp)
-                        .then(
-                            if (tourViewModel != null) {
-                                Modifier.tourTarget("items_action_fab", tourViewModel)
-                            } else {
-                                Modifier
-                            },
-                        ),
+                        .padding(16.dp),
             ) {
                 FloatingActionButton(
                     onClick = { showShareMenu = true },
@@ -702,18 +707,10 @@ fun ItemsListScreen(
             }
         }
 
-        // Full screen draft preview overlay
-        DraftPreviewOverlay(
-            item = previewItem,
-            sourceBounds = previewBounds,
-            isVisible = previewItem != null,
-        )
-
         // FTUE Tour Overlays
         if (isTourActive && currentTourStep?.screen == com.scanium.app.ftue.TourScreen.ITEMS_LIST) {
             when (currentTourStep?.key) {
                 com.scanium.app.ftue.TourStepKey.ITEMS_ACTION_FAB,
-                com.scanium.app.ftue.TourStepKey.ITEMS_AI_ASSISTANT,
                 com.scanium.app.ftue.TourStepKey.ITEMS_SWIPE_DELETE,
                 com.scanium.app.ftue.TourStepKey.ITEMS_SELECTION,
                 -> {
@@ -738,14 +735,6 @@ fun ItemsListScreen(
                 else -> { /* Camera steps */ }
             }
         }
-    }
-
-    // Draft preview dialog (legacy/fallback if needed, but primary is overlay now)
-    previewDraft?.let { draft ->
-        DraftPreviewDialog(
-            draft = draft,
-            onDismiss = { previewDraft = null },
-        )
     }
 
     // Item detail sheet for viewing all attributes
@@ -810,27 +799,27 @@ fun ItemsListScreen(
 
 /**
  * Single item row in the list.
+ *
+ * Gesture behavior:
+ * - Tap: If in selection mode, toggles selection. Otherwise, opens edit screen.
+ * - Long press: Enters selection mode and selects this item.
  */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ItemRow(
     item: ScannedItem,
     isSelected: Boolean,
+    selectionMode: Boolean,
     onClick: () -> Unit,
-    onPreviewStart: (ScannedItem, Rect) -> Unit,
-    onPreviewEnd: () -> Unit,
+    onLongPress: () -> Unit,
     onRetryClassification: () -> Unit,
 ) {
-    var currentBounds by remember { mutableStateOf<Rect?>(null) }
     val interactionSource = remember { MutableInteractionSource() }
 
     Card(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    currentBounds = coordinates.boundsInWindow()
-                }
                 .semantics(mergeDescendants = true) {
                     contentDescription =
                         buildString {
@@ -847,6 +836,11 @@ private fun ItemRow(
                             if (isSelected) {
                                 append(". Selected")
                             }
+                            if (selectionMode) {
+                                append(". Tap to toggle selection")
+                            } else {
+                                append(". Tap to edit, long press to select")
+                            }
                         }
                 }
                 .pointerInput(Unit) {
@@ -860,11 +854,9 @@ private fun ItemRow(
                             } else {
                                 interactionSource.emit(PressInteraction.Cancel(press))
                             }
-                            // Always trigger preview end on release/cancel
-                            onPreviewEnd()
                         },
                         onLongPress = {
-                            currentBounds?.let { onPreviewStart(item, it) }
+                            onLongPress()
                         },
                         onTap = {
                             onClick()
@@ -1259,37 +1251,4 @@ private fun ConditionBadge(condition: ItemCondition) {
 private fun formatTimestamp(timestamp: Long): String {
     val format = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault())
     return format.format(Date(timestamp))
-}
-
-@Composable
-private fun DraftPreviewDialog(
-    draft: ListingDraft,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
-        },
-        title = { Text("Draft preview") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Title: ${draft.title.value.orEmpty()}")
-                Text("Description: ${draft.description.value.orEmpty()}")
-                Text("Price: ${formatPrice(draft.price.value)}")
-                Text("Condition: ${draft.fields[com.scanium.app.listing.DraftFieldKey.CONDITION]?.value.orEmpty()}")
-                Text("Status: ${draft.status.name.lowercase().replaceFirstChar { it.uppercase() }}")
-            }
-        },
-    )
-}
-
-private fun formatPrice(value: Double?): String {
-    if (value == null) return ""
-    val formatter = java.text.DecimalFormat("0.##")
-    formatter.maximumFractionDigits = 2
-    formatter.minimumFractionDigits = 0
-    return formatter.format(value)
 }
