@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -74,6 +75,7 @@ private data class ItemDraft(
  *
  * @param itemIds List of item IDs to edit
  * @param onBack Callback when user cancels or completes editing
+ * @param onNavigateToAssistant Callback to open AI assistant with the current item
  * @param itemsViewModel ViewModel for accessing and updating items
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -81,6 +83,7 @@ private data class ItemDraft(
 fun EditItemsScreen(
     itemIds: List<String>,
     onBack: () -> Unit,
+    onNavigateToAssistant: (List<String>) -> Unit,
     itemsViewModel: ItemsViewModel,
 ) {
     val allItems by itemsViewModel.items.collectAsState()
@@ -126,6 +129,23 @@ fun EditItemsScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Cancel",
+                        )
+                    }
+                },
+                actions = {
+                    // AI Assistant button - opens assistant with current item
+                    IconButton(
+                        onClick = {
+                            val currentItem = selectedItems.getOrNull(pagerState.currentPage)
+                            if (currentItem != null) {
+                                onNavigateToAssistant(listOf(currentItem.id))
+                            }
+                        },
+                        enabled = selectedItems.isNotEmpty(),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "AI Assistant",
                         )
                     }
                 },
