@@ -15,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.scanium.app.BuildConfig
 import com.scanium.app.ScaniumApplication
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.billing.ui.PaywallScreen
 import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.camera.CameraScreen
@@ -169,10 +170,10 @@ fun ScaniumNavGraph(
 
         // Part of ARCH-001/DX-003: Updated to use hiltViewModel() for DeveloperOptionsViewModel,
         // eliminating the need for manual dependency creation and Factory instantiation.
-        // DEV_MODE_ENABLED gates access to this screen - beta builds navigate back immediately
+        // FeatureFlags.allowDeveloperMode gates access - beta/prod builds navigate back immediately
         composable(Routes.SETTINGS_DEVELOPER) {
-            if (!BuildConfig.DEV_MODE_ENABLED) {
-                // Beta builds: block access to developer options via deep links
+            if (!FeatureFlags.allowDeveloperMode) {
+                // Beta/prod builds: block access to developer options via deep links
                 androidx.compose.runtime.LaunchedEffect(Unit) {
                     navController.popBackStack()
                 }
@@ -371,6 +372,8 @@ fun ScaniumNavGraph(
             )
         }
 
+        // AI Assistant route - gated by FeatureFlags.allowAiAssistant
+        // Beta/prod: navigates back immediately to guard against deep links or stale state
         composable(
             route = "${Routes.ASSISTANT}?itemIds={itemIds}&index={index}",
             arguments =
@@ -385,6 +388,13 @@ fun ScaniumNavGraph(
                     },
                 ),
         ) { backStackEntry ->
+            // Guard: AI Assistant is completely hidden in beta/prod builds
+            if (!FeatureFlags.allowAiAssistant) {
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+                return@composable
+            }
             val ids =
                 backStackEntry.arguments?.getString("itemIds")
                     ?.split(",")

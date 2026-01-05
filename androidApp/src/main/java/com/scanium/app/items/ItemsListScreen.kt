@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.components.AttributeChipsRow
@@ -109,9 +110,12 @@ fun ItemsListScreen(
     val targetBounds by tourViewModel?.targetBounds?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
 
     // SEC-010: Prevent screenshots of sensitive item data (prices, images)
-    // Respects developer mode setting to allow screenshots when enabled
+    // Beta/prod: FLAG_SECURE always applied (FeatureFlags.allowScreenshots = false)
+    // Dev: Respects developer mode setting to allow screenshots when enabled
     val settingsRepository = remember { SettingsRepository(context) }
-    val allowScreenshots by settingsRepository.devAllowScreenshotsFlow.collectAsState(initial = false)
+    val userAllowScreenshots by settingsRepository.devAllowScreenshotsFlow.collectAsState(initial = false)
+    // Effective value: only allow if both feature flag AND user preference are true
+    val allowScreenshots = FeatureFlags.allowScreenshots && userAllowScreenshots
 
     DisposableEffect(allowScreenshots) {
         val window = (context as? Activity)?.window
@@ -826,12 +830,15 @@ private fun ItemRow(
                             append(item.displayLabel)
                             append(". ")
                             append(item.formattedPriceRange)
-                            append(". ")
-                            append("Confidence: ${item.confidenceLevel.displayName}")
-                            when (item.classificationStatus) {
-                                "PENDING" -> append(". Classification in progress")
-                                "FAILED" -> append(". Classification failed")
-                                else -> {}
+                            // Diagnostic info only in dev builds
+                            if (FeatureFlags.showItemDiagnostics) {
+                                append(". ")
+                                append("Confidence: ${item.confidenceLevel.displayName}")
+                                when (item.classificationStatus) {
+                                    "PENDING" -> append(". Classification in progress")
+                                    "FAILED" -> append(". Classification failed")
+                                    else -> {}
+                                }
                             }
                             if (isSelected) {
                                 append(". Selected")
@@ -925,8 +932,11 @@ private fun ItemRow(
                         text = item.displayLabel,
                         style = MaterialTheme.typography.titleMedium,
                     )
-                    ConfidenceBadge(confidenceLevel = item.confidenceLevel)
-                    ClassificationStatusBadge(status = item.classificationStatus)
+                    // Diagnostic badges only shown in dev builds
+                    if (FeatureFlags.showItemDiagnostics) {
+                        ConfidenceBadge(confidenceLevel = item.confidenceLevel)
+                        ClassificationStatusBadge(status = item.classificationStatus)
+                    }
                 }
 
                 // Price display: user price if set, otherwise estimated range
@@ -967,7 +977,7 @@ private fun ItemRow(
                     )
                 }
 
-                // Timestamp and confidence percentage
+                // Timestamp (and confidence percentage in dev builds)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -976,16 +986,19 @@ private fun ItemRow(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Text(
-                        text = "•",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = item.formattedConfidence,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    // Confidence percentage only shown in dev builds
+                    if (FeatureFlags.showItemDiagnostics) {
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = item.formattedConfidence,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
 
                 // Classification error message and retry button

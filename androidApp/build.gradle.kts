@@ -157,6 +157,13 @@ android {
             buildConfigField("boolean", "DEV_MODE_ENABLED", "false")
             // App name: "Scanium"
             resValue("string", "app_name", "Scanium")
+
+            // Feature flags for production - restricted feature set
+            buildConfigField("boolean", "FEATURE_DEV_MODE", "false")
+            buildConfigField("boolean", "FEATURE_SCREENSHOTS", "false")
+            buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "false")
+            buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"NORMAL\"")
+            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
         }
         create("dev") {
             dimension = "distribution"
@@ -166,6 +173,13 @@ android {
             buildConfigField("boolean", "DEV_MODE_ENABLED", "true")
             // App name: "Scanium Dev" for side-by-side identification
             resValue("string", "app_name", "Scanium Dev")
+
+            // Feature flags for dev - full functionality
+            buildConfigField("boolean", "FEATURE_DEV_MODE", "true")
+            buildConfigField("boolean", "FEATURE_SCREENSHOTS", "true")
+            buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
+            buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
+            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
         }
         create("beta") {
             dimension = "distribution"
@@ -175,6 +189,13 @@ android {
             buildConfigField("boolean", "DEV_MODE_ENABLED", "false")
             // App name: "Scanium Beta" for side-by-side identification
             resValue("string", "app_name", "Scanium Beta")
+
+            // Feature flags for beta - restricted feature set (same as prod)
+            buildConfigField("boolean", "FEATURE_DEV_MODE", "false")
+            buildConfigField("boolean", "FEATURE_SCREENSHOTS", "false")
+            buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "false")
+            buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"NORMAL\"")
+            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
         }
     }
 
