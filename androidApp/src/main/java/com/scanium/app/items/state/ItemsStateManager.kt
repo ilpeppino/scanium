@@ -310,6 +310,7 @@ class ItemsStateManager(
                         barcodeValue = update.barcodeValue ?: item.barcodeValue,
                         userPriceCents = newUserPriceCents,
                         condition = newCondition,
+                        category = update.category ?: item.category,
                     )
                 } else {
                     item
@@ -704,4 +705,5 @@ data class ItemFieldUpdate(
     val clearUserPriceCents: Boolean = false,
     val condition: com.scanium.app.items.ItemCondition? = null,
     val clearCondition: Boolean = false,
+    val category: com.scanium.app.ml.ItemCategory? = null,
 )
