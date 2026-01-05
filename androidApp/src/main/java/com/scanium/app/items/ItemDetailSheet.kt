@@ -15,11 +15,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.QuestionMark
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -42,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.items.components.AttributeChip
 import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.AttributeConfidenceTier
@@ -96,6 +99,20 @@ fun ItemDetailSheet(
 
             HorizontalDivider()
 
+            // Barcode section (if available) with AI assistant button (dev only)
+            item.barcodeValue?.let { barcode ->
+                BarcodeSection(
+                    barcodeValue = barcode,
+                    onAskAi = if (FeatureFlags.allowAiAssistant && onGenerateListing != null) {
+                        onGenerateListing
+                    } else {
+                        null
+                    },
+                )
+
+                HorizontalDivider()
+            }
+
             // Attributes section
             if (item.attributes.isNotEmpty()) {
                 AttributesSection(
@@ -122,7 +139,9 @@ fun ItemDetailSheet(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Generate listing button (if attributes available)
-                if (item.attributes.isNotEmpty() && onGenerateListing != null) {
+                // Only show here if barcode section didn't already show the AI button
+                if (item.attributes.isNotEmpty() && onGenerateListing != null &&
+                    FeatureFlags.allowAiAssistant && item.barcodeValue == null) {
                     Button(
                         onClick = onGenerateListing,
                         modifier = Modifier.fillMaxWidth(),
@@ -144,6 +163,81 @@ fun ItemDetailSheet(
                     ) {
                         Text("Refresh Attributes")
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Barcode section with AI assistant button (dev flavor only).
+ * Displays the barcode value and a prominent "Ask AI" button centered below it.
+ */
+@Composable
+private fun BarcodeSection(
+    barcodeValue: String,
+    onAskAi: (() -> Unit)?,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        // Barcode value row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = MaterialTheme.shapes.small,
+                )
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Barcode Value",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = barcodeValue,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+
+        // AI assistant button (dev flavor only)
+        if (onAskAi != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                ElevatedButton(
+                    onClick = onAskAi,
+                    modifier = Modifier
+                        .semantics {
+                            contentDescription = "Ask AI assistant about this item"
+                        }
+                        .height(56.dp),
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                    elevation = ButtonDefaults.elevatedButtonElevation(
+                        defaultElevation = 4.dp,
+                        pressedElevation = 8.dp,
+                    ),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AutoAwesome,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Ask AI",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                 }
             }
         }
