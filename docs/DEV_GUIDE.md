@@ -770,7 +770,7 @@ docker compose -p scanium-monitoring up -d
 **From backend** (OpenTelemetry SDK):
 ```typescript
 // Backend automatically exports to Alloy
-// Configured in backend/src/index.ts
+// Configured in backend/src/main.ts
 // OTLP endpoint: http://localhost:4318 (HTTP)
 ```
 
