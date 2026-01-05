@@ -61,3 +61,6 @@ deploy/nas/env/monitoring.env
 # NAS compose environment file (contains secrets)
 deploy/nas/compose/.env
 !deploy/nas/compose/.env.example
+keystore.properties
+keystore/*.jks
+

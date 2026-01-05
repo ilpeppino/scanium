@@ -29,6 +29,8 @@ private val localProperties by lazy(LazyThreadSafetyMode.NONE) {
     }
 }
 
+
+
 /**
  * Allow Android Studio to open either the repo root or the androidApp module directly.
  * When androidApp is opened standalone, rootProject points to /androidApp so we fall
@@ -53,15 +55,22 @@ private fun localPropertyOrEnv(
 ): String = localProperties.getProperty(key) ?: System.getenv(envKey) ?: defaultValue
 
 val saveClassifierCropsDebug = localPropertyOrEnv("scanium.classifier.save_crops.debug", envKey = "", defaultValue = "false").toBoolean()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 
 android {
     namespace = "com.scanium.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.scanium.app"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
 
         val versionCodeEnv = localPropertyOrEnv("scanium.version.code", "SCANIUM_VERSION_CODE", "1").toInt()
         val versionNameEnv = localPropertyOrEnv("scanium.version.name", "SCANIUM_VERSION_NAME", "1.0")
@@ -134,13 +143,27 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = localPropertyOrEnv("scanium.keystore.file", "SCANIUM_KEYSTORE_FILE")
-            if (keystorePath.isNotEmpty() && file(keystorePath).exists()) {
-                storeFile = file(keystorePath)
-                storePassword = localPropertyOrEnv("scanium.keystore.password", "SCANIUM_KEYSTORE_PASSWORD")
-                keyAlias = localPropertyOrEnv("scanium.key.alias", "SCANIUM_KEY_ALIAS")
-                keyPassword = localPropertyOrEnv("scanium.key.password", "SCANIUM_KEY_PASSWORD")
+            if (!keystorePropertiesFile.exists()) {
+                throw GradleException("keystore.properties not found at: ${keystorePropertiesFile.absolutePath}")
             }
+
+            val storeFilePath = keystoreProperties.getProperty("storeFile")
+                ?: throw GradleException("keystore.properties missing 'storeFile'")
+            val storePasswordValue = keystoreProperties.getProperty("storePassword")
+                ?: throw GradleException("keystore.properties missing 'storePassword'")
+            val keyAliasValue = keystoreProperties.getProperty("keyAlias")
+                ?: throw GradleException("keystore.properties missing 'keyAlias'")
+            val keyPasswordValue = keystoreProperties.getProperty("keyPassword")
+                ?: throw GradleException("keystore.properties missing 'keyPassword'")
+
+            storeFile = rootProject.file(storeFilePath)
+            if (storeFile == null || !storeFile!!.exists()) {
+                throw GradleException("Keystore file not found: ${rootProject.file(storeFilePath).absolutePath}")
+            }
+
+            storePassword = storePasswordValue
+            keyAlias = keyAliasValue
+            keyPassword = keyPasswordValue
         }
     }
 
@@ -225,9 +248,7 @@ android {
             buildConfigField("boolean", "CLASSIFIER_SAVE_CROPS", "false")
 
             // Only sign if we have a valid configuration
-            if (signingConfigs.getByName("release").storeFile != null) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
