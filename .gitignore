@@ -42,6 +42,11 @@ backend/.env
 backend/.env.*
 backend/.env.backup
 backend/.env.last
+# Secrets
+backend/secrets/
+*.json
+*.key
+*.pem
 !backend/.env.example
 
 # NAS deployment environment files (secrets)
