@@ -2,16 +2,25 @@ package com.scanium.app.monitoring
 
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.runTest
+import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for HealthCheckRepository.
  * Tests endpoint validation rules using MockWebServer.
+ *
+ * Note: The repository checks all endpoints in parallel, so we use a Dispatcher
+ * to return appropriate responses based on the request path rather than relying
+ * on enqueue order.
  */
+@RunWith(RobolectricTestRunner::class)
 class HealthCheckRepositoryTest {
 
     private lateinit var mockWebServer: MockWebServer
@@ -31,16 +40,35 @@ class HealthCheckRepositoryTest {
 
     private fun baseUrl(): String = mockWebServer.url("/").toString().trimEnd('/')
 
+    /**
+     * Helper to set up a dispatcher that returns specific responses per endpoint.
+     */
+    private fun setDispatcher(
+        healthCode: Int = 200,
+        configCode: Int = 200,
+        preflightCode: Int = 200,
+        assistStatusCode: Int = 200,
+    ) {
+        mockWebServer.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                return when (request.path) {
+                    "/health" -> MockResponse().setResponseCode(healthCode)
+                    "/v1/config" -> MockResponse().setResponseCode(configCode)
+                    "/v1/preflight" -> MockResponse().setResponseCode(preflightCode)
+                    "/v1/assist/status" -> MockResponse().setResponseCode(assistStatusCode)
+                    else -> MockResponse().setResponseCode(404)
+                }
+            }
+        }
+    }
+
     // =========================================================================
     // /health endpoint tests
     // =========================================================================
 
     @Test
     fun `health 200 passes`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200))
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -51,10 +79,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `health 500 fails`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(500)) // health fails
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 500, configCode = 200, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -70,10 +95,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 200 with API key passes`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config - OK with key
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-api-key", true)
         val result = repository.performHealthCheck(config)
@@ -83,10 +105,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 401 with API key fails`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(401)) // config - 401 fails with key
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 401, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-api-key", true)
         val result = repository.performHealthCheck(config)
@@ -101,10 +120,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 401 without API key passes - endpoint is reachable`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(401)) // config - 401 OK without key
-        mockWebServer.enqueue(MockResponse().setResponseCode(401)) // preflight - 401 OK without key
-        mockWebServer.enqueue(MockResponse().setResponseCode(403)) // assist/status - 403 OK
+        setDispatcher(healthCode = 200, configCode = 401, preflightCode = 401, assistStatusCode = 403)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -115,10 +131,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 200 without API key passes`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -132,10 +145,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `preflight 401 without API key passes`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(401)) // preflight - 401 OK without key
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 401, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -145,10 +155,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `preflight 500 fails`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(500)) // preflight - server error
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 500, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -163,10 +170,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `assist-status 403 accepted - protected but reachable`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(403)) // assist/status - 403 OK
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 403)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -176,10 +180,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `assist-status 200 passes`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-key", true)
         val result = repository.performHealthCheck(config)
@@ -189,10 +190,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `assist-status 500 fails`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(500)) // assist/status
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 500)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -207,10 +205,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `failure signature format is correct`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(500)) // health
-        mockWebServer.enqueue(MockResponse().setResponseCode(401)) // config
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // preflight
-        mockWebServer.enqueue(MockResponse().setResponseCode(200)) // assist/status
+        setDispatcher(healthCode = 500, configCode = 401, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-key", true)
         val result = repository.performHealthCheck(config)
@@ -222,10 +217,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `OK result has empty failure signature`() = runTest {
-        mockWebServer.enqueue(MockResponse().setResponseCode(200))
-        mockWebServer.enqueue(MockResponse().setResponseCode(200))
-        mockWebServer.enqueue(MockResponse().setResponseCode(200))
-        mockWebServer.enqueue(MockResponse().setResponseCode(200))
+        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
