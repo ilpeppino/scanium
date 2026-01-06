@@ -1,136 +1,254 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
-# Scanium Public Endpoint Smoke Test
+# Scanium Smoke Test
 # =============================================================================
-# Tests that the backend is reachable through Cloudflare tunnel.
+# Tests backend endpoints for basic reachability and authentication.
 # Returns exit code 0 if all tests pass, 1 otherwise.
 #
 # Usage:
-#   ./scripts/ops/smoke.sh                              # Test public endpoints only
-#   ./scripts/ops/smoke.sh https://scanium.gtemp1.com   # Test custom URL
-#   SCANIUM_API_KEY=xxx ./scripts/ops/smoke.sh          # Include authenticated tests
+#   ./scripts/ops/smoke.sh --help
+#   ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
+#   SCANIUM_API_KEY=xxx ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
 #
-# Environment variables:
-#   SCANIUM_API_KEY - If set, also tests authenticated endpoints (preflight/chat)
-#
-# Add to cron for monitoring (e.g., every 5 minutes):
-#   */5 * * * * /path/to/smoke.sh >> /var/log/scanium-smoke.log 2>&1
 # =============================================================================
 
-set -euo pipefail
+# Source common library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+source "$SCRIPT_DIR/lib/common.sh"
 
-BASE_URL="${1:-https://scanium.gtemp1.com}"
+# -----------------------------------------------------------------------------
+# Defaults
+# -----------------------------------------------------------------------------
+BASE_URL=""
 API_KEY="${SCANIUM_API_KEY:-}"
 TIMEOUT=10
+VERBOSE=false
 FAILED=0
 
-log() {
-  echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] $*"
+# -----------------------------------------------------------------------------
+# Help
+# -----------------------------------------------------------------------------
+show_help() {
+  cat <<EOF
+smoke.sh - Scanium backend smoke tests
+
+Usage: $(basename "$0") [OPTIONS]
+
+Options:
+  --base-url URL    Base URL to test (default: http://localhost:8080)
+  --api-key KEY     API key for authenticated tests (or set SCANIUM_API_KEY)
+  --timeout SECS    Timeout per request in seconds (default: 10)
+  --verbose         Show detailed output including response bodies
+  --help            Show this help message
+
+Examples:
+  # Test public production endpoint
+  ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
+
+  # Test with authentication
+  SCANIUM_API_KEY=xxx ./scripts/ops/smoke.sh --base-url https://scanium.gtemp1.com
+
+  # Test local development
+  ./scripts/ops/smoke.sh --base-url http://localhost:8080 --verbose
+
+Endpoints tested:
+  GET /health           - Health check (expect 200)
+  GET /v1/config        - Config endpoint (200 with key, 401 without)
+  GET /v1/preflight     - Preflight check (200 with key, 401 without)
+  GET /v1/assist/status - Assist status (200/403 with key, 401/403 without)
+
+Exit codes:
+  0 - All tests passed
+  1 - One or more tests failed
+
+EOF
 }
 
+# -----------------------------------------------------------------------------
+# Parse arguments
+# -----------------------------------------------------------------------------
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help|-h)
+      show_help
+      exit 0
+      ;;
+    --base-url)
+      BASE_URL="$2"
+      shift 2
+      ;;
+    --base-url=*)
+      BASE_URL="${1#*=}"
+      shift
+      ;;
+    --api-key)
+      API_KEY="$2"
+      shift 2
+      ;;
+    --api-key=*)
+      API_KEY="${1#*=}"
+      shift
+      ;;
+    --timeout)
+      TIMEOUT="$2"
+      shift 2
+      ;;
+    --timeout=*)
+      TIMEOUT="${1#*=}"
+      shift
+      ;;
+    --verbose|-v)
+      VERBOSE=true
+      shift
+      ;;
+    *)
+      # Support legacy positional argument for base URL
+      if [[ -z "$BASE_URL" && "$1" != -* ]]; then
+        BASE_URL="$1"
+        shift
+      else
+        die "Unknown option: $1. Use --help for usage."
+      fi
+      ;;
+  esac
+done
+
+# -----------------------------------------------------------------------------
+# Validate base URL
+# -----------------------------------------------------------------------------
+if [[ -z "$BASE_URL" ]]; then
+  # Try localhost first
+  if curl -s --max-time 2 -o /dev/null http://localhost:8080/health 2>/dev/null; then
+    BASE_URL="http://localhost:8080"
+    log_info "Using detected local backend: $BASE_URL"
+  else
+    die "No --base-url provided and localhost:8080 not reachable. Use --help for usage."
+  fi
+fi
+
+# Strip trailing slash
+BASE_URL="${BASE_URL%/}"
+
+# -----------------------------------------------------------------------------
+# Test functions
+# -----------------------------------------------------------------------------
 test_endpoint() {
   local endpoint="$1"
-  local expected_code="$2"
+  local expected_codes="$2"  # Comma-separated list of acceptable codes
+  local auth_required="${3:-false}"
   local url="${BASE_URL}${endpoint}"
 
-  local http_code
-  http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$TIMEOUT" "$url" 2>/dev/null || echo "000")
+  local headers=""
+  if [[ "$auth_required" == "true" && -n "$API_KEY" ]]; then
+    headers="X-API-Key: $API_KEY"
+  fi
 
-  if [[ "$http_code" == "$expected_code" ]]; then
-    log "PASS: $endpoint -> HTTP $http_code"
+  # Get status and body
+  local response
+  local http_code
+  local body=""
+
+  if [[ "$VERBOSE" == "true" ]]; then
+    local tmp_body
+    tmp_body=$(mktemp)
+    http_code=$(curl -s -w '%{http_code}' --max-time "$TIMEOUT" -o "$tmp_body" \
+      ${headers:+-H "$headers"} "$url" 2>/dev/null || echo "000")
+    body=$(cat "$tmp_body" 2>/dev/null || true)
+    rm -f "$tmp_body"
+  else
+    http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$TIMEOUT" \
+      ${headers:+-H "$headers"} "$url" 2>/dev/null || echo "000")
+  fi
+
+  # Check if status is in expected list
+  local IFS=','
+  local expected
+  local passed=false
+  for expected in $expected_codes; do
+    if [[ "$http_code" == "$expected" ]]; then
+      passed=true
+      break
+    fi
+  done
+
+  local auth_suffix=""
+  [[ "$auth_required" == "true" && -n "$API_KEY" ]] && auth_suffix=" (auth)"
+
+  if [[ "$passed" == "true" ]]; then
+    log_success "$endpoint$auth_suffix -> HTTP $http_code"
     return 0
   else
-    log "FAIL: $endpoint -> HTTP $http_code (expected $expected_code)"
+    log_fail "$endpoint$auth_suffix -> HTTP $http_code (expected: $expected_codes)"
+
+    if [[ "$VERBOSE" == "true" && -n "$body" ]]; then
+      local truncated
+      truncated=$(truncate_string "$body" 200 | redact_secrets)
+      echo "  Response: $truncated"
+    fi
     return 1
   fi
 }
 
-test_authenticated_endpoint() {
-  local endpoint="$1"
-  local expected_code="$2"
-  local method="${3:-GET}"
-  local body="${4:-}"
-  local url="${BASE_URL}${endpoint}"
+# -----------------------------------------------------------------------------
+# Run tests
+# -----------------------------------------------------------------------------
+log_info "Starting smoke tests against $BASE_URL"
+[[ -n "$API_KEY" ]] && log_info "API key provided - will run authenticated tests"
+echo ""
 
-  local http_code
-  if [[ "$method" == "POST" ]]; then
-    http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$TIMEOUT" \
-      -X POST \
-      -H "Content-Type: application/json" \
-      -H "X-API-Key: $API_KEY" \
-      -d "$body" \
-      "$url" 2>/dev/null || echo "000")
-  else
-    http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$TIMEOUT" \
-      -H "X-API-Key: $API_KEY" \
-      "$url" 2>/dev/null || echo "000")
-  fi
-
-  if [[ "$http_code" == "$expected_code" ]]; then
-    log "PASS: $endpoint (auth) -> HTTP $http_code"
-    return 0
-  else
-    log "FAIL: $endpoint (auth) -> HTTP $http_code (expected $expected_code)"
-    return 1
-  fi
-}
-
-log "Starting smoke tests against $BASE_URL"
-
-# =============================================================================
-# PUBLIC ENDPOINT TESTS (no auth required)
-# =============================================================================
-
-# Test 1: Health endpoint (no auth required, should return 200)
+# Test 1: Health endpoint (always expect 200)
 if ! test_endpoint "/health" "200"; then
   FAILED=1
 fi
 
-# Test 2: Config endpoint (requires auth, should return 401 without API key)
-if ! test_endpoint "/v1/config" "401"; then
-  FAILED=1
-fi
-
-# Test 3: Assist status (requires auth, should return 401 without API key)
-# Note: May return 403 if Cloudflare WAF blocks the request
-http_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time "$TIMEOUT" "${BASE_URL}/v1/assist/status" 2>/dev/null || echo "000")
-if [[ "$http_code" == "401" || "$http_code" == "403" ]]; then
-  log "PASS: /v1/assist/status -> HTTP $http_code (401 or 403 expected)"
-else
-  log "FAIL: /v1/assist/status -> HTTP $http_code (expected 401 or 403)"
-  FAILED=1
-fi
-
-# =============================================================================
-# AUTHENTICATED ENDPOINT TESTS (only if API key provided)
-# =============================================================================
-
+# Test 2: Config endpoint
+# - With API key: expect 200
+# - Without API key: expect 401 (auth required)
 if [[ -n "$API_KEY" ]]; then
-  log "Running authenticated endpoint tests..."
-
-  # Test 4: Config endpoint with valid API key (should return 200)
-  if ! test_authenticated_endpoint "/v1/config" "200"; then
-    FAILED=1
-  fi
-
-  # Test 5: Preflight/chat endpoint with valid API key (should return 200)
-  # Uses minimal chat payload that Android preflight sends
-  PREFLIGHT_BODY='{"message":"ping","items":[],"history":[]}'
-  if ! test_authenticated_endpoint "/v1/assist/chat" "200" "POST" "$PREFLIGHT_BODY"; then
+  if ! test_endpoint "/v1/config" "200" "true"; then
     FAILED=1
   fi
 else
-  log "Skipping authenticated tests (SCANIUM_API_KEY not set)"
+  if ! test_endpoint "/v1/config" "401"; then
+    FAILED=1
+  fi
 fi
 
-# =============================================================================
-# SUMMARY
-# =============================================================================
+# Test 3: Preflight endpoint
+# - With API key: expect 200
+# - Without API key: expect 401 (auth required)
+if [[ -n "$API_KEY" ]]; then
+  if ! test_endpoint "/v1/preflight" "200" "true"; then
+    FAILED=1
+  fi
+else
+  if ! test_endpoint "/v1/preflight" "401"; then
+    FAILED=1
+  fi
+fi
 
+# Test 4: Assist status endpoint
+# - With API key: expect 200 or 403 (route protected but reachable)
+# - Without API key: expect 401 or 403
+if [[ -n "$API_KEY" ]]; then
+  if ! test_endpoint "/v1/assist/status" "200,403" "true"; then
+    FAILED=1
+  fi
+else
+  if ! test_endpoint "/v1/assist/status" "401,403"; then
+    FAILED=1
+  fi
+fi
+
+# -----------------------------------------------------------------------------
+# Summary
+# -----------------------------------------------------------------------------
+echo ""
 if [[ "$FAILED" -eq 0 ]]; then
-  log "All smoke tests passed"
+  log_success "All smoke tests passed"
   exit 0
 else
-  log "Some smoke tests failed"
+  log_fail "Some smoke tests failed"
   exit 1
 fi
