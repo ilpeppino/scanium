@@ -23,6 +23,5 @@ services:
       - SMOKE_INTERVAL=300
     command: >
       sh -c "apk add --no-cache curl bash &&
-             chmod +x /scripts/*.sh &&
-             /scripts/smoke-loop.sh"
+             /bin/bash /scripts/smoke-loop.sh"
     mem_limit: 32m
