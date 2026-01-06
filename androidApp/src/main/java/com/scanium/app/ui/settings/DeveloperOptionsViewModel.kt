@@ -24,6 +24,9 @@ import com.scanium.app.model.config.ConnectionTestResult
 import com.scanium.app.model.config.FeatureFlagRepository
 import com.scanium.app.platform.ConnectivityStatus
 import com.scanium.app.platform.ConnectivityStatusProvider
+import com.scanium.app.monitoring.DevHealthMonitorScheduler
+import com.scanium.app.monitoring.DevHealthMonitorStateStore
+import com.scanium.app.monitoring.MonitorHealthStatus
 import com.scanium.app.selling.assistant.AssistantPreflightManager
 import com.scanium.app.selling.assistant.PreflightResult
 import com.scanium.app.selling.assistant.PreflightStatus
@@ -59,6 +62,10 @@ class DeveloperOptionsViewModel
         private val connectivityStatusProvider: ConnectivityStatusProvider,
         private val preflightManager: AssistantPreflightManager,
     ) : AndroidViewModel(application) {
+        // Health monitor (DEV-only)
+        private val healthMonitorStateStore = DevHealthMonitorStateStore(application)
+        private val healthMonitorScheduler = DevHealthMonitorScheduler(application)
+
         // Diagnostics state
         val diagnosticsState: StateFlow<DiagnosticsState> = diagnosticsRepository.state
 
@@ -129,6 +136,32 @@ class DeveloperOptionsViewModel
         val overlayAccuracyStep: StateFlow<Int> =
             settingsRepository.devOverlayAccuracyStepFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+        // ==================== Health Monitor (DEV-only) ====================
+
+        val healthMonitorState: StateFlow<DevHealthMonitorStateStore.MonitorState> =
+            healthMonitorStateStore.stateFlow
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(5000),
+                    DevHealthMonitorStateStore.MonitorState(null, null, null, null, null),
+                )
+
+        val healthMonitorConfig: StateFlow<DevHealthMonitorStateStore.MonitorConfig> =
+            healthMonitorStateStore.configFlow
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(5000),
+                    DevHealthMonitorStateStore.MonitorConfig(false, null, true),
+                )
+
+        val healthMonitorWorkState: StateFlow<DevHealthMonitorScheduler.WorkState> =
+            healthMonitorScheduler.getWorkInfoFlow()
+                .stateIn(
+                    viewModelScope,
+                    SharingStarted.WhileSubscribed(5000),
+                    DevHealthMonitorScheduler.WorkState.NotScheduled,
+                )
 
         // Auto-refresh state
         private val _autoRefreshEnabled = MutableStateFlow(false)
@@ -428,6 +461,55 @@ class DeveloperOptionsViewModel
                     }
                 }
             }
+        }
+
+        // ==================== Health Monitor Controls (DEV-only) ====================
+
+        /**
+         * Enable or disable the background health monitor.
+         */
+        fun setHealthMonitorEnabled(enabled: Boolean) {
+            viewModelScope.launch {
+                healthMonitorStateStore.setEnabled(enabled)
+                if (enabled) {
+                    healthMonitorScheduler.enable()
+                } else {
+                    healthMonitorScheduler.disable()
+                }
+            }
+        }
+
+        /**
+         * Set whether to notify on recovery.
+         */
+        fun setHealthMonitorNotifyOnRecovery(notify: Boolean) {
+            viewModelScope.launch {
+                healthMonitorStateStore.setNotifyOnRecovery(notify)
+            }
+        }
+
+        /**
+         * Set a custom base URL for health checks.
+         */
+        fun setHealthMonitorBaseUrl(url: String?) {
+            viewModelScope.launch {
+                healthMonitorStateStore.setBaseUrlOverride(url)
+            }
+        }
+
+        /**
+         * Run a one-time health check immediately.
+         */
+        fun runHealthCheckNow() {
+            healthMonitorScheduler.runNow()
+        }
+
+        /**
+         * Get the effective base URL for health monitoring.
+         */
+        fun getHealthMonitorEffectiveBaseUrl(): String {
+            val config = healthMonitorConfig.value
+            return healthMonitorStateStore.getEffectiveBaseUrl(config)
         }
 
         override fun onCleared() {

@@ -418,6 +418,9 @@ dependencies {
     // OkHttp for cloud classification API
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    // WorkManager for background tasks (DEV-only health monitoring)
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
+
     // Room persistence
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")

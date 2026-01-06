@@ -25,6 +25,9 @@ import com.scanium.app.R
 import com.scanium.app.camera.ConfidenceTiers
 import com.scanium.app.diagnostics.*
 import com.scanium.app.model.config.ConnectionTestResult
+import com.scanium.app.monitoring.DevHealthMonitorScheduler
+import com.scanium.app.monitoring.DevHealthMonitorStateStore
+import com.scanium.app.monitoring.MonitorHealthStatus
 import com.scanium.app.selling.assistant.PreflightResult
 import com.scanium.app.selling.assistant.PreflightStatus
 import java.text.SimpleDateFormat
@@ -63,6 +66,11 @@ fun DeveloperOptionsScreen(
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // Health Monitor state
+    val healthMonitorState by viewModel.healthMonitorState.collectAsState()
+    val healthMonitorConfig by viewModel.healthMonitorConfig.collectAsState()
+    val healthMonitorWorkState by viewModel.healthMonitorWorkState.collectAsState()
 
     // Show snackbar for copy result
     LaunchedEffect(copyResult) {
@@ -117,6 +125,20 @@ fun DeveloperOptionsScreen(
                 state = preflightState,
                 onRefresh = { viewModel.refreshPreflight() },
                 onClearCache = { viewModel.clearPreflightCache() },
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Background Health Monitor Section
+            HealthMonitorSection(
+                monitorState = healthMonitorState,
+                monitorConfig = healthMonitorConfig,
+                workState = healthMonitorWorkState,
+                effectiveBaseUrl = viewModel.getHealthMonitorEffectiveBaseUrl(),
+                onEnabledChange = { viewModel.setHealthMonitorEnabled(it) },
+                onNotifyRecoveryChange = { viewModel.setHealthMonitorNotifyOnRecovery(it) },
+                onBaseUrlChange = { viewModel.setHealthMonitorBaseUrl(it) },
+                onRunNow = { viewModel.runHealthCheckNow() },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -1618,5 +1640,299 @@ private fun OverlayAccuracySliderRow(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+// ==================== Health Monitor Section ====================
+
+/**
+ * Background health monitoring section for DEV builds.
+ * Configures periodic backend health checks with local notifications.
+ */
+@Composable
+private fun HealthMonitorSection(
+    monitorState: DevHealthMonitorStateStore.MonitorState,
+    monitorConfig: DevHealthMonitorStateStore.MonitorConfig,
+    workState: DevHealthMonitorScheduler.WorkState,
+    effectiveBaseUrl: String,
+    onEnabledChange: (Boolean) -> Unit,
+    onNotifyRecoveryChange: (Boolean) -> Unit,
+    onBaseUrlChange: (String?) -> Unit,
+    onRunNow: () -> Unit,
+) {
+    var baseUrlInput by remember(monitorConfig.baseUrlOverride) {
+        mutableStateOf(monitorConfig.baseUrlOverride ?: "")
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    Icons.Default.MonitorHeart,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = "Background Health Monitor",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Status badge
+        HealthMonitorStatusBadge(
+            isEnabled = monitorConfig.enabled,
+            workState = workState,
+            lastStatus = monitorState.lastStatus,
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Settings card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            ),
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                // Enable toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Enable monitoring",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = "Check backend every 15 minutes",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = monitorConfig.enabled,
+                        onCheckedChange = onEnabledChange,
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Notify on recovery toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Notify on recovery",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = "Send notification when backend recovers",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(
+                        checked = monitorConfig.notifyOnRecovery,
+                        onCheckedChange = onNotifyRecoveryChange,
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Base URL input
+                Text(
+                    text = "Base URL Override",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                )
+                Text(
+                    text = "Leave empty to use default: $effectiveBaseUrl",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = baseUrlInput,
+                    onValueChange = { baseUrlInput = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("https://your-backend.example.com") },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                )
+                if (baseUrlInput != (monitorConfig.baseUrlOverride ?: "")) {
+                    TextButton(
+                        onClick = {
+                            onBaseUrlChange(baseUrlInput.takeIf { it.isNotBlank() })
+                        },
+                    ) {
+                        Text("Save URL")
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Last check result
+                Text(
+                    text = "Last Check",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                if (monitorState.hasEverRun) {
+                    val statusColor = when (monitorState.lastStatus) {
+                        MonitorHealthStatus.OK -> Color(0xFF4CAF50)
+                        MonitorHealthStatus.FAIL -> Color(0xFFF44336)
+                        null -> Color(0xFF9E9E9E)
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(statusColor),
+                        )
+                        Text(
+                            text = when (monitorState.lastStatus) {
+                                MonitorHealthStatus.OK -> "OK"
+                                MonitorHealthStatus.FAIL -> "FAIL"
+                                null -> "Unknown"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = statusColor,
+                        )
+                        monitorState.lastCheckedAt?.let { ts ->
+                            Text(
+                                text = "at ${formatTimestamp(ts)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    monitorState.lastFailureSummary?.let { summary ->
+                        Text(
+                            text = summary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFF44336),
+                            modifier = Modifier.padding(start = 18.dp, top = 4.dp),
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "Never run",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                // Run now button
+                Button(
+                    onClick = onRunNow,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Run Now")
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Status badge showing current health monitor state.
+ */
+@Composable
+private fun HealthMonitorStatusBadge(
+    isEnabled: Boolean,
+    workState: DevHealthMonitorScheduler.WorkState,
+    lastStatus: MonitorHealthStatus?,
+) {
+    val (color, text, icon) = when {
+        !isEnabled -> Triple(
+            Color(0xFF9E9E9E),
+            "Disabled",
+            Icons.Default.PauseCircle,
+        )
+        workState == DevHealthMonitorScheduler.WorkState.Running -> Triple(
+            Color(0xFF2196F3),
+            "Running...",
+            Icons.Default.Sync,
+        )
+        lastStatus == MonitorHealthStatus.OK -> Triple(
+            Color(0xFF4CAF50),
+            "Enabled - Last check OK",
+            Icons.Default.CheckCircle,
+        )
+        lastStatus == MonitorHealthStatus.FAIL -> Triple(
+            Color(0xFFF44336),
+            "Enabled - Last check FAILED",
+            Icons.Default.Error,
+        )
+        else -> Triple(
+            Color(0xFF2196F3),
+            "Enabled - Waiting for first check",
+            Icons.Default.Schedule,
+        )
+    }
+
+    Surface(
+        color = color.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                icon,
+                contentDescription = text,
+                tint = color,
+                modifier = Modifier.size(24.dp),
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = color,
+            )
+        }
     }
 }
