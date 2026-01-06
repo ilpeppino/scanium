@@ -12,6 +12,7 @@ import { healthRoutes } from './modules/health/routes.js';
 import { ebayAuthRoutes } from './modules/auth/ebay/routes.js';
 import { classifierRoutes } from './modules/classifier/routes.js';
 import { assistantRoutes } from './modules/assistant/routes.js';
+import { visionInsightsRoutes } from './modules/vision/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { billingRoutes } from './modules/billing/billing.routes.js';
 import { configRoutes } from './modules/config/config.routes.js';
@@ -54,7 +55,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   app.setErrorHandler(errorHandlerPlugin);
 
   await app.register(apiGuardPlugin, {
-    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/admin/'],
+    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/vision/', '/v1/admin/'],
     maxRequests: Number(process.env.SECURITY_RATE_LIMIT_MAX ?? 30),
     windowMs: Number(process.env.SECURITY_RATE_LIMIT_WINDOW_MS ?? 10_000),
   });
@@ -97,6 +98,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Assistant chat proxy
   await app.register(assistantRoutes, { prefix: '/v1', config });
+
+  // Vision insights for immediate prefill
+  await app.register(visionInsightsRoutes, { prefix: '/v1', config });
 
   // Billing verification stub
   await app.register(billingRoutes, { prefix: '/v1' });

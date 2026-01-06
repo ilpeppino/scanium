@@ -8,9 +8,11 @@ import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.ml.VisionInsightsRepository
 import com.scanium.app.model.billing.BillingProvider
 import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.model.config.FeatureFlagRepository
+import com.scanium.app.network.DeviceIdProvider
 import com.scanium.app.platform.ConnectivityStatusProvider
 import dagger.Module
 import dagger.Provides
@@ -82,6 +84,18 @@ object RepositoryModule {
             entitlementPolicyFlow = entitlementManager.entitlementPolicyFlow,
             connectivityStatusProvider = connectivityStatusProvider,
             apiKeyStore = apiKeyStore,
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideVisionInsightsRepository(
+        @ApplicationContext context: Context,
+        apiKeyStore: SecureApiKeyStore,
+    ): VisionInsightsRepository {
+        return VisionInsightsRepository(
+            apiKeyProvider = { apiKeyStore.getApiKey() },
+            getDeviceId = { DeviceIdProvider.getHashedDeviceId(context) },
         )
     }
 }
