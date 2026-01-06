@@ -12,8 +12,8 @@
 MAC_SSH_HOST=
 MAC_SSH_USER=
 
-# Repo path on Mac
-MAC_REPO_DIR=~/dev/scanium
+# Repo path on Mac (use quotes to prevent local ~ expansion)
+MAC_REPO_DIR='~/dev/scanium'
 
 # Phone storage paths (after running termux-setup-storage)
 PHONE_DOWNLOADS_DIR=~/storage/downloads
