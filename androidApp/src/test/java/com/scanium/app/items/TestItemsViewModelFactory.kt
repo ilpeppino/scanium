@@ -1,19 +1,37 @@
 package com.scanium.app.items
 
+import android.content.Context
+import android.net.Uri
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
+import com.scanium.app.items.state.ItemsStateManager
+import com.scanium.app.ml.VisionInsightsPrefiller
+import com.scanium.app.ml.VisionInsightsRepository
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.telemetry.facade.Telemetry
+import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+
+/**
+ * A no-op VisionInsightsPrefiller for testing.
+ * Does nothing when called - no network requests, no state updates.
+ */
+object NoopVisionInsightsPrefiller {
+    fun create(): VisionInsightsPrefiller {
+        val mockRepository = mockk<VisionInsightsRepository>(relaxed = true)
+        return VisionInsightsPrefiller(mockRepository)
+    }
+}
 
 /**
  * Helper for constructing [ItemsViewModel] instances in unit tests.
@@ -29,6 +47,7 @@ fun createTestItemsViewModel(
     cloudClassifier: ItemClassifier = NoopClassifier,
     itemsStore: ScannedItemStore = NoopScannedItemStore,
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
+    visionInsightsPrefiller: VisionInsightsPrefiller = NoopVisionInsightsPrefiller.create(),
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
     mainDispatcher: CoroutineDispatcher = workerDispatcher,
@@ -40,6 +59,7 @@ fun createTestItemsViewModel(
         cloudClassifier = cloudClassifier,
         itemsStore = itemsStore,
         stableItemCropper = stableItemCropper,
+        visionInsightsPrefiller = visionInsightsPrefiller,
         telemetry = telemetry,
         workerDispatcher = workerDispatcher,
         mainDispatcher = mainDispatcher,
