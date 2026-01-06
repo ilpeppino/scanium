@@ -423,6 +423,53 @@ class ItemsStateManager(
     }
 
     /**
+     * Apply vision insights to an item for immediate prefill.
+     *
+     * This is called immediately after a photo is captured to populate
+     * OCR text, brand/logo, and color information without waiting for
+     * full classification.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param visionAttributes Vision data (OCR, colors, logos, labels)
+     * @param suggestedLabel Optional suggested label derived from vision data
+     * @param categoryHint Optional category hint from vision labels
+     */
+    fun applyVisionInsights(
+        aggregatedId: String,
+        visionAttributes: VisionAttributes,
+        suggestedLabel: String? = null,
+        categoryHint: String? = null,
+    ) {
+        // Apply vision attributes
+        itemAggregator.applyEnhancedClassification(
+            aggregatedId = aggregatedId,
+            category = categoryHint?.let { hint ->
+                // Try to map category hint to ItemCategory
+                try {
+                    ItemCategory.entries.find { it.name.equals(hint, ignoreCase = true) }
+                } catch (e: Exception) {
+                    null
+                }
+            },
+            label = suggestedLabel,
+            priceRange = null,
+            classificationConfidence = null,
+            attributes = null,
+            visionAttributes = visionAttributes,
+            isFromBackend = true,
+        )
+
+        // Update the items state to reflect the changes
+        scope.launch(workerDispatcher) {
+            withContext(mainDispatcher) {
+                updateItemsState(notifyNewItems = false)
+            }
+        }
+
+        Log.i(TAG, "Applied vision insights to item $aggregatedId: label=$suggestedLabel category=$categoryHint")
+    }
+
+    /**
      * Update price estimation for an aggregated item.
      */
     fun updatePriceEstimation(

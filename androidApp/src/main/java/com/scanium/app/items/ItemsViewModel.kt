@@ -1,5 +1,6 @@
 package com.scanium.app.items
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -15,6 +16,7 @@ import com.scanium.app.items.overlay.OverlayTrackManager
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.ml.DetectionResult
+import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
@@ -67,6 +69,7 @@ class ItemsViewModel
         @Named("cloud") cloudClassifier: ItemClassifier,
         private val itemsStore: ScannedItemStore,
         private val stableItemCropper: ClassificationThumbnailProvider,
+        private val visionInsightsPrefiller: VisionInsightsPrefiller,
         telemetry: Telemetry?,
     ) : ViewModel() {
         // Default dispatchers (override in tests if needed)
@@ -80,6 +83,7 @@ class ItemsViewModel
             cloudClassifier: ItemClassifier,
             itemsStore: ScannedItemStore,
             stableItemCropper: ClassificationThumbnailProvider,
+            visionInsightsPrefiller: VisionInsightsPrefiller,
             telemetry: Telemetry?,
             workerDispatcher: CoroutineDispatcher,
             mainDispatcher: CoroutineDispatcher,
@@ -90,6 +94,7 @@ class ItemsViewModel
             cloudClassifier = cloudClassifier,
             itemsStore = itemsStore,
             stableItemCropper = stableItemCropper,
+            visionInsightsPrefiller = visionInsightsPrefiller,
             telemetry = telemetry,
         ) {
             this.workerDispatcher = workerDispatcher
@@ -229,6 +234,58 @@ class ItemsViewModel
          */
         fun addItems(newItems: List<ScannedItem>) {
             stateManager.addItems(newItems)
+        }
+
+        /**
+         * Adds items and immediately triggers vision insights extraction for items with high-res images.
+         *
+         * This method:
+         * 1. Adds the items to the state manager
+         * 2. Triggers async vision extraction for each item with a fullImageUri
+         * 3. Updates items with OCR text, brand, colors when extraction completes
+         *
+         * @param context Android context for loading images
+         * @param newItems Items to add
+         */
+        fun addItemsWithVisionPrefill(context: Context, newItems: List<ScannedItem>) {
+            stateManager.addItems(newItems)
+
+            // Trigger vision extraction for items with high-res images
+            val itemsWithImages = newItems.filter { it.fullImageUri != null }
+            if (itemsWithImages.isNotEmpty()) {
+                Log.i(TAG, "Triggering vision prefill for ${itemsWithImages.size} items")
+                itemsWithImages.forEach { item ->
+                    item.fullImageUri?.let { uri ->
+                        visionInsightsPrefiller.extractAndApply(
+                            context = context,
+                            scope = viewModelScope,
+                            stateManager = stateManager,
+                            itemId = item.id,
+                            imageUri = uri,
+                        )
+                    }
+                }
+            }
+        }
+
+        /**
+         * Triggers vision insights extraction for a specific item.
+         *
+         * Call this when you have a new high-res image for an existing item.
+         *
+         * @param context Android context for loading images
+         * @param itemId The item to extract insights for
+         * @param imageUri URI to the high-resolution image
+         */
+        fun extractVisionInsights(context: Context, itemId: String, imageUri: Uri) {
+            Log.i(TAG, "Extracting vision insights for item $itemId")
+            visionInsightsPrefiller.extractAndApply(
+                context = context,
+                scope = viewModelScope,
+                stateManager = stateManager,
+                itemId = itemId,
+                imageUri = imageUri,
+            )
         }
 
         /**

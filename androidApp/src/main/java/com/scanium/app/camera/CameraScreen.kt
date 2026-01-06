@@ -807,7 +807,7 @@ fun CameraScreen(
                                                     // Fallback: use original items if high-res capture failed
                                                     items
                                                 }
-                                            itemsViewModel.addItems(itemsWithHighRes)
+                                            itemsViewModel.addItemsWithVisionPrefill(context, itemsWithHighRes)
                                             Toast.makeText(
                                                 context,
                                                 "Detected ${items.size} item(s)",
@@ -879,7 +879,7 @@ fun CameraScreen(
                                                 } else {
                                                     items
                                                 }
-                                            itemsViewModel.addItems(itemsWithHighRes)
+                                            itemsViewModel.addItemsWithVisionPrefill(context, itemsWithHighRes)
                                         }
                                     }
                                 },
