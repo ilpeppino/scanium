@@ -2,11 +2,13 @@
 # Scanium Smoke Test Monitor - NAS Deployment
 # =============================================================================
 # Lightweight container that runs smoke tests every 5 minutes.
-# Logs results and sends alerts on failure (configurable).
+# Logs results to /volume1/docker/scanium/logs/smoke.log
 #
 # Usage:
-#   docker compose -f docker-compose.nas.monitor.yml up -d
+#   docker-compose -f docker-compose.nas.monitor.yml up -d
 # =============================================================================
+
+version: "3.8"
 
 services:
   smoke-monitor:
@@ -14,29 +16,17 @@ services:
     container_name: scanium-smoke-monitor
     restart: unless-stopped
     volumes:
-      - ${NAS_REPO_PATH:-/volume1/docker/scanium/repo}/scripts/ops/smoke.sh:/smoke.sh:ro
-      - ${NAS_DATA_PATH:-/volume1/docker/scanium}/logs:/logs
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        apk add --no-cache curl bash
-        echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] Smoke monitor started"
-        while true; do
-          /bin/bash /smoke.sh >> /logs/smoke.log 2>&1
-          # Keep log file from growing too large (retain last 10000 lines)
-          if [ -f /logs/smoke.log ] && [ $(wc -l < /logs/smoke.log) -gt 10000 ]; then
-            tail -5000 /logs/smoke.log > /logs/smoke.log.tmp
-            mv /logs/smoke.log.tmp /logs/smoke.log
-          fi
-          sleep 300  # 5 minutes
-        done
+      - /volume1/docker/scanium/repo/scripts/ops:/scripts:ro
+      - /volume1/docker/scanium/logs:/logs
+    environment:
+      - LOG_DIR=/logs
+      - SMOKE_INTERVAL=300
+    command: >
+      sh -c "apk add --no-cache curl bash &&
+             chmod +x /scripts/*.sh &&
+             /scripts/smoke-loop.sh"
     deploy:
       resources:
         limits:
           memory: 32M
           cpus: '0.1'
-    healthcheck:
-      test: ["CMD", "pgrep", "-f", "sleep"]
-      interval: 60s
-      timeout: 5s
-      retries: 3
