@@ -18,10 +18,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -295,7 +296,7 @@ fun EditItemsScreen(
 
 /**
  * Single page for editing one item's fields.
- * Compact layout without scrolling for essential content.
+ * Scrollable layout with consistent OutlinedTextField styling.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -304,9 +305,12 @@ private fun ItemEditPage(
     draft: ItemDraft,
     onDraftChange: (ItemDraft) -> Unit,
 ) {
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -344,7 +348,16 @@ private fun ItemEditPage(
             }
         }
 
-        // Category dropdown (editable)
+        // Label / Name field
+        OutlinedTextField(
+            value = draft.labelText,
+            onValueChange = { onDraftChange(draft.copy(labelText = it)) },
+            label = { Text("Label / Name") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+        )
+
+        // Category dropdown
         CategoryDropdown(
             selectedCategory = draft.category,
             onCategorySelected = { category ->
@@ -353,51 +366,33 @@ private fun ItemEditPage(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        // Vision Attributes Display (brand, colors) if available
-        VisionAttributesDisplay(item = item)
-
-        // Price and Condition in a row for compact layout
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Price input
-            OutlinedTextField(
-                value = draft.priceText,
-                onValueChange = { newValue ->
-                    // Validate: only allow valid price characters
-                    val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
-                    // Prevent multiple decimal separators
-                    val decimalCount = filtered.count { it == '.' || it == ',' }
-                    if (decimalCount <= 1) {
-                        onDraftChange(draft.copy(priceText = filtered))
-                    }
-                },
-                label = { Text("Price") },
-                modifier = Modifier.weight(1f),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                prefix = { Text("€") },
-                isError = draft.priceText.isNotEmpty() && parsePriceToCents(draft.priceText) == null && draft.priceText != "0",
-            )
-
-            // Condition dropdown
-            ConditionDropdown(
-                selectedCondition = draft.condition,
-                onConditionSelected = { condition ->
-                    onDraftChange(draft.copy(condition = condition))
-                },
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        // Label / Name field
+        // Price input
         OutlinedTextField(
-            value = draft.labelText,
-            onValueChange = { onDraftChange(draft.copy(labelText = it)) },
-            label = { Text("Label / Name") },
+            value = draft.priceText,
+            onValueChange = { newValue ->
+                // Validate: only allow valid price characters
+                val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+                // Prevent multiple decimal separators
+                val decimalCount = filtered.count { it == '.' || it == ',' }
+                if (decimalCount <= 1) {
+                    onDraftChange(draft.copy(priceText = filtered))
+                }
+            },
+            label = { Text("Price") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            prefix = { Text("€") },
+            isError = draft.priceText.isNotEmpty() && parsePriceToCents(draft.priceText) == null && draft.priceText != "0",
+        )
+
+        // Condition dropdown
+        ConditionDropdown(
+            selectedCondition = draft.condition,
+            onConditionSelected = { condition ->
+                onDraftChange(draft.copy(condition = condition))
+            },
+            modifier = Modifier.fillMaxWidth(),
         )
 
         // Recognized Text field - show OCR results (multi-line for full text)
@@ -581,63 +576,3 @@ private fun CategoryDropdown(
     }
 }
 
-/**
- * Display vision attributes (brand, colors) as informational chips.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun VisionAttributesDisplay(item: ScannedItem) {
-    val hasVisionData = !item.visionAttributes.isEmpty || item.attributes.isNotEmpty()
-
-    if (!hasVisionData) return
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            text = "Detected Attributes",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        // Brand
-        val brand = item.attributes["brand"]?.value ?: item.visionAttributes.primaryBrand
-        if (!brand.isNullOrBlank()) {
-            androidx.compose.material3.FilterChip(
-                selected = false,
-                onClick = { /* Could allow editing */ },
-                label = { Text("Brand: $brand") },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                },
-            )
-        }
-
-        // Colors
-        if (item.visionAttributes.colors.isNotEmpty()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = "Colors:",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.align(Alignment.CenterVertically),
-                )
-                item.visionAttributes.colors.take(3).forEach { visionColor ->
-                    androidx.compose.material3.FilterChip(
-                        selected = false,
-                        onClick = { /* Could allow editing */ },
-                        label = { Text(visionColor.name.replaceFirstChar { it.uppercase() }) },
-                    )
-                }
-            }
-        }
-    }
-}
