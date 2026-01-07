@@ -76,6 +76,12 @@ data class ScannedItemEntity(
     val exportFromCache: Int,
     val exportModel: String?,
     val exportConfidenceTier: String?,
+    // Quality Loop fields (v9)
+    val completenessScore: Int,
+    val missingAttributesJson: String?,
+    val lastEnrichedAt: Long?,
+    val capturedShotTypesJson: String?,
+    val isReadyForListing: Int,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -132,6 +138,12 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         exportFromCache = if (exportFromCache) 1 else 0,
         exportModel = exportModel,
         exportConfidenceTier = exportConfidenceTier,
+        // Quality Loop fields
+        completenessScore = completenessScore,
+        missingAttributesJson = serializeStringList(missingAttributes),
+        lastEnrichedAt = lastEnrichedAt,
+        capturedShotTypesJson = serializeStringList(capturedShotTypes),
+        isReadyForListing = if (isReadyForListing) 1 else 0,
     )
 }
 
@@ -218,6 +230,12 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         exportFromCache = exportFromCache == 1,
         exportModel = exportModel,
         exportConfidenceTier = exportConfidenceTier,
+        // Quality Loop fields
+        completenessScore = completenessScore,
+        missingAttributes = deserializeStringList(missingAttributesJson),
+        lastEnrichedAt = lastEnrichedAt,
+        capturedShotTypes = deserializeStringList(capturedShotTypesJson),
+        isReadyForListing = isReadyForListing == 1,
     )
 }
 
@@ -582,6 +600,40 @@ private fun deserializeExportBullets(json: String?): List<String> {
             val bullet = jsonArray.optString(i)
             if (bullet.isNotBlank()) {
                 result.add(bullet)
+            }
+        }
+        result
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
+
+/**
+ * Serialize a generic string list to JSON string.
+ */
+private fun serializeStringList(list: List<String>): String? {
+    if (list.isEmpty()) return null
+    return try {
+        val jsonArray = JSONArray()
+        list.forEach { jsonArray.put(it) }
+        jsonArray.toString()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Deserialize JSON string back to string list.
+ */
+private fun deserializeStringList(json: String?): List<String> {
+    if (json.isNullOrBlank()) return emptyList()
+    return try {
+        val result = mutableListOf<String>()
+        val jsonArray = JSONArray(json)
+        for (i in 0 until jsonArray.length()) {
+            val item = jsonArray.optString(i)
+            if (item.isNotBlank()) {
+                result.add(item)
             }
         }
         result

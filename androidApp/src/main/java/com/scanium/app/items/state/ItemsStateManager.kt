@@ -77,6 +77,9 @@ class ItemsStateManager(
     val items: StateFlow<List<ScannedItem>> = _items.asStateFlow()
     val itemAddedEvents = _itemAddedEvents.asSharedFlow()
 
+    /** Convenience method to get current items snapshot */
+    fun getItems(): List<ScannedItem> = _items.value
+
     // Dynamic similarity threshold control
     private val _similarityThreshold = MutableStateFlow(aggregationConfig.similarityThreshold)
     val similarityThreshold: StateFlow<Float> = _similarityThreshold.asStateFlow()
@@ -998,6 +1001,82 @@ class ItemsStateManager(
             exportModel,
             exportConfidenceTier,
         )
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
+
+    /**
+     * Update completeness evaluation fields for an item.
+     *
+     * This should be called after each enrichment layer completes
+     * to recalculate the completeness score based on current attributes.
+     *
+     * @param itemId The ID of the item to update
+     * @param completenessScore Completeness score (0-100)
+     * @param missingAttributes List of missing attribute keys ordered by importance
+     * @param isReadyForListing Whether the item meets the completeness threshold
+     * @param lastEnrichedAt Timestamp of the last enrichment operation
+     */
+    fun updateCompleteness(
+        itemId: String,
+        completenessScore: Int,
+        missingAttributes: List<String>,
+        isReadyForListing: Boolean,
+        lastEnrichedAt: Long? = null,
+    ) {
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        completenessScore = completenessScore,
+                        missingAttributes = missingAttributes,
+                        isReadyForListing = isReadyForListing,
+                        lastEnrichedAt = lastEnrichedAt ?: item.lastEnrichedAt,
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Update aggregator
+        itemAggregator.updateCompleteness(
+            itemId,
+            completenessScore,
+            missingAttributes,
+            isReadyForListing,
+            lastEnrichedAt,
+        )
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
+
+    /**
+     * Add a captured shot type to an item.
+     *
+     * @param itemId The ID of the item
+     * @param shotType The shot type that was captured
+     */
+    fun addCapturedShotType(
+        itemId: String,
+        shotType: String,
+    ) {
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId && shotType !in item.capturedShotTypes) {
+                    item.copy(
+                        capturedShotTypes = item.capturedShotTypes + shotType,
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Update aggregator
+        itemAggregator.addCapturedShotType(itemId, shotType)
 
         persistItems(updatedItems)
         onStateChanged?.invoke()

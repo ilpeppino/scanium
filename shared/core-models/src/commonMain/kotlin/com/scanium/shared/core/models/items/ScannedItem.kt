@@ -165,6 +165,32 @@ data class ScannedItem<FullImageUri>(
      * Confidence tier of the AI-generated export (HIGH/MED/LOW).
      */
     val exportConfidenceTier: String? = null,
+    // Quality Loop fields (Phase 6)
+    /**
+     * Completeness score (0-100) based on category-specific required attributes.
+     * Updated after each enrichment pass or manual edit.
+     */
+    val completenessScore: Int = 0,
+    /**
+     * List of missing attribute keys ordered by importance.
+     * Used to guide user on what photos to add.
+     */
+    val missingAttributes: List<String> = emptyList(),
+    /**
+     * Timestamp of the last enrichment operation.
+     * Used by EnrichmentPolicy to avoid redundant API calls.
+     */
+    val lastEnrichedAt: Long? = null,
+    /**
+     * Photo shot types that have been captured for this item.
+     * Used by PhotoPlaybook to avoid recommending duplicate shots.
+     */
+    val capturedShotTypes: List<String> = emptyList(),
+    /**
+     * Whether the item is considered ready for marketplace listing.
+     * True when completenessScore >= threshold (default 70%).
+     */
+    val isReadyForListing: Boolean = false,
 ) {
     /**
      * Formatted price range string for display.

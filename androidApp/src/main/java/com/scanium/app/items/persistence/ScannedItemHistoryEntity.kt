@@ -55,6 +55,20 @@ data class ScannedItemHistoryEntity(
     val additionalPhotosJson: String?,
     val sourcePhotoId: String?,
     val enrichmentStatusJson: String?,
+    // Export Assistant fields (v8)
+    val exportTitle: String?,
+    val exportDescription: String?,
+    val exportBulletsJson: String?,
+    val exportGeneratedAt: Long?,
+    val exportFromCache: Int,
+    val exportModel: String?,
+    val exportConfidenceTier: String?,
+    // Quality Loop fields (v9)
+    val completenessScore: Int,
+    val missingAttributesJson: String?,
+    val lastEnrichedAt: Long?,
+    val capturedShotTypesJson: String?,
+    val isReadyForListing: Int,
 )
 
 fun ScannedItemEntity.toHistoryEntity(
@@ -104,5 +118,19 @@ fun ScannedItemEntity.toHistoryEntity(
         additionalPhotosJson = additionalPhotosJson,
         sourcePhotoId = sourcePhotoId,
         enrichmentStatusJson = enrichmentStatusJson,
+        // Export fields
+        exportTitle = exportTitle,
+        exportDescription = exportDescription,
+        exportBulletsJson = exportBulletsJson,
+        exportGeneratedAt = exportGeneratedAt,
+        exportFromCache = exportFromCache,
+        exportModel = exportModel,
+        exportConfidenceTier = exportConfidenceTier,
+        // Quality Loop fields
+        completenessScore = completenessScore,
+        missingAttributesJson = missingAttributesJson,
+        lastEnrichedAt = lastEnrichedAt,
+        capturedShotTypesJson = capturedShotTypesJson,
+        isReadyForListing = isReadyForListing,
     )
 }

@@ -15,6 +15,7 @@ import com.scanium.app.ml.classification.ClassificationThumbnailProvider
 import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.ml.classification.NoopClassifier
+import com.scanium.app.quality.EnrichmentPolicy
 import com.scanium.telemetry.facade.Telemetry
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
@@ -34,7 +35,8 @@ object NoopVisionInsightsPrefiller {
         val mockVisionRepository = mockk<VisionInsightsRepository>(relaxed = true)
         val mockLocalExtractor = mockk<LocalVisionExtractor>(relaxed = true)
         val mockEnrichmentRepository = mockk<EnrichmentRepository>(relaxed = true)
-        return VisionInsightsPrefiller(mockVisionRepository, mockLocalExtractor, mockEnrichmentRepository)
+        val mockEnrichmentPolicy = mockk<EnrichmentPolicy>(relaxed = true)
+        return VisionInsightsPrefiller(mockVisionRepository, mockLocalExtractor, mockEnrichmentRepository, mockEnrichmentPolicy)
     }
 }
 

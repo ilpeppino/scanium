@@ -106,6 +106,17 @@ data class AggregatedItem(
     var exportModel: String? = null,
     /** Confidence tier of the AI-generated export */
     var exportConfidenceTier: String? = null,
+    // Quality Loop fields (v9)
+    /** Completeness score (0-100) based on category-specific required attributes */
+    var completenessScore: Int = 0,
+    /** List of missing attribute keys ordered by importance */
+    var missingAttributes: List<String> = emptyList(),
+    /** Timestamp of the last enrichment operation */
+    var lastEnrichedAt: Long? = null,
+    /** Photo shot types that have been captured */
+    var capturedShotTypes: List<String> = emptyList(),
+    /** Whether the item meets the completeness threshold */
+    var isReadyForListing: Boolean = false,
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -147,6 +158,11 @@ data class AggregatedItem(
             exportFromCache = exportFromCache,
             exportModel = exportModel,
             exportConfidenceTier = exportConfidenceTier,
+            completenessScore = completenessScore,
+            missingAttributes = missingAttributes,
+            lastEnrichedAt = lastEnrichedAt,
+            capturedShotTypes = capturedShotTypes,
+            isReadyForListing = isReadyForListing,
         )
     }
 

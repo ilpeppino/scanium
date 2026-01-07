@@ -710,6 +710,40 @@ class ItemAggregator(
             item.exportConfidenceTier = exportConfidenceTier
         }
     }
+
+    /**
+     * Update completeness evaluation fields for an aggregated item.
+     */
+    fun updateCompleteness(
+        aggregatedId: String,
+        completenessScore: Int,
+        missingAttributes: List<String>,
+        isReadyForListing: Boolean,
+        lastEnrichedAt: Long?,
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.completenessScore = completenessScore
+            item.missingAttributes = missingAttributes
+            item.isReadyForListing = isReadyForListing
+            if (lastEnrichedAt != null) {
+                item.lastEnrichedAt = lastEnrichedAt
+            }
+        }
+    }
+
+    /**
+     * Add a captured shot type to an aggregated item.
+     */
+    fun addCapturedShotType(
+        aggregatedId: String,
+        shotType: String,
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            if (shotType !in item.capturedShotTypes) {
+                item.capturedShotTypes = item.capturedShotTypes + shotType
+            }
+        }
+    }
 }
 
 /**
