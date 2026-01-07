@@ -22,6 +22,7 @@ import com.scanium.app.camera.CameraScreen
 import com.scanium.app.camera.CameraViewModel
 import com.scanium.app.items.EditItemsScreen
 import com.scanium.app.items.edit.EditItemScreenV2
+import com.scanium.app.items.edit.ExportAssistantViewModel
 import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.selling.assistant.AssistantScreen
@@ -89,6 +90,8 @@ fun ScaniumNavGraph(
     marketplaceService: EbayMarketplaceService,
     draftStore: ListingDraftStore,
     tourViewModel: com.scanium.app.ftue.TourViewModel,
+    /** Factory for creating ExportAssistantViewModel - null disables the feature */
+    exportAssistantViewModelFactory: ExportAssistantViewModel.Factory? = null,
 ) {
     NavHost(
         navController = navController,
@@ -262,11 +265,12 @@ fun ScaniumNavGraph(
                         // For now, just log or no-op
                     },
                     onAiGenerate = { targetItemId ->
-                        // Navigate to assistant for AI generation
+                        // Navigate to assistant for AI generation (fallback if export assistant not available)
                         val encoded = Uri.encode(targetItemId)
                         navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
                     },
                     itemsViewModel = itemsViewModel,
+                    exportAssistantViewModelFactory = exportAssistantViewModelFactory,
                 )
             } else {
                 // No item to edit, go back

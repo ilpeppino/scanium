@@ -15,6 +15,7 @@ import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.di.DraftStoreEntryPoint
+import com.scanium.app.di.ExportAssistantViewModelFactoryEntryPoint
 import com.scanium.app.di.SettingsRepositoryEntryPoint
 import com.scanium.app.di.TourViewModelFactoryEntryPoint
 import com.scanium.app.ftue.TourViewModel
@@ -67,6 +68,10 @@ fun ScaniumApp() {
     // because they're not ViewModels (they're used directly in composables)
     val draftStore: ListingDraftRepository = hiltEntryPoint<DraftStoreEntryPoint>(context).draftStore()
 
+    // ExportAssistantViewModel factory for Phase 4: Export Assistant
+    val exportAssistantViewModelFactory = hiltEntryPoint<ExportAssistantViewModelFactoryEntryPoint>(context)
+        .exportAssistantViewModelFactory()
+
     // Sound manager needs SettingsRepository for the enabled flow
     val settingsRepository: SettingsRepository = hiltEntryPoint<SettingsRepositoryEntryPoint>(context).settingsRepository()
     val soundManager =
@@ -99,6 +104,7 @@ fun ScaniumApp() {
             marketplaceService = marketplaceService,
             draftStore = draftStore,
             tourViewModel = tourViewModel,
+            exportAssistantViewModelFactory = exportAssistantViewModelFactory,
         )
     }
 }

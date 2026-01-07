@@ -134,6 +134,37 @@ data class ScannedItem<FullImageUri>(
      * Used to show "Enriching..." UI and track progress.
      */
     val enrichmentStatus: EnrichmentLayerStatus = EnrichmentLayerStatus(),
+    // Export Assistant fields (Phase 4)
+    /**
+     * AI-generated marketplace-ready title.
+     * Set when user applies export assistant output.
+     */
+    val exportTitle: String? = null,
+    /**
+     * AI-generated marketplace-ready description.
+     * Set when user applies export assistant output.
+     */
+    val exportDescription: String? = null,
+    /**
+     * AI-generated bullet highlights for the listing.
+     */
+    val exportBullets: List<String> = emptyList(),
+    /**
+     * Timestamp when export fields were generated.
+     */
+    val exportGeneratedAt: Long? = null,
+    /**
+     * Whether the export was served from cache.
+     */
+    val exportFromCache: Boolean = false,
+    /**
+     * LLM model used to generate the export.
+     */
+    val exportModel: String? = null,
+    /**
+     * Confidence tier of the AI-generated export (HIGH/MED/LOW).
+     */
+    val exportConfidenceTier: String? = null,
 ) {
     /**
      * Formatted price range string for display.
