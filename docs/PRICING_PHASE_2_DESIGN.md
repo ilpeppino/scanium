@@ -1057,14 +1057,14 @@ Phase 3 will add marketplace awareness. It is explicitly **out of scope** for Ph
 
 ---
 
-***REMOVED******REMOVED*** Open Questions for Review
+***REMOVED******REMOVED*** Design Decisions (Resolved)
 
-1. **Urban Classification Source:** Should we use OpenStreetMap city boundaries or postal code databases? OSM is more accurate but larger.
+1. **Urban Classification Source:** ✅ Postal code database (lighter than OSM, sufficient accuracy)
 
-2. **Seasonality Granularity:** Current design uses monthly factors. Should we consider weekly (e.g., Black Friday week)?
+2. **Seasonality Granularity:** ✅ Monthly factors (simpler, weekly adds complexity without proportional value)
 
-3. **Wear Detection Integration:** The `wearIndicators` field assumes vision already detects wear. Should we add wear detection to the vision pipeline first?
+3. **Wear Detection Integration:** ✅ Yes, add wear detection to vision pipeline first (Phase 2 will stub the interface)
 
-4. **Currency Rate Source:** ECB rates are free but EUR-centric. Federal Reserve for USD crosses. Any preference?
+4. **Currency Rate Source:** ✅ ECB for EUR, Federal Reserve for USD crosses
 
-5. **Regional Coverage:** Starting with EU + US + UK. Should we add more regions (AU, CA, JP)?
+5. **Regional Coverage:** ✅ EU + US + UK only (expand later based on user base)

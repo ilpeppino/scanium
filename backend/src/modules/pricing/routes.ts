@@ -1,9 +1,11 @@
 /**
  * Pricing Routes
  *
- * POST /v1/pricing/estimate - Get price estimate for an item
+ * POST /v1/pricing/estimate - Get price estimate for an item (Phase 1)
+ * POST /v1/pricing/estimate/v2 - Get market-aware price estimate (Phase 2)
  * GET /v1/pricing/categories - List supported categories with price ranges
  * GET /v1/pricing/brands/:brand - Check brand tier
+ * GET /v1/pricing/regions - List supported regions
  */
 
 import { FastifyInstance, FastifyPluginOptions, FastifyRequest, FastifyReply } from 'fastify';
@@ -11,10 +13,13 @@ import { z } from 'zod';
 import { Config } from '../../config/index.js';
 import { ApiKeyManager } from '../classifier/api-key-manager.js';
 import { estimatePrice, formatPriceRange } from './estimator.js';
+import { estimatePriceV2 } from './estimator-v2.js';
 import { CATEGORY_PRICING } from './category-pricing.js';
 import { getBrandTier, getBrandTierLabel, isKnownBrand } from './brand-tiers.js';
 import { parseCondition } from './condition-modifiers.js';
+import { getSupportedRegions, getMarketDataLoadedAt } from './market-data.js';
 import { PriceEstimateInput, ItemCondition } from './types.js';
+import { PriceEstimateInputV2 } from './types-v2.js';
 
 // Zod schemas for request validation
 const PriceEstimateBodySchema = z.object({
@@ -45,6 +50,58 @@ const PriceEstimateBodySchema = z.object({
 
 const BrandCheckParamsSchema = z.object({
   brand: z.string().min(1).max(100),
+});
+
+// V2 schema with market context and vision quality
+const PriceEstimateV2BodySchema = z.object({
+  // Phase 1 fields
+  itemId: z.string().min(1).max(100),
+  category: z.string().max(100).optional(),
+  segment: z.string().max(50).optional(),
+  brand: z.string().max(100).optional(),
+  brandConfidence: z.enum(['HIGH', 'MED', 'LOW']).optional(),
+  productType: z.string().max(100).optional(),
+  condition: z.string().max(50).optional(),
+  completeness: z
+    .object({
+      hasOriginalBox: z.boolean().optional(),
+      hasTags: z.boolean().optional(),
+      isSealed: z.boolean().optional(),
+      hasAccessories: z.boolean().optional(),
+      hasDocumentation: z.boolean().optional(),
+    })
+    .optional(),
+  material: z.string().max(50).optional(),
+  visionHints: z
+    .object({
+      ocrSnippets: z.array(z.string()).optional(),
+      labels: z.array(z.string()).optional(),
+    })
+    .optional(),
+  // Phase 2 additions
+  marketContext: z
+    .object({
+      region: z.string().max(10).optional(),
+      isUrban: z.boolean().optional(),
+      postalCode: z.string().max(20).optional(),
+    })
+    .optional(),
+  visionQuality: z
+    .object({
+      photoCount: z.number().int().min(0).max(20).optional(),
+      avgResolutionMp: z.number().min(0).max(50).optional(),
+      blurScore: z.number().min(0).max(1).optional(),
+      lightingQuality: z.enum(['GOOD', 'FAIR', 'POOR']).optional(),
+      wearIndicators: z
+        .object({
+          scratchesDetected: z.boolean().optional(),
+          stainDetected: z.boolean().optional(),
+          tearDetected: z.boolean().optional(),
+          fadeDetected: z.boolean().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 // Error response helper
@@ -272,6 +329,111 @@ export async function pricingRoutes(
     return reply.status(200).send({
       success: true,
       conditions,
+    });
+  });
+
+  /**
+   * POST /pricing/estimate/v2
+   *
+   * Get a market-aware price estimate (Phase 2).
+   * Includes regional adjustments, urban premium, seasonality, and vision quality.
+   */
+  app.post('/pricing/estimate/v2', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Validate API key
+    const apiKey = request.headers['x-api-key'] as string | undefined;
+    if (!apiKey) {
+      return errorResponse(reply, 401, 'UNAUTHORIZED', 'API key required');
+    }
+
+    const keyManager = getApiKeyManager(config);
+    if (!keyManager.validateKey(apiKey)) {
+      return errorResponse(reply, 401, 'UNAUTHORIZED', 'Invalid API key');
+    }
+
+    // Parse and validate body
+    let body: z.infer<typeof PriceEstimateV2BodySchema>;
+    try {
+      body = PriceEstimateV2BodySchema.parse(request.body);
+    } catch (e) {
+      const zodError = e as z.ZodError;
+      return errorResponse(
+        reply,
+        400,
+        'INVALID_REQUEST',
+        `Invalid request body: ${zodError.errors.map((err) => err.message).join(', ')}`
+      );
+    }
+
+    // Build pricing input
+    const input: PriceEstimateInputV2 = {
+      itemId: body.itemId,
+      category: body.category,
+      segment: body.segment,
+      brand: body.brand,
+      brandConfidence: body.brandConfidence,
+      productType: body.productType,
+      condition: body.condition ? parseCondition(body.condition) : undefined,
+      completeness: body.completeness,
+      material: body.material,
+      visionHints: body.visionHints,
+      marketContext: body.marketContext as PriceEstimateInputV2['marketContext'],
+      visionQuality: body.visionQuality,
+    };
+
+    // Get price estimate
+    const result = estimatePriceV2(input);
+
+    app.log.info({
+      msg: 'Price estimate V2 generated',
+      itemId: body.itemId,
+      category: body.category,
+      brand: body.brand,
+      region: result.inputSummary.region,
+      isUrban: result.inputSummary.isUrban,
+      priceRange: result.priceRangeFormatted,
+      currency: result.currency,
+      confidence: result.confidence,
+    });
+
+    return reply.status(200).send({
+      success: true,
+      estimate: {
+        priceEstimateMinCents: result.priceEstimateMinCents,
+        priceEstimateMaxCents: result.priceEstimateMaxCents,
+        priceEstimateMin: result.priceEstimateMin,
+        priceEstimateMax: result.priceEstimateMax,
+        priceRangeFormatted: result.priceRangeFormatted,
+        currency: result.currency,
+        currencySymbol: result.currencySymbol,
+        confidence: result.confidence,
+        marketContext: result.marketContext,
+        explanation: result.explanation,
+        caveats: result.caveats,
+        inputSummary: result.inputSummary,
+      },
+      // Include calculation steps in debug mode
+      ...(request.headers['x-debug'] === 'true' && {
+        debug: {
+          calculationSteps: result.calculationSteps,
+        },
+      }),
+    });
+  });
+
+  /**
+   * GET /pricing/regions
+   *
+   * List all supported regions for market-aware pricing.
+   */
+  app.get('/pricing/regions', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const regions = getSupportedRegions();
+    const loadedAt = getMarketDataLoadedAt();
+
+    return reply.status(200).send({
+      success: true,
+      regions,
+      count: regions.length,
+      marketDataLoadedAt: loadedAt?.toISOString() || null,
     });
   });
 }
