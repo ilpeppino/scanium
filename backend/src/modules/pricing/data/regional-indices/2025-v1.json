@@ -1,0 +1,189 @@
+{
+  "version": "2025-v1",
+  "validFrom": "2025-01-01",
+  "validUntil": "2025-12-31",
+  "source": "eurostat_ppp_2024_oecd",
+  "baseline": "USD",
+  "regions": [
+    {
+      "region": "US",
+      "categoryIndices": {
+        "electronics": 1.00,
+        "fashion": 1.00,
+        "furniture": 1.00,
+        "home_goods": 1.00,
+        "sports": 1.00,
+        "toys": 1.00
+      },
+      "defaultIndex": 1.00
+    },
+    {
+      "region": "NL",
+      "categoryIndices": {
+        "electronics": 1.05,
+        "fashion": 1.15,
+        "furniture": 1.20,
+        "home_goods": 1.10,
+        "sports": 1.08,
+        "toys": 1.02
+      },
+      "defaultIndex": 1.10
+    },
+    {
+      "region": "DE",
+      "categoryIndices": {
+        "electronics": 1.03,
+        "fashion": 1.10,
+        "furniture": 1.15,
+        "home_goods": 1.08,
+        "sports": 1.05,
+        "toys": 1.00
+      },
+      "defaultIndex": 1.07
+    },
+    {
+      "region": "UK",
+      "categoryIndices": {
+        "electronics": 1.08,
+        "fashion": 1.12,
+        "furniture": 1.18,
+        "home_goods": 1.10,
+        "sports": 1.10,
+        "toys": 1.05
+      },
+      "defaultIndex": 1.10
+    },
+    {
+      "region": "FR",
+      "categoryIndices": {
+        "electronics": 1.02,
+        "fashion": 1.18,
+        "furniture": 1.15,
+        "home_goods": 1.08,
+        "sports": 1.05,
+        "toys": 1.00
+      },
+      "defaultIndex": 1.08
+    },
+    {
+      "region": "BE",
+      "categoryIndices": {
+        "electronics": 1.04,
+        "fashion": 1.12,
+        "furniture": 1.18,
+        "home_goods": 1.10,
+        "sports": 1.06,
+        "toys": 1.02
+      },
+      "defaultIndex": 1.09
+    },
+    {
+      "region": "ES",
+      "categoryIndices": {
+        "electronics": 0.95,
+        "fashion": 1.00,
+        "furniture": 1.05,
+        "home_goods": 0.95,
+        "sports": 0.98,
+        "toys": 0.95
+      },
+      "defaultIndex": 0.98
+    },
+    {
+      "region": "IT",
+      "categoryIndices": {
+        "electronics": 0.98,
+        "fashion": 1.15,
+        "furniture": 1.12,
+        "home_goods": 1.00,
+        "sports": 1.02,
+        "toys": 0.98
+      },
+      "defaultIndex": 1.04
+    },
+    {
+      "region": "PT",
+      "categoryIndices": {
+        "electronics": 0.90,
+        "fashion": 0.92,
+        "furniture": 0.95,
+        "home_goods": 0.88,
+        "sports": 0.90,
+        "toys": 0.88
+      },
+      "defaultIndex": 0.90
+    },
+    {
+      "region": "AT",
+      "categoryIndices": {
+        "electronics": 1.05,
+        "fashion": 1.10,
+        "furniture": 1.15,
+        "home_goods": 1.08,
+        "sports": 1.08,
+        "toys": 1.02
+      },
+      "defaultIndex": 1.08
+    },
+    {
+      "region": "PL",
+      "categoryIndices": {
+        "electronics": 0.75,
+        "fashion": 0.70,
+        "furniture": 0.72,
+        "home_goods": 0.68,
+        "sports": 0.72,
+        "toys": 0.70
+      },
+      "defaultIndex": 0.71
+    },
+    {
+      "region": "SE",
+      "categoryIndices": {
+        "electronics": 1.10,
+        "fashion": 1.15,
+        "furniture": 1.22,
+        "home_goods": 1.12,
+        "sports": 1.10,
+        "toys": 1.05
+      },
+      "defaultIndex": 1.12
+    },
+    {
+      "region": "DK",
+      "categoryIndices": {
+        "electronics": 1.15,
+        "fashion": 1.18,
+        "furniture": 1.25,
+        "home_goods": 1.15,
+        "sports": 1.12,
+        "toys": 1.08
+      },
+      "defaultIndex": 1.15
+    },
+    {
+      "region": "FI",
+      "categoryIndices": {
+        "electronics": 1.08,
+        "fashion": 1.12,
+        "furniture": 1.18,
+        "home_goods": 1.10,
+        "sports": 1.08,
+        "toys": 1.02
+      },
+      "defaultIndex": 1.10
+    },
+    {
+      "region": "IE",
+      "categoryIndices": {
+        "electronics": 1.10,
+        "fashion": 1.15,
+        "furniture": 1.20,
+        "home_goods": 1.12,
+        "sports": 1.10,
+        "toys": 1.05
+      },
+      "defaultIndex": 1.12
+    }
+  ]
+}
