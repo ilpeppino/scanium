@@ -9,6 +9,10 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.ml.ItemCategory
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.EnrichmentLayerStatus
+import com.scanium.shared.core.models.items.ItemPhoto
+import com.scanium.shared.core.models.items.LayerState
+import com.scanium.shared.core.models.items.PhotoType
 import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.items.VisionColor
 import com.scanium.shared.core.models.items.VisionLabel
@@ -58,6 +62,12 @@ data class ScannedItemEntity(
     val attributesJson: String?,
     val detectedAttributesJson: String?,
     val visionAttributesJson: String?,
+    // New fields for multi-object scanning (v7)
+    val attributesSummaryText: String?,
+    val summaryTextUserEdited: Int,
+    val additionalPhotosJson: String?,
+    val sourcePhotoId: String?,
+    val enrichmentStatusJson: String?,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -101,6 +111,11 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         attributesJson = serializeAttributes(attributes),
         detectedAttributesJson = serializeAttributes(detectedAttributes),
         visionAttributesJson = serializeVisionAttributes(visionAttributes),
+        attributesSummaryText = attributesSummaryText.takeIf { it.isNotEmpty() },
+        summaryTextUserEdited = if (summaryTextUserEdited) 1 else 0,
+        additionalPhotosJson = serializeAdditionalPhotos(additionalPhotos),
+        sourcePhotoId = sourcePhotoId,
+        enrichmentStatusJson = serializeEnrichmentStatus(enrichmentStatus),
     )
 }
 
@@ -174,6 +189,11 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         attributes = deserializeAttributes(attributesJson),
         detectedAttributes = deserializeAttributes(detectedAttributesJson),
         visionAttributes = deserializeVisionAttributes(visionAttributesJson),
+        attributesSummaryText = attributesSummaryText ?: "",
+        summaryTextUserEdited = summaryTextUserEdited == 1,
+        additionalPhotos = deserializeAdditionalPhotos(additionalPhotosJson),
+        sourcePhotoId = sourcePhotoId,
+        enrichmentStatus = deserializeEnrichmentStatus(enrichmentStatusJson),
     )
 }
 
@@ -392,5 +412,120 @@ private fun deserializeVisionAttributes(json: String?): VisionAttributes {
         )
     } catch (e: Exception) {
         VisionAttributes.EMPTY
+    }
+}
+
+/**
+ * Serialize additional photos list to JSON string.
+ *
+ * Format: [{ "id": "...", "uri": "...", "mimeType": "...", "width": 0, "height": 0, "capturedAt": 0, "photoHash": "...", "photoType": "PRIMARY" }, ...]
+ */
+private fun serializeAdditionalPhotos(photos: List<ItemPhoto>): String? {
+    if (photos.isEmpty()) return null
+    return try {
+        val jsonArray = JSONArray()
+        for (photo in photos) {
+            val photoJson = JSONObject().apply {
+                put("id", photo.id)
+                photo.uri?.let { put("uri", it) }
+                put("mimeType", photo.mimeType)
+                put("width", photo.width)
+                put("height", photo.height)
+                put("capturedAt", photo.capturedAt)
+                photo.photoHash?.let { put("photoHash", it) }
+                put("photoType", photo.photoType.name)
+            }
+            jsonArray.put(photoJson)
+        }
+        jsonArray.toString()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Deserialize JSON string back to additional photos list.
+ */
+private fun deserializeAdditionalPhotos(json: String?): List<ItemPhoto> {
+    if (json.isNullOrBlank()) return emptyList()
+    return try {
+        val result = mutableListOf<ItemPhoto>()
+        val jsonArray = JSONArray(json)
+        for (i in 0 until jsonArray.length()) {
+            val photoJson = jsonArray.getJSONObject(i)
+            val photoType = runCatching {
+                PhotoType.valueOf(photoJson.optString("photoType", "PRIMARY"))
+            }.getOrElse { PhotoType.PRIMARY }
+
+            val photo = ItemPhoto(
+                id = photoJson.getString("id"),
+                uri = photoJson.optString("uri").takeIf { it.isNotBlank() },
+                bytes = null, // Bytes are not persisted to JSON
+                mimeType = photoJson.optString("mimeType", "image/jpeg"),
+                width = photoJson.optInt("width", 0),
+                height = photoJson.optInt("height", 0),
+                capturedAt = photoJson.optLong("capturedAt", 0L),
+                photoHash = photoJson.optString("photoHash").takeIf { it.isNotBlank() },
+                photoType = photoType,
+            )
+            result.add(photo)
+        }
+        result
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
+
+/**
+ * Serialize enrichment status to JSON string.
+ *
+ * Format: { "layerA": "COMPLETED", "layerB": "IN_PROGRESS", "layerC": "PENDING", "lastUpdated": 12345 }
+ */
+private fun serializeEnrichmentStatus(status: EnrichmentLayerStatus): String? {
+    // Don't persist if all layers are pending (default state)
+    if (status.layerA == LayerState.PENDING &&
+        status.layerB == LayerState.PENDING &&
+        status.layerC == LayerState.PENDING
+    ) {
+        return null
+    }
+    return try {
+        JSONObject().apply {
+            put("layerA", status.layerA.name)
+            put("layerB", status.layerB.name)
+            put("layerC", status.layerC.name)
+            put("lastUpdated", status.lastUpdated)
+        }.toString()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Deserialize JSON string back to enrichment status.
+ */
+private fun deserializeEnrichmentStatus(json: String?): EnrichmentLayerStatus {
+    if (json.isNullOrBlank()) return EnrichmentLayerStatus()
+    return try {
+        val obj = JSONObject(json)
+        val layerA = runCatching {
+            LayerState.valueOf(obj.optString("layerA", "PENDING"))
+        }.getOrElse { LayerState.PENDING }
+        val layerB = runCatching {
+            LayerState.valueOf(obj.optString("layerB", "PENDING"))
+        }.getOrElse { LayerState.PENDING }
+        val layerC = runCatching {
+            LayerState.valueOf(obj.optString("layerC", "PENDING"))
+        }.getOrElse { LayerState.PENDING }
+        val lastUpdated = obj.optLong("lastUpdated", 0L)
+
+        EnrichmentLayerStatus(
+            layerA = layerA,
+            layerB = layerB,
+            layerC = layerC,
+            lastUpdated = lastUpdated,
+        )
+    } catch (e: Exception) {
+        EnrichmentLayerStatus()
     }
 }

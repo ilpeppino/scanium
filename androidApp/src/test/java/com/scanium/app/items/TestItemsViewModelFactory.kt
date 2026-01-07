@@ -6,6 +6,7 @@ import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.enrichment.EnrichmentRepository
+import com.scanium.app.ml.CropBasedEnricher
 import com.scanium.app.ml.LocalVisionExtractor
 import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.app.ml.VisionInsightsRepository
@@ -38,6 +39,19 @@ object NoopVisionInsightsPrefiller {
 }
 
 /**
+ * A no-op CropBasedEnricher for testing.
+ * Does nothing when called - no enrichment operations.
+ */
+object NoopCropBasedEnricher {
+    fun create(): CropBasedEnricher {
+        val mockVisionRepository = mockk<VisionInsightsRepository>(relaxed = true)
+        val mockLocalExtractor = mockk<LocalVisionExtractor>(relaxed = true)
+        val mockEnrichmentRepository = mockk<EnrichmentRepository>(relaxed = true)
+        return CropBasedEnricher(mockVisionRepository, mockLocalExtractor, mockEnrichmentRepository)
+    }
+}
+
+/**
  * Helper for constructing [ItemsViewModel] instances in unit tests.
  *
  * The production ViewModel relies on several injected dependencies, so tests
@@ -52,6 +66,7 @@ fun createTestItemsViewModel(
     itemsStore: ScannedItemStore = NoopScannedItemStore,
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     visionInsightsPrefiller: VisionInsightsPrefiller = NoopVisionInsightsPrefiller.create(),
+    cropBasedEnricher: CropBasedEnricher = NoopCropBasedEnricher.create(),
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
     mainDispatcher: CoroutineDispatcher = workerDispatcher,
@@ -64,6 +79,7 @@ fun createTestItemsViewModel(
         itemsStore = itemsStore,
         stableItemCropper = stableItemCropper,
         visionInsightsPrefiller = visionInsightsPrefiller,
+        cropBasedEnricher = cropBasedEnricher,
         telemetry = telemetry,
         workerDispatcher = workerDispatcher,
         mainDispatcher = mainDispatcher,

@@ -15,6 +15,8 @@ import com.scanium.app.items.listing.ListingStatusManager
 import com.scanium.app.items.overlay.OverlayTrackManager
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
+import com.scanium.app.camera.CameraXManager
+import com.scanium.app.ml.CropBasedEnricher
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.app.ml.classification.ClassificationMode
@@ -70,6 +72,7 @@ class ItemsViewModel
         private val itemsStore: ScannedItemStore,
         private val stableItemCropper: ClassificationThumbnailProvider,
         private val visionInsightsPrefiller: VisionInsightsPrefiller,
+        private val cropBasedEnricher: CropBasedEnricher,
         telemetry: Telemetry?,
     ) : ViewModel() {
         // Default dispatchers (override in tests if needed)
@@ -84,6 +87,7 @@ class ItemsViewModel
             itemsStore: ScannedItemStore,
             stableItemCropper: ClassificationThumbnailProvider,
             visionInsightsPrefiller: VisionInsightsPrefiller,
+            cropBasedEnricher: CropBasedEnricher,
             telemetry: Telemetry?,
             workerDispatcher: CoroutineDispatcher,
             mainDispatcher: CoroutineDispatcher,
@@ -95,6 +99,7 @@ class ItemsViewModel
             itemsStore = itemsStore,
             stableItemCropper = stableItemCropper,
             visionInsightsPrefiller = visionInsightsPrefiller,
+            cropBasedEnricher = cropBasedEnricher,
             telemetry = telemetry,
         ) {
             this.workerDispatcher = workerDispatcher
@@ -320,6 +325,57 @@ class ItemsViewModel
         }
 
         /**
+         * Adds items from a multi-object capture and triggers crop-based enrichment.
+         *
+         * This is the primary entry point for the multi-object scanning flow:
+         * 1. Adds all detected items to the state manager
+         * 2. Triggers crop-based Vision enrichment for each item
+         * 3. Items share the same sourcePhotoId for linking
+         *
+         * @param context Android context for content resolver
+         * @param captureResult The result from CameraXManager.captureMultiObjectFrame()
+         * @see CropBasedEnricher.enrichFromCrop
+         */
+        fun addItemsFromMultiObjectCapture(
+            context: Context,
+            captureResult: CameraXManager.MultiObjectCaptureResult,
+        ) {
+            Log.i(TAG, "╔════════════════════════════════════════════════════════════════")
+            Log.i(TAG, "║ MULTI_OBJECT: addItemsFromMultiObjectCapture() CALLED")
+            Log.i(TAG, "║ items.size=${captureResult.items.size}")
+            Log.i(TAG, "║ sourcePhotoId=${captureResult.sourcePhotoId}")
+            Log.i(TAG, "╚════════════════════════════════════════════════════════════════")
+
+            // Add items to state manager synchronously
+            val aggregatedItems = stateManager.addItemsSync(captureResult.items)
+
+            Log.i(TAG, "MULTI_OBJECT: Aggregated ${aggregatedItems.size} items")
+
+            // Trigger crop-based enrichment for each item
+            for (aggregated in aggregatedItems) {
+                val boundingBox = aggregated.boundingBox
+
+                Log.i(
+                    TAG,
+                    "MULTI_OBJECT: Triggering crop enrichment for ${aggregated.aggregatedId} " +
+                        "bbox=(${boundingBox.left}, ${boundingBox.top}, ${boundingBox.right}, ${boundingBox.bottom})",
+                )
+
+                cropBasedEnricher.enrichFromCrop(
+                    context = context,
+                    scope = viewModelScope,
+                    fullImage = captureResult.fullImageBitmap,
+                    boundingBox = boundingBox,
+                    itemId = aggregated.aggregatedId,
+                    stateManager = stateManager,
+                )
+            }
+
+            // Note: fullImageBitmap should be recycled by the caller after this returns
+            // The enricher makes copies of crops as needed
+        }
+
+        /**
          * Removes a specific item by ID.
          * @see ItemsStateManager.removeItem
          */
@@ -496,6 +552,23 @@ class ItemsViewModel
             attribute: com.scanium.shared.core.models.items.ItemAttribute,
         ) {
             stateManager.updateItemAttribute(itemId, attributeKey, attribute)
+        }
+
+        /**
+         * Updates the summary text for an item.
+         * Used by EditItemScreenV2 when user edits the attribute summary.
+         *
+         * @param itemId The ID of the item to update
+         * @param summaryText The new summary text
+         * @param userEdited Whether the user has manually edited the text
+         * @see ItemsStateManager.updateSummaryText
+         */
+        fun updateSummaryText(
+            itemId: String,
+            summaryText: String,
+            userEdited: Boolean,
+        ) {
+            stateManager.updateSummaryText(itemId, summaryText, userEdited)
         }
 
         // ==================== Threshold Operations (Delegated to StateManager) ====================

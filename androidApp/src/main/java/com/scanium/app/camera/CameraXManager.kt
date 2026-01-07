@@ -98,6 +98,23 @@ class CameraXManager(
         val error: Throwable? = null,
     )
 
+    /**
+     * Result of a multi-object capture operation.
+     *
+     * @property items Detected items with bounding boxes and attributes
+     * @property detections Raw detection results for overlay display
+     * @property fullImageUri URI to the saved high-res image file
+     * @property fullImageBitmap The captured image as a Bitmap (for crop operations)
+     * @property sourcePhotoId Unique ID linking all items from this capture
+     */
+    data class MultiObjectCaptureResult(
+        val items: List<ScannedItem>,
+        val detections: List<DetectionResult>,
+        val fullImageUri: Uri,
+        val fullImageBitmap: Bitmap,
+        val sourcePhotoId: String,
+    )
+
     @Volatile
     private var cameraProvider: ProcessCameraProvider? = null
 
@@ -1835,6 +1852,94 @@ class CameraXManager(
                 savedUri
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to capture high-res image", e)
+                null
+            }
+        }
+
+    /**
+     * Captures a single photo and detects multiple objects in it.
+     *
+     * This is the entry point for the multi-object scanning flow. It:
+     * 1. Captures a high-resolution image
+     * 2. Runs ML Kit object detection to find all objects
+     * 3. Returns items with bounding boxes for crop-based enrichment
+     *
+     * Each detected item shares the same sourcePhotoId, linking them to this capture.
+     *
+     * @return MultiObjectCaptureResult with all detections, or null if capture failed
+     */
+    suspend fun captureMultiObjectFrame(): MultiObjectCaptureResult? =
+        withContext(Dispatchers.IO) {
+            Log.i(TAG, "captureMultiObjectFrame: Starting multi-object capture")
+
+            try {
+                // Step 1: Capture high-resolution image
+                val imageUri = captureHighResImage()
+                if (imageUri == null) {
+                    Log.e(TAG, "captureMultiObjectFrame: Failed to capture high-res image")
+                    return@withContext null
+                }
+
+                Log.i(TAG, "captureMultiObjectFrame: Captured image at $imageUri")
+
+                // Step 2: Load the captured image as a bitmap
+                val bitmap =
+                    try {
+                        context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
+                            BitmapFactory.decodeStream(inputStream)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "captureMultiObjectFrame: Failed to load captured image", e)
+                        return@withContext null
+                    }
+
+                if (bitmap == null) {
+                    Log.e(TAG, "captureMultiObjectFrame: Decoded bitmap is null")
+                    return@withContext null
+                }
+
+                Log.i(TAG, "captureMultiObjectFrame: Loaded bitmap ${bitmap.width}x${bitmap.height}")
+
+                // Step 3: Create InputImage for ML Kit
+                val inputImage = InputImage.fromBitmap(bitmap, 0)
+
+                // Step 4: Run object detection with multiple object mode enabled
+                val imageBoundsForFiltering = android.graphics.Rect(0, 0, bitmap.width, bitmap.height)
+                val response =
+                    objectDetector.detectObjects(
+                        image = inputImage,
+                        sourceBitmap = { bitmap },
+                        useStreamMode = false, // Single-shot mode for best accuracy
+                        cropRect = imageBoundsForFiltering,
+                        edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
+                    )
+
+                Log.i(
+                    TAG,
+                    "captureMultiObjectFrame: Detected ${response.scannedItems.size} items and ${response.detectionResults.size} detection results",
+                )
+
+                // Step 5: Generate unique sourcePhotoId for this capture
+                val sourcePhotoId = java.util.UUID.randomUUID().toString()
+
+                // Step 6: Update items with fullImageUri and sourcePhotoId
+                val itemsWithPhoto =
+                    response.scannedItems.map { item ->
+                        item.copy(
+                            fullImageUri = imageUri,
+                            sourcePhotoId = sourcePhotoId,
+                        )
+                    }
+
+                MultiObjectCaptureResult(
+                    items = itemsWithPhoto,
+                    detections = response.detectionResults,
+                    fullImageUri = imageUri,
+                    fullImageBitmap = bitmap, // Caller is responsible for recycling
+                    sourcePhotoId = sourcePhotoId,
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "captureMultiObjectFrame: Error during capture", e)
                 null
             }
         }

@@ -2,7 +2,9 @@ package com.scanium.app.aggregation
 
 import android.net.Uri
 import com.scanium.app.items.ScannedItem
+import com.scanium.shared.core.models.items.EnrichmentLayerStatus
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.ItemPhoto
 import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.ml.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
@@ -78,6 +80,17 @@ data class AggregatedItem(
      * can show "Detected: X" alongside the user's override.
      */
     var detectedAttributes: Map<String, ItemAttribute> = emptyMap(),
+    // Multi-object scanning fields (v7)
+    /** User-editable attribute summary text */
+    var attributesSummaryText: String = "",
+    /** Flag indicating user has manually edited the summary text */
+    var summaryTextUserEdited: Boolean = false,
+    /** Additional photos attached to this item */
+    var additionalPhotos: List<ItemPhoto> = emptyList(),
+    /** ID linking items from same multi-object capture */
+    var sourcePhotoId: String? = null,
+    /** Status of each enrichment layer */
+    var enrichmentStatus: EnrichmentLayerStatus = EnrichmentLayerStatus(),
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -107,6 +120,11 @@ data class AggregatedItem(
             attributes = enrichedAttributes,
             visionAttributes = visionAttributes,
             detectedAttributes = detectedAttributes,
+            attributesSummaryText = attributesSummaryText,
+            summaryTextUserEdited = summaryTextUserEdited,
+            additionalPhotos = additionalPhotos,
+            sourcePhotoId = sourcePhotoId,
+            enrichmentStatus = enrichmentStatus,
         )
     }
 

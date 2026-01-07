@@ -937,6 +937,8 @@ private fun ItemRow(
                         ConfidenceBadge(confidenceLevel = item.confidenceLevel)
                         ClassificationStatusBadge(status = item.classificationStatus)
                     }
+                    // Enrichment status badge (always visible when enriching)
+                    EnrichmentStatusBadge(status = item.enrichmentStatus)
                 }
 
                 // Price display: user price if set, otherwise estimated range
@@ -1251,6 +1253,47 @@ private fun ConditionBadge(condition: ItemCondition) {
     ) {
         Text(
             text = condition.displayName,
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/**
+ * Enrichment status badge showing enriching/enriched state.
+ */
+@Composable
+private fun EnrichmentStatusBadge(
+    status: com.scanium.shared.core.models.items.EnrichmentLayerStatus,
+) {
+    val (backgroundColor, textColor, text) =
+        when {
+            status.isEnriching -> Triple(
+                MaterialTheme.colorScheme.primaryContainer,
+                MaterialTheme.colorScheme.onPrimaryContainer,
+                "Enriching...",
+            )
+            status.isComplete && status.hasAnyResults -> Triple(
+                MaterialTheme.colorScheme.tertiaryContainer,
+                MaterialTheme.colorScheme.onTertiaryContainer,
+                "Enriched",
+            )
+            status.layerA == com.scanium.shared.core.models.items.LayerState.FAILED &&
+                status.layerB == com.scanium.shared.core.models.items.LayerState.FAILED -> Triple(
+                MaterialTheme.colorScheme.errorContainer,
+                MaterialTheme.colorScheme.onErrorContainer,
+                "Failed",
+            )
+            else -> return // Don't show badge for pending state
+        }
+
+    Surface(
+        shape = MaterialTheme.shapes.extraSmall,
+        color = backgroundColor,
+    ) {
+        Text(
+            text = text,
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

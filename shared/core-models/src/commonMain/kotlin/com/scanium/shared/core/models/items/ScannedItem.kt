@@ -98,6 +98,42 @@ data class ScannedItem<FullImageUri>(
      * show "Detected: X" alongside the user's override.
      */
     val detectedAttributes: Map<String, ItemAttribute> = emptyMap(),
+    /**
+     * User-editable attribute summary text.
+     * Generated from structured attributes in a readable format:
+     * Category: Fashion > Tops > T-Shirt
+     * Brand: Nike
+     * Color: Gray
+     * Size: (missing)
+     */
+    val attributesSummaryText: String = "",
+    /**
+     * Flag indicating whether the user has manually edited the summary text.
+     * When true, new attributes from enrichment will NOT auto-merge into the text.
+     * Instead, they'll be shown as "Suggested Additions" for the user to accept.
+     */
+    val summaryTextUserEdited: Boolean = false,
+    /**
+     * Additional photos attached to this item (close-ups, alternate angles).
+     * The primary photo is stored in thumbnail/fullImageUri.
+     * These additional photos are used for:
+     * - Re-enrichment to fill missing attributes
+     * - Better AI generation with more visual context
+     */
+    val additionalPhotos: List<ItemPhoto> = emptyList(),
+    /**
+     * ID linking items captured from the same multi-object photo.
+     * When a single capture detects multiple objects, all resulting items
+     * share the same sourcePhotoId, allowing:
+     * - Reference back to the full scene image
+     * - Grouping related items in the UI
+     */
+    val sourcePhotoId: String? = null,
+    /**
+     * Status of each enrichment layer (A/B/C).
+     * Used to show "Enriching..." UI and track progress.
+     */
+    val enrichmentStatus: EnrichmentLayerStatus = EnrichmentLayerStatus(),
 ) {
     /**
      * Formatted price range string for display.
