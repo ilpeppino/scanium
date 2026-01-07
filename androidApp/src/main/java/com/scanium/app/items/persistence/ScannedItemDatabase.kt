@@ -11,7 +11,7 @@ import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
     entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = false,
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
@@ -43,6 +43,7 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     MIGRATION_5_6,
                     MIGRATION_6_7,
                     MIGRATION_7_8,
+                    MIGRATION_8_9,
                 )
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
@@ -224,6 +225,33 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     // exportConfidenceTier: Confidence tier of AI-generated export (HIGH/MED/LOW)
                     db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportConfidenceTier TEXT")
                     db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportConfidenceTier TEXT")
+                }
+            }
+
+        private val MIGRATION_8_9 =
+            object : Migration(8, 9) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Add columns for Quality Loop feature (Phase 6)
+
+                    // completenessScore: 0-100 score based on category-specific required attributes
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN completenessScore INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN completenessScore INTEGER NOT NULL DEFAULT 0")
+
+                    // missingAttributesJson: List of missing attribute keys ordered by importance
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN missingAttributesJson TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN missingAttributesJson TEXT")
+
+                    // lastEnrichedAt: Timestamp of the last enrichment operation
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN lastEnrichedAt INTEGER")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN lastEnrichedAt INTEGER")
+
+                    // capturedShotTypesJson: Photo shot types that have been captured
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN capturedShotTypesJson TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN capturedShotTypesJson TEXT")
+
+                    // isReadyForListing: Whether the item meets the completeness threshold
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN isReadyForListing INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN isReadyForListing INTEGER NOT NULL DEFAULT 0")
                 }
             }
     }

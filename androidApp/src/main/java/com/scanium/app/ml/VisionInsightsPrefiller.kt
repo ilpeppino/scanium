@@ -9,6 +9,8 @@ import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.enrichment.EnrichmentStatus
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.logging.ScaniumLog
+import com.scanium.app.quality.AttributeCompletenessEvaluator
+import com.scanium.app.quality.EnrichmentPolicy
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.items.VisionColor
@@ -60,6 +62,7 @@ class VisionInsightsPrefiller @Inject constructor(
     private val visionInsightsRepository: VisionInsightsRepository,
     private val localVisionExtractor: LocalVisionExtractor,
     private val enrichmentRepository: EnrichmentRepository,
+    private val enrichmentPolicy: EnrichmentPolicy,
 ) {
     companion object {
         private const val TAG = "VisionInsightsPrefiller"
@@ -133,6 +136,8 @@ class VisionInsightsPrefiller @Inject constructor(
                                 suggestedLabel = localResult.suggestedLabel,
                                 categoryHint = null,
                             )
+                            // Evaluate completeness after Layer A
+                            evaluateAndUpdateCompleteness(stateManager, itemId)
                         }
                         localApplied = true
                         Log.i(TAG, "SCAN_ENRICH: Local results applied (Layer A)")
@@ -154,6 +159,8 @@ class VisionInsightsPrefiller @Inject constructor(
                             suggestedLabel = insights.suggestedLabel,
                             categoryHint = insights.categoryHint,
                         )
+                        // Evaluate completeness after Layer B
+                        evaluateAndUpdateCompleteness(stateManager, itemId)
                     }
                     Log.i(TAG, "SCAN_ENRICH: Cloud results applied (Layer B)")
                 }
@@ -247,18 +254,70 @@ class VisionInsightsPrefiller @Inject constructor(
     }
 
     /**
+     * Evaluate and update completeness for an item after enrichment.
+     *
+     * This should be called after each layer completes to recalculate
+     * the completeness score based on current attributes.
+     */
+    private fun evaluateAndUpdateCompleteness(
+        stateManager: ItemsStateManager,
+        itemId: String,
+        recordEnrichment: Boolean = false,
+    ) {
+        val item = stateManager.getItems().find { it.id == itemId } ?: return
+
+        val result = AttributeCompletenessEvaluator.evaluate(
+            category = item.category,
+            attributes = item.attributes,
+        )
+
+        Log.i(TAG, "SCAN_ENRICH: Completeness for $itemId: ${result.score}%, missing=${result.missingAttributes.map { it.key }}")
+
+        stateManager.updateCompleteness(
+            itemId = itemId,
+            completenessScore = result.score,
+            missingAttributes = result.missingAttributes.map { it.key },
+            isReadyForListing = result.isReadyForListing,
+            lastEnrichedAt = if (recordEnrichment) System.currentTimeMillis() else null,
+        )
+
+        if (recordEnrichment) {
+            enrichmentPolicy.recordEnrichment(itemId)
+        }
+    }
+
+    /**
      * Run Layer C: Full enrichment with draft generation.
      *
      * This is a longer-running operation (~5-15s) that:
-     * 1. Submits the image to /v1/items/enrich
-     * 2. Polls for completion
-     * 3. Applies normalized attributes and draft info to the item
+     * 1. Checks enrichment policy (budget, completeness)
+     * 2. Submits the image to /v1/items/enrich
+     * 3. Polls for completion
+     * 4. Applies normalized attributes and draft info to the item
+     * 5. Evaluates completeness and records enrichment
      */
     private suspend fun runEnrichmentLayer(
         bitmap: Bitmap,
         itemId: String,
         stateManager: ItemsStateManager,
     ) {
+        // Check enrichment policy before proceeding
+        val item = stateManager.getItems().find { it.id == itemId }
+        if (item != null) {
+            val decision = enrichmentPolicy.shouldEnrich(
+                itemId = itemId,
+                category = item.category,
+                attributes = item.attributes,
+                enrichmentStatus = item.enrichmentStatus,
+                lastEnrichedAt = item.lastEnrichedAt,
+            )
+
+            if (!decision.shouldEnrich) {
+                Log.i(TAG, "SCAN_ENRICH: Skipping Layer C for $itemId - ${decision.reason}")
+                return
+            }
+        }
+
         Log.i(TAG, "SCAN_ENRICH: Starting enrichment (Layer C) for item $itemId")
 
         val result = enrichmentRepository.enrichItem(
@@ -275,6 +334,8 @@ class VisionInsightsPrefiller @Inject constructor(
             // Apply enrichment results to the item
             withContext(Dispatchers.Main) {
                 applyEnrichmentResults(stateManager, itemId, status)
+                // Evaluate completeness and record enrichment after Layer C
+                evaluateAndUpdateCompleteness(stateManager, itemId, recordEnrichment = true)
             }
             Log.i(TAG, "SCAN_ENRICH: Enrichment results applied (Layer C)")
         }
