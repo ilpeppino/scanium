@@ -132,6 +132,10 @@ data class EnrichmentStatus(
     val stage: String,
     val visionFacts: VisionFactsSummary? = null,
     val normalizedAttributes: List<NormalizedAttribute>? = null,
+    // Phase 2: Structured attributes with full provenance
+    val attributesStructured: List<StructuredAttributeDto>? = null,
+    val summaryText: String? = null,
+    val suggestedAdditions: List<SuggestedAdditionDto>? = null,
     val draft: ListingDraft? = null,
     val error: EnrichmentErrorInfo? = null,
     val createdAt: Long,
@@ -153,6 +157,60 @@ data class EnrichmentStatus(
 
     val isFailed: Boolean
         get() = stageEnum == EnrichmentStage.FAILED
+}
+
+/**
+ * Evidence reference for structured attributes.
+ */
+@Serializable
+data class EvidenceRefDto(
+    val type: String,
+    val rawValue: String,
+    val score: Float? = null,
+    val imageRef: String? = null,
+)
+
+/**
+ * Structured attribute with full provenance (Phase 2).
+ */
+@Serializable
+data class StructuredAttributeDto(
+    val key: String,
+    val value: String,
+    val source: String,
+    val confidence: String,
+    val evidence: List<EvidenceRefDto>? = null,
+    val updatedAt: Long = 0,
+) {
+    val isUserProvided: Boolean
+        get() = source.uppercase() == "USER"
+
+    val isDetected: Boolean
+        get() = source.uppercase() == "DETECTED"
+
+    val confidenceLevel: EnrichmentConfidence
+        get() = when (confidence.uppercase()) {
+            "HIGH" -> EnrichmentConfidence.HIGH
+            "MED", "MEDIUM" -> EnrichmentConfidence.MED
+            else -> EnrichmentConfidence.LOW
+        }
+}
+
+/**
+ * Suggested addition for user review (Phase 2).
+ */
+@Serializable
+data class SuggestedAdditionDto(
+    val attribute: StructuredAttributeDto,
+    val reason: String,
+    val action: String,
+    val existingValue: String? = null,
+) {
+    val isAdd: Boolean
+        get() = action.lowercase() == "add"
+
+    val isReplace: Boolean
+        get() = action.lowercase() == "replace"
 }
 
 /**

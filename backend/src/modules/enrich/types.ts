@@ -93,6 +93,19 @@ export type EnrichmentError = {
 };
 
 /**
+ * Structured attribute with full provenance (canonical format).
+ * Re-exported from items module for convenience.
+ */
+export type {
+  StructuredAttribute,
+  SuggestedAddition,
+  ItemEnrichmentState,
+  AttributeSource as StructuredAttributeSource,
+  EvidenceRef as StructuredEvidenceRef,
+  EvidenceType,
+} from '../items/attribute-types.js';
+
+/**
  * Current status of an enrichment request.
  */
 export type EnrichmentStatus = {
@@ -106,8 +119,23 @@ export type EnrichmentStatus = {
   stage: EnrichmentStage;
   /** Vision facts summary (available after VISION_DONE) */
   visionFacts?: VisionFactsSummary;
-  /** Normalized attributes (available after ATTRIBUTES_DONE) */
+  /** Normalized attributes (available after ATTRIBUTES_DONE) - legacy format */
   normalizedAttributes?: NormalizedAttribute[];
+  /**
+   * Structured attributes with full provenance (available after ATTRIBUTES_DONE).
+   * This is the canonical format with source, confidence, and evidence.
+   */
+  attributesStructured?: import('../items/attribute-types.js').StructuredAttribute[];
+  /**
+   * Summary text generated from attributes.
+   * Format: "Key: Value\nKey: Value\n..."
+   */
+  summaryText?: string;
+  /**
+   * Suggested additions for user review (currently empty from enrichment).
+   * Will be populated when merging with user-edited items.
+   */
+  suggestedAdditions?: import('../items/attribute-types.js').SuggestedAddition[];
   /** Generated draft (available after DRAFT_DONE) */
   draft?: ListingDraft;
   /** Error info if failed */
