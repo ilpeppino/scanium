@@ -131,7 +131,11 @@ fun ItemDetailSheet(
             // Vision details section (OCR, colors, candidates)
             if (!item.visionAttributes.isEmpty) {
                 HorizontalDivider()
-                VisionDetailsSection(visionAttributes = item.visionAttributes)
+                VisionDetailsSection(
+                    visionAttributes = item.visionAttributes,
+                    attributes = item.attributes,
+                    onAttributeEdit = onAttributeEdit,
+                )
             }
 
             // Action buttons
@@ -333,7 +337,7 @@ private fun AttributesSection(
         )
 
         // Priority order for attribute display
-        val priorityOrder = listOf("brand", "model", "color", "secondaryColor", "material")
+        val priorityOrder = listOf("brand", "itemType", "model", "color", "secondaryColor", "material")
 
         // Sort attributes by priority, then alphabetically
         val sortedAttributes = attributes.entries
@@ -528,10 +532,13 @@ private fun ConfidenceIndicator(
 private fun formatAttributeLabel(key: String): String {
     return when (key) {
         "brand" -> "Brand"
+        "itemType" -> "Item Type"
         "model" -> "Model"
         "color" -> "Color"
         "secondaryColor" -> "Secondary Color"
         "material" -> "Material"
+        "labelHints" -> "Label Hints"
+        "ocrText" -> "OCR Text"
         else -> key.replaceFirstChar { it.uppercase() }
     }
 }
@@ -540,7 +547,11 @@ private fun formatAttributeLabel(key: String): String {
  * Section displaying raw vision data including OCR text, colors, and candidates.
  */
 @Composable
-private fun VisionDetailsSection(visionAttributes: VisionAttributes) {
+private fun VisionDetailsSection(
+    visionAttributes: VisionAttributes,
+    attributes: Map<String, ItemAttribute>,
+    onAttributeEdit: (String, ItemAttribute) -> Unit,
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -549,12 +560,34 @@ private fun VisionDetailsSection(visionAttributes: VisionAttributes) {
             style = MaterialTheme.typography.titleMedium,
         )
 
+        visionAttributes.itemType?.takeIf { it.isNotBlank() }?.let { itemType ->
+            VisionDetailRow(
+                label = "Item Type",
+                value = itemType,
+            )
+        }
+
         // OCR Text
-        visionAttributes.ocrText?.takeIf { it.isNotBlank() }?.let { ocrText ->
+        val ocrSnippet = visionAttributes.ocrText
+            ?.lineSequence()
+            ?.map { it.trim() }
+            ?.firstOrNull { it.isNotEmpty() }
+            ?.take(80)
+        if (!ocrSnippet.isNullOrBlank()) {
+            val editableOcrAttribute =
+                resolveEditableAttribute(
+                    key = "ocrText",
+                    attributes = attributes,
+                    fallbackValue = ocrSnippet,
+                    fallbackConfidence = 0.8f,
+                    fallbackSource = "vision-ocr",
+                )
             VisionDetailRow(
                 label = "OCR Text",
-                value = ocrText.replace("\n", " ").take(100) +
-                    if (ocrText.length > 100) "..." else "",
+                value = editableOcrAttribute?.value ?: ocrSnippet,
+                onEdit = editableOcrAttribute?.let { attribute ->
+                    { onAttributeEdit("ocrText", attribute) }
+                },
             )
         }
 
@@ -578,9 +611,21 @@ private fun VisionDetailsSection(visionAttributes: VisionAttributes) {
 
         // Detected Labels
         if (visionAttributes.labels.isNotEmpty()) {
+            val labelHints = visionAttributes.labels.take(3).joinToString(", ") { it.name }
+            val editableLabelAttribute =
+                resolveEditableAttribute(
+                    key = "labelHints",
+                    attributes = attributes,
+                    fallbackValue = labelHints,
+                    fallbackConfidence = visionAttributes.labels.maxOfOrNull { it.score } ?: 0.5f,
+                    fallbackSource = "vision-label",
+                )
             VisionDetailRow(
                 label = "Labels",
-                value = visionAttributes.labels.take(3).joinToString(", ") { it.name },
+                value = editableLabelAttribute?.value ?: labelHints,
+                onEdit = editableLabelAttribute?.let { attribute ->
+                    { onAttributeEdit("labelHints", attribute) }
+                },
             )
         }
 
@@ -606,6 +651,7 @@ private fun VisionDetailsSection(visionAttributes: VisionAttributes) {
 private fun VisionDetailRow(
     label: String,
     value: String,
+    onEdit: (() -> Unit)? = null,
 ) {
     Row(
         modifier = Modifier
@@ -616,6 +662,7 @@ private fun VisionDetailRow(
             )
             .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = "$label:",
@@ -628,7 +675,36 @@ private fun VisionDetailRow(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
+        if (onEdit != null) {
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier.semantics { contentDescription = "Edit $label" },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
+}
+
+private fun resolveEditableAttribute(
+    key: String,
+    attributes: Map<String, ItemAttribute>,
+    fallbackValue: String,
+    fallbackConfidence: Float,
+    fallbackSource: String,
+): ItemAttribute? {
+    val existing = attributes[key]
+    if (existing != null) return existing
+    if (fallbackValue.isBlank()) return null
+    return ItemAttribute(
+        value = fallbackValue,
+        confidence = fallbackConfidence,
+        source = fallbackSource,
+    )
 }
 
 @Composable

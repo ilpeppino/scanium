@@ -87,6 +87,12 @@ fun AttributeEditDialog(
                 // Color suggestions from detected colors
                 visionAttributes.colors.map { it.name }.distinct().take(5)
             }
+            "itemType" -> {
+                buildList {
+                    visionAttributes.itemType?.let { add(it) }
+                    addAll(visionAttributes.labels.map { it.name })
+                }.distinct().take(5)
+            }
             else -> emptyList()
         }
     }
@@ -273,10 +279,13 @@ private fun CurrentConfidenceRow(attribute: ItemAttribute) {
 private fun formatAttributeLabel(key: String): String {
     return when (key) {
         "brand" -> "Brand"
+        "itemType" -> "Item Type"
         "model" -> "Model"
         "color" -> "Color"
         "secondaryColor" -> "Secondary Color"
         "material" -> "Material"
+        "labelHints" -> "Label Hints"
+        "ocrText" -> "OCR Text"
         else -> key.replaceFirstChar { it.uppercase() }
     }
 }

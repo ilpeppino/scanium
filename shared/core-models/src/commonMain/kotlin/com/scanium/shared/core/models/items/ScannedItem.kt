@@ -141,9 +141,15 @@ data class ScannedItem<FullImageUri>(
      */
     val displayLabel: String
         get() {
-            val brand = visionAttributes.primaryBrand?.trim()?.takeIf { it.isNotEmpty() }
-            val itemType = visionAttributes.itemType?.trim()?.takeIf { it.isNotEmpty() }
-            val color = visionAttributes.primaryColor?.name?.trim()?.takeIf { it.isNotEmpty() }
+            val brand =
+                attributes["brand"]?.value?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: visionAttributes.primaryBrand?.trim()?.takeIf { it.isNotEmpty() }
+            val itemType =
+                attributes["itemType"]?.value?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: visionAttributes.itemType?.trim()?.takeIf { it.isNotEmpty() }
+            val color =
+                attributes["color"]?.value?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: visionAttributes.primaryColor?.name?.trim()?.takeIf { it.isNotEmpty() }
 
             // Build label using vision attributes with priority
             val label = when {

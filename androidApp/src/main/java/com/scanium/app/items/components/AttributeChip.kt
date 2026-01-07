@@ -210,10 +210,13 @@ fun AttributeChipsRow(
 private fun formatAttributeLabel(key: String): String {
     return when (key) {
         "brand" -> "Brand"
+        "itemType" -> "Item Type"
         "model" -> "Model"
         "color" -> "Color"
-        "secondaryColor" -> "Secondary color"
+        "secondaryColor" -> "Secondary Color"
         "material" -> "Material"
+        "labelHints" -> "Label Hints"
+        "ocrText" -> "OCR Text"
         else -> key.replaceFirstChar { it.uppercase() }
     }
 }

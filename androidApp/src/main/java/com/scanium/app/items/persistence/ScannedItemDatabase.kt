@@ -11,7 +11,7 @@ import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
     entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
@@ -35,7 +35,13 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                 ScannedItemDatabase::class.java,
                 "scanned_items.db",
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                )
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
                 .build()
@@ -145,6 +151,15 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     // This preserves the original backend detection even after user edits
                     db.execSQL("ALTER TABLE scanned_items ADD COLUMN detectedAttributesJson TEXT")
                     db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN detectedAttributesJson TEXT")
+                }
+            }
+
+        private val MIGRATION_5_6 =
+            object : Migration(5, 6) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Add visionAttributesJson column to store OCR/color/logo/label data
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN visionAttributesJson TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN visionAttributesJson TEXT")
                 }
             }
     }

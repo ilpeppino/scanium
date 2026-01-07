@@ -9,11 +9,16 @@ import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.ml.ItemCategory
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.VisionAttributes
+import com.scanium.shared.core.models.items.VisionColor
+import com.scanium.shared.core.models.items.VisionLabel
+import com.scanium.shared.core.models.items.VisionLogo
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.shared.core.models.pricing.Money
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange
+import org.json.JSONArray
 import org.json.JSONObject
 
 @Entity(tableName = "scanned_items")
@@ -52,6 +57,7 @@ data class ScannedItemEntity(
     val condition: String?,
     val attributesJson: String?,
     val detectedAttributesJson: String?,
+    val visionAttributesJson: String?,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -94,6 +100,7 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         condition = condition?.name,
         attributesJson = serializeAttributes(attributes),
         detectedAttributesJson = serializeAttributes(detectedAttributes),
+        visionAttributesJson = serializeVisionAttributes(visionAttributes),
     )
 }
 
@@ -166,6 +173,7 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         condition = conditionValue,
         attributes = deserializeAttributes(attributesJson),
         detectedAttributes = deserializeAttributes(detectedAttributesJson),
+        visionAttributes = deserializeVisionAttributes(visionAttributesJson),
     )
 }
 
@@ -243,5 +251,146 @@ private fun deserializeAttributes(json: String?): Map<String, ItemAttribute> {
         result
     } catch (e: Exception) {
         emptyMap()
+    }
+}
+
+private fun serializeVisionAttributes(visionAttributes: VisionAttributes): String? {
+    if (visionAttributes.isEmpty) return null
+    return try {
+        val json = JSONObject()
+
+        visionAttributes.ocrText?.let { json.put("ocrText", it) }
+        visionAttributes.itemType?.let { json.put("itemType", it) }
+
+        if (visionAttributes.colors.isNotEmpty()) {
+            val colors = JSONArray()
+            visionAttributes.colors.forEach { color ->
+                val colorJson = JSONObject()
+                colorJson.put("name", color.name)
+                colorJson.put("hex", color.hex)
+                colorJson.put("score", color.score.toDouble())
+                colors.put(colorJson)
+            }
+            json.put("colors", colors)
+        }
+
+        if (visionAttributes.logos.isNotEmpty()) {
+            val logos = JSONArray()
+            visionAttributes.logos.forEach { logo ->
+                val logoJson = JSONObject()
+                logoJson.put("name", logo.name)
+                logoJson.put("score", logo.score.toDouble())
+                logos.put(logoJson)
+            }
+            json.put("logos", logos)
+        }
+
+        if (visionAttributes.labels.isNotEmpty()) {
+            val labels = JSONArray()
+            visionAttributes.labels.forEach { label ->
+                val labelJson = JSONObject()
+                labelJson.put("name", label.name)
+                labelJson.put("score", label.score.toDouble())
+                labels.put(labelJson)
+            }
+            json.put("labels", labels)
+        }
+
+        if (visionAttributes.brandCandidates.isNotEmpty()) {
+            val brands = JSONArray()
+            visionAttributes.brandCandidates.forEach { brands.put(it) }
+            json.put("brandCandidates", brands)
+        }
+
+        if (visionAttributes.modelCandidates.isNotEmpty()) {
+            val models = JSONArray()
+            visionAttributes.modelCandidates.forEach { models.put(it) }
+            json.put("modelCandidates", models)
+        }
+
+        json.toString()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+private fun deserializeVisionAttributes(json: String?): VisionAttributes {
+    if (json.isNullOrBlank()) return VisionAttributes.EMPTY
+    return try {
+        val obj = JSONObject(json)
+
+        val colors = mutableListOf<VisionColor>()
+        val colorsArray = obj.optJSONArray("colors")
+        if (colorsArray != null) {
+            for (i in 0 until colorsArray.length()) {
+                val colorObj = colorsArray.optJSONObject(i) ?: continue
+                val name = colorObj.optString("name")
+                val hex = colorObj.optString("hex")
+                val score = colorObj.optDouble("score", 0.0).toFloat()
+                if (name.isNotBlank() && hex.isNotBlank()) {
+                    colors.add(VisionColor(name = name, hex = hex, score = score))
+                }
+            }
+        }
+
+        val logos = mutableListOf<VisionLogo>()
+        val logosArray = obj.optJSONArray("logos")
+        if (logosArray != null) {
+            for (i in 0 until logosArray.length()) {
+                val logoObj = logosArray.optJSONObject(i) ?: continue
+                val name = logoObj.optString("name")
+                val score = logoObj.optDouble("score", 0.0).toFloat()
+                if (name.isNotBlank()) {
+                    logos.add(VisionLogo(name = name, score = score))
+                }
+            }
+        }
+
+        val labels = mutableListOf<VisionLabel>()
+        val labelsArray = obj.optJSONArray("labels")
+        if (labelsArray != null) {
+            for (i in 0 until labelsArray.length()) {
+                val labelObj = labelsArray.optJSONObject(i) ?: continue
+                val name = labelObj.optString("name")
+                val score = labelObj.optDouble("score", 0.0).toFloat()
+                if (name.isNotBlank()) {
+                    labels.add(VisionLabel(name = name, score = score))
+                }
+            }
+        }
+
+        val brandCandidates = mutableListOf<String>()
+        val brandsArray = obj.optJSONArray("brandCandidates")
+        if (brandsArray != null) {
+            for (i in 0 until brandsArray.length()) {
+                val brand = brandsArray.optString(i)
+                if (brand.isNotBlank()) {
+                    brandCandidates.add(brand)
+                }
+            }
+        }
+
+        val modelCandidates = mutableListOf<String>()
+        val modelsArray = obj.optJSONArray("modelCandidates")
+        if (modelsArray != null) {
+            for (i in 0 until modelsArray.length()) {
+                val model = modelsArray.optString(i)
+                if (model.isNotBlank()) {
+                    modelCandidates.add(model)
+                }
+            }
+        }
+
+        VisionAttributes(
+            colors = colors,
+            ocrText = obj.optString("ocrText").takeIf { it.isNotBlank() },
+            logos = logos,
+            labels = labels,
+            brandCandidates = brandCandidates,
+            modelCandidates = modelCandidates,
+            itemType = obj.optString("itemType").takeIf { it.isNotBlank() },
+        )
+    } catch (e: Exception) {
+        VisionAttributes.EMPTY
     }
 }

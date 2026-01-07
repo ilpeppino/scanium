@@ -139,7 +139,7 @@ class LocalVisionExtractor @Inject constructor() {
             colors = result.colors,
             logos = emptyList(), // Local extraction doesn't detect logos
             labels = emptyList(), // Local extraction doesn't provide labels
-            brandCandidates = emptyList(),
+            brandCandidates = result.suggestedLabel?.let { listOf(it) } ?: emptyList(),
             modelCandidates = emptyList(),
         )
     }

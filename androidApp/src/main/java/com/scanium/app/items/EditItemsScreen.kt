@@ -521,9 +521,12 @@ private fun parsePriceToCents(priceText: String): Long? {
 private fun buildSuggestedLabel(item: ScannedItem): String? {
     val brand = item.attributes["brand"]?.value ?: item.visionAttributes.primaryBrand
     val model = item.attributes["model"]?.value ?: item.visionAttributes.primaryModel
+    val itemType = item.attributes["itemType"]?.value ?: item.visionAttributes.itemType
 
     return when {
         !brand.isNullOrBlank() && !model.isNullOrBlank() -> "$brand $model"
+        !brand.isNullOrBlank() && !itemType.isNullOrBlank() -> "$brand $itemType"
+        !itemType.isNullOrBlank() -> itemType
         !brand.isNullOrBlank() -> brand
         else -> null
     }
