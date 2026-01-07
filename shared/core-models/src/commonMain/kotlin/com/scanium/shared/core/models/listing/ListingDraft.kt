@@ -240,11 +240,26 @@ object ListingDraftBuilder {
                 source = DraftProvenance.DEFAULT,
             )
 
-        item.labelText?.takeIf { it.isNotBlank() }?.let { label ->
+        // BRAND: prefer vision-detected brand, fallback to labelText
+        val brand = item.visionAttributes.primaryBrand
+            ?: item.labelText?.takeIf { it.isNotBlank() }
+        brand?.let {
             fields[DraftFieldKey.BRAND] =
                 DraftField(
-                    value = label,
-                    confidence = item.confidence,
+                    value = it,
+                    confidence = item.visionAttributes.logos.maxOfOrNull { logo -> logo.score } ?: item.confidence,
+                    source = DraftProvenance.DETECTED,
+                )
+        }
+
+        // COLOR: from vision attributes (join unique color names)
+        val colors = item.visionAttributes.colors
+        if (colors.isNotEmpty()) {
+            val colorNames = colors.map { it.name }.distinct().joinToString(", ")
+            fields[DraftFieldKey.COLOR] =
+                DraftField(
+                    value = colorNames,
+                    confidence = colors.mapNotNull { it.score }.average().toFloat().takeIf { !it.isNaN() } ?: 0.8f,
                     source = DraftProvenance.DETECTED,
                 )
         }

@@ -401,6 +401,9 @@ dependencies {
     // ML Kit Image Labeling for on-device classification
     implementation("com.google.mlkit:image-labeling:17.0.8")
 
+    // Android Palette API for color extraction
+    implementation("androidx.palette:palette-ktx:1.0.0")
+
     // Coroutines for Play Services (needed for ML Kit await)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 

@@ -1,5 +1,6 @@
 package com.scanium.app.assistant
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.items.ItemsViewModel
@@ -10,6 +11,7 @@ import com.scanium.shared.core.models.assistant.AssistantActionType
 import com.scanium.shared.core.models.assistant.AssistantMessage
 import com.scanium.shared.core.models.assistant.AssistantPromptBuilder
 import com.scanium.shared.core.models.assistant.AssistantRole
+import com.scanium.shared.core.models.assistant.ItemAttributeSnapshot
 import com.scanium.shared.core.models.assistant.ItemContextSnapshot
 import com.scanium.shared.core.models.assistant.ItemContextSnapshotBuilder
 import com.scanium.shared.core.models.listing.ExportProfileDefinition
@@ -44,20 +46,59 @@ class AssistantViewModel(
 
     private fun loadContext() {
         viewModelScope.launch {
-            val snapshots = mutableListOf<ItemContextSnapshot>()
-
-            if (activeDraftId != null) {
-                val draft = draftStore.getByItemId(activeDraftId)
-                if (draft != null) {
-                    snapshots.add(ItemContextSnapshotBuilder.fromDraft(draft))
-                }
-            } else if (selectedItemIds.isNotEmpty()) {
-                val itemsList = itemsViewModel.items.value.filter { selectedItemIds.contains(it.id) }
-                snapshots.addAll(itemsList.map { it.toContextSnapshot() })
-            }
-
+            val snapshots = refreshContext()
             _uiState.update { it.copy(contextItems = snapshots) }
         }
+    }
+
+    /**
+     * Refresh and return the latest context items.
+     * This ensures we get the most up-to-date vision attributes,
+     * which may have been applied after the assistant was opened.
+     */
+    private suspend fun refreshContext(): List<ItemContextSnapshot> {
+        Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
+        Log.w(TAG, "║ ASSISTANT: refreshContext() CALLED")
+        Log.w(TAG, "║ activeDraftId=$activeDraftId")
+        Log.w(TAG, "║ selectedItemIds=$selectedItemIds")
+        Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
+
+        val snapshots = mutableListOf<ItemContextSnapshot>()
+
+        if (activeDraftId != null) {
+            val draft = draftStore.getByItemId(activeDraftId)
+            Log.w(TAG, "DIAG: Draft lookup for activeDraftId=$activeDraftId, found=${draft != null}")
+            if (draft != null) {
+                snapshots.add(ItemContextSnapshotBuilder.fromDraft(draft))
+            }
+        } else if (selectedItemIds.isNotEmpty()) {
+            val allItems = itemsViewModel.items.value
+            Log.w(TAG, "DIAG: Total items in itemsViewModel: ${allItems.size}")
+            allItems.forEach { item ->
+                Log.w(TAG, "DIAG: Item id=${item.id}, displayLabel=${item.displayLabel}, labelText=${item.labelText}")
+                Log.w(TAG, "DIAG:   visionAttributes.isEmpty=${item.visionAttributes.isEmpty}")
+                Log.w(TAG, "DIAG:   visionAttributes.ocrText=${item.visionAttributes.ocrText?.take(50)}")
+                Log.w(TAG, "DIAG:   visionAttributes.colors=${item.visionAttributes.colors.map { it.name }}")
+            }
+            val itemsList = allItems.filter { selectedItemIds.contains(it.id) }
+            Log.w(TAG, "DIAG: Filtered items matching selectedItemIds: ${itemsList.size}")
+            snapshots.addAll(itemsList.map { it.toContextSnapshot() })
+        }
+
+        Log.w(TAG, "DIAG: Created ${snapshots.size} context snapshots")
+        snapshots.forEach { snapshot ->
+            Log.w(TAG, "DIAG: Snapshot title=${snapshot.title}, category=${snapshot.category}")
+            Log.w(TAG, "DIAG:   attributes=${snapshot.attributes.map { "${it.key}=${it.value}" }}")
+        }
+
+        // Update UI state with fresh context
+        _uiState.update { it.copy(contextItems = snapshots) }
+
+        return snapshots
+    }
+
+    companion object {
+        private const val TAG = "AssistantViewModel"
     }
 
     fun sendMessage(text: String) {
@@ -79,6 +120,9 @@ class AssistantViewModel(
         }
 
         viewModelScope.launch {
+            // Refresh context to get latest vision attributes before sending
+            val freshContextItems = refreshContext()
+
             // Use generic profile if not specified (TODO: Load real profile)
             val exportProfile =
                 ExportProfileDefinition(
@@ -89,7 +133,7 @@ class AssistantViewModel(
             val currentMessages = _uiState.value.messages
             val request =
                 AssistantPromptBuilder.buildRequest(
-                    items = _uiState.value.contextItems,
+                    items = freshContextItems,
                     conversation = currentMessages,
                     userMessage = text,
                     exportProfile = exportProfile,
@@ -166,15 +210,89 @@ class AssistantViewModel(
 }
 
 private fun ScannedItem.toContextSnapshot(): ItemContextSnapshot {
+    // Build attributes list from all available sources
+    val extractedAttributes = buildList {
+        // 1. Add user-edited attributes (highest priority)
+        this@toContextSnapshot.attributes.forEach { (key, attr) ->
+            add(ItemAttributeSnapshot(
+                key = key,
+                value = attr.value,
+                confidence = attr.confidence,
+            ))
+        }
+
+        // 2. Add vision attributes if not already present from user edits
+        val existingKeys = this@toContextSnapshot.attributes.keys.map { it.lowercase() }.toSet()
+
+        // Brand from vision
+        this@toContextSnapshot.visionAttributes.primaryBrand?.let { brand ->
+            if ("brand" !in existingKeys) {
+                add(ItemAttributeSnapshot(
+                    key = "brand",
+                    value = brand,
+                    confidence = this@toContextSnapshot.visionAttributes.logos.maxOfOrNull { it.score },
+                ))
+            }
+        }
+
+        // Colors from vision (include all unique colors)
+        val visionColors = this@toContextSnapshot.visionAttributes.colors
+        if (visionColors.isNotEmpty() && "color" !in existingKeys && "colors" !in existingKeys) {
+            // Join all color names for the assistant context
+            val colorNames = visionColors.map { it.name }.distinct().joinToString(", ")
+            val avgConfidence = visionColors.mapNotNull { it.score }.average().toFloat()
+            add(ItemAttributeSnapshot(
+                key = "colors",
+                value = colorNames,
+                confidence = if (avgConfidence.isNaN()) null else avgConfidence,
+            ))
+        }
+
+        // OCR text (condensed for assistant context)
+        this@toContextSnapshot.visionAttributes.ocrText?.takeIf { it.isNotBlank() }?.let { ocr ->
+            if ("recognizedText" !in existingKeys && "ocr" !in existingKeys) {
+                // Limit OCR text to first 200 chars for assistant context
+                val condensedOcr = if (ocr.length > 200) ocr.take(200) + "..." else ocr
+                add(ItemAttributeSnapshot(
+                    key = "recognizedText",
+                    value = condensedOcr,
+                    confidence = 0.8f, // OCR is generally reliable
+                ))
+            }
+        }
+
+        // Add recognized text from item itself if present
+        this@toContextSnapshot.recognizedText?.takeIf { it.isNotBlank() }?.let { text ->
+            if ("recognizedText" !in existingKeys && "ocr" !in existingKeys &&
+                this@toContextSnapshot.visionAttributes.ocrText.isNullOrBlank()) {
+                val condensed = if (text.length > 200) text.take(200) + "..." else text
+                add(ItemAttributeSnapshot(
+                    key = "recognizedText",
+                    value = condensed,
+                    confidence = 0.8f,
+                ))
+            }
+        }
+
+        // Condition if set
+        this@toContextSnapshot.condition?.let { condition ->
+            if ("condition" !in existingKeys) {
+                add(ItemAttributeSnapshot(
+                    key = "condition",
+                    value = condition.displayName,
+                    confidence = null,
+                ))
+            }
+        }
+    }
+
     return ItemContextSnapshot(
         itemId = this.id,
         title = this.displayLabel,
-        description = null,
-// ScannedItem doesn't have description until drafted
+        description = null, // ScannedItem doesn't have description until drafted
         category = this.category.name,
         confidence = this.confidence,
-        attributes = emptyList(),
-// TODO: extract attributes if available
+        attributes = extractedAttributes,
         priceEstimate = this.estimatedPriceRange?.let { (it.low.amount + it.high.amount) / 2.0 },
         photosCount = if (this.fullImageUri != null || this.thumbnail != null) 1 else 0,
     )
