@@ -228,11 +228,13 @@ class VisionInsightsRepositoryTest {
             },
             brandCandidates = response.logoHints.map { it.name },
             modelCandidates = emptyList(),
+            itemType = response.itemType,
         )
 
         return VisionInsightsResult(
             visionAttributes = visionAttributes,
             suggestedLabel = response.suggestedLabel,
+            itemType = response.itemType,
             categoryHint = response.categoryHint,
             requestId = response.requestId,
         )

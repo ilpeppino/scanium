@@ -240,45 +240,62 @@ class ItemsViewModel
          * Adds items and immediately triggers vision insights extraction for items with high-res images.
          *
          * This method:
-         * 1. Adds the items to the state manager
-         * 2. Triggers async vision extraction for each item with a fullImageUri
-         * 3. Updates items with OCR text, brand, colors when extraction completes
+         * 1. Adds the items to the state manager SYNCHRONOUSLY (processes through aggregator)
+         * 2. Gets the resulting aggregatedId for each item
+         * 3. Triggers async vision extraction for each item with a fullImageUri
+         * 4. Updates items with OCR text, brand, colors when extraction completes
          *
          * @param context Android context for loading images
          * @param newItems Items to add
          */
         fun addItemsWithVisionPrefill(context: Context, newItems: List<ScannedItem>) {
-            Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
-            Log.w(TAG, "║ VISION PREFILL: addItemsWithVisionPrefill() CALLED")
-            Log.w(TAG, "║ newItems.size=${newItems.size}")
+            Log.i(TAG, "╔════════════════════════════════════════════════════════════════")
+            Log.i(TAG, "║ SCAN_ENRICH: addItemsWithVisionPrefill() CALLED")
+            Log.i(TAG, "║ newItems.size=${newItems.size}")
             newItems.forEachIndexed { index, item ->
-                Log.w(TAG, "║ [$index] id=${item.id.take(12)}... label=${item.labelText} category=${item.category}")
-                Log.w(TAG, "║ [$index] fullImageUri=${item.fullImageUri}")
+                Log.i(TAG, "║ [$index] id=${item.id.take(12)}... label=${item.labelText} category=${item.category}")
+                Log.i(TAG, "║ [$index] fullImageUri=${item.fullImageUri}")
             }
-            Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
+            Log.i(TAG, "╚════════════════════════════════════════════════════════════════")
 
-            stateManager.addItems(newItems)
+            // Build a map of original IDs to fullImageUri BEFORE adding to state manager
+            val imageUriByOriginalId = newItems
+                .filter { it.fullImageUri != null }
+                .associate { it.id to it.fullImageUri!! }
+
+            Log.i(TAG, "SCAN_ENRICH: Items with fullImageUri: ${imageUriByOriginalId.size}/${newItems.size}")
+
+            // Add items to state manager SYNCHRONOUSLY - this ensures items are in the
+            // aggregator when we trigger vision extraction
+            val aggregatedItems = stateManager.addItemsSync(newItems)
+
+            Log.i(TAG, "SCAN_ENRICH: Aggregated ${aggregatedItems.size} items")
 
             // Trigger vision extraction for items with high-res images
-            val itemsWithImages = newItems.filter { it.fullImageUri != null }
-            Log.w(TAG, "DIAG: Items with fullImageUri: ${itemsWithImages.size}/${newItems.size}")
+            // Match aggregated items back to original items by checking sourceDetectionIds
+            if (imageUriByOriginalId.isNotEmpty()) {
+                Log.i(TAG, "SCAN_ENRICH: ✓ Triggering vision prefill for items with images")
 
-            if (itemsWithImages.isNotEmpty()) {
-                Log.w(TAG, "DIAG: ✓ Triggering vision prefill for ${itemsWithImages.size} items")
-                itemsWithImages.forEach { item ->
-                    item.fullImageUri?.let { uri ->
-                        Log.w(TAG, "DIAG: Calling extractAndApply for item ${item.id}, uri=$uri")
+                for (aggregated in aggregatedItems) {
+                    // Find the fullImageUri for this aggregated item
+                    // The aggregated item's sourceDetectionIds contains original item IDs
+                    // For newly created items, aggregatedId == original item.id
+                    val uri = aggregated.fullImageUri
+                        ?: aggregated.sourceDetectionIds.firstNotNullOfOrNull { imageUriByOriginalId[it] }
+
+                    if (uri != null) {
+                        Log.i(TAG, "SCAN_ENRICH: Calling extractAndApply for aggregatedId=${aggregated.aggregatedId}")
                         visionInsightsPrefiller.extractAndApply(
                             context = context,
                             scope = viewModelScope,
                             stateManager = stateManager,
-                            itemId = item.id,
+                            itemId = aggregated.aggregatedId,
                             imageUri = uri,
                         )
                     }
                 }
             } else {
-                Log.w(TAG, "DIAG: ⚠ NO items have fullImageUri - vision prefill SKIPPED!")
+                Log.w(TAG, "SCAN_ENRICH: ⚠ NO items have fullImageUri - vision prefill SKIPPED!")
             }
         }
 

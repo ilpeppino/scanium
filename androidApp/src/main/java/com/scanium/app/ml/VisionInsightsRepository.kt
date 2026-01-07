@@ -41,6 +41,8 @@ data class VisionInsightsResponse(
     val dominantColors: List<ColorResponse> = emptyList(),
     val labelHints: List<String> = emptyList(),
     val suggestedLabel: String? = null,
+    /** Sellable item type noun (e.g., "Lip Balm", "T-Shirt") */
+    val itemType: String? = null,
     val categoryHint: String? = null,
     val error: VisionInsightsError? = null,
 )
@@ -82,7 +84,9 @@ data class VisionInsightsResult(
     val visionAttributes: VisionAttributes,
     /** Suggested label/name derived from OCR + brand */
     val suggestedLabel: String?,
-    /** Category hint from labels */
+    /** Sellable item type noun (e.g., "Lip Balm", "T-Shirt") */
+    val itemType: String?,
+    /** Category hint from labels (coarse category) */
     val categoryHint: String?,
     /** Request ID for debugging */
     val requestId: String?,
@@ -151,15 +155,10 @@ class VisionInsightsRepository(
         bitmap: Bitmap,
         itemId: String? = null,
     ): Result<VisionInsightsResult> = withContext(Dispatchers.IO) {
-        Log.w(TAG, "DIAG: extractInsights() called, bitmap=${bitmap.width}x${bitmap.height}, itemId=$itemId")
-
-        // DIAG: Check config
         val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
-        Log.w(TAG, "DIAG: BuildConfig.SCANIUM_API_BASE_URL='${baseUrlRaw.take(50)}...'")
-
         val baseUrl = baseUrlRaw.takeIf { it.isNotBlank() }
             ?: run {
-                Log.e(TAG, "DIAG: ❌ SCANIUM_API_BASE_URL is BLANK - cannot make vision request!")
+                Log.e(TAG, "SCAN_ENRICH: SCANIUM_API_BASE_URL is not configured")
                 return@withContext Result.failure(
                     VisionInsightsException(
                         errorCode = "CONFIG_ERROR",
@@ -170,12 +169,9 @@ class VisionInsightsRepository(
             }
 
         val apiKeyRaw = apiKeyProvider()
-        val apiKeyPresent = !apiKeyRaw.isNullOrBlank()
-        Log.w(TAG, "DIAG: API key present=$apiKeyPresent (length=${apiKeyRaw?.length ?: 0})")
-
         val apiKey = apiKeyRaw?.takeIf { it.isNotBlank() }
             ?: run {
-                Log.e(TAG, "DIAG: ❌ API KEY is BLANK or NULL - cannot make vision request!")
+                Log.e(TAG, "SCAN_ENRICH: API key is missing")
                 return@withContext Result.failure(
                     VisionInsightsException(
                         errorCode = "CONFIG_ERROR",
@@ -187,13 +183,11 @@ class VisionInsightsRepository(
 
         val endpoint = "${baseUrl.trimEnd('/')}/v1/vision/insights"
         val correlationId = CorrelationIds.currentClassificationSessionId()
-        Log.w(TAG, "DIAG: ✓ Config OK. endpoint=$endpoint, correlationId=$correlationId")
 
         try {
             // Prepare image - resize if needed and compress to JPEG
             val processedBitmap = resizeIfNeeded(bitmap)
             val imageBytes = processedBitmap.toJpegBytes()
-            Log.w(TAG, "DIAG: Image prepared: ${processedBitmap.width}x${processedBitmap.height}, ${imageBytes.size} bytes")
 
             // Build multipart request
             val requestBodyBuilder = MultipartBody.Builder()
@@ -233,19 +227,15 @@ class VisionInsightsRepository(
             }
 
             val httpRequest = httpRequestBuilder.build()
-
-            Log.w(TAG, "DIAG: Making HTTP request to $endpoint...")
             val startTime = System.currentTimeMillis()
 
             client.newCall(httpRequest).execute().use { response ->
                 val responseBody = response.body?.string()
                 val latencyMs = System.currentTimeMillis() - startTime
-                Log.w(TAG, "DIAG: HTTP response received: code=${response.code}, latency=${latencyMs}ms, bodyLen=${responseBody?.length ?: 0}")
 
                 when {
                     response.isSuccessful -> {
                         if (responseBody == null) {
-                            Log.e(TAG, "DIAG: ❌ Response body is NULL despite success code")
                             return@use Result.failure(
                                 VisionInsightsException(
                                     errorCode = "EMPTY_RESPONSE",
@@ -255,13 +245,10 @@ class VisionInsightsRepository(
                             )
                         }
 
-                        Log.w(TAG, "DIAG: ✓ Success response, parsing JSON...")
-                        Log.w(TAG, "DIAG: Raw response (first 500 chars): ${responseBody.take(500)}")
-
                         val apiResponse = json.decodeFromString<VisionInsightsResponse>(responseBody)
 
                         if (!apiResponse.success) {
-                            Log.e(TAG, "DIAG: ❌ API returned success=false: ${apiResponse.error?.code} - ${apiResponse.error?.message}")
+                            Log.e(TAG, "SCAN_ENRICH: API returned success=false: ${apiResponse.error?.code}")
                             return@use Result.failure(
                                 VisionInsightsException(
                                     errorCode = apiResponse.error?.code ?: "EXTRACTION_FAILED",
@@ -271,21 +258,14 @@ class VisionInsightsRepository(
                             )
                         }
 
-                        Log.w(TAG, "DIAG: ✓ API response parsed successfully")
-                        Log.w(TAG, "DIAG:   ocrSnippets=${apiResponse.ocrSnippets.take(3)}")
-                        Log.w(TAG, "DIAG:   logoHints=${apiResponse.logoHints.map { it.name }}")
-                        Log.w(TAG, "DIAG:   dominantColors=${apiResponse.dominantColors.map { it.name }}")
-                        Log.w(TAG, "DIAG:   suggestedLabel=${apiResponse.suggestedLabel}")
-                        Log.w(TAG, "DIAG:   categoryHint=${apiResponse.categoryHint}")
+                        Log.d(TAG, "SCAN_ENRICH: Response - brand=${apiResponse.logoHints.firstOrNull()?.name}, itemType=${apiResponse.itemType}, colors=${apiResponse.dominantColors.map { it.name }}")
 
                         val result = parseResponse(apiResponse)
-                        Log.w(TAG, "DIAG: ✓ Response parsed into VisionInsightsResult")
-
                         Result.success(result)
                     }
 
                     response.code == 401 -> {
-                        Log.e(TAG, "DIAG: ❌ 401 UNAUTHORIZED - API key rejected")
+                        Log.e(TAG, "SCAN_ENRICH: 401 UNAUTHORIZED - API key rejected")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "UNAUTHORIZED",
@@ -296,7 +276,7 @@ class VisionInsightsRepository(
                     }
 
                     response.code == 429 -> {
-                        Log.w(TAG, "DIAG: ⚠ 429 RATE LIMITED")
+                        Log.w(TAG, "SCAN_ENRICH: Rate limited (429)")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "RATE_LIMITED",
@@ -307,7 +287,7 @@ class VisionInsightsRepository(
                     }
 
                     response.code == 413 -> {
-                        Log.e(TAG, "DIAG: ❌ 413 IMAGE TOO LARGE")
+                        Log.e(TAG, "SCAN_ENRICH: Image too large (413)")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "IMAGE_TOO_LARGE",
@@ -318,7 +298,7 @@ class VisionInsightsRepository(
                     }
 
                     response.code == 503 -> {
-                        Log.w(TAG, "DIAG: ⚠ 503 SERVICE UNAVAILABLE")
+                        Log.w(TAG, "SCAN_ENRICH: Service unavailable (503)")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "SERVICE_UNAVAILABLE",
@@ -329,8 +309,7 @@ class VisionInsightsRepository(
                     }
 
                     else -> {
-                        Log.e(TAG, "DIAG: ❌ Unexpected HTTP code: ${response.code}")
-                        Log.e(TAG, "DIAG: Response body: ${responseBody?.take(500)}")
+                        Log.e(TAG, "SCAN_ENRICH: Unexpected HTTP ${response.code}")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "UNKNOWN_ERROR",
@@ -342,7 +321,7 @@ class VisionInsightsRepository(
                 }
             }
         } catch (e: SocketTimeoutException) {
-            Log.e(TAG, "DIAG: ❌ Socket TIMEOUT - backend not responding within ${READ_TIMEOUT_SECONDS}s", e)
+            Log.e(TAG, "SCAN_ENRICH: Request timed out", e)
             Result.failure(
                 VisionInsightsException(
                     errorCode = "TIMEOUT",
@@ -351,7 +330,7 @@ class VisionInsightsRepository(
                 )
             )
         } catch (e: UnknownHostException) {
-            Log.e(TAG, "DIAG: ❌ UnknownHostException - cannot resolve host (offline?)", e)
+            Log.e(TAG, "SCAN_ENRICH: Offline - cannot resolve host", e)
             Result.failure(
                 VisionInsightsException(
                     errorCode = "OFFLINE",
@@ -360,7 +339,7 @@ class VisionInsightsRepository(
                 )
             )
         } catch (e: IOException) {
-            Log.e(TAG, "DIAG: ❌ IOException - network error", e)
+            Log.e(TAG, "SCAN_ENRICH: Network error", e)
             Result.failure(
                 VisionInsightsException(
                     errorCode = "NETWORK_ERROR",
@@ -369,9 +348,7 @@ class VisionInsightsRepository(
                 )
             )
         } catch (e: Exception) {
-            Log.e(TAG, "DIAG: ❌ UNEXPECTED EXCEPTION in extractInsights", e)
-            Log.e(TAG, "DIAG: Exception type: ${e.javaClass.name}")
-            Log.e(TAG, "DIAG: Message: ${e.message}")
+            Log.e(TAG, "SCAN_ENRICH: Unexpected error: ${e.javaClass.simpleName}", e)
             Result.failure(
                 VisionInsightsException(
                     errorCode = "UNKNOWN_ERROR",
@@ -407,11 +384,13 @@ class VisionInsightsRepository(
             },
             brandCandidates = response.logoHints.map { it.name },
             modelCandidates = emptyList(), // Model detection not yet available
+            itemType = response.itemType,
         )
 
         return VisionInsightsResult(
             visionAttributes = visionAttributes,
             suggestedLabel = response.suggestedLabel,
+            itemType = response.itemType,
             categoryHint = response.categoryHint,
             requestId = response.requestId,
         )

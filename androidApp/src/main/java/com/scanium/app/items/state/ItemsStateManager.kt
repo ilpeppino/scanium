@@ -141,6 +141,10 @@ class ItemsStateManager(
     /**
      * Adds multiple detected items at once.
      * More efficient than calling addItem() multiple times.
+     *
+     * Note: This runs asynchronously. Items are NOT immediately available
+     * in the aggregator when this method returns. Use [addItemsSync] if you
+     * need to immediately access the aggregated items.
      */
     fun addItems(newItems: List<ScannedItem>) {
         if (newItems.isEmpty()) return
@@ -156,6 +160,30 @@ class ItemsStateManager(
                 updateItemsState()
             }
         }
+    }
+
+    /**
+     * Adds multiple detected items synchronously and returns the resulting aggregated items.
+     *
+     * Use this method when you need to immediately access the aggregated items after adding,
+     * such as for triggering vision extraction with the correct aggregatedId.
+     *
+     * @param newItems Items to add
+     * @return List of resulting aggregated items (may be merged with existing items)
+     */
+    fun addItemsSync(newItems: List<ScannedItem>): List<AggregatedItem> {
+        if (newItems.isEmpty()) return emptyList()
+
+        Log.i(TAG, ">>> addItemsSync: Processing ${newItems.size} items synchronously")
+
+        val result = itemAggregator.processDetections(newItems)
+
+        // Trigger UI update (async, but items are already in aggregator)
+        scope.launch(mainDispatcher) {
+            updateItemsState()
+        }
+
+        return result
     }
 
     /**
@@ -440,26 +468,21 @@ class ItemsStateManager(
         suggestedLabel: String? = null,
         categoryHint: String? = null,
     ) {
-        Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
-        Log.w(TAG, "║ VISION APPLY: applyVisionInsights() CALLED")
-        Log.w(TAG, "║ aggregatedId=$aggregatedId")
-        Log.w(TAG, "║ suggestedLabel=$suggestedLabel")
-        Log.w(TAG, "║ categoryHint=$categoryHint")
-        Log.w(TAG, "║ visionAttributes.ocrText=${visionAttributes.ocrText?.take(100)}")
-        Log.w(TAG, "║ visionAttributes.primaryBrand=${visionAttributes.primaryBrand}")
-        Log.w(TAG, "║ visionAttributes.colors=${visionAttributes.colors.map { it.name }}")
-        Log.w(TAG, "║ visionAttributes.logos=${visionAttributes.logos.map { it.name }}")
-        Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
-
-        // DIAG: Check if item exists in aggregator
+        // Check if item exists in aggregator
         val allItems = itemAggregator.getAggregatedItems()
         val existingItem = allItems.find { it.aggregatedId == aggregatedId }
-        Log.w(TAG, "DIAG: Total items in aggregator: ${allItems.size}")
-        Log.w(TAG, "DIAG: Item exists in aggregator: ${existingItem != null}")
-        if (existingItem != null) {
-            Log.w(TAG, "DIAG: Existing item label=${existingItem.labelText}, category=${existingItem.category}")
-            Log.w(TAG, "DIAG: Existing visionAttributes.isEmpty=${existingItem.visionAttributes.isEmpty}")
+
+        if (existingItem == null) {
+            Log.e(TAG, "SCAN_ENRICH: ❌ Cannot apply vision insights - item NOT FOUND: $aggregatedId")
+            Log.e(TAG, "SCAN_ENRICH: Available items: ${allItems.map { it.aggregatedId.take(8) }}")
+            return
         }
+
+        Log.i(TAG, "SCAN_ENRICH: Applying vision insights to item $aggregatedId")
+        Log.i(TAG, "SCAN_ENRICH:   suggestedLabel=$suggestedLabel")
+        Log.i(TAG, "SCAN_ENRICH:   brand=${visionAttributes.primaryBrand}")
+        Log.i(TAG, "SCAN_ENRICH:   colors=${visionAttributes.colors.map { it.name }}")
+        Log.i(TAG, "SCAN_ENRICH:   hasOCR=${!visionAttributes.ocrText.isNullOrBlank()}")
 
         // Apply vision attributes
         itemAggregator.applyEnhancedClassification(
@@ -479,31 +502,19 @@ class ItemsStateManager(
             visionAttributes = visionAttributes,
             isFromBackend = true,
         )
-        Log.w(TAG, "DIAG: Called itemAggregator.applyEnhancedClassification()")
 
-        // DIAG: Check item after applying
-        val updatedItems = itemAggregator.getAggregatedItems()
-        val updatedItem = updatedItems.find { it.aggregatedId == aggregatedId }
+        // Verify the update
+        val updatedItem = itemAggregator.getAggregatedItems().find { it.aggregatedId == aggregatedId }
         if (updatedItem != null) {
-            Log.w(TAG, "DIAG: After apply - labelText=${updatedItem.labelText}")
-            Log.w(TAG, "DIAG: After apply - enhancedLabelText=${updatedItem.enhancedLabelText}")
-            Log.w(TAG, "DIAG: After apply - toScannedItem().labelText=${updatedItem.toScannedItem().labelText}")
-            Log.w(TAG, "DIAG: After apply - toScannedItem().displayLabel=${updatedItem.toScannedItem().displayLabel}")
-            Log.w(TAG, "DIAG: After apply - visionAttributes.isEmpty=${updatedItem.visionAttributes.isEmpty}")
-            Log.w(TAG, "DIAG: After apply - visionAttributes.ocrText=${updatedItem.visionAttributes.ocrText?.take(50)}")
-        } else {
-            Log.e(TAG, "DIAG: ❌ Item NOT FOUND after apply! aggregatedId=$aggregatedId")
+            Log.i(TAG, "SCAN_ENRICH: ✓ Applied - label now: ${updatedItem.toScannedItem().displayLabel}")
         }
 
         // Update the items state to reflect the changes
         scope.launch(workerDispatcher) {
             withContext(mainDispatcher) {
                 updateItemsState(notifyNewItems = false)
-                Log.w(TAG, "DIAG: updateItemsState() completed for vision insights")
             }
         }
-
-        Log.w(TAG, "DIAG: ✓ applyVisionInsights() completed for item $aggregatedId")
     }
 
     /**

@@ -129,12 +129,56 @@ data class ScannedItem<FullImageUri>(
             }
 
     /**
-     * Preferred human-readable label prioritizing specific classification output.
+     * Preferred human-readable label prioritizing vision attributes.
+     *
+     * Priority order:
+     * 1. brand + itemType + color → "Brand ItemType · Color"
+     * 2. itemType + color → "ItemType · Color"
+     * 3. brand + itemType → "Brand ItemType"
+     * 4. itemType only → "ItemType"
+     * 5. labelText (suggestedLabel from backend)
+     * 6. category.displayName (fallback)
      */
     val displayLabel: String
         get() {
-            val preferred = labelText?.trim().takeUnless { it.isNullOrEmpty() } ?: category.displayName
-            return capitalizeDisplayLabel(preferred.trim())
+            val brand = visionAttributes.primaryBrand?.trim()?.takeIf { it.isNotEmpty() }
+            val itemType = visionAttributes.itemType?.trim()?.takeIf { it.isNotEmpty() }
+            val color = visionAttributes.primaryColor?.name?.trim()?.takeIf { it.isNotEmpty() }
+
+            // Build label using vision attributes with priority
+            val label = when {
+                // Brand + ItemType + Color: "Labello Lip Balm · Blue"
+                brand != null && itemType != null && color != null ->
+                    "$brand $itemType · $color"
+
+                // ItemType + Color: "Lip Balm · Blue"
+                itemType != null && color != null ->
+                    "$itemType · $color"
+
+                // Brand + ItemType: "Labello Lip Balm"
+                brand != null && itemType != null ->
+                    "$brand $itemType"
+
+                // Brand + Color (no itemType): "Labello · Blue"
+                brand != null && color != null ->
+                    "$brand · $color"
+
+                // ItemType only: "Lip Balm"
+                itemType != null ->
+                    itemType
+
+                // Brand only: "Labello"
+                brand != null ->
+                    brand
+
+                // Fallback to labelText (suggestedLabel from backend)
+                else ->
+                    labelText?.trim()?.takeIf { it.isNotEmpty() }
+            }
+
+            // Final fallback to category
+            val result = label ?: category.displayName
+            return capitalizeDisplayLabel(result)
         }
 
     /**

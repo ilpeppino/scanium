@@ -81,92 +81,59 @@ class VisionInsightsPrefiller @Inject constructor(
         itemId: String,
         imageUri: Uri,
     ) {
-        // DIAG: Entry point logging
-        Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
-        Log.w(TAG, "║ VISION PREFILL: extractAndApply() CALLED")
-        Log.w(TAG, "║ itemId=$itemId")
-        Log.w(TAG, "║ imageUri=$imageUri")
-        Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
-
         // Check if already extracting for this item
         synchronized(inFlightExtractions) {
             if (inFlightExtractions.contains(itemId)) {
-                Log.w(TAG, "DIAG: Extraction already in flight for item $itemId - SKIPPING")
+                Log.d(TAG, "SCAN_ENRICH: Skipping - already extracting for $itemId")
                 return
             }
-
-            // Limit concurrent extractions
             if (inFlightExtractions.size >= MAX_CONCURRENT_EXTRACTIONS) {
-                Log.w(TAG, "DIAG: Too many concurrent extractions (${inFlightExtractions.size}), skipping item $itemId")
+                Log.d(TAG, "SCAN_ENRICH: Skipping - max concurrent extractions reached")
                 return
             }
-
             inFlightExtractions.add(itemId)
-            Log.w(TAG, "DIAG: Added $itemId to inFlightExtractions (total=${inFlightExtractions.size})")
         }
+
+        Log.i(TAG, "SCAN_ENRICH: Starting extraction for item $itemId")
 
         val job = scope.launch(Dispatchers.IO) {
             try {
-                Log.w(TAG, "DIAG: Starting TWO-LAYER vision extraction for item $itemId")
-                val startTime = System.currentTimeMillis()
-
                 // Load image from URI
-                Log.w(TAG, "DIAG: [1/5] Loading bitmap from URI: $imageUri")
                 val bitmap = loadBitmapFromUri(context, imageUri)
                 if (bitmap == null) {
-                    Log.e(TAG, "DIAG: ❌ FAILED to load bitmap from URI for item $itemId")
+                    Log.e(TAG, "SCAN_ENRICH: Failed to load image from URI for item $itemId")
                     return@launch
                 }
-                Log.w(TAG, "DIAG: ✓ Bitmap loaded: ${bitmap.width}x${bitmap.height} for item $itemId")
 
-                // ═══════════════════════════════════════════════════════════════
                 // LAYER A: LOCAL EXTRACTION (fast, always available)
-                // ═══════════════════════════════════════════════════════════════
-                Log.w(TAG, "DIAG: [2/5] Running LAYER A - Local extraction (ML Kit + Palette)...")
                 var localApplied = false
                 try {
                     val localResult = localVisionExtractor.extract(bitmap)
+                    Log.i(TAG, "SCAN_ENRICH: Local extraction complete - OCR=${localResult.ocrSuccess}, Colors=${localResult.colors.size}")
 
                     if (localResult.ocrSuccess || localResult.colorSuccess) {
                         val localVisionAttributes = localVisionExtractor.toVisionAttributes(localResult)
-
-                        Log.w(TAG, "DIAG: [3/5] Applying LOCAL results immediately...")
                         withContext(Dispatchers.Main) {
                             stateManager.applyVisionInsights(
                                 aggregatedId = itemId,
                                 visionAttributes = localVisionAttributes,
                                 suggestedLabel = localResult.suggestedLabel,
-                                categoryHint = null, // Local doesn't determine category
+                                categoryHint = null,
                             )
                         }
                         localApplied = true
-
-                        Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
-                        Log.w(TAG, "║ LAYER A (LOCAL) APPLIED for item $itemId")
-                        Log.w(TAG, "║ latency=${localResult.extractionTimeMs}ms")
-                        Log.w(TAG, "║ ocrText=${localResult.ocrText?.take(50)}")
-                        Log.w(TAG, "║ colors=${localResult.colors.map { it.name }}")
-                        Log.w(TAG, "║ suggestedLabel=${localResult.suggestedLabel}")
-                        Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
-                    } else {
-                        Log.w(TAG, "DIAG: Local extraction produced no useful data")
+                        Log.i(TAG, "SCAN_ENRICH: Local results applied (Layer A)")
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "DIAG: Layer A (local) extraction failed", e)
+                    Log.e(TAG, "SCAN_ENRICH: Local extraction failed", e)
                 }
 
-                // ═══════════════════════════════════════════════════════════════
                 // LAYER B: CLOUD EXTRACTION (higher accuracy, logo/brand detection)
-                // ═══════════════════════════════════════════════════════════════
-                Log.w(TAG, "DIAG: [4/5] Running LAYER B - Cloud extraction...")
+                Log.i(TAG, "SCAN_ENRICH: Starting cloud extraction (Layer B)")
                 val cloudResult = visionInsightsRepository.extractInsights(bitmap, itemId)
 
                 cloudResult.onSuccess { insights ->
-                    val latencyMs = System.currentTimeMillis() - startTime
-                    Log.w(TAG, "DIAG: ✓ Cloud insights received in ${latencyMs}ms")
-
-                    // Apply cloud results (overrides/enhances local)
-                    Log.w(TAG, "DIAG: [5/5] Applying CLOUD results (merging with local)...")
+                    Log.i(TAG, "SCAN_ENRICH: Cloud extraction complete - brand=${insights.visionAttributes.primaryBrand}, itemType=${insights.itemType}")
                     withContext(Dispatchers.Main) {
                         stateManager.applyVisionInsights(
                             aggregatedId = itemId,
@@ -175,44 +142,22 @@ class VisionInsightsPrefiller @Inject constructor(
                             categoryHint = insights.categoryHint,
                         )
                     }
-
-                    Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
-                    Log.w(TAG, "║ LAYER B (CLOUD) APPLIED for item $itemId")
-                    Log.w(TAG, "║ totalLatency=${latencyMs}ms")
-                    Log.w(TAG, "║ suggestedLabel=${insights.suggestedLabel}")
-                    Log.w(TAG, "║ categoryHint=${insights.categoryHint}")
-                    Log.w(TAG, "║ brand=${insights.visionAttributes.primaryBrand}")
-                    Log.w(TAG, "║ ocrText=${insights.visionAttributes.ocrText?.take(50)}")
-                    Log.w(TAG, "║ logos=${insights.visionAttributes.logos.map { it.name }}")
-                    Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
+                    Log.i(TAG, "SCAN_ENRICH: Cloud results applied (Layer B)")
                 }
 
                 cloudResult.onFailure { error ->
-                    val latencyMs = System.currentTimeMillis() - startTime
-                    Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
-                    Log.w(TAG, "║ LAYER B (CLOUD) FAILED for item $itemId")
-                    Log.w(TAG, "║ latency=${latencyMs}ms")
-                    if (error is VisionInsightsException) {
-                        Log.w(TAG, "║ errorCode=${error.errorCode}")
-                        Log.w(TAG, "║ userMessage=${error.userMessage}")
+                    if (!localApplied) {
+                        Log.w(TAG, "SCAN_ENRICH: Vision extraction failed for item $itemId: ${error.message}")
                     } else {
-                        Log.w(TAG, "║ error=${error.message}")
+                        Log.i(TAG, "SCAN_ENRICH: Cloud failed but local results available for item $itemId")
                     }
-                    if (localApplied) {
-                        Log.w(TAG, "║ ✓ Local results are still applied (graceful degradation)")
-                    } else {
-                        Log.w(TAG, "║ ⚠ No vision data available for this item")
-                    }
-                    Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "DIAG: ❌ EXCEPTION in vision extraction for item $itemId", e)
-                Log.e(TAG, "DIAG: Exception message: ${e.message}")
+                Log.e(TAG, "SCAN_ENRICH: Vision extraction failed for item $itemId", e)
             } finally {
                 synchronized(inFlightExtractions) {
                     inFlightExtractions.remove(itemId)
                     extractionJobs.remove(itemId)
-                    Log.w(TAG, "DIAG: Removed $itemId from inFlightExtractions (remaining=${inFlightExtractions.size})")
                 }
             }
         }
@@ -220,7 +165,6 @@ class VisionInsightsPrefiller @Inject constructor(
         synchronized(inFlightExtractions) {
             extractionJobs[itemId] = job
         }
-        Log.w(TAG, "DIAG: Extraction job launched for item $itemId")
     }
 
     /**
