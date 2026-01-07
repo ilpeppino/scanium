@@ -356,6 +356,10 @@ class VisionInsightsPrefiller @Inject constructor(
     ) {
         // Build VisionAttributes from enrichment vision facts
         val visionFacts = status.visionFacts
+        // Extract itemType from normalized attributes (backend calls it product_type)
+        val enrichmentItemType = status.normalizedAttributes
+            ?.find { it.key == "product_type" }
+            ?.value
         val visionAttributes = if (visionFacts != null) {
             VisionAttributes(
                 colors = visionFacts.dominantColors.map { color ->
@@ -380,13 +384,17 @@ class VisionInsightsPrefiller @Inject constructor(
                 },
                 brandCandidates = visionFacts.logoHints.map { it.name },
                 modelCandidates = emptyList(),
-                itemType = null, // Will be populated from normalized attributes
+                itemType = enrichmentItemType, // Populated from normalized attributes
             )
+        } else if (enrichmentItemType != null) {
+            // Even without vision facts, create minimal attributes with itemType
+            VisionAttributes(itemType = enrichmentItemType)
         } else {
             null
         }
 
         // Build attributes map from normalized attributes
+        // Map backend keys to Android keys (e.g., product_type -> itemType)
         val attributesMap = mutableMapOf<String, ItemAttribute>()
         status.normalizedAttributes?.forEach { attr ->
             val confidence = when (attr.confidence) {
@@ -395,7 +403,13 @@ class VisionInsightsPrefiller @Inject constructor(
                 "LOW" -> 0.5f
                 else -> 0.5f
             }
-            attributesMap[attr.key] = ItemAttribute(
+            // Normalize key names: backend uses product_type, Android uses itemType
+            val normalizedKey = when (attr.key) {
+                "product_type" -> "itemType"
+                "secondary_color" -> "secondaryColor"
+                else -> attr.key
+            }
+            attributesMap[normalizedKey] = ItemAttribute(
                 value = attr.value,
                 confidence = confidence,
                 source = "enrichment-${attr.source.lowercase()}",

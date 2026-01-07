@@ -74,6 +74,10 @@ enum class DraftFieldKey(val wireValue: String) {
     BRAND("brand"),
     MODEL("model"),
     COLOR("color"),
+    /** Sellable item type noun (e.g., "Lip Balm", "T-Shirt", "Tissue Box") */
+    ITEM_TYPE("itemType"),
+    /** OCR detected text from the product (filtered snippets) */
+    DETECTED_TEXT("detectedText"),
     ;
 
     companion object {
@@ -210,9 +214,12 @@ object ListingDraftBuilder {
     }
 
     private fun buildTitle(item: ScannedItem<*>): String {
+        // Use displayLabel which has smart priority logic for brand + itemType + color
+        // This ensures titles like "Used Labello Lip Balm · Blue" instead of generic "Used Cosmetics"
+        val displayLabel = item.displayLabel.trim().takeUnless { it.isEmpty() }
         val label = item.labelText?.trim().takeUnless { it.isNullOrEmpty() }
         val category = item.category.displayName.trim().takeUnless { it.isEmpty() }
-        val base = label ?: category ?: "Item"
+        val base = displayLabel ?: label ?: category ?: "Item"
         val title = "$TITLE_PREFIX ${base.replaceFirstChar { it.uppercase() }}".trim()
         return if (title.length <= MAX_TITLE_LENGTH) title else title.substring(0, MAX_TITLE_LENGTH).trimEnd()
     }
@@ -262,6 +269,42 @@ object ListingDraftBuilder {
                     confidence = colors.mapNotNull { it.score }.average().toFloat().takeIf { !it.isNaN() } ?: 0.8f,
                     source = DraftProvenance.DETECTED,
                 )
+        }
+
+        // ITEM_TYPE: sellable item type noun (e.g., "Lip Balm", "T-Shirt")
+        // Priority: visionAttributes.itemType > attributes["itemType"] > first label
+        val itemType = item.visionAttributes.itemType?.takeIf { it.isNotBlank() }
+            ?: item.attributes["itemType"]?.value?.takeIf { it.isNotBlank() }
+            ?: item.visionAttributes.labels.firstOrNull()?.name?.takeIf { it.isNotBlank() }
+        itemType?.let {
+            val confidence = item.visionAttributes.labels.maxOfOrNull { label -> label.score } ?: 0.7f
+            fields[DraftFieldKey.ITEM_TYPE] =
+                DraftField(
+                    value = it,
+                    confidence = confidence,
+                    source = DraftProvenance.DETECTED,
+                )
+        }
+
+        // DETECTED_TEXT: OCR text from product (filtered, first meaningful snippet)
+        val ocrText = item.visionAttributes.ocrText?.takeIf { it.isNotBlank() }
+            ?: item.attributes["ocrText"]?.value?.takeIf { it.isNotBlank() }
+        ocrText?.let { text ->
+            // Take first 200 chars, filtering out very short lines
+            val filtered = text.lineSequence()
+                .map { it.trim() }
+                .filter { it.length >= 3 }
+                .take(5)
+                .joinToString(" | ")
+                .take(200)
+            if (filtered.isNotBlank()) {
+                fields[DraftFieldKey.DETECTED_TEXT] =
+                    DraftField(
+                        value = filtered,
+                        confidence = 0.8f,
+                        source = DraftProvenance.DETECTED,
+                    )
+            }
         }
 
         return fields
