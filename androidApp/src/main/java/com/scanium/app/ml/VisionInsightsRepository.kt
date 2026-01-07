@@ -1,6 +1,7 @@
 package com.scanium.app.ml
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
@@ -150,31 +151,49 @@ class VisionInsightsRepository(
         bitmap: Bitmap,
         itemId: String? = null,
     ): Result<VisionInsightsResult> = withContext(Dispatchers.IO) {
-        val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                VisionInsightsException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "Vision service not configured.",
-                    retryable = false,
-                )
-            )
+        Log.w(TAG, "DIAG: extractInsights() called, bitmap=${bitmap.width}x${bitmap.height}, itemId=$itemId")
 
-        val apiKey = apiKeyProvider()?.takeIf { it.isNotBlank() }
-            ?: return@withContext Result.failure(
-                VisionInsightsException(
-                    errorCode = "CONFIG_ERROR",
-                    userMessage = "API key is missing.",
-                    retryable = false,
+        // DIAG: Check config
+        val baseUrlRaw = BuildConfig.SCANIUM_API_BASE_URL
+        Log.w(TAG, "DIAG: BuildConfig.SCANIUM_API_BASE_URL='${baseUrlRaw.take(50)}...'")
+
+        val baseUrl = baseUrlRaw.takeIf { it.isNotBlank() }
+            ?: run {
+                Log.e(TAG, "DIAG: ❌ SCANIUM_API_BASE_URL is BLANK - cannot make vision request!")
+                return@withContext Result.failure(
+                    VisionInsightsException(
+                        errorCode = "CONFIG_ERROR",
+                        userMessage = "Vision service not configured.",
+                        retryable = false,
+                    )
                 )
-            )
+            }
+
+        val apiKeyRaw = apiKeyProvider()
+        val apiKeyPresent = !apiKeyRaw.isNullOrBlank()
+        Log.w(TAG, "DIAG: API key present=$apiKeyPresent (length=${apiKeyRaw?.length ?: 0})")
+
+        val apiKey = apiKeyRaw?.takeIf { it.isNotBlank() }
+            ?: run {
+                Log.e(TAG, "DIAG: ❌ API KEY is BLANK or NULL - cannot make vision request!")
+                return@withContext Result.failure(
+                    VisionInsightsException(
+                        errorCode = "CONFIG_ERROR",
+                        userMessage = "API key is missing.",
+                        retryable = false,
+                    )
+                )
+            }
 
         val endpoint = "${baseUrl.trimEnd('/')}/v1/vision/insights"
         val correlationId = CorrelationIds.currentClassificationSessionId()
+        Log.w(TAG, "DIAG: ✓ Config OK. endpoint=$endpoint, correlationId=$correlationId")
 
         try {
             // Prepare image - resize if needed and compress to JPEG
             val processedBitmap = resizeIfNeeded(bitmap)
             val imageBytes = processedBitmap.toJpegBytes()
+            Log.w(TAG, "DIAG: Image prepared: ${processedBitmap.width}x${processedBitmap.height}, ${imageBytes.size} bytes")
 
             // Build multipart request
             val requestBodyBuilder = MultipartBody.Builder()
@@ -215,16 +234,18 @@ class VisionInsightsRepository(
 
             val httpRequest = httpRequestBuilder.build()
 
-            ScaniumLog.d(TAG, "Extracting vision insights correlationId=$correlationId")
+            Log.w(TAG, "DIAG: Making HTTP request to $endpoint...")
             val startTime = System.currentTimeMillis()
 
             client.newCall(httpRequest).execute().use { response ->
                 val responseBody = response.body?.string()
                 val latencyMs = System.currentTimeMillis() - startTime
+                Log.w(TAG, "DIAG: HTTP response received: code=${response.code}, latency=${latencyMs}ms, bodyLen=${responseBody?.length ?: 0}")
 
                 when {
                     response.isSuccessful -> {
                         if (responseBody == null) {
+                            Log.e(TAG, "DIAG: ❌ Response body is NULL despite success code")
                             return@use Result.failure(
                                 VisionInsightsException(
                                     errorCode = "EMPTY_RESPONSE",
@@ -234,9 +255,13 @@ class VisionInsightsRepository(
                             )
                         }
 
+                        Log.w(TAG, "DIAG: ✓ Success response, parsing JSON...")
+                        Log.w(TAG, "DIAG: Raw response (first 500 chars): ${responseBody.take(500)}")
+
                         val apiResponse = json.decodeFromString<VisionInsightsResponse>(responseBody)
 
                         if (!apiResponse.success) {
+                            Log.e(TAG, "DIAG: ❌ API returned success=false: ${apiResponse.error?.code} - ${apiResponse.error?.message}")
                             return@use Result.failure(
                                 VisionInsightsException(
                                     errorCode = apiResponse.error?.code ?: "EXTRACTION_FAILED",
@@ -246,16 +271,21 @@ class VisionInsightsRepository(
                             )
                         }
 
+                        Log.w(TAG, "DIAG: ✓ API response parsed successfully")
+                        Log.w(TAG, "DIAG:   ocrSnippets=${apiResponse.ocrSnippets.take(3)}")
+                        Log.w(TAG, "DIAG:   logoHints=${apiResponse.logoHints.map { it.name }}")
+                        Log.w(TAG, "DIAG:   dominantColors=${apiResponse.dominantColors.map { it.name }}")
+                        Log.w(TAG, "DIAG:   suggestedLabel=${apiResponse.suggestedLabel}")
+                        Log.w(TAG, "DIAG:   categoryHint=${apiResponse.categoryHint}")
+
                         val result = parseResponse(apiResponse)
-                        ScaniumLog.i(
-                            TAG,
-                            "Vision insights extracted latency=${latencyMs}ms ocrSnippets=${apiResponse.ocrSnippets.size} logos=${apiResponse.logoHints.size} correlationId=$correlationId"
-                        )
+                        Log.w(TAG, "DIAG: ✓ Response parsed into VisionInsightsResult")
 
                         Result.success(result)
                     }
 
                     response.code == 401 -> {
+                        Log.e(TAG, "DIAG: ❌ 401 UNAUTHORIZED - API key rejected")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "UNAUTHORIZED",
@@ -266,7 +296,7 @@ class VisionInsightsRepository(
                     }
 
                     response.code == 429 -> {
-                        ScaniumLog.w(TAG, "Rate limited correlationId=$correlationId")
+                        Log.w(TAG, "DIAG: ⚠ 429 RATE LIMITED")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "RATE_LIMITED",
@@ -277,6 +307,7 @@ class VisionInsightsRepository(
                     }
 
                     response.code == 413 -> {
+                        Log.e(TAG, "DIAG: ❌ 413 IMAGE TOO LARGE")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "IMAGE_TOO_LARGE",
@@ -287,7 +318,7 @@ class VisionInsightsRepository(
                     }
 
                     response.code == 503 -> {
-                        ScaniumLog.w(TAG, "Service unavailable correlationId=$correlationId")
+                        Log.w(TAG, "DIAG: ⚠ 503 SERVICE UNAVAILABLE")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "SERVICE_UNAVAILABLE",
@@ -298,7 +329,8 @@ class VisionInsightsRepository(
                     }
 
                     else -> {
-                        ScaniumLog.e(TAG, "Unexpected error: ${response.code}")
+                        Log.e(TAG, "DIAG: ❌ Unexpected HTTP code: ${response.code}")
+                        Log.e(TAG, "DIAG: Response body: ${responseBody?.take(500)}")
                         Result.failure(
                             VisionInsightsException(
                                 errorCode = "UNKNOWN_ERROR",
@@ -310,7 +342,7 @@ class VisionInsightsRepository(
                 }
             }
         } catch (e: SocketTimeoutException) {
-            ScaniumLog.w(TAG, "Timeout extracting vision insights", e)
+            Log.e(TAG, "DIAG: ❌ Socket TIMEOUT - backend not responding within ${READ_TIMEOUT_SECONDS}s", e)
             Result.failure(
                 VisionInsightsException(
                     errorCode = "TIMEOUT",
@@ -319,7 +351,7 @@ class VisionInsightsRepository(
                 )
             )
         } catch (e: UnknownHostException) {
-            ScaniumLog.w(TAG, "No network for vision insights", e)
+            Log.e(TAG, "DIAG: ❌ UnknownHostException - cannot resolve host (offline?)", e)
             Result.failure(
                 VisionInsightsException(
                     errorCode = "OFFLINE",
@@ -328,7 +360,7 @@ class VisionInsightsRepository(
                 )
             )
         } catch (e: IOException) {
-            ScaniumLog.e(TAG, "Network error extracting vision insights", e)
+            Log.e(TAG, "DIAG: ❌ IOException - network error", e)
             Result.failure(
                 VisionInsightsException(
                     errorCode = "NETWORK_ERROR",
@@ -337,7 +369,9 @@ class VisionInsightsRepository(
                 )
             )
         } catch (e: Exception) {
-            ScaniumLog.e(TAG, "Failed to extract vision insights", e)
+            Log.e(TAG, "DIAG: ❌ UNEXPECTED EXCEPTION in extractInsights", e)
+            Log.e(TAG, "DIAG: Exception type: ${e.javaClass.name}")
+            Log.e(TAG, "DIAG: Message: ${e.message}")
             Result.failure(
                 VisionInsightsException(
                     errorCode = "UNKNOWN_ERROR",

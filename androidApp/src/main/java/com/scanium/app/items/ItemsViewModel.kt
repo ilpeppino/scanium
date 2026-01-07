@@ -248,14 +248,26 @@ class ItemsViewModel
          * @param newItems Items to add
          */
         fun addItemsWithVisionPrefill(context: Context, newItems: List<ScannedItem>) {
+            Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
+            Log.w(TAG, "║ VISION PREFILL: addItemsWithVisionPrefill() CALLED")
+            Log.w(TAG, "║ newItems.size=${newItems.size}")
+            newItems.forEachIndexed { index, item ->
+                Log.w(TAG, "║ [$index] id=${item.id.take(12)}... label=${item.labelText} category=${item.category}")
+                Log.w(TAG, "║ [$index] fullImageUri=${item.fullImageUri}")
+            }
+            Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
+
             stateManager.addItems(newItems)
 
             // Trigger vision extraction for items with high-res images
             val itemsWithImages = newItems.filter { it.fullImageUri != null }
+            Log.w(TAG, "DIAG: Items with fullImageUri: ${itemsWithImages.size}/${newItems.size}")
+
             if (itemsWithImages.isNotEmpty()) {
-                Log.i(TAG, "Triggering vision prefill for ${itemsWithImages.size} items")
+                Log.w(TAG, "DIAG: ✓ Triggering vision prefill for ${itemsWithImages.size} items")
                 itemsWithImages.forEach { item ->
                     item.fullImageUri?.let { uri ->
+                        Log.w(TAG, "DIAG: Calling extractAndApply for item ${item.id}, uri=$uri")
                         visionInsightsPrefiller.extractAndApply(
                             context = context,
                             scope = viewModelScope,
@@ -265,6 +277,8 @@ class ItemsViewModel
                         )
                     }
                 }
+            } else {
+                Log.w(TAG, "DIAG: ⚠ NO items have fullImageUri - vision prefill SKIPPED!")
             }
         }
 

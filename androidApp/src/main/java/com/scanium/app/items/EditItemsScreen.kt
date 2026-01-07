@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -399,14 +400,16 @@ private fun ItemEditPage(
             singleLine = true,
         )
 
-        // Recognized Text field (optional, collapsible if needed)
+        // Recognized Text field - show OCR results (multi-line for full text)
         OutlinedTextField(
             value = draft.recognizedText,
             onValueChange = { onDraftChange(draft.copy(recognizedText = it)) },
             label = { Text("Recognized Text") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            maxLines = 1,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp, max = 120.dp),
+            singleLine = false,
+            maxLines = 4,
         )
 
         // Barcode Value field
