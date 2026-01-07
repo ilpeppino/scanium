@@ -5,6 +5,7 @@ import android.net.Uri
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.state.ItemsStateManager
+import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.ml.LocalVisionExtractor
 import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.app.ml.VisionInsightsRepository
@@ -29,9 +30,10 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
  */
 object NoopVisionInsightsPrefiller {
     fun create(): VisionInsightsPrefiller {
-        val mockRepository = mockk<VisionInsightsRepository>(relaxed = true)
+        val mockVisionRepository = mockk<VisionInsightsRepository>(relaxed = true)
         val mockLocalExtractor = mockk<LocalVisionExtractor>(relaxed = true)
-        return VisionInsightsPrefiller(mockRepository, mockLocalExtractor)
+        val mockEnrichmentRepository = mockk<EnrichmentRepository>(relaxed = true)
+        return VisionInsightsPrefiller(mockVisionRepository, mockLocalExtractor, mockEnrichmentRepository)
     }
 }
 
