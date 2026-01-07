@@ -947,6 +947,61 @@ class ItemsStateManager(
         persistItems(updatedItems)
         onStateChanged?.invoke()
     }
+
+    /**
+     * Update export assistant fields for an item.
+     *
+     * @param itemId The ID of the item to update
+     * @param exportTitle AI-generated marketplace-ready title
+     * @param exportDescription AI-generated marketplace-ready description
+     * @param exportBullets AI-generated bullet highlights
+     * @param exportFromCache Whether the export was served from cache
+     * @param exportModel LLM model used to generate the export
+     * @param exportConfidenceTier Confidence tier of the AI-generated export
+     */
+    fun updateExportFields(
+        itemId: String,
+        exportTitle: String?,
+        exportDescription: String?,
+        exportBullets: List<String>,
+        exportFromCache: Boolean,
+        exportModel: String?,
+        exportConfidenceTier: String?,
+    ) {
+        val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        exportTitle = exportTitle,
+                        exportDescription = exportDescription,
+                        exportBullets = exportBullets,
+                        exportGeneratedAt = now,
+                        exportFromCache = exportFromCache,
+                        exportModel = exportModel,
+                        exportConfidenceTier = exportConfidenceTier,
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Update aggregator
+        itemAggregator.updateExportFields(
+            itemId,
+            exportTitle,
+            exportDescription,
+            exportBullets,
+            now,
+            exportFromCache,
+            exportModel,
+            exportConfidenceTier,
+        )
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
 }
 
 /**

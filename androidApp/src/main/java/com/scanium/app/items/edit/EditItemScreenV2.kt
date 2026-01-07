@@ -79,6 +79,7 @@ import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.LayerState
+import com.scanium.app.config.FeatureFlags
 
 /**
  * Redesigned edit screen for Phase 3: Item details UX.
@@ -99,11 +100,19 @@ fun EditItemScreenV2(
     onAddPhotos: (String) -> Unit,
     onAiGenerate: (String) -> Unit,
     itemsViewModel: ItemsViewModel,
+    /** Factory for creating ExportAssistantViewModel - if null, AI button falls back to onAiGenerate */
+    exportAssistantViewModelFactory: ExportAssistantViewModel.Factory? = null,
 ) {
     val context = LocalContext.current
     val allItems by itemsViewModel.items.collectAsState()
     val item by remember(allItems, itemId) {
         derivedStateOf { allItems.find { it.id == itemId } }
+    }
+
+    // Export Assistant state
+    var showExportAssistantSheet by remember { mutableStateOf(false) }
+    val exportAssistantViewModel = remember(exportAssistantViewModelFactory, itemId) {
+        exportAssistantViewModelFactory?.create(itemId, itemsViewModel)
     }
 
     // Summary text state (local draft)
@@ -197,7 +206,13 @@ fun EditItemScreenV2(
 
                     // AI Generate button
                     OutlinedButton(
-                        onClick = { onAiGenerate(itemId) },
+                        onClick = {
+                            if (exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
+                                showExportAssistantSheet = true
+                            } else {
+                                onAiGenerate(itemId)
+                            }
+                        },
                         modifier = Modifier.weight(1f),
                     ) {
                         Icon(
@@ -341,6 +356,42 @@ fun EditItemScreenV2(
 
             Spacer(Modifier.height(16.dp))
         }
+    }
+
+    // Export Assistant Bottom Sheet
+    if (showExportAssistantSheet && exportAssistantViewModel != null) {
+        ExportAssistantSheet(
+            viewModel = exportAssistantViewModel,
+            onDismiss = { showExportAssistantSheet = false },
+            onApply = { title, description, bullets ->
+                // Apply export content to summary text (user can then edit/save)
+                val builder = StringBuilder()
+                title?.let {
+                    builder.appendLine("Title: $it")
+                    builder.appendLine()
+                }
+                description?.let {
+                    builder.appendLine("Description:")
+                    builder.appendLine(it)
+                    builder.appendLine()
+                }
+                if (bullets.isNotEmpty()) {
+                    builder.appendLine("Highlights:")
+                    bullets.forEach { bullet ->
+                        builder.appendLine("• $bullet")
+                    }
+                }
+                // Keep existing attributes at the bottom
+                if (summaryText.isNotBlank()) {
+                    builder.appendLine()
+                    builder.appendLine("---")
+                    builder.appendLine("Attributes:")
+                    builder.append(summaryText)
+                }
+                summaryText = builder.toString()
+                textEdited = true
+            },
+        )
     }
 }
 

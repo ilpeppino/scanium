@@ -68,6 +68,14 @@ data class ScannedItemEntity(
     val additionalPhotosJson: String?,
     val sourcePhotoId: String?,
     val enrichmentStatusJson: String?,
+    // Export Assistant fields (v8)
+    val exportTitle: String?,
+    val exportDescription: String?,
+    val exportBulletsJson: String?,
+    val exportGeneratedAt: Long?,
+    val exportFromCache: Int,
+    val exportModel: String?,
+    val exportConfidenceTier: String?,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {
@@ -116,6 +124,14 @@ fun ScannedItem.toEntity(): ScannedItemEntity {
         additionalPhotosJson = serializeAdditionalPhotos(additionalPhotos),
         sourcePhotoId = sourcePhotoId,
         enrichmentStatusJson = serializeEnrichmentStatus(enrichmentStatus),
+        // Export fields
+        exportTitle = exportTitle,
+        exportDescription = exportDescription,
+        exportBulletsJson = serializeExportBullets(exportBullets),
+        exportGeneratedAt = exportGeneratedAt,
+        exportFromCache = if (exportFromCache) 1 else 0,
+        exportModel = exportModel,
+        exportConfidenceTier = exportConfidenceTier,
     )
 }
 
@@ -194,6 +210,14 @@ fun ScannedItemEntity.toModel(): ScannedItem {
         additionalPhotos = deserializeAdditionalPhotos(additionalPhotosJson),
         sourcePhotoId = sourcePhotoId,
         enrichmentStatus = deserializeEnrichmentStatus(enrichmentStatusJson),
+        // Export fields
+        exportTitle = exportTitle,
+        exportDescription = exportDescription,
+        exportBullets = deserializeExportBullets(exportBulletsJson),
+        exportGeneratedAt = exportGeneratedAt,
+        exportFromCache = exportFromCache == 1,
+        exportModel = exportModel,
+        exportConfidenceTier = exportConfidenceTier,
     )
 }
 
@@ -527,5 +551,41 @@ private fun deserializeEnrichmentStatus(json: String?): EnrichmentLayerStatus {
         )
     } catch (e: Exception) {
         EnrichmentLayerStatus()
+    }
+}
+
+/**
+ * Serialize export bullets list to JSON string.
+ *
+ * Format: ["bullet 1", "bullet 2", ...]
+ */
+private fun serializeExportBullets(bullets: List<String>): String? {
+    if (bullets.isEmpty()) return null
+    return try {
+        val jsonArray = JSONArray()
+        bullets.forEach { jsonArray.put(it) }
+        jsonArray.toString()
+    } catch (e: Exception) {
+        null
+    }
+}
+
+/**
+ * Deserialize JSON string back to export bullets list.
+ */
+private fun deserializeExportBullets(json: String?): List<String> {
+    if (json.isNullOrBlank()) return emptyList()
+    return try {
+        val result = mutableListOf<String>()
+        val jsonArray = JSONArray(json)
+        for (i in 0 until jsonArray.length()) {
+            val bullet = jsonArray.optString(i)
+            if (bullet.isNotBlank()) {
+                result.add(bullet)
+            }
+        }
+        result
+    } catch (e: Exception) {
+        emptyList()
     }
 }

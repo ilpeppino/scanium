@@ -686,6 +686,30 @@ class ItemAggregator(
             item.additionalPhotos = item.additionalPhotos + photo
         }
     }
+
+    /**
+     * Update export assistant fields for an aggregated item.
+     */
+    fun updateExportFields(
+        aggregatedId: String,
+        exportTitle: String?,
+        exportDescription: String?,
+        exportBullets: List<String>,
+        exportGeneratedAt: Long,
+        exportFromCache: Boolean,
+        exportModel: String?,
+        exportConfidenceTier: String?,
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.exportTitle = exportTitle
+            item.exportDescription = exportDescription
+            item.exportBullets = exportBullets
+            item.exportGeneratedAt = exportGeneratedAt
+            item.exportFromCache = exportFromCache
+            item.exportModel = exportModel
+            item.exportConfidenceTier = exportConfidenceTier
+        }
+    }
 }
 
 /**

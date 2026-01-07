@@ -11,7 +11,7 @@ import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
     entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
@@ -42,6 +42,7 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     MIGRATION_4_5,
                     MIGRATION_5_6,
                     MIGRATION_6_7,
+                    MIGRATION_7_8,
                 )
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
@@ -188,6 +189,41 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     // enrichmentStatusJson: Status of each enrichment layer (A/B/C)
                     db.execSQL("ALTER TABLE scanned_items ADD COLUMN enrichmentStatusJson TEXT")
                     db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN enrichmentStatusJson TEXT")
+                }
+            }
+
+        private val MIGRATION_7_8 =
+            object : Migration(7, 8) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Add columns for Export Assistant feature (Phase 4)
+
+                    // exportTitle: AI-generated marketplace-ready title
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportTitle TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportTitle TEXT")
+
+                    // exportDescription: AI-generated marketplace-ready description
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportDescription TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportDescription TEXT")
+
+                    // exportBulletsJson: AI-generated bullet highlights for listing
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportBulletsJson TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportBulletsJson TEXT")
+
+                    // exportGeneratedAt: Timestamp when export fields were generated
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportGeneratedAt INTEGER")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportGeneratedAt INTEGER")
+
+                    // exportFromCache: Whether the export was served from cache (0/1)
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportFromCache INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportFromCache INTEGER NOT NULL DEFAULT 0")
+
+                    // exportModel: LLM model used to generate the export
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportModel TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportModel TEXT")
+
+                    // exportConfidenceTier: Confidence tier of AI-generated export (HIGH/MED/LOW)
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN exportConfidenceTier TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN exportConfidenceTier TEXT")
                 }
             }
     }

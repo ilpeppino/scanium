@@ -2,6 +2,7 @@ package com.scanium.app.di
 
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.TourViewModel
+import com.scanium.app.items.edit.ExportAssistantViewModel
 import com.scanium.app.selling.assistant.AssistantViewModel
 import com.scanium.app.selling.persistence.ListingDraftRepository
 import com.scanium.app.selling.ui.DraftReviewViewModel
@@ -79,4 +80,14 @@ interface PostingAssistViewModelFactoryEntryPoint {
 @InstallIn(SingletonComponent::class)
 interface ListingViewModelFactoryEntryPoint {
     fun listingViewModelFactory(): ListingViewModel.Factory
+}
+
+/**
+ * Entry point for accessing ExportAssistantViewModel's assisted factory.
+ * Part of Phase 4: Export Assistant feature.
+ */
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface ExportAssistantViewModelFactoryEntryPoint {
+    fun exportAssistantViewModelFactory(): ExportAssistantViewModel.Factory
 }

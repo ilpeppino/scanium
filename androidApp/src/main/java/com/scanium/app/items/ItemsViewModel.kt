@@ -576,6 +576,37 @@ class ItemsViewModel
         }
 
         /**
+         * Update export assistant fields for an item.
+         *
+         * @param itemId The ID of the item to update
+         * @param exportTitle AI-generated marketplace-ready title
+         * @param exportDescription AI-generated marketplace-ready description
+         * @param exportBullets AI-generated bullet highlights
+         * @param exportFromCache Whether the export was served from cache
+         * @param exportModel LLM model used to generate the export
+         * @param exportConfidenceTier Confidence tier of the AI-generated export
+         */
+        fun updateExportFields(
+            itemId: String,
+            exportTitle: String?,
+            exportDescription: String?,
+            exportBullets: List<String>,
+            exportFromCache: Boolean,
+            exportModel: String?,
+            exportConfidenceTier: String?,
+        ) {
+            stateManager.updateExportFields(
+                itemId = itemId,
+                exportTitle = exportTitle,
+                exportDescription = exportDescription,
+                exportBullets = exportBullets,
+                exportFromCache = exportFromCache,
+                exportModel = exportModel,
+                exportConfidenceTier = exportConfidenceTier,
+            )
+        }
+
+        /**
          * Add an additional photo to an existing item and trigger re-enrichment.
          * Used by the item detail screen when user adds more photos to improve detection.
          *

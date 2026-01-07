@@ -91,6 +91,21 @@ data class AggregatedItem(
     var sourcePhotoId: String? = null,
     /** Status of each enrichment layer */
     var enrichmentStatus: EnrichmentLayerStatus = EnrichmentLayerStatus(),
+    // Export Assistant fields (v8)
+    /** AI-generated marketplace-ready title */
+    var exportTitle: String? = null,
+    /** AI-generated marketplace-ready description */
+    var exportDescription: String? = null,
+    /** AI-generated bullet highlights for listing */
+    var exportBullets: List<String> = emptyList(),
+    /** Timestamp when export fields were generated */
+    var exportGeneratedAt: Long? = null,
+    /** Whether the export was served from cache */
+    var exportFromCache: Boolean = false,
+    /** LLM model used to generate the export */
+    var exportModel: String? = null,
+    /** Confidence tier of the AI-generated export */
+    var exportConfidenceTier: String? = null,
 ) {
     /**
      * Convert this aggregated item to a ScannedItem for UI display.
@@ -125,6 +140,13 @@ data class AggregatedItem(
             additionalPhotos = additionalPhotos,
             sourcePhotoId = sourcePhotoId,
             enrichmentStatus = enrichmentStatus,
+            exportTitle = exportTitle,
+            exportDescription = exportDescription,
+            exportBullets = exportBullets,
+            exportGeneratedAt = exportGeneratedAt,
+            exportFromCache = exportFromCache,
+            exportModel = exportModel,
+            exportConfidenceTier = exportConfidenceTier,
         )
     }
 
