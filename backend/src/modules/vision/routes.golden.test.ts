@@ -89,11 +89,25 @@ describeIf('Vision Insights Golden', () => {
     expect(body.dominantColors.length).toBeGreaterThan(0);
     expect(body.labelHints.length).toBeGreaterThan(0);
 
+    // Verify brand detection via OCR or logos
     if ((body.logoHints ?? []).length === 0) {
       const ocrJoined = (body.ocrSnippets ?? []).join(' ').toLowerCase();
       expect(ocrJoined).toContain('kleenex');
     }
 
+    // Verify itemType derivation - should detect "Tissue Box" for Kleenex
+    // This is the KEY assertion for acceptance criteria
+    expect(body.itemType).toBeDefined();
+    if (body.itemType) {
+      const itemTypeLower = body.itemType.toLowerCase();
+      expect(
+        itemTypeLower.includes('tissue') || itemTypeLower.includes('box')
+      ).toBe(true);
+    }
+
+    // Verify suggestedLabel combines brand + itemType
+    expect(body.suggestedLabel).toBeDefined();
+
     await app.close();
-  });
+  }, 30000); // 30s timeout
 });

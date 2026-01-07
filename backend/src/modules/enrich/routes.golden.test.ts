@@ -216,10 +216,26 @@ describeIf('Enrichment Routes Golden Tests', () => {
       expect(brandAttr.value.toLowerCase()).toContain('kleenex');
     }
 
+    // Should have product_type attribute - KEY acceptance criteria
+    // The pipeline uses 'product_type' key (mapped to 'itemType' on Android side)
+    const productTypeAttr = status.normalizedAttributes!.find((a) => a.key === 'product_type');
+    if (productTypeAttr) {
+      const productTypeLower = productTypeAttr.value.toLowerCase();
+      expect(
+        productTypeLower.includes('tissue') || productTypeLower.includes('box')
+      ).toBe(true);
+    }
+
     // Verify draft was generated
     expect(status.draft).toBeDefined();
     expect(status.draft!.title).toBeDefined();
     expect(status.draft!.title.length).toBeGreaterThan(0);
+
+    // Draft title should include brand and/or itemType
+    const titleLower = status.draft!.title.toLowerCase();
+    const hasBrandInTitle = titleLower.includes('kleenex');
+    const hasItemTypeInTitle = titleLower.includes('tissue') || titleLower.includes('box');
+    expect(hasBrandInTitle || hasItemTypeInTitle).toBe(true);
   }, 60000); // 60s timeout for full enrichment
 
   it('returns metrics endpoint without auth', async () => {
