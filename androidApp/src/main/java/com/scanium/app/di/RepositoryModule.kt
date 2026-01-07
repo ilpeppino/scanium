@@ -9,6 +9,7 @@ import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ml.VisionInsightsRepository
+import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.model.billing.BillingProvider
 import com.scanium.app.model.config.ConfigProvider
 import com.scanium.app.model.config.FeatureFlagRepository
@@ -94,6 +95,18 @@ object RepositoryModule {
         apiKeyStore: SecureApiKeyStore,
     ): VisionInsightsRepository {
         return VisionInsightsRepository(
+            apiKeyProvider = { apiKeyStore.getApiKey() },
+            getDeviceId = { DeviceIdProvider.getHashedDeviceId(context) },
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideEnrichmentRepository(
+        @ApplicationContext context: Context,
+        apiKeyStore: SecureApiKeyStore,
+    ): EnrichmentRepository {
+        return EnrichmentRepository(
             apiKeyProvider = { apiKeyStore.getApiKey() },
             getDeviceId = { DeviceIdProvider.getHashedDeviceId(context) },
         )

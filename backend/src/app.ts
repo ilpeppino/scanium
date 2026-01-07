@@ -16,6 +16,7 @@ import { visionInsightsRoutes } from './modules/vision/routes.js';
 import { adminRoutes } from './modules/admin/routes.js';
 import { billingRoutes } from './modules/billing/billing.routes.js';
 import { configRoutes } from './modules/config/config.routes.js';
+import { enrichRoutes } from './modules/enrich/routes.js';
 import { apiGuardPlugin } from './infra/security/api-guard.js';
 
 /**
@@ -55,7 +56,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   app.setErrorHandler(errorHandlerPlugin);
 
   await app.register(apiGuardPlugin, {
-    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/vision/', '/v1/admin/'],
+    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/vision/', '/v1/admin/', '/v1/items/enrich'],
     maxRequests: Number(process.env.SECURITY_RATE_LIMIT_MAX ?? 30),
     windowMs: Number(process.env.SECURITY_RATE_LIMIT_WINDOW_MS ?? 10_000),
   });
@@ -102,6 +103,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   // Vision insights for immediate prefill
   await app.register(visionInsightsRoutes, { prefix: '/v1', config });
 
+  // Enrichment pipeline (scan → vision → attributes → draft)
+  await app.register(enrichRoutes, { prefix: '/v1', config });
+
   // Billing verification stub
   await app.register(billingRoutes, { prefix: '/v1' });
 
@@ -127,6 +131,10 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
         },
         assistant: {
           chat: 'POST /v1/assist/chat',
+        },
+        enrich: {
+          submit: 'POST /v1/items/enrich',
+          status: 'GET /v1/items/enrich/status/:requestId',
         },
       },
     });
