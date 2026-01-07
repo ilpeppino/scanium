@@ -39,11 +39,11 @@ fun PaywallScreen(
     if (error != null) {
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
-            title = { Text("Error") },
-            text = { Text(error ?: "Unknown error") },
+            title = { Text(stringResource(R.string.paywall_error_title)) },
+            text = { Text(error ?: stringResource(R.string.paywall_unknown_error)) },
             confirmButton = {
                 Button(onClick = { viewModel.clearError() }) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             },
         )
@@ -55,7 +55,7 @@ fun PaywallScreen(
                 title = { },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.Close, contentDescription = "Close")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.common_close))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -83,7 +83,7 @@ fun PaywallScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    text = "Upgrade to Pro",
+                    text = stringResource(R.string.paywall_upgrade_title),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -92,7 +92,7 @@ fun PaywallScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Unlock the full power of Scanium with unlimited cloud classifications and advanced assistant features.",
+                    text = stringResource(R.string.paywall_upgrade_description),
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -101,10 +101,10 @@ fun PaywallScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Feature List
-                FeatureRow("Unlimited Cloud Classification")
-                FeatureRow("AI Listing Assistant")
-                FeatureRow("Batch Export")
-                FeatureRow("Support Development")
+                FeatureRow(stringResource(R.string.paywall_feature_unlimited_cloud))
+                FeatureRow(stringResource(R.string.paywall_feature_ai_assistant))
+                FeatureRow(stringResource(R.string.paywall_feature_batch_export))
+                FeatureRow(stringResource(R.string.paywall_feature_support_development))
 
                 Spacer(modifier = Modifier.height(48.dp))
 
@@ -127,7 +127,7 @@ fun PaywallScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 TextButton(onClick = { viewModel.restorePurchases() }) {
-                    Text("Restore Purchases")
+                    Text(stringResource(R.string.paywall_restore_purchases))
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))

@@ -15,11 +15,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import com.scanium.app.R
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -84,7 +86,7 @@ fun ExportBottomSheet(
         ) {
             // Title
             Text(
-                text = "Export Items",
+                text = stringResource(R.string.export_items_title),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
@@ -104,7 +106,7 @@ fun ExportBottomSheet(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Preparing export...",
+                            text = stringResource(R.string.export_preparing),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -131,7 +133,12 @@ fun ExportBottomSheet(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Creating ZIP... (${exportState.currentItem}/${exportState.totalItems})",
+                            text =
+                                stringResource(
+                                    R.string.export_creating_zip,
+                                    exportState.currentItem,
+                                    exportState.totalItems,
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -148,7 +155,7 @@ fun ExportBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Export Ready!",
+                        text = stringResource(R.string.export_ready_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -156,9 +163,10 @@ fun ExportBottomSheet(
 
                     // Summary of what was exported
                     val summary = buildString {
-                        append("${exportState.result.totalItems} item(s)")
+                        append(stringResource(R.string.export_total_items, exportState.result.totalItems))
                         if (exportState.result.needsAiCount > 0) {
-                            append(" (${exportState.result.needsAiCount} needs AI)")
+                            append(" ")
+                            append(stringResource(R.string.export_needs_ai_count, exportState.result.needsAiCount))
                         }
                     }
                     Text(
@@ -188,7 +196,7 @@ fun ExportBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Export Failed",
+                        text = stringResource(R.string.export_failed_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -201,7 +209,7 @@ fun ExportBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     OutlinedButton(onClick = onDismiss) {
-                        Text("Close")
+                        Text(stringResource(R.string.common_close))
                     }
                 }
             }
@@ -230,7 +238,7 @@ private fun ExportSummary(result: ExportBundleResult) {
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = "Items to export",
+                    text = stringResource(R.string.export_items_to_export),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
@@ -247,7 +255,7 @@ private fun ExportSummary(result: ExportBundleResult) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "Ready (AI-generated)",
+                        text = stringResource(R.string.export_ready_ai_generated),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -277,7 +285,7 @@ private fun ExportSummary(result: ExportBundleResult) {
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
-                            text = "Needs AI processing",
+                            text = stringResource(R.string.export_needs_ai_processing),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
@@ -297,7 +305,7 @@ private fun ExportSummary(result: ExportBundleResult) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "Without photos",
+                        text = stringResource(R.string.export_without_photos),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -315,7 +323,7 @@ private fun ExportSummary(result: ExportBundleResult) {
     if (result.needsAiCount > 0) {
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Items without AI-generated descriptions will use fallback text and be marked as 'NEEDS_AI' in the export.",
+            text = stringResource(R.string.export_ai_fallback_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -332,6 +340,8 @@ private fun ExportOptions(
     onExportZip: () -> Unit,
     hasPhotos: Boolean,
 ) {
+    val shareTextLabel = stringResource(R.string.export_share_text_button)
+    val exportZipLabel = stringResource(R.string.export_zip_with_photos)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -341,7 +351,7 @@ private fun ExportOptions(
             onClick = onExportText,
             modifier = Modifier
                 .fillMaxWidth()
-                .semantics { contentDescription = "Share as text" },
+                .semantics { contentDescription = shareTextLabel },
         ) {
             Icon(
                 imageVector = Icons.Outlined.Description,
@@ -349,7 +359,7 @@ private fun ExportOptions(
                 modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Share as Text")
+            Text(shareTextLabel)
         }
 
         // ZIP option (only if items have photos)
@@ -358,7 +368,7 @@ private fun ExportOptions(
                 onClick = onExportZip,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .semantics { contentDescription = "Export as ZIP with photos" },
+                    .semantics { contentDescription = exportZipLabel },
             ) {
                 Icon(
                     imageVector = Icons.Outlined.FolderZip,
@@ -366,7 +376,7 @@ private fun ExportOptions(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Export ZIP with Photos")
+                Text(exportZipLabel)
             }
         }
     }
@@ -399,7 +409,7 @@ private fun ShareActions(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Share ZIP")
+                Text(stringResource(R.string.export_share_zip))
             }
 
             // File size info
@@ -410,7 +420,7 @@ private fun ShareActions(
                 "$sizeKb KB"
             }
             Text(
-                text = "File size: $sizeText",
+                text = stringResource(R.string.export_file_size, sizeText),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -429,7 +439,7 @@ private fun ShareActions(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Share Text")
+                Text(stringResource(R.string.export_share_text))
             }
 
             // Copy to clipboard
@@ -443,7 +453,7 @@ private fun ShareActions(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Copy to Clipboard")
+                Text(stringResource(R.string.export_copy_to_clipboard))
             }
         }
     }

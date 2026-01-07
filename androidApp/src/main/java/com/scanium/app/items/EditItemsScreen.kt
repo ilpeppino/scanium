@@ -54,6 +54,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.scanium.app.R
 import com.scanium.app.items.state.ItemFieldUpdate
 import com.scanium.app.model.toImageBitmap
 import java.text.DecimalFormat
@@ -133,16 +135,22 @@ fun EditItemsScreen(
             TopAppBar(
                 title = {
                     if (selectedItems.size > 1) {
-                        Text("Edit Items (${pagerState.currentPage + 1}/${selectedItems.size})")
+                        Text(
+                            stringResource(
+                                R.string.edit_items_title,
+                                pagerState.currentPage + 1,
+                                selectedItems.size,
+                            ),
+                        )
                     } else {
-                        Text("Edit Item")
+                        Text(stringResource(R.string.edit_item_title))
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Cancel",
+                            contentDescription = stringResource(R.string.common_cancel),
                         )
                     }
                 },
@@ -159,7 +167,7 @@ fun EditItemsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = "AI Assistant",
+                            contentDescription = stringResource(R.string.assistant_ai_assistant),
                         )
                     }
                 },
@@ -180,7 +188,7 @@ fun EditItemsScreen(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "No items to edit",
+                        text = stringResource(R.string.edit_items_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -256,7 +264,7 @@ fun EditItemsScreen(
                         onClick = onBack,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
 
                     Button(
@@ -286,7 +294,7 @@ fun EditItemsScreen(
                         modifier = Modifier.weight(1f),
                         enabled = selectedItems.isNotEmpty(),
                     ) {
-                        Text("OK")
+                        Text(stringResource(R.string.common_ok))
                     }
                 }
             }
@@ -325,7 +333,7 @@ private fun ItemEditPage(
             if (thumbnailBitmap != null) {
                 Image(
                     bitmap = thumbnailBitmap,
-                    contentDescription = "Item thumbnail",
+                    contentDescription = stringResource(R.string.items_thumbnail),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(160.dp)
@@ -340,7 +348,7 @@ private fun ItemEditPage(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "No image",
+                        text = stringResource(R.string.items_no_image),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -352,7 +360,7 @@ private fun ItemEditPage(
         OutlinedTextField(
             value = draft.labelText,
             onValueChange = { onDraftChange(draft.copy(labelText = it)) },
-            label = { Text("Label / Name") },
+            label = { Text(stringResource(R.string.edit_item_label_name)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
         )
@@ -378,11 +386,11 @@ private fun ItemEditPage(
                     onDraftChange(draft.copy(priceText = filtered))
                 }
             },
-            label = { Text("Price") },
+            label = { Text(stringResource(R.string.edit_item_price_label)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            prefix = { Text("€") },
+            prefix = { Text(stringResource(R.string.edit_item_price_prefix)) },
             isError = draft.priceText.isNotEmpty() && parsePriceToCents(draft.priceText) == null && draft.priceText != "0",
         )
 
@@ -399,7 +407,7 @@ private fun ItemEditPage(
         OutlinedTextField(
             value = draft.recognizedText,
             onValueChange = { onDraftChange(draft.copy(recognizedText = it)) },
-            label = { Text("Recognized Text") },
+            label = { Text(stringResource(R.string.edit_item_recognized_text_label)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 56.dp, max = 120.dp),
@@ -411,7 +419,7 @@ private fun ItemEditPage(
         OutlinedTextField(
             value = draft.barcodeValue,
             onValueChange = { onDraftChange(draft.copy(barcodeValue = it)) },
-            label = { Text("Barcode Value") },
+            label = { Text(stringResource(R.string.edit_item_barcode_value_label)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
         )
@@ -439,8 +447,8 @@ private fun ConditionDropdown(
             value = selectedCondition?.displayName ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text("Condition") },
-            placeholder = { Text("Select") },
+            label = { Text(stringResource(R.string.edit_item_condition_label)) },
+            placeholder = { Text(stringResource(R.string.common_select)) },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -457,7 +465,7 @@ private fun ConditionDropdown(
         ) {
             // Option to clear the condition
             DropdownMenuItem(
-                text = { Text("Not set", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                text = { Text(stringResource(R.string.common_not_set), color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 onClick = {
                     onConditionSelected(null)
                     expanded = false
@@ -575,4 +583,3 @@ private fun CategoryDropdown(
         }
     }
 }
-

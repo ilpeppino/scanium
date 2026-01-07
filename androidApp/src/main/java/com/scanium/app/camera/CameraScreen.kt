@@ -404,7 +404,10 @@ fun CameraScreen(
                 modelDownloadState = ModelDownloadState.Ready
             } catch (e: Exception) {
                 Log.e("CameraScreen", "Error checking model availability", e)
-                modelDownloadState = ModelDownloadState.Error("Error initializing ML Kit: ${e.message}")
+                modelDownloadState =
+                    ModelDownloadState.Error(
+                        context.getString(R.string.camera_mlkit_error, e.message.orEmpty()),
+                    )
             }
         }
     }
@@ -499,7 +502,7 @@ fun CameraScreen(
                             lensFacing = resolvedLens
                             Toast.makeText(
                                 context,
-                                "Selected lens unavailable. Switched cameras.",
+                                context.getString(R.string.camera_lens_unavailable),
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
@@ -511,11 +514,15 @@ fun CameraScreen(
                             cameraState = CameraState.ERROR
                             cameraErrorState =
                                 CameraErrorState(
-                                    title = "Camera unavailable",
-                                    message = it.message ?: "Unable to start camera.",
+                                    title = context.getString(R.string.camera_unavailable_title),
+                                    message = it.message ?: context.getString(R.string.camera_unable_start_message),
                                     canRetry = true,
                                 )
-                            Toast.makeText(context, "Unable to start camera.", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.camera_unable_start_message),
+                                Toast.LENGTH_SHORT,
+                            ).show()
                             Log.e("CameraScreen", "Failed to bind camera", it)
                         }
                     },
@@ -540,7 +547,10 @@ fun CameraScreen(
                                     } catch (e: Exception) {
                                         modelDownloadState =
                                             ModelDownloadState.Error(
-                                                "Error initializing ML Kit: ${e.message}",
+                                                context.getString(
+                                                    R.string.camera_mlkit_error,
+                                                    e.message.orEmpty(),
+                                                ),
                                             )
                                     }
                                 }
@@ -611,7 +621,7 @@ fun CameraScreen(
                 // DEV BUILD Indicator
                 if (com.scanium.app.BuildConfig.DEBUG) {
                     Text(
-                        text = "DEV BUILD",
+                        text = stringResource(R.string.camera_dev_build),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White,
                         modifier =
@@ -682,14 +692,14 @@ fun CameraScreen(
                                             itemsViewModel.addItem(result.item)
                                             Toast.makeText(
                                                 context,
-                                                "Document scanned successfully",
+                                                context.getString(R.string.camera_document_scan_success),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
                                         }
                                         is CameraXManager.DocumentScanResult.NoTextDetected -> {
                                             Toast.makeText(
                                                 context,
-                                                "No text detected in document",
+                                                context.getString(R.string.camera_document_scan_no_text),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
                                         }
@@ -700,7 +710,10 @@ fun CameraScreen(
                                             Log.e("CameraScreen", "Document scan error: ${result.message}", result.exception)
                                             Toast.makeText(
                                                 context,
-                                                "Scan failed: ${result.message}",
+                                                context.getString(
+                                                    R.string.camera_document_scan_failed,
+                                                    result.message,
+                                                ),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
                                         }
@@ -749,7 +762,7 @@ fun CameraScreen(
                             if (!hasEligibleBbox && hasOutsideRoiOnly) {
                                 Toast.makeText(
                                     context,
-                                    "Center object in scan zone for better accuracy",
+                                    context.getString(R.string.camera_hint_center_object),
                                     Toast.LENGTH_SHORT,
                                 ).show()
                             }
@@ -764,9 +777,9 @@ fun CameraScreen(
                                         // PHASE 3: More specific message based on what we detected
                                         val message =
                                             if (hasOutsideRoiOnly) {
-                                                "Object detected outside scan zone. Center it for better results."
+                                                context.getString(R.string.camera_hint_outside_scan_zone)
                                             } else {
-                                                "No objects detected. Try pointing at prominent items."
+                                                context.getString(R.string.camera_hint_no_objects)
                                             }
                                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                         soundManager.play(AppSound.ERROR)
@@ -810,7 +823,7 @@ fun CameraScreen(
                                             itemsViewModel.addItemsWithVisionPrefill(context, itemsWithHighRes)
                                             Toast.makeText(
                                                 context,
-                                                "Detected ${items.size} item(s)",
+                                                context.getString(R.string.camera_detected_items, items.size),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
                                         }
@@ -1123,7 +1136,7 @@ private fun BoxScope.CameraOverlay(
             ) {
                 Icon(
                     imageVector = Icons.Default.Menu,
-                    contentDescription = "Open settings",
+                    contentDescription = stringResource(R.string.cd_open_settings),
                     tint = Color.White,
                 )
             }
@@ -1148,7 +1161,7 @@ private fun BoxScope.CameraOverlay(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.scanium_logo),
-                    contentDescription = "Scanium logo",
+                    contentDescription = stringResource(R.string.cd_scanium_logo),
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit,
                 )
@@ -1262,7 +1275,7 @@ private fun BoxScope.CameraOverlayPortrait(
                     ) {
                         Icon(
                             imageVector = Icons.Default.List,
-                            contentDescription = "View items",
+                            contentDescription = stringResource(R.string.cd_view_items),
                             tint = Color.White,
                         )
                     }
@@ -1324,7 +1337,7 @@ private fun BoxScope.CameraOverlayPortrait(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Cameraswitch,
-                        contentDescription = "Flip camera",
+                        contentDescription = stringResource(R.string.cd_flip_camera),
                         tint = Color.White,
                     )
                 }
@@ -1450,7 +1463,7 @@ private fun BoxScope.CameraOverlayLandscape(
             ) {
                 Icon(
                     imageVector = Icons.Default.List,
-                    contentDescription = "View items",
+                    contentDescription = stringResource(R.string.cd_view_items),
                     tint = Color.White,
                 )
             }
@@ -1494,7 +1507,7 @@ private fun BoxScope.CameraOverlayLandscape(
         ) {
             Icon(
                 imageVector = Icons.Default.Cameraswitch,
-                contentDescription = "Flip camera",
+                contentDescription = stringResource(R.string.cd_flip_camera),
                 tint = Color.White,
             )
         }
@@ -1504,11 +1517,12 @@ private fun BoxScope.CameraOverlayLandscape(
 /**
  * Formats the resolution setting for display.
  */
+@Composable
 private fun getResolutionLabel(resolution: CaptureResolution): String {
     return when (resolution) {
-        CaptureResolution.LOW -> "Resolution: Low (720p)"
-        CaptureResolution.NORMAL -> "Resolution: Normal (1080p)"
-        CaptureResolution.HIGH -> "Resolution: High (4K)"
+        CaptureResolution.LOW -> stringResource(R.string.camera_resolution_low)
+        CaptureResolution.NORMAL -> stringResource(R.string.camera_resolution_normal)
+        CaptureResolution.HIGH -> stringResource(R.string.camera_resolution_high)
     }
 }
 
@@ -1523,8 +1537,8 @@ private fun CameraErrorContent(
 ) {
     val resolvedError =
         error ?: CameraErrorState(
-            title = "Camera unavailable",
-            message = "Unable to access the camera right now.",
+            title = stringResource(R.string.camera_unavailable_title),
+            message = stringResource(R.string.camera_unavailable_message),
             canRetry = true,
         )
 
@@ -1552,13 +1566,13 @@ private fun CameraErrorContent(
 
         if (resolvedError.canRetry) {
             Button(onClick = onRetry) {
-                Text("Retry")
+                Text(stringResource(R.string.common_retry))
             }
             Spacer(modifier = Modifier.height(12.dp))
         }
 
         androidx.compose.material3.TextButton(onClick = onViewItems) {
-            Text("View Items")
+            Text(stringResource(R.string.camera_view_items))
         }
     }
 }
@@ -1593,7 +1607,7 @@ private fun PermissionDeniedContent(
         // Camera icon
         Icon(
             imageVector = Icons.Default.Camera,
-            contentDescription = "Camera permission required",
+            contentDescription = stringResource(R.string.cd_camera_permission_required),
             modifier = Modifier.size(72.dp),
             tint = MaterialTheme.colorScheme.primary,
         )
@@ -1602,7 +1616,7 @@ private fun PermissionDeniedContent(
 
         // Title
         Text(
-            text = "Camera Access Required",
+            text = stringResource(R.string.camera_permission_title),
             style = MaterialTheme.typography.headlineMedium,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
@@ -1613,9 +1627,9 @@ private fun PermissionDeniedContent(
         Text(
             text =
                 if (isPermanentlyDenied) {
-                    "Camera access has been disabled for Scanium. To scan and catalog items, please enable camera access in your device settings."
+                    stringResource(R.string.camera_permission_description_settings)
                 } else {
-                    "Scanium uses your camera to detect and catalog objects in your environment."
+                    stringResource(R.string.camera_permission_description_rationale)
                 },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1638,13 +1652,13 @@ private fun PermissionDeniedContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "Camera enables:",
+                    text = stringResource(R.string.camera_permission_features_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
-                FeatureItem("📦", "Object detection and cataloging")
-                FeatureItem("📸", "High-quality image capture")
+                FeatureItem("📦", stringResource(R.string.camera_permission_feature_detection))
+                FeatureItem("📸", stringResource(R.string.camera_permission_feature_capture))
             }
         }
 
@@ -1652,7 +1666,7 @@ private fun PermissionDeniedContent(
 
         // Privacy note
         Text(
-            text = "🔒 All processing happens locally on your device. Images are never uploaded without your permission.",
+            text = stringResource(R.string.camera_permission_privacy_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1674,13 +1688,13 @@ private fun PermissionDeniedContent(
                     modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Open Settings")
+                Text(stringResource(R.string.camera_open_settings))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Tap 'Permissions' → 'Camera' → 'Allow'",
+                text = stringResource(R.string.camera_permission_settings_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1691,7 +1705,7 @@ private fun PermissionDeniedContent(
                 onClick = onRequestPermission,
                 modifier = Modifier.fillMaxWidth(0.8f),
             ) {
-                Text("Grant Camera Access")
+                Text(stringResource(R.string.camera_grant_camera_access))
             }
         }
     }
@@ -1754,9 +1768,9 @@ private fun ModelLoadingOverlay(state: ModelDownloadState) {
                 Text(
                     text =
                         when (state) {
-                            is ModelDownloadState.Checking -> "Preparing ML models..."
-                            is ModelDownloadState.Downloading -> "Downloading AI models..."
-                            else -> "Loading..."
+                            is ModelDownloadState.Checking -> stringResource(R.string.camera_model_preparing)
+                            is ModelDownloadState.Downloading -> stringResource(R.string.camera_model_downloading)
+                            else -> stringResource(R.string.camera_model_loading)
                         },
                     style = MaterialTheme.typography.titleMedium,
                 )
@@ -1764,7 +1778,7 @@ private fun ModelLoadingOverlay(state: ModelDownloadState) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "First launch requires downloading\nML Kit object detection models (~15 MB)",
+                    text = stringResource(R.string.camera_model_first_launch_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1812,28 +1826,28 @@ private fun ModelErrorDialog(
 ) {
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Model Initialization Failed") },
+        title = { Text(stringResource(R.string.camera_model_init_failed)) },
         text = {
             Column {
                 Text(error)
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    "Please ensure you have:",
+                    stringResource(R.string.camera_requirements_title),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Text("• Active internet connection", style = MaterialTheme.typography.bodySmall)
-                Text("• At least 20 MB free storage", style = MaterialTheme.typography.bodySmall)
-                Text("• Network access for this app", style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.camera_requirements_internet), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.camera_requirements_storage), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.camera_requirements_network), style = MaterialTheme.typography.bodySmall)
             }
         },
         confirmButton = {
             androidx.compose.material3.Button(onClick = onRetry) {
-                Text("Retry")
+                Text(stringResource(R.string.common_retry))
             }
         },
         dismissButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text("Continue Anyway")
+                Text(stringResource(R.string.camera_continue_anyway))
             }
         },
     )
@@ -1869,18 +1883,18 @@ private fun ConfigurationStatusBanner(
             ) {
                 Icon(
                     imageVector = Icons.Default.Info,
-                    contentDescription = "Configuration warning",
+                    contentDescription = stringResource(R.string.cd_configuration_warning),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(20.dp),
                 )
                 Column {
                     Text(
-                        text = "Cloud mode not configured",
+                        text = stringResource(R.string.camera_cloud_not_configured),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                     )
                     Text(
-                        text = "Classification will use on-device processing until SCANIUM_API_BASE_URL is configured.",
+                        text = stringResource(R.string.camera_cloud_not_configured_message),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                     )

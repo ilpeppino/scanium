@@ -63,7 +63,7 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                 // Title
                 Text(
-                    text = "Before We Begin",
+                    text = stringResource(R.string.ftue_permission_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
@@ -73,7 +73,7 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                 // Why camera is needed
                 Text(
-                    text = "Scanium needs camera access to scan and catalog items in your environment.",
+                    text = stringResource(R.string.ftue_permission_message),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -87,7 +87,7 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                 // What the app does section
                 Text(
-                    text = "What You Can Do",
+                    text = stringResource(R.string.ftue_permission_section_actions),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.fillMaxWidth(),
@@ -97,8 +97,8 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                 EducationFeatureRow(
                     icon = Icons.Outlined.Category,
-                    title = "Object Detection",
-                    description = "Point at items to identify and catalog them",
+                    title = stringResource(R.string.ftue_permission_object_detection_title),
+                    description = stringResource(R.string.ftue_permission_object_detection_desc),
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -109,7 +109,7 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                 // How to use section
                 Text(
-                    text = "How to Capture",
+                    text = stringResource(R.string.ftue_permission_section_capture),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.fillMaxWidth(),
@@ -132,12 +132,12 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                     Column {
                         Text(
-                            text = "Tap",
+                            text = stringResource(R.string.ftue_permission_tap_title),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
-                            text = "Capture a single frame",
+                            text = stringResource(R.string.ftue_permission_tap_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -161,12 +161,12 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                     Column {
                         Text(
-                            text = "Long-Press",
+                            text = stringResource(R.string.ftue_permission_long_press_title),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
-                            text = "Start continuous scanning (tap again to stop)",
+                            text = stringResource(R.string.ftue_permission_long_press_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -177,7 +177,7 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
 
                 // Privacy note
                 Text(
-                    text = "🔒 All processing happens on your device. Images are never uploaded without your permission.",
+                    text = stringResource(R.string.ftue_permission_privacy_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     textAlign = TextAlign.Center,
@@ -190,7 +190,7 @@ fun PermissionEducationDialog(onContinue: () -> Unit) {
                     onClick = onContinue,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Continue")
+                    Text(stringResource(R.string.common_continue))
                 }
             }
         }

@@ -1,8 +1,11 @@
 package com.scanium.app
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import com.scanium.app.crash.AndroidCrashPortAdapter
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.model.AppLanguage
 import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.telemetry.*
 import com.scanium.diagnostics.DefaultDiagnosticsPort
@@ -46,6 +49,17 @@ class ScaniumApplication : Application() {
 
         val settingsRepository = SettingsRepository(this)
         val classificationPreferences = com.scanium.app.data.ClassificationPreferences(this)
+
+        applicationScope.launch {
+            settingsRepository.appLanguageFlow.collect { language ->
+                val localeList =
+                    when (language) {
+                        AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+                        else -> LocaleListCompat.forLanguageTags(language.code)
+                    }
+                AppCompatDelegate.setApplicationLocales(localeList)
+            }
+        }
 
         // Initialize DiagnosticsPort (shared buffer for crash-time diagnostics)
         diagnosticsPort =
@@ -131,6 +145,7 @@ class ScaniumApplication : Application() {
                     crashPort.setTag("cloud_allowed", allowed.toString())
                 }
             }
+
         } else {
             // Use NoOp adapter when Sentry is not configured
             crashPort = com.scanium.telemetry.ports.NoOpCrashPort
