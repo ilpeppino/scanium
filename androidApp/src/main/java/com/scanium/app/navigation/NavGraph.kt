@@ -21,6 +21,7 @@ import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.camera.CameraScreen
 import com.scanium.app.camera.CameraViewModel
 import com.scanium.app.items.EditItemsScreen
+import com.scanium.app.items.edit.EditItemScreenV2
 import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.selling.assistant.AssistantScreen
@@ -250,17 +251,29 @@ fun ScaniumNavGraph(
                 ?.split(",")
                 ?.filter { it.isNotBlank() }
                 ?: emptyList()
-            EditItemsScreen(
-                itemIds = ids,
-                onBack = { navController.popBackStack() },
-                onNavigateToAssistant = { assistantItemIds ->
-                    if (assistantItemIds.isNotEmpty()) {
-                        val encoded = Uri.encode(assistantItemIds.joinToString(","))
+            // V2: Single-item edit page (uses first ID from selection)
+            val itemId = ids.firstOrNull() ?: ""
+            if (itemId.isNotEmpty()) {
+                EditItemScreenV2(
+                    itemId = itemId,
+                    onBack = { navController.popBackStack() },
+                    onAddPhotos = { targetItemId ->
+                        // TODO: Phase 6 - Implement photo capture flow
+                        // For now, just log or no-op
+                    },
+                    onAiGenerate = { targetItemId ->
+                        // Navigate to assistant for AI generation
+                        val encoded = Uri.encode(targetItemId)
                         navController.navigate("${Routes.ASSISTANT}?itemIds=$encoded")
-                    }
-                },
-                itemsViewModel = itemsViewModel,
-            )
+                    },
+                    itemsViewModel = itemsViewModel,
+                )
+            } else {
+                // No item to edit, go back
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            }
         }
 
         composable(

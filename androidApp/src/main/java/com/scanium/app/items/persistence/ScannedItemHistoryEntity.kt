@@ -49,6 +49,12 @@ data class ScannedItemHistoryEntity(
     val attributesJson: String?,
     val detectedAttributesJson: String?,
     val visionAttributesJson: String?,
+    // New fields for multi-object scanning (v7)
+    val attributesSummaryText: String?,
+    val summaryTextUserEdited: Int,
+    val additionalPhotosJson: String?,
+    val sourcePhotoId: String?,
+    val enrichmentStatusJson: String?,
 )
 
 fun ScannedItemEntity.toHistoryEntity(
@@ -93,5 +99,10 @@ fun ScannedItemEntity.toHistoryEntity(
         attributesJson = attributesJson,
         detectedAttributesJson = detectedAttributesJson,
         visionAttributesJson = visionAttributesJson,
+        attributesSummaryText = attributesSummaryText,
+        summaryTextUserEdited = summaryTextUserEdited,
+        additionalPhotosJson = additionalPhotosJson,
+        sourcePhotoId = sourcePhotoId,
+        enrichmentStatusJson = enrichmentStatusJson,
     )
 }

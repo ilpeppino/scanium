@@ -632,6 +632,60 @@ class ItemAggregator(
         logger.d(TAG, "      - Distance similarity: $distanceSim")
         logger.d(TAG, "      - Final weighted score: $finalScore")
     }
+
+    /**
+     * Updates the enrichment status for an aggregated item.
+     * Thread-safe via synchronized block to prevent concurrent modification.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param status The new enrichment layer status
+     */
+    @Synchronized
+    fun updateEnrichmentStatus(
+        aggregatedId: String,
+        status: com.scanium.shared.core.models.items.EnrichmentLayerStatus,
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.enrichmentStatus = status
+        }
+    }
+
+    /**
+     * Updates the summary text for an aggregated item.
+     * Thread-safe via synchronized block to prevent concurrent modification.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param summaryText The new summary text
+     * @param userEdited Whether the user manually edited the text
+     */
+    @Synchronized
+    fun updateSummaryText(
+        aggregatedId: String,
+        summaryText: String,
+        userEdited: Boolean,
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.attributesSummaryText = summaryText
+            item.summaryTextUserEdited = userEdited
+        }
+    }
+
+    /**
+     * Adds a photo to an aggregated item.
+     * Thread-safe via synchronized block to prevent concurrent modification.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param photo The photo to add
+     */
+    @Synchronized
+    fun addPhotoToItem(
+        aggregatedId: String,
+        photo: com.scanium.shared.core.models.items.ItemPhoto,
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.additionalPhotos = item.additionalPhotos + photo
+        }
+    }
 }
 
 /**

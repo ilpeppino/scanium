@@ -11,7 +11,7 @@ import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
     entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
@@ -41,6 +41,7 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     MIGRATION_3_4,
                     MIGRATION_4_5,
                     MIGRATION_5_6,
+                    MIGRATION_6_7,
                 )
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
@@ -160,6 +161,33 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     // Add visionAttributesJson column to store OCR/color/logo/label data
                     db.execSQL("ALTER TABLE scanned_items ADD COLUMN visionAttributesJson TEXT")
                     db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN visionAttributesJson TEXT")
+                }
+            }
+
+        private val MIGRATION_6_7 =
+            object : Migration(6, 7) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Add columns for multi-object scanning feature
+
+                    // attributesSummaryText: User-editable attribute summary text
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN attributesSummaryText TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN attributesSummaryText TEXT")
+
+                    // summaryTextUserEdited: Flag indicating user has manually edited the summary
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN summaryTextUserEdited INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN summaryTextUserEdited INTEGER NOT NULL DEFAULT 0")
+
+                    // additionalPhotosJson: Additional photos attached to the item (close-ups)
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN additionalPhotosJson TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN additionalPhotosJson TEXT")
+
+                    // sourcePhotoId: Links items captured from the same multi-object photo
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN sourcePhotoId TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN sourcePhotoId TEXT")
+
+                    // enrichmentStatusJson: Status of each enrichment layer (A/B/C)
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN enrichmentStatusJson TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN enrichmentStatusJson TEXT")
                 }
             }
     }

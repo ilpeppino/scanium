@@ -851,6 +851,102 @@ class ItemsStateManager(
         persistItems(updatedItems)
         onStateChanged?.invoke()
     }
+
+    /**
+     * Update the enrichment status for an item.
+     *
+     * @param itemId The ID of the item to update
+     * @param transform Function to transform the current status to the new status
+     */
+    fun updateEnrichmentStatus(
+        itemId: String,
+        transform: (com.scanium.shared.core.models.items.EnrichmentLayerStatus) -> com.scanium.shared.core.models.items.EnrichmentLayerStatus,
+    ) {
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    val newStatus = transform(item.enrichmentStatus)
+                    item.copy(
+                        enrichmentStatus = newStatus.copy(
+                            lastUpdated = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                        ),
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Update aggregator
+        val updatedItem = updatedItems.find { it.id == itemId }
+        if (updatedItem != null) {
+            itemAggregator.updateEnrichmentStatus(itemId, updatedItem.enrichmentStatus)
+        }
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
+
+    /**
+     * Update the summary text for an item.
+     *
+     * @param itemId The ID of the item to update
+     * @param summaryText The new summary text
+     * @param userEdited Whether the user manually edited the text
+     */
+    fun updateSummaryText(
+        itemId: String,
+        summaryText: String,
+        userEdited: Boolean,
+    ) {
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        attributesSummaryText = summaryText,
+                        summaryTextUserEdited = userEdited,
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Update aggregator
+        itemAggregator.updateSummaryText(itemId, summaryText, userEdited)
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
+
+    /**
+     * Add an additional photo to an item.
+     *
+     * @param itemId The ID of the item
+     * @param photo The photo to add
+     */
+    fun addPhotoToItem(
+        itemId: String,
+        photo: com.scanium.shared.core.models.items.ItemPhoto,
+    ) {
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    item.copy(
+                        additionalPhotos = item.additionalPhotos + photo,
+                    )
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Update aggregator
+        itemAggregator.addPhotoToItem(itemId, photo)
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
 }
 
 /**
