@@ -188,8 +188,8 @@ fun ItemsListScreen(
         scope.launch {
             val result =
                 snackbarHostState.showSnackbar(
-                    message = "Item deleted",
-                    actionLabel = "Undo",
+                    message = context.getString(R.string.items_snackbar_item_deleted),
+                    actionLabel = context.getString(R.string.common_undo),
                 )
             if (result == SnackbarResult.ActionPerformed) {
                 lastDeletedItem?.let { deleted ->
@@ -216,7 +216,7 @@ fun ItemsListScreen(
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 clipData = ClipData.newUri(context.contentResolver, file.name, uri)
             }
-        val chooser = Intent.createChooser(intent, "Share CSV")
+        val chooser = Intent.createChooser(intent, context.getString(R.string.items_share_csv_title))
         if (context !is Activity) {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -224,7 +224,7 @@ fun ItemsListScreen(
             .onFailure {
                 soundManager.play(AppSound.ERROR)
                 scope.launch {
-                    snackbarHostState.showSnackbar("Unable to share CSV")
+                    snackbarHostState.showSnackbar(context.getString(R.string.items_share_csv_failed))
                 }
             }
     }
@@ -234,7 +234,7 @@ fun ItemsListScreen(
             val result =
                 snackbarHostState.showSnackbar(
                     message = alert.message,
-                    actionLabel = "Retry",
+                    actionLabel = context.getString(R.string.common_retry),
                     duration = SnackbarDuration.Long,
                 )
             if (result == SnackbarResult.ActionPerformed) {
@@ -262,7 +262,7 @@ fun ItemsListScreen(
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 clipData = ClipData.newUri(context.contentResolver, file.name, uri)
             }
-        val chooser = Intent.createChooser(intent, "Share ZIP")
+        val chooser = Intent.createChooser(intent, context.getString(R.string.items_share_zip_title))
         if (context !is Activity) {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -270,7 +270,7 @@ fun ItemsListScreen(
             .onFailure {
                 soundManager.play(AppSound.ERROR)
                 scope.launch {
-                    snackbarHostState.showSnackbar("Unable to share ZIP")
+                    snackbarHostState.showSnackbar(context.getString(R.string.items_share_zip_failed))
                 }
             }
     }
@@ -281,7 +281,7 @@ fun ItemsListScreen(
      */
     suspend fun shareItems(selectedItems: List<ScannedItem>) {
         if (selectedItems.isEmpty()) {
-            snackbarHostState.showSnackbar("Select items to share")
+            snackbarHostState.showSnackbar(context.getString(R.string.items_select_items_to_share))
             return
         }
 
@@ -310,15 +310,15 @@ fun ItemsListScreen(
         // Build text summary
         val textSummary =
             buildString {
-                appendLine("Scanium Items (${selectedItems.size})")
+                appendLine(context.getString(R.string.items_share_summary_title, selectedItems.size))
                 appendLine()
                 selectedItems.forEachIndexed { index, item ->
                     appendLine("${index + 1}. ${item.displayLabel}")
                     if (item.formattedPriceRange.isNotBlank()) {
-                        appendLine("   Price: ${item.formattedPriceRange}")
+                        appendLine(context.getString(R.string.items_share_summary_price, item.formattedPriceRange))
                     }
                     item.labelText?.let { label ->
-                        appendLine("   Category: $label")
+                        appendLine(context.getString(R.string.items_share_summary_category, label))
                     }
                 }
             }
@@ -354,7 +354,7 @@ fun ItemsListScreen(
                 }
             }
 
-        val chooser = Intent.createChooser(intent, "Share items")
+        val chooser = Intent.createChooser(intent, context.getString(R.string.items_share_items_title))
         if (context !is Activity) {
             chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -362,7 +362,7 @@ fun ItemsListScreen(
         runCatching { context.startActivity(chooser) }
             .onFailure {
                 soundManager.play(AppSound.ERROR)
-                snackbarHostState.showSnackbar("Unable to share items")
+                snackbarHostState.showSnackbar(context.getString(R.string.items_share_items_failed))
             }
     }
 
@@ -370,12 +370,20 @@ fun ItemsListScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text(if (selectionMode) "Select items" else "Detected Items") },
+                    title = {
+                        Text(
+                            if (selectionMode) {
+                                stringResource(R.string.items_select_items_title)
+                            } else {
+                                stringResource(R.string.items_detected_items_title)
+                            },
+                        )
+                    },
                     navigationIcon = {
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.common_back),
                             )
                         }
                     },
@@ -385,13 +393,13 @@ fun ItemsListScreen(
                                 selectedIds.clear()
                                 selectionMode = false
                             }) {
-                                Text("Cancel")
+                                Text(stringResource(R.string.common_cancel))
                             }
                         } else if (items.isNotEmpty()) {
                             IconButton(onClick = { itemsViewModel.clearAllItems() }) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Clear all",
+                                    contentDescription = stringResource(R.string.items_clear_all),
                                 )
                             }
                         }
@@ -486,7 +494,7 @@ fun ItemsListScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
-                                                contentDescription = "Delete",
+                                                contentDescription = stringResource(R.string.items_delete),
                                                 tint = iconTint,
                                             )
                                         }
@@ -522,6 +530,10 @@ fun ItemsListScreen(
 
         // Overlay controls when items are selected
         if (selectionMode && selectedIds.isNotEmpty()) {
+            val selectAllLabel = stringResource(R.string.items_select_all)
+            val deselectAllLabel = stringResource(R.string.items_deselect_all)
+            val deleteSelectedLabel = stringResource(R.string.items_delete_selected)
+
             // Select All button - bottom-left
             FloatingActionButton(
                 onClick = { toggleSelectAll() },
@@ -532,9 +544,9 @@ fun ItemsListScreen(
                         .padding(16.dp)
                         .semantics {
                             contentDescription = if (selectedIds.size == items.size) {
-                                "Deselect all items"
+                                deselectAllLabel
                             } else {
-                                "Select all items"
+                                selectAllLabel
                             }
                         },
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -561,7 +573,9 @@ fun ItemsListScreen(
                         selectionMode = false
                         soundManager.play(AppSound.DELETE)
                         scope.launch {
-                            snackbarHostState.showSnackbar("${selected.size} item(s) deleted")
+                            snackbarHostState.showSnackbar(
+                                context.getString(R.string.items_snackbar_items_deleted, selected.size),
+                            )
                         }
                     }
                 },
@@ -570,7 +584,7 @@ fun ItemsListScreen(
                         .align(Alignment.BottomCenter)
                         .windowInsetsPadding(WindowInsets.navigationBars)
                         .padding(16.dp)
-                        .semantics { contentDescription = "Delete selected items" },
+                        .semantics { contentDescription = deleteSelectedLabel },
                 containerColor = MaterialTheme.colorScheme.errorContainer,
                 contentColor = MaterialTheme.colorScheme.onErrorContainer,
             ) {
@@ -602,7 +616,7 @@ fun ItemsListScreen(
                     } else {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share",
+                            contentDescription = stringResource(R.string.common_share),
                         )
                     }
                 }
@@ -614,7 +628,7 @@ fun ItemsListScreen(
                 ) {
                     // Share... (system share sheet)
                     DropdownMenuItem(
-                        text = { Text("Share…") },
+                        text = { Text(stringResource(R.string.items_share_ellipsis)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Share,
@@ -639,7 +653,7 @@ fun ItemsListScreen(
 
                     // Export CSV
                     DropdownMenuItem(
-                        text = { Text("Export CSV") },
+                        text = { Text(stringResource(R.string.items_export_csv)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.Description,
@@ -650,7 +664,11 @@ fun ItemsListScreen(
                             showShareMenu = false
                             val payload = itemsViewModel.createExportPayload(selectedIds.toList())
                             if (payload == null) {
-                                scope.launch { snackbarHostState.showSnackbar("Select items to export") }
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        context.getString(R.string.items_select_items_to_export),
+                                    )
+                                }
                                 return@DropdownMenuItem
                             }
                             scope.launch {
@@ -665,11 +683,11 @@ fun ItemsListScreen(
                                     result.fold(
                                         onSuccess = { file ->
                                             shareCsv(file)
-                                            "CSV ready to share"
+                                            context.getString(R.string.items_export_csv_ready)
                                         },
                                         onFailure = {
                                             soundManager.play(AppSound.ERROR)
-                                            "Failed to export CSV"
+                                            context.getString(R.string.items_export_csv_failed)
                                         },
                                     )
                                 snackbarHostState.showSnackbar(message)
@@ -679,7 +697,7 @@ fun ItemsListScreen(
 
                     // Export ZIP
                     DropdownMenuItem(
-                        text = { Text("Export ZIP") },
+                        text = { Text(stringResource(R.string.items_export_zip)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.FolderZip,
@@ -690,7 +708,11 @@ fun ItemsListScreen(
                             showShareMenu = false
                             val payload = itemsViewModel.createExportPayload(selectedIds.toList())
                             if (payload == null) {
-                                scope.launch { snackbarHostState.showSnackbar("Select items to export") }
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        context.getString(R.string.items_select_items_to_export),
+                                    )
+                                }
                                 return@DropdownMenuItem
                             }
                             scope.launch {
@@ -705,11 +727,11 @@ fun ItemsListScreen(
                                     result.fold(
                                         onSuccess = { file ->
                                             shareZip(file)
-                                            "ZIP ready to share"
+                                            context.getString(R.string.items_export_zip_ready)
                                         },
                                         onFailure = {
                                             soundManager.play(AppSound.ERROR)
-                                            "Failed to export ZIP"
+                                            context.getString(R.string.items_export_zip_failed)
                                         },
                                     )
                                 snackbarHostState.showSnackbar(message)
@@ -721,17 +743,21 @@ fun ItemsListScreen(
 
                     // Export Listings (new Phase 5 feature)
                     DropdownMenuItem(
-                        text = { Text("Export Listings…") },
+                        text = { Text(stringResource(R.string.items_export_listings_ellipsis)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Outlined.FolderZip,
-                                contentDescription = "Export marketplace listings",
+                                contentDescription = stringResource(R.string.items_export_marketplace),
                             )
                         },
                         onClick = {
                             showShareMenu = false
                             if (selectedIds.isEmpty()) {
-                                scope.launch { snackbarHostState.showSnackbar("Select items to export") }
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        context.getString(R.string.items_select_items_to_export),
+                                    )
+                                }
                                 return@DropdownMenuItem
                             }
                             soundManager.play(AppSound.EXPORT)
@@ -855,29 +881,33 @@ fun ItemsListScreen(
                 val copied = exportViewModel.copyTextToClipboard()
                 scope.launch {
                     snackbarHostState.showSnackbar(
-                        if (copied) "Copied to clipboard" else "Failed to copy",
+                        if (copied) {
+                            context.getString(R.string.common_copied_to_clipboard)
+                        } else {
+                            context.getString(R.string.common_copy_failed)
+                        },
                     )
                 }
             },
             onShareZip = { zipFile ->
                 val intent = exportViewModel.createZipShareIntent(zipFile)
-                val chooser = Intent.createChooser(intent, "Share ZIP")
+                val chooser = Intent.createChooser(intent, context.getString(R.string.items_share_zip_title))
                 runCatching { context.startActivity(chooser) }
                     .onFailure {
                         soundManager.play(AppSound.ERROR)
                         scope.launch {
-                            snackbarHostState.showSnackbar("Unable to share ZIP")
+                            snackbarHostState.showSnackbar(context.getString(R.string.items_share_zip_failed))
                         }
                     }
             },
             onShareText = { text ->
                 val intent = exportViewModel.createTextShareIntent(text)
-                val chooser = Intent.createChooser(intent, "Share Listings")
+                val chooser = Intent.createChooser(intent, context.getString(R.string.items_share_listings_title))
                 runCatching { context.startActivity(chooser) }
                     .onFailure {
                         soundManager.play(AppSound.ERROR)
                         scope.launch {
-                            snackbarHostState.showSnackbar("Unable to share text")
+                            snackbarHostState.showSnackbar(context.getString(R.string.items_share_text_failed))
                         }
                     }
             },
@@ -903,36 +933,53 @@ private fun ItemRow(
     onRetryClassification: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val confidenceLabel =
+        if (FeatureFlags.showItemDiagnostics) {
+            stringResource(
+                R.string.items_accessibility_confidence,
+                item.confidenceLevel.displayName,
+            )
+        } else {
+            null
+        }
+    val classificationInProgress = stringResource(R.string.items_accessibility_classification_in_progress)
+    val classificationFailed = stringResource(R.string.items_accessibility_classification_failed)
+    val selectedLabel = stringResource(R.string.items_accessibility_selected)
+    val toggleSelectionLabel = stringResource(R.string.items_accessibility_tap_toggle_selection)
+    val tapEditLabel = stringResource(R.string.items_accessibility_tap_edit_long_press)
+    val contentDescription =
+        buildString {
+            append(item.displayLabel)
+            append(". ")
+            append(item.formattedPriceRange)
+            // Diagnostic info only in dev builds
+            if (FeatureFlags.showItemDiagnostics) {
+                append(". ")
+                if (confidenceLabel != null) {
+                    append(confidenceLabel)
+                }
+                when (item.classificationStatus) {
+                    "PENDING" -> append(". $classificationInProgress")
+                    "FAILED" -> append(". $classificationFailed")
+                    else -> {}
+                }
+            }
+            if (isSelected) {
+                append(". $selectedLabel")
+            }
+            if (selectionMode) {
+                append(". $toggleSelectionLabel")
+            } else {
+                append(". $tapEditLabel")
+            }
+        }
 
     Card(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .semantics(mergeDescendants = true) {
-                    contentDescription =
-                        buildString {
-                            append(item.displayLabel)
-                            append(". ")
-                            append(item.formattedPriceRange)
-                            // Diagnostic info only in dev builds
-                            if (FeatureFlags.showItemDiagnostics) {
-                                append(". ")
-                                append("Confidence: ${item.confidenceLevel.displayName}")
-                                when (item.classificationStatus) {
-                                    "PENDING" -> append(". Classification in progress")
-                                    "FAILED" -> append(". Classification failed")
-                                    else -> {}
-                                }
-                            }
-                            if (isSelected) {
-                                append(". Selected")
-                            }
-                            if (selectionMode) {
-                                append(". Tap to toggle selection")
-                            } else {
-                                append(". Tap to edit, long press to select")
-                            }
-                        }
+                    this.contentDescription = contentDescription
                 }
                 .pointerInput(Unit) {
                     detectTapGestures(
@@ -975,7 +1022,7 @@ private fun ItemRow(
             thumbnailBitmap?.let { bitmap ->
                 Image(
                     bitmap = bitmap,
-                    contentDescription = "Item thumbnail",
+                    contentDescription = stringResource(R.string.items_thumbnail),
                     modifier =
                         Modifier
                             .size(80.dp)
@@ -998,7 +1045,7 @@ private fun ItemRow(
                             ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("?", style = MaterialTheme.typography.headlineMedium)
+                    Text(stringResource(R.string.common_question_mark), style = MaterialTheme.typography.headlineMedium)
                 }
             }
 
@@ -1075,7 +1122,7 @@ private fun ItemRow(
                     // Confidence percentage only shown in dev builds
                     if (FeatureFlags.showItemDiagnostics) {
                         Text(
-                            text = "•",
+                            text = stringResource(R.string.common_bullet),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1101,21 +1148,21 @@ private fun ItemRow(
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
-                            text = item.classificationErrorMessage ?: "Classification failed",
+                            text = item.classificationErrorMessage
+                                ?: stringResource(R.string.items_classification_failed),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             maxLines = 1,
                             modifier = Modifier.weight(1f, fill = false),
                         )
+                        val retryLabel = stringResource(R.string.items_retry_classification)
                         TextButton(
                             onClick = onRetryClassification,
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                             modifier =
                                 Modifier
                                     .sizeIn(minHeight = 48.dp)
-                                    .semantics {
-                                        contentDescription = "Retry classification for this item"
-                                    },
+                                    .semantics { this.contentDescription = retryLabel },
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
@@ -1124,7 +1171,7 @@ private fun ItemRow(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Retry",
+                                text = stringResource(R.string.common_retry),
                                 style = MaterialTheme.typography.labelSmall,
                             )
                         }
@@ -1143,6 +1190,7 @@ private fun ItemRow(
                         // "View listing" button for active listings
                         if (item.listingStatus == ItemListingStatus.LISTED_ACTIVE && item.listingUrl != null) {
                             val context = LocalContext.current
+                            val viewListingLabel = stringResource(R.string.items_view_listing_marketplace)
                             TextButton(
                                 onClick = {
                                     val intent = Intent(Intent.ACTION_VIEW, Uri.parse(item.listingUrl))
@@ -1150,11 +1198,9 @@ private fun ItemRow(
                                 },
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                                 modifier =
-                                    Modifier
-                                        .sizeIn(minHeight = 48.dp)
-                                        .semantics {
-                                            contentDescription = "View listing on marketplace"
-                                        },
+                                Modifier
+                                    .sizeIn(minHeight = 48.dp)
+                                    .semantics { this.contentDescription = viewListingLabel },
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.OpenInNew,
@@ -1163,7 +1209,7 @@ private fun ItemRow(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "View",
+                                    text = stringResource(R.string.common_view),
                                     style = MaterialTheme.typography.labelSmall,
                                 )
                             }
@@ -1188,18 +1234,18 @@ private fun BoxScope.EmptyItemsContent() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "No items detected yet",
+            text = stringResource(R.string.items_empty_title),
             style = MaterialTheme.typography.headlineSmall,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Use the camera to scan objects",
+            text = stringResource(R.string.items_empty_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Export to spreadsheets, chat apps, or marketplaces.",
+            text = stringResource(R.string.items_empty_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1283,19 +1329,19 @@ private fun ClassificationStatusBadge(status: String) {
                 Triple(
                     MaterialTheme.colorScheme.secondaryContainer,
                     MaterialTheme.colorScheme.onSecondaryContainer,
-                    "Classifying...",
+                    stringResource(R.string.items_status_classifying),
                 )
             "SUCCESS" ->
                 Triple(
                     MaterialTheme.colorScheme.primaryContainer,
                     MaterialTheme.colorScheme.onPrimaryContainer,
-                    "Cloud",
+                    stringResource(R.string.items_status_cloud),
                 )
             "FAILED" ->
                 Triple(
                     MaterialTheme.colorScheme.errorContainer,
                     MaterialTheme.colorScheme.onErrorContainer,
-                    "Failed",
+                    stringResource(R.string.items_status_failed),
                 )
             "NOT_STARTED" -> return // Don't show badge for not started
             else -> return // Unknown status
@@ -1356,18 +1402,18 @@ private fun EnrichmentStatusBadge(
             status.isEnriching -> Triple(
                 MaterialTheme.colorScheme.primaryContainer,
                 MaterialTheme.colorScheme.onPrimaryContainer,
-                "Enriching...",
+                stringResource(R.string.items_status_enriching),
             )
             status.isComplete && status.hasAnyResults -> Triple(
                 MaterialTheme.colorScheme.tertiaryContainer,
                 MaterialTheme.colorScheme.onTertiaryContainer,
-                "Enriched",
+                stringResource(R.string.items_status_enriched),
             )
             status.layerA == com.scanium.shared.core.models.items.LayerState.FAILED &&
                 status.layerB == com.scanium.shared.core.models.items.LayerState.FAILED -> Triple(
                 MaterialTheme.colorScheme.errorContainer,
                 MaterialTheme.colorScheme.onErrorContainer,
-                "Failed",
+                stringResource(R.string.items_status_failed),
             )
             else -> return // Don't show badge for pending state
         }

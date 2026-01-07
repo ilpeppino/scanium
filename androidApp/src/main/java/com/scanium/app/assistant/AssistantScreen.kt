@@ -171,22 +171,27 @@ fun AssistantScreen(
             if (granted) {
                 voiceController.startListening(handleVoiceResult)
             } else {
-                scope.launch { snackbarHostState.showSnackbar("Microphone permission denied") }
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        context.getString(R.string.assistant_microphone_permission_denied),
+                    )
+                }
             }
         }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Export Assistant") },
+                title = { Text(stringResource(R.string.assistant_export_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     // Show speaking indicator and stop button in top bar
                     if (voiceState == VoiceState.SPEAKING) {
+                        val stopReadingDescription = stringResource(R.string.assistant_stop_reading_aloud)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(end = 8.dp),
@@ -196,13 +201,13 @@ fun AssistantScreen(
                                 strokeWidth = 2.dp,
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Speaking...", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.assistant_speaking), style = MaterialTheme.typography.labelMedium)
                             IconButton(
                                 onClick = { voiceController.stopSpeaking() },
                                 modifier =
                                     Modifier
                                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                        .semantics { contentDescription = "Stop reading aloud" },
+                                        .semantics { contentDescription = stopReadingDescription },
                             ) {
                                 Icon(Icons.Default.Stop, contentDescription = stringResource(R.string.cd_stop_speaking))
                             }
@@ -233,7 +238,7 @@ fun AssistantScreen(
                     uiState.contextItems.forEach { item ->
                         AssistChip(
                             onClick = {},
-                            label = { Text(item.title ?: "Item") },
+                            label = { Text(item.title ?: stringResource(R.string.assistant_context_item_fallback)) },
                         )
                     }
                 }
@@ -329,7 +334,7 @@ fun AssistantScreen(
                     value = inputText,
                     onValueChange = { inputText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Ask about your items...") },
+                    placeholder = { Text(stringResource(R.string.assistant_input_placeholder)) },
                     shape = RoundedCornerShape(24.dp),
                     colors =
                         TextFieldDefaults.colors(
@@ -347,6 +352,10 @@ fun AssistantScreen(
                                 val isListening = voiceState == VoiceState.LISTENING
                                 val isTranscribing = voiceState == VoiceState.TRANSCRIBING
                                 val isActive = isListening || isTranscribing
+                                val stopVoiceLabel = stringResource(R.string.assistant_stop_voice_input)
+                                val startVoiceLabel = stringResource(R.string.assistant_start_voice_input)
+                                val voiceUnavailableLabel = stringResource(R.string.cd_voice_unavailable)
+                                val stopSpeakingLabel = stringResource(R.string.cd_stop_speaking)
 
                                 // Animate mic button color when active
                                 val micColor by animateColorAsState(
@@ -386,9 +395,9 @@ fun AssistantScreen(
                                             .semantics {
                                                 contentDescription =
                                                     if (isActive) {
-                                                        "Stop voice input"
+                                                        stopVoiceLabel
                                                     } else {
-                                                        "Start voice input"
+                                                        startVoiceLabel
                                                     }
                                             },
                                 ) {
@@ -402,9 +411,9 @@ fun AssistantScreen(
                                         imageVector = icon,
                                         contentDescription =
                                             when {
-                                                !speechAvailable -> stringResource(R.string.cd_voice_unavailable)
-                                                isActive -> stringResource(R.string.cd_stop_speaking)
-                                                else -> "Start voice input"
+                                                !speechAvailable -> voiceUnavailableLabel
+                                                isActive -> stopSpeakingLabel
+                                                else -> startVoiceLabel
                                             },
                                         tint = micColor,
                                     )
@@ -412,6 +421,7 @@ fun AssistantScreen(
                             }
 
                             // Send icon button
+                            val sendMessageLabel = stringResource(R.string.assistant_send_message)
                             IconButton(
                                 onClick = {
                                     if (inputText.isNotBlank() && !uiState.isLoading) {
@@ -423,11 +433,11 @@ fun AssistantScreen(
                                 modifier =
                                     Modifier
                                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                        .semantics { contentDescription = "Send message" },
+                                        .semantics { contentDescription = sendMessageLabel },
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Send,
-                                    contentDescription = "Send",
+                                    contentDescription = stringResource(R.string.assistant_send),
                                     tint =
                                         if (inputText.isNotBlank() && !uiState.isLoading) {
                                             MaterialTheme.colorScheme.primary
@@ -471,7 +481,12 @@ fun ChatMessageItem(message: AssistantMessage) {
             Text(text = message.content, color = textColor)
         }
         Text(
-            text = if (isUser) "You" else "Assistant",
+            text =
+                if (isUser) {
+                    stringResource(R.string.assistant_sender_you)
+                } else {
+                    stringResource(R.string.assistant_sender_assistant)
+                },
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline,
             modifier = Modifier.padding(top = 4.dp),
@@ -492,24 +507,35 @@ fun ActionCard(
             Text(
                 text =
                     when (action.type) {
-                        AssistantActionType.APPLY_DRAFT_UPDATE -> "Suggestion: Update Draft"
-                        AssistantActionType.COPY_TEXT -> "Suggestion: Copy Text"
-                        else -> "Action Available"
+                        AssistantActionType.APPLY_DRAFT_UPDATE -> stringResource(R.string.assistant_action_update_draft)
+                        AssistantActionType.COPY_TEXT -> stringResource(R.string.assistant_action_copy_text)
+                        else -> stringResource(R.string.assistant_action_available)
                     },
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
 
             if (action.type == AssistantActionType.APPLY_DRAFT_UPDATE) {
-                action.payload["title"]?.let { Text("Title: $it", style = MaterialTheme.typography.bodySmall) }
-                action.payload["description"]?.let { Text("Description: $it", style = MaterialTheme.typography.bodySmall, maxLines = 2) }
+                action.payload["title"]?.let {
+                    Text(
+                        stringResource(R.string.assistant_action_title, it),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                action.payload["description"]?.let {
+                    Text(
+                        stringResource(R.string.assistant_action_description, it),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2,
+                    )
+                }
             }
 
             Button(
                 onClick = onApply,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             ) {
-                Text("Apply")
+                Text(stringResource(R.string.common_apply))
             }
         }
     }
@@ -524,6 +550,7 @@ private fun VoiceListeningIndicator(
     partialTranscript: String,
     onStop: () -> Unit,
 ) {
+    val stopVoiceLabel = stringResource(R.string.assistant_stop_voice_input)
     Card(
         modifier =
             Modifier
@@ -568,8 +595,8 @@ private fun VoiceListeningIndicator(
                     Text(
                         text =
                             when (state) {
-                                VoiceState.LISTENING -> "Listening..."
-                                VoiceState.TRANSCRIBING -> "Transcribing..."
+                                VoiceState.LISTENING -> stringResource(R.string.assistant_voice_listening)
+                                VoiceState.TRANSCRIBING -> stringResource(R.string.assistant_voice_transcribing)
                                 else -> ""
                             },
                         style = MaterialTheme.typography.labelMedium,
@@ -602,7 +629,7 @@ private fun VoiceListeningIndicator(
                 modifier =
                     Modifier
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                        .semantics { contentDescription = "Stop voice input" },
+                        .semantics { contentDescription = stopVoiceLabel },
             ) {
                 Icon(
                     imageVector = Icons.Default.Stop,
@@ -651,17 +678,17 @@ private fun VoiceErrorBanner(
                     color = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Text(
-                    text = "Tap retry or edit and send manually.",
+                    text = stringResource(R.string.assistant_voice_error_help),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(onClick = onDismiss) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.common_dismiss))
                 }
                 Button(onClick = onRetry, enabled = retryEnabled) {
-                    Text("Retry")
+                    Text(stringResource(R.string.common_retry))
                 }
             }
         }
@@ -695,12 +722,12 @@ private fun VoiceUnavailableBanner() {
             )
             Column {
                 Text(
-                    text = "Voice input unavailable on this device",
+                    text = stringResource(R.string.assistant_voice_unavailable_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "You can keep typing questions while we disable the mic button.",
+                    text = stringResource(R.string.assistant_voice_unavailable_message),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 )

@@ -1,11 +1,14 @@
 package com.scanium.app.ui.settings
 
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
 import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.model.AppLanguage
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
@@ -51,6 +54,10 @@ class SettingsViewModel
         val themeMode: StateFlow<ThemeMode> =
             settingsRepository.themeModeFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ThemeMode.SYSTEM)
+
+        val appLanguage: StateFlow<AppLanguage> =
+            settingsRepository.appLanguageFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppLanguage.SYSTEM)
 
         // Use centralized FeatureFlagRepository for cloud classification state
         val allowCloud: StateFlow<Boolean> =
@@ -172,6 +179,18 @@ class SettingsViewModel
 
         fun setThemeMode(mode: ThemeMode) {
             viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+        }
+
+        fun setAppLanguage(language: AppLanguage) {
+            viewModelScope.launch {
+                settingsRepository.setAppLanguage(language)
+                val localeList =
+                    when (language) {
+                        AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+                        else -> LocaleListCompat.forLanguageTags(language.code)
+                    }
+                AppCompatDelegate.setApplicationLocales(localeList)
+            }
         }
 
         fun setAllowCloud(allow: Boolean) {

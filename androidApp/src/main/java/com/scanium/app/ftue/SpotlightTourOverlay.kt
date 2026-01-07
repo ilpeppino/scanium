@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
+import com.scanium.app.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -37,6 +38,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.scanium.app.BuildConfig
 import com.scanium.app.data.SettingsRepository
@@ -326,7 +328,7 @@ private fun TooltipBubble(
             ) {
                 // Skip button (always visible)
                 TextButton(onClick = onSkip) {
-                    Text("Skip")
+                    Text(stringResource(R.string.common_skip))
                 }
 
                 Spacer(Modifier.width(8.dp))
@@ -334,7 +336,7 @@ private fun TooltipBubble(
                 // Back button (hidden on first step)
                 if (step.key != TourStepKey.WELCOME) {
                     TextButton(onClick = onBack) {
-                        Text("Back")
+                        Text(stringResource(R.string.common_back))
                     }
                     Spacer(Modifier.width(8.dp))
                 }
@@ -344,9 +346,9 @@ private fun TooltipBubble(
                     Text(
                         text =
                             when {
-                                step.requiresUserAction -> "Got it"
-                                step.key == TourStepKey.COMPLETION -> "Done"
-                                else -> "Next"
+                                step.requiresUserAction -> stringResource(R.string.ftue_got_it)
+                                step.key == TourStepKey.COMPLETION -> stringResource(R.string.ftue_done)
+                                else -> stringResource(R.string.common_next)
                             },
                     )
                 }

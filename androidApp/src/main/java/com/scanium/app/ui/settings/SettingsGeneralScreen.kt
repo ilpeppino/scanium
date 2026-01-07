@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.data.ThemeMode
+import com.scanium.app.model.AppLanguage
 import com.scanium.app.model.user.UserEdition
 import java.text.DateFormat
 import java.util.Date
@@ -35,6 +36,7 @@ fun SettingsGeneralScreen(
     onUpgradeClick: () -> Unit,
 ) {
     val themeMode by viewModel.themeMode.collectAsState()
+    val appLanguage by viewModel.appLanguage.collectAsState()
     val currentEdition by viewModel.currentEdition.collectAsState()
     val entitlementState by viewModel.entitlementState.collectAsState()
 
@@ -128,13 +130,32 @@ fun SettingsGeneralScreen(
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_language))
-            SettingNavigationRow(
+            
+            val languageOptions =
+                listOf(
+                    AppLanguage.SYSTEM.code to stringResource(R.string.settings_language_system_default),
+                    AppLanguage.EN.code to stringResource(R.string.settings_language_en),
+                    AppLanguage.IT.code to stringResource(R.string.settings_language_it),
+                    AppLanguage.FR.code to stringResource(R.string.settings_language_fr),
+                    AppLanguage.NL.code to stringResource(R.string.settings_language_nl),
+                    AppLanguage.DE.code to stringResource(R.string.settings_language_de),
+                    AppLanguage.PT_BR.code to stringResource(R.string.settings_language_pt_br),
+                )
+
+            val selectedLanguageLabel =
+                languageOptions.find { it.first == appLanguage.code }?.second
+                    ?: stringResource(R.string.settings_language_system_default)
+
+            SettingDropdownRow(
                 title = stringResource(R.string.settings_language_system_title),
                 subtitle = stringResource(R.string.settings_language_system_desc),
                 icon = null,
-                onClick = {},
-                showChevron = false,
-                enabled = false,
+                selectedLabel = selectedLanguageLabel,
+                options = languageOptions,
+                onOptionSelected = { code ->
+                    viewModel.setAppLanguage(AppLanguage.fromCode(code))
+                },
+                enabled = true,
             )
         }
     }

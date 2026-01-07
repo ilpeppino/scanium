@@ -66,7 +66,7 @@ fun WelcomeOverlay(
             ) {
                 // Title
                 Text(
-                    text = "Welcome to Scanium!",
+                    text = stringResource(R.string.ftue_welcome_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -76,7 +76,7 @@ fun WelcomeOverlay(
 
                 // Introduction
                 Text(
-                    text = "Let's take a quick tour of the main features:",
+                    text = stringResource(R.string.ftue_welcome_intro),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -87,7 +87,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.Camera,
                     contentDescription = stringResource(R.string.cd_feature_scan_items),
-                    text = "Scan items with object detection",
+                    text = stringResource(R.string.ftue_feature_scan_items),
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -95,7 +95,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.List,
                     contentDescription = stringResource(R.string.cd_feature_view_items),
-                    text = "View all your scanned items in an organized list",
+                    text = stringResource(R.string.ftue_feature_view_items),
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -103,7 +103,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.ShoppingCart,
                     contentDescription = stringResource(R.string.cd_feature_export_items),
-                    text = "Select items and export them for other apps",
+                    text = stringResource(R.string.ftue_feature_export_items),
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -111,7 +111,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.AutoAwesome,
                     contentDescription = stringResource(R.string.cd_feature_ai_assistant),
-                    text = "Get pricing and export help from the AI assistant",
+                    text = stringResource(R.string.ftue_feature_ai_assistant),
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -119,7 +119,7 @@ fun WelcomeOverlay(
                 FeatureBullet(
                     icon = Icons.Default.Menu,
                     contentDescription = stringResource(R.string.cd_feature_settings),
-                    text = "Customize settings and preferences from the menu",
+                    text = stringResource(R.string.ftue_feature_customize_settings),
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -131,13 +131,13 @@ fun WelcomeOverlay(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     TextButton(onClick = onSkip) {
-                        Text("Skip Tour")
+                        Text(stringResource(R.string.ftue_skip_tour))
                     }
 
                     Spacer(Modifier.width(16.dp))
 
                     Button(onClick = onStart) {
-                        Text("Start Tour")
+                        Text(stringResource(R.string.ftue_start_tour))
                     }
                 }
             }

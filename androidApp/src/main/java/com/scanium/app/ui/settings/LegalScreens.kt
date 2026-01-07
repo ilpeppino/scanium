@@ -23,10 +23,10 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("About Scanium") },
+                title = { Text(stringResource(R.string.settings_about_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
             )
@@ -50,12 +50,12 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Scanium",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineMedium,
             )
 
             Text(
-                text = "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                text = stringResource(R.string.settings_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -63,7 +63,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Scanium is a camera-first application that uses machine learning to detect and identify objects in real-time, helping you value and list items for resale.",
+                text = stringResource(R.string.about_description),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
             )
@@ -71,7 +71,7 @@ fun AboutScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.weight(1f))
 
             Text(
-                text = "© 2025 Scanium Team",
+                text = stringResource(R.string.about_copyright),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -85,17 +85,17 @@ fun PrivacyPolicyScreen(onNavigateBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Privacy Policy") },
+                title = { Text(stringResource(R.string.settings_privacy_policy_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
             )
         },
     ) { padding ->
         Text(
-            text = "Privacy Policy Placeholder\n\n(This would load from assets/privacy_policy.md in a real build)",
+            text = stringResource(R.string.privacy_policy_placeholder),
             modifier = Modifier.padding(padding).padding(16.dp),
         )
     }
@@ -107,17 +107,17 @@ fun TermsScreen(onNavigateBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Terms of Service") },
+                title = { Text(stringResource(R.string.settings_terms_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
             )
         },
     ) { padding ->
         Text(
-            text = "Terms of Service Placeholder\n\n(This would load from assets/terms.md in a real build)",
+            text = stringResource(R.string.terms_placeholder),
             modifier = Modifier.padding(padding).padding(16.dp),
         )
     }

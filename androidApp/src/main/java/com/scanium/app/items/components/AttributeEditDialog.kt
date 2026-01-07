@@ -33,7 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.shared.core.models.items.AttributeConfidenceTier
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.VisionAttributes
@@ -169,16 +171,17 @@ fun AttributeEditDialog(
                     attribute.source != "user"
                 ) {
                     Text(
-                        text = "Confirming will mark this as verified.",
+                        text = stringResource(R.string.attribute_confirm_help),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 // Source info
-                if (attribute.source != null && attribute.source != "user") {
+                val source = attribute.source
+                if (source != null && source != "user") {
                     Text(
-                        text = "Extracted via: ${attribute.source}",
+                        text = stringResource(R.string.attribute_extracted_via, source),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -198,12 +201,12 @@ fun AttributeEditDialog(
                 },
                 enabled = editedValue.isNotBlank(),
             ) {
-                Text("Confirm")
+                Text(stringResource(R.string.common_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         },
     )

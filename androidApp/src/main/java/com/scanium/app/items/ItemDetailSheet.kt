@@ -41,9 +41,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.items.components.AttributeChip
 import com.scanium.app.model.toImageBitmap
@@ -122,7 +124,7 @@ fun ItemDetailSheet(
                 )
             } else {
                 Text(
-                    text = "No attributes detected yet. Attributes will be extracted during cloud classification.",
+                    text = stringResource(R.string.items_no_attributes),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -150,7 +152,7 @@ fun ItemDetailSheet(
                         onClick = onGenerateListing,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text("Generate Listing")
+                        Text(stringResource(R.string.items_generate_listing))
                     }
                 }
 
@@ -165,7 +167,7 @@ fun ItemDetailSheet(
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         ),
                     ) {
-                        Text("Refresh Attributes")
+                        Text(stringResource(R.string.items_refresh_attributes))
                     }
                 }
             }
@@ -199,7 +201,7 @@ private fun BarcodeSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Barcode Value",
+                text = stringResource(R.string.items_barcode_value_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -215,11 +217,12 @@ private fun BarcodeSection(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
             ) {
+                val askAiDescription = stringResource(R.string.items_ask_ai_description)
                 ElevatedButton(
                     onClick = onAskAi,
                     modifier = Modifier
                         .semantics {
-                            contentDescription = "Ask AI assistant about this item"
+                            contentDescription = askAiDescription
                         }
                         .height(56.dp),
                     colors = ButtonDefaults.elevatedButtonColors(
@@ -239,7 +242,7 @@ private fun BarcodeSection(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Ask AI",
+                        text = stringResource(R.string.items_ask_ai),
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
@@ -260,7 +263,7 @@ private fun ItemDetailHeader(item: ScannedItem) {
         thumbnailBitmap?.let { bitmap ->
             Image(
                 bitmap = bitmap,
-                contentDescription = "Item thumbnail",
+                contentDescription = stringResource(R.string.items_thumbnail),
                 modifier = Modifier
                     .size(120.dp)
                     .background(
@@ -279,7 +282,7 @@ private fun ItemDetailHeader(item: ScannedItem) {
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Text("?", style = MaterialTheme.typography.headlineLarge)
+            Text(stringResource(R.string.common_question_mark), style = MaterialTheme.typography.headlineLarge)
         }
 
         // Item info
@@ -305,14 +308,14 @@ private fun ItemDetailHeader(item: ScannedItem) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Confidence: ${item.formattedConfidence}",
+                    text = stringResource(R.string.items_confidence_label, item.formattedConfidence),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
                 if (item.classificationStatus == "SUCCESS") {
                     Text(
-                        text = "Cloud",
+                        text = stringResource(R.string.items_status_cloud),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -332,7 +335,7 @@ private fun AttributesSection(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "Detected Attributes",
+            text = stringResource(R.string.items_detected_attributes_title),
             style = MaterialTheme.typography.titleMedium,
         )
 
@@ -372,18 +375,21 @@ private fun AttributeRow(
     onEdit: () -> Unit,
 ) {
     val isUserOverride = attribute.source == "user"
+    val label = formatAttributeLabel(attributeKey)
+    val confidenceLabel = formatConfidenceLabel(attribute.confidenceTier)
     val accessibilityDescription = buildString {
-        append(formatAttributeLabel(attributeKey))
+        append(label)
         append(": ")
         append(attribute.value)
         append(". ")
         if (isUserOverride) {
-            append("User edited. ")
+            append(stringResource(R.string.items_attribute_user_edited))
+            append(". ")
         }
-        append(attribute.confidenceTier.description)
+        append(confidenceLabel)
         if (detectedValue != null) {
-            append(". Originally detected as: ")
-            append(detectedValue)
+            append(". ")
+            append(stringResource(R.string.items_attribute_originally_detected, detectedValue))
         }
     }
 
@@ -414,7 +420,7 @@ private fun AttributeRow(
             Column {
                 // Attribute label
                 Text(
-                    text = formatAttributeLabel(attributeKey),
+                    text = label,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -428,7 +434,7 @@ private fun AttributeRow(
                 // Show detected value if user has overridden
                 if (detectedValue != null) {
                     Text(
-                        text = "Detected: $detectedValue",
+                        text = stringResource(R.string.items_attribute_detected_value, detectedValue),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -440,13 +446,13 @@ private fun AttributeRow(
                 ) {
                     if (isUserOverride) {
                         Text(
-                            text = "User edited",
+                            text = stringResource(R.string.items_attribute_user_edited),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.tertiary,
                         )
                     } else {
                         Text(
-                            text = attribute.confidenceTier.description,
+                            text = confidenceLabel,
                             style = MaterialTheme.typography.bodySmall,
                             color = when (attribute.confidenceTier) {
                                 AttributeConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
@@ -457,7 +463,7 @@ private fun AttributeRow(
 
                         attribute.source?.let { source ->
                             Text(
-                                text = "via $source",
+                                text = stringResource(R.string.items_attribute_via_source, source),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -468,10 +474,11 @@ private fun AttributeRow(
         }
 
         // Edit button
+        val editLabel = stringResource(R.string.items_attribute_edit, label)
         IconButton(
             onClick = onEdit,
             modifier = Modifier.semantics {
-                contentDescription = "Edit ${formatAttributeLabel(attributeKey)}"
+                contentDescription = editLabel
             },
         ) {
             Icon(
@@ -519,7 +526,12 @@ private fun ConfidenceIndicator(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = if (isUserOverride) "User verified" else tier.description,
+            contentDescription =
+                if (isUserOverride) {
+                    stringResource(R.string.items_attribute_user_verified)
+                } else {
+                    formatConfidenceLabel(tier)
+                },
             modifier = Modifier.size(16.dp),
             tint = tint,
         )
@@ -529,17 +541,27 @@ private fun ConfidenceIndicator(
 /**
  * Format attribute key to human-readable label.
  */
+@Composable
 private fun formatAttributeLabel(key: String): String {
     return when (key) {
-        "brand" -> "Brand"
-        "itemType" -> "Item Type"
-        "model" -> "Model"
-        "color" -> "Color"
-        "secondaryColor" -> "Secondary Color"
-        "material" -> "Material"
-        "labelHints" -> "Label Hints"
-        "ocrText" -> "OCR Text"
-        else -> key.replaceFirstChar { it.uppercase() }
+        "brand" -> stringResource(R.string.items_attribute_brand)
+        "itemType" -> stringResource(R.string.items_attribute_item_type)
+        "model" -> stringResource(R.string.items_attribute_model)
+        "color" -> stringResource(R.string.items_attribute_color)
+        "secondaryColor" -> stringResource(R.string.items_attribute_secondary_color)
+        "material" -> stringResource(R.string.items_attribute_material)
+        "labelHints" -> stringResource(R.string.items_attribute_label_hints)
+        "ocrText" -> stringResource(R.string.items_attribute_ocr_text)
+        else -> key.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+    }
+}
+
+@Composable
+private fun formatConfidenceLabel(tier: AttributeConfidenceTier): String {
+    return when (tier) {
+        AttributeConfidenceTier.HIGH -> stringResource(R.string.items_attribute_confidence_high)
+        AttributeConfidenceTier.MEDIUM -> stringResource(R.string.items_attribute_confidence_medium)
+        AttributeConfidenceTier.LOW -> stringResource(R.string.items_attribute_confidence_low)
     }
 }
 
@@ -556,13 +578,13 @@ private fun VisionDetailsSection(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text = "Vision Details",
+            text = stringResource(R.string.items_vision_details_title),
             style = MaterialTheme.typography.titleMedium,
         )
 
         visionAttributes.itemType?.takeIf { it.isNotBlank() }?.let { itemType ->
             VisionDetailRow(
-                label = "Item Type",
+                label = stringResource(R.string.items_attribute_item_type),
                 value = itemType,
             )
         }
@@ -583,7 +605,7 @@ private fun VisionDetailsSection(
                     fallbackSource = "vision-ocr",
                 )
             VisionDetailRow(
-                label = "OCR Text",
+                label = stringResource(R.string.items_attribute_ocr_text),
                 value = editableOcrAttribute?.value ?: ocrSnippet,
                 onEdit = editableOcrAttribute?.let { attribute ->
                     { onAttributeEdit("ocrText", attribute) }
@@ -599,7 +621,7 @@ private fun VisionDetailsSection(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Colors:",
+                    text = stringResource(R.string.items_colors_label),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -621,7 +643,7 @@ private fun VisionDetailsSection(
                     fallbackSource = "vision-label",
                 )
             VisionDetailRow(
-                label = "Labels",
+                label = stringResource(R.string.items_labels_label),
                 value = editableLabelAttribute?.value ?: labelHints,
                 onEdit = editableLabelAttribute?.let { attribute ->
                     { onAttributeEdit("labelHints", attribute) }
@@ -632,7 +654,7 @@ private fun VisionDetailsSection(
         // Brand Candidates (if not already in enriched attributes)
         if (visionAttributes.brandCandidates.isNotEmpty()) {
             VisionDetailRow(
-                label = "Brand Candidates",
+                label = stringResource(R.string.items_brand_candidates_label),
                 value = visionAttributes.brandCandidates.take(3).joinToString(", "),
             )
         }
@@ -640,7 +662,7 @@ private fun VisionDetailsSection(
         // Model Candidates
         if (visionAttributes.modelCandidates.isNotEmpty()) {
             VisionDetailRow(
-                label = "Model Candidates",
+                label = stringResource(R.string.items_model_candidates_label),
                 value = visionAttributes.modelCandidates.take(3).joinToString(", "),
             )
         }
@@ -665,7 +687,7 @@ private fun VisionDetailRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "$label:",
+            text = stringResource(R.string.items_label_with_colon, label),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.width(100.dp),
@@ -676,9 +698,10 @@ private fun VisionDetailRow(
             modifier = Modifier.weight(1f),
         )
         if (onEdit != null) {
+            val editLabel = stringResource(R.string.items_attribute_edit, label)
             IconButton(
                 onClick = onEdit,
-                modifier = Modifier.semantics { contentDescription = "Edit $label" },
+                modifier = Modifier.semantics { contentDescription = editLabel },
             ) {
                 Icon(
                     imageVector = Icons.Default.Edit,

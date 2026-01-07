@@ -17,9 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.FileProvider
+import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.model.toImageBitmap
@@ -66,7 +68,7 @@ fun ItemDetailDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Item Details",
+                        text = stringResource(R.string.item_detail_title),
                         style = MaterialTheme.typography.headlineSmall,
                     )
                     IconButton(
@@ -79,7 +81,7 @@ fun ItemDetailDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share item",
+                            contentDescription = stringResource(R.string.item_detail_share),
                         )
                     }
                 }
@@ -92,7 +94,7 @@ fun ItemDetailDialog(
                 thumbnailBitmap?.let { bitmap ->
                     Image(
                         bitmap = bitmap,
-                        contentDescription = "Item detail thumbnail",
+                        contentDescription = stringResource(R.string.item_detail_thumbnail),
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -115,23 +117,26 @@ fun ItemDetailDialog(
                                 ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("No image", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.item_detail_no_image), style = MaterialTheme.typography.bodyLarge)
                     }
                 }
 
                 // Details
-                DetailRow(label = "Classification", value = item.displayLabel)
-                DetailRow(label = "Category", value = item.category.displayName)
-                DetailRow(label = "Price Range", value = item.formattedPriceRange)
-                DetailRow(label = "Confidence", value = item.formattedConfidence)
+                DetailRow(label = stringResource(R.string.item_detail_classification_label), value = item.displayLabel)
+                DetailRow(label = stringResource(R.string.item_detail_category_label), value = item.category.displayName)
+                DetailRow(label = stringResource(R.string.item_detail_price_range_label), value = item.formattedPriceRange)
+                DetailRow(label = stringResource(R.string.item_detail_confidence_label), value = item.formattedConfidence)
                 DetailRow(
-                    label = "Detected At",
+                    label = stringResource(R.string.item_detail_detected_at_label),
                     value = formatDetailTimestamp(item.timestamp),
                 )
                 item.domainCategoryId?.let { id ->
-                    DetailRow(label = "Domain Category", value = formatDomainCategory(id))
+                    DetailRow(
+                        label = stringResource(R.string.item_detail_domain_category_label),
+                        value = formatDomainCategory(id, stringResource(R.string.common_unknown)),
+                    )
                 }
-                DetailRow(label = "Item ID", value = item.id.take(8))
+                DetailRow(label = stringResource(R.string.item_detail_id_label), value = item.id.take(8))
 
                 // Show recognized text for documents
                 item.recognizedText?.let { text ->
@@ -141,7 +146,7 @@ fun ItemDetailDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
-                            text = "Recognized Text:",
+                            text = stringResource(R.string.item_detail_recognized_text_label),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -164,7 +169,7 @@ fun ItemDetailDialog(
                 // Show barcode value for barcodes
                 item.barcodeValue?.let { barcode ->
                     HorizontalDivider()
-                    DetailRow(label = "Barcode Value", value = barcode)
+                    DetailRow(label = stringResource(R.string.item_detail_barcode_value_label), value = barcode)
                 }
 
                 HorizontalDivider()
@@ -174,7 +179,7 @@ fun ItemDetailDialog(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End),
                 ) {
-                    Text("Close")
+                    Text(stringResource(R.string.common_close))
                 }
             }
         }
@@ -213,8 +218,11 @@ private fun formatDetailTimestamp(timestamp: Long): String {
     return format.format(Date(timestamp))
 }
 
-private fun formatDomainCategory(raw: String): String {
-    if (raw.isBlank()) return "Unknown"
+private fun formatDomainCategory(
+    raw: String,
+    unknownLabel: String,
+): String {
+    if (raw.isBlank()) return unknownLabel
     val words = raw.split('_').filter { it.isNotBlank() }
     return words.joinToString(" ") { word ->
         word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }

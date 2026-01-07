@@ -67,7 +67,7 @@ fun CompletionOverlay(
 
                 // Title
                 Text(
-                    text = "You're Ready!",
+                    text = stringResource(R.string.ftue_completion_title),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -78,7 +78,7 @@ fun CompletionOverlay(
 
                 // Description
                 Text(
-                    text = "You're all set to start scanning and cataloging objects. Happy scanning!",
+                    text = stringResource(R.string.ftue_completion_message),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -91,7 +91,7 @@ fun CompletionOverlay(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Get Started")
+                    Text(stringResource(R.string.ftue_get_started))
                 }
             }
         }

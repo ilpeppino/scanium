@@ -53,9 +53,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.shared.core.models.assistant.ConfidenceTier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -125,12 +127,30 @@ fun ExportAssistantSheet(
                     }
 
                     is ExportAssistantState.Success -> {
+                        val titleLabel = stringResource(R.string.export_assistant_title_label)
+                        val descriptionLabel = stringResource(R.string.export_assistant_description_label)
+                        val bulletsLabel = stringResource(R.string.export_assistant_bullets_label)
+                        val bulletSymbol = stringResource(R.string.common_bullet)
                         ExportSuccessContent(
                             state = currentState,
                             onCopyAll = { copyAllToClipboard(context, currentState) },
-                            onCopyTitle = { currentState.title?.let { copyToClipboard(context, "Title", it) } },
-                            onCopyDescription = { currentState.description?.let { copyToClipboard(context, "Description", it) } },
-                            onCopyBullets = { copyToClipboard(context, "Bullets", currentState.bullets.joinToString("\n") { "• $it" }) },
+                            onCopyTitle = {
+                                currentState.title?.let {
+                                    copyToClipboard(context, titleLabel, it)
+                                }
+                            },
+                            onCopyDescription = {
+                                currentState.description?.let {
+                                    copyToClipboard(context, descriptionLabel, it)
+                                }
+                            },
+                            onCopyBullets = {
+                                copyToClipboard(
+                                    context,
+                                    bulletsLabel,
+                                    currentState.bullets.joinToString("\n") { "$bulletSymbol $it" },
+                                )
+                            },
                             onRegenerate = { viewModel.generateExport() },
                             onApply = {
                                 onApply(currentState.title, currentState.description, currentState.bullets)
@@ -171,12 +191,12 @@ private fun ExportAssistantHeader() {
         )
         Column {
             Text(
-                text = "Export Assistant",
+                text = stringResource(R.string.export_assistant_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
             Text(
-                text = "Generate marketplace-ready content",
+                text = stringResource(R.string.export_assistant_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -194,7 +214,7 @@ private fun ExportIdleContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "Generate a compelling title, description, and bullet points for your listing.",
+            text = stringResource(R.string.export_assistant_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -209,7 +229,7 @@ private fun ExportIdleContent(
                 modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Generate Listing Content")
+            Text(stringResource(R.string.export_assistant_generate_button))
         }
     }
 }
@@ -228,12 +248,12 @@ private fun ExportLoadingContent() {
             strokeWidth = 4.dp,
         )
         Text(
-            text = "Drafting...",
+            text = stringResource(R.string.export_assistant_drafting),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "Analyzing item and generating content",
+            text = stringResource(R.string.export_assistant_drafting_subtitle),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -271,7 +291,7 @@ private fun ExportSuccessContent(
         // Title section
         state.title?.let { title ->
             ExportContentCard(
-                label = "Title",
+                label = stringResource(R.string.export_assistant_title_label),
                 content = title,
                 onCopy = {
                     onCopyTitle()
@@ -283,7 +303,7 @@ private fun ExportSuccessContent(
         // Description section
         state.description?.let { description ->
             ExportContentCard(
-                label = "Description",
+                label = stringResource(R.string.export_assistant_description_label),
                 content = description,
                 onCopy = {
                     onCopyDescription()
@@ -319,7 +339,7 @@ private fun ExportSuccessContent(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "Copied to clipboard",
+                    text = stringResource(R.string.common_copied_to_clipboard),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -343,7 +363,7 @@ private fun ExportSuccessContent(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Regenerate")
+                Text(stringResource(R.string.common_regenerate))
             }
 
             FilledTonalButton(
@@ -359,7 +379,7 @@ private fun ExportSuccessContent(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Copy All")
+                Text(stringResource(R.string.common_copy_all))
             }
         }
 
@@ -373,7 +393,7 @@ private fun ExportSuccessContent(
                 modifier = Modifier.size(18.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Apply to Item")
+            Text(stringResource(R.string.export_assistant_apply_to_item))
         }
     }
 }
@@ -413,7 +433,7 @@ private fun ExportContentCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy $label",
+                        contentDescription = stringResource(R.string.common_copy_with_label, label),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -452,7 +472,7 @@ private fun ExportBulletsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Highlights",
+                    text = stringResource(R.string.export_assistant_highlights),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold,
@@ -463,7 +483,7 @@ private fun ExportBulletsCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy bullets",
+                        contentDescription = stringResource(R.string.export_assistant_copy_bullets),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -476,7 +496,7 @@ private fun ExportBulletsCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "•",
+                        text = stringResource(R.string.common_bullet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -493,9 +513,9 @@ private fun ExportBulletsCard(
 @Composable
 private fun ConfidenceTierChip(tier: ConfidenceTier) {
     val (text, color) = when (tier) {
-        ConfidenceTier.HIGH -> "High confidence" to MaterialTheme.colorScheme.primary
-        ConfidenceTier.MED -> "Medium confidence" to MaterialTheme.colorScheme.tertiary
-        ConfidenceTier.LOW -> "Low confidence" to MaterialTheme.colorScheme.error
+        ConfidenceTier.HIGH -> stringResource(R.string.export_assistant_confidence_high) to MaterialTheme.colorScheme.primary
+        ConfidenceTier.MED -> stringResource(R.string.export_assistant_confidence_medium) to MaterialTheme.colorScheme.tertiary
+        ConfidenceTier.LOW -> stringResource(R.string.export_assistant_confidence_low) to MaterialTheme.colorScheme.error
     }
 
     Row(
@@ -537,7 +557,7 @@ private fun ExportErrorContent(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "Generation Failed",
+            text = stringResource(R.string.export_assistant_generation_failed),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.error,
         )
@@ -555,7 +575,7 @@ private fun ExportErrorContent(
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
 
             if (isRetryable) {
@@ -569,7 +589,7 @@ private fun ExportErrorContent(
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Retry")
+                    Text(stringResource(R.string.common_retry))
                 }
             }
         }
@@ -588,23 +608,23 @@ private fun copyAllToClipboard(context: Context, state: ExportAssistantState.Suc
     val sb = StringBuilder()
 
     state.title?.let {
-        sb.appendLine("TITLE:")
+        sb.appendLine(context.getString(R.string.export_assistant_clipboard_title_heading))
         sb.appendLine(it)
         sb.appendLine()
     }
 
     state.description?.let {
-        sb.appendLine("DESCRIPTION:")
+        sb.appendLine(context.getString(R.string.export_assistant_clipboard_description_heading))
         sb.appendLine(it)
         sb.appendLine()
     }
 
     if (state.bullets.isNotEmpty()) {
-        sb.appendLine("HIGHLIGHTS:")
+        sb.appendLine(context.getString(R.string.export_assistant_clipboard_highlights_heading))
         state.bullets.forEach { bullet ->
-            sb.appendLine("• $bullet")
+            sb.appendLine("${context.getString(R.string.common_bullet)} $bullet")
         }
     }
 
-    copyToClipboard(context, "Export Content", sb.toString().trim())
+    copyToClipboard(context, context.getString(R.string.export_assistant_clipboard_label), sb.toString().trim())
 }
