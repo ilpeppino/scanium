@@ -67,7 +67,7 @@ import kotlin.math.min
  * ## Error Handling
  * - Retryable: 408, 429, 5xx, network I/O errors
  * - Non-retryable: 400, 401, 403, 404
- * - Timeouts: 10s connect, 10s read
+ * - Timeouts: 10s connect, 30s read, 30s write (aligned Phase 3 policy)
  *
  * ## Configuration
  * Set in local.properties (not committed):
@@ -88,8 +88,10 @@ class CloudClassifier(
 ) : ItemClassifier {
     companion object {
         private const val TAG = "CloudClassifier"
+        // Unified timeout policy for enrichment/vision calls (Phase 3)
         private const val CONNECT_TIMEOUT_SECONDS = 10L
-        private const val READ_TIMEOUT_SECONDS = 10L
+        private const val READ_TIMEOUT_SECONDS = 30L  // Increased from 10s for cloud classification
+        private const val WRITE_TIMEOUT_SECONDS = 30L // For multipart photo uploads
         private const val JPEG_QUALITY = 85
         private val TIMESTAMP_FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
     }
@@ -98,6 +100,7 @@ class CloudClassifier(
         OkHttpClient.Builder()
             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .apply {
                 // SEC-003: Add certificate pinning for MITM protection
                 val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN

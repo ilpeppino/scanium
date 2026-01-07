@@ -313,7 +313,11 @@ class ItemsViewModel
          * @param itemId The item to extract insights for
          * @param imageUri URI to the high-resolution image
          */
-        fun extractVisionInsights(context: Context, itemId: String, imageUri: Uri) {
+        fun extractVisionInsights(context: Context, itemId: String, imageUri: Uri?) {
+            if (imageUri == null) {
+                Log.w(TAG, "Cannot extract vision insights - no image URI for item $itemId")
+                return
+            }
             Log.i(TAG, "Extracting vision insights for item $itemId")
             visionInsightsPrefiller.extractAndApply(
                 context = context,
@@ -569,6 +573,71 @@ class ItemsViewModel
             userEdited: Boolean,
         ) {
             stateManager.updateSummaryText(itemId, summaryText, userEdited)
+        }
+
+        /**
+         * Add an additional photo to an existing item and trigger re-enrichment.
+         * Used by the item detail screen when user adds more photos to improve detection.
+         *
+         * @param context Android context for loading images
+         * @param itemId The ID of the item to add the photo to
+         * @param photoUri URI of the captured photo
+         * @see ItemsStateManager.addPhotoToItem
+         */
+        fun addPhotoToItem(
+            context: Context,
+            itemId: String,
+            photoUri: Uri,
+        ) {
+            viewModelScope.launch(workerDispatcher) {
+                try {
+                    // Load the photo
+                    val bitmap = android.graphics.BitmapFactory.decodeStream(
+                        context.contentResolver.openInputStream(photoUri)
+                    ) ?: run {
+                        Log.e(TAG, "Failed to load photo from URI for item $itemId")
+                        return@launch
+                    }
+
+                    // Save to internal storage
+                    val photosDir = java.io.File(context.filesDir, "item_photos/$itemId")
+                    photosDir.mkdirs()
+                    val photoFile = java.io.File(photosDir, "${java.util.UUID.randomUUID()}.jpg")
+                    photoFile.outputStream().use { out ->
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
+                    }
+                    val savedUri = photoFile.absolutePath
+
+                    // Create ItemPhoto
+                    val photo = com.scanium.shared.core.models.items.ItemPhoto(
+                        id = java.util.UUID.randomUUID().toString(),
+                        uri = savedUri,
+                        bytes = null,
+                        mimeType = "image/jpeg",
+                        width = bitmap.width,
+                        height = bitmap.height,
+                        capturedAt = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                        photoHash = null,
+                        photoType = com.scanium.shared.core.models.items.PhotoType.CLOSEUP,
+                    )
+
+                    // Add to item
+                    stateManager.addPhotoToItem(itemId, photo)
+
+                    Log.i(TAG, "Added photo to item $itemId, triggering re-enrichment")
+
+                    // Trigger re-enrichment with the new photo
+                    visionInsightsPrefiller.extractAndApply(
+                        context = context,
+                        scope = viewModelScope,
+                        stateManager = stateManager,
+                        itemId = itemId,
+                        imageUri = photoUri,
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to add photo to item $itemId", e)
+                }
+            }
         }
 
         // ==================== Threshold Operations (Delegated to StateManager) ====================
