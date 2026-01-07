@@ -252,6 +252,168 @@ flowchart LR
 
 ---
 
+## Vision → Classification → Assistant Pipeline
+
+This section describes the end-to-end flow from camera scan to assistant output, including attribute extraction and enrichment.
+
+### Pipeline Overview
+
+```
+[Camera Scan]
+    ↓
+[Layer A: Local OCR/Colors] ── ML Kit Text Recognition + Android Palette (~100-200ms)
+    ↓                         Results applied IMMEDIATELY
+[Layer B: Cloud Vision] ───── POST /v1/vision/insights (~1-2s)
+    ↓                         Returns: logos, colors, labels, itemType, suggestedLabel
+[Layer C: Enrichment] ─────── POST /v1/items/enrich (~5-15s)
+    ↓                         Returns: normalized attributes, draft title/description
+[UI Display] ──────────────── displayLabel shows "Brand ItemType · Color"
+    ↓
+[Assistant Context] ────────── ItemContextSnapshot with all extracted attributes
+```
+
+### Key Concepts
+
+**itemType vs category:**
+- `category` = High-level classification (e.g., "Cosmetics", "Electronics", "Fashion")
+- `itemType` = Concrete sellable noun (e.g., "Lip Balm", "Tissue Box", "T-Shirt")
+- `itemType` is the PRIMARY UX label; `category` is secondary/internal
+
+**Direct vs derived attributes:**
+- **Direct (Vision):** brand (from logos), color (from color detection), ocrText (from OCR)
+- **Derived (Backend):** itemType (from Vision labels → mapping), suggestedLabel (brand + itemType)
+
+**When Vision is used:**
+- Layer A (Local): Always, immediately after scan - ML Kit OCR + Android Palette
+- Layer B (Cloud): When network available - Google Vision API via backend proxy
+- Layer C (Enrichment): For full draft generation - Vision + LLM reasoning
+
+**When LLM is allowed:**
+- Only in Layer C (enrichment) for draft title/description generation
+- Fallback to template-based generation when LLM unavailable
+- LLM NEVER used for attribute extraction (pure Vision-first approach)
+
+### Step-by-Step Sequence
+
+1. **Camera captures frame** → `CameraScreen.kt` triggers `addItemsWithVisionPrefill()`
+2. **Item created** → `ItemsStateManager.addItemsSync()` assigns `aggregatedId`
+3. **Layer A extraction** → `LocalVisionExtractor.extract()` runs ML Kit OCR + Palette
+4. **Layer A applied** → `ItemsStateManager.applyVisionInsights()` updates item immediately
+5. **Layer B extraction** → `VisionInsightsRepository.extractInsights()` calls backend
+6. **Backend Vision** → `backend/src/modules/vision/routes.ts` calls Google Vision API
+7. **itemType derived** → `deriveItemType()` maps Vision labels to concrete nouns
+8. **Layer B applied** → Results merged (cloud takes precedence over local)
+9. **Layer C enrichment** → `EnrichmentRepository.enrichItem()` for full pipeline
+10. **Attributes normalized** → Backend maps `product_type` → Android receives as `itemType`
+11. **UI displays** → `ScannedItem.displayLabel` shows "Brand ItemType · Color"
+12. **Assistant clicked** → `ListingDraftBuilder.build()` extracts all attributes
+13. **Context sent** → `ItemContextSnapshot` includes itemType, detectedText, brand, color
+14. **Description generated** → Assistant uses structured context for specific output
+
+### Key Files
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| Local extraction | `androidApp/.../ml/LocalVisionExtractor.kt` | ML Kit OCR + Palette API |
+| Cloud extraction | `androidApp/.../ml/VisionInsightsRepository.kt` | POST /v1/vision/insights |
+| Enrichment | `androidApp/.../enrichment/EnrichmentRepository.kt` | POST /v1/items/enrich |
+| State management | `androidApp/.../items/state/ItemsStateManager.kt` | `applyVisionInsights()` |
+| Vision prefiller | `androidApp/.../ml/VisionInsightsPrefiller.kt` | 3-layer pipeline orchestration |
+| Draft builder | `shared/.../listing/ListingDraft.kt` | `ListingDraftBuilder.buildFields()` |
+| Backend Vision | `backend/src/modules/vision/routes.ts` | `deriveItemType()`, Vision API |
+| Backend Enrichment | `backend/src/modules/enrich/pipeline.ts` | 3-stage enrichment pipeline |
+
+### Attribute Schema
+
+```kotlin
+// VisionAttributes (raw Vision data)
+data class VisionAttributes(
+    val colors: List<VisionColor>,      // Detected colors with scores
+    val ocrText: String?,               // OCR text snippets
+    val logos: List<VisionLogo>,        // Brand logos detected
+    val labels: List<VisionLabel>,      // Category/material labels
+    val brandCandidates: List<String>,  // Brand candidates from logos/OCR
+    val itemType: String?,              // Sellable item type noun
+)
+
+// ItemAttribute (normalized for UI/assistant)
+data class ItemAttribute(
+    val value: String,
+    val confidence: Float,              // 0.0-1.0
+    val source: String,                 // e.g., "enrichment-vision_logo"
+)
+
+// DraftFieldKey (assistant context keys)
+enum class DraftFieldKey {
+    CATEGORY, CONDITION, BRAND, MODEL, COLOR,
+    ITEM_TYPE,      // Sellable item type noun
+    DETECTED_TEXT,  // OCR text snippets
+}
+```
+
+---
+
+## Vision Golden Tests Strategy
+
+Golden tests validate the complete Vision extraction pipeline using real product images, ensuring:
+- OCR correctly extracts text (brand names, product info)
+- Logo detection identifies brands
+- Color extraction provides dominant colors
+- Label detection provides category hints
+- itemType derivation produces concrete sellable nouns
+
+### Why Golden Images Exist
+
+1. **Regression protection:** Detect silent failures in Vision API or derivation logic
+2. **End-to-end validation:** Test full pipeline from image to structured attributes
+3. **Deterministic verification:** Compare actual output against expected attributes
+4. **CI integration:** Run without external API calls using cached/mock responses
+
+### What They Protect Against
+
+- Vision API response format changes
+- Derivation logic regressions (e.g., itemType mapping)
+- Attribute key mismatches (e.g., `product_type` vs `itemType`)
+- Confidence threshold changes affecting output
+- OCR/logo/color extraction quality degradation
+
+### Image Selection Criteria
+
+Golden images should be:
+- **Clear:** Well-lit, focused, representative of real scanning conditions
+- **Real-world:** Not studio-perfect; include typical user scenarios
+- **Brand/text visible:** Logo or text clearly readable for OCR/logo detection
+- **Compressed:** Max 800px longest side, ≤200KB to minimize Git footprint
+- **Diverse:** Cover target categories (cosmetics, household, apparel, electronics)
+
+### Validation Approach
+
+```typescript
+// Example golden test assertions (backend)
+expect(body.ocrSnippets.length).toBeGreaterThan(0);
+expect(body.itemType).toBeDefined();
+expect(body.suggestedLabel).toBeDefined();
+
+// Verify specific brand detection
+const ocrText = body.ocrSnippets.join(' ').toLowerCase();
+expect(ocrText).toContain('kleenex');
+
+// Verify itemType derivation
+const itemTypeLower = body.itemType.toLowerCase();
+expect(itemTypeLower.includes('tissue') || itemTypeLower.includes('box')).toBe(true);
+```
+
+### Golden Test Files
+
+| File | Purpose |
+|------|---------|
+| `backend/src/modules/vision/routes.golden.test.ts` | Vision insights extraction test |
+| `backend/src/modules/enrich/routes.golden.test.ts` | Full enrichment pipeline test |
+| `tests/golden_images/` | Golden image assets |
+| `androidApp/src/test/resources/golden/` | Android golden test fixtures |
+
+---
+
 ## Build Guardrails
 - Java 17 toolchain (root + androidApp).
 - Commands: `./gradlew assembleDebug` (must stay green), `./gradlew test` (fast, offline), `./gradlew connectedAndroidTest` (device-only), `./gradlew lint` (optional/CI).

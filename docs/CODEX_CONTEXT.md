@@ -141,7 +141,131 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Run fast checks: `./gradlew prePushJvmCheck` (shared JVM tests + portability), `./gradlew test` (unit), `./gradlew assembleDebug` (app builds), `./gradlew lint` when touching UI/Android.
 - Avoid: android.* imports in shared/KMP modules; adding heavy deps to shared; leaking API keys; bypassing domain pack contracts; breaking tracker reset/aggregation invariants.
 
-## F) Where Config Lives
+## F) Item Enrichment & Attribute Contract
+
+### Canonical Attribute Schema
+
+| Key | Type | Source | Confidence | Description |
+|-----|------|--------|------------|-------------|
+| `brand` | String | VISION_LOGO, VISION_OCR | 0.0-1.0 | Brand name from logo detection or OCR |
+| `itemType` | String | VISION_LABEL, VISION_OCR | 0.0-1.0 | Concrete sellable noun (e.g., "Lip Balm") |
+| `color` | String | VISION_COLOR | 0.0-1.0 | Primary dominant color |
+| `secondaryColor` | String | VISION_COLOR | 0.0-1.0 | Secondary dominant color |
+| `ocrText` | String | VISION_OCR | 0.8 | Detected text snippets (filtered) |
+| `model` | String | VISION_OCR | 0.0-1.0 | Product model number |
+| `material` | String | VISION_LABEL | 0.0-1.0 | Material composition |
+
+**Source values:** `VISION_LOGO`, `VISION_OCR`, `VISION_COLOR`, `VISION_LABEL`, `LLM_DERIVED`, `USER`
+
+### Attribute Lifecycle
+
+**Created:**
+- Layer A (Local): `LocalVisionExtractor.kt` → ocrText, colors
+- Layer B (Cloud): `VisionInsightsRepository.kt` → logos, labels, itemType, colors
+- Layer C (Enrichment): `backend/src/modules/enrich/pipeline.ts` → normalized attributes
+
+**Merged:**
+- `ItemsStateManager.applyVisionInsights()` merges with priority: Cloud > Local
+- `VisionInsightsPrefiller.applyEnrichmentResults()` maps backend keys to Android keys
+- Key normalization: `product_type` → `itemType`, `secondary_color` → `secondaryColor`
+
+**Persisted:**
+- `ScannedItemEntity.kt` serializes `visionAttributesJson` to Room database
+- Includes: ocrText, itemType, colors, logos, labels, brandCandidates, modelCandidates
+
+**Consumed by UI:**
+- `ScannedItem.displayLabel` uses priority: brand + itemType + color
+- `EditItemScreenV2.buildDisplayableAttributes()` renders attribute chips
+- `ItemsListScreen.AttributeChipsRow()` shows top 3 attributes
+
+**Passed to Assistant:**
+- `ListingDraftBuilder.buildFields()` extracts to `DraftFieldKey` map
+- `ItemContextSnapshotBuilder.fromDraft()` converts to `ItemAttributeSnapshot`
+- `AssistantViewModel.mergeSnapshotAttributes()` adds vision attributes
+
+### Critical Files for Enrichment Logic
+
+**Must touch (for enrichment changes):**
+- `androidApp/.../ml/VisionInsightsPrefiller.kt` - Pipeline orchestration
+- `androidApp/.../ml/LocalVisionExtractor.kt` - Local extraction
+- `androidApp/.../ml/VisionInsightsRepository.kt` - Cloud Vision calls
+- `androidApp/.../items/state/ItemsStateManager.kt` - State updates
+- `shared/.../listing/ListingDraft.kt` - Draft field extraction
+- `backend/src/modules/vision/routes.ts` - Backend Vision API
+- `backend/src/modules/enrich/pipeline.ts` - Enrichment pipeline
+
+**Must NOT modify without architectural review:**
+- `shared/.../items/ScannedItem.kt` - Core model (affects all consumers)
+- `shared/.../items/VisionAttributes.kt` - Vision data contract
+- `shared/.../assistant/AssistantModels.kt` - Assistant context contract
+- `androidApp/.../items/persistence/ScannedItemEntity.kt` - Database schema
+
+---
+
+## G) Vision Golden Assets
+
+### Directory Structure
+
+```
+tests/
+└── golden_images/
+    ├── kleenex-small-box.jpg       # Household goods (tissue box)
+    ├── labello-lip-balm.jpg        # Cosmetics (lip balm) [future]
+    ├── nike-tshirt.jpg             # Apparel (branded t-shirt) [future]
+    └── multi-object-scene.jpg      # Multi-item scene [future]
+
+androidApp/src/test/resources/golden/
+    ├── nike_shoe_attributes.json   # Expected attributes for Nike shoe
+    └── iphone_partial_attributes.json  # Partial electronics item
+```
+
+### Image Constraints
+
+| Constraint | Value | Reason |
+|------------|-------|--------|
+| Max dimension | 800px (longest side) | Git storage efficiency |
+| Max file size | 200KB | Avoid bloating repository |
+| Format | JPEG | Universal Vision API support |
+| Quality | 85% compression | Balance quality/size |
+| Content | Clear, well-lit | Reliable extraction |
+
+### Manifest Format (Expected Attributes)
+
+```json
+{
+  "imageFile": "kleenex-small-box.jpg",
+  "expectedAttributes": {
+    "brand": { "contains": "kleenex", "minConfidence": 0.7 },
+    "itemType": { "oneOf": ["tissue box", "tissue", "box"], "minConfidence": 0.5 },
+    "ocrText": { "contains": "kleenex" },
+    "colors": { "minCount": 1 }
+  },
+  "testType": "golden",
+  "category": "household"
+}
+```
+
+### Adding a New Golden Image
+
+1. **Select image:** Clear, well-lit, brand/text visible
+2. **Resize:** `convert input.jpg -resize 800x800\> -quality 85 output.jpg`
+3. **Verify size:** Must be ≤200KB
+4. **Store:** Add to `tests/golden_images/`
+5. **Create fixture:** Add expected attributes JSON
+6. **Update test:** Add assertions in `routes.golden.test.ts`
+7. **Run locally:** Verify with `GOOGLE_APPLICATION_CREDENTIALS=... npm test`
+8. **Commit:** Include image + fixture + test update in same PR
+
+### CI Behavior
+
+- Golden tests **skip** when `GOOGLE_APPLICATION_CREDENTIALS` not set
+- Use `describe.skip` / `describeIf` pattern for conditional execution
+- Mock extractors available for offline testing
+- Real Vision API only called in golden test runs with credentials
+
+---
+
+## H) Where Config Lives
 - Build configs: set via `local.properties` or env → `androidApp/build.gradle.kts` (`SCANIUM_API_BASE_URL`, `SCANIUM_API_KEY`, `SENTRY_DSN`, legacy `CLOUD_CLASSIFIER_*`, `CLASSIFIER_SAVE_CROPS`). Example defaults in `local.properties.example` (not committed).
 - Signing/keystore paths also read from `local.properties` keys (`scanium.keystore.*`).
 - Domain packs: JSON under `core-domainpack/src/main/res/raw/`. Never commit secrets or real API keys.
