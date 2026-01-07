@@ -17,6 +17,7 @@ import { adminRoutes } from './modules/admin/routes.js';
 import { billingRoutes } from './modules/billing/billing.routes.js';
 import { configRoutes } from './modules/config/config.routes.js';
 import { enrichRoutes } from './modules/enrich/routes.js';
+import { pricingRoutes } from './modules/pricing/routes.js';
 import { apiGuardPlugin } from './infra/security/api-guard.js';
 
 /**
@@ -56,7 +57,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   app.setErrorHandler(errorHandlerPlugin);
 
   await app.register(apiGuardPlugin, {
-    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/vision/', '/v1/admin/', '/v1/items/enrich'],
+    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/vision/', '/v1/admin/', '/v1/items/enrich', '/v1/pricing/estimate'],
     maxRequests: Number(process.env.SECURITY_RATE_LIMIT_MAX ?? 30),
     windowMs: Number(process.env.SECURITY_RATE_LIMIT_WINDOW_MS ?? 10_000),
   });
@@ -106,6 +107,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   // Enrichment pipeline (scan → vision → attributes → draft)
   await app.register(enrichRoutes, { prefix: '/v1', config });
 
+  // Pricing estimation (baseline prices from visual attributes)
+  await app.register(pricingRoutes, { prefix: '/v1', config });
+
   // Billing verification stub
   await app.register(billingRoutes, { prefix: '/v1' });
 
@@ -135,6 +139,12 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
         enrich: {
           submit: 'POST /v1/items/enrich',
           status: 'GET /v1/items/enrich/status/:requestId',
+        },
+        pricing: {
+          estimate: 'POST /v1/pricing/estimate',
+          categories: 'GET /v1/pricing/categories',
+          brands: 'GET /v1/pricing/brands/:brand',
+          conditions: 'GET /v1/pricing/conditions',
         },
       },
     });
