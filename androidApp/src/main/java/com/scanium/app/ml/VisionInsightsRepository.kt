@@ -113,8 +113,10 @@ class VisionInsightsRepository(
 ) {
     companion object {
         private const val TAG = "VisionInsightsRepo"
+        // Unified timeout policy for enrichment/vision calls (Phase 3)
         private const val CONNECT_TIMEOUT_SECONDS = 10L
-        private const val READ_TIMEOUT_SECONDS = 15L
+        private const val READ_TIMEOUT_SECONDS = 30L  // Increased from 15s for vision processing
+        private const val WRITE_TIMEOUT_SECONDS = 30L // For multipart photo uploads
         private const val JPEG_QUALITY = 85
         private const val MAX_IMAGE_DIMENSION = 1024 // Resize large images
     }
@@ -122,6 +124,7 @@ class VisionInsightsRepository(
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .apply {
             // Certificate pinning for MITM protection
             val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN

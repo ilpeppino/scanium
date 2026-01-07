@@ -1,6 +1,5 @@
 package com.scanium.app.items.edit
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,16 +26,18 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -44,15 +45,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,28 +66,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.summary.AttributeSummaryGenerator
 import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus
-import com.scanium.shared.core.models.items.ItemPhoto
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.LayerState
-import java.io.File
 
 /**
- * Redesigned edit screen for multi-object scanning flow.
+ * Redesigned edit screen for Phase 3: Item details UX.
  *
  * Features:
  * - Photo gallery at top (primary + additional photos)
- * - Status chips showing detection status ("Brand detected", "Enriching...")
+ * - **Detected Attributes section** showing brand, color, type, OCR text IMMEDIATELY
+ * - Enrichment status row (non-blocking, with retry)
  * - Suggested additions section (when user edited text and new attrs arrive)
  * - ONE BIG editable text box for attribute summary
  * - Actions: Save, AI Generate, Add Photos
@@ -99,6 +100,7 @@ fun EditItemScreenV2(
     onAiGenerate: (String) -> Unit,
     itemsViewModel: ItemsViewModel,
 ) {
+    val context = LocalContext.current
     val allItems by itemsViewModel.items.collectAsState()
     val item by remember(allItems, itemId) {
         derivedStateOf { allItems.find { it.id == itemId } }
@@ -120,6 +122,18 @@ fun EditItemScreenV2(
     LaunchedEffect(item?.attributes, textEdited) {
         if (textEdited && item != null) {
             suggestedAdditions = detectSuggestedAdditions(item!!, summaryText)
+        }
+    }
+
+    // Auto-trigger enrichment if item is not yet enriched or stale
+    LaunchedEffect(item) {
+        val currentItem = item ?: return@LaunchedEffect
+        if (shouldTriggerEnrichment(currentItem)) {
+            itemsViewModel.extractVisionInsights(
+                context = context,
+                itemId = itemId,
+                imageUri = currentItem.fullImageUri,
+            )
         }
     }
 
@@ -243,10 +257,23 @@ fun EditItemScreenV2(
 
             Spacer(Modifier.height(12.dp))
 
-            // Enrichment Status Chips
-            EnrichmentStatusChips(
+            // Enrichment Status Row (non-blocking)
+            EnrichmentStatusRow(
                 enrichmentStatus = currentItem.enrichmentStatus,
+                onRetry = {
+                    itemsViewModel.extractVisionInsights(
+                        context = context,
+                        itemId = itemId,
+                        imageUri = currentItem.fullImageUri,
+                    )
+                },
+            )
+
+            // Detected Attributes Section (visible immediately)
+            DetectedAttributesSection(
                 attributes = currentItem.attributes,
+                visionAttributes = currentItem.visionAttributes,
+                detectedAttributes = currentItem.detectedAttributes,
             )
 
             // Suggested Additions Section (when user edited and new attrs arrived)
@@ -291,7 +318,7 @@ fun EditItemScreenV2(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 250.dp, max = 400.dp)
+                        .heightIn(min = 200.dp, max = 350.dp)
                         .padding(8.dp),
                     textStyle = MaterialTheme.typography.bodyMedium,
                 )
@@ -318,6 +345,28 @@ fun EditItemScreenV2(
 }
 
 /**
+ * Check if enrichment should be triggered automatically.
+ */
+private fun shouldTriggerEnrichment(item: ScannedItem): Boolean {
+    // Don't trigger if already enriching
+    if (item.enrichmentStatus.isEnriching) return false
+
+    // Don't trigger if user has edited (respect their edits)
+    if (item.summaryTextUserEdited) return false
+
+    // Don't trigger if no image available
+    if (item.fullImageUri == null) return false
+
+    // Trigger if never enriched
+    val lastEnrichment = item.enrichmentStatus.lastUpdated
+    if (lastEnrichment == null || lastEnrichment == 0L) return true
+
+    // Trigger if stale (more than 5 minutes old)
+    val age = kotlinx.datetime.Clock.System.now().toEpochMilliseconds() - lastEnrichment
+    return age > 5 * 60 * 1000L
+}
+
+/**
  * Photo gallery showing primary and additional photos.
  */
 @Composable
@@ -325,8 +374,6 @@ private fun PhotoGallerySection(
     item: ScannedItem,
     onAddPhoto: () -> Unit,
 ) {
-    val context = LocalContext.current
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -472,110 +519,373 @@ private fun AddPhotoButton(onClick: () -> Unit) {
 }
 
 /**
- * Enrichment status chips showing detection progress and results.
+ * Non-blocking enrichment status row.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun EnrichmentStatusChips(
+private fun EnrichmentStatusRow(
     enrichmentStatus: EnrichmentLayerStatus,
-    attributes: Map<String, com.scanium.shared.core.models.items.ItemAttribute>,
+    onRetry: () -> Unit,
 ) {
-    FlowRow(
+    val statusMessage: String
+    val statusColor: androidx.compose.ui.graphics.Color
+    val showProgress: Boolean
+    val showRetry: Boolean
+
+    when {
+        enrichmentStatus.isEnriching -> {
+            statusMessage = "Analyzing photo..."
+            statusColor = MaterialTheme.colorScheme.primary
+            showProgress = true
+            showRetry = false
+        }
+        enrichmentStatus.layerB == LayerState.FAILED || enrichmentStatus.layerC == LayerState.FAILED -> {
+            statusMessage = "Couldn't analyze photo"
+            statusColor = MaterialTheme.colorScheme.error
+            showProgress = false
+            showRetry = true
+        }
+        enrichmentStatus.isComplete && enrichmentStatus.hasAnyResults -> {
+            statusMessage = "Photo analyzed"
+            statusColor = MaterialTheme.colorScheme.tertiary
+            showProgress = false
+            showRetry = false
+        }
+        enrichmentStatus.isComplete -> {
+            statusMessage = "No new info found"
+            statusColor = MaterialTheme.colorScheme.onSurfaceVariant
+            showProgress = false
+            showRetry = false
+        }
+        else -> {
+            // Idle state - don't show anything
+            return
+        }
+    }
+
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = statusColor.copy(alpha = 0.1f),
+        ),
     ) {
-        // Enrichment in progress chip
-        if (enrichmentStatus.isEnriching) {
-            AssistChip(
-                onClick = {},
-                label = { Text("Enriching...") },
-                leadingIcon = {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                    )
-                },
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showProgress) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = statusColor,
+                )
+                Spacer(Modifier.width(8.dp))
+            } else {
+                Icon(
+                    imageVector = when {
+                        enrichmentStatus.layerB == LayerState.FAILED -> Icons.Default.Warning
+                        enrichmentStatus.isComplete && enrichmentStatus.hasAnyResults -> Icons.Default.Check
+                        else -> Icons.Default.Search
+                    },
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = statusColor,
+                )
+                Spacer(Modifier.width(8.dp))
+            }
+
+            Text(
+                text = statusMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = statusColor,
+                modifier = Modifier.weight(1f),
             )
+
+            if (showRetry) {
+                IconButton(
+                    onClick = onRetry,
+                    modifier = Modifier.size(32.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = "Retry",
+                        tint = statusColor,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
         }
 
-        // Brand detected chip
-        val brand = attributes["brand"]?.value
-        if (!brand.isNullOrBlank()) {
-            AssistChip(
-                onClick = {},
-                label = { Text("Brand: $brand") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                },
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                ),
-            )
-        }
-
-        // Color detected chip
-        val color = attributes["color"]?.value
-        if (!color.isNullOrBlank()) {
-            AssistChip(
-                onClick = {},
-                label = { Text("Color: $color") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                },
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                ),
-            )
-        }
-
-        // Missing brand warning
-        if (brand.isNullOrBlank() && enrichmentStatus.isComplete) {
-            AssistChip(
-                onClick = {},
-                label = { Text("Brand missing") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                },
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                ),
-            )
-        }
-
-        // Missing color warning
-        if (color.isNullOrBlank() && enrichmentStatus.isComplete) {
-            AssistChip(
-                onClick = {},
-                label = { Text("Color missing") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                    )
-                },
-                colors = AssistChipDefaults.assistChipColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                ),
+        if (showProgress) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = statusColor,
+                trackColor = statusColor.copy(alpha = 0.2f),
             )
         }
     }
 }
+
+/**
+ * Section showing detected attributes immediately (visible without extra clicks).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DetectedAttributesSection(
+    attributes: Map<String, ItemAttribute>,
+    visionAttributes: com.scanium.shared.core.models.items.VisionAttributes,
+    detectedAttributes: Map<String, ItemAttribute>,
+) {
+    // Build combined list of displayable attributes
+    val displayAttrs = buildDisplayableAttributes(attributes, visionAttributes, detectedAttributes)
+
+    if (displayAttrs.isEmpty()) return
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+        ) {
+            Text(
+                text = "Detected Attributes",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(8.dp))
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                displayAttrs.forEach { attr ->
+                    AttributeChip(
+                        label = attr.displayName,
+                        value = attr.value,
+                        isUserProvided = attr.isUserProvided,
+                        evidenceType = attr.evidenceType,
+                        confidence = attr.confidence,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Single attribute chip with provenance indicator.
+ */
+@Composable
+private fun AttributeChip(
+    label: String,
+    value: String,
+    isUserProvided: Boolean,
+    evidenceType: String?,
+    confidence: Float,
+) {
+    val containerColor = when {
+        isUserProvided -> MaterialTheme.colorScheme.primaryContainer
+        confidence >= 0.8f -> MaterialTheme.colorScheme.tertiaryContainer
+        confidence >= 0.5f -> MaterialTheme.colorScheme.secondaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    AssistChip(
+        onClick = {},
+        label = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "$label: ",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        },
+        leadingIcon = {
+            if (isUserProvided) {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = "User provided",
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            } else if (evidenceType != null) {
+                val icon = when (evidenceType) {
+                    "OCR" -> Icons.Default.Search
+                    "LOGO" -> Icons.Default.Check
+                    "COLOR" -> Icons.Default.Check
+                    else -> Icons.Default.AutoAwesome
+                }
+                Icon(
+                    icon,
+                    contentDescription = evidenceType,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = containerColor.copy(alpha = 0.6f),
+        ),
+    )
+}
+
+/**
+ * Build list of displayable attributes from all sources.
+ */
+private fun buildDisplayableAttributes(
+    attributes: Map<String, ItemAttribute>,
+    visionAttributes: com.scanium.shared.core.models.items.VisionAttributes,
+    detectedAttributes: Map<String, ItemAttribute>,
+): List<DisplayableAttribute> {
+    val result = mutableListOf<DisplayableAttribute>()
+    val seen = mutableSetOf<String>()
+
+    val displayNameMap = mapOf(
+        "brand" to "Brand",
+        "color" to "Color",
+        "secondaryColor" to "Secondary Color",
+        "itemType" to "Type",
+        "model" to "Model",
+        "material" to "Material",
+        "size" to "Size",
+        "ocrText" to "Text",
+        "labelHints" to "Labels",
+    )
+
+    // Add from main attributes
+    for ((key, attr) in attributes) {
+        if (attr.value.isBlank()) continue
+        val displayName = displayNameMap[key] ?: continue
+        if (seen.contains(key)) continue
+        seen.add(key)
+
+        result.add(
+            DisplayableAttribute(
+                key = key,
+                displayName = displayName,
+                value = attr.value.take(50),
+                isUserProvided = attr.source?.contains("user", ignoreCase = true) == true,
+                evidenceType = attr.source?.let { extractEvidenceType(it) },
+                confidence = attr.confidence,
+            )
+        )
+    }
+
+    // Add from vision attributes if not already present
+    if (!seen.contains("brand")) {
+        visionAttributes.logos.firstOrNull()?.let { logo ->
+            result.add(
+                DisplayableAttribute(
+                    key = "brand",
+                    displayName = "Brand",
+                    value = logo.name,
+                    isUserProvided = false,
+                    evidenceType = "LOGO",
+                    confidence = logo.score,
+                )
+            )
+            seen.add("brand")
+        }
+    }
+
+    if (!seen.contains("color")) {
+        visionAttributes.colors.firstOrNull()?.let { color ->
+            result.add(
+                DisplayableAttribute(
+                    key = "color",
+                    displayName = "Color",
+                    value = color.name,
+                    isUserProvided = false,
+                    evidenceType = "COLOR",
+                    confidence = color.score,
+                )
+            )
+            seen.add("color")
+        }
+    }
+
+    if (!seen.contains("itemType")) {
+        val itemType = visionAttributes.itemType ?: visionAttributes.labels.firstOrNull()?.name
+        if (!itemType.isNullOrBlank()) {
+            result.add(
+                DisplayableAttribute(
+                    key = "itemType",
+                    displayName = "Type",
+                    value = itemType,
+                    isUserProvided = false,
+                    evidenceType = "LABEL",
+                    confidence = 0.7f,
+                )
+            )
+            seen.add("itemType")
+        }
+    }
+
+    // Add OCR snippet if present
+    if (!seen.contains("ocrText")) {
+        visionAttributes.ocrText?.takeIf { it.isNotBlank() }?.let { text ->
+            val snippet = text.lineSequence()
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .take(2)
+                .joinToString(" | ")
+                .take(60)
+            if (snippet.isNotBlank()) {
+                result.add(
+                    DisplayableAttribute(
+                        key = "ocrText",
+                        displayName = "Text",
+                        value = snippet,
+                        isUserProvided = false,
+                        evidenceType = "OCR",
+                        confidence = 0.8f,
+                    )
+                )
+            }
+        }
+    }
+
+    return result
+}
+
+private fun extractEvidenceType(source: String): String? {
+    return when {
+        source.contains("ocr", ignoreCase = true) -> "OCR"
+        source.contains("logo", ignoreCase = true) -> "LOGO"
+        source.contains("color", ignoreCase = true) -> "COLOR"
+        source.contains("label", ignoreCase = true) -> "LABEL"
+        source.contains("llm", ignoreCase = true) -> "AI"
+        source.contains("vision", ignoreCase = true) -> "VISION"
+        else -> null
+    }
+}
+
+/**
+ * Display data for an attribute.
+ */
+private data class DisplayableAttribute(
+    val key: String,
+    val displayName: String,
+    val value: String,
+    val isUserProvided: Boolean,
+    val evidenceType: String?,
+    val confidence: Float,
+)
 
 /**
  * Section showing suggested attribute additions.

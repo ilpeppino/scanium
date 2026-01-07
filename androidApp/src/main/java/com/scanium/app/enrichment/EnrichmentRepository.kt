@@ -39,8 +39,10 @@ class EnrichmentRepository(
 ) {
     companion object {
         private const val TAG = "EnrichmentRepo"
+        // Unified timeout policy for enrichment/vision calls (Phase 3)
         private const val CONNECT_TIMEOUT_SECONDS = 10L
         private const val READ_TIMEOUT_SECONDS = 30L
+        private const val WRITE_TIMEOUT_SECONDS = 30L // For multipart photo uploads
         private const val JPEG_QUALITY = 85
         private const val MAX_IMAGE_DIMENSION = 1024
 
@@ -54,6 +56,7 @@ class EnrichmentRepository(
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .apply {
             // Certificate pinning for MITM protection
             val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
