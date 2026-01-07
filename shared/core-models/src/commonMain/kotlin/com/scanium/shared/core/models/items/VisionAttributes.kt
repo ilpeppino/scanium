@@ -50,7 +50,8 @@ data class VisionAttributes(
             logos.isEmpty() &&
             labels.isEmpty() &&
             brandCandidates.isEmpty() &&
-            modelCandidates.isEmpty()
+            modelCandidates.isEmpty() &&
+            itemType.isNullOrBlank()
 
     companion object {
         val EMPTY = VisionAttributes()

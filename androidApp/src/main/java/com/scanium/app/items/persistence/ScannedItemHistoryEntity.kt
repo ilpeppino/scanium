@@ -48,6 +48,7 @@ data class ScannedItemHistoryEntity(
     val condition: String?,
     val attributesJson: String?,
     val detectedAttributesJson: String?,
+    val visionAttributesJson: String?,
 )
 
 fun ScannedItemEntity.toHistoryEntity(
@@ -91,5 +92,6 @@ fun ScannedItemEntity.toHistoryEntity(
         condition = condition,
         attributesJson = attributesJson,
         detectedAttributesJson = detectedAttributesJson,
+        visionAttributesJson = visionAttributesJson,
     )
 }

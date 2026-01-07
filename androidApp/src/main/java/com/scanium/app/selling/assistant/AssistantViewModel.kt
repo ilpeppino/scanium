@@ -22,8 +22,11 @@ import com.scanium.app.model.AssistantMessage
 import com.scanium.app.model.AssistantRole
 import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
+import com.scanium.app.model.ItemAttributeSnapshot
 import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.model.SuggestedAttribute
+import com.scanium.app.items.ScannedItem
+import com.scanium.shared.core.models.assistant.AttributeSource
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.app.model.ItemContextSnapshotBuilder
 import com.scanium.app.platform.ConnectivityStatus
@@ -997,14 +1000,16 @@ class AssistantViewModel
 
         private suspend fun refreshSnapshots() {
             val draftsMap = mutableMapOf<String, ListingDraft>()
+            val itemsById = itemsViewModel.items.value.associateBy { it.id }
             val snapshots =
                 itemIds.mapNotNull { itemId ->
+                    val item = itemsById[itemId]
                     val draft =
                         draftStore.getByItemId(itemId)
-                            ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
-                                ?.let { ListingDraftBuilder.build(it) }
+                            ?: item?.let { ListingDraftBuilder.build(it) }
                     draft?.also { draftsMap[itemId] = it }
                         ?.let { ItemContextSnapshotBuilder.fromDraft(it) }
+                        ?.let { snapshot -> mergeSnapshotAttributes(snapshot, item) }
                 }
             val localSuggestions = localSuggestionEngine.generateSuggestions(snapshots)
             _uiState.update {
@@ -1014,6 +1019,97 @@ class AssistantViewModel
                     localSuggestions = localSuggestions,
                 )
             }
+        }
+
+        private fun mergeSnapshotAttributes(
+            snapshot: ItemContextSnapshot,
+            item: ScannedItem?,
+        ): ItemContextSnapshot {
+            if (item == null) return snapshot
+
+            val merged = linkedMapOf<String, ItemAttributeSnapshot>()
+
+            fun keyFor(attributeKey: String) = attributeKey.lowercase()
+            fun addIfMissing(attribute: ItemAttributeSnapshot) {
+                val key = keyFor(attribute.key)
+                if (key !in merged) {
+                    merged[key] = attribute
+                }
+            }
+
+            item.attributes.forEach { (key, attr) ->
+                val source = if (attr.source == "user") AttributeSource.USER else AttributeSource.DETECTED
+                merged[keyFor(key)] = ItemAttributeSnapshot(
+                    key = key,
+                    value = attr.value,
+                    confidence = attr.confidence,
+                    source = source,
+                )
+            }
+
+            snapshot.attributes.forEach { addIfMissing(it) }
+
+            val vision = item.visionAttributes
+            vision.primaryBrand?.let { brand ->
+                addIfMissing(
+                    ItemAttributeSnapshot(
+                        key = "brand",
+                        value = brand,
+                        confidence = vision.logos.maxOfOrNull { it.score },
+                        source = AttributeSource.DETECTED,
+                    ),
+                )
+            }
+
+            val colors = vision.colors.sortedByDescending { it.score }
+            colors.firstOrNull()?.let { color ->
+                addIfMissing(
+                    ItemAttributeSnapshot(
+                        key = "color",
+                        value = color.name,
+                        confidence = color.score,
+                        source = AttributeSource.DETECTED,
+                    ),
+                )
+            }
+
+            vision.itemType?.takeIf { it.isNotBlank() }?.let { itemType ->
+                addIfMissing(
+                    ItemAttributeSnapshot(
+                        key = "itemType",
+                        value = itemType,
+                        confidence = vision.labels.maxOfOrNull { it.score },
+                        source = AttributeSource.DETECTED,
+                    ),
+                )
+            }
+
+            val labelHints = vision.labels.map { it.name }.distinct().take(3)
+            if (labelHints.isNotEmpty()) {
+                addIfMissing(
+                    ItemAttributeSnapshot(
+                        key = "labelHints",
+                        value = labelHints.joinToString(", "),
+                        confidence = vision.labels.maxOfOrNull { it.score },
+                        source = AttributeSource.DETECTED,
+                    ),
+                )
+            }
+
+            val ocrText = item.recognizedText?.takeIf { it.isNotBlank() }
+                ?: vision.ocrText?.takeIf { it.isNotBlank() }
+            ocrText?.let { text ->
+                addIfMissing(
+                    ItemAttributeSnapshot(
+                        key = "recognizedText",
+                        value = if (text.length > 200) text.take(200) + "..." else text,
+                        confidence = 0.8f,
+                        source = AttributeSource.DETECTED,
+                    ),
+                )
+            }
+
+            return snapshot.copy(attributes = merged.values.toList())
         }
 
         private fun observeConnectivity() {
