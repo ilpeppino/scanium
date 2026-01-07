@@ -1,0 +1,255 @@
+***REMOVED*** Export Formats
+
+This document describes the export formats supported by Scanium's export bundle feature (Phase 5).
+
+***REMOVED******REMOVED*** Overview
+
+Scanium supports exporting scanned items in two formats:
+1. **Plain Text** - Ready-to-paste text for marketplaces
+2. **ZIP Bundle** - Structured archive with photos and metadata
+
+***REMOVED******REMOVED*** Text Export
+
+***REMOVED******REMOVED******REMOVED*** Share Text Format
+
+The share text format is optimized for pasting into marketplace listings:
+
+```
+📦 Nike Air Max 90 - Size 10
+
+Classic sneakers in excellent condition. Original box included.
+Never worn, purchased last month.
+
+Highlights:
+• Size 10 US / 44 EU
+• White/Black colorway
+• Original box and receipt
+
+Category: Fashion
+📷 3 photo(s) available
+```
+
+***REMOVED******REMOVED******REMOVED*** Compact List Format
+
+For quick sharing of multiple items:
+
+```
+Scanium Items (3)
+
+1. Nike Air Max 90
+   Classic sneakers in excellent condition...
+   Price: $120
+
+2. Vintage Leather Jacket
+   Beautiful brown leather jacket...
+   Price: $85
+
+3. Unknown Item ⚠️
+   Category: Electronics...
+```
+
+Items marked with ⚠️ need AI processing for better descriptions.
+
+***REMOVED******REMOVED*** ZIP Bundle Format
+
+***REMOVED******REMOVED******REMOVED*** Structure
+
+```
+scanium-export-YYYYMMDD-HHmmss.zip
+├── export-manifest.json
+└── items/
+    ├── <itemId1>/
+    │   ├── listing.txt
+    │   ├── listing.json
+    │   └── photos/
+    │       ├── 001.jpg
+    │       ├── 002.jpg
+    │       └── ...
+    ├── <itemId2>/
+    │   └── ...
+    └── ...
+```
+
+***REMOVED******REMOVED******REMOVED*** export-manifest.json
+
+The manifest provides a summary of the export:
+
+```json
+{
+  "manifestVersion": "1.0",
+  "exportFormat": "zip",
+  "exportedAt": "2024-01-15T10:30:00Z",
+  "app": {
+    "name": "Scanium",
+    "platform": "Android",
+    "sdkVersion": 34
+  },
+  "statistics": {
+    "totalItems": 5,
+    "readyCount": 4,
+    "needsAiCount": 1,
+    "noPhotosCount": 0,
+    "allReady": false
+  },
+  "items": [
+    {
+      "id": "item-123",
+      "title": "Nike Air Max 90",
+      "category": "FASHION",
+      "photoCount": 3,
+      "status": "READY",
+      "flags": ["READY"],
+      "paths": {
+        "folder": "items/item-123",
+        "listingTxt": "items/item-123/listing.txt",
+        "listingJson": "items/item-123/listing.json",
+        "photos": "items/item-123/photos/"
+      }
+    }
+  ]
+}
+```
+
+***REMOVED******REMOVED******REMOVED*** listing.json
+
+Structured JSON for each item:
+
+```json
+{
+  "id": "item-123",
+  "title": "Nike Air Max 90",
+  "description": "Classic sneakers in excellent condition...",
+  "bullets": ["Size 10", "Original box", "Never worn"],
+  "category": "FASHION",
+  "categoryDisplayName": "Fashion",
+  "attributes": {
+    "brand": {
+      "value": "Nike",
+      "confidence": 0.95,
+      "source": "vision"
+    },
+    "color": {
+      "value": "White",
+      "confidence": 0.88,
+      "source": "vision"
+    },
+    "size": {
+      "value": "10",
+      "confidence": 0.92,
+      "source": "user"
+    }
+  },
+  "photos": [
+    "photos/001.jpg",
+    "photos/002.jpg",
+    "photos/003.jpg"
+  ],
+  "photoCount": 3,
+  "createdAt": "2024-01-15T10:30:00Z",
+  "exportStatus": {
+    "ready": true,
+    "needsAi": false,
+    "hasPhotos": true,
+    "confidenceTier": "HIGH",
+    "model": "gpt-4"
+  }
+}
+```
+
+***REMOVED******REMOVED******REMOVED*** listing.txt
+
+Human-readable text version:
+
+```
+📦 Nike Air Max 90
+
+Classic sneakers in excellent condition. Original box included.
+Never worn, purchased last month.
+
+Highlights:
+• Size 10 US / 44 EU
+• White/Black colorway
+• Original box and receipt
+
+Category: Fashion
+AI Confidence: HIGH
+📷 3 photo(s) available
+```
+
+***REMOVED******REMOVED*** Export Status Flags
+
+| Flag | Description |
+|------|-------------|
+| `READY` | Export fields are AI-generated and complete |
+| `NEEDS_AI` | Missing AI-generated fields, using fallback text |
+| `NO_PHOTOS` | No photos available for this item |
+| `USER_EDITED` | Summary text was edited by user |
+
+***REMOVED******REMOVED*** Item Status Values
+
+| Status | Description |
+|--------|-------------|
+| `READY` | Complete with photos |
+| `READY_NO_PHOTOS` | Complete but no photos |
+| `NEEDS_AI` | Needs AI processing, has photos |
+| `NEEDS_AI_NO_PHOTOS` | Needs AI processing, no photos |
+
+***REMOVED******REMOVED*** Export Limits
+
+| Limit | Default Value |
+|-------|---------------|
+| Max items per export | 50 |
+| Max photos per item | 10 |
+| Max total photos | 200 |
+
+If limits are exceeded, the export will fail with an error message.
+
+***REMOVED******REMOVED*** Text Source Priority
+
+When generating export text, the following priority is used:
+
+1. **AI-generated export fields** (`exportTitle` + `exportDescription`)
+   - Generated by Export Assistant (Phase 4)
+   - Marked as `READY`
+
+2. **User-edited summary text** (`attributesSummaryText` with `summaryTextUserEdited=true`)
+   - Manually edited by user
+   - Marked as `USER_EDITED`
+
+3. **Enrichment summary text** (`attributesSummaryText`)
+   - Auto-generated from vision/enrichment
+   - Marked as `NEEDS_AI`
+
+4. **Generated minimal text** (from attributes)
+   - Fallback when no other text available
+   - Marked as `NEEDS_AI`
+
+***REMOVED******REMOVED*** Photo Processing
+
+Photos are processed during ZIP export:
+- Re-encoded as JPEG at 85% quality
+- Resized if larger than 1200px on longest edge
+- EXIF metadata is stripped for privacy
+- Streamed to avoid memory issues
+
+***REMOVED******REMOVED*** Usage
+
+***REMOVED******REMOVED******REMOVED*** From Items List
+1. Long-press to enter selection mode
+2. Select items to export
+3. Tap Share button
+4. Choose "Export Listings…"
+5. Select format (Text or ZIP)
+6. Share or save
+
+***REMOVED******REMOVED******REMOVED*** Programmatic
+```kotlin
+val repository = ExportBundleRepository(context, photoManager)
+val result = repository.buildBundles(items, selectedIds)
+
+// Text export
+val text = ListingTextFormatter.formatMultiple(result.bundles)
+
+// ZIP export
+val zipResult = zipExporter.createZip(result)
+```
