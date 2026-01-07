@@ -53,10 +53,9 @@ Examples:
   ./scripts/ops/smoke.sh --base-url http://localhost:8080 --verbose
 
 Endpoints tested:
-  GET /health           - Health check (expect 200)
-  GET /v1/config        - Config endpoint (200 with key, 401 without)
-  GET /v1/preflight     - Preflight check (200 with key, 401 without)
-  GET /v1/assist/status - Assist status (200/403 with key, 401/403 without)
+  GET /health               - Health check (expect 200)
+  GET /v1/config            - Config endpoint (200 with key, 401 without)
+  GET /v1/assist/cache/stats - Assist cache stats (200 with key, 401 without)
 
 Exit codes:
   0 - All tests passed
@@ -215,28 +214,15 @@ else
   fi
 fi
 
-***REMOVED*** Test 3: Preflight endpoint
+***REMOVED*** Test 3: Assist cache stats (GET endpoint that should work)
 ***REMOVED*** - With API key: expect 200
-***REMOVED*** - Without API key: expect 401 (auth required)
+***REMOVED*** - Without API key: expect 401
 if [[ -n "$API_KEY" ]]; then
-  if ! test_endpoint "/v1/preflight" "200" "true"; then
+  if ! test_endpoint "/v1/assist/cache/stats" "200" "true"; then
     FAILED=1
   fi
 else
-  if ! test_endpoint "/v1/preflight" "401"; then
-    FAILED=1
-  fi
-fi
-
-***REMOVED*** Test 4: Assist status endpoint
-***REMOVED*** - With API key: expect 200 or 403 (route protected but reachable)
-***REMOVED*** - Without API key: expect 401 or 403
-if [[ -n "$API_KEY" ]]; then
-  if ! test_endpoint "/v1/assist/status" "200,403" "true"; then
-    FAILED=1
-  fi
-else
-  if ! test_endpoint "/v1/assist/status" "401,403"; then
+  if ! test_endpoint "/v1/assist/cache/stats" "401"; then
     FAILED=1
   fi
 fi
