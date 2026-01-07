@@ -252,6 +252,10 @@ export async function enrichRoutes(
         stage: status.stage,
         visionFacts: status.visionFacts,
         normalizedAttributes: status.normalizedAttributes,
+        // Phase 2: Structured attributes with full provenance
+        attributesStructured: status.attributesStructured,
+        summaryText: status.summaryText,
+        suggestedAdditions: status.suggestedAdditions,
         draft: status.draft,
         error: status.error,
         createdAt: status.createdAt,

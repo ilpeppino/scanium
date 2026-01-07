@@ -342,4 +342,309 @@ class EnrichmentModelsParsingTest {
         assertThat(visionFacts.dominantColors).isEmpty()
         assertThat(visionFacts.labelHints).isEmpty()
     }
+
+    // ==================== Phase 2: Structured Attributes Tests ====================
+
+    @Test
+    fun `parse EnrichStatusResponse with structured attributes and summary text`() {
+        val responseJson = """
+            {
+                "success": true,
+                "status": {
+                    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+                    "correlationId": "corr-123",
+                    "itemId": "item-001",
+                    "stage": "ATTRIBUTES_DONE",
+                    "normalizedAttributes": [
+                        {"key": "brand", "value": "Kleenex", "confidence": "HIGH", "source": "VISION_LOGO"}
+                    ],
+                    "attributesStructured": [
+                        {
+                            "key": "brand",
+                            "value": "Kleenex",
+                            "source": "DETECTED",
+                            "confidence": "HIGH",
+                            "evidence": [
+                                {"type": "LOGO", "rawValue": "Kleenex", "score": 0.95}
+                            ],
+                            "updatedAt": 1704067210000
+                        },
+                        {
+                            "key": "color",
+                            "value": "blue",
+                            "source": "DETECTED",
+                            "confidence": "MED",
+                            "evidence": [
+                                {"type": "COLOR", "rawValue": "blue (45%)", "score": 0.45}
+                            ],
+                            "updatedAt": 1704067210000
+                        },
+                        {
+                            "key": "product_type",
+                            "value": "tissue box",
+                            "source": "DETECTED",
+                            "confidence": "LOW",
+                            "updatedAt": 1704067210000
+                        }
+                    ],
+                    "summaryText": "Brand: Kleenex\nColor: blue\nProduct Type: tissue box",
+                    "suggestedAdditions": [],
+                    "createdAt": 1704067200000,
+                    "updatedAt": 1704067210000
+                }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
+        assertThat(response.success).isTrue()
+
+        val status = response.status!!
+        assertThat(status.stage).isEqualTo("ATTRIBUTES_DONE")
+
+        // Verify structured attributes
+        val structuredAttrs = status.attributesStructured!!
+        assertThat(structuredAttrs).hasSize(3)
+
+        val brandAttr = structuredAttrs.find { it.key == "brand" }!!
+        assertThat(brandAttr.value).isEqualTo("Kleenex")
+        assertThat(brandAttr.source).isEqualTo("DETECTED")
+        assertThat(brandAttr.confidence).isEqualTo("HIGH")
+        assertThat(brandAttr.isDetected).isTrue()
+        assertThat(brandAttr.isUserProvided).isFalse()
+        assertThat(brandAttr.confidenceLevel).isEqualTo(EnrichmentConfidence.HIGH)
+
+        // Verify evidence
+        val evidence = brandAttr.evidence!!
+        assertThat(evidence).hasSize(1)
+        assertThat(evidence[0].type).isEqualTo("LOGO")
+        assertThat(evidence[0].rawValue).isEqualTo("Kleenex")
+        assertThat(evidence[0].score).isWithin(0.01f).of(0.95f)
+
+        val colorAttr = structuredAttrs.find { it.key == "color" }!!
+        assertThat(colorAttr.confidenceLevel).isEqualTo(EnrichmentConfidence.MED)
+
+        val productAttr = structuredAttrs.find { it.key == "product_type" }!!
+        assertThat(productAttr.confidence).isEqualTo("LOW")
+        assertThat(productAttr.confidenceLevel).isEqualTo(EnrichmentConfidence.LOW)
+        assertThat(productAttr.evidence).isNull()
+
+        // Verify summary text
+        assertThat(status.summaryText).isEqualTo("Brand: Kleenex\nColor: blue\nProduct Type: tissue box")
+
+        // Verify suggested additions (empty for fresh enrichment)
+        assertThat(status.suggestedAdditions).isEmpty()
+    }
+
+    @Test
+    fun `parse EnrichStatusResponse with USER source attribute`() {
+        val responseJson = """
+            {
+                "success": true,
+                "status": {
+                    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+                    "correlationId": "corr-123",
+                    "itemId": "item-001",
+                    "stage": "ATTRIBUTES_DONE",
+                    "attributesStructured": [
+                        {
+                            "key": "brand",
+                            "value": "Nike",
+                            "source": "USER",
+                            "confidence": "HIGH",
+                            "updatedAt": 1704067210000
+                        }
+                    ],
+                    "summaryText": "Brand: Nike",
+                    "createdAt": 1704067200000,
+                    "updatedAt": 1704067210000
+                }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
+        val status = response.status!!
+
+        val brandAttr = status.attributesStructured!![0]
+        assertThat(brandAttr.source).isEqualTo("USER")
+        assertThat(brandAttr.isUserProvided).isTrue()
+        assertThat(brandAttr.isDetected).isFalse()
+    }
+
+    @Test
+    fun `parse EnrichStatusResponse with suggested additions`() {
+        val responseJson = """
+            {
+                "success": true,
+                "status": {
+                    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+                    "correlationId": "corr-123",
+                    "itemId": "item-001",
+                    "stage": "ATTRIBUTES_DONE",
+                    "attributesStructured": [
+                        {
+                            "key": "brand",
+                            "value": "Nike",
+                            "source": "USER",
+                            "confidence": "HIGH",
+                            "updatedAt": 1704067200000
+                        }
+                    ],
+                    "summaryText": "Brand: Nike",
+                    "suggestedAdditions": [
+                        {
+                            "attribute": {
+                                "key": "color",
+                                "value": "Red",
+                                "source": "DETECTED",
+                                "confidence": "MED",
+                                "updatedAt": 1704067210000
+                            },
+                            "reason": "Detected color: \"Red\" (MED confidence)",
+                            "action": "add"
+                        },
+                        {
+                            "attribute": {
+                                "key": "size",
+                                "value": "L",
+                                "source": "DETECTED",
+                                "confidence": "LOW",
+                                "updatedAt": 1704067210000
+                            },
+                            "reason": "Detected size: \"L\" (LOW confidence)",
+                            "action": "add"
+                        }
+                    ],
+                    "createdAt": 1704067200000,
+                    "updatedAt": 1704067210000
+                }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
+        val status = response.status!!
+
+        val suggestions = status.suggestedAdditions!!
+        assertThat(suggestions).hasSize(2)
+
+        val colorSuggestion = suggestions[0]
+        assertThat(colorSuggestion.attribute.key).isEqualTo("color")
+        assertThat(colorSuggestion.attribute.value).isEqualTo("Red")
+        assertThat(colorSuggestion.action).isEqualTo("add")
+        assertThat(colorSuggestion.isAdd).isTrue()
+        assertThat(colorSuggestion.isReplace).isFalse()
+        assertThat(colorSuggestion.existingValue).isNull()
+
+        val sizeSuggestion = suggestions[1]
+        assertThat(sizeSuggestion.attribute.key).isEqualTo("size")
+        assertThat(sizeSuggestion.isAdd).isTrue()
+    }
+
+    @Test
+    fun `parse EnrichStatusResponse with replace suggestion`() {
+        val responseJson = """
+            {
+                "success": true,
+                "status": {
+                    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+                    "correlationId": "corr-123",
+                    "itemId": "item-001",
+                    "stage": "ATTRIBUTES_DONE",
+                    "attributesStructured": [
+                        {
+                            "key": "brand",
+                            "value": "Sonny",
+                            "source": "DETECTED",
+                            "confidence": "LOW",
+                            "updatedAt": 1704067200000
+                        }
+                    ],
+                    "summaryText": "Brand: Sonny",
+                    "suggestedAdditions": [
+                        {
+                            "attribute": {
+                                "key": "brand",
+                                "value": "Sony",
+                                "source": "DETECTED",
+                                "confidence": "HIGH",
+                                "evidence": [{"type": "LOGO", "rawValue": "Sony", "score": 0.98}],
+                                "updatedAt": 1704067210000
+                            },
+                            "reason": "Updated brand from \"Sonny\" to \"Sony\" (HIGH confidence)",
+                            "action": "replace",
+                            "existingValue": "Sonny"
+                        }
+                    ],
+                    "createdAt": 1704067200000,
+                    "updatedAt": 1704067210000
+                }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
+        val status = response.status!!
+
+        val suggestions = status.suggestedAdditions!!
+        assertThat(suggestions).hasSize(1)
+
+        val brandSuggestion = suggestions[0]
+        assertThat(brandSuggestion.attribute.key).isEqualTo("brand")
+        assertThat(brandSuggestion.attribute.value).isEqualTo("Sony")
+        assertThat(brandSuggestion.action).isEqualTo("replace")
+        assertThat(brandSuggestion.isReplace).isTrue()
+        assertThat(brandSuggestion.isAdd).isFalse()
+        assertThat(brandSuggestion.existingValue).isEqualTo("Sonny")
+    }
+
+    @Test
+    fun `parse status without Phase 2 fields for backwards compatibility`() {
+        // Old response format without attributesStructured, summaryText, suggestedAdditions
+        val responseJson = """
+            {
+                "success": true,
+                "status": {
+                    "requestId": "550e8400-e29b-41d4-a716-446655440000",
+                    "correlationId": "corr-123",
+                    "itemId": "item-001",
+                    "stage": "ATTRIBUTES_DONE",
+                    "normalizedAttributes": [
+                        {"key": "brand", "value": "Nike", "confidence": "HIGH", "source": "VISION_LOGO"}
+                    ],
+                    "createdAt": 1704067200000,
+                    "updatedAt": 1704067210000
+                }
+            }
+        """.trimIndent()
+
+        val response = json.decodeFromString<EnrichStatusResponse>(responseJson)
+        val status = response.status!!
+
+        // Phase 2 fields should be null/absent
+        assertThat(status.attributesStructured).isNull()
+        assertThat(status.summaryText).isNull()
+        assertThat(status.suggestedAdditions).isNull()
+
+        // Legacy fields should still work
+        assertThat(status.normalizedAttributes).isNotNull()
+        assertThat(status.normalizedAttributes).hasSize(1)
+    }
+
+    @Test
+    fun `StructuredAttributeDto confidence level mapping`() {
+        // Test all confidence mappings
+        val highJson = """{"key": "a", "value": "b", "source": "DETECTED", "confidence": "HIGH"}"""
+        val medJson = """{"key": "a", "value": "b", "source": "DETECTED", "confidence": "MED"}"""
+        val lowJson = """{"key": "a", "value": "b", "source": "DETECTED", "confidence": "LOW"}"""
+        val mediumJson = """{"key": "a", "value": "b", "source": "DETECTED", "confidence": "MEDIUM"}"""
+
+        val highAttr = json.decodeFromString<StructuredAttributeDto>(highJson)
+        val medAttr = json.decodeFromString<StructuredAttributeDto>(medJson)
+        val lowAttr = json.decodeFromString<StructuredAttributeDto>(lowJson)
+        val mediumAttr = json.decodeFromString<StructuredAttributeDto>(mediumJson)
+
+        assertThat(highAttr.confidenceLevel).isEqualTo(EnrichmentConfidence.HIGH)
+        assertThat(medAttr.confidenceLevel).isEqualTo(EnrichmentConfidence.MED)
+        assertThat(lowAttr.confidenceLevel).isEqualTo(EnrichmentConfidence.LOW)
+        // "MEDIUM" should map to MED for backwards compatibility
+        assertThat(mediumAttr.confidenceLevel).isEqualTo(EnrichmentConfidence.MED)
+    }
 }

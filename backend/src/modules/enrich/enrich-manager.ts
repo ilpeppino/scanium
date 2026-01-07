@@ -18,6 +18,8 @@ import {
 } from './types.js';
 import { runEnrichmentPipeline } from './pipeline.js';
 import { FastifyBaseLogger } from 'fastify';
+import { normalizedArrayToStructured } from '../items/attribute-converter.js';
+import { formatSummaryText } from '../items/attribute-merge.js';
 
 /**
  * Default enrichment configuration.
@@ -233,6 +235,13 @@ export class EnrichmentManager {
     }
     if (data.normalizedAttributes) {
       status.normalizedAttributes = data.normalizedAttributes;
+
+      // Compute structured attributes and summary text
+      const timestamp = Date.now();
+      const structuredAttrs = normalizedArrayToStructured(data.normalizedAttributes, timestamp);
+      status.attributesStructured = structuredAttrs;
+      status.summaryText = formatSummaryText(structuredAttrs);
+      status.suggestedAdditions = []; // Empty for fresh enrichment
     }
     if (data.draft) {
       status.draft = data.draft;
