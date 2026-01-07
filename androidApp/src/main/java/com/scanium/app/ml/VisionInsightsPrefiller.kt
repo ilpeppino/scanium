@@ -5,9 +5,15 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
+import com.scanium.app.enrichment.EnrichmentRepository
+import com.scanium.app.enrichment.EnrichmentStatus
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.logging.ScaniumLog
+import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.VisionAttributes
+import com.scanium.shared.core.models.items.VisionColor
+import com.scanium.shared.core.models.items.VisionLabel
+import com.scanium.shared.core.models.items.VisionLogo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,7 +26,7 @@ import javax.inject.Singleton
 /**
  * Coordinates immediate vision insights extraction for scanned items.
  *
- * This class implements a TWO-LAYER extraction pipeline:
+ * This class implements a THREE-LAYER extraction pipeline:
  *
  * Layer A (Local, Fast, Always Available):
  * - Uses ML Kit Text Recognition for OCR
@@ -33,6 +39,12 @@ import javax.inject.Singleton
  * - Provides logo/brand detection, better categorization
  * - Results merged when available (cloud takes precedence)
  *
+ * Layer C (Enrichment, Full Draft Generation):
+ * - Calls /v1/items/enrich backend endpoint
+ * - Performs Google Vision extraction + attribute normalization + LLM draft
+ * - Provides title/description drafts for listings
+ * - Results merged when available (~5-15s)
+ *
  * This ensures users ALWAYS see something immediately, even if:
  * - Network is unavailable
  * - Cloud service is slow or fails
@@ -41,12 +53,13 @@ import javax.inject.Singleton
  * Usage:
  * After capturing items with high-res images, call [extractAndApply] to
  * trigger immediate prefill. Local results appear instantly, cloud results
- * are merged when available.
+ * are merged when available, and enrichment drafts arrive later.
  */
 @Singleton
 class VisionInsightsPrefiller @Inject constructor(
     private val visionInsightsRepository: VisionInsightsRepository,
     private val localVisionExtractor: LocalVisionExtractor,
+    private val enrichmentRepository: EnrichmentRepository,
 ) {
     companion object {
         private const val TAG = "VisionInsightsPrefiller"
@@ -152,6 +165,10 @@ class VisionInsightsPrefiller @Inject constructor(
                         Log.i(TAG, "SCAN_ENRICH: Cloud failed but local results available for item $itemId")
                     }
                 }
+
+                // LAYER C: ENRICHMENT (full draft generation, async ~5-15s)
+                // This runs in the background and updates the item when complete
+                runEnrichmentLayer(bitmap, itemId, stateManager)
             } catch (e: Exception) {
                 Log.e(TAG, "SCAN_ENRICH: Vision extraction failed for item $itemId", e)
             } finally {
@@ -226,6 +243,131 @@ class VisionInsightsPrefiller @Inject constructor(
         } catch (e: Exception) {
             Log.w(TAG, "Failed to load bitmap from URI: $uri", e)
             null
+        }
+    }
+
+    /**
+     * Run Layer C: Full enrichment with draft generation.
+     *
+     * This is a longer-running operation (~5-15s) that:
+     * 1. Submits the image to /v1/items/enrich
+     * 2. Polls for completion
+     * 3. Applies normalized attributes and draft info to the item
+     */
+    private suspend fun runEnrichmentLayer(
+        bitmap: Bitmap,
+        itemId: String,
+        stateManager: ItemsStateManager,
+    ) {
+        Log.i(TAG, "SCAN_ENRICH: Starting enrichment (Layer C) for item $itemId")
+
+        val result = enrichmentRepository.enrichItem(
+            bitmap = bitmap,
+            itemId = itemId,
+            onProgress = { status ->
+                Log.d(TAG, "SCAN_ENRICH: Enrichment progress for $itemId: stage=${status.stage}")
+            },
+        )
+
+        result.onSuccess { status ->
+            Log.i(TAG, "SCAN_ENRICH: Enrichment complete for $itemId - stage=${status.stage}, hasDraft=${status.draft != null}")
+
+            // Apply enrichment results to the item
+            withContext(Dispatchers.Main) {
+                applyEnrichmentResults(stateManager, itemId, status)
+            }
+            Log.i(TAG, "SCAN_ENRICH: Enrichment results applied (Layer C)")
+        }
+
+        result.onFailure { error ->
+            // Enrichment failure is non-critical - item still has Layer A/B results
+            Log.w(TAG, "SCAN_ENRICH: Enrichment failed for $itemId: ${error.message}")
+        }
+    }
+
+    /**
+     * Apply enrichment results to update item attributes and label.
+     */
+    private fun applyEnrichmentResults(
+        stateManager: ItemsStateManager,
+        itemId: String,
+        status: EnrichmentStatus,
+    ) {
+        // Build VisionAttributes from enrichment vision facts
+        val visionFacts = status.visionFacts
+        val visionAttributes = if (visionFacts != null) {
+            VisionAttributes(
+                colors = visionFacts.dominantColors.map { color ->
+                    VisionColor(
+                        name = color.name,
+                        hex = color.hex,
+                        score = color.pct / 100f,
+                    )
+                },
+                ocrText = visionFacts.ocrSnippets.joinToString("\n").takeIf { it.isNotBlank() },
+                logos = visionFacts.logoHints.map { logo ->
+                    VisionLogo(
+                        name = logo.name,
+                        score = logo.confidence,
+                    )
+                },
+                labels = visionFacts.labelHints.map { label ->
+                    VisionLabel(
+                        name = label,
+                        score = 1.0f,
+                    )
+                },
+                brandCandidates = visionFacts.logoHints.map { it.name },
+                modelCandidates = emptyList(),
+                itemType = null, // Will be populated from normalized attributes
+            )
+        } else {
+            null
+        }
+
+        // Build attributes map from normalized attributes
+        val attributesMap = mutableMapOf<String, ItemAttribute>()
+        status.normalizedAttributes?.forEach { attr ->
+            val confidence = when (attr.confidence) {
+                "HIGH" -> 0.9f
+                "MED" -> 0.7f
+                "LOW" -> 0.5f
+                else -> 0.5f
+            }
+            attributesMap[attr.key] = ItemAttribute(
+                value = attr.value,
+                confidence = confidence,
+                source = "enrichment-${attr.source.lowercase()}",
+            )
+        }
+
+        // Use draft title as suggested label if available
+        val suggestedLabel = status.draft?.title?.takeIf { it.isNotBlank() }
+
+        // Apply to state manager
+        if (visionAttributes != null || attributesMap.isNotEmpty() || suggestedLabel != null) {
+            stateManager.applyVisionInsights(
+                aggregatedId = itemId,
+                visionAttributes = visionAttributes ?: VisionAttributes.EMPTY,
+                suggestedLabel = suggestedLabel,
+                categoryHint = null,
+            )
+
+            // Apply normalized attributes with higher confidence (from enrichment)
+            if (attributesMap.isNotEmpty()) {
+                stateManager.applyEnhancedClassification(
+                    aggregatedId = itemId,
+                    category = null,
+                    label = suggestedLabel,
+                    priceRange = null,
+                    classificationConfidence = null,
+                    attributes = attributesMap,
+                    visionAttributes = visionAttributes,
+                    isFromBackend = true,
+                )
+            }
+
+            Log.i(TAG, "SCAN_ENRICH: Applied enrichment - label=$suggestedLabel, attrs=${attributesMap.keys}")
         }
     }
 }
