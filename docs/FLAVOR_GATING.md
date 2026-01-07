@@ -10,16 +10,17 @@ Scanium uses Android product flavors to control feature availability and UI visi
 
 | Feature | dev | beta | prod |
 |---------|-----|------|------|
-| Developer Mode | Enabled (toggleable) | Disabled | Disabled |
+| Developer Mode | Always ON (forced) | Disabled | Disabled |
 | Screenshots | Enabled (toggleable) | Disabled (FLAG_SECURE) | Disabled (FLAG_SECURE) |
 | AI Assistant | Enabled | Hidden | Hidden |
 | Image Resolution | Low/Normal/High | Low/Normal | Low/Normal |
 | Item Diagnostics | Shown | Hidden | Hidden |
+| Diagnostics Description | Shown | Hidden | Hidden |
 
 ## Feature Details
 
 ### Developer Mode
-- **dev**: Users can enable Developer Options in Settings. When enabled, shows Developer Options menu with debug toggles.
+- **dev**: Developer Mode is **always ON** and cannot be disabled. The toggle is removed from the Developer Options screen - replaced with a static indicator showing "Always enabled in DEV builds". This ensures developers always have access to debug features without having to remember to enable them.
 - **beta/prod**: Developer Options completely hidden. No entry point in Settings. Deep links to developer screen navigate back immediately.
 
 ### Screenshots
@@ -47,6 +48,10 @@ Scanium uses Android product flavors to control feature availability and UI visi
   - Title/category
   - Price and condition
   - Attributes
+
+### Diagnostics & Checks Description
+- **dev**: Shows an informational card at the top of the Developer Options screen explaining the purpose of diagnostics sections: "Diagnostics & checks help verify connectivity to your backend services (health, config, preflight, assistant) and alert you when something breaks. Use them while testing to quickly spot disruptions."
+- **beta/prod**: Not shown (Developer Options screen is not accessible).
 
 ## Architecture
 
@@ -90,6 +95,7 @@ buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
 2. **Navigation Guards**: Routes check flags and navigate back if unauthorized
 3. **Settings Clamping**: SettingsRepository clamps values at read time
 4. **Resolution Clamping**: CameraViewModel clamps HIGH to NORMAL
+5. **Developer Mode Forcing**: DEV builds always return `true` for `developerModeFlow`, BETA/PROD always return `false`
 
 ### Migration Safety
 
@@ -97,6 +103,10 @@ When a dev build is replaced by beta/prod, settings that would enable restricted
 - `developerModeFlow` returns false regardless of stored value
 - `devAllowScreenshotsFlow` returns false regardless of stored value
 - Capture resolution HIGH is clamped to NORMAL
+
+When a beta/prod build is replaced by dev:
+- `developerModeFlow` returns true regardless of stored value (forced ON)
+- `setDeveloperMode()` is a no-op (cannot be disabled by user)
 
 No crashes or stale UI will occur.
 
@@ -121,6 +131,8 @@ No crashes or stale UI will occur.
 3. Resolution selector shows High option
 4. Developer menu visible in Settings
 5. Screenshots can be toggled
+6. Developer Mode shows "Always enabled in DEV builds" (no toggle)
+7. Diagnostics & Checks description card visible at top of Developer Options
 
 **BETA/PROD build:**
 1. Item list has NO accuracy badges
@@ -133,4 +145,5 @@ No crashes or stale UI will occur.
 
 See test files:
 - `FeatureFlagsTest.kt` - Flag value verification
+- `DeveloperModeSettingsTest.kt` - Developer mode behavior per flavor
 - `ItemsListScreenTest.kt` - Diagnostic visibility tests

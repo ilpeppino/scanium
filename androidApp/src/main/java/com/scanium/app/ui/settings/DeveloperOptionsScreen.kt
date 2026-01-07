@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.camera.ConfidenceTiers
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.diagnostics.*
 import com.scanium.app.model.config.ConnectionTestResult
 import com.scanium.app.monitoring.DevHealthMonitorScheduler
@@ -100,6 +101,11 @@ fun DeveloperOptionsScreen(
                     .padding(paddingValues)
                     .verticalScroll(scrollState),
         ) {
+            // Diagnostics description (DEV-only)
+            if (FeatureFlags.isDevBuild) {
+                DiagnosticsDescriptionCard()
+            }
+
             // System Health Section
             SystemHealthSection(
                 diagnosticsState = diagnosticsState,
@@ -158,13 +164,45 @@ fun DeveloperOptionsScreen(
             // Developer Settings Section
             SettingsSectionHeader("Developer Settings")
 
-            SettingSwitchRow(
-                title = "Developer Mode",
-                subtitle = "Unlock all features for testing",
-                icon = Icons.Default.BugReport,
-                checked = isDeveloperMode,
-                onCheckedChange = { viewModel.setDeveloperMode(it) },
-            )
+            // In DEV builds, Developer Mode is always ON and cannot be toggled
+            // Only show the toggle in non-DEV builds (shouldn't normally be reachable)
+            if (!FeatureFlags.isDevBuild) {
+                SettingSwitchRow(
+                    title = "Developer Mode",
+                    subtitle = "Unlock all features for testing",
+                    icon = Icons.Default.BugReport,
+                    checked = isDeveloperMode,
+                    onCheckedChange = { viewModel.setDeveloperMode(it) },
+                )
+            } else {
+                // DEV flavor: Show static indicator that dev mode is always on
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(
+                        Icons.Default.BugReport,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Column {
+                        Text(
+                            text = "Developer Mode",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                        )
+                        Text(
+                            text = "Always enabled in DEV builds",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -1933,6 +1971,53 @@ private fun HealthMonitorStatusBadge(
                 fontWeight = FontWeight.SemiBold,
                 color = color,
             )
+        }
+    }
+}
+
+// ==================== Diagnostics Description (DEV-only) ====================
+
+/**
+ * Informational card explaining what the diagnostics sections are for.
+ * Only shown in DEV builds to help developers understand the diagnostic tools.
+ */
+@Composable
+private fun DiagnosticsDescriptionCard() {
+    Surface(
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
+            Column {
+                Text(
+                    text = "Diagnostics & Checks",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Diagnostics & checks help verify connectivity to your backend services " +
+                        "(health, config, preflight, assistant) and alert you when something breaks. " +
+                        "Use them while testing to quickly spot disruptions.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

@@ -136,22 +136,31 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
-     * Developer mode flow - clamped to false in beta/prod builds.
-     * In beta/prod, this always returns false regardless of stored preference.
+     * Developer mode flow - behavior varies by build flavor:
+     * - DEV: Always returns true (forced ON, cannot be disabled)
+     * - BETA/PROD: Always returns false (developer mode hidden)
      */
     val developerModeFlow: Flow<Boolean> =
         context.settingsDataStore.data.map { preferences ->
-            // Clamp to false if developer mode is not allowed by feature flags
-            if (!FeatureFlags.allowDeveloperMode) {
-                false
-            } else {
-                preferences[DEVELOPER_MODE_KEY] ?: false
+            when {
+                // DEV flavor: Developer mode is always ON
+                FeatureFlags.isDevBuild -> true
+                // BETA/PROD: Developer mode is completely disabled
+                !FeatureFlags.allowDeveloperMode -> false
+                // Fallback: use stored preference (shouldn't reach here with current flavors)
+                else -> preferences[DEVELOPER_MODE_KEY] ?: false
             }
         }
 
+    /**
+     * Set developer mode - no-op in DEV builds (always ON) and BETA/PROD builds (always OFF).
+     */
     suspend fun setDeveloperMode(enabled: Boolean) {
-        // Only persist if developer mode is allowed
+        // DEV flavor: Developer mode is forced ON, ignore setter
+        if (FeatureFlags.isDevBuild) return
+        // BETA/PROD: Developer mode is not allowed, ignore setter
         if (!FeatureFlags.allowDeveloperMode) return
+        // Fallback: persist the value (shouldn't reach here with current flavors)
         context.settingsDataStore.edit { preferences ->
             preferences[DEVELOPER_MODE_KEY] = enabled
         }
