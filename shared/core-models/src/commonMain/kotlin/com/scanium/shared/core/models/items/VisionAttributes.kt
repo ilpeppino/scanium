@@ -19,6 +19,8 @@ data class VisionAttributes(
     val labels: List<VisionLabel> = emptyList(),
     val brandCandidates: List<String> = emptyList(),
     val modelCandidates: List<String> = emptyList(),
+    /** Sellable item type noun (e.g., "Lip Balm", "T-Shirt") */
+    val itemType: String? = null,
 ) {
     /**
      * Primary color (highest score) if available.

@@ -72,7 +72,9 @@ type VisionInsightsResponse = {
   labelHints: string[];
   /** Suggested label/name based on OCR + logos */
   suggestedLabel: string | null;
-  /** Category hint based on labels */
+  /** Sellable item type noun (e.g., "lip balm", "T-shirt") */
+  itemType: string | null;
+  /** Category hint based on labels (coarse category) */
   categoryHint: string | null;
   /** Extraction metadata */
   extractionMeta: {
@@ -417,14 +419,26 @@ function buildResponse(
   // Extract attribute candidates
   const { brandCandidates, modelCandidates } = collectAttributeCandidates(facts);
 
-  // Build suggested label from brand + model or OCR
+  // Derive sellable item type from labels (e.g., "lip balm", "T-shirt")
+  const itemType = deriveItemType(facts.labelHints);
+
+  // Derive coarse category from labels
+  const categoryHint = deriveCategoryHint(facts.labelHints);
+
+  // Build suggested label: brand + itemType > brand alone > OCR snippet
   let suggestedLabel: string | null = null;
   if (brandCandidates.length > 0) {
-    if (modelCandidates.length > 0) {
+    if (itemType) {
+      // "Labello Lip Balm" format
+      suggestedLabel = `${brandCandidates[0]} ${itemType}`;
+    } else if (modelCandidates.length > 0) {
       suggestedLabel = `${brandCandidates[0]} ${modelCandidates[0]}`;
     } else {
       suggestedLabel = brandCandidates[0];
     }
+  } else if (itemType) {
+    // Use itemType as label when no brand
+    suggestedLabel = itemType;
   } else if (facts.ocrSnippets.length > 0) {
     // Use first meaningful OCR snippet as fallback
     const firstSnippet = facts.ocrSnippets[0].text.trim();
@@ -432,9 +446,6 @@ function buildResponse(
       suggestedLabel = firstSnippet;
     }
   }
-
-  // Derive category hint from labels
-  const categoryHint = deriveCategoryHint(facts.labelHints);
 
   return {
     success: true,
@@ -452,6 +463,7 @@ function buildResponse(
     })),
     labelHints: facts.labelHints.map((l) => l.label).slice(0, 5),
     suggestedLabel,
+    itemType,
     categoryHint,
     extractionMeta: {
       provider: facts.extractionMeta.provider,
@@ -459,6 +471,174 @@ function buildResponse(
       cacheHit,
     },
   };
+}
+
+/**
+ * Derive a sellable item type (noun) from label hints.
+ * Returns specific product types like "Lip Balm", "T-Shirt", "Tissue Box".
+ * This is more specific than categoryHint which gives coarse categories.
+ */
+function deriveItemType(
+  labelHints: Array<{ label: string; score: number }>
+): string | null {
+  // Map Vision API labels to sellable item type nouns
+  // Priority: More specific labels first
+  const itemTypeMap: Record<string, string> = {
+    // Cosmetics / Personal Care
+    'lip balm': 'Lip Balm',
+    'lipstick': 'Lipstick',
+    'lip gloss': 'Lip Gloss',
+    'chapstick': 'Lip Balm',
+    'moisturizer': 'Moisturizer',
+    'lotion': 'Lotion',
+    'cream': 'Cream',
+    'sunscreen': 'Sunscreen',
+    'perfume': 'Perfume',
+    'cologne': 'Cologne',
+    'deodorant': 'Deodorant',
+    'shampoo': 'Shampoo',
+    'conditioner': 'Conditioner',
+    'soap': 'Soap',
+    'body wash': 'Body Wash',
+    'nail polish': 'Nail Polish',
+    'mascara': 'Mascara',
+    'foundation': 'Foundation',
+    'concealer': 'Concealer',
+    'eyeshadow': 'Eyeshadow',
+    'blush': 'Blush',
+    // Clothing
+    't-shirt': 'T-Shirt',
+    'shirt': 'Shirt',
+    'blouse': 'Blouse',
+    'pants': 'Pants',
+    'jeans': 'Jeans',
+    'shorts': 'Shorts',
+    'skirt': 'Skirt',
+    'dress': 'Dress',
+    'jacket': 'Jacket',
+    'coat': 'Coat',
+    'sweater': 'Sweater',
+    'hoodie': 'Hoodie',
+    'cardigan': 'Cardigan',
+    'sneakers': 'Sneakers',
+    'shoes': 'Shoes',
+    'boots': 'Boots',
+    'sandals': 'Sandals',
+    'socks': 'Socks',
+    'hat': 'Hat',
+    'cap': 'Cap',
+    'scarf': 'Scarf',
+    'gloves': 'Gloves',
+    'belt': 'Belt',
+    // Electronics
+    'phone': 'Phone',
+    'smartphone': 'Smartphone',
+    'tablet': 'Tablet',
+    'laptop': 'Laptop',
+    'computer': 'Computer',
+    'monitor': 'Monitor',
+    'keyboard': 'Keyboard',
+    'mouse': 'Mouse',
+    'headphones': 'Headphones',
+    'earbuds': 'Earbuds',
+    'speaker': 'Speaker',
+    'camera': 'Camera',
+    'television': 'Television',
+    'tv': 'TV',
+    'charger': 'Charger',
+    'cable': 'Cable',
+    'controller': 'Controller',
+    // Home goods
+    'tissue': 'Tissue Box',
+    'tissue box': 'Tissue Box',
+    'paper towel': 'Paper Towels',
+    'towel': 'Towel',
+    'pillow': 'Pillow',
+    'blanket': 'Blanket',
+    'candle': 'Candle',
+    'vase': 'Vase',
+    'lamp': 'Lamp',
+    'clock': 'Clock',
+    'mirror': 'Mirror',
+    'frame': 'Picture Frame',
+    'rug': 'Rug',
+    'curtain': 'Curtains',
+    // Kitchen
+    'mug': 'Mug',
+    'cup': 'Cup',
+    'glass': 'Glass',
+    'plate': 'Plate',
+    'bowl': 'Bowl',
+    'utensil': 'Utensils',
+    'pot': 'Pot',
+    'pan': 'Pan',
+    'knife': 'Knife',
+    'cutting board': 'Cutting Board',
+    'bottle': 'Bottle',
+    'container': 'Container',
+    // Furniture
+    'chair': 'Chair',
+    'table': 'Table',
+    'desk': 'Desk',
+    'shelf': 'Shelf',
+    'cabinet': 'Cabinet',
+    'sofa': 'Sofa',
+    'couch': 'Couch',
+    'bed': 'Bed',
+    // Books & Media
+    'book': 'Book',
+    'magazine': 'Magazine',
+    'dvd': 'DVD',
+    'cd': 'CD',
+    'vinyl': 'Vinyl Record',
+    // Toys & Games
+    'toy': 'Toy',
+    'doll': 'Doll',
+    'action figure': 'Action Figure',
+    'board game': 'Board Game',
+    'puzzle': 'Puzzle',
+    'lego': 'LEGO Set',
+    // Sports
+    'ball': 'Ball',
+    'racket': 'Racket',
+    'bat': 'Bat',
+    'helmet': 'Helmet',
+    'bicycle': 'Bicycle',
+    'skateboard': 'Skateboard',
+    // Bags & Accessories
+    'bag': 'Bag',
+    'backpack': 'Backpack',
+    'purse': 'Purse',
+    'wallet': 'Wallet',
+    'watch': 'Watch',
+    'sunglasses': 'Sunglasses',
+    'jewelry': 'Jewelry',
+    'necklace': 'Necklace',
+    'bracelet': 'Bracelet',
+    'ring': 'Ring',
+    'earrings': 'Earrings',
+    // Food & Beverages (for packaging)
+    'snack': 'Snack',
+    'candy': 'Candy',
+    'chocolate': 'Chocolate',
+    'drink': 'Beverage',
+  };
+
+  for (const hint of labelHints) {
+    const normalized = hint.label.toLowerCase();
+    // Check for exact matches first (more specific)
+    if (itemTypeMap[normalized]) {
+      return itemTypeMap[normalized];
+    }
+    // Then check for partial matches
+    for (const [keyword, itemType] of Object.entries(itemTypeMap)) {
+      if (normalized.includes(keyword) || keyword.includes(normalized)) {
+        return itemType;
+      }
+    }
+  }
+
+  return null;
 }
 
 /**

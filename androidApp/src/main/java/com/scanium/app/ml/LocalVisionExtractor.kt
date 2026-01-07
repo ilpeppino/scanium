@@ -82,7 +82,6 @@ class LocalVisionExtractor @Inject constructor() {
      */
     suspend fun extract(bitmap: Bitmap): LocalVisionResult = withContext(Dispatchers.Default) {
         val startTime = System.currentTimeMillis()
-        Log.w(TAG, "DIAG: Starting local vision extraction for ${bitmap.width}x${bitmap.height} bitmap")
 
         var ocrText: String? = null
         var ocrSuccess = false
@@ -92,62 +91,34 @@ class LocalVisionExtractor @Inject constructor() {
 
         // Extract OCR text
         try {
-            Log.w(TAG, "DIAG: [1/2] Running ML Kit OCR...")
-            val ocrStartTime = System.currentTimeMillis()
             val inputImage = InputImage.fromBitmap(bitmap, 0)
             val visionText = textRecognizer.process(inputImage).await()
-
             val rawText = visionText.text
-            val ocrLatency = System.currentTimeMillis() - ocrStartTime
-            Log.w(TAG, "DIAG: ML Kit OCR completed in ${ocrLatency}ms, rawText.length=${rawText.length}")
 
             if (rawText.length >= MIN_OCR_TEXT_LENGTH) {
-                // Truncate if needed
                 ocrText = if (rawText.length > MAX_OCR_TEXT_LENGTH) {
                     rawText.take(MAX_OCR_TEXT_LENGTH) + "..."
                 } else {
                     rawText
                 }
                 ocrSuccess = true
-
-                // Extract suggested label from first meaningful line
                 suggestedLabel = extractSuggestedLabel(rawText)
-                Log.w(TAG, "DIAG: OCR text preview: ${ocrText.take(100)}...")
-                Log.w(TAG, "DIAG: Suggested label: $suggestedLabel")
-            } else {
-                Log.w(TAG, "DIAG: OCR text too short (${rawText.length} < $MIN_OCR_TEXT_LENGTH)")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "DIAG: ML Kit OCR failed", e)
+            Log.e(TAG, "ML Kit OCR failed", e)
         }
 
         // Extract colors using Palette API
         try {
-            Log.w(TAG, "DIAG: [2/2] Running Palette color extraction...")
-            val colorStartTime = System.currentTimeMillis()
-
-            // Resize bitmap for faster palette extraction
             val resizedBitmap = resizeForPalette(bitmap)
             val palette = Palette.from(resizedBitmap).generate()
-
-            val colorLatency = System.currentTimeMillis() - colorStartTime
-            Log.w(TAG, "DIAG: Palette extraction completed in ${colorLatency}ms")
-
             colors = extractColorsFromPalette(palette)
             colorSuccess = colors.isNotEmpty()
-            Log.w(TAG, "DIAG: Extracted ${colors.size} colors: ${colors.map { it.name }}")
         } catch (e: Exception) {
-            Log.e(TAG, "DIAG: Palette extraction failed", e)
+            Log.e(TAG, "Palette extraction failed", e)
         }
 
         val totalTime = System.currentTimeMillis() - startTime
-        Log.w(TAG, "╔════════════════════════════════════════════════════════════════")
-        Log.w(TAG, "║ LOCAL VISION EXTRACTION COMPLETE")
-        Log.w(TAG, "║ totalTime=${totalTime}ms")
-        Log.w(TAG, "║ ocrSuccess=$ocrSuccess, ocrText.length=${ocrText?.length ?: 0}")
-        Log.w(TAG, "║ colorSuccess=$colorSuccess, colors=${colors.map { it.name }}")
-        Log.w(TAG, "║ suggestedLabel=$suggestedLabel")
-        Log.w(TAG, "╚════════════════════════════════════════════════════════════════")
 
         LocalVisionResult(
             ocrText = ocrText,
