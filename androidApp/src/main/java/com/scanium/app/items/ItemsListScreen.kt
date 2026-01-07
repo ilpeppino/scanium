@@ -50,6 +50,9 @@ import com.scanium.app.items.components.AttributeChipsRow
 import com.scanium.app.items.components.AttributeEditDialog
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
+import com.scanium.app.items.export.bundle.ExportBottomSheet
+import com.scanium.app.items.export.bundle.ExportState
+import com.scanium.app.items.export.bundle.ExportViewModel
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.app.model.resolveBytes
 import com.scanium.app.model.toImageBitmap
@@ -77,6 +80,7 @@ fun ItemsListScreen(
     onNavigateToGenerateListing: (String) -> Unit = {},
     draftStore: ListingDraftStore,
     itemsViewModel: ItemsViewModel = viewModel(),
+    exportViewModel: ExportViewModel = viewModel(),
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val items by itemsViewModel.items.collectAsState()
@@ -96,6 +100,11 @@ fun ItemsListScreen(
     var showShareMenu by remember { mutableStateOf(false) }
     var isExporting by remember { mutableStateOf(false) }
     val exportPayload by itemsViewModel.exportPayload.collectAsState()
+
+    // Export bundle state
+    var showExportSheet by remember { mutableStateOf(false) }
+    val exportState by exportViewModel.exportState.collectAsState()
+    val bundleResult by exportViewModel.bundleResult.collectAsState()
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -707,6 +716,33 @@ fun ItemsListScreen(
                             }
                         },
                     )
+
+                    HorizontalDivider()
+
+                    // Export Listings (new Phase 5 feature)
+                    DropdownMenuItem(
+                        text = { Text("Export Listings…") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Outlined.FolderZip,
+                                contentDescription = "Export marketplace listings",
+                            )
+                        },
+                        onClick = {
+                            showShareMenu = false
+                            if (selectedIds.isEmpty()) {
+                                scope.launch { snackbarHostState.showSnackbar("Select items to export") }
+                                return@DropdownMenuItem
+                            }
+                            soundManager.play(AppSound.EXPORT)
+                            // Prepare bundles and show export sheet
+                            exportViewModel.prepareExport(
+                                items = items,
+                                selectedIds = selectedIds.toSet(),
+                            )
+                            showExportSheet = true
+                        },
+                    )
                 }
             }
         }
@@ -796,6 +832,54 @@ fun ItemsListScreen(
                 detailSheetItem?.let { currentItem ->
                     detailSheetItem = itemsViewModel.getItem(currentItem.id)
                 }
+            },
+        )
+    }
+
+    // Export bottom sheet
+    if (showExportSheet) {
+        ExportBottomSheet(
+            bundleResult = bundleResult,
+            exportState = exportState,
+            onDismiss = {
+                showExportSheet = false
+                exportViewModel.reset()
+            },
+            onExportText = {
+                exportViewModel.exportText()
+            },
+            onExportZip = {
+                exportViewModel.exportZip()
+            },
+            onCopyText = {
+                val copied = exportViewModel.copyTextToClipboard()
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        if (copied) "Copied to clipboard" else "Failed to copy",
+                    )
+                }
+            },
+            onShareZip = { zipFile ->
+                val intent = exportViewModel.createZipShareIntent(zipFile)
+                val chooser = Intent.createChooser(intent, "Share ZIP")
+                runCatching { context.startActivity(chooser) }
+                    .onFailure {
+                        soundManager.play(AppSound.ERROR)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Unable to share ZIP")
+                        }
+                    }
+            },
+            onShareText = { text ->
+                val intent = exportViewModel.createTextShareIntent(text)
+                val chooser = Intent.createChooser(intent, "Share Listings")
+                runCatching { context.startActivity(chooser) }
+                    .onFailure {
+                        soundManager.play(AppSound.ERROR)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Unable to share text")
+                        }
+                    }
             },
         )
     }
