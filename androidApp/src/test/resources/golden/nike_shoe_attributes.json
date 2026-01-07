@@ -1,0 +1,37 @@
+{
+  "scenario": "nike_shoe_full",
+  "description": "Nike shoe with all attributes detected - should be ready for listing",
+  "category": "FASHION",
+  "attributes": {
+    "brand": {
+      "value": "Nike",
+      "confidence": 0.95,
+      "source": "vision-logo"
+    },
+    "itemType": {
+      "value": "Running Shoe",
+      "confidence": 0.88,
+      "source": "vision-label"
+    },
+    "color": {
+      "value": "Black",
+      "confidence": 0.92,
+      "source": "vision-color"
+    },
+    "size": {
+      "value": "US 10",
+      "confidence": 0.85,
+      "source": "ocr"
+    },
+    "condition": {
+      "value": "New",
+      "confidence": 0.75,
+      "source": "user"
+    }
+  },
+  "expected": {
+    "minScore": 75,
+    "isReadyForListing": true,
+    "maxMissingCount": 3
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "scenario": "iphone_partial",
+  "description": "iPhone with only brand detected - needs more attributes",
+  "category": "ELECTRONICS",
+  "attributes": {
+    "brand": {
+      "value": "Apple",
+      "confidence": 0.92,
+      "source": "vision-logo"
+    },
+    "color": {
+      "value": "Space Gray",
+      "confidence": 0.78,
+      "source": "vision-color"
+    }
+  },
+  "expected": {
+    "maxScore": 50,
+    "isReadyForListing": false,
+    "requiredMissing": ["model", "condition"]
+  }
+}
