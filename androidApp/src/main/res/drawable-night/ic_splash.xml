@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-Splash screen icon for Scanium - Dark Mode variant.
-Uses only the "S" mark (Scan Beam symbol) centered for splash display.
+Splash screen icon for Scanium - Dark Mode variant - Lightning Bolt Design.
+Uses the geometric "S" lightning bolt symbol centered for splash display.
 
-Dark mode: White frame with yellow S accent on dark slate background.
+Dark mode: White frame with yellow lightning bolt accent on dark slate background.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -27,14 +27,19 @@ Dark mode: White frame with yellow S accent on dark slate background.
             android:strokeWidth="6.5"
             android:fillColor="#00000000"/>
 
-        <!-- S Symbol: Smooth curved S with rounded ends - Lightning Yellow accent -->
+        <!-- Lightning Bolt S Symbol: Three geometric parallelograms -->
+        <!-- Top bar -->
         <path
-            android:pathData="M 66.1 28.8 C 66.1 28.8 61.4 23.9 54 23.9 C 45 23.9 38.7 28.8 38.7 35.6 C 38.7 42.4 45 46.3 54 48.2 C 63 50.2 69.3 54 69.3 61.8 C 69.3 69.6 63 75.4 54 75.4 C 46.4 75.4 41.7 70.5 41.7 70.5"
-            android:strokeColor="#FFD400"
-            android:strokeWidth="9"
-            android:strokeLineCap="round"
-            android:strokeLineJoin="round"
-            android:fillColor="#00000000"/>
+            android:pathData="M 29 27 L 75 27 L 69 37 L 29 37 Z"
+            android:fillColor="#FFD400"/>
+        <!-- Middle diagonal bar -->
+        <path
+            android:pathData="M 67 37 L 75 27 L 41 73 L 33 63 Z"
+            android:fillColor="#FFD400"/>
+        <!-- Bottom bar -->
+        <path
+            android:pathData="M 33 63 L 41 73 L 79 73 L 79 63 Z"
+            android:fillColor="#FFD400"/>
 
     </group>
 </vector>
