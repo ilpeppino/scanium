@@ -12,6 +12,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -23,6 +24,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
 import com.scanium.app.domain.DomainPackProvider
+import com.scanium.app.startup.StartupGuard
 import com.scanium.app.ui.theme.ScaniumTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -123,6 +125,12 @@ class MainActivity : AppCompatActivity() {
                     ThemeMode.LIGHT -> false
                     ThemeMode.DARK -> true
                 }
+
+            // Record successful startup after first composition
+            LaunchedEffect(Unit) {
+                StartupGuard.getInstance(this@MainActivity).recordStartupSuccess()
+                Log.d(TAG, "Startup success recorded - crash loop detection reset")
+            }
 
             ScaniumTheme(darkTheme = useDarkTheme) {
                 Surface(

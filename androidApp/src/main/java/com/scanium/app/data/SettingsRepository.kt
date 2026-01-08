@@ -1,10 +1,13 @@
 package com.scanium.app.data
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -17,11 +20,24 @@ import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
 import com.scanium.app.model.user.UserEdition
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 
+private const val SETTINGS_DATASTORE_TAG = "SettingsDataStore"
+
+/**
+ * DataStore with corruption handler that resets to defaults on file corruption.
+ * This prevents startup crashes if the preferences file becomes corrupted
+ * (e.g., after process kill, disk issues, or app updates).
+ */
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "settings_preferences",
+    corruptionHandler = ReplaceFileCorruptionHandler { exception ->
+        Log.e(SETTINGS_DATASTORE_TAG, "DataStore corrupted, resetting to defaults", exception)
+        emptyPreferences()
+    },
 )
 
 class SettingsRepository(
@@ -83,8 +99,29 @@ class SettingsRepository(
         private val DEV_OVERLAY_ACCURACY_STEP_KEY = intPreferencesKey("dev_overlay_accuracy_step")
     }
 
+    /**
+     * Helper to create a safe flow that catches IO exceptions and emits a default value.
+     * This prevents crashes during startup if DataStore encounters transient IO issues.
+     */
+    private fun <T> Flow<Preferences>.safeMap(
+        default: T,
+        transform: (Preferences) -> T,
+    ): Flow<T> =
+        this
+            .catch { exception ->
+                if (exception is IOException) {
+                    Log.e(SETTINGS_DATASTORE_TAG, "DataStore IO error, using default", exception)
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }
+            .map { preferences ->
+                runCatching { transform(preferences) }.getOrElse { default }
+            }
+
     val themeModeFlow: Flow<ThemeMode> =
-        dataStore.data.map { preferences ->
+        dataStore.data.safeMap(ThemeMode.SYSTEM) { preferences ->
             val raw = preferences[THEME_MODE_KEY]
             raw?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.SYSTEM
         }
@@ -96,7 +133,7 @@ class SettingsRepository(
     }
 
     val appLanguageFlow: Flow<AppLanguage> =
-        dataStore.data.map { preferences ->
+        dataStore.data.safeMap(AppLanguage.SYSTEM) { preferences ->
             val raw = preferences[APP_LANGUAGE_KEY]
             raw?.let { AppLanguage.fromCode(it) } ?: AppLanguage.SYSTEM
         }
@@ -130,7 +167,7 @@ class SettingsRepository(
     }
 
     val shareDiagnosticsFlow: Flow<Boolean> =
-        dataStore.data.map { preferences ->
+        dataStore.data.safeMap(false) { preferences ->
             preferences[SHARE_DIAGNOSTICS_KEY] ?: false
         }
 

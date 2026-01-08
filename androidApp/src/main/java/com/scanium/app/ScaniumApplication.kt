@@ -7,6 +7,7 @@ import com.scanium.app.crash.AndroidCrashPortAdapter
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.model.AppLanguage
 import com.scanium.app.perf.PerformanceMonitor
+import com.scanium.app.startup.StartupGuard
 import com.scanium.app.telemetry.*
 import com.scanium.diagnostics.DefaultDiagnosticsPort
 import com.scanium.diagnostics.DiagnosticsPort
@@ -44,21 +45,50 @@ class ScaniumApplication : Application() {
     lateinit var telemetry: Telemetry
         private set
 
+    // Startup guard for crash-loop detection
+    lateinit var startupGuard: StartupGuard
+        private set
+
+    /**
+     * Whether the app is running in safe mode due to crash-loop detection.
+     * In safe mode, optional startup tasks are skipped to maximize reliability.
+     */
+    val isSafeMode: Boolean
+        get() = if (::startupGuard.isInitialized) startupGuard.isSafeMode else false
+
     override fun onCreate() {
         super.onCreate()
+
+        // Initialize crash-loop detection FIRST (uses SharedPrefs, not DataStore)
+        startupGuard = StartupGuard.getInstance(this)
+        startupGuard.recordStartupAttempt()
+
+        if (startupGuard.isSafeMode) {
+            android.util.Log.w("ScaniumApplication", "Starting in SAFE MODE due to crash loop")
+        }
 
         val settingsRepository = SettingsRepository(this)
         val classificationPreferences = com.scanium.app.data.ClassificationPreferences(this)
 
         // Apply saved locale SYNCHRONOUSLY before any Activity starts
         // This ensures the correct locale is set before the first UI renders
-        val initialLanguage = runBlocking {
-            settingsRepository.appLanguageFlow.first()
-        }
-        val initialLocaleList = when (initialLanguage) {
-            AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
-            else -> LocaleListCompat.forLanguageTags(initialLanguage.code)
-        }
+        // Wrapped in defensive error handling to prevent startup crash on DataStore issues
+        val initialLanguage =
+            runCatching {
+                runBlocking { settingsRepository.appLanguageFlow.first() }
+            }.getOrElse { exception ->
+                android.util.Log.e(
+                    "ScaniumApplication",
+                    "Failed to load initial language preference, using SYSTEM default",
+                    exception,
+                )
+                AppLanguage.SYSTEM
+            }
+        val initialLocaleList =
+            when (initialLanguage) {
+                AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+                else -> LocaleListCompat.forLanguageTags(initialLanguage.code)
+            }
         AppCompatDelegate.setApplicationLocales(initialLocaleList)
 
         // Initialize DiagnosticsPort (shared buffer for crash-time diagnostics)
