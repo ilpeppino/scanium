@@ -59,21 +59,10 @@ class MainActivity : AppCompatActivity() {
             val flashDuration = 175L
             val fadeOutDuration = 100L
 
-            // First: quick alpha pulse (flash effect)
-            val flashAnimator =
-                ObjectAnimator.ofFloat(
-                    splashScreenView.iconView,
-                    View.ALPHA,
-                    1f,
-                    1.2f,
-                    1f,
-// Subtle brightness pulse
-                ).apply {
-                    duration = flashDuration
-                    interpolator = AccelerateInterpolator()
-                }
+            // Guard against null iconView (can happen if splash icon isn't animated)
+            val iconView = splashScreenView.iconView
 
-            // Then: fade out the entire splash
+            // Fade out the entire splash
             val fadeOutAnimator =
                 ObjectAnimator.ofFloat(
                     splashScreenView.view,
@@ -86,9 +75,27 @@ class MainActivity : AppCompatActivity() {
                     doOnEnd { splashScreenView.remove() }
                 }
 
-            // Chain animations: flash then fade
-            flashAnimator.doOnEnd { fadeOutAnimator.start() }
-            flashAnimator.start()
+            // Only apply flash effect if iconView exists
+            if (iconView != null) {
+                val flashAnimator =
+                    ObjectAnimator.ofFloat(
+                        iconView,
+                        View.ALPHA,
+                        1f,
+                        1.2f,
+                        1f, // Subtle brightness pulse
+                    ).apply {
+                        duration = flashDuration
+                        interpolator = AccelerateInterpolator()
+                    }
+
+                // Chain animations: flash then fade
+                flashAnimator.doOnEnd { fadeOutAnimator.start() }
+                flashAnimator.start()
+            } else {
+                // No icon, just fade out
+                fadeOutAnimator.start()
+            }
         }
 
         super.onCreate(savedInstanceState)

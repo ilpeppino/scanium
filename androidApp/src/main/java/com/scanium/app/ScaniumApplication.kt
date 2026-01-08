@@ -190,7 +190,22 @@ class ScaniumApplication : Application() {
         }
 
         // Initialize OTLP telemetry ports
-        initializeTelemetry()
+        try {
+            initializeTelemetry()
+        } catch (e: Exception) {
+            android.util.Log.e("ScaniumApplication", "Failed to initialize telemetry", e)
+            // Create minimal no-op telemetry to prevent NPE later
+            val fallbackConfig = com.scanium.telemetry.TelemetryConfig.development()
+            telemetry = com.scanium.telemetry.facade.Telemetry(
+                config = fallbackConfig,
+                defaultAttributesProvider = AndroidDefaultAttributesProvider(fallbackConfig.dataRegion),
+                logPort = com.scanium.telemetry.ports.NoOpLogPort,
+                metricPort = com.scanium.telemetry.ports.NoOpMetricPort,
+                tracePort = com.scanium.telemetry.ports.NoOpTracePort,
+                crashPort = crashPort,
+                diagnosticsPort = diagnosticsPort,
+            )
+        }
     }
 
     private fun initializeTelemetry() {
