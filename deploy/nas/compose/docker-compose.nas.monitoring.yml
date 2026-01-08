@@ -9,8 +9,8 @@ services:
       - "3000:3000"
     volumes:
       - /volume1/docker/scanium/monitoring/grafana:/var/lib/grafana
-      ***REMOVED*** Optional provisioning (uncomment if you have them in-repo):
-      ***REMOVED*** - ${REPO_ROOT}/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${REPO_ROOT}/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${REPO_ROOT}/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - loki
       - tempo

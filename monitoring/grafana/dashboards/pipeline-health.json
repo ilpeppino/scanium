@@ -52,7 +52,7 @@
         "name": "app_version",
         "label": "App Version",
         "type": "query",
-        "datasource": { "type": "loki", "uid": "loki" },
+        "datasource": { "type": "loki", "uid": "LOKI" },
         "query": "label_values({source=\"scanium-mobile\"}, app_version)",
         "refresh": 2,
         "includeAll": true,
@@ -71,7 +71,7 @@
       "description": "Logs ingested per minute",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -101,7 +101,7 @@
       "description": "Log distribution by event prefix",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -147,7 +147,7 @@
       "description": "Total log entries in last hour",
       "type": "stat",
       "gridPos": { "x": 0, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -180,7 +180,7 @@
       "description": "Average log rate over last hour",
       "type": "stat",
       "gridPos": { "x": 6, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -212,7 +212,7 @@
       "description": "Unique session_ids sending telemetry",
       "type": "stat",
       "gridPos": { "x": 12, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -243,7 +243,7 @@
       "description": "Time since last log received",
       "type": "stat",
       "gridPos": { "x": 18, "y": 8, "w": 6, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -276,7 +276,7 @@
       "description": "Distribution of event types",
       "type": "piechart",
       "gridPos": { "x": 0, "y": 12, "w": 8, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -296,7 +296,7 @@
       "description": "Active metric series in Mimir",
       "type": "timeseries",
       "gridPos": { "x": 8, "y": 12, "w": 8, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -327,7 +327,7 @@
       "description": "Traces via TraceQL service search",
       "type": "stat",
       "gridPos": { "x": 16, "y": 12, "w": 8, "h": 4 },
-      "datasource": { "type": "tempo", "uid": "tempo" },
+      "datasource": { "type": "tempo", "uid": "TEMPO" },
       "targets": [
         {
           "refId": "A",
@@ -359,7 +359,7 @@
       "description": "Quick health check for observability pipeline",
       "type": "table",
       "gridPos": { "x": 16, "y": 16, "w": 8, "h": 4 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -391,7 +391,7 @@
       "description": "Live log stream from mobile app",
       "type": "logs",
       "gridPos": { "x": 0, "y": 20, "w": 24, "h": 8 },
-      "datasource": { "type": "loki", "uid": "loki" },
+      "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
@@ -420,7 +420,7 @@
       "description": "Health status of observability services (1 = up, 0 = down)",
       "type": "stat",
       "gridPos": { "x": 0, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -457,7 +457,7 @@
       "description": "Alloy version and build information",
       "type": "stat",
       "gridPos": { "x": 6, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -489,7 +489,7 @@
       "description": "Time since Alloy process started",
       "type": "stat",
       "gridPos": { "x": 12, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -519,7 +519,7 @@
       "description": "Last successful scrape timestamp (seconds ago)",
       "type": "stat",
       "gridPos": { "x": 18, "y": 29, "w": 6, "h": 4 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -553,7 +553,7 @@
       "description": "Records accepted by Alloy OTLP receivers (logs, metrics, spans)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 33, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -593,7 +593,7 @@
       "description": "Records refused by Alloy OTLP receivers (indicates errors)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 33, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -641,7 +641,7 @@
       "description": "Records successfully sent to backends (Loki, Mimir, Tempo)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 41, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -681,7 +681,7 @@
       "description": "Records that failed to send (indicates backend issues)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 41, "w": 12, "h": 8 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -721,7 +721,7 @@
       "description": "Items currently queued for export (backpressure indicator)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 49, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -751,7 +751,7 @@
       "description": "Maximum queue capacity for exporters",
       "type": "stat",
       "gridPos": { "x": 8, "y": 49, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -782,7 +782,7 @@
       "description": "Exporter retry attempts (indicates temporary failures)",
       "type": "timeseries",
       "gridPos": { "x": 16, "y": 49, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -822,7 +822,7 @@
       "description": "Loki ingester memory streams and request rate",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 55, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -857,7 +857,7 @@
       "description": "Tempo live traces and request rate",
       "type": "timeseries",
       "gridPos": { "x": 8, "y": 55, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
@@ -892,7 +892,7 @@
       "description": "Mimir active series and request rate",
       "type": "timeseries",
       "gridPos": { "x": 16, "y": 55, "w": 8, "h": 6 },
-      "datasource": { "type": "prometheus", "uid": "mimir" },
+      "datasource": { "type": "prometheus", "uid": "MIMIR" },
       "targets": [
         {
           "refId": "A",
