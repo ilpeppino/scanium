@@ -135,6 +135,7 @@ fun SettingsGeneralScreen(
                 listOf(
                     AppLanguage.SYSTEM.code to stringResource(R.string.settings_language_system_default),
                     AppLanguage.EN.code to stringResource(R.string.settings_language_en),
+                    AppLanguage.ES.code to stringResource(R.string.settings_language_es),
                     AppLanguage.IT.code to stringResource(R.string.settings_language_it),
                     AppLanguage.FR.code to stringResource(R.string.settings_language_fr),
                     AppLanguage.NL.code to stringResource(R.string.settings_language_nl),
