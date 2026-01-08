@@ -3,6 +3,7 @@ package com.scanium.app.model
 enum class AppLanguage(val code: String) {
     SYSTEM("system"),
     EN("en"),
+    ES("es"),
     IT("it"),
     FR("fr"),
     NL("nl"),
