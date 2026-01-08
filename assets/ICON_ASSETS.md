@@ -83,6 +83,4 @@ while some in-app branding elements retain the curved "S" for visual continuity 
 ***REMOVED******REMOVED*** Future Considerations
 
 - The curved "S" drawables (`ic_launcher_foreground.xml`, `ic_launcher_monochrome.xml`) are marked
-  as deprecated and can be removed once all UI elements are migrated to the lightning bolt design.
-- The `scanium_logo.png` and `scanium_icon.png` in drawable/ may need updating if full brand
-  consistency is desired.
+  as deprecated and can be removed if no longer needed.
