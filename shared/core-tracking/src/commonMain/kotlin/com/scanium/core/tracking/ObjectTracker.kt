@@ -871,6 +871,36 @@ class ObjectTracker(
             currentFrame = currentFrame,
         )
     }
+
+    /**
+     * Get all currently confirmed candidates.
+     *
+     * This returns all candidates that have met confirmation criteria and are still active
+     * (not expired). Unlike processFrame/processFrameWithRoi which only return newly
+     * confirmed candidates, this returns ALL confirmed candidates for use in item
+     * creation when guidance state allows.
+     *
+     * @return List of all confirmed candidates that are still being tracked
+     */
+    fun getConfirmedCandidates(): List<ObjectCandidate> {
+        return confirmedIds.mapNotNull { id -> candidates[id] }
+    }
+
+    /**
+     * Mark a candidate as "consumed" (converted to item).
+     *
+     * This removes the candidate from the confirmed set so it won't be returned
+     * again by getConfirmedCandidates(). The candidate remains in the tracking
+     * pool for spatial matching but won't trigger duplicate item creation.
+     *
+     * @param candidateId The internal ID of the candidate to mark as consumed
+     */
+    fun markCandidateConsumed(candidateId: String) {
+        confirmedIds.remove(candidateId)
+        if (config.enableVerboseLogging) {
+            logger.i(TAG, "Marked candidate $candidateId as consumed (removed from confirmedIds)")
+        }
+    }
 }
 
 /**

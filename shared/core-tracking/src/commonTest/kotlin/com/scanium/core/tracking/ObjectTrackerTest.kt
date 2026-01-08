@@ -213,4 +213,147 @@ class ObjectTrackerTest {
         assertEquals(1, confirmed.size)
         assertEquals(5, confirmed.first().seenCount)
     }
+
+    // =========================================================================
+    // Regression tests for scanning mode item addition fix
+    // These tests verify the fix for the race condition where candidates were
+    // confirmed before guidance reached LOCKED state, causing items to never
+    // be added to the item list.
+    // =========================================================================
+
+    @Test
+    fun getConfirmedCandidatesReturnsAllConfirmed() {
+        // Confirm a candidate through the normal process
+        val detection = testDetectionInfo(
+            trackingId = "confirmed_1",
+            boundingBox = TestFixtures.BoundingBoxes.center,
+            confidence = 0.5f,
+        )
+        repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
+
+        // getConfirmedCandidates should return the confirmed candidate
+        val allConfirmed = tracker.getConfirmedCandidates()
+        assertEquals(1, allConfirmed.size)
+        assertEquals("confirmed_1", allConfirmed.first().internalId)
+    }
+
+    @Test
+    fun getConfirmedCandidatesReturnsEmptyBeforeConfirmation() {
+        // Add a detection but don't reach confirmation threshold
+        val detection = testDetectionInfo(
+            trackingId = "not_confirmed",
+            boundingBox = TestFixtures.BoundingBoxes.center,
+            confidence = 0.5f,
+        )
+        tracker.processFrame(listOf(detection))
+
+        // getConfirmedCandidates should return empty
+        val allConfirmed = tracker.getConfirmedCandidates()
+        assertEquals(0, allConfirmed.size)
+    }
+
+    @Test
+    fun markCandidateConsumedRemovesFromConfirmed() {
+        // Confirm a candidate
+        val detection = testDetectionInfo(
+            trackingId = "to_consume",
+            boundingBox = TestFixtures.BoundingBoxes.center,
+            confidence = 0.5f,
+        )
+        repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
+
+        // Verify it's confirmed
+        assertEquals(1, tracker.getConfirmedCandidates().size)
+
+        // Mark as consumed
+        tracker.markCandidateConsumed("to_consume")
+
+        // Should no longer appear in getConfirmedCandidates
+        assertEquals(0, tracker.getConfirmedCandidates().size)
+
+        // But candidate should still exist for tracking
+        assertEquals(1, tracker.getStats().activeCandidates)
+    }
+
+    @Test
+    fun confirmedCandidatesAvailableAcrossMultipleFrames() {
+        // This tests the fix for the race condition:
+        // 1. Candidate is confirmed on frame 3
+        // 2. processFrame returns the newly confirmed candidate
+        // 3. But if guidance isn't LOCKED, we don't add items
+        // 4. Later frames should still be able to get the confirmed candidate
+
+        val detection = testDetectionInfo(
+            trackingId = "race_condition_test",
+            boundingBox = TestFixtures.BoundingBoxes.center,
+            confidence = 0.5f,
+        )
+
+        // Confirm the candidate
+        repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
+
+        // Simulate frames passing (guidance not LOCKED yet)
+        // processFrame returns empty for newly confirmed (already confirmed)
+        val emptyNewlyConfirmed = tracker.processFrame(listOf(detection))
+        assertEquals(0, emptyNewlyConfirmed.size, "processFrame should return empty - candidate already confirmed")
+
+        // But getConfirmedCandidates should still return it
+        val allConfirmed = tracker.getConfirmedCandidates()
+        assertEquals(1, allConfirmed.size, "getConfirmedCandidates should return the candidate")
+        assertEquals("race_condition_test", allConfirmed.first().internalId)
+
+        // More frames pass
+        repeat(5) { tracker.processFrame(listOf(detection)) }
+
+        // Still available via getConfirmedCandidates
+        assertEquals(1, tracker.getConfirmedCandidates().size, "Candidate should persist until consumed")
+    }
+
+    @Test
+    fun consumedCandidateNotReturnedAgain() {
+        val detection = testDetectionInfo(
+            trackingId = "consume_once",
+            boundingBox = TestFixtures.BoundingBoxes.center,
+            confidence = 0.5f,
+        )
+
+        // Confirm the candidate
+        repeat(config.minFramesToConfirm) { tracker.processFrame(listOf(detection)) }
+        assertEquals(1, tracker.getConfirmedCandidates().size)
+
+        // Consume it (simulating item creation when LOCKED)
+        tracker.markCandidateConsumed("consume_once")
+        assertEquals(0, tracker.getConfirmedCandidates().size)
+
+        // Continue tracking the same object - it should not be re-confirmed
+        repeat(5) { tracker.processFrame(listOf(detection)) }
+
+        // Should still be empty - once consumed, not re-confirmed
+        assertEquals(0, tracker.getConfirmedCandidates().size, "Consumed candidate should not be re-confirmed")
+    }
+
+    @Test
+    fun multipleConfirmedCandidatesAllRetrievable() {
+        // Confirm multiple candidates
+        val detection1 = testDetectionInfo(
+            trackingId = "multi_1",
+            boundingBox = TestFixtures.BoundingBoxes.topLeft,
+            confidence = 0.5f,
+        )
+        val detection2 = testDetectionInfo(
+            trackingId = "multi_2",
+            boundingBox = TestFixtures.BoundingBoxes.bottomRight,
+            confidence = 0.6f,
+        )
+
+        // Process both detections together
+        repeat(config.minFramesToConfirm) {
+            tracker.processFrame(listOf(detection1, detection2))
+        }
+
+        // Both should be retrievable
+        val allConfirmed = tracker.getConfirmedCandidates()
+        assertEquals(2, allConfirmed.size)
+        assertEquals(setOf("multi_1", "multi_2"), allConfirmed.map { it.internalId }.toSet())
+    }
 }
