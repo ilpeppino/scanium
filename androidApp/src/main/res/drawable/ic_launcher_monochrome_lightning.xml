@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="1024"
+    android:viewportHeight="1024">
+    <!-- Scanium Adaptive Icon Monochrome - Lightning Bolt Design (for Android 13+ themed icons) -->
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="179.2"
+        android:translateY="179.2">
+        <!-- Camera frame (rounded square) -->
+        <path
+            android:pathData="M 282 112 H 742 A 170 170 0 0 1 912 282 V 742 A 170 170 0 0 1 742 912 H 282 A 170 170 0 0 1 112 742 V 282 A 170 170 0 0 1 282 112 Z"
+            android:strokeColor="***REMOVED***FFFFFFFF"
+            android:strokeWidth="70"
+            android:fillColor="***REMOVED***00000000"/>
+        <!-- Lightning Bolt S Symbol: Three geometric parallelograms -->
+        <!-- Top bar (angled right) -->
+        <path
+            android:pathData="M 300 280 L 680 280 L 620 380 L 300 380 Z"
+            android:fillColor="***REMOVED***FFFFFFFF"/>
+        <!-- Middle diagonal bar -->
+        <path
+            android:pathData="M 580 380 L 680 280 L 420 744 L 320 640 Z"
+            android:fillColor="***REMOVED***FFFFFFFF"/>
+        <!-- Bottom bar (angled right) -->
+        <path
+            android:pathData="M 320 644 L 420 744 L 720 744 L 720 644 Z"
+            android:fillColor="***REMOVED***FFFFFFFF"/>
+    </group>
+</vector>
