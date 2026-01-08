@@ -7,13 +7,14 @@ This document describes the Grafana dashboards provisioned for Scanium observabi
 | Dashboard | UID | Purpose | Primary Datasource |
 |-----------|-----|---------|-------------------|
 | [System Overview (RED)](#system-overview-red) | `scanium-system-overview` | Rate, Errors, Duration overview with saturation | Mimir |
+| [Backend Health](#backend-health) | `scanium-backend-health` | Backend RED summary + recent errors | Mimir, Loki |
 | [Backend API Performance](#backend-api-performance) | `scanium-backend-api-perf` | Latency, throughput, errors by route | Mimir |
 | [Backend Errors](#backend-errors) | `scanium-backend-errors` | 4xx vs 5xx analysis, error messages, trace links | Mimir, Loki, Tempo |
 | [Logs Explorer](#logs-explorer) | `scanium-logs-explorer` | Log exploration, error rates, pattern analysis | Loki |
 | [Traces Drilldown](#traces-drilldown) | `scanium-traces-drilldown` | Slow traces, span analysis, service map | Tempo, Mimir |
 | [LGTM Stack Health](#lgtm-stack-health) | `scanium-lgtm-health` | Observability infrastructure health | Mimir |
 | [Ops Overview](#ops-overview-mobile) | `scanium-ops-overview` | Mobile app executive summary | Loki, Mimir |
-| [App Health](#app-health-mobile) | `scanium-app-health` | Mobile app functional correctness | Loki |
+| [Mobile App Health](#mobile-app-health) | `scanium-mobile-app-health` | Mobile app functional correctness | Loki |
 | [Scan Performance](#scan-performance-mobile) | `scanium-scan-performance` | ML inference latency | Mimir |
 | [Errors](#errors-mobile) | `scanium-errors` | Mobile app error analysis | Loki |
 | [Pipeline Health](#pipeline-health) | `scanium-pipeline-health` | Telemetry pipeline metrics | Loki, Mimir |
@@ -22,66 +23,42 @@ This document describes the Grafana dashboards provisioned for Scanium observabi
 
 ## Metric & Label Inventory
 
-### Backend HTTP Metrics (OpenTelemetry Semantic Conventions)
+### Backend HTTP Metrics (Prometheus via prom-client)
 
-The backend dashboards expect metrics following [OpenTelemetry HTTP semantic conventions](https://opentelemetry.io/docs/specs/semconv/http/http-metrics/).
+The backend dashboards expect Scanium-prefixed metrics emitted by the backend service and scraped by Alloy.
 
-#### Primary Metric: `http_server_request_duration_seconds`
+#### Primary Metrics
 
-**Type:** Histogram (with `_bucket`, `_count`, `_sum` suffixes)
+- `scanium_http_requests_total` (Counter)
+- `scanium_http_request_duration_ms_bucket` (Histogram)
 
 **Expected Labels:**
 
 | Label | Description | Example Values |
 |-------|-------------|----------------|
-| `service_name` | Name of the service | `api-gateway`, `user-service` |
-| `deployment_environment` | Environment | `dev`, `stage`, `prod` |
-| `http_request_method` | HTTP method | `GET`, `POST`, `PUT`, `DELETE` |
-| `http_route` | Route pattern (not path) | `/api/v1/users/{id}`, `/health` |
-| `http_response_status_code` | HTTP status code | `200`, `400`, `500` |
+| `service_name` | Name of the service | `scanium-backend` |
+| `env` | Environment | `dev`, `stage`, `prod` |
+| `deployment_environment` | Environment (alias) | `dev`, `stage`, `prod` |
+| `method` | HTTP method | `GET`, `POST` |
+| `route` | Route pattern | `/v1/assist/chat`, `/healthz` |
+| `status_code` | HTTP status code | `200`, `401`, `500` |
+| `source` | Log/metric source | `scanium-backend` |
 
 **Example metric:**
 ```
-http_server_request_duration_seconds_bucket{
-  service_name="api-gateway",
-  deployment_environment="prod",
-  http_request_method="GET",
-  http_route="/api/v1/users/{id}",
-  http_response_status_code="200",
-  le="0.1"
-} 1234
+scanium_http_request_duration_ms_bucket{
+  service_name="scanium-backend",
+  env="dev",
+  method="GET",
+  route="/v1/config",
+  status_code="401",
+  le="250"
+} 12
 ```
 
-#### Saturation Metric: `http_server_active_requests`
+### Assistant / Vision / Classifier Metrics
 
-**Type:** Gauge
-
-**Expected Labels:**
-- `service_name`
-- `deployment_environment`
-
-### Trace Span Metrics (Tempo-generated)
-
-Tempo's metrics generator exports span metrics to Mimir.
-
-#### Metric: `traces_spanmetrics_latency`
-
-**Type:** Histogram
-
-**Expected Labels:**
-
-| Label | Description |
-|-------|-------------|
-| `service` | Service name |
-| `span_name` | Name of the span |
-| `span_kind` | `SPAN_KIND_SERVER`, `SPAN_KIND_CLIENT`, etc. |
-| `status_code` | `STATUS_CODE_OK`, `STATUS_CODE_ERROR`, `STATUS_CODE_UNSET` |
-
-#### Metric: `traces_spanmetrics_calls_total`
-
-**Type:** Counter
-
-Same labels as `traces_spanmetrics_latency`.
+Scanium backend emits domain metrics for assistant, vision, and classifier pipelines (see `monitoring/grafana/OPENAI_MONITORING.md`).
 
 ### Log Labels (Loki)
 
@@ -89,20 +66,21 @@ Same labels as `traces_spanmetrics_latency`.
 
 | Label | Description | Example Values |
 |-------|-------------|----------------|
-| `source` | Log source identifier | `scanium-backend`, `scanium-mobile` |
+| `source` | Log source identifier | `scanium-backend` |
 | `env` | Environment | `dev`, `stage`, `prod` |
-| `service_name` | Service name (optional) | `api-gateway` |
+| `service_name` | Service name | `scanium-backend` |
+| `level` | Severity | `INFO`, `WARN`, `ERROR` |
 
 **Expected JSON fields in log body:**
 
 | Field | Description |
 |-------|-------------|
-| `level` | Log level: `debug`, `info`, `warn`, `error`, `fatal` |
-| `error_message` | Error message text |
-| `event_name` | Event type (for mobile) |
-| `trace_id` | Trace correlation ID |
+| `severity` | Severity string |
+| `body` | Log message |
+| `traceid` | Trace correlation ID |
+| `attributes.http.route` | Route |
 
-#### Mobile App Logs
+#### Mobile App Logs (OTLP events)
 
 | Label | Description | Example Values |
 |-------|-------------|----------------|
@@ -110,6 +88,21 @@ Same labels as `traces_spanmetrics_latency`.
 | `platform` | Mobile platform | `android`, `ios` |
 | `env` | Environment | `dev`, `stage`, `prod` |
 | `app_version` | Semantic version | `1.2.3` |
+
+**Required JSON fields for mobile dashboards:**
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `event_name` | Event type | `scan.session_started`, `scan.candidate_created` |
+| `scan_mode` | Scan mode | `barcode`, `camera`, `manual` |
+| `duration_ms` | Session duration (ms) | `1234` |
+| `session_id` | Session identifier | `sess_abc123` |
+
+**Recommended event schema + cardinality constraints:**
+- Keep `session_id` stable per session but avoid device IDs or PII.
+- Avoid high-cardinality attributes (full URLs, raw SKUs, free-form user input).
+- Use controlled vocabularies for `event_name`, `scan_mode`, and `platform`.
+- Prefer short enums over arbitrary strings for new attributes.
 
 ### Pipeline Self-Observability Metrics
 
@@ -131,48 +124,48 @@ Same labels as `traces_spanmetrics_latency`.
 
 ## Adapting Queries for Different Naming Conventions
 
-If your metrics use different names or labels, here's how to adapt:
+If your metrics use different names or labels, here is how to adapt:
 
 ### Different Metric Names
 
-**Scenario:** Your HTTP metrics are named `http_requests_total` instead of `http_server_request_duration_seconds`
+**Scenario:** Your HTTP metrics are named `http_requests_total` instead of `scanium_http_requests_total`
 
 1. Open the dashboard in Grafana
 2. Go to Settings → Variables
 3. Update variable queries to use your metric name
 4. Edit each panel query:
-   - Find: `http_server_request_duration_seconds`
+   - Find: `scanium_http_requests_total`
    - Replace: `http_requests_total` (or your metric name)
 
 ### Different Label Names
 
-**Scenario:** You use `environment` instead of `deployment_environment`
+**Scenario:** You use `environment` instead of `env`
 
 1. Update dashboard variables to use your label:
    ```promql
    # Original
-   label_values(http_server_request_duration_seconds_bucket, deployment_environment)
+   label_values(scanium_http_requests_total, env)
    # Modified
-   label_values(http_server_request_duration_seconds_bucket, environment)
+   label_values(scanium_http_requests_total, environment)
    ```
 
 2. Update panel queries:
    ```promql
    # Original
-   {deployment_environment=~"$env"}
+   {env=~"$env"}
    # Modified
    {environment=~"$env"}
    ```
 
 ### Common Label Mapping
 
-| OpenTelemetry Convention | Common Alternative | Dashboard Variable |
-|-------------------------|-------------------|-------------------|
+| Expected Label | Common Alternative | Dashboard Variable |
+|----------------|--------------------|-------------------|
 | `service_name` | `service`, `app` | `$service` |
-| `deployment_environment` | `env`, `environment` | `$env` |
-| `http_route` | `route`, `path`, `endpoint` | `$route` |
-| `http_request_method` | `method` | `$method` |
-| `http_response_status_code` | `status_code`, `status` | `$status_code` |
+| `env` | `environment` | `$env` |
+| `route` | `path`, `endpoint` | `$route` |
+| `method` | `http_method` | `$method` |
+| `status_code` | `status` | `$status_code` |
 
 ### Non-Histogram Metrics
 
@@ -180,17 +173,17 @@ If your latency metrics are gauges or summaries instead of histograms:
 
 **Original (histogram):**
 ```promql
-histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))
+histogram_quantile(0.95, sum by (le) (rate(scanium_http_request_duration_ms_bucket[5m])))
 ```
 
 **For summary metrics:**
 ```promql
-http_request_duration_seconds{quantile="0.95"}
+scanium_http_request_duration_ms{quantile="0.95"}
 ```
 
 **For gauge (avg only):**
 ```promql
-avg(http_request_duration_seconds)
+avg(scanium_http_request_duration_ms)
 ```
 
 ---
@@ -201,10 +194,10 @@ All backend dashboards use these standard variables:
 
 | Variable | Type | Query | Description |
 |----------|------|-------|-------------|
-| `$service` | Query | `label_values(http_server_request_duration_seconds_bucket, service_name)` | Filter by service |
-| `$env` | Custom | `dev,stage,prod` | Filter by environment |
-| `$route` | Query | `label_values(...{service_name=~"$service"}, http_route)` | Filter by API route |
-| `$method` | Query | `label_values(..., http_request_method)` | Filter by HTTP method |
+| `$service` | Query | `label_values(scanium_http_requests_total, service_name)` | Filter by service |
+| `$env` | Query | `label_values(scanium_http_requests_total, env)` | Filter by environment |
+| `$route` | Query | `label_values(scanium_http_request_duration_ms_bucket{service_name=~"$service"}, route)` | Filter by API route |
+| `$method` | Query | `label_values(scanium_http_request_duration_ms_bucket, method)` | Filter by HTTP method |
 
 Mobile dashboards use:
 
@@ -229,6 +222,18 @@ Mobile dashboards use:
 - Active requests (saturation)
 - Apdex score (satisfaction index)
 - Status code distribution
+
+### Backend Health
+
+**Purpose:** Backend RED summary plus recent error logs.
+
+**Key Panels:**
+- Request rate (req/s)
+- Error rate (% 5xx)
+- p95 latency
+- Requests by route
+- 4xx vs 5xx over time
+- Recent error logs
 
 ### Backend API Performance
 
@@ -287,6 +292,19 @@ Mobile dashboards use:
 - Backend health (streams, traces, series)
 - Resource usage (CPU, memory)
 
+### Mobile App Health
+
+**Purpose:** Mobile app functional correctness and usage funnel.
+
+**Key Panels:**
+- Session started → candidate created → confirmed
+- Confirmation ratio
+- Scan mode usage
+- Session duration distribution
+- Session drilldown logs
+
+**Note:** Panels are empty until mobile OTLP logs are shipped with `source="scanium-mobile"` and the required labels or fields.
+
 ---
 
 ## Alert Rules
@@ -297,9 +315,9 @@ Alert rules are provisioned in `/monitoring/grafana/provisioning/alerting/rules.
 
 | Alert | Metric | Condition | Severity |
 |-------|--------|-----------|----------|
-| Backend 5xx Error Rate Spike | `http_server_request_duration_seconds_count{http_response_status_code=~"5.."}` | > 5% for 5m | Critical |
+| Backend 5xx Error Rate Spike | `scanium_http_requests_total{status_code=~"5.."}` | > 5% for 5m | Critical |
 | Sustained High Latency (p95) | `histogram_quantile(0.95, ...)` | > 500ms for 10m | Warning |
-| API Availability | `up{job="backend"}` | == 0 for 2m | Critical |
+| API Availability | `up{job="scanium-backend"}` | == 0 for 2m | Critical |
 
 ### Infrastructure Alerts (Existing)
 
@@ -327,6 +345,7 @@ Alert rules are provisioned in `/monitoring/grafana/provisioning/alerting/rules.
 | Dashboard | Recommended Range | Use Case |
 |-----------|------------------|----------|
 | System Overview | 1h - 6h | Real-time monitoring |
+| Backend Health | 1h - 6h | Operational pulse |
 | API Performance | 1h - 24h | Performance analysis |
 | Errors | 15m - 1h | Incident investigation |
 | Logs Explorer | 5m - 1h | Debugging |
@@ -439,7 +458,7 @@ Regenerate dashboards when:
    cat monitoring/grafana/telemetry-inventory.md
    ```
 
-3. **Update dashboard JSON files** based on discovered metrics/labels
+3. **Update dashboard JSON files** based on discovered metrics or labels
 
 4. **Restart Grafana** to reload dashboards:
    ```bash
@@ -448,7 +467,7 @@ Regenerate dashboards when:
 
 5. **Verify dashboards** via Grafana UI or API:
    ```bash
-   curl -s localhost:3000/api/search | jq '.[].title'
+   curl -s localhost:3000/api/search | jq ".[].title"
    ```
 
 ---
@@ -470,6 +489,7 @@ After making changes to dashboards, verify:
 ### Data Presence
 - [ ] **LGTM Stack Health:** Shows UP status for all services
 - [ ] **System Overview:** Shows request rate (requires backend traffic)
+- [ ] **Backend Health:** Shows request rate and error logs
 - [ ] **Logs Explorer:** Shows log volume (requires log ingestion)
 - [ ] **Traces Drilldown:** Shows traces (requires trace ingestion)
 
