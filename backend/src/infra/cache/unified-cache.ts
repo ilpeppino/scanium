@@ -246,7 +246,7 @@ export class UnifiedCache<T> {
  * Internal helper to build stable cache keys from components.
  * (Used by buildVisionCacheKey; safe to keep private.)
  */
-function buildCacheKey(...components: Array<string | number | undefined | null>): string {
+export function buildCacheKey(...components: Array<string | number | undefined | null>): string {
   const normalized = components
     .filter((c): c is string | number => c !== undefined && c !== null)
     .map((c) => String(c))
