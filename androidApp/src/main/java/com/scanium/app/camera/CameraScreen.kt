@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.style.TextOverflow
@@ -77,6 +78,7 @@ import com.scanium.app.media.StorageHelper
 import com.scanium.app.ml.classification.ClassificationMetrics
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
+import com.scanium.app.testing.TestSemantics
 import com.scanium.app.ui.motion.MotionConfig
 import com.scanium.app.ui.motion.MotionEnhancedOverlay
 import kotlinx.coroutines.Job
@@ -604,6 +606,7 @@ fun CameraScreen(
                         rotationDegrees = imageRotationDegrees,
                         showGeometryDebug = bboxMappingDebugEnabled,
                         overlayAccuracyStep = overlayAccuracyStep,
+                        modifier = Modifier.testTag(TestSemantics.DETECTION_OVERLAY),
                     )
                 }
 
