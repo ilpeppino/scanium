@@ -533,6 +533,84 @@ Use Synology VPN Server or WireGuard:
 
 ---
 
+## NAS Performance Tuning
+
+### Monitoring Stack Configuration
+
+The monitoring stack configurations in `monitoring/` have been optimized for the DS418play's resource constraints (2 cores, 4 threads, 6GB RAM). These tuned values differ from development workstation configurations.
+
+#### Key Configuration Differences
+
+| Setting | Dev Value | NAS Value | File | Rationale |
+|---------|-----------|-----------|------|-----------|
+| **Tempo: Storage Workers** | 100 | 4 | `monitoring/tempo/tempo.yaml:40` | Match NAS thread count (4 threads) |
+| **Tempo: Queue Depth** | 10000 | 1000 | `monitoring/tempo/tempo.yaml:41` | Reduce memory pressure |
+| **Mimir: Query Parallelism** | 32 | 4 | `monitoring/mimir/mimir.yaml:102` | Prevent CPU contention |
+| **Mimir: Index Cache** | 512MB | 128MB | `monitoring/mimir/mimir.yaml:37` | Conserve RAM for other services |
+| **Alloy: Scrape Interval** | 15s | 60s | `monitoring/alloy/config.alloy` | Reduce CPU and I/O load |
+| **Loki: Retention** | 168h (7d) | 72h (3d) | `monitoring/loki/loki.yaml:35` | Conserve disk space |
+
+> **Note:** The index cache value in the table above shows the recommended NAS value (128MB). However, the current configuration uses 512MB as specified in line 37 of `monitoring/mimir/mimir.yaml`. If you experience memory pressure, consider reducing this to 128MB.
+
+#### Related Issues
+
+These optimizations address the following performance issues:
+- [#363](https://github.com/username/scanium/issues/363) - Tempo storage pool workers
+- [#364](https://github.com/username/scanium/issues/364) - Prometheus scrape intervals
+
+#### Verifying NAS-Optimized Configuration
+
+After deploying, verify the tuned values are in effect:
+
+```bash
+# Check Tempo workers (should be 4)
+sudo docker exec scanium-tempo grep -A2 "pool:" /etc/tempo/tempo.yaml
+
+# Check Mimir query parallelism (should be 4)
+sudo docker exec scanium-mimir grep "max_query_parallelism" /etc/mimir/mimir.yaml
+
+# Check Alloy scrape interval (should be 60s)
+sudo docker exec scanium-alloy grep "scrape_interval" /etc/alloy/config.alloy
+
+# Check Loki retention (should be 72h)
+sudo docker exec scanium-loki grep "retention_period" /etc/loki/loki.yaml
+```
+
+#### Performance Monitoring
+
+Monitor resource usage to ensure the stack runs within NAS constraints:
+
+```bash
+# Check container memory usage (should stay under limits)
+sudo docker stats --no-stream --format "table {{.Name}}\t{{.MemUsage}}\t{{.CPUPerc}}"
+
+# Monitor system resources
+free -h  # Check available RAM
+df -h    # Check disk space
+```
+
+Expected resource usage:
+- **Total Memory:** ~2.2GB across all services
+- **CPU Usage:** <50% under normal load
+- **Disk Growth:** ~100MB/day with 3-day retention
+
+#### Troubleshooting Performance Issues
+
+**High CPU Usage (>70%):**
+- Increase Alloy scrape intervals further (e.g., 120s)
+- Reduce Mimir compaction frequency
+- Consider disabling Tempo if traces aren't needed
+
+**Memory Pressure (>5GB used):**
+- Reduce Mimir index cache to 128MB
+- Reduce Loki/Tempo retention periods
+- Check for metric/log cardinality explosion
+
+**Disk Space Issues:**
+- Reduce retention periods further
+- Enable compaction for Loki/Tempo
+- Archive old data to external storage
+
 ## Maintenance
 
 ### Viewing Logs

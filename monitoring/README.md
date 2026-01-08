@@ -67,6 +67,7 @@ This documentation covers **local development** deployment. For NAS deployment, 
 | **Data Paths** | `./data/` | `/volume1/docker/scanium/` |
 | **Network** | Laptop/desktop | LAN-accessible |
 | **User Permissions** | Current user | Root (`user: "0"`) for NAS volumes |
+| **Performance Tuning** | Default values | [NAS-optimized](../deploy/nas/README.md#nas-performance-tuning) |
 
 ## Network Boundaries
 
@@ -465,9 +466,11 @@ docker compose stats
 
 | Service | Retention Period | Configuration |
 |---------|------------------|---------------|
-| **Loki** | 14 days | `loki/loki.yaml` → `limits_config.retention_period` |
+| **Loki** | 3 days (NAS) / 14 days (dev) | `loki/loki.yaml` → `limits_config.retention_period` |
 | **Tempo** | 7 days | `tempo/tempo.yaml` → `compactor.compaction.block_retention` |
 | **Mimir** | 15 days | `mimir/mimir.yaml` → `limits.compactor_blocks_retention_period` |
+
+> **Note:** The configurations in `monitoring/` are optimized for NAS deployment (Synology DS418play). For development workstation deployment with more resources, you can increase these values. See [NAS Performance Tuning](../deploy/nas/README.md#nas-performance-tuning) for details on resource-constrained optimizations.
 
 To change retention, edit the config files and restart:
 

@@ -99,7 +99,7 @@ limits:
   # Query limits
   max_fetched_series_per_query: 100000
   max_fetched_chunk_bytes_per_query: 100000000
-  max_query_parallelism: 32
+  max_query_parallelism: 4    # Reduced for NAS (DS418play: 4 threads)
   max_query_lookback: 0
   max_partial_query_length: 744h
   max_cache_freshness: 10m
