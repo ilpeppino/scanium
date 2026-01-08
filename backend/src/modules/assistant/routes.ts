@@ -531,7 +531,16 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     // Schema validation
     const parsed = requestSchema.safeParse(requestBody);
     if (!parsed.success) {
-      request.log.warn({ correlationId }, 'Request validation failed');
+      // Log detailed validation errors for debugging
+      const zodErrors = parsed.error.issues.map((issue) => ({
+        path: issue.path.join('.'),
+        code: issue.code,
+        message: issue.message,
+      }));
+      request.log.warn(
+        { correlationId, zodErrors, firstError: zodErrors[0] },
+        'Request validation failed'
+      );
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_ERROR',
