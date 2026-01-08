@@ -501,4 +501,58 @@
     <string name="camera_requirements_title">Please ensure you have:</string>
     <string name="camera_cloud_not_configured">Cloud mode not configured</string>
     <string name="camera_cloud_not_configured_message">Classification will use on-device processing until SCANIUM_API_BASE_URL is configured.</string>
+
+    <!-- Common actions (additional) -->
+    <string name="common_save">Save</string>
+    <string name="common_go_back">Go Back</string>
+    <string name="common_use_this">Use This</string>
+    <string name="common_add">Add</string>
+    <string name="common_accept">Accept</string>
+    <string name="common_ai">AI</string>
+    <string name="common_prev">Prev</string>
+    <string name="common_copied_label">%1$s copied to clipboard</string>
+
+    <!-- Edit Item Screen -->
+    <string name="edit_item_not_found">Item not found</string>
+    <string name="edit_item_photos">Photos</string>
+    <string name="edit_item_photo_primary">Primary</string>
+    <string name="edit_item_add_photo">Add photo</string>
+    <string name="edit_item_analyzing">Analyzing photo…</string>
+    <string name="edit_item_analyze_failed">Couldn\'t analyze photo</string>
+    <string name="edit_item_analyzed">Photo analyzed</string>
+    <string name="edit_item_no_new_info">No new info found</string>
+    <string name="edit_item_user_provided">User provided</string>
+    <string name="edit_item_new_attributes">New attributes detected</string>
+    <string name="edit_item_missing_fields">Missing: %1$s</string>
+
+    <!-- Generated Listing Screen -->
+    <string name="generated_listing_title">Generated Listing</string>
+    <string name="generated_listing_select_item">Select an item to generate a listing</string>
+    <string name="generated_listing_generating">Generating listing…</string>
+    <string name="generated_listing_field_title">Title</string>
+    <string name="generated_listing_field_description">Description</string>
+    <string name="generated_listing_copy_label">Copy %1$s</string>
+    <string name="generated_listing_please_verify">Please verify</string>
+    <string name="generated_listing_suggested_photo">Suggested next photo</string>
+
+    <!-- Assistant Screen (additional) -->
+    <string name="assistant_confirm_action">Confirm action</string>
+    <string name="assistant_low_confidence_warning">This suggestion has lower confidence. Do you want to apply it anyway?</string>
+    <string name="assistant_retry_online">Retry online</string>
+    <string name="assistant_use_local">Use local</string>
+
+    <!-- Posting Assist Screen -->
+    <string name="posting_assist_title">Posting Assist</string>
+    <string name="posting_assist_copy_all">Copy all</string>
+    <string name="posting_assist_change_target">Change target</string>
+    <string name="posting_assist_no_draft">No draft available</string>
+    <string name="posting_assist_completeness">Completeness</string>
+    <string name="posting_assist_required">Required</string>
+    <string name="posting_assist_copy_next">Copy Next</string>
+    <string name="posting_assist_open_target">Open target</string>
+    <string name="posting_assist_posting_target">Posting target</string>
+
+    <!-- Condition options -->
+    <string name="condition_label">Condition</string>
+    <string name="category_label">Category</string>
 </resources>

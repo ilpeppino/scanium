@@ -500,4 +500,58 @@
     <string name="camera_requirements_title">Assicurati di avere:</string>
     <string name="camera_cloud_not_configured">Modalità cloud non configurata</string>
     <string name="camera_cloud_not_configured_message">La classificazione userà l\'elaborazione sul dispositivo finché SCANIUM_API_BASE_URL non è configurato.</string>
+
+    <!-- Common actions (additional) -->
+    <string name="common_save">Salva</string>
+    <string name="common_go_back">Indietro</string>
+    <string name="common_use_this">Usa questo</string>
+    <string name="common_add">Aggiungi</string>
+    <string name="common_accept">Accetta</string>
+    <string name="common_ai">AI</string>
+    <string name="common_prev">Prec</string>
+    <string name="common_copied_label">%1$s copiato negli appunti</string>
+
+    <!-- Edit Item Screen -->
+    <string name="edit_item_not_found">Elemento non trovato</string>
+    <string name="edit_item_photos">Foto</string>
+    <string name="edit_item_photo_primary">Principale</string>
+    <string name="edit_item_add_photo">Aggiungi foto</string>
+    <string name="edit_item_analyzing">Analisi foto…</string>
+    <string name="edit_item_analyze_failed">Impossibile analizzare la foto</string>
+    <string name="edit_item_analyzed">Foto analizzata</string>
+    <string name="edit_item_no_new_info">Nessuna nuova informazione trovata</string>
+    <string name="edit_item_user_provided">Fornito dall\'utente</string>
+    <string name="edit_item_new_attributes">Nuovi attributi rilevati</string>
+    <string name="edit_item_missing_fields">Mancanti: %1$s</string>
+
+    <!-- Generated Listing Screen -->
+    <string name="generated_listing_title">Inserzione generata</string>
+    <string name="generated_listing_select_item">Seleziona un elemento per generare un\'inserzione</string>
+    <string name="generated_listing_generating">Generazione inserzione…</string>
+    <string name="generated_listing_field_title">Titolo</string>
+    <string name="generated_listing_field_description">Descrizione</string>
+    <string name="generated_listing_copy_label">Copia %1$s</string>
+    <string name="generated_listing_please_verify">Verifica</string>
+    <string name="generated_listing_suggested_photo">Prossima foto suggerita</string>
+
+    <!-- Assistant Screen (additional) -->
+    <string name="assistant_confirm_action">Conferma azione</string>
+    <string name="assistant_low_confidence_warning">Questo suggerimento ha confidenza bassa. Vuoi applicarlo comunque?</string>
+    <string name="assistant_retry_online">Riprova online</string>
+    <string name="assistant_use_local">Usa locale</string>
+
+    <!-- Posting Assist Screen -->
+    <string name="posting_assist_title">Assistente pubblicazione</string>
+    <string name="posting_assist_copy_all">Copia tutto</string>
+    <string name="posting_assist_change_target">Cambia destinazione</string>
+    <string name="posting_assist_no_draft">Nessuna bozza disponibile</string>
+    <string name="posting_assist_completeness">Completezza</string>
+    <string name="posting_assist_required">Richiesto</string>
+    <string name="posting_assist_copy_next">Copia prossimo</string>
+    <string name="posting_assist_open_target">Apri destinazione</string>
+    <string name="posting_assist_posting_target">Destinazione pubblicazione</string>
+
+    <!-- Condition options -->
+    <string name="condition_label">Condizione</string>
+    <string name="category_label">Categoria</string>
 </resources>
