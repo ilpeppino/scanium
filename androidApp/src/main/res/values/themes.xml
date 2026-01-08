@@ -19,7 +19,8 @@
     </style>
 
     <!-- Main Scanium app theme (applied after splash) -->
-    <style name="Theme.Scanium" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- Must extend AppCompat theme since MainActivity extends AppCompatActivity -->
+    <style name="Theme.Scanium" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Standard window background for app content -->
         <item name="android:windowBackground">@color/splash_background</item>
     </style>
