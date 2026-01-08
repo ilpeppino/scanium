@@ -1674,12 +1674,22 @@ class CameraXManager(
         val canAddItems = guidanceState.canAddItem
         val isLocked = guidanceState.state == GuidanceState.LOCKED
 
-        // Assert: If we have confirmed candidates but guidance doesn't allow add, don't return them
-        // This ensures visual preview (bbox) != item add (requires LOCKED state)
+        // FIX: Use ALL confirmed candidates, not just newly confirmed ones.
+        // The tracker confirms candidates immediately (minFramesToConfirm=1), but guidance
+        // requires stability before reaching LOCKED state. This race condition meant
+        // candidates were confirmed before LOCKED, and never returned again.
+        // Now we get ALL confirmed candidates when LOCKED and mark them as consumed.
         val itemsToAdd =
             if (canAddItems && isLocked) {
-                // Guidance allows add - verify candidates are inside ROI (debug assertion)
-                confirmedCandidates.mapNotNull { candidate ->
+                // Get ALL confirmed candidates that haven't been consumed yet
+                val allConfirmedCandidates = objectTracker.getConfirmedCandidates()
+                Log.i(
+                    TAG,
+                    ">>> LOCKED state: checking ${allConfirmedCandidates.size} total confirmed candidates (${confirmedCandidates.size} newly confirmed)",
+                )
+
+                // Convert candidates to items, verify ROI, and mark as consumed
+                allConfirmedCandidates.mapNotNull { candidate ->
                     val bbox = candidate.boundingBoxNorm ?: return@mapNotNull null
                     val centerX = (bbox.left + bbox.right) / 2f
                     val centerY = (bbox.top + bbox.bottom) / 2f
@@ -1698,15 +1708,22 @@ class CameraXManager(
                         }
                         null
                     } else {
-                        objectDetector.candidateToScannedItem(candidate)
+                        // Convert to ScannedItem and mark candidate as consumed
+                        val item = objectDetector.candidateToScannedItem(candidate)
+                        if (item != null) {
+                            objectTracker.markCandidateConsumed(candidate.internalId)
+                            Log.i(TAG, ">>> Added item from candidate ${candidate.internalId}, marked as consumed")
+                        }
+                        item
                     }
                 }
             } else {
-                // Guidance doesn't allow add (not LOCKED) - don't add items even if tracker confirmed them
-                if (confirmedCandidates.isNotEmpty()) {
+                // Guidance doesn't allow add (not LOCKED) - candidates accumulate until LOCKED
+                val totalConfirmed = objectTracker.getStats().confirmedCandidates
+                if (totalConfirmed > 0) {
                     Log.d(
                         TAG,
-                        ">>> Not adding ${confirmedCandidates.size} confirmed candidates: canAddItem=$canAddItems, isLocked=$isLocked",
+                        ">>> Waiting for LOCKED state: $totalConfirmed confirmed candidates pending (canAddItem=$canAddItems, isLocked=$isLocked)",
                     )
                 }
                 emptyList()
