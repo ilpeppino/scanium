@@ -1471,9 +1471,11 @@ class CameraXManager(
             // Route to the appropriate scanner based on mode
             when (scanMode) {
                 ScanMode.OBJECT_DETECTION -> {
-                    // Use tracking pipeline when in STREAM_MODE and scanning
-                    if (useStreamMode && isScanning) {
-                        Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
+                    // PIPELINE ALIGNMENT FIX: Use tracking pipeline for continuous scanning
+                    // This enables quality gating (LOCKED state), ROI filtering, and dedup
+                    // Detection always uses SINGLE_IMAGE_MODE to avoid blinking bboxes
+                    if (isScanning) {
+                        Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (isScanning=$isScanning)")
                         val (items, detections) =
                             processObjectDetectionWithTracking(
                                 inputImage = inputImage,
@@ -1583,11 +1585,13 @@ class CameraXManager(
         Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
 
         // SINGLE DETECTION PASS: Get both tracking metadata and overlay data together
+        // PIPELINE ALIGNMENT: Use SINGLE_IMAGE_MODE (false) to avoid unstable tracking IDs
+        // that caused blinking bboxes. Quality gating is handled by ObjectTracker + ScanGuidanceManager.
         val trackingResponse =
             objectDetector.detectObjectsWithTracking(
                 image = inputImage,
                 sourceBitmap = lazyBitmapProvider,
-                useStreamMode = true,
+                useStreamMode = false, // CRITICAL: Use SINGLE_IMAGE_MODE for stable bboxes
                 cropRect = cropRect,
                 edgeInsetRatio = edgeInsetRatio,
             )
