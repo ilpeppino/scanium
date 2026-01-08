@@ -26,6 +26,7 @@ const TONE_INSTRUCTIONS: Record<string, string> = {
   NEUTRAL: 'Use a neutral, informative tone.',
   FRIENDLY: 'Use a friendly, approachable tone with helpful suggestions.',
   PROFESSIONAL: 'Use a formal, professional business tone.',
+  MARKETPLACE: 'Use concise, matter-of-fact marketplace copy. No marketing hype, exclamation marks, or emojis. Avoid phrases like "perfect for", "don\'t miss out", "amazing". Title: short, includes key identifiers (type + brand + model + size/color if available). Description: 3-6 bullet lines max covering condition, key specs, what\'s included, defects (if known). Only use detected attributes; do not invent details. If info is missing, mark as "Unknown" or omit.',
 };
 
 /**

@@ -91,7 +91,7 @@ const messageSchema = z.object({
 
 const assistantPrefsSchema = z.object({
   language: z.string().optional(),
-  tone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL']).optional(),
+  tone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL', 'MARKETPLACE']).optional(),
   region: z.enum(['NL', 'DE', 'BE', 'FR', 'UK', 'US', 'EU']).optional(),
   units: z.enum(['METRIC', 'IMPERIAL']).optional(),
   verbosity: z.enum(['CONCISE', 'NORMAL', 'DETAILED']).optional(),

@@ -95,6 +95,7 @@ fun SettingsAssistantScreen(
                     AssistantTone.NEUTRAL -> stringResource(R.string.settings_tone_neutral)
                     AssistantTone.FRIENDLY -> stringResource(R.string.settings_tone_friendly)
                     AssistantTone.PROFESSIONAL -> stringResource(R.string.settings_tone_professional)
+                    AssistantTone.MARKETPLACE -> stringResource(R.string.settings_tone_marketplace)
                 }
             tone.name to label
         }

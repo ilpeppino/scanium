@@ -57,7 +57,7 @@ export type AssistantReasonCode =
 /**
  * Tone preference for assistant responses.
  */
-export type AssistantTone = 'NEUTRAL' | 'FRIENDLY' | 'PROFESSIONAL';
+export type AssistantTone = 'NEUTRAL' | 'FRIENDLY' | 'PROFESSIONAL' | 'MARKETPLACE';
 
 /**
  * Region preference (affects currency, marketplace mentions).

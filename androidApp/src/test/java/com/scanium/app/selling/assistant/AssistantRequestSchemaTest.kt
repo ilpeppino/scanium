@@ -264,6 +264,66 @@ class AssistantRequestSchemaTest {
         assertThat(message).isNotNull()
         assertThat(message).isNotEmpty()
     }
+
+    @Test
+    fun `assistantPrefs tone enum values match backend schema`() {
+        // Backend expects: NEUTRAL, FRIENDLY, PROFESSIONAL, MARKETPLACE
+        val validTones = listOf("NEUTRAL", "FRIENDLY", "PROFESSIONAL", "MARKETPLACE")
+
+        validTones.forEach { tone ->
+            val request = TestAssistantChatRequest(
+                items = listOf(
+                    TestItemContextSnapshotDto(
+                        itemId = "item-123",
+                        title = "Test"
+                    )
+                ),
+                history = emptyList(),
+                message = "Test",
+                exportProfile = null,
+                assistantPrefs = TestAssistantPrefsDto(
+                    tone = tone,
+                    language = "EN",
+                    region = "EU"
+                )
+            )
+
+            val jsonString = json.encodeToString(request)
+            val parsed = json.parseToJsonElement(jsonString).jsonObject
+            val prefs = parsed["assistantPrefs"]?.jsonObject
+
+            assertThat(prefs).isNotNull()
+            assertThat(prefs?.get("tone")?.jsonPrimitive?.content).isEqualTo(tone)
+        }
+    }
+
+    @Test
+    fun `MARKETPLACE tone serializes correctly`() {
+        val request = TestAssistantChatRequest(
+            items = listOf(
+                TestItemContextSnapshotDto(itemId = "item-1", title = "Test Item")
+            ),
+            history = emptyList(),
+            message = "Create listing",
+            exportProfile = null,
+            assistantPrefs = TestAssistantPrefsDto(
+                tone = "MARKETPLACE",
+                language = "EN",
+                region = "NL",
+                verbosity = "CONCISE"
+            )
+        )
+
+        val jsonString = json.encodeToString(request)
+        val parsed = json.parseToJsonElement(jsonString).jsonObject
+        val prefs = parsed["assistantPrefs"]?.jsonObject
+
+        assertThat(prefs).isNotNull()
+        assertThat(prefs?.get("tone")?.jsonPrimitive?.content).isEqualTo("MARKETPLACE")
+        assertThat(prefs?.get("language")?.jsonPrimitive?.content).isEqualTo("EN")
+        assertThat(prefs?.get("region")?.jsonPrimitive?.content).isEqualTo("NL")
+        assertThat(prefs?.get("verbosity")?.jsonPrimitive?.content).isEqualTo("CONCISE")
+    }
 }
 
 // Test-only DTOs that mirror production DTOs for schema verification

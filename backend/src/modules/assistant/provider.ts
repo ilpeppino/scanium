@@ -510,6 +510,13 @@ function applyTone(content: string, tone?: string): string {
     content = content.replace(/!/g, '.');
     content = content.replace(/Great!/g, 'Understood.');
     content = content.replace(/Happy to help!/g, '');
+  } else if (tone === 'MARKETPLACE') {
+    // Strip marketing language and make concise
+    content = content.replace(/!/g, '.');
+    content = content.replace(/\b(perfect for|don't miss out|amazing|incredible|fantastic|wonderful)\b/gi, '');
+    content = content.replace(/Happy to help!\s*/g, '');
+    content = content.replace(/Great!\s*/g, '');
+    content = content.replace(/\s+/g, ' '); // Clean up extra spaces
   }
 
   return content.trim();

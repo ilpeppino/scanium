@@ -47,6 +47,16 @@ describe('Listing Generation Prompts', () => {
       expect(prompt).toContain('professional');
     });
 
+    it('includes marketplace tone instruction when specified', () => {
+      const prompt = buildListingSystemPrompt({ tone: 'MARKETPLACE' });
+
+      expect(prompt).toContain('concise');
+      expect(prompt).toContain('matter-of-fact');
+      expect(prompt).toContain('No marketing hype');
+      expect(prompt).toContain('emojis');
+      expect(prompt).toContain('3-6 bullet lines max');
+    });
+
     it('includes region-specific marketplaces for NL', () => {
       const prompt = buildListingSystemPrompt({ region: 'NL' });
 
