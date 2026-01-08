@@ -20,6 +20,7 @@ import { enrichRoutes } from './modules/enrich/routes.js';
 import { pricingRoutes } from './modules/pricing/routes.js';
 import { apiGuardPlugin } from './infra/security/api-guard.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { recordHttpRequest } from './infra/observability/metrics.js';
 
 /**
@@ -57,6 +58,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
 
   const tracer = trace.getTracer('scanium-backend');
+  const otelLogger = logs.getLogger('scanium-backend');
   const ignoredMetricPaths = ['/health', '/healthz', '/readyz', '/metrics'];
 
   app.addHook('onRequest', (request, _reply, done) => {
@@ -92,6 +94,25 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
     if (start && !ignoredMetricPaths.some((path) => url.startsWith(path))) {
       const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
       recordHttpRequest(request.method, route, reply.statusCode, durationMs);
+
+      const severityNumber =
+        reply.statusCode >= 500
+          ? SeverityNumber.ERROR
+          : reply.statusCode >= 400
+          ? SeverityNumber.WARN
+          : SeverityNumber.INFO;
+      const severityText =
+        reply.statusCode >= 500 ? 'ERROR' : reply.statusCode >= 400 ? 'WARN' : 'INFO';
+      otelLogger.emit({
+        severityNumber,
+        severityText,
+        body: `HTTP ${request.method} ${route}`,
+        attributes: {
+          'http.method': request.method,
+          'http.route': route,
+          'http.status_code': reply.statusCode,
+        },
+      });
     }
     done();
   });

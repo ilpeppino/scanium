@@ -31,6 +31,19 @@ otelcol.receiver.otlp "mobile_grpc" {
   }
 }
 
+// OTLP HTTP receiver (backend API)
+otelcol.receiver.otlp "backend_http" {
+  http {
+    endpoint = "0.0.0.0:4319"
+  }
+
+  output {
+    logs    = [otelcol.processor.batch.backend.input]
+    metrics = [otelcol.processor.batch.backend.input]
+    traces  = [otelcol.processor.batch.backend.input]
+  }
+}
+
 // ============================================================================
 // Processors
 // ============================================================================
@@ -49,6 +62,18 @@ otelcol.processor.batch "mobile" {
   }
 }
 
+otelcol.processor.batch "backend" {
+  send_batch_size         = 100
+  send_batch_max_size     = 200
+  timeout                 = "5s"
+
+  output {
+    logs    = [otelcol.exporter.loki.backend.input]
+    metrics = [otelcol.exporter.prometheus.backend.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
 // ============================================================================
 // Exporters
 // ============================================================================
@@ -56,6 +81,10 @@ otelcol.processor.batch "mobile" {
 // Loki exporter for logs
 otelcol.exporter.loki "mobile" {
   forward_to = [loki.write.mobile.receiver]
+}
+
+otelcol.exporter.loki "backend" {
+  forward_to = [loki.write.backend.receiver]
 }
 
 // Loki write component
@@ -99,6 +128,10 @@ loki.source.docker "backend" {
 // Prometheus remote write exporter for metrics (to Mimir)
 otelcol.exporter.prometheus "mobile" {
   forward_to = [prometheus.remote_write.mobile.receiver]
+}
+
+otelcol.exporter.prometheus "backend" {
+  forward_to = [prometheus.remote_write.backend.receiver]
 }
 
 prometheus.remote_write "mobile" {

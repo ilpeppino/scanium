@@ -27,9 +27,9 @@
 4) Dashboards:
    - System Overview / Backend API Performance / Backend Errors should now show data.
 
-***REMOVED******REMOVED*** Remaining Gap (Logs)
-- Loki ingestion from Docker logs is blocked by the `db` log driver.
-- To enable Logs Explorer, change the backend container log driver to `json-file` or ship logs via OTLP.
+***REMOVED******REMOVED*** Logs Status
+- Backend logs are now exported via OTLP and also available via Docker `json-file` logging.
+- Loki queries like `{source="scanium-backend"}` should return recent entries.
 
 ***REMOVED******REMOVED*** Regression Prevention
 - Keep `/metrics` scrape active in Alloy for backend.
