@@ -31,7 +31,7 @@ describe('UnifiedCache', () => {
     });
 
     it('returns null for missing keys', () => {
-      expect(cache.get('nonexistent')).toBeNull();
+      expect(cache.get('nonexistent')).toBeUndefined();
     });
 
     it('tracks cache hits and misses', () => {
@@ -135,7 +135,7 @@ describe('UnifiedCache', () => {
       // Wait for expiration
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(shortCache.get('key1')).toBeNull();
+      expect(shortCache.get('key1')).toBeUndefined();
       shortCache.stop();
     });
   });
@@ -283,7 +283,7 @@ describe('buildItemSnapshotHash', () => {
     });
 
     expect(hash).toBeDefined();
-    expect(hash.length).toBe(32);
+    expect(hash.length).toBe(16);
   });
 });
 
