@@ -174,7 +174,7 @@ prometheus.scrape "alloy" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"  // Reduced frequency for NAS resource constraints
   scrape_timeout  = "10s"
 }
 
@@ -188,7 +188,7 @@ prometheus.scrape "loki" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"  // Reduced frequency for NAS resource constraints
   scrape_timeout  = "10s"
 }
 
@@ -202,7 +202,7 @@ prometheus.scrape "tempo" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"  // Reduced frequency for NAS resource constraints
   scrape_timeout  = "10s"
 }
 
@@ -216,7 +216,7 @@ prometheus.scrape "mimir" {
     },
   ]
   forward_to      = [prometheus.remote_write.pipeline.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"  // Reduced frequency for NAS resource constraints
   scrape_timeout  = "10s"
 }
 
@@ -232,7 +232,7 @@ prometheus.scrape "backend" {
     },
   ]
   forward_to      = [prometheus.remote_write.backend.receiver]
-  scrape_interval = "15s"
+  scrape_interval = "60s"  // Reduced frequency for NAS resource constraints
   scrape_timeout  = "10s"
 }
 
