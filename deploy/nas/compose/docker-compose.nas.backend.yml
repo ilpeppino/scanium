@@ -10,6 +10,12 @@ services:
     volumes:
       # Synology bind mount (persist DB data)
       - /volume1/docker/scanium/postgres:/var/lib/postgresql/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U scanium -d scanium"]
       interval: 10s
@@ -33,11 +39,18 @@ services:
       SCANIUM_CLASSIFIER_PROVIDER: ${SCANIUM_CLASSIFIER_PROVIDER}
       VISION_FEATURE: ${VISION_FEATURE}
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/vision-sa.json
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://scanium-alloy:4319
     depends_on:
       postgres:
         condition: service_healthy
     ports:
       - "8080:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:8080/health', (r) => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))\""]
       interval: 10s

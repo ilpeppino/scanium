@@ -1,9 +1,12 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { Resource } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import { logs } from '@opentelemetry/api-logs';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
 
@@ -19,6 +22,7 @@ import { FastifyInstrumentation } from '@opentelemetry/instrumentation-fastify';
  */
 
 let sdk: NodeSDK | null = null;
+let loggerProvider: LoggerProvider | null = null;
 
 export interface TelemetryConfig {
   serviceName: string;
@@ -37,6 +41,14 @@ export function initTelemetry(config: TelemetryConfig): void {
     [ATTR_SERVICE_NAME]: config.serviceName,
     'deployment.environment': config.environment,
   });
+
+  const logExporter = new OTLPLogExporter({
+    url: `${config.otlpEndpoint}/v1/logs`,
+  });
+
+  loggerProvider = new LoggerProvider({ resource });
+  loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(logExporter));
+  logs.setGlobalLoggerProvider(loggerProvider);
 
   // Trace exporter
   const traceExporter = new OTLPTraceExporter({
@@ -80,7 +92,12 @@ export function shutdownTelemetry(): Promise<void> {
     return Promise.resolve();
   }
 
-  return sdk.shutdown().then(
+  const shutdowns: Promise<void>[] = [sdk.shutdown()];
+  if (loggerProvider) {
+    shutdowns.push(loggerProvider.shutdown());
+  }
+
+  return Promise.all(shutdowns).then(
     () => console.log('📊 OpenTelemetry shut down'),
     (error) => console.error('📊 Error shutting down OpenTelemetry:', error)
   );
