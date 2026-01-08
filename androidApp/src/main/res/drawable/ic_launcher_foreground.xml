@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    DEPRECATED: This curved "S" icon is no longer used as the launcher icon.
+    The launcher now uses ic_launcher_foreground_lightning.xml (geometric lightning bolt design).
+
+    This file is kept for reference and may be used for splash screen or other UI elements
+    that intentionally use the curved "S" design.
+
+    See: assets/ICON_ASSETS.md for documentation on icon asset roles.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="1024"
     android:viewportHeight="1024">
-    <!-- Scanium Adaptive Icon Foreground -->
+    <!-- Scanium Adaptive Icon Foreground - Curved S Design (DEPRECATED for launcher) -->
     <!-- S Symbol centered within Android safe zone (inner 66%) -->
     <group
         android:scaleX="0.65"

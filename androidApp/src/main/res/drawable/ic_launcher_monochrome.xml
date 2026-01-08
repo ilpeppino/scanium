@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    DEPRECATED: This curved "S" monochrome icon is no longer used as the launcher icon.
+    The launcher now uses ic_launcher_monochrome_lightning.xml (geometric lightning bolt design).
+
+    See: assets/ICON_ASSETS.md for documentation on icon asset roles.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="1024"
     android:viewportHeight="1024">
-    <!-- Scanium Adaptive Icon Monochrome (for Android 13+ themed icons) -->
+    <!-- Scanium Adaptive Icon Monochrome - Curved S Design (DEPRECATED for launcher) -->
     <group
         android:scaleX="0.65"
         android:scaleY="0.65"
