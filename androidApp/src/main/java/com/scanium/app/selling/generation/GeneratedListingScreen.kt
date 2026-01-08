@@ -42,11 +42,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.scanium.app.R
 import com.scanium.shared.core.models.assistant.ConfidenceTier
 import com.scanium.shared.core.models.listing.GeneratedListing
 import com.scanium.shared.core.models.listing.GeneratedListingWarning
@@ -78,12 +80,12 @@ fun GeneratedListingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Generated Listing") },
+                title = { Text(stringResource(R.string.generated_listing_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Go back",
+                            contentDescription = stringResource(R.string.common_back),
                         )
                     }
                 },
@@ -133,7 +135,7 @@ private fun IdleContent() {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "Select an item to generate a listing",
+            text = stringResource(R.string.generated_listing_select_item),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -152,7 +154,7 @@ private fun LoadingContent() {
         ) {
             CircularProgressIndicator()
             Text(
-                text = "Generating listing...",
+                text = stringResource(R.string.generated_listing_generating),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -219,7 +221,7 @@ private fun SuccessContent(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.size(8.dp))
-                Text("Regenerate")
+                Text(stringResource(R.string.common_regenerate))
             }
 
             if (onUseListing != null) {
@@ -233,7 +235,7 @@ private fun SuccessContent(
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(modifier = Modifier.size(8.dp))
-                    Text("Use This")
+                    Text(stringResource(R.string.common_use_this))
                 }
             }
         }
@@ -293,9 +295,9 @@ private fun ListingFieldCard(
                     ) {
                         Text(
                             text = when (confidence) {
-                                ConfidenceTier.HIGH -> "High confidence"
-                                ConfidenceTier.MED -> "Medium confidence"
-                                ConfidenceTier.LOW -> "Low confidence"
+                                ConfidenceTier.HIGH -> stringResource(R.string.export_assistant_confidence_high)
+                                ConfidenceTier.MED -> stringResource(R.string.export_assistant_confidence_medium)
+                                ConfidenceTier.LOW -> stringResource(R.string.export_assistant_confidence_low)
                             },
                             style = MaterialTheme.typography.labelSmall,
                             color = confidenceColor,
@@ -353,7 +355,7 @@ private fun WarningsSection(warnings: List<GeneratedListingWarning>) {
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
-                    text = "Please verify",
+                    text = stringResource(R.string.generated_listing_please_verify),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.error,
@@ -401,7 +403,7 @@ private fun SuggestedPhotoCard(suggestion: String) {
             )
             Column {
                 Text(
-                    text = "Suggested next photo",
+                    text = stringResource(R.string.generated_listing_suggested_photo),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.tertiary,
@@ -441,7 +443,7 @@ private fun ErrorContent(
             )
 
             Text(
-                text = "Generation Failed",
+                text = stringResource(R.string.export_assistant_generation_failed),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.error,
             )
@@ -458,7 +460,7 @@ private fun ErrorContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 OutlinedButton(onClick = onGoBack) {
-                    Text("Go Back")
+                    Text(stringResource(R.string.common_go_back))
                 }
 
                 if (retryable) {
@@ -469,7 +471,7 @@ private fun ErrorContent(
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.size(8.dp))
-                        Text("Retry")
+                        Text(stringResource(R.string.common_retry))
                     }
                 }
             }

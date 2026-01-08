@@ -69,9 +69,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.summary.AttributeSummaryGenerator
@@ -152,10 +154,10 @@ fun EditItemScreenV2(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Edit Item") },
+                    title = { Text(stringResource(R.string.edit_item_title)) },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                         }
                     },
                 )
@@ -167,7 +169,7 @@ fun EditItemScreenV2(
                     .padding(padding),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Item not found", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.edit_item_not_found), style = MaterialTheme.typography.bodyLarge)
             }
         }
         return
@@ -176,10 +178,10 @@ fun EditItemScreenV2(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Edit Item") },
+                title = { Text(stringResource(R.string.edit_item_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
             )
@@ -201,7 +203,7 @@ fun EditItemScreenV2(
                         onClick = onBack,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.common_cancel))
                     }
 
                     // AI Generate button
@@ -221,7 +223,7 @@ fun EditItemScreenV2(
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("AI")
+                        Text(stringResource(R.string.common_ai))
                     }
 
                     // Save button
@@ -252,7 +254,7 @@ fun EditItemScreenV2(
                         },
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text("Save")
+                        Text(stringResource(R.string.common_save))
                     }
                 }
             }
@@ -323,7 +325,7 @@ fun EditItemScreenV2(
                             textEdited = true
                         }
                     },
-                    label = { Text("Item Details") },
+                    label = { Text(stringResource(R.string.item_detail_title)) },
                     placeholder = {
                         Text(
                             "Category: ...\nBrand: ...\nColor: ...\nCondition: ...",
@@ -347,7 +349,7 @@ fun EditItemScreenV2(
             )
             if (missingFields.isNotEmpty()) {
                 Text(
-                    text = "Missing: ${missingFields.joinToString(", ")}",
+                    text = stringResource(R.string.edit_item_missing_fields, missingFields.joinToString(", ")),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -431,7 +433,7 @@ private fun PhotoGallerySection(
             .padding(horizontal = 16.dp),
     ) {
         Text(
-            text = "Photos",
+            text = stringResource(R.string.edit_item_photos),
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier.padding(bottom = 8.dp),
         )
@@ -445,7 +447,7 @@ private fun PhotoGallerySection(
                 val thumbnailBitmap = (item.thumbnailRef ?: item.thumbnail).toImageBitmap()
                 PhotoThumbnail(
                     bitmap = thumbnailBitmap,
-                    label = "Primary",
+                    label = stringResource(R.string.edit_item_photo_primary),
                     isPrimary = true,
                 )
             }
@@ -517,7 +519,7 @@ private fun PhotoThumbnail(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        "No image",
+                        stringResource(R.string.items_no_image),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -537,6 +539,8 @@ private fun PhotoThumbnail(
 
 @Composable
 private fun AddPhotoButton(onClick: () -> Unit) {
+    val addPhotoText = stringResource(R.string.edit_item_add_photo)
+    val addText = stringResource(R.string.common_add)
     Card(
         modifier = Modifier
             .size(100.dp)
@@ -555,12 +559,12 @@ private fun AddPhotoButton(onClick: () -> Unit) {
             ) {
                 Icon(
                     Icons.Default.Add,
-                    contentDescription = "Add photo",
+                    contentDescription = addPhotoText,
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    "Add",
+                    addText,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -577,6 +581,12 @@ private fun EnrichmentStatusRow(
     enrichmentStatus: EnrichmentLayerStatus,
     onRetry: () -> Unit,
 ) {
+    val analyzingText = stringResource(R.string.edit_item_analyzing)
+    val analyzeFailedText = stringResource(R.string.edit_item_analyze_failed)
+    val analyzedText = stringResource(R.string.edit_item_analyzed)
+    val noNewInfoText = stringResource(R.string.edit_item_no_new_info)
+    val retryText = stringResource(R.string.common_retry)
+
     val statusMessage: String
     val statusColor: androidx.compose.ui.graphics.Color
     val showProgress: Boolean
@@ -584,25 +594,25 @@ private fun EnrichmentStatusRow(
 
     when {
         enrichmentStatus.isEnriching -> {
-            statusMessage = "Analyzing photo..."
+            statusMessage = analyzingText
             statusColor = MaterialTheme.colorScheme.primary
             showProgress = true
             showRetry = false
         }
         enrichmentStatus.layerB == LayerState.FAILED || enrichmentStatus.layerC == LayerState.FAILED -> {
-            statusMessage = "Couldn't analyze photo"
+            statusMessage = analyzeFailedText
             statusColor = MaterialTheme.colorScheme.error
             showProgress = false
             showRetry = true
         }
         enrichmentStatus.isComplete && enrichmentStatus.hasAnyResults -> {
-            statusMessage = "Photo analyzed"
+            statusMessage = analyzedText
             statusColor = MaterialTheme.colorScheme.tertiary
             showProgress = false
             showRetry = false
         }
         enrichmentStatus.isComplete -> {
-            statusMessage = "No new info found"
+            statusMessage = noNewInfoText
             statusColor = MaterialTheme.colorScheme.onSurfaceVariant
             showProgress = false
             showRetry = false
@@ -662,7 +672,7 @@ private fun EnrichmentStatusRow(
                 ) {
                     Icon(
                         Icons.Default.Refresh,
-                        contentDescription = "Retry",
+                        contentDescription = retryText,
                         tint = statusColor,
                         modifier = Modifier.size(18.dp),
                     )
@@ -707,7 +717,7 @@ private fun DetectedAttributesSection(
             modifier = Modifier.padding(12.dp),
         ) {
             Text(
-                text = "Detected Attributes",
+                text = stringResource(R.string.items_detected_attributes_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -743,6 +753,7 @@ private fun AttributeChip(
     evidenceType: String?,
     confidence: Float,
 ) {
+    val userProvidedText = stringResource(R.string.edit_item_user_provided)
     val containerColor = when {
         isUserProvided -> MaterialTheme.colorScheme.primaryContainer
         confidence >= 0.8f -> MaterialTheme.colorScheme.tertiaryContainer
@@ -770,7 +781,7 @@ private fun AttributeChip(
             if (isUserProvided) {
                 Icon(
                     Icons.Default.Person,
-                    contentDescription = "User provided",
+                    contentDescription = userProvidedText,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -947,6 +958,10 @@ private fun SuggestedAdditionsSection(
     onAccept: (SuggestedAttribute) -> Unit,
     onDismiss: (SuggestedAttribute) -> Unit,
 ) {
+    val newAttributesText = stringResource(R.string.edit_item_new_attributes)
+    val acceptText = stringResource(R.string.common_accept)
+    val dismissText = stringResource(R.string.common_dismiss)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -959,7 +974,7 @@ private fun SuggestedAdditionsSection(
             modifier = Modifier.padding(12.dp),
         ) {
             Text(
-                text = "New attributes detected",
+                text = newAttributesText,
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
             )
@@ -983,7 +998,7 @@ private fun SuggestedAdditionsSection(
                     ) {
                         Icon(
                             Icons.Default.Check,
-                            contentDescription = "Accept",
+                            contentDescription = acceptText,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp),
                         )
@@ -994,7 +1009,7 @@ private fun SuggestedAdditionsSection(
                     ) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Dismiss",
+                            contentDescription = dismissText,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp),
                         )
