@@ -77,8 +77,8 @@ python generate_assets.py
 ***REMOVED******REMOVED*** Why Two Designs Exist
 
 The curved "S" design was the original icon. The lightning bolt design was created as an evolution
-representing speed and energy. The launcher icon now uses the lightning bolt design while some
-in-app branding elements retain the curved "S" for visual continuity during transition.
+representing speed and energy. The launcher icon and splash screen now use the lightning bolt design
+while some in-app branding elements retain the curved "S" for visual continuity during transition.
 
 ***REMOVED******REMOVED*** Future Considerations
 
@@ -86,4 +86,3 @@ in-app branding elements retain the curved "S" for visual continuity during tran
   as deprecated and can be removed once all UI elements are migrated to the lightning bolt design.
 - The `scanium_logo.png` and `scanium_icon.png` in drawable/ may need updating if full brand
   consistency is desired.
-- The splash screen (`ic_splash.xml`) uses the curved "S" and may need updating separately.
