@@ -1,4 +1,5 @@
 import { ImageAnnotatorClient, protos } from '@google-cloud/vision';
+import { randomBytes } from 'node:crypto';
 import { ClassificationRequest, ProviderResponse, VisionFeature } from '../types.js';
 import {
   extractVisualFactsFromResponses,
@@ -18,6 +19,14 @@ export type GoogleVisionOptions = {
   >;
 };
 
+/**
+ * Generates a new span ID for W3C trace context.
+ * Format: 8 bytes (16 hex chars)
+ */
+function generateSpanId(): string {
+  return randomBytes(8).toString('hex');
+}
+
 export class GoogleVisionClassifier {
   private readonly client: ImageAnnotatorClient;
 
@@ -34,7 +43,7 @@ export class GoogleVisionClassifier {
       features: this.buildFeatureRequests(featureSet),
     };
 
-    const response = await this.callWithRetry(annotateRequest);
+    const response = await this.callWithRetry(annotateRequest, request.traceContext);
 
     const signals = this.parseSignals(response, featureSet);
     const visionMs = Math.round(performance.now() - started);
@@ -106,15 +115,31 @@ export class GoogleVisionClassifier {
   }
 
   private async callWithRetry(
-    request: protos.google.cloud.vision.v1.IAnnotateImageRequest
+    request: protos.google.cloud.vision.v1.IAnnotateImageRequest,
+    traceContext?: ClassificationRequest['traceContext']
   ): Promise<protos.google.cloud.vision.v1.IAnnotateImageResponse> {
     let lastError: unknown;
+
+    // Prepare W3C trace context headers if available
+    const callOptions: { otherArgs?: { headers?: Record<string, string> } } = {};
+    if (traceContext) {
+      // Generate new span ID for Google Vision API call
+      const visionSpanId = generateSpanId();
+      const traceparent = `00-${traceContext.traceId}-${visionSpanId}-${traceContext.flags}`;
+
+      callOptions.otherArgs = {
+        headers: {
+          traceparent,
+        },
+      };
+    }
+
     for (let attempt = 0; attempt <= this.options.maxRetries; attempt++) {
       let timeoutRef: NodeJS.Timeout | undefined;
       try {
         const batchRequest: protos.google.cloud.vision.v1.IBatchAnnotateImagesRequest =
           { requests: [request] };
-        const visionPromise = this.client.batchAnnotateImages(batchRequest);
+        const visionPromise = this.client.batchAnnotateImages(batchRequest, callOptions);
         const [response] = (await Promise.race([
           visionPromise,
           new Promise((_, reject) => {

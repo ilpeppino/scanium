@@ -10,6 +10,7 @@ import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.ml.ItemCategory
 import com.scanium.app.network.security.RequestSigner
+import com.scanium.app.telemetry.TraceContext
 import com.scanium.shared.core.models.config.CloudClassifierConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -85,6 +86,7 @@ class CloudClassifier(
     private val maxAttempts: Int = 3,
     private val baseDelayMs: Long = 1_000L,
     private val maxDelayMs: Long = 8_000L,
+    private val telemetry: com.scanium.telemetry.facade.Telemetry? = null,
 ) : ItemClassifier {
     companion object {
         private const val TAG = "CloudClassifier"
@@ -101,6 +103,7 @@ class CloudClassifier(
             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .addInterceptor(com.scanium.app.telemetry.TraceContextInterceptor())
             .apply {
                 // SEC-003: Add certificate pinning for MITM protection
                 val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
@@ -150,6 +153,34 @@ class CloudClassifier(
             val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify?enrichAttributes=true"
             val correlationId = CorrelationIds.currentClassificationSessionId()
             ScaniumLog.d(TAG, "Classifying endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
+
+            // Create child span for this API call
+            val parentSpan = TraceContext.getActiveSpan()
+            val classifySpan =
+                if (parentSpan != null) {
+                    telemetry?.beginChildSpan(
+                        "api.classify",
+                        parentSpan,
+                        mapOf(
+                            "domain_pack_id" to domainPackId,
+                            "endpoint" to "/v1/classify",
+                        ),
+                    )
+                } else {
+                    telemetry?.beginSpan(
+                        "api.classify",
+                        mapOf(
+                            "domain_pack_id" to domainPackId,
+                            "endpoint" to "/v1/classify",
+                        ),
+                    )
+                }
+
+            // Set as active for HTTP header injection
+            classifySpan?.let { TraceContext.setActiveSpan(it) }
+            val startTime = System.currentTimeMillis()
+
+            try {
 
             maybeSaveDebugCrop(input)
 
@@ -214,6 +245,37 @@ class CloudClassifier(
                         if (responseCode == 200 && responseBody != null) {
                             val apiResponse = json.decodeFromString<CloudClassificationResponse>(responseBody)
                             val result = parseSuccessResponse(apiResponse)
+                            val latencyMs = System.currentTimeMillis() - startTime
+
+                            // Record success metrics
+                            telemetry?.timer(
+                                "mobile.api.duration_ms",
+                                latencyMs,
+                                mapOf(
+                                    "endpoint" to "/v1/classify",
+                                    "status_code" to "200",
+                                ),
+                            )
+                            telemetry?.counter(
+                                "mobile.api.request_count",
+                                1,
+                                mapOf(
+                                    "endpoint" to "/v1/classify",
+                                    "status" to "success",
+                                ),
+                            )
+
+                            // End span with success attributes
+                            classifySpan?.end(
+                                mapOf(
+                                    "status_code" to "200",
+                                    "latency_ms" to latencyMs.toString(),
+                                    "request_id" to (apiResponse.requestId ?: "unknown"),
+                                    "attempts" to attempt.toString(),
+                                ),
+                            )
+                            TraceContext.clearActiveSpan()
+
                             ScaniumLog.i(
                                 TAG,
                                 "Classification success correlationId=$correlationId requestId=${apiResponse.requestId}",
@@ -245,19 +307,87 @@ class CloudClassifier(
                     }
 
                     if (errorMessage != null) {
+                        val latencyMs = System.currentTimeMillis() - startTime
+
+                        // Record error metrics
+                        telemetry?.timer(
+                            "mobile.api.duration_ms",
+                            latencyMs,
+                            mapOf(
+                                "endpoint" to "/v1/classify",
+                                "status_code" to responseCode.toString(),
+                            ),
+                        )
+                        telemetry?.counter(
+                            "mobile.api.error_count",
+                            1,
+                            mapOf(
+                                "endpoint" to "/v1/classify",
+                                "status_code" to responseCode.toString(),
+                            ),
+                        )
+
+                        classifySpan?.recordError(
+                            errorMessage,
+                            mapOf(
+                                "status_code" to responseCode.toString(),
+                                "attempts" to attempt.toString(),
+                            ),
+                        )
+                        classifySpan?.end(mapOf("status" to "error"))
+                        TraceContext.clearActiveSpan()
+
                         return@withContext failureResult(errorMessage, offlineError)
                     }
                 } catch (e: SocketTimeoutException) {
                     lastError = "Request timeout"
+                    telemetry?.counter(
+                        "mobile.api.error_count",
+                        1,
+                        mapOf(
+                            "endpoint" to "/v1/classify",
+                            "error_type" to "timeout",
+                        ),
+                    )
+                    classifySpan?.recordError(lastError, mapOf("attempt" to attempt.toString()))
                     Log.w(TAG, "Timeout classifying image (attempt $attempt)", e)
                 } catch (e: UnknownHostException) {
                     lastError = "Offline - check your connection"
+                    telemetry?.counter(
+                        "mobile.api.error_count",
+                        1,
+                        mapOf(
+                            "endpoint" to "/v1/classify",
+                            "error_type" to "offline",
+                        ),
+                    )
+                    classifySpan?.recordError(lastError, mapOf("attempt" to attempt.toString()))
                     Log.w(TAG, "Network unavailable (attempt $attempt)", e)
                 } catch (e: IOException) {
                     lastError = "Network error: ${e.message}"
+                    telemetry?.counter(
+                        "mobile.api.error_count",
+                        1,
+                        mapOf(
+                            "endpoint" to "/v1/classify",
+                            "error_type" to "network",
+                        ),
+                    )
+                    classifySpan?.recordError(lastError, mapOf("attempt" to attempt.toString()))
                     Log.w(TAG, "I/O error classifying image (attempt $attempt)", e)
                 } catch (e: Exception) {
                     lastError = "Unexpected error: ${e.message}"
+                    telemetry?.counter(
+                        "mobile.api.error_count",
+                        1,
+                        mapOf(
+                            "endpoint" to "/v1/classify",
+                            "error_type" to e::class.simpleName ?: "unknown",
+                        ),
+                    )
+                    classifySpan?.recordError(lastError ?: "Unexpected error")
+                    classifySpan?.end(mapOf("status" to "exception"))
+                    TraceContext.clearActiveSpan()
                     Log.e(TAG, "Unexpected error classifying image", e)
                     return@withContext failureResult(lastError ?: "Unexpected error")
                 }
@@ -271,7 +401,20 @@ class CloudClassifier(
                 attempt++
             }
 
+            // All retries exhausted
+            classifySpan?.end(
+                mapOf(
+                    "status" to "failed_all_retries",
+                    "attempts" to attempt.toString(),
+                ),
+            )
+            TraceContext.clearActiveSpan()
+
             return@withContext failureResult(lastError ?: "Unable to classify", offline = lastError?.contains("Offline", true) == true)
+            } finally {
+                // Ensure TraceContext is always cleared
+                TraceContext.clearActiveSpan()
+            }
         }
 
     private fun currentConfig(): CloudClassifierConfig =

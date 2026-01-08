@@ -61,6 +61,7 @@ object AssistantOkHttpClientFactory {
             .readTimeout(config.readTimeoutSeconds, TimeUnit.SECONDS)
             .writeTimeout(config.writeTimeoutSeconds, TimeUnit.SECONDS)
             .callTimeout(config.callTimeoutSeconds, TimeUnit.SECONDS)
+            .addInterceptor(com.scanium.app.telemetry.TraceContextInterceptor())
             .apply {
                 // Add retry interceptor if retries are enabled
                 if (config.retryCount > 0) {

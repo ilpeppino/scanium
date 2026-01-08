@@ -243,6 +243,27 @@ class Telemetry(
     }
 
     /**
+     * Begins a child tracing span with a parent relationship.
+     *
+     * The child span inherits the traceId from the parent, enabling
+     * hierarchical distributed tracing.
+     *
+     * @param name Span name (e.g., "api.classify")
+     * @param parent The parent span context
+     * @param userAttributes User-provided attributes (will be merged with defaults and sanitized)
+     * @return SpanContext that must be ended when the operation completes
+     */
+    fun beginChildSpan(
+        name: String,
+        parent: SpanContext,
+        userAttributes: Map<String, String> = emptyMap(),
+    ): SpanContext {
+        if (!config.enabled) return tracePort.beginChildSpan(name, parent, emptyMap())
+        val mergedAttributes = mergeAndSanitize(userAttributes)
+        return tracePort.beginChildSpan(name, parent, mergedAttributes)
+    }
+
+    /**
      * Executes a block within a span, automatically ending the span when complete.
      *
      * @param name Span name

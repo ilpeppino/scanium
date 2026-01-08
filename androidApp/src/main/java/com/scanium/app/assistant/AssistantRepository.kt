@@ -5,6 +5,7 @@ import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.network.security.RequestSigner
 import com.scanium.app.selling.assistant.network.AssistantHttpConfig
+import com.scanium.app.telemetry.TraceContext
 import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import com.scanium.shared.core.models.assistant.AssistantPromptRequest
 import com.scanium.shared.core.models.assistant.AssistantResponse
@@ -63,6 +64,7 @@ class AssistantRepository(
     private val apiKeyProvider: () -> String? = { null },
     private val getDeviceId: () -> String = { "" },
     private val httpConfig: AssistantHttpConfig = AssistantHttpConfig.DEFAULT,
+    private val telemetry: com.scanium.telemetry.facade.Telemetry? = null,
 ) {
     companion object {
         private const val TAG = "AssistantRepository"
@@ -94,36 +96,72 @@ class AssistantRepository(
      */
     suspend fun sendMessage(request: AssistantPromptRequest): Result<AssistantResponse> =
         withContext(Dispatchers.IO) {
-            val baseUrl =
-                BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
-                    ?: return@withContext Result.failure(
-                        AssistantException(
-                            errorCode = "CONFIG_ERROR",
-                            userMessage = "Assistant is not configured. Please check app settings.",
+            // Create span for assistant request
+            val parentSpan = TraceContext.getActiveSpan()
+            val assistSpan =
+                if (parentSpan != null) {
+                    telemetry?.beginChildSpan(
+                        "assistant.request",
+                        parentSpan,
+                        mapOf(
+                            "message_length" to request.userMessage.length.toString(),
+                            "item_count" to request.items.size.toString(),
                         ),
                     )
-
-            val apiKey =
-                apiKeyProvider()?.takeIf { it.isNotBlank() }
-                    ?: return@withContext Result.failure(
-                        AssistantException(
-                            errorCode = "CONFIG_ERROR",
-                            userMessage = "API key is missing. Please check app settings.",
+                } else {
+                    telemetry?.beginSpan(
+                        "assistant.request",
+                        mapOf(
+                            "message_length" to request.userMessage.length.toString(),
+                            "item_count" to request.items.size.toString(),
                         ),
                     )
+                }
 
-            // Client-side throttling
-            val now = System.currentTimeMillis()
-            val lastTime = lastRequestTime.get()
-            if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
-                return@withContext Result.failure(
-                    AssistantException(
-                        errorCode = "THROTTLED",
-                        userMessage = "Please wait a moment before sending another message.",
-                    ),
-                )
-            }
-            lastRequestTime.set(now)
+            // Set as active for HTTP header injection
+            assistSpan?.let { TraceContext.setActiveSpan(it) }
+            val startTime = System.currentTimeMillis()
+
+            try {
+                val baseUrl =
+                    BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
+                        ?: return@withContext Result.failure(
+                            AssistantException(
+                                errorCode = "CONFIG_ERROR",
+                                userMessage = "Assistant is not configured. Please check app settings.",
+                            ),
+                        ).also {
+                            assistSpan?.end(mapOf("status" to "config_error"))
+                            TraceContext.clearActiveSpan()
+                        }
+
+                val apiKey =
+                    apiKeyProvider()?.takeIf { it.isNotBlank() }
+                        ?: return@withContext Result.failure(
+                            AssistantException(
+                                errorCode = "CONFIG_ERROR",
+                                userMessage = "API key is missing. Please check app settings.",
+                            ),
+                        ).also {
+                            assistSpan?.end(mapOf("status" to "config_error"))
+                            TraceContext.clearActiveSpan()
+                        }
+
+                // Client-side throttling
+                val now = System.currentTimeMillis()
+                val lastTime = lastRequestTime.get()
+                if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
+                    return@withContext Result.failure(
+                        AssistantException(
+                            errorCode = "THROTTLED",
+                            userMessage = "Please wait a moment before sending another message.",
+                        ),
+                    ).also {
+                        assistSpan?.end(mapOf("status" to "throttled"))
+                        TraceContext.clearActiveSpan()
+                    }
+                }
+                lastRequestTime.set(now)
 
             val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
             val correlationId = CorrelationIds.currentClassificationSessionId()
@@ -171,6 +209,25 @@ class AssistantRepository(
                             }
 
                             val assistantResponse = json.decodeFromString<AssistantResponse>(responseBody)
+                            val latencyMs = System.currentTimeMillis() - startTime
+
+                            // Record success metrics
+                            telemetry?.timer(
+                                "mobile.api.duration_ms",
+                                latencyMs,
+                                mapOf(
+                                    "endpoint" to "/v1/assist/chat",
+                                    "status_code" to "200",
+                                ),
+                            )
+                            telemetry?.counter(
+                                "mobile.api.request_count",
+                                1,
+                                mapOf(
+                                    "endpoint" to "/v1/assist/chat",
+                                    "status" to "success",
+                                ),
+                            )
 
                             // Check if response was blocked by safety filters
                             val safety = assistantResponse.safety
@@ -178,10 +235,32 @@ class AssistantRepository(
                                 ScaniumLog.w(TAG, "Response blocked: ${safety.reasonCode}")
                             }
 
+                            // End span with success attributes
+                            assistSpan?.end(
+                                mapOf(
+                                    "status_code" to "200",
+                                    "latency_ms" to latencyMs.toString(),
+                                    "blocked" to (safety?.blocked?.toString() ?: "false"),
+                                ),
+                            )
+                            TraceContext.clearActiveSpan()
+
                             Result.success(assistantResponse)
                         }
 
                         response.code == 401 -> {
+                            telemetry?.counter(
+                                "mobile.api.error_count",
+                                1,
+                                mapOf(
+                                    "endpoint" to "/v1/assist/chat",
+                                    "status_code" to "401",
+                                ),
+                            )
+                            assistSpan?.recordError("Unauthorized", mapOf("status_code" to "401"))
+                            assistSpan?.end(mapOf("status" to "error"))
+                            TraceContext.clearActiveSpan()
+
                             Result.failure(
                                 AssistantException(
                                     errorCode = "UNAUTHORIZED",
@@ -204,6 +283,18 @@ class AssistantRepository(
                                     else -> "Too many requests. Please wait a moment."
                                 }
 
+                            telemetry?.counter(
+                                "mobile.api.error_count",
+                                1,
+                                mapOf(
+                                    "endpoint" to "/v1/assist/chat",
+                                    "status_code" to "429",
+                                ),
+                            )
+                            assistSpan?.recordError(userMessage, mapOf("status_code" to "429"))
+                            assistSpan?.end(mapOf("status" to "rate_limited"))
+                            TraceContext.clearActiveSpan()
+
                             Result.failure(
                                 AssistantException(
                                     errorCode = errorResponse?.error?.code ?: "RATE_LIMITED",
@@ -214,6 +305,18 @@ class AssistantRepository(
                         }
 
                         response.code == 400 -> {
+                            telemetry?.counter(
+                                "mobile.api.error_count",
+                                1,
+                                mapOf(
+                                    "endpoint" to "/v1/assist/chat",
+                                    "status_code" to "400",
+                                ),
+                            )
+                            assistSpan?.recordError("Validation error", mapOf("status_code" to "400"))
+                            assistSpan?.end(mapOf("status" to "validation_error"))
+                            TraceContext.clearActiveSpan()
+
                             Result.failure(
                                 AssistantException(
                                     errorCode = "VALIDATION_ERROR",
@@ -223,6 +326,18 @@ class AssistantRepository(
                         }
 
                         response.code == 503 -> {
+                            telemetry?.counter(
+                                "mobile.api.error_count",
+                                1,
+                                mapOf(
+                                    "endpoint" to "/v1/assist/chat",
+                                    "status_code" to "503",
+                                ),
+                            )
+                            assistSpan?.recordError("Service unavailable", mapOf("status_code" to "503"))
+                            assistSpan?.end(mapOf("status" to "service_unavailable"))
+                            TraceContext.clearActiveSpan()
+
                             Result.failure(
                                 AssistantException(
                                     errorCode = "SERVICE_UNAVAILABLE",
@@ -232,6 +347,18 @@ class AssistantRepository(
                         }
 
                         else -> {
+                            telemetry?.counter(
+                                "mobile.api.error_count",
+                                1,
+                                mapOf(
+                                    "endpoint" to "/v1/assist/chat",
+                                    "status_code" to response.code.toString(),
+                                ),
+                            )
+                            assistSpan?.recordError("Unexpected error", mapOf("status_code" to response.code.toString()))
+                            assistSpan?.end(mapOf("status" to "error"))
+                            TraceContext.clearActiveSpan()
+
                             ScaniumLog.e(TAG, "Unexpected error: ${response.code} - ${ScaniumLog.sanitizeResponseBody(responseBody)}")
                             Result.failure(
                                 AssistantException(
@@ -243,6 +370,18 @@ class AssistantRepository(
                     }
                 }
             } catch (e: IOException) {
+                telemetry?.counter(
+                    "mobile.api.error_count",
+                    1,
+                    mapOf(
+                        "endpoint" to "/v1/assist/chat",
+                        "error_type" to "network",
+                    ),
+                )
+                assistSpan?.recordError("Network error: ${e.message}")
+                assistSpan?.end(mapOf("status" to "network_error"))
+                TraceContext.clearActiveSpan()
+
                 ScaniumLog.e(TAG, "Network error", e)
                 Result.failure(
                     AssistantException(
@@ -251,6 +390,18 @@ class AssistantRepository(
                     ),
                 )
             } catch (e: Exception) {
+                telemetry?.counter(
+                    "mobile.api.error_count",
+                    1,
+                    mapOf(
+                        "endpoint" to "/v1/assist/chat",
+                        "error_type" to e::class.simpleName ?: "unknown",
+                    ),
+                )
+                assistSpan?.recordError("Exception: ${e.message}")
+                assistSpan?.end(mapOf("status" to "exception"))
+                TraceContext.clearActiveSpan()
+
                 ScaniumLog.e(TAG, "Failed to send assistant message", e)
                 Result.failure(
                     AssistantException(
@@ -258,6 +409,9 @@ class AssistantRepository(
                         userMessage = "Something went wrong. Please try again.",
                     ),
                 )
+            } finally {
+                // Ensure TraceContext is always cleared
+                TraceContext.clearActiveSpan()
             }
         }
 

@@ -86,10 +86,44 @@ class AndroidTracePortOtlp(
         return OtlpSpanContext(
             traceId = traceId,
             spanId = spanId,
+            parentSpanId = null,
             name = name,
             startTimeNano = startTimeNano,
             attributes = attributes.toMutableMap(),
             onEnd = { span -> onSpanEnd(span) },
+            sampled = true,
+        )
+    }
+
+    override fun beginChildSpan(
+        name: String,
+        parent: SpanContext,
+        attributes: Map<String, String>,
+    ): SpanContext {
+        if (!otlpConfig.enabled) {
+            return NoOpSpanContext
+        }
+
+        // Inherit traceId from parent, generate new spanId
+        val traceId = parent.getTraceId()
+        if (traceId.isEmpty()) {
+            // Parent is NoOp (not sampled), return NoOp child
+            return NoOpSpanContext
+        }
+
+        val spanId = generateSpanId()
+        val parentSpanId = parent.getSpanId()
+        val startTimeNano = System.currentTimeMillis() * 1_000_000
+
+        return OtlpSpanContext(
+            traceId = traceId,
+            spanId = spanId,
+            parentSpanId = parentSpanId,
+            name = name,
+            startTimeNano = startTimeNano,
+            attributes = attributes.toMutableMap(),
+            onEnd = { span -> onSpanEnd(span) },
+            sampled = true,
         )
     }
 
@@ -184,10 +218,12 @@ class AndroidTracePortOtlp(
     private class OtlpSpanContext(
         private val traceId: String,
         private val spanId: String,
+        private val parentSpanId: String? = null,
         private val name: String,
         private val startTimeNano: Long,
         private val attributes: MutableMap<String, String>,
         private val onEnd: (Span) -> Unit,
+        private val sampled: Boolean,
     ) : SpanContext {
         @Volatile
         private var ended = false
@@ -217,6 +253,7 @@ class AndroidTracePortOtlp(
                 Span(
                     traceId = traceId,
                     spanId = spanId,
+                    parentSpanId = parentSpanId,
                     name = name,
                     kind = Span.SPAN_KIND_INTERNAL,
                     startTimeUnixNano = startTimeNano.toString(),
@@ -249,6 +286,12 @@ class AndroidTracePortOtlp(
                 this.attributes.putAll(attributes)
             }
         }
+
+        override fun getTraceId(): String = traceId
+
+        override fun getSpanId(): String = spanId
+
+        override fun getTraceFlags(): String = if (sampled) "01" else "00"
     }
 
     private object NoOpSpanContext : SpanContext {
@@ -263,5 +306,11 @@ class AndroidTracePortOtlp(
             error: String,
             attributes: Map<String, String>,
         ) {}
+
+        override fun getTraceId(): String = ""
+
+        override fun getSpanId(): String = ""
+
+        override fun getTraceFlags(): String = "00"
     }
 }

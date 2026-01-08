@@ -337,6 +337,18 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
 
       // Images stay in-memory only. Future retention requires explicit opt-in via config.
       const requestId = randomUUID();
+
+      // Extract W3C trace context from request (if present)
+      const traceContext =
+        request.traceId && request.spanId && request.parentSpanId
+          ? {
+              traceId: request.traceId,
+              spanId: request.spanId,
+              parentSpanId: request.parentSpanId,
+              flags: '01', // Default sampled flag
+            }
+          : undefined;
+
       const classificationRequest: ClassificationRequest = {
         requestId,
         correlationId,
@@ -347,6 +359,7 @@ export const classifierRoutes: FastifyPluginAsync<RouteOpts> = async (
         domainPackId,
         hints,
         enrichAttributes,
+        traceContext,
       };
 
       const classifyStartTime = performance.now();
