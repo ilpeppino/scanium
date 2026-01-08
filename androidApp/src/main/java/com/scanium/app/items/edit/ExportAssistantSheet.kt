@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -399,12 +400,14 @@ private fun ExportSuccessContent(
 }
 
 @Composable
-private fun ExportContentCard(
+internal fun ExportContentCard(
     label: String,
     content: String,
     onCopy: () -> Unit,
     maxLines: Int = 3,
 ) {
+    val scrollState = rememberScrollState()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -440,18 +443,26 @@ private fun ExportContentCard(
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = content,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = maxLines,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(
+                        max = if (maxLines == Int.MAX_VALUE) 300.dp
+                        else (maxLines * 20).dp.coerceAtMost(200.dp)
+                    )
+                    .verticalScroll(scrollState)
+            ) {
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ExportBulletsCard(
+internal fun ExportBulletsCard(
     bullets: List<String>,
     onCopy: () -> Unit,
 ) {
