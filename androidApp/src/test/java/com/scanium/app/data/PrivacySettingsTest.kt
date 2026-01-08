@@ -27,17 +27,21 @@ class PrivacySettingsTest {
     }
 
     @Test
-    fun `documented default - assistant OFF`() {
-        // Per DATA_SAFETY.md: assistant is opt-in (default false)
-        val assistantDefault = false
-        assertFalse("Assistant should default to OFF per documentation", assistantDefault)
+    fun `documented default - assistant OFF in beta prod`() {
+        // Per DATA_SAFETY.md: assistant is opt-in (default false) in beta/prod
+        // Note: In DEV builds, this defaults to true for easier development/testing
+        // See AssistantSettingsDefaultsTest for flavor-specific default tests
+        val betaProdAssistantDefault = false
+        assertFalse("Assistant should default to OFF in beta/prod per documentation", betaProdAssistantDefault)
     }
 
     @Test
-    fun `documented default - assistant images OFF`() {
-        // Per DATA_SAFETY.md: assistant images is opt-in (default false)
-        val imagesDefault = false
-        assertFalse("Assistant images should default to OFF per documentation", imagesDefault)
+    fun `documented default - assistant images OFF in beta prod`() {
+        // Per DATA_SAFETY.md: assistant images is opt-in (default false) in beta/prod
+        // Note: In DEV builds, this defaults to true for easier development/testing
+        // See AssistantSettingsDefaultsTest for flavor-specific default tests
+        val betaProdImagesDefault = false
+        assertFalse("Assistant images should default to OFF in beta/prod per documentation", betaProdImagesDefault)
     }
 
     @Test
