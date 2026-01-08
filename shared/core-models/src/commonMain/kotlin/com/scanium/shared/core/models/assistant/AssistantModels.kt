@@ -24,6 +24,7 @@ enum class AssistantTone {
     NEUTRAL,
     FRIENDLY,
     PROFESSIONAL,
+    MARKETPLACE,
 }
 
 /**

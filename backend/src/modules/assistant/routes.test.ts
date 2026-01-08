@@ -554,4 +554,76 @@ describe('POST /v1/assist/chat', () => {
       expect(body.evidence).toBeUndefined();
     });
   });
+
+  describe('assistantPrefs tone handling', () => {
+    it('accepts MARKETPLACE tone in request', async () => {
+      const app = await appPromise;
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/assist/chat',
+        headers: { 'x-api-key': 'assist-key' },
+        payload: {
+          items: [
+            {
+              itemId: 'item-1',
+              title: 'Test Item',
+              category: 'Electronics',
+            },
+          ],
+          message: 'Help me create a listing',
+          assistantPrefs: {
+            tone: 'MARKETPLACE',
+            language: 'EN',
+            region: 'EU',
+          },
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+      expect(body.reply).toBeDefined();
+      expect(typeof body.reply).toBe('string');
+      // MARKETPLACE tone should strip exclamation marks
+      expect(body.reply).not.toContain('!');
+    });
+
+    it('accepts all valid tone values', async () => {
+      const app = await appPromise;
+      const tones = ['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL', 'MARKETPLACE'];
+
+      for (const tone of tones) {
+        const res = await app.inject({
+          method: 'POST',
+          url: '/v1/assist/chat',
+          headers: { 'x-api-key': 'assist-key' },
+          payload: {
+            items: [{ itemId: 'item-1', title: 'Test' }],
+            message: 'Help',
+            assistantPrefs: { tone },
+          },
+        });
+
+        expect(res.statusCode).toBe(200);
+      }
+    });
+
+    it('rejects invalid tone value', async () => {
+      const app = await appPromise;
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/assist/chat',
+        headers: { 'x-api-key': 'assist-key' },
+        payload: {
+          items: [{ itemId: 'item-1' }],
+          message: 'Help',
+          assistantPrefs: { tone: 'INVALID_TONE' },
+        },
+      });
+
+      expect(res.statusCode).toBe(400);
+      const body = JSON.parse(res.body);
+      // Check that it's a validation error (structure may vary by backend version)
+      expect(body.error || body.message || body.reason).toBeDefined();
+    });
+  });
 });
