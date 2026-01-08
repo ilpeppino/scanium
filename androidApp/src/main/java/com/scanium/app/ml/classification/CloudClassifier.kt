@@ -236,9 +236,10 @@ class CloudClassifier(
                     var retry = false
                     var offlineError = false
                     var errorMessage: String? = null
+                    var responseCode = 0
 
                     client.newCall(request).execute().use { response ->
-                        val responseCode = response.code
+                        responseCode = response.code
                         val responseBody = response.body?.string()
                         Log.d(TAG, "Response: code=$responseCode")
 
@@ -382,7 +383,7 @@ class CloudClassifier(
                         1,
                         mapOf(
                             "endpoint" to "/v1/classify",
-                            "error_type" to e::class.simpleName ?: "unknown",
+                            "error_type" to (e::class.simpleName ?: "unknown"),
                         ),
                     )
                     classifySpan?.recordError(lastError ?: "Unexpected error")

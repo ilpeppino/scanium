@@ -122,46 +122,45 @@ class AssistantRepository(
             assistSpan?.let { TraceContext.setActiveSpan(it) }
             val startTime = System.currentTimeMillis()
 
-            try {
-                val baseUrl =
-                    BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
-                        ?: return@withContext Result.failure(
-                            AssistantException(
-                                errorCode = "CONFIG_ERROR",
-                                userMessage = "Assistant is not configured. Please check app settings.",
-                            ),
-                        ).also {
-                            assistSpan?.end(mapOf("status" to "config_error"))
-                            TraceContext.clearActiveSpan()
-                        }
-
-                val apiKey =
-                    apiKeyProvider()?.takeIf { it.isNotBlank() }
-                        ?: return@withContext Result.failure(
-                            AssistantException(
-                                errorCode = "CONFIG_ERROR",
-                                userMessage = "API key is missing. Please check app settings.",
-                            ),
-                        ).also {
-                            assistSpan?.end(mapOf("status" to "config_error"))
-                            TraceContext.clearActiveSpan()
-                        }
-
-                // Client-side throttling
-                val now = System.currentTimeMillis()
-                val lastTime = lastRequestTime.get()
-                if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
-                    return@withContext Result.failure(
+            val baseUrl =
+                BuildConfig.SCANIUM_API_BASE_URL.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure<AssistantResponse>(
                         AssistantException(
-                            errorCode = "THROTTLED",
-                            userMessage = "Please wait a moment before sending another message.",
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "Assistant is not configured. Please check app settings.",
                         ),
                     ).also {
-                        assistSpan?.end(mapOf("status" to "throttled"))
+                        assistSpan?.end(mapOf("status" to "config_error"))
                         TraceContext.clearActiveSpan()
                     }
+
+            val apiKey =
+                apiKeyProvider()?.takeIf { it.isNotBlank() }
+                    ?: return@withContext Result.failure<AssistantResponse>(
+                        AssistantException(
+                            errorCode = "CONFIG_ERROR",
+                            userMessage = "API key is missing. Please check app settings.",
+                        ),
+                    ).also {
+                        assistSpan?.end(mapOf("status" to "config_error"))
+                        TraceContext.clearActiveSpan()
+                    }
+
+            // Client-side throttling
+            val now = System.currentTimeMillis()
+            val lastTime = lastRequestTime.get()
+            if (now - lastTime < MIN_REQUEST_INTERVAL_MS) {
+                return@withContext Result.failure<AssistantResponse>(
+                    AssistantException(
+                        errorCode = "THROTTLED",
+                        userMessage = "Please wait a moment before sending another message.",
+                    ),
+                ).also {
+                    assistSpan?.end(mapOf("status" to "throttled"))
+                    TraceContext.clearActiveSpan()
                 }
-                lastRequestTime.set(now)
+            }
+            lastRequestTime.set(now)
 
             val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
             val correlationId = CorrelationIds.currentClassificationSessionId()
@@ -395,7 +394,7 @@ class AssistantRepository(
                     1,
                     mapOf(
                         "endpoint" to "/v1/assist/chat",
-                        "error_type" to e::class.simpleName ?: "unknown",
+                        "error_type" to (e::class.simpleName ?: "unknown"),
                     ),
                 )
                 assistSpan?.recordError("Exception: ${e.message}")

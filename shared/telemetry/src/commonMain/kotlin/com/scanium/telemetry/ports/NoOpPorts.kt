@@ -71,6 +71,12 @@ private object NoOpSpanContext : SpanContext {
     ) {
         // No-op
     }
+
+    override fun getTraceId(): String = ""
+
+    override fun getSpanId(): String = ""
+
+    override fun getTraceFlags(): String = "00"
 }
 
 /**
@@ -84,6 +90,14 @@ private object NoOpSpanContext : SpanContext {
 object NoOpTracePort : TracePort {
     override fun beginSpan(
         name: String,
+        attributes: Map<String, String>,
+    ): SpanContext {
+        return NoOpSpanContext
+    }
+
+    override fun beginChildSpan(
+        name: String,
+        parent: SpanContext,
         attributes: Map<String, String>,
     ): SpanContext {
         return NoOpSpanContext
