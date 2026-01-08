@@ -255,6 +255,8 @@
     <string name="ftue_permission_long_press_title">Pulsación larga</string>
     <string name="ftue_permission_long_press_desc">Inicia escaneo continuo (toca de nuevo para detener)</string>
     <string name="ftue_permission_privacy_note">🔒 Todo el procesamiento ocurre en tu dispositivo. Las imágenes nunca se suben sin tu permiso.</string>
+    <string name="ftue_language_title">Elige tu idioma</string>
+    <string name="ftue_language_subtitle">Selecciona tu idioma preferido para la aplicación</string>
     <string name="ftue_completion_title">¡Listo!</string>
     <string name="ftue_completion_message">Estás listo para comenzar a escanear y catalogar objetos. ¡Feliz escaneo!</string>
     <string name="ftue_get_started">Comenzar</string>

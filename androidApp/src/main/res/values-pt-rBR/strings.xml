@@ -256,6 +256,8 @@
     <string name="ftue_permission_long_press_title">Toque prolongado</string>
     <string name="ftue_permission_long_press_desc">Iniciar escaneamento contínuo (toque novamente para parar)</string>
     <string name="ftue_permission_privacy_note">🔒 Todo o processamento acontece no seu dispositivo. Imagens nunca são enviadas sem sua permissão.</string>
+    <string name="ftue_language_title">Escolha seu idioma</string>
+    <string name="ftue_language_subtitle">Selecione seu idioma preferido para o aplicativo</string>
     <string name="ftue_completion_title">Você está pronto!</string>
     <string name="ftue_completion_message">Tudo certo para começar a escanear e catalogar objetos. Boas digitalizações!</string>
     <string name="ftue_get_started">Começar</string>

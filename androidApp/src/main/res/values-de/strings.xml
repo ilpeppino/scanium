@@ -256,6 +256,8 @@
     <string name="ftue_permission_long_press_title">Langes Drücken</string>
     <string name="ftue_permission_long_press_desc">Kontinuierliches Scannen starten (erneut tippen zum Stoppen)</string>
     <string name="ftue_permission_privacy_note">🔒 Die Verarbeitung erfolgt vollständig auf deinem Gerät. Bilder werden nie ohne deine Erlaubnis hochgeladen.</string>
+    <string name="ftue_language_title">Wähle deine Sprache</string>
+    <string name="ftue_language_subtitle">Wähle deine bevorzugte Sprache für die App</string>
     <string name="ftue_completion_title">Du bist bereit!</string>
     <string name="ftue_completion_message">Alles bereit, um mit dem Scannen und Katalogisieren zu starten. Viel Spaß beim Scannen!</string>
     <string name="ftue_get_started">Loslegen</string>

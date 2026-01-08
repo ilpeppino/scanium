@@ -149,6 +149,11 @@ fun CameraScreen(
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
     var showPermissionEducationDialog by remember { mutableStateOf(false) }
 
+    // Language selection state (shown after camera permission is granted)
+    val languageSelectionShown by ftueRepository.languageSelectionShownFlow.collectAsState(initial = false)
+    var showLanguageSelectionDialog by remember { mutableStateOf(false) }
+    val currentAppLanguage by settingsRepository.appLanguageFlow.collectAsState(initial = com.scanium.app.model.AppLanguage.SYSTEM)
+
     // FTUE tour state
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
     val isTourActive by tourViewModel?.isTourActive?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -370,9 +375,18 @@ fun CameraScreen(
         }
     }
 
-    // Start tour after permission is granted (if tour is active)
-    LaunchedEffect(cameraPermissionState.status.isGranted, isTourActive) {
-        if (cameraPermissionState.status.isGranted && isTourActive) {
+    // Show language selection after camera permission is granted (but before tour)
+    LaunchedEffect(cameraPermissionState.status.isGranted, languageSelectionShown) {
+        if (cameraPermissionState.status.isGranted && !languageSelectionShown) {
+            // Camera permission granted, show language selection dialog
+            delay(300) // Brief delay for smooth transition
+            showLanguageSelectionDialog = true
+        }
+    }
+
+    // Start tour after permission is granted AND language is selected (if tour is active)
+    LaunchedEffect(cameraPermissionState.status.isGranted, isTourActive, languageSelectionShown) {
+        if (cameraPermissionState.status.isGranted && isTourActive && languageSelectionShown) {
             delay(300) // Let camera initialize
             tourViewModel?.startTour()
         }
@@ -1007,6 +1021,27 @@ fun CameraScreen(
                         ftueRepository.setPermissionEducationShown(true)
                     }
                     cameraPermissionState.launchPermissionRequest()
+                },
+            )
+        }
+
+        // Language selection dialog (shown after camera permission is granted)
+        if (showLanguageSelectionDialog) {
+            com.scanium.app.ftue.LanguageSelectionDialog(
+                currentLanguage = currentAppLanguage,
+                onLanguageSelected = { selectedLanguage ->
+                    showLanguageSelectionDialog = false
+                    scope.launch {
+                        settingsRepository.setAppLanguage(selectedLanguage)
+                        // Update app locale
+                        val localeList =
+                            when (selectedLanguage) {
+                                com.scanium.app.model.AppLanguage.SYSTEM -> androidx.core.os.LocaleListCompat.getEmptyLocaleList()
+                                else -> androidx.core.os.LocaleListCompat.forLanguageTags(selectedLanguage.code)
+                            }
+                        androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList)
+                        ftueRepository.setLanguageSelectionShown(true)
+                    }
                 },
             )
         }
