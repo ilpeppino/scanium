@@ -95,6 +95,9 @@ class SettingsRepository(
         // Motion overlays toggle
         private val DEV_MOTION_OVERLAYS_ENABLED_KEY = booleanPreferencesKey("dev_motion_overlays_enabled")
 
+        // Show detection bounding boxes overlay
+        private val SHOW_DETECTION_BOXES_KEY = booleanPreferencesKey("show_detection_boxes")
+
         // Overlay accuracy filter (developer debug feature)
         private val DEV_OVERLAY_ACCURACY_STEP_KEY = intPreferencesKey("dev_overlay_accuracy_step")
     }
@@ -739,6 +742,26 @@ class SettingsRepository(
     suspend fun setDevMotionOverlaysEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[DEV_MOTION_OVERLAYS_ENABLED_KEY] = enabled
+        }
+    }
+
+    // =========================================================================
+    // Detection Bounding Boxes Overlay Toggle
+    // =========================================================================
+
+    /**
+     * Whether detection bounding boxes overlay is shown.
+     * Controls visibility of DetectionOverlay component in camera view.
+     * Default is ON for visual feedback during scanning.
+     */
+    val showDetectionBoxesFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[SHOW_DETECTION_BOXES_KEY] ?: true
+        }
+
+    suspend fun setShowDetectionBoxes(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SHOW_DETECTION_BOXES_KEY] = enabled
         }
     }
 

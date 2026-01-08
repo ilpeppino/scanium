@@ -101,6 +101,10 @@ class SettingsViewModel
             settingsRepository.soundsEnabledFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+        val showDetectionBoxes: StateFlow<Boolean> =
+            settingsRepository.showDetectionBoxesFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
         val entitlements =
             entitlementManager.entitlementPolicyFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.scanium.app.model.user.FreeEntitlements)
@@ -257,6 +261,10 @@ class SettingsViewModel
 
         fun setSoundsEnabled(enabled: Boolean) {
             viewModelScope.launch { settingsRepository.setSoundsEnabled(enabled) }
+        }
+
+        fun setShowDetectionBoxes(enabled: Boolean) {
+            viewModelScope.launch { settingsRepository.setShowDetectionBoxes(enabled) }
         }
 
         fun setForceFtueTour(enabled: Boolean) {
