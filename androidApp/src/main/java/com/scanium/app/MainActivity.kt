@@ -6,8 +6,8 @@ import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +42,7 @@ import javax.inject.Inject
  * - Transitions immediately to camera when ready (no artificial delay)
  */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var settingsRepository: SettingsRepository
 
