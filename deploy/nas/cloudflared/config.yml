@@ -1,0 +1,8 @@
+ingress:
+  - hostname: scanium.gtemp1.com
+    service: http://scanium-backend:8080
+
+  - hostname: grafana.gtemp1.com
+    service: http://scanium-grafana:3000
+
+  - service: http_status:404
