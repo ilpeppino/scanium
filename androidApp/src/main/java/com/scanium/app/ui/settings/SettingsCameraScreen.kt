@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Storage
@@ -51,6 +52,7 @@ fun SettingsCameraScreen(
     val classificationMode by classificationViewModel.classificationMode.collectAsState()
     val lowDataMode by classificationViewModel.lowDataMode.collectAsState()
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
+    val showDetectionBoxes by settingsViewModel.showDetectionBoxes.collectAsState()
 
     val dirPickerLauncher =
         rememberLauncherForActivityResult(
@@ -198,6 +200,15 @@ fun SettingsCameraScreen(
                 onSelect = { level ->
                     itemsViewModel.updateSimilarityThreshold(level.threshold)
                 },
+            )
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_overlay))
+            SettingSwitchRow(
+                title = stringResource(R.string.settings_detection_boxes_title),
+                subtitle = stringResource(R.string.settings_detection_boxes_subtitle),
+                icon = Icons.Filled.CropFree,
+                checked = showDetectionBoxes,
+                onCheckedChange = settingsViewModel::setShowDetectionBoxes,
             )
         }
     }

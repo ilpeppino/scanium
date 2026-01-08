@@ -135,6 +135,9 @@ fun CameraScreen(
     // Overlay accuracy filter (developer debug feature - step 0 = show all)
     val overlayAccuracyStep by settingsRepository.devOverlayAccuracyStepFlow.collectAsState(initial = 0)
 
+    // Show/hide detection boxes overlay
+    val showDetectionBoxes by settingsRepository.showDetectionBoxesFlow.collectAsState(initial = true)
+
     // Sync motion overlays setting with MotionConfig
     LaunchedEffect(motionOverlaysEnabled) {
         MotionConfig.setMotionOverlaysEnabled(motionOverlaysEnabled)
@@ -592,7 +595,8 @@ fun CameraScreen(
 
                 // Detection overlay - bounding boxes, labels, and motion animations
                 // Uses MotionEnhancedOverlay for scan frame appear + lightning pulse
-                if (previewSize.width > 0 && previewSize.height > 0) {
+                // Gated by showDetectionBoxes setting (user toggle in Camera Settings)
+                if (showDetectionBoxes && previewSize.width > 0 && previewSize.height > 0) {
                     MotionEnhancedOverlay(
                         detections = overlayTracks,
                         imageSize = imageSize,
