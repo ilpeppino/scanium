@@ -353,9 +353,11 @@ interactive_mode() {
       exit 0
     fi
 
-    # Read area IDs
+    # Read area IDs (bash 3.2 compatible)
     local area_ids=()
-    mapfile -t area_ids < /tmp/script_master_areas.$$
+    while IFS= read -r line; do
+      area_ids+=("$line")
+    done < /tmp/script_master_areas.$$
 
     if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le "${#area_ids[@]}" ]]; then
       local selected_area="${area_ids[$((choice-1))]}"
@@ -371,9 +373,11 @@ interactive_mode() {
           break
         fi
 
-        # Read script IDs
+        # Read script IDs (bash 3.2 compatible)
         local script_ids=()
-        mapfile -t script_ids < /tmp/script_master_scripts.$$
+        while IFS= read -r line; do
+          script_ids+=("$line")
+        done < /tmp/script_master_scripts.$$
 
         if [[ "$script_choice" =~ ^[0-9]+$ ]] && [[ "$script_choice" -ge 1 ]] && [[ "$script_choice" -le "${#script_ids[@]}" ]]; then
           local selected_script="${script_ids[$((script_choice-1))]}"
