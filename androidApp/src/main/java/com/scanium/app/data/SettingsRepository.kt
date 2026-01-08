@@ -155,9 +155,27 @@ class SettingsRepository(
         }
     }
 
+    /**
+     * Whether the AI Assistant is enabled by the user.
+     *
+     * Default varies by build flavor:
+     * - DEV: true (enabled by default for easier development/testing)
+     * - BETA/PROD: false (privacy-first, user must opt-in)
+     *
+     * Note: This is the user preference only. Actual availability is gated by
+     * FeatureFlagRepository which combines this with remote config and entitlements.
+     */
     val allowAssistantFlow: Flow<Boolean> =
         dataStore.data.map { preferences ->
-            preferences[ALLOW_ASSISTANT_KEY] ?: false
+            val storedValue = preferences[ALLOW_ASSISTANT_KEY]
+            when {
+                // User explicitly set a value - respect their choice
+                storedValue != null -> storedValue
+                // DEV flavor: default to true for easier development/testing
+                FeatureFlags.isDevBuild -> true
+                // BETA/PROD: default to false (privacy-first)
+                else -> false
+            }
         }
 
     suspend fun setAllowAssistant(allow: Boolean) {
@@ -247,12 +265,25 @@ class SettingsRepository(
     }
 
     /**
-     * Whether to allow images to be sent to the AI assistant.
-     * Default is OFF for privacy reasons.
+     * Whether to allow images to be sent to the AI assistant ("Send pictures to AI").
+     *
+     * Default varies by build flavor:
+     * - DEV: true (enabled by default for easier development/testing)
+     * - BETA/PROD: false (privacy-first, user must opt-in)
+     *
+     * This setting requires the AI Assistant to be enabled to have any effect.
      */
     val allowAssistantImagesFlow: Flow<Boolean> =
         dataStore.data.map { preferences ->
-            preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false
+            val storedValue = preferences[ALLOW_ASSISTANT_IMAGES_KEY]
+            when {
+                // User explicitly set a value - respect their choice
+                storedValue != null -> storedValue
+                // DEV flavor: default to true for easier development/testing
+                FeatureFlags.isDevBuild -> true
+                // BETA/PROD: default to false (privacy-first)
+                else -> false
+            }
         }
 
     suspend fun setAllowAssistantImages(allow: Boolean) {
@@ -654,11 +685,16 @@ class SettingsRepository(
     /**
      * Checks if Privacy Safe Mode is effectively active.
      * Returns true if all cloud sharing features are disabled.
+     *
+     * Note: Uses flavor-aware defaults for assistant images to maintain
+     * consistency with [allowAssistantImagesFlow].
      */
     val isPrivacySafeModeActiveFlow: Flow<Boolean> =
         dataStore.data.map { preferences ->
             val cloudOff = !(preferences[ALLOW_CLOUD_CLASSIFICATION_KEY] ?: true)
-            val imagesOff = !(preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: false)
+            // Use flavor-aware default for assistant images (true in dev, false in beta/prod)
+            val imagesDefaultValue = if (FeatureFlags.isDevBuild) true else false
+            val imagesOff = !(preferences[ALLOW_ASSISTANT_IMAGES_KEY] ?: imagesDefaultValue)
             val diagnosticsOff = !(preferences[SHARE_DIAGNOSTICS_KEY] ?: false)
             cloudOff && imagesOff && diagnosticsOff
         }
