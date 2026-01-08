@@ -271,6 +271,38 @@ class AssistantRepositoryMultipartTest {
         assertThat(body).contains("Follow-up question")
     }
 
+    @Test
+    fun `send with null assistantPrefs omits field from JSON payload`() = runBlocking {
+        // Arrange
+        mockWebServer.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody("""{"content":"ok","actions":[],"citationsMetadata":{}}"""),
+        )
+
+        val repository = createRepository()
+        val items = listOf(createTestSnapshot("item-1"))
+
+        // Act
+        repository.send(
+            items = items,
+            history = emptyList(),
+            userMessage = "Test message",
+            exportProfile = createTestProfile(),
+            correlationId = "test-123",
+            imageAttachments = emptyList(),
+            assistantPrefs = null,  // Explicitly null
+        )
+
+        // Assert
+        val request = mockWebServer.takeRequest()
+        val body = request.body.readUtf8()
+
+        // Verify that assistantPrefs field is NOT present in the JSON
+        // (explicitNulls = false should omit it rather than sending "assistantPrefs":null)
+        assertThat(body).doesNotContain("\"assistantPrefs\"")
+    }
+
     // Helper methods
 
     private fun createRepository(apiKey: String? = "test-key"): AssistantRepository {
@@ -308,6 +340,7 @@ class AssistantRepositoryMultipartTest {
  * A test-only implementation of AssistantRepository that uses MockWebServer.
  * This allows testing the multipart request building without the full production setup.
  */
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 private class TestAssistantRepository(
     private val client: OkHttpClient,
     private val baseUrl: String,
@@ -316,6 +349,7 @@ private class TestAssistantRepository(
     private val json = kotlinx.serialization.json.Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
+        explicitNulls = false  // Don't encode null values for optional fields
     }
 
     override suspend fun send(

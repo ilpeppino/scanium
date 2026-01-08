@@ -19,6 +19,7 @@ import com.scanium.app.selling.assistant.network.AssistantHttpConfig
 import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -132,6 +133,7 @@ class AssistantRepositoryFactory(
     }
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 private class CloudAssistantRepository(
     private val context: Context,
     private val client: OkHttpClient,
@@ -142,6 +144,7 @@ private class CloudAssistantRepository(
         Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
+            explicitNulls = false  // Don't encode null values for optional fields
         }
     private val logger = AssistantRepositoryLogger()
 

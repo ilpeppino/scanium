@@ -537,8 +537,17 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         code: issue.code,
         message: issue.message,
       }));
+      // Log request shape for debugging (not full content)
+      const requestShape = {
+        isMultipart,
+        hasPayload: requestBody !== null && requestBody !== undefined,
+        bodyKeys: requestBody ? Object.keys(requestBody as Record<string, unknown>) : [],
+        messageLength: (requestBody as any)?.message?.length,
+        itemsCount: Array.isArray((requestBody as any)?.items) ? (requestBody as any).items.length : 'not-array',
+        historyCount: Array.isArray((requestBody as any)?.history) ? (requestBody as any).history.length : 'not-array-or-missing',
+      };
       request.log.warn(
-        { correlationId, zodErrors, firstError: zodErrors[0] },
+        { correlationId, zodErrors, firstError: zodErrors[0], requestShape },
         'Request validation failed'
       );
       return reply.status(400).send({

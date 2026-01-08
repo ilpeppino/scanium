@@ -58,6 +58,7 @@ class AssistantException(
  * @param getDeviceId Provider for the device ID (for rate limiting)
  * @param httpConfig HTTP timeout and retry configuration
  */
+@OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 class AssistantRepository(
     private val apiKeyProvider: () -> String? = { null },
     private val getDeviceId: () -> String = { "" },
@@ -79,6 +80,7 @@ class AssistantRepository(
             ignoreUnknownKeys = true
             encodeDefaults = true
             isLenient = true
+            explicitNulls = false  // Don't encode null values for optional fields
         }
 
     // Client-side throttling
