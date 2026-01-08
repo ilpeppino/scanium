@@ -179,9 +179,15 @@ private class CloudAssistantRepository(
                 )
 
             val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
-            // DIAG: Log endpoint
+            // DIAG: Log endpoint and request summary
             Log.d("ScaniumNet", "AssistantRepo: endpoint=$endpoint")
             val payloadJson = json.encodeToString(AssistantChatRequest.serializer(), requestPayload)
+            // Log request shape for debugging (not full content)
+            Log.d("ScaniumAssist", "Request: items=${requestPayload.items.size} " +
+                "history=${requestPayload.history.size} " +
+                "message.length=${requestPayload.message.length} " +
+                "hasExportProfile=${requestPayload.exportProfile != null} " +
+                "hasPrefs=${requestPayload.assistantPrefs != null}")
 
             // Use multipart when images are attached, otherwise use JSON
             val request =
@@ -198,6 +204,11 @@ private class CloudAssistantRepository(
                         val parsed = json.decodeFromString(AssistantChatResponse.serializer(), responseBody)
                         parsed.assistantError?.let { throw AssistantBackendException(it.toFailure()) }
                         return@withContext parsed.toModel()
+                    }
+                    // Enhanced error logging for debugging validation failures
+                    if (response.code == 400) {
+                        Log.e("ScaniumAssist", "Validation error (HTTP 400): correlationId=$correlationId")
+                        Log.e("ScaniumAssist", "Response body: ${responseBody?.take(500)}")
                     }
                     logger.log("Assistant backend error: ${response.code} ${ScaniumLog.sanitizeResponseBody(responseBody)}")
                     throw mapHttpFailure(response.code, responseBody)
@@ -606,6 +617,7 @@ private data class SuggestedDraftUpdateDto(
 private data class ItemContextSnapshotDto(
     val itemId: String,
     val title: String? = null,
+    val description: String? = null,
     val category: String? = null,
     val confidence: Float? = null,
     val attributes: List<ItemAttributeSnapshotDto> = emptyList(),
@@ -618,6 +630,7 @@ private data class ItemContextSnapshotDto(
             return ItemContextSnapshotDto(
                 itemId = model.itemId,
                 title = model.title,
+                description = model.description,
                 category = model.category,
                 confidence = model.confidence,
                 attributes = model.attributes.map { ItemAttributeSnapshotDto.fromModel(it) },
@@ -634,6 +647,7 @@ private data class ItemAttributeSnapshotDto(
     val key: String,
     val value: String,
     val confidence: Float? = null,
+    val source: String? = null,
 ) {
     companion object {
         fun fromModel(model: com.scanium.app.model.ItemAttributeSnapshot): ItemAttributeSnapshotDto {
@@ -641,6 +655,8 @@ private data class ItemAttributeSnapshotDto(
                 key = model.key,
                 value = model.value,
                 confidence = model.confidence,
+                // Map source enum to backend-expected string values
+                source = model.source?.name,
             )
         }
     }

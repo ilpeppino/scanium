@@ -23,6 +23,7 @@ import com.scanium.app.camera.CameraViewModel
 import com.scanium.app.items.EditItemsScreen
 import com.scanium.app.items.edit.EditItemScreenV2
 import com.scanium.app.items.edit.ExportAssistantViewModel
+import com.scanium.app.items.edit.rememberAddPhotoHandler
 import com.scanium.app.items.ItemsListScreen
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.selling.assistant.AssistantScreen
@@ -257,12 +258,24 @@ fun ScaniumNavGraph(
             // V2: Single-item edit page (uses first ID from selection)
             val itemId = ids.firstOrNull() ?: ""
             if (itemId.isNotEmpty()) {
+                // Add Photo handler - manages camera/gallery capture flow
+                val addPhotoHandler = rememberAddPhotoHandler(
+                    itemsViewModel = itemsViewModel,
+                    onPhotoAdded = { addedItemId ->
+                        // Photo added successfully - UI will update via ViewModel flow
+                        android.util.Log.i("NavGraph", "Photo added to item $addedItemId")
+                    },
+                    onError = { message ->
+                        android.util.Log.e("NavGraph", "Add photo error: $message")
+                    },
+                )
+
                 EditItemScreenV2(
                     itemId = itemId,
                     onBack = { navController.popBackStack() },
                     onAddPhotos = { targetItemId ->
-                        // TODO: Phase 6 - Implement photo capture flow
-                        // For now, just log or no-op
+                        // Trigger camera/gallery capture flow
+                        addPhotoHandler.triggerAddPhoto(targetItemId)
                     },
                     onAiGenerate = { targetItemId ->
                         // Navigate to assistant for AI generation (fallback if export assistant not available)
