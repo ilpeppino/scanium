@@ -108,6 +108,7 @@
     <string name="settings_tone_neutral">Neutral</string>
     <string name="settings_tone_friendly">Friendly</string>
     <string name="settings_tone_professional">Professional</string>
+    <string name="settings_tone_marketplace">Marketplace (concise)</string>
     <string name="settings_assistant_region_title">Region</string>
     <string name="settings_assistant_region_subtitle">Affects currency and marketplace suggestions</string>
     <string name="settings_region_europe">Europe (General)</string>
@@ -421,6 +422,18 @@
     <!-- Attribute Editing -->
     <string name="attribute_confirm_help">Confirming will mark this as verified.</string>
     <string name="attribute_extracted_via">Extracted via: %1$s</string>
+    <string name="attribute_current_value">Current: %1$s</string>
+    <string name="attribute_suggestions_title">Suggestions</string>
+    <string name="attribute_tap_to_edit_hint">Tap to edit</string>
+    <string name="attribute_source_label">Source: %1$s</string>
+
+    <!-- Confidence Tier Display Names -->
+    <string name="confidence_tier_high_name">High</string>
+    <string name="confidence_tier_medium_name">Medium</string>
+    <string name="confidence_tier_low_name">Low</string>
+    <string name="confidence_tier_high_desc">Verified</string>
+    <string name="confidence_tier_medium_desc">Likely correct</string>
+    <string name="confidence_tier_low_desc">Needs verification</string>
 
     <!-- Export -->
     <string name="export_items_title">Export Items</string>
