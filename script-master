@@ -1,0 +1,431 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Scanium Script Master
+# =============================================================================
+# Interactive launcher for all Scanium scripts.
+#
+# Usage:
+#   ./script-master              # Interactive menu
+#   ./script-master --list       # List all scripts
+#   ./script-master --run <area> <script>  # Run specific script
+#   ./script-master --help       # Show help
+#
+# =============================================================================
+
+set -euo pipefail
+
+# =============================================================================
+# Configuration
+# =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MANIFEST_FILE="$SCRIPT_DIR/scripts/scripts_manifest.json"
+LOG_DIR="$SCRIPT_DIR/tmp/script-master"
+VERSION="1.0.0"
+
+# Colors (auto-disable if not TTY)
+if [[ -t 1 ]]; then
+  C_RED='\033[0;31m'
+  C_GREEN='\033[0;32m'
+  C_YELLOW='\033[1;33m'
+  C_BLUE='\033[0;34m'
+  C_CYAN='\033[0;36m'
+  C_BOLD='\033[1m'
+  C_DIM='\033[2m'
+  C_RESET='\033[0m'
+else
+  C_RED='' C_GREEN='' C_YELLOW='' C_BLUE='' C_CYAN='' C_BOLD='' C_DIM='' C_RESET=''
+fi
+
+# =============================================================================
+# Platform Detection
+# =============================================================================
+get_platform() {
+  if [[ -n "${TERMUX_VERSION:-}" ]] || [[ -d "/data/data/com.termux" ]]; then
+    echo "termux"
+  elif [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "macos"
+  elif [[ "$(uname -s)" == "Linux" ]]; then
+    echo "linux"
+  else
+    echo "unknown"
+  fi
+}
+
+PLATFORM="$(get_platform)"
+
+# =============================================================================
+# Helpers
+# =============================================================================
+log_info() { echo -e "${C_BLUE}[INFO]${C_RESET} $*"; }
+log_success() { echo -e "${C_GREEN}[OK]${C_RESET} $*"; }
+log_warn() { echo -e "${C_YELLOW}[WARN]${C_RESET} $*" >&2; }
+log_error() { echo -e "${C_RED}[ERROR]${C_RESET} $*" >&2; }
+
+die() {
+  log_error "$@"
+  exit 1
+}
+
+# Check for required tools
+check_deps() {
+  if ! command -v jq &>/dev/null; then
+    die "jq is required. Install with: brew install jq (macOS) or pkg install jq (Termux)"
+  fi
+  if [[ ! -f "$MANIFEST_FILE" ]]; then
+    die "Manifest not found: $MANIFEST_FILE"
+  fi
+}
+
+# =============================================================================
+# Manifest Parsing
+# =============================================================================
+get_areas() {
+  jq -r '.areas[] | "\(.id)|\(.name)|\(.description)"' "$MANIFEST_FILE"
+}
+
+get_area_name() {
+  local area_id="$1"
+  jq -r --arg id "$area_id" '.areas[] | select(.id == $id) | .name' "$MANIFEST_FILE"
+}
+
+get_scripts_for_area() {
+  local area_id="$1"
+  jq -r --arg id "$area_id" --arg platform "$PLATFORM" \
+    '.areas[] | select(.id == $id) | .scripts[] |
+     select(.environment | index($platform) or index("any")) |
+     "\(.id)|\(.label)|\(.path)|\(.safe)|\(.description)"' "$MANIFEST_FILE"
+}
+
+get_script_info() {
+  local area_id="$1"
+  local script_id="$2"
+  jq -r --arg area "$area_id" --arg script "$script_id" \
+    '.areas[] | select(.id == $area) | .scripts[] | select(.id == $script)' "$MANIFEST_FILE"
+}
+
+get_all_scripts() {
+  jq -r --arg platform "$PLATFORM" \
+    '.areas[] | .scripts[] |
+     select(.environment | index($platform) or index("any")) |
+     "\(.label)|\(.path)|\(.description)"' "$MANIFEST_FILE"
+}
+
+# =============================================================================
+# Banner
+# =============================================================================
+print_banner() {
+  echo ""
+  echo -e "${C_CYAN}╔═══════════════════════════════════════════════════════════════╗${C_RESET}"
+  echo -e "${C_CYAN}║${C_RESET}       ${C_BOLD}Scanium Script Master${C_RESET}  v${VERSION}                        ${C_CYAN}║${C_RESET}"
+  echo -e "${C_CYAN}║${C_RESET}       Platform: ${C_YELLOW}${PLATFORM}${C_RESET}                                      ${C_CYAN}║${C_RESET}"
+  echo -e "${C_CYAN}╚═══════════════════════════════════════════════════════════════╝${C_RESET}"
+  echo ""
+}
+
+# =============================================================================
+# Menu Display
+# =============================================================================
+show_main_menu() {
+  print_banner
+  echo -e "${C_BOLD}Select an area:${C_RESET}"
+  echo ""
+
+  local i=1
+  local area_ids=()
+
+  while IFS='|' read -r id name desc; do
+    # Check if area has any scripts for this platform
+    local script_count
+    script_count=$(jq -r --arg id "$id" --arg platform "$PLATFORM" \
+      '.areas[] | select(.id == $id) | .scripts |
+       map(select(.environment | index($platform) or index("any"))) | length' "$MANIFEST_FILE")
+
+    if [[ "$script_count" -gt 0 ]]; then
+      printf "  ${C_GREEN}%2d)${C_RESET} ${C_BOLD}%-20s${C_RESET} ${C_DIM}%s${C_RESET}\n" "$i" "$name" "$desc"
+      area_ids+=("$id")
+      ((i++))
+    fi
+  done < <(get_areas)
+
+  echo ""
+  echo -e "  ${C_YELLOW} 0)${C_RESET} Exit"
+  echo ""
+
+  # Store area IDs for selection
+  printf '%s\n' "${area_ids[@]}" > /tmp/script_master_areas.$$
+}
+
+show_area_menu() {
+  local area_id="$1"
+  local area_name
+  area_name="$(get_area_name "$area_id")"
+
+  echo ""
+  echo -e "${C_CYAN}════════════════════════════════════════════════════════════════${C_RESET}"
+  echo -e "${C_BOLD}  $area_name${C_RESET}"
+  echo -e "${C_CYAN}════════════════════════════════════════════════════════════════${C_RESET}"
+  echo ""
+
+  local i=1
+  local script_ids=()
+
+  while IFS='|' read -r id label path safe desc; do
+    local safe_indicator=""
+    if [[ "$safe" == "false" ]]; then
+      safe_indicator="${C_YELLOW}[!]${C_RESET} "
+    fi
+    printf "  ${C_GREEN}%2d)${C_RESET} ${safe_indicator}${C_BOLD}%-25s${C_RESET} ${C_DIM}%s${C_RESET}\n" "$i" "$label" "$desc"
+    script_ids+=("$id")
+    ((i++))
+  done < <(get_scripts_for_area "$area_id")
+
+  echo ""
+  echo -e "  ${C_YELLOW} 0)${C_RESET} Back to main menu"
+  echo ""
+
+  printf '%s\n' "${script_ids[@]}" > /tmp/script_master_scripts.$$
+}
+
+# =============================================================================
+# Script Execution
+# =============================================================================
+run_script() {
+  local area_id="$1"
+  local script_id="$2"
+
+  # Get script info
+  local script_info
+  script_info=$(get_script_info "$area_id" "$script_id")
+
+  if [[ -z "$script_info" ]]; then
+    log_error "Script not found: $area_id/$script_id"
+    return 1
+  fi
+
+  local label path safe interpreter
+  label=$(echo "$script_info" | jq -r '.label')
+  path=$(echo "$script_info" | jq -r '.path')
+  safe=$(echo "$script_info" | jq -r '.safe')
+  interpreter=$(echo "$script_info" | jq -r '.interpreter // ""')
+
+  local full_path="$SCRIPT_DIR/$path"
+
+  if [[ ! -f "$full_path" ]]; then
+    log_error "Script file not found: $full_path"
+    return 1
+  fi
+
+  # Safety confirmation for non-safe scripts
+  if [[ "$safe" == "false" ]]; then
+    echo ""
+    log_warn "This script is marked as potentially modifying state."
+    read -p "Continue? [y/N] " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      log_info "Cancelled."
+      return 0
+    fi
+  fi
+
+  # Create log directory
+  mkdir -p "$LOG_DIR"
+  local timestamp
+  timestamp=$(date '+%Y%m%d_%H%M%S')
+  local log_file="$LOG_DIR/${timestamp}_${script_id}.log"
+
+  # Print header
+  echo ""
+  echo -e "${C_CYAN}════════════════════════════════════════════════════════════════${C_RESET}"
+  echo -e "${C_BOLD}  Running: $label${C_RESET}"
+  echo -e "  Path: ${C_DIM}$path${C_RESET}"
+  echo -e "  Time: ${C_DIM}$(date '+%Y-%m-%d %H:%M:%S')${C_RESET}"
+  echo -e "  Log:  ${C_DIM}$log_file${C_RESET}"
+  echo -e "${C_CYAN}════════════════════════════════════════════════════════════════${C_RESET}"
+  echo ""
+
+  # Determine how to run the script
+  local cmd
+  if [[ -n "$interpreter" ]]; then
+    cmd="$interpreter"
+  elif [[ -x "$full_path" ]]; then
+    cmd=""
+  else
+    cmd="bash"
+  fi
+
+  # Run the script with tee to both display and log
+  local exit_code=0
+
+  # Handle Ctrl+C gracefully
+  trap 'echo ""; log_warn "Interrupted"; return 130' INT
+
+  if [[ -n "$cmd" ]]; then
+    $cmd "$full_path" 2>&1 | tee "$log_file" || exit_code=$?
+  else
+    "$full_path" 2>&1 | tee "$log_file" || exit_code=$?
+  fi
+
+  trap - INT
+
+  # Print footer
+  echo ""
+  echo -e "${C_CYAN}════════════════════════════════════════════════════════════════${C_RESET}"
+  if [[ $exit_code -eq 0 ]]; then
+    echo -e "  ${C_GREEN}Exit code: 0 (success)${C_RESET}"
+  else
+    echo -e "  ${C_RED}Exit code: $exit_code${C_RESET}"
+  fi
+  echo -e "  Log saved: ${C_DIM}$log_file${C_RESET}"
+  echo -e "${C_CYAN}════════════════════════════════════════════════════════════════${C_RESET}"
+  echo ""
+
+  read -p "Press Enter to continue..."
+  return $exit_code
+}
+
+# =============================================================================
+# List Mode
+# =============================================================================
+list_scripts() {
+  echo ""
+  echo -e "${C_BOLD}Scanium Scripts (Platform: $PLATFORM)${C_RESET}"
+  echo ""
+
+  while IFS='|' read -r label path desc; do
+    printf "  ${C_GREEN}%-30s${C_RESET} ${C_DIM}%-45s${C_RESET} %s\n" "$label" "$path" "$desc"
+  done < <(get_all_scripts)
+
+  echo ""
+}
+
+# =============================================================================
+# Help
+# =============================================================================
+show_help() {
+  cat <<EOF
+Scanium Script Master v${VERSION}
+
+Usage:
+  ./script-master              Interactive menu mode
+  ./script-master --list       List all scripts for current platform
+  ./script-master --run <area> <script>
+                               Run a specific script by area and ID
+  ./script-master --help       Show this help message
+
+Areas:
+  dev        Development (Mac)
+  android    Android build tools
+  backend    Backend server management
+  ci         CI / Quality checks
+  monitoring Observability stack
+  ops        Operations / NAS
+  termux     Termux (phone)
+  tools      Utilities
+
+Examples:
+  ./script-master --run dev run-tests
+  ./script-master --run backend start-dev
+  ./script-master --run ci local-ci
+
+Environment:
+  Platform detected: $PLATFORM
+  Manifest: $MANIFEST_FILE
+  Logs: $LOG_DIR
+
+EOF
+}
+
+# =============================================================================
+# Interactive Mode
+# =============================================================================
+interactive_mode() {
+  check_deps
+
+  while true; do
+    clear
+    show_main_menu
+
+    read -p "Select area [0-9]: " choice
+
+    if [[ "$choice" == "0" ]]; then
+      echo ""
+      log_info "Goodbye!"
+      exit 0
+    fi
+
+    # Read area IDs
+    local area_ids=()
+    mapfile -t area_ids < /tmp/script_master_areas.$$
+
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le "${#area_ids[@]}" ]]; then
+      local selected_area="${area_ids[$((choice-1))]}"
+
+      # Area submenu loop
+      while true; do
+        clear
+        show_area_menu "$selected_area"
+
+        read -p "Select script [0-9]: " script_choice
+
+        if [[ "$script_choice" == "0" ]]; then
+          break
+        fi
+
+        # Read script IDs
+        local script_ids=()
+        mapfile -t script_ids < /tmp/script_master_scripts.$$
+
+        if [[ "$script_choice" =~ ^[0-9]+$ ]] && [[ "$script_choice" -ge 1 ]] && [[ "$script_choice" -le "${#script_ids[@]}" ]]; then
+          local selected_script="${script_ids[$((script_choice-1))]}"
+          clear
+          run_script "$selected_area" "$selected_script" || true
+        else
+          log_warn "Invalid selection"
+          sleep 1
+        fi
+      done
+    else
+      log_warn "Invalid selection"
+      sleep 1
+    fi
+  done
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+main() {
+  case "${1:-}" in
+    --help|-h)
+      show_help
+      ;;
+    --list|-l)
+      check_deps
+      list_scripts
+      ;;
+    --run|-r)
+      check_deps
+      if [[ $# -lt 3 ]]; then
+        die "Usage: $0 --run <area> <script>"
+      fi
+      run_script "$2" "$3"
+      ;;
+    --version|-v)
+      echo "Script Master v${VERSION}"
+      ;;
+    "")
+      interactive_mode
+      ;;
+    *)
+      die "Unknown option: $1. Use --help for usage."
+      ;;
+  esac
+}
+
+# Cleanup temp files on exit
+cleanup() {
+  rm -f /tmp/script_master_areas.$$ /tmp/script_master_scripts.$$ 2>/dev/null || true
+}
+trap cleanup EXIT
+
+main "$@"
