@@ -39,7 +39,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
@@ -70,6 +70,10 @@ import java.util.*
  * - "Clear all" action in top bar
  * - Tap to select, long-press for details
  * - Empty state when no items
+ *
+ * IMPORTANT: ViewModels must use hiltViewModel() not viewModel() since they are @HiltViewModel
+ * classes that require dependency injection. Using viewModel() will cause a crash because the
+ * default ViewModelProvider cannot instantiate ViewModels that have injected dependencies.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -79,8 +83,8 @@ fun ItemsListScreen(
     onNavigateToEdit: (List<String>) -> Unit,
     onNavigateToGenerateListing: (String) -> Unit = {},
     draftStore: ListingDraftStore,
-    itemsViewModel: ItemsViewModel = viewModel(),
-    exportViewModel: ExportViewModel = viewModel(),
+    itemsViewModel: ItemsViewModel = hiltViewModel(),
+    exportViewModel: ExportViewModel = hiltViewModel(),
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val items by itemsViewModel.items.collectAsState()
