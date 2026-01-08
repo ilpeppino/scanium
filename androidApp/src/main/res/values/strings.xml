@@ -261,6 +261,8 @@
     <string name="ftue_permission_long_press_title">Long-Press</string>
     <string name="ftue_permission_long_press_desc">Start continuous scanning (tap again to stop)</string>
     <string name="ftue_permission_privacy_note">🔒 All processing happens on your device. Images are never uploaded without your permission.</string>
+    <string name="ftue_language_title">Choose Your Language</string>
+    <string name="ftue_language_subtitle">Select your preferred language for the app</string>
     <string name="ftue_completion_title">You\'re Ready!</string>
     <string name="ftue_completion_message">You\'re all set to start scanning and cataloging objects. Happy scanning!</string>
     <string name="ftue_get_started">Get Started</string>

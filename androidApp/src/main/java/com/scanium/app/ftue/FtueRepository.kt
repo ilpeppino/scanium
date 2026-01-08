@@ -19,6 +19,7 @@ class FtueRepository(private val context: Context) {
         private val FTUE_FORCE_ENABLED_KEY = booleanPreferencesKey("ftue_force_enabled")
         private val PERMISSION_EDUCATION_SHOWN_KEY = booleanPreferencesKey("permission_education_shown")
         private val SHUTTER_HINT_SHOWN_KEY = booleanPreferencesKey("shutter_hint_shown")
+        private val LANGUAGE_SELECTION_SHOWN_KEY = booleanPreferencesKey("language_selection_shown")
     }
 
     /**
@@ -57,6 +58,16 @@ class FtueRepository(private val context: Context) {
     val shutterHintShownFlow: Flow<Boolean> =
         context.ftueDataStore.data.map { preferences ->
             preferences[SHUTTER_HINT_SHOWN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the language selection dialog has been shown.
+     * This dialog allows users to choose their preferred app language after granting camera permission.
+     * Defaults to false (not shown).
+     */
+    val languageSelectionShownFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[LANGUAGE_SELECTION_SHOWN_KEY] ?: false
         }
 
     /**
@@ -100,6 +111,16 @@ class FtueRepository(private val context: Context) {
     }
 
     /**
+     * Sets the language selection shown status.
+     * @param shown True if the language selection dialog has been shown, false otherwise
+     */
+    suspend fun setLanguageSelectionShown(shown: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[LANGUAGE_SELECTION_SHOWN_KEY] = shown
+        }
+    }
+
+    /**
      * Resets the tour completion status, allowing the tour to be shown again.
      */
     suspend fun reset() {
@@ -115,6 +136,7 @@ class FtueRepository(private val context: Context) {
             preferences[FTUE_COMPLETED_KEY] = false
             preferences[PERMISSION_EDUCATION_SHOWN_KEY] = false
             preferences[SHUTTER_HINT_SHOWN_KEY] = false
+            preferences[LANGUAGE_SELECTION_SHOWN_KEY] = false
         }
     }
 }

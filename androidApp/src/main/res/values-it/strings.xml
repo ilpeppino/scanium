@@ -255,6 +255,8 @@
     <string name="ftue_permission_long_press_title">Pressione prolungata</string>
     <string name="ftue_permission_long_press_desc">Avvia la scansione continua (tocca di nuovo per fermare)</string>
     <string name="ftue_permission_privacy_note">🔒 Tutta l\'elaborazione avviene sul tuo dispositivo. Le immagini non vengono mai caricate senza il tuo permesso.</string>
+    <string name="ftue_language_title">Scegli la tua lingua</string>
+    <string name="ftue_language_subtitle">Seleziona la lingua preferita per l\'app</string>
     <string name="ftue_completion_title">Sei pronto!</string>
     <string name="ftue_completion_message">Sei pronto per iniziare a scansionare e catalogare oggetti. Buona scansione!</string>
     <string name="ftue_get_started">Inizia</string>

@@ -255,6 +255,8 @@
     <string name="ftue_permission_long_press_title">Appui long</string>
     <string name="ftue_permission_long_press_desc">Démarrer le scan continu (retouchez pour arrêter)</string>
     <string name="ftue_permission_privacy_note">🔒 Tout le traitement se fait sur votre appareil. Les images ne sont jamais envoyées sans votre autorisation.</string>
+    <string name="ftue_language_title">Choisissez votre langue</string>
+    <string name="ftue_language_subtitle">Sélectionnez votre langue préférée pour l\'application</string>
     <string name="ftue_completion_title">Vous êtes prêt !</string>
     <string name="ftue_completion_message">Vous êtes prêt à commencer à scanner et cataloguer des objets. Bon scan !</string>
     <string name="ftue_get_started">Commencer</string>
