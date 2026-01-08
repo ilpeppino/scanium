@@ -278,29 +278,30 @@ class ItemsViewModel
 
             // Trigger vision extraction for items with high-res images
             // Match aggregated items back to original items by checking sourceDetectionIds
-            if (imageUriByOriginalId.isNotEmpty()) {
-                Log.i(TAG, "SCAN_ENRICH: ✓ Triggering vision prefill for items with images")
+            // IMPORTANT: Use item's thumbnail (cropped to bounding box) for per-item extraction
+            // This ensures each item gets its own brand/label instead of sharing full-frame results
+            Log.i(TAG, "SCAN_ENRICH: ✓ Triggering vision prefill for ${aggregatedItems.size} items")
 
-                for (aggregated in aggregatedItems) {
-                    // Find the fullImageUri for this aggregated item
-                    // The aggregated item's sourceDetectionIds contains original item IDs
-                    // For newly created items, aggregatedId == original item.id
-                    val uri = aggregated.fullImageUri
-                        ?: aggregated.sourceDetectionIds.firstNotNullOfOrNull { imageUriByOriginalId[it] }
+            for (aggregated in aggregatedItems) {
+                // Prefer thumbnail for per-item extraction (cropped to item's bounding box)
+                // Fall back to full image URI if no thumbnail available
+                val thumbnail = aggregated.thumbnail
+                val uri = aggregated.fullImageUri
+                    ?: aggregated.sourceDetectionIds.firstNotNullOfOrNull { imageUriByOriginalId[it] }
 
-                    if (uri != null) {
-                        Log.i(TAG, "SCAN_ENRICH: Calling extractAndApply for aggregatedId=${aggregated.aggregatedId}")
-                        visionInsightsPrefiller.extractAndApply(
-                            context = context,
-                            scope = viewModelScope,
-                            stateManager = stateManager,
-                            itemId = aggregated.aggregatedId,
-                            imageUri = uri,
-                        )
-                    }
+                if (thumbnail != null || uri != null) {
+                    Log.i(TAG, "SCAN_ENRICH: Calling extractAndApply for aggregatedId=${aggregated.aggregatedId} (hasThumbnail=${thumbnail != null})")
+                    visionInsightsPrefiller.extractAndApply(
+                        context = context,
+                        scope = viewModelScope,
+                        stateManager = stateManager,
+                        itemId = aggregated.aggregatedId,
+                        imageUri = uri,
+                        thumbnail = thumbnail,
+                    )
+                } else {
+                    Log.w(TAG, "SCAN_ENRICH: ⚠ Item ${aggregated.aggregatedId} has no thumbnail or URI - vision prefill SKIPPED!")
                 }
-            } else {
-                Log.w(TAG, "SCAN_ENRICH: ⚠ NO items have fullImageUri - vision prefill SKIPPED!")
             }
         }
 

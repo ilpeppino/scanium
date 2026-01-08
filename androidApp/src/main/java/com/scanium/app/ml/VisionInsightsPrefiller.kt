@@ -9,6 +9,7 @@ import com.scanium.app.enrichment.EnrichmentRepository
 import com.scanium.app.enrichment.EnrichmentStatus
 import com.scanium.app.items.state.ItemsStateManager
 import com.scanium.app.logging.ScaniumLog
+import com.scanium.app.model.toBitmap
 import com.scanium.app.quality.AttributeCompletenessEvaluator
 import com.scanium.app.quality.EnrichmentPolicy
 import com.scanium.shared.core.models.items.ItemAttribute
@@ -16,6 +17,7 @@ import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.items.VisionColor
 import com.scanium.shared.core.models.items.VisionLabel
 import com.scanium.shared.core.models.items.VisionLogo
+import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -77,9 +79,13 @@ class VisionInsightsPrefiller @Inject constructor(
      * Extract vision insights from an item's image and apply them.
      *
      * This method:
-     * 1. Loads the image from the provided URI
+     * 1. Loads the image from the thumbnail (preferred) or URI fallback
      * 2. Calls the vision insights backend
      * 3. Applies the results to the item via ItemsStateManager
+     *
+     * IMPORTANT: When multiple items are detected in the same frame, each item
+     * should use its own thumbnail (cropped to bounding box) for extraction.
+     * Using the full-frame image would apply the same brand/label to all items.
      *
      * The extraction runs asynchronously and does not block.
      * If extraction fails, the item remains unchanged (graceful degradation).
@@ -88,14 +94,16 @@ class VisionInsightsPrefiller @Inject constructor(
      * @param scope Coroutine scope for the extraction
      * @param stateManager ItemsStateManager to apply results
      * @param itemId The item ID to update
-     * @param imageUri URI to the high-resolution image
+     * @param imageUri URI to the high-resolution image (fallback if no thumbnail)
+     * @param thumbnail Optional thumbnail cropped to the item's bounding box (preferred)
      */
     fun extractAndApply(
         context: Context,
         scope: CoroutineScope,
         stateManager: ItemsStateManager,
         itemId: String,
-        imageUri: Uri,
+        imageUri: Uri?,
+        thumbnail: ImageRef? = null,
     ) {
         // Check if already extracting for this item
         synchronized(inFlightExtractions) {
@@ -110,16 +118,19 @@ class VisionInsightsPrefiller @Inject constructor(
             inFlightExtractions.add(itemId)
         }
 
-        Log.i(TAG, "SCAN_ENRICH: Starting extraction for item $itemId")
+        Log.i(TAG, "SCAN_ENRICH: Starting extraction for item $itemId (hasThumbnail=${thumbnail != null})")
 
         val job = scope.launch(Dispatchers.IO) {
             try {
-                // Load image from URI
-                val bitmap = loadBitmapFromUri(context, imageUri)
+                // IMPORTANT: Prefer thumbnail over full-frame image for per-item extraction
+                // This ensures each item gets its own brand/label instead of sharing results
+                val bitmap = thumbnail?.toBitmap()
+                    ?: imageUri?.let { loadBitmapFromUri(context, it) }
                 if (bitmap == null) {
-                    Log.e(TAG, "SCAN_ENRICH: Failed to load image from URI for item $itemId")
+                    Log.e(TAG, "SCAN_ENRICH: Failed to load image for item $itemId (no thumbnail or URI)")
                     return@launch
                 }
+                Log.i(TAG, "SCAN_ENRICH: Using ${if (thumbnail != null) "thumbnail" else "full image"} for extraction (${bitmap.width}x${bitmap.height})")
 
                 // LAYER A: LOCAL EXTRACTION (fast, always available)
                 var localApplied = false
