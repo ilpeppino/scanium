@@ -1,8 +1,8 @@
 {
-  "uid": "scanium-app-health",
-  "title": "Scanium - Application Health",
-  "description": "Functional correctness and usage funnel",
-  "tags": ["scanium", "health", "app"],
+  "uid": "scanium-mobile-app-health",
+  "title": "Scanium - Mobile App Health",
+  "description": "Mobile app functional correctness and usage funnel (requires mobile OTLP events)",
+  "tags": ["scanium", "mobile", "health", "app"],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
@@ -58,9 +58,19 @@
   "panels": [
     {
       "id": 1,
+      "title": "Mobile Telemetry Status",
+      "type": "text",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+      "options": {
+        "mode": "markdown",
+        "content": "**No data until mobile OTLP events are shipped.** This dashboard depends on Loki logs from `source=\"scanium-mobile\"` with `event_name`, `platform`, and `app_version` labels."
+      }
+    },
+    {
+      "id": 2,
       "title": "Scan Funnel (Started -> Created -> Confirmed)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "gridPos": { "x": 0, "y": 3, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
@@ -86,10 +96,10 @@
       }
     },
     {
-      "id": 2,
+      "id": 3,
       "title": "Confirmation Ratio (Confirmed / Created)",
       "type": "stat",
-      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 8 },
+      "gridPos": { "x": 12, "y": 3, "w": 6, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
@@ -114,10 +124,10 @@
       }
     },
     {
-      "id": 3,
+      "id": 4,
       "title": "Scan Mode Usage",
       "type": "piechart",
-      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 8 },
+      "gridPos": { "x": 18, "y": 3, "w": 6, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
@@ -128,10 +138,10 @@
       ]
     },
     {
-      "id": 4,
+      "id": 5,
       "title": "Session Duration Distribution",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
@@ -148,10 +158,10 @@
       "fieldConfig": { "defaults": { "unit": "ms" } }
     },
     {
-      "id": 5,
+      "id": 6,
       "title": "Sessions by ID (Drilldown)",
       "type": "logs",
-      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "gridPos": { "x": 12, "y": 11, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
