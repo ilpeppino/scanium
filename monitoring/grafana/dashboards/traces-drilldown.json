@@ -138,7 +138,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[5m])) / sum(rate(traces_spanmetrics_latency_count{service=~\"$service\"}[5m])) * 1000 or vector(0)",
+          "expr": "sum(rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[5m])) / sum(rate(traces_spanmetrics_latency_count{service=~\"$service\"}[5m])) or vector(0)",
           "legendFormat": "avg"
         }
       ],
@@ -171,7 +171,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m])))",
           "legendFormat": "p99"
         }
       ],
@@ -204,17 +204,17 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m])))",
           "legendFormat": "p50"
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m])))",
           "legendFormat": "p95"
         },
         {
           "refId": "C",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m])))",
           "legendFormat": "p99"
         }
       ],
@@ -251,7 +251,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[15m])))) * 1000",
+          "expr": "topk(10, histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[15m]))))",
           "legendFormat": "{{span_name}}"
         }
       ],
@@ -301,7 +301,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(5, histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m])))) * 1000",
+          "expr": "topk(5, histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m]))))",
           "legendFormat": "{{service}}"
         }
       ],

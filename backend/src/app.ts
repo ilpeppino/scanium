@@ -19,6 +19,8 @@ import { configRoutes } from './modules/config/config.routes.js';
 import { enrichRoutes } from './modules/enrich/routes.js';
 import { pricingRoutes } from './modules/pricing/routes.js';
 import { apiGuardPlugin } from './infra/security/api-guard.js';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { recordHttpRequest } from './infra/observability/metrics.js';
 
 /**
  * Build Fastify application instance
@@ -51,6 +53,47 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
             }
           : undefined,
     },
+  });
+
+
+  const tracer = trace.getTracer('scanium-backend');
+  const ignoredMetricPaths = ['/health', '/healthz', '/readyz', '/metrics'];
+
+  app.addHook('onRequest', (request, _reply, done) => {
+    const url = request.raw.url ?? '';
+    const span = tracer.startSpan(`HTTP ${request.method} ${url}`);
+    span.setAttribute('http.method', request.method);
+    span.setAttribute('http.target', url);
+    (request as any).__scaniumRequestStart = process.hrtime.bigint();
+    (request as any).__scaniumSpan = span;
+    done();
+  });
+
+  app.addHook('onResponse', (request, reply, done) => {
+    const start = (request as any).__scaniumRequestStart as bigint | undefined;
+    const url = request.raw.url ?? '';
+    const route =
+      (request as any).routeOptions?.url ??
+      (request as any).routerPath ??
+      request.raw.url ??
+      request.url ??
+      'unknown';
+    const span = (request as any).__scaniumSpan;
+
+    if (span) {
+      span.setAttribute('http.route', route);
+      span.setAttribute('http.status_code', reply.statusCode);
+      if (reply.statusCode >= 500) {
+        span.setStatus({ code: SpanStatusCode.ERROR });
+      }
+      span.end();
+    }
+
+    if (start && !ignoredMetricPaths.some((path) => url.startsWith(path))) {
+      const durationMs = Number(process.hrtime.bigint() - start) / 1e6;
+      recordHttpRequest(request.method, route, reply.statusCode, durationMs);
+    }
+    done();
   });
 
   // Register error handler
