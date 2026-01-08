@@ -50,16 +50,16 @@ class ScaniumApplication : Application() {
         val settingsRepository = SettingsRepository(this)
         val classificationPreferences = com.scanium.app.data.ClassificationPreferences(this)
 
-        applicationScope.launch {
-            settingsRepository.appLanguageFlow.collect { language ->
-                val localeList =
-                    when (language) {
-                        AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
-                        else -> LocaleListCompat.forLanguageTags(language.code)
-                    }
-                AppCompatDelegate.setApplicationLocales(localeList)
-            }
+        // Apply saved locale SYNCHRONOUSLY before any Activity starts
+        // This ensures the correct locale is set before the first UI renders
+        val initialLanguage = runBlocking {
+            settingsRepository.appLanguageFlow.first()
         }
+        val initialLocaleList = when (initialLanguage) {
+            AppLanguage.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+            else -> LocaleListCompat.forLanguageTags(initialLanguage.code)
+        }
+        AppCompatDelegate.setApplicationLocales(initialLocaleList)
 
         // Initialize DiagnosticsPort (shared buffer for crash-time diagnostics)
         diagnosticsPort =
