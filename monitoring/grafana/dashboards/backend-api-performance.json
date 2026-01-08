@@ -18,7 +18,7 @@
         "label": "Service",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "MIMIR" },
-        "query": "label_values(http_server_request_duration_seconds_bucket, service_name)",
+        "query": "label_values(scanium_http_request_duration_ms_bucket, service_name)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -44,7 +44,7 @@
         "label": "Route",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "MIMIR" },
-        "query": "label_values(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}, http_route)",
+        "query": "label_values(scanium_http_request_duration_ms_bucket{service_name=~\"$service\"}, route)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -55,7 +55,7 @@
         "label": "HTTP Method",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "MIMIR" },
-        "query": "label_values(http_server_request_duration_seconds_bucket, http_request_method)",
+        "query": "label_values(scanium_http_request_duration_ms_bucket, method)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -81,7 +81,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
           "legendFormat": "p50"
         }
       ],
@@ -115,7 +115,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
           "legendFormat": "p95"
         }
       ],
@@ -149,7 +149,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
           "legendFormat": "p99"
         }
       ],
@@ -183,7 +183,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))",
+          "expr": "sum(rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m]))",
           "legendFormat": "req/s"
         }
       ],
@@ -215,22 +215,22 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
           "legendFormat": "p50"
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.90, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.90, sum by (le) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
           "legendFormat": "p90"
         },
         {
           "refId": "C",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
           "legendFormat": "p95"
         },
         {
           "refId": "D",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
           "legendFormat": "p99"
         }
       ],
@@ -268,8 +268,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m])))) * 1000",
-          "legendFormat": "{{http_route}}"
+          "expr": "topk(10, histogram_quantile(0.95, sum by (le, route) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m]))))",
+          "legendFormat": "{{route}}"
         }
       ],
       "fieldConfig": {
@@ -298,8 +298,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, sum by (http_route) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m])))",
-          "legendFormat": "{{http_route}}"
+          "expr": "topk(10, sum by (route) (rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
+          "legendFormat": "{{route}}"
         }
       ],
       "fieldConfig": {
@@ -329,7 +329,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(15, histogram_quantile(0.95, sum by (le, http_route, service_name) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[15m])))) * 1000 > 200",
+          "expr": "topk(15, histogram_quantile(0.95, sum by (le, route, service_name) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\"}[15m])))) > 200",
           "format": "table",
           "instant": true
         }
@@ -340,7 +340,7 @@
           "options": {
             "excludeByName": { "Time": true, "le": true },
             "renameByName": {
-              "http_route": "Route",
+              "route": "Route",
               "service_name": "Service",
               "Value": "p95 (ms)"
             }
@@ -392,7 +392,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(15, sum by (http_route, service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[15m])) / sum by (http_route, service_name) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[15m])) * 100)",
+          "expr": "topk(15, sum by (route, service_name) (rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"5..\"}[15m])) / sum by (route, service_name) (rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\"}[15m])) * 100)",
           "format": "table",
           "instant": true
         }
@@ -403,7 +403,7 @@
           "options": {
             "excludeByName": { "Time": true },
             "renameByName": {
-              "http_route": "Route",
+              "route": "Route",
               "service_name": "Service",
               "Value": "Error Rate (%)"
             }
@@ -461,8 +461,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.95, sum by (le, http_request_method) (rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))) * 1000",
-          "legendFormat": "{{http_request_method}}"
+          "expr": "histogram_quantile(0.95, sum by (le, method) (rate(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m])))",
+          "legendFormat": "{{method}}"
         }
       ],
       "fieldConfig": {
@@ -491,8 +491,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (http_request_method) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[5m]))",
-          "legendFormat": "{{http_request_method}}"
+          "expr": "sum by (method) (rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[5m]))",
+          "legendFormat": "{{method}}"
         }
       ],
       "fieldConfig": {
@@ -522,7 +522,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(http_server_request_duration_seconds_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_request_method=~\"$method\"}[$__rate_interval])) by (le)",
+          "expr": "sum(increase(scanium_http_request_duration_ms_bucket{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", method=~\"$method\"}[$__rate_interval])) by (le)",
           "format": "heatmap",
           "legendFormat": "{{le}}"
         }

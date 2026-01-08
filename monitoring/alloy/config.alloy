@@ -70,6 +70,32 @@ loki.write "mobile" {
   }
 }
 
+loki.write "backend" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+
+  external_labels = {
+    source = "scanium-backend",
+    env    = "dev",
+  }
+}
+
+
+// Docker logs -> Loki (backend)
+loki.source.docker "backend" {
+  host = "unix:///var/run/docker.sock"
+
+  targets = [
+    {
+      container_name = "scanium-backend",
+      labels = "source=scanium-backend,env=dev",
+    },
+  ]
+
+  forward_to = [loki.write.backend.receiver]
+}
+
 // Prometheus remote write exporter for metrics (to Mimir)
 otelcol.exporter.prometheus "mobile" {
   forward_to = [prometheus.remote_write.mobile.receiver]
@@ -159,6 +185,37 @@ prometheus.scrape "mimir" {
   forward_to      = [prometheus.remote_write.pipeline.receiver]
   scrape_interval = "15s"
   scrape_timeout  = "10s"
+}
+
+
+// Scrape Backend metrics
+prometheus.scrape "backend" {
+  targets = [
+    {
+      __address__      = "scanium-backend:8080",
+      __metrics_path__ = "/metrics",
+      job              = "scanium-backend",
+      instance         = "scanium-backend",
+    },
+  ]
+  forward_to      = [prometheus.remote_write.backend.receiver]
+  scrape_interval = "15s"
+  scrape_timeout  = "10s"
+}
+
+
+// Remote write for backend metrics
+prometheus.remote_write "backend" {
+  endpoint {
+    url = "http://mimir:9009/api/v1/push"
+  }
+
+  external_labels = {
+    source                  = "scanium-backend",
+    env                     = "dev",
+    service_name            = "scanium-backend",
+    deployment_environment  = "dev",
+  }
 }
 
 // Remote write for pipeline self-observability metrics

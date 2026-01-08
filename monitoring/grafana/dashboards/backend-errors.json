@@ -18,7 +18,7 @@
         "label": "Service",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "MIMIR" },
-        "query": "label_values(http_server_request_duration_seconds_bucket, service_name)",
+        "query": "label_values(scanium_http_request_duration_ms_bucket, service_name)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -44,7 +44,7 @@
         "label": "Route",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "MIMIR" },
-        "query": "label_values(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}, http_route)",
+        "query": "label_values(scanium_http_request_duration_ms_bucket{service_name=~\"$service\"}, route)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -84,7 +84,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h]))",
+          "expr": "sum(increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"$status_code\"}[1h]))",
           "legendFormat": "errors"
         }
       ],
@@ -117,7 +117,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"4..\"}[1h])) or vector(0)",
+          "expr": "sum(increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"4..\"}[1h])) or vector(0)",
           "legendFormat": "4xx"
         }
       ],
@@ -150,7 +150,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[1h])) or vector(0)",
+          "expr": "sum(increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"5..\"}[1h])) or vector(0)",
           "legendFormat": "5xx"
         }
       ],
@@ -183,7 +183,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\"}[5m])) * 100 or vector(0)",
+          "expr": "sum(rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"$status_code\"}[5m])) / sum(rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\"}[5m])) * 100 or vector(0)",
           "legendFormat": "error %"
         }
       ],
@@ -217,12 +217,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"4..\"}[5m]))",
+          "expr": "sum(rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"4..\"}[5m]))",
           "legendFormat": "4xx (Client Errors)"
         },
         {
           "refId": "B",
-          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"5..\"}[5m]))",
+          "expr": "sum(rate(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"5..\"}[5m]))",
           "legendFormat": "5xx (Server Errors)"
         }
       ],
@@ -268,8 +268,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (http_response_status_code) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h]))",
-          "legendFormat": "{{http_response_status_code}}"
+          "expr": "sum by (status_code) (increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"$status_code\"}[1h]))",
+          "legendFormat": "{{status_code}}"
         }
       ],
       "fieldConfig": {
@@ -302,8 +302,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, sum by (http_route) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h])))",
-          "legendFormat": "{{http_route}}"
+          "expr": "topk(10, sum by (route) (increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"$status_code\"}[1h])))",
+          "legendFormat": "{{route}}"
         }
       ],
       "options": {
@@ -326,7 +326,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (service_name) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_response_status_code=~\"$status_code\"}[1h]))",
+          "expr": "sum by (service_name) (increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", status_code=~\"$status_code\"}[1h]))",
           "legendFormat": "{{service_name}}"
         }
       ],
@@ -357,7 +357,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (http_route, service_name, http_response_status_code) (increase(http_server_request_duration_seconds_count{service_name=~\"$service\", deployment_environment=~\"$env\", http_route=~\"$route\", http_response_status_code=~\"$status_code\"}[1h])) > 0",
+          "expr": "sum by (route, service_name, status_code) (increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"$status_code\"}[1h])) > 0",
           "format": "table",
           "instant": true
         }
@@ -368,9 +368,9 @@
           "options": {
             "excludeByName": { "Time": true },
             "renameByName": {
-              "http_route": "Route",
+              "route": "Route",
               "service_name": "Service",
-              "http_response_status_code": "Status Code",
+              "status_code": "Status Code",
               "Value": "Error Count"
             }
           }
