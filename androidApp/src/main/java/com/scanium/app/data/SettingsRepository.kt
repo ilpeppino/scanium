@@ -430,7 +430,7 @@ class SettingsRepository(
      * In beta/prod builds, this is always false regardless of stored preference.
      */
     val devAllowScreenshotsFlow: Flow<Boolean> =
-        dataStore.data.map { preferences ->
+        dataStore.data.safeMap(FeatureFlags.allowScreenshots) { preferences ->
             // Clamp to false if screenshots are not allowed by feature flags
             if (!FeatureFlags.allowScreenshots) {
                 false

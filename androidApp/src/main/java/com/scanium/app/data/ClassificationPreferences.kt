@@ -1,18 +1,34 @@
 package com.scanium.app.data
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.BuildConfig
 import com.scanium.app.ml.classification.ClassificationMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 
-private val Context.classificationDataStore: DataStore<Preferences> by preferencesDataStore(name = "classification_preferences")
+private const val TAG = "ClassificationPrefs"
+
+/**
+ * DataStore with corruption handler that resets to defaults on file corruption.
+ */
+private val Context.classificationDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "classification_preferences",
+    corruptionHandler = ReplaceFileCorruptionHandler { exception ->
+        Log.e(TAG, "DataStore corrupted, resetting to defaults", exception)
+        emptyPreferences()
+    },
+)
 
 class ClassificationPreferences(private val context: Context) {
     companion object {
@@ -24,6 +40,14 @@ class ClassificationPreferences(private val context: Context) {
 
     val mode: Flow<ClassificationMode> =
         context.classificationDataStore.data
+            .catch { exception ->
+                if (exception is IOException) {
+                    Log.e(TAG, "DataStore IO error, using default mode", exception)
+                    emit(emptyPreferences())
+                } else {
+                    throw exception
+                }
+            }
             .map { preferences ->
                 val raw = preferences[CLASSIFICATION_MODE_KEY]
                 // Default to CLOUD mode for production cloud-first classification
