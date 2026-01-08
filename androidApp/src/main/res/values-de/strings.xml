@@ -416,6 +416,18 @@
     <!-- Attribute Editing -->
     <string name="attribute_confirm_help">Bestätigen markiert dies als verifiziert.</string>
     <string name="attribute_extracted_via">Extrahiert über: %1$s</string>
+    <string name="attribute_current_value">Aktuell: %1$s</string>
+    <string name="attribute_suggestions_title">Vorschläge</string>
+    <string name="attribute_tap_to_edit_hint">Tippen zum Bearbeiten</string>
+    <string name="attribute_source_label">Quelle: %1$s</string>
+
+    <!-- Confidence Tier Display Names -->
+    <string name="confidence_tier_high_name">Hoch</string>
+    <string name="confidence_tier_medium_name">Mittel</string>
+    <string name="confidence_tier_low_name">Niedrig</string>
+    <string name="confidence_tier_high_desc">Verifiziert</string>
+    <string name="confidence_tier_medium_desc">Wahrscheinlich korrekt</string>
+    <string name="confidence_tier_low_desc">Benötigt Überprüfung</string>
 
     <!-- Export -->
     <string name="export_items_title">Artikel exportieren</string>

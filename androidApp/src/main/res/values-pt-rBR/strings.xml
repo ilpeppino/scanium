@@ -416,6 +416,18 @@
     <!-- Attribute Editing -->
     <string name="attribute_confirm_help">Confirmar marcará como verificado.</string>
     <string name="attribute_extracted_via">Extraído via: %1$s</string>
+    <string name="attribute_current_value">Atual: %1$s</string>
+    <string name="attribute_suggestions_title">Sugestões</string>
+    <string name="attribute_tap_to_edit_hint">Toque para editar</string>
+    <string name="attribute_source_label">Fonte: %1$s</string>
+
+    <!-- Confidence Tier Display Names -->
+    <string name="confidence_tier_high_name">Alto</string>
+    <string name="confidence_tier_medium_name">Médio</string>
+    <string name="confidence_tier_low_name">Baixo</string>
+    <string name="confidence_tier_high_desc">Verificado</string>
+    <string name="confidence_tier_medium_desc">Provavelmente correto</string>
+    <string name="confidence_tier_low_desc">Requer verificação</string>
 
     <!-- Export -->
     <string name="export_items_title">Exportar itens</string>

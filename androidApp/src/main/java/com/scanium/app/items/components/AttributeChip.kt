@@ -21,7 +21,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.shared.core.models.items.AttributeConfidenceTier
 import com.scanium.shared.core.models.items.ItemAttribute
 
@@ -70,18 +72,25 @@ fun AttributeChip(
         AttributeConfidenceTier.MEDIUM, AttributeConfidenceTier.LOW -> Icons.Default.QuestionMark
     }
 
+    val context = LocalContext.current
+    val attributeLabel = getAttributeLabelResource(attributeKey)?.let { context.getString(it) }
+        ?: attributeKey.replaceFirstChar { it.uppercase() }
+    val confidenceTierDesc = getConfidenceTierDescriptionResource(attribute.confidenceTier)?.let { context.getString(it) }
+        ?: attribute.confidenceTier.description
+
     val accessibilityDescription = buildString {
-        append(formatAttributeLabel(attributeKey))
+        append(attributeLabel)
         append(": ")
         append(attribute.value)
         append(". ")
-        append(attribute.confidenceTier.description)
+        append(confidenceTierDesc)
         if (attribute.source != null) {
-            append(". Source: ")
-            append(attribute.source)
+            append(". ")
+            append(context.getString(R.string.attribute_source_label, attribute.source))
         }
         if (onClick != null) {
-            append(". Tap to edit")
+            append(". ")
+            append(context.getString(R.string.attribute_tap_to_edit_hint))
         }
     }
 
@@ -205,18 +214,30 @@ fun AttributeChipsRow(
 }
 
 /**
- * Format attribute key to human-readable label.
+ * Map attribute key to string resource ID.
+ * Returns null if no mapping exists (will fall back to formatted key).
  */
-private fun formatAttributeLabel(key: String): String {
+private fun getAttributeLabelResource(key: String): Int? {
     return when (key) {
-        "brand" -> "Brand"
-        "itemType" -> "Item Type"
-        "model" -> "Model"
-        "color" -> "Color"
-        "secondaryColor" -> "Secondary Color"
-        "material" -> "Material"
-        "labelHints" -> "Label Hints"
-        "ocrText" -> "OCR Text"
-        else -> key.replaceFirstChar { it.uppercase() }
+        "brand" -> R.string.items_attribute_brand
+        "itemType" -> R.string.items_attribute_item_type
+        "model" -> R.string.items_attribute_model
+        "color" -> R.string.items_attribute_color
+        "secondaryColor" -> R.string.items_attribute_secondary_color
+        "material" -> R.string.items_attribute_material
+        "labelHints" -> R.string.items_attribute_label_hints
+        "ocrText" -> R.string.items_attribute_ocr_text
+        else -> null
+    }
+}
+
+/**
+ * Map confidence tier to localized description string resource.
+ */
+private fun getConfidenceTierDescriptionResource(tier: AttributeConfidenceTier): Int? {
+    return when (tier) {
+        AttributeConfidenceTier.HIGH -> R.string.confidence_tier_high_desc
+        AttributeConfidenceTier.MEDIUM -> R.string.confidence_tier_medium_desc
+        AttributeConfidenceTier.LOW -> R.string.confidence_tier_low_desc
     }
 }

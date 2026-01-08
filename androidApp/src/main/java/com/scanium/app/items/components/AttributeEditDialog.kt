@@ -99,10 +99,13 @@ fun AttributeEditDialog(
         }
     }
 
+    val attributeLabel = getAttributeLabelResource(attributeKey)?.let { stringResource(it) }
+        ?: attributeKey.replaceFirstChar { it.uppercase() }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = "Edit ${formatAttributeLabel(attributeKey)}")
+            Text(text = stringResource(R.string.items_attribute_edit, attributeLabel))
         },
         text = {
             Column(
@@ -117,7 +120,7 @@ fun AttributeEditDialog(
                 // Show original detected value if different
                 if (detectedValue != null && detectedValue != attribute.value) {
                     Text(
-                        text = "Originally detected: $detectedValue",
+                        text = stringResource(R.string.items_attribute_originally_detected, detectedValue),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -129,7 +132,7 @@ fun AttributeEditDialog(
                 OutlinedTextField(
                     value = editedValue,
                     onValueChange = { editedValue = it },
-                    label = { Text(formatAttributeLabel(attributeKey)) },
+                    label = { Text(attributeLabel) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -140,7 +143,7 @@ fun AttributeEditDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
-                            text = "Suggestions",
+                            text = stringResource(R.string.attribute_suggestions_title),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -258,13 +261,16 @@ private fun CurrentConfidenceRow(attribute: ItemAttribute) {
             )
         }
 
+        val confidenceTierDesc = getConfidenceTierDescriptionResource(attribute.confidenceTier)?.let { stringResource(it) }
+            ?: attribute.confidenceTier.description
+
         Column {
             Text(
-                text = "Current: ${attribute.value}",
+                text = stringResource(R.string.attribute_current_value, attribute.value),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
-                text = attribute.confidenceTier.description,
+                text = confidenceTierDesc,
                 style = MaterialTheme.typography.bodySmall,
                 color = when (attribute.confidenceTier) {
                     AttributeConfidenceTier.HIGH -> MaterialTheme.colorScheme.primary
@@ -277,18 +283,30 @@ private fun CurrentConfidenceRow(attribute: ItemAttribute) {
 }
 
 /**
- * Format attribute key to human-readable label.
+ * Map attribute key to string resource ID.
+ * Returns null if no mapping exists (will fall back to formatted key).
  */
-private fun formatAttributeLabel(key: String): String {
+private fun getAttributeLabelResource(key: String): Int? {
     return when (key) {
-        "brand" -> "Brand"
-        "itemType" -> "Item Type"
-        "model" -> "Model"
-        "color" -> "Color"
-        "secondaryColor" -> "Secondary Color"
-        "material" -> "Material"
-        "labelHints" -> "Label Hints"
-        "ocrText" -> "OCR Text"
-        else -> key.replaceFirstChar { it.uppercase() }
+        "brand" -> R.string.items_attribute_brand
+        "itemType" -> R.string.items_attribute_item_type
+        "model" -> R.string.items_attribute_model
+        "color" -> R.string.items_attribute_color
+        "secondaryColor" -> R.string.items_attribute_secondary_color
+        "material" -> R.string.items_attribute_material
+        "labelHints" -> R.string.items_attribute_label_hints
+        "ocrText" -> R.string.items_attribute_ocr_text
+        else -> null
+    }
+}
+
+/**
+ * Map confidence tier to localized description string resource.
+ */
+private fun getConfidenceTierDescriptionResource(tier: AttributeConfidenceTier): Int? {
+    return when (tier) {
+        AttributeConfidenceTier.HIGH -> R.string.confidence_tier_high_desc
+        AttributeConfidenceTier.MEDIUM -> R.string.confidence_tier_medium_desc
+        AttributeConfidenceTier.LOW -> R.string.confidence_tier_low_desc
     }
 }
