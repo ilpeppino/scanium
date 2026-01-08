@@ -37,7 +37,7 @@
     <string name="settings_current_edition_title">Current edition</string>
     <string name="settings_edition_free">Free</string>
     <string name="settings_edition_pro">Pro</string>
-    <string name="settings_edition_developer">Developer build</string>
+    <string name="settings_edition_developer">Tester build</string>
     <string name="settings_edition_expires_on">Expires %1$s</string>
     <string name="settings_upgrade_cta">Upgrade</string>
     <string name="settings_manage_subscription">Manage</string>

@@ -36,7 +36,7 @@
     <string name="settings_current_edition_title">Edizione attuale</string>
     <string name="settings_edition_free">Gratuita</string>
     <string name="settings_edition_pro">Pro</string>
-    <string name="settings_edition_developer">Build Sviluppatore</string>
+    <string name="settings_edition_developer">Build Tester</string>
     <string name="settings_edition_expires_on">Scade il %1$s</string>
     <string name="settings_upgrade_cta">Aggiorna</string>
     <string name="settings_manage_subscription">Gestisci</string>

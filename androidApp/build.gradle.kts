@@ -181,12 +181,12 @@ android {
             // App name: "Scanium"
             resValue("string", "app_name", "Scanium")
 
-            // Feature flags for production - restricted feature set
+            // Feature flags for production - unlocked features (except dev mode)
             buildConfigField("boolean", "FEATURE_DEV_MODE", "false")
-            buildConfigField("boolean", "FEATURE_SCREENSHOTS", "false")
-            buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "false")
-            buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"NORMAL\"")
-            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
+            buildConfigField("boolean", "FEATURE_SCREENSHOTS", "true")
+            buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
+            buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
+            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
         }
         create("dev") {
             dimension = "distribution"
@@ -213,12 +213,12 @@ android {
             // App name: "Scanium Beta" for side-by-side identification
             resValue("string", "app_name", "Scanium Beta")
 
-            // Feature flags for beta - restricted feature set (same as prod)
+            // Feature flags for beta - unlocked features (except dev mode)
             buildConfigField("boolean", "FEATURE_DEV_MODE", "false")
-            buildConfigField("boolean", "FEATURE_SCREENSHOTS", "false")
-            buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "false")
-            buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"NORMAL\"")
-            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "false")
+            buildConfigField("boolean", "FEATURE_SCREENSHOTS", "true")
+            buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
+            buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
+            buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
         }
     }
 
