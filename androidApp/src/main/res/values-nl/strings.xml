@@ -36,7 +36,7 @@
     <string name="settings_current_edition_title">Huidige editie</string>
     <string name="settings_edition_free">Gratis</string>
     <string name="settings_edition_pro">Pro</string>
-    <string name="settings_edition_developer">Ontwikkelaarsbuild</string>
+    <string name="settings_edition_developer">Testerbuild</string>
     <string name="settings_edition_expires_on">Verloopt op %1$s</string>
     <string name="settings_upgrade_cta">Upgraden</string>
     <string name="settings_manage_subscription">Beheren</string>
