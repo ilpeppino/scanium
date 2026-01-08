@@ -117,6 +117,14 @@ The project is a multi-module Gradle project with a distinct separation between 
 *   **State:** Expose `StateFlow` from ViewModels. Collect as state in UI.
 *   **Tests:** Name tests `whenCondition_thenResult`. Use `RobolectricTestRunner` for Android-dependent unit tests.
 
+***REMOVED******REMOVED******REMOVED*** AI Agent Workflow
+*   **Commit & Push:** When a task is complete and all tests pass, commit your changes and push to main. Use descriptive commit messages in imperative mood (e.g., "Add voice control feature", "Fix pricing engine bug").
+*   **Docker & NAS:** The monitoring stack runs on a NAS. Always prefix Docker commands with `ssh nas`. Examples:
+    *   `ssh nas "docker compose -p scanium-monitoring restart grafana"`
+    *   `ssh nas "docker ps -a"`
+    *   `ssh nas "ls -la /volume1/docker/scanium/"`
+    *   The backend's PostgreSQL container runs locally and doesn't need `ssh nas`.
+
 ***REMOVED******REMOVED*** 6. Important Files
 *   `settings.gradle.kts`: Module definition.
 *   `androidApp/build.gradle.kts`: Main app dependencies and config.

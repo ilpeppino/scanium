@@ -141,6 +141,14 @@ shared:test-utils -> shared:core-models, shared:core-tracking
 - Run fast checks: `./gradlew prePushJvmCheck` (shared JVM tests + portability), `./gradlew test` (unit), `./gradlew assembleDebug` (app builds), `./gradlew lint` when touching UI/Android.
 - Avoid: android.* imports in shared/KMP modules; adding heavy deps to shared; leaking API keys; bypassing domain pack contracts; breaking tracker reset/aggregation invariants.
 
+***REMOVED******REMOVED*** E.1) AI Agent Workflow
+- **Commit & Push:** When a task is complete and all tests pass, create a commit and push to main. Use descriptive commit messages following the repository's commit style (imperative mood, clear scope).
+- **Docker & NAS Operations:** Always use `ssh nas` prefix for any Docker commands or NAS file system changes. Examples:
+  - `ssh nas "docker compose -p scanium-monitoring restart"`
+  - `ssh nas "docker ps -a"`
+  - `ssh nas "ls -la /volume1/docker/scanium/"`
+  - Never run Docker commands directly on the local machine - the monitoring stack runs on the NAS.
+
 ***REMOVED******REMOVED*** F) Item Enrichment & Attribute Contract
 
 ***REMOVED******REMOVED******REMOVED*** Canonical Attribute Schema

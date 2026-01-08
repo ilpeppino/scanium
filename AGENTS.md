@@ -136,3 +136,24 @@ cd backend && npm run typecheck       ***REMOVED*** TypeScript type checking
 - Commits in imperative mood with clear scope (e.g., `Add MLKit detector pipeline`, `Tweak CameraScreen gestures`); keep them small and logically grouped.
 - PRs include: short summary, testing notes with commands run, linked issues/tickets, and screenshots or screen recordings for UI-facing changes (camera overlays, lists, dialogs).
 - Call out any API/permission implications (camera usage, ML Kit model changes) in the PR description.
+
+***REMOVED******REMOVED*** AI Agent Workflow
+When working as an AI agent on tasks:
+
+***REMOVED******REMOVED******REMOVED*** Completing Tasks
+- **Always commit and push to main** when a task is complete and all tests pass.
+- Run appropriate tests before committing (see Testing Guidelines above).
+- Use descriptive commit messages following the conventions above (imperative mood, clear scope).
+- Push changes immediately after committing: `git push origin main`
+
+***REMOVED******REMOVED******REMOVED*** Docker & NAS Operations
+- **Always use `ssh nas` prefix** for any Docker commands or NAS file system operations.
+- The monitoring stack (Grafana, Loki, Tempo, Mimir, Alloy) runs on the NAS, not locally.
+- Examples of correct usage:
+  ```bash
+  ssh nas "docker compose -p scanium-monitoring restart"
+  ssh nas "docker ps -a"
+  ssh nas "docker compose -p scanium-monitoring logs -f grafana"
+  ssh nas "ls -la /volume1/docker/scanium/"
+  ```
+- Never run Docker commands directly on the local machine unless explicitly working with the backend's PostgreSQL container (which runs locally via `backend/docker-compose.yml`).
