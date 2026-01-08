@@ -774,10 +774,22 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
 
     request.log.info(logData, 'Assistant request');
 
-    // Build request with visual facts
+    // Extract W3C trace context from request (if present)
+    const traceContext =
+      request.traceId && request.spanId && request.parentSpanId
+        ? {
+            traceId: request.traceId,
+            spanId: request.spanId,
+            parentSpanId: request.parentSpanId,
+            flags: '01', // Default sampled flag
+          }
+        : undefined;
+
+    // Build request with visual facts and trace context
     const requestWithVision: AssistantChatRequestWithVision = {
       ...sanitizedRequest,
       visualFacts: visualFactsMap.size > 0 ? visualFactsMap : undefined,
+      traceContext,
     };
 
     // Build response cache key

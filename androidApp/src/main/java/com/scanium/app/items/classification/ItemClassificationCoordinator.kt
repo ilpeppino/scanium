@@ -21,6 +21,7 @@ import com.scanium.app.ml.classification.ItemClassifier
 import com.scanium.app.ml.classification.NoopClassificationThumbnailProvider
 import com.scanium.app.ml.classification.NoopClassifier
 import com.scanium.app.pricing.PriceEstimationRepository
+import com.scanium.app.telemetry.TraceContext
 import com.scanium.shared.core.models.model.ImageRef
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceEstimatorProvider
@@ -77,7 +78,7 @@ class ItemClassificationCoordinator(
     cloudClassifier: ItemClassifier = NoopClassifier,
     private val stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     priceEstimatorProvider: PriceEstimatorProvider? = null,
-    telemetry: Telemetry? = null,
+    private val telemetry: Telemetry? = null,
     private val workerDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
@@ -137,47 +138,82 @@ class ItemClassificationCoordinator(
      */
     fun triggerEnhancedClassification() {
         scope.launch(mainDispatcher) {
-            // Stage 1: Preliminary filter (check orchestrator + gate cooldown/stability)
-            val candidates =
-                withContext(workerDispatcher) {
-                    stateManager.getAggregatedItems()
-                        .filter {
-                            (it.thumbnail != null || it.fullImageUri != null) &&
-                                classificationOrchestrator.shouldClassify(it.aggregatedId) &&
-                                cloudCallGate.canClassify(it, null)
-                        }
+            // Create root span for classification session
+            val sessionSpan = telemetry?.beginSpan(
+                "classification.session",
+                mapOf(
+                    "mode" to effectiveClassificationMode.value.name,
+                ),
+            )
+
+            // Set span as active for trace context propagation
+            sessionSpan?.let { TraceContext.setActiveSpan(it) }
+
+            try {
+                // Stage 1: Preliminary filter (check orchestrator + gate cooldown/stability)
+                val candidates =
+                    withContext(workerDispatcher) {
+                        stateManager.getAggregatedItems()
+                            .filter {
+                                (it.thumbnail != null || it.fullImageUri != null) &&
+                                    classificationOrchestrator.shouldClassify(it.aggregatedId) &&
+                                    cloudCallGate.canClassify(it, null)
+                            }
+                    }
+
+                if (candidates.isEmpty()) {
+                    sessionSpan?.end(mapOf("status" to "no_candidates"))
+                    return@launch
                 }
 
-            if (candidates.isEmpty()) return@launch
-
-            // Stage 2: Prepare thumbnails (I/O)
-            val preparedItems = prepareThumbnailsForClassification(candidates)
-            if (preparedItems.isEmpty()) return@launch
-
-            // Stage 3: Duplicate content filter (Hash check)
-            val itemsToClassify =
-                preparedItems.filter { item ->
-                    cloudCallGate.canClassify(item, item.thumbnail)
+                // Stage 2: Prepare thumbnails (I/O)
+                val preparedItems = prepareThumbnailsForClassification(candidates)
+                if (preparedItems.isEmpty()) {
+                    sessionSpan?.end(mapOf("status" to "no_thumbnails"))
+                    return@launch
                 }
 
-            if (itemsToClassify.isEmpty()) return@launch
+                // Stage 3: Duplicate content filter (Hash check)
+                val itemsToClassify =
+                    preparedItems.filter { item ->
+                        cloudCallGate.canClassify(item, item.thumbnail)
+                    }
 
-            // Mark items as PENDING
-            val pendingIds = itemsToClassify.map { it.aggregatedId }
-            stateManager.markClassificationPending(pendingIds)
+                if (itemsToClassify.isEmpty()) {
+                    sessionSpan?.end(mapOf("status" to "all_filtered"))
+                    return@launch
+                }
 
-            // Notify gate of successful trigger
-            itemsToClassify.forEach {
-                cloudCallGate.onClassificationTriggered(it, it.thumbnail)
-            }
+                // Mark items as PENDING
+                val pendingIds = itemsToClassify.map { it.aggregatedId }
+                stateManager.markClassificationPending(pendingIds)
 
-            // Update UI
-            withContext(mainDispatcher) {
-                stateManager.refreshItemsFromAggregator()
-            }
+                // Notify gate of successful trigger
+                itemsToClassify.forEach {
+                    cloudCallGate.onClassificationTriggered(it, it.thumbnail)
+                }
 
-            classificationOrchestrator.classify(itemsToClassify) { aggregatedItem, result ->
-                handleClassificationResult(aggregatedItem, result)
+                // Update UI
+                withContext(mainDispatcher) {
+                    stateManager.refreshItemsFromAggregator()
+                }
+
+                classificationOrchestrator.classify(itemsToClassify) { aggregatedItem, result ->
+                    handleClassificationResult(aggregatedItem, result)
+                }
+
+                sessionSpan?.end(
+                    mapOf(
+                        "status" to "completed",
+                        "item_count" to itemsToClassify.size.toString(),
+                    ),
+                )
+            } catch (e: Exception) {
+                sessionSpan?.recordError(e.message ?: "Unknown error")
+                sessionSpan?.end(mapOf("status" to "error"))
+                throw e
+            } finally {
+                TraceContext.clearActiveSpan()
             }
         }
     }

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { randomBytes } from 'node:crypto';
 import {
   AssistantChatRequest,
   AssistantChatRequestWithVision,
@@ -30,6 +31,14 @@ export interface OpenAIProviderConfig {
 }
 
 /**
+ * Generates a new span ID for W3C trace context.
+ * Format: 8 bytes (16 hex chars)
+ */
+function generateSpanId(): string {
+  return randomBytes(8).toString('hex');
+}
+
+/**
  * OpenAI-based assistant provider using the OpenAI API.
  *
  * Implements the AssistantProvider interface for real LLM-powered
@@ -49,9 +58,44 @@ export class OpenAIAssistantProvider implements AssistantProvider {
     this.maxTokens = config.maxTokens;
   }
 
+  /**
+   * Create a custom fetch function that injects W3C trace context headers.
+   */
+  private createTracingFetch(
+    traceContext?: AssistantChatRequest['traceContext']
+  ): typeof fetch | undefined {
+    if (!traceContext) {
+      return undefined; // Use default fetch
+    }
+
+    // Generate new span ID for OpenAI API call
+    const openaiSpanId = generateSpanId();
+    const traceparent = `00-${traceContext.traceId}-${openaiSpanId}-${traceContext.flags}`;
+
+    // Return custom fetch that adds traceparent header
+    return async (input: string | URL | Request, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      headers.set('traceparent', traceparent);
+
+      return fetch(input, {
+        ...init,
+        headers,
+      });
+    };
+  }
+
   async respond(request: AssistantChatRequest | AssistantChatRequestWithVision): Promise<AssistantResponse> {
     const visualRequest = request as AssistantChatRequestWithVision;
     const primaryItem = request.items[0];
+
+    // Get the client to use (with trace context if available)
+    const clientToUse = request.traceContext
+      ? new OpenAI({
+          apiKey: this.client.apiKey,
+          timeout: this.client.timeout,
+          fetch: this.createTracingFetch(request.traceContext),
+        })
+      : this.client;
 
     // Resolve attributes from visual facts
     const resolvedAttributesMap = new Map<string, ResolvedAttributes>();
@@ -79,7 +123,7 @@ export class OpenAIAssistantProvider implements AssistantProvider {
     const startTime = Date.now();
 
     try {
-      const response = await this.client.chat.completions.create({
+      const response = await clientToUse.chat.completions.create({
         model: this.model,
         max_tokens: this.maxTokens,
         messages: [
