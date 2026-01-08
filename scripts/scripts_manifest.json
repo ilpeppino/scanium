@@ -1,0 +1,417 @@
+{
+  "version": "1.0",
+  "generated": "2026-01-08",
+  "description": "Scanium script manifest for Script Master launcher",
+  "areas": [
+    {
+      "id": "dev",
+      "name": "Development (Mac)",
+      "description": "Local development scripts for macOS",
+      "scripts": [
+        {
+          "id": "build",
+          "label": "Build APK",
+          "path": "scripts/build.sh",
+          "description": "Portable Gradle build with JDK 17 auto-detection",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "run-tests",
+          "label": "Run Tests",
+          "path": "scripts/dev/run_tests.sh",
+          "description": "Run Android unit tests with logging",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "autofix-tests",
+          "label": "AI Test Fixer",
+          "path": "scripts/dev/autofix_tests.sh",
+          "description": "AI-assisted test fixing loop (Claude/Codex/Gemini)",
+          "supports_help": true,
+          "supports_dry_run": true,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "install-hooks",
+          "label": "Install Git Hooks",
+          "path": "scripts/dev/install-hooks.sh",
+          "description": "Install pre-commit and pre-push hooks",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "gradle17",
+          "label": "Gradle with JDK 17",
+          "path": "scripts/dev/gradle17.sh",
+          "description": "Run any gradle command with JDK 17",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "capture-crash",
+          "label": "Capture Startup Crash",
+          "path": "scripts/dev/capture_startup_crash.sh",
+          "description": "Capture Android startup crash diagnostics",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        }
+      ]
+    },
+    {
+      "id": "android",
+      "name": "Android",
+      "description": "Android build and device tools",
+      "scripts": [
+        {
+          "id": "build-install",
+          "label": "Build & Install devDebug",
+          "path": "scripts/android/build-install-devdebug.sh",
+          "description": "Build devDebug, install on device, run smoke test",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "set-backend",
+          "label": "Set Cloudflare Backend",
+          "path": "scripts/android/set-backend-cloudflare-dev.sh",
+          "description": "Configure local.properties for Cloudflare backend",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "verify-backend",
+          "label": "Verify Backend Config",
+          "path": "scripts/dev/verify-backend-config.sh",
+          "description": "Verify Android backend configuration",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "ml-kit-test",
+          "label": "Test ML Kit Detection",
+          "path": "scripts/dev/test_ml_kit_detection.sh",
+          "description": "Test ML Kit barcode detection on device",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        }
+      ]
+    },
+    {
+      "id": "backend",
+      "name": "Backend",
+      "description": "Backend development server management",
+      "scripts": [
+        {
+          "id": "start-dev",
+          "label": "Start Dev Stack",
+          "path": "scripts/backend/start-dev.sh",
+          "description": "Start PostgreSQL, backend, ngrok, and monitoring",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": false,
+          "environment": ["macos"]
+        },
+        {
+          "id": "stop-dev",
+          "label": "Stop Dev Stack",
+          "path": "scripts/backend/stop-dev.sh",
+          "description": "Stop all backend development services",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "check-status",
+          "label": "Check Stack Status",
+          "path": "scripts/backend/check-status.sh",
+          "description": "Comprehensive health check of backend and monitoring",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "verify-setup",
+          "label": "Verify Backend Setup",
+          "path": "scripts/backend/verify-setup.sh",
+          "description": "Verify backend .env, deps, Prisma, and tests",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        }
+      ]
+    },
+    {
+      "id": "ci",
+      "name": "CI / Quality",
+      "description": "Continuous integration and code quality",
+      "scripts": [
+        {
+          "id": "local-ci",
+          "label": "Local CI",
+          "path": "scripts/ci/local-ci.sh",
+          "description": "Run local CI checks (coverage, security, lint)",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "doctor",
+          "label": "CI Doctor",
+          "path": "scripts/ci/doctor.sh",
+          "description": "Check CI prerequisites (Java, Gradle, Docker)",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "coverage",
+          "label": "Run Coverage",
+          "path": "scripts/ci/run_coverage.sh",
+          "description": "Run test coverage analysis",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "security",
+          "label": "Security Scan",
+          "path": "scripts/ci/run_security.sh",
+          "description": "Run CVE security scan",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "gradle-sanity",
+          "label": "Gradle Sanity",
+          "path": "scripts/ci/gradle_sanity.sh",
+          "description": "Gradle configuration sanity check",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        }
+      ]
+    },
+    {
+      "id": "monitoring",
+      "name": "Monitoring",
+      "description": "Observability stack management (LGTM + Alloy)",
+      "scripts": [
+        {
+          "id": "start",
+          "label": "Start Monitoring",
+          "path": "scripts/monitoring/start-monitoring.sh",
+          "description": "Start LGTM stack (Loki, Grafana, Tempo, Mimir) + Alloy",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": false,
+          "environment": ["macos"]
+        },
+        {
+          "id": "stop",
+          "label": "Stop Monitoring",
+          "path": "scripts/monitoring/stop-monitoring.sh",
+          "description": "Stop monitoring stack containers",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "urls",
+          "label": "Print URLs",
+          "path": "scripts/monitoring/print-urls.sh",
+          "description": "Print monitoring stack access URLs and health",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        },
+        {
+          "id": "inventory",
+          "label": "Telemetry Inventory",
+          "path": "scripts/monitoring/inventory-telemetry.sh",
+          "description": "Discover available telemetry in LGTM stack",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        }
+      ]
+    },
+    {
+      "id": "ops",
+      "name": "Ops / NAS",
+      "description": "Operations, Docker, and NAS management",
+      "scripts": [
+        {
+          "id": "smoke",
+          "label": "Smoke Test",
+          "path": "scripts/ops/smoke.sh",
+          "description": "Backend endpoint smoke tests",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux", "termux"]
+        },
+        {
+          "id": "docker-status",
+          "label": "Docker Status",
+          "path": "scripts/ops/docker_status.sh",
+          "description": "Show Docker container status and health",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "support-bundle",
+          "label": "Collect Support Bundle",
+          "path": "scripts/ops/collect_support_bundle.sh",
+          "description": "Collect diagnostic bundle (redacted)",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos", "linux"]
+        },
+        {
+          "id": "nas-preflight",
+          "label": "NAS Vision Preflight",
+          "path": "scripts/ops/nas_vision_preflight.sh",
+          "description": "Verify NAS backend vision configuration via SSH",
+          "supports_help": true,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"]
+        }
+      ]
+    },
+    {
+      "id": "termux",
+      "name": "Termux (Phone)",
+      "description": "Scripts for running on Android via Termux",
+      "scripts": [
+        {
+          "id": "build-local",
+          "label": "Build to Downloads",
+          "path": "scripts/termux/build_debug_to_downloads.sh",
+          "description": "Build APK locally in Termux to Downloads folder",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["termux"]
+        },
+        {
+          "id": "remote-build",
+          "label": "Remote Build & Pull",
+          "path": "scripts/termux/remote_build_pull_apk.sh",
+          "description": "Build APK on Mac via SSH and pull to phone",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["termux"]
+        },
+        {
+          "id": "remote-autofix",
+          "label": "Remote Test Fixer",
+          "path": "scripts/termux/remote_autofix_tests.sh",
+          "description": "Run AI test fixer on remote Mac via SSH",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["termux"]
+        },
+        {
+          "id": "storage-setup",
+          "label": "Storage Setup",
+          "path": "scripts/termux/termux-storage-setup.sh",
+          "description": "Configure Termux storage permissions",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["termux"]
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "name": "Tools / Maintenance",
+      "description": "Utility and maintenance scripts",
+      "scripts": [
+        {
+          "id": "gen-assets",
+          "label": "Generate Brand Assets",
+          "path": "scripts/generate_assets.py",
+          "description": "Generate brand SVG/PNG assets",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"],
+          "interpreter": "python3"
+        },
+        {
+          "id": "gen-android-assets",
+          "label": "Generate Android Icons",
+          "path": "scripts/generate_android_assets.py",
+          "description": "Generate Android vector drawable icons",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": true,
+          "environment": ["macos"],
+          "interpreter": "python3"
+        },
+        {
+          "id": "gh-issues",
+          "label": "Create GitHub Issues",
+          "path": "scripts/tools/create-github-issues.sh",
+          "description": "Create GitHub issues from markdown files",
+          "supports_help": false,
+          "supports_dry_run": false,
+          "safe": false,
+          "environment": ["macos"]
+        }
+      ]
+    }
+  ],
+  "deprecated": [
+    {
+      "path": "scripts/android-build-install-dev.sh",
+      "replacement": "scripts/android/build-install-devdebug.sh",
+      "reason": "Moved to scripts/android/ subfolder"
+    },
+    {
+      "path": "scripts/android-configure-backend-dev.sh",
+      "replacement": "scripts/android/set-backend-cloudflare-dev.sh",
+      "reason": "Renamed and moved to scripts/android/"
+    }
+  ]
+}
