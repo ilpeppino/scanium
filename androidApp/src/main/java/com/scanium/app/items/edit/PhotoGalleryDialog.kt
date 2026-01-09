@@ -428,8 +428,8 @@ private suspend fun PointerInputScope.detectPagerFriendlyTransformGestures(
 
                 val centroid = event.calculateCentroid(useCurrent = false)
                 val panMagnitude = pan.getDistance()
-                val zoomMotion = abs(1 - zoom) * centroid.getDistance(Offset.Zero)
-                val rotationMotion = abs(rotation * PI.toFloat() * centroid.getDistance(Offset.Zero) / 180f)
+                val zoomMotion = abs(1 - zoom) * centroid.getDistance()
+                val rotationMotion = abs(rotation * PI.toFloat() * centroid.getDistance() / 180f)
 
                 if (zoomMotion > touchSlop ||
                     rotationMotion > touchSlop ||
