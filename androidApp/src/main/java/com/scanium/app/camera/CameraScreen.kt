@@ -591,7 +591,8 @@ fun CameraScreen(
                     if (cameraState == CameraState.SCANNING) {
                         CameraGuidanceOverlay(
                             guidanceState = scanGuidanceState,
-                            showDebugInfo = roiDiagnosticsEnabled || scanDiagnosticsEnabled,
+                            // Debug info only visible in Dev flavor
+                            showDebugInfo = (roiDiagnosticsEnabled || scanDiagnosticsEnabled) && BuildConfig.FLAVOR == "dev",
                             // PHASE 6: Pass ROI filter diagnostics
                             roiFilterResult = lastRoiFilterResult,
                             previewBboxCount = overlayTracks.size,
@@ -618,7 +619,8 @@ fun CameraScreen(
                         imageSize = imageSize,
                         previewSize = previewSize,
                         rotationDegrees = imageRotationDegrees,
-                        showGeometryDebug = bboxMappingDebugEnabled,
+                        // Geometry debug only visible in Dev flavor
+                        showGeometryDebug = bboxMappingDebugEnabled && BuildConfig.FLAVOR == "dev",
                         overlayAccuracyStep = overlayAccuracyStep,
                         modifier = Modifier.testTag(TestSemantics.DETECTION_OVERLAY),
                     )
@@ -655,7 +657,8 @@ fun CameraScreen(
                 }
 
                 // Performance Overlay (Debug)
-                if (verboseLogging) {
+                // Only visible in Dev flavor (hidden in Beta and Prod)
+                if (verboseLogging && BuildConfig.FLAVOR == "dev") {
                     PerfOverlay(
                         analysisFps = analysisFps,
                         classificationMode = classificationMode,
@@ -672,7 +675,8 @@ fun CameraScreen(
                 }
 
                 // Camera Pipeline Lifecycle Debug Overlay
-                if (cameraPipelineDebugEnabled) {
+                // Only visible in Dev flavor (hidden in Beta and Prod)
+                if (cameraPipelineDebugEnabled && BuildConfig.FLAVOR == "dev") {
                     CameraPipelineDebugOverlay(
                         diagnostics = pipelineDiagnostics,
                         modifier =
