@@ -92,7 +92,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -131,7 +131,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -162,7 +162,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -195,7 +195,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -250,7 +250,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -301,7 +301,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -343,7 +343,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -382,7 +382,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -422,7 +422,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -474,7 +474,7 @@ class AssistantViewModelTest {
             val viewModel =
                 AssistantViewModel(
                     itemIds = listOf("item-1"),
-                    itemsViewModel = itemsViewModel,
+                    itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
                     draftStore = store,
                     exportProfileRepository = profileRepository,
                     exportProfilePreferences = profilePreferences,
@@ -693,7 +693,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -738,7 +738,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -775,7 +775,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -823,7 +823,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -856,7 +856,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -890,7 +890,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -920,7 +920,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -949,7 +949,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -978,7 +978,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,
@@ -1020,7 +1020,7 @@ class AssistantViewModelTest {
 
         val viewModel = AssistantViewModel(
             itemIds = listOf("item-1"),
-            itemsViewModel = itemsViewModel,
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
             draftStore = store,
             exportProfileRepository = profileRepository,
             exportProfilePreferences = profilePreferences,

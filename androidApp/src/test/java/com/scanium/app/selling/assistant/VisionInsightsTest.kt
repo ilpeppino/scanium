@@ -239,6 +239,7 @@ class VisionInsightsTest {
         return AssistantViewModel(
             itemIds = listOf("item-1"),
             itemsViewModel = itemsViewModel,
+            context = ApplicationProvider.getApplicationContext(),
             draftStore = FakeDraftStore(),
             exportProfileRepository = FakeExportProfileRepo(),
             exportProfilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext()),
