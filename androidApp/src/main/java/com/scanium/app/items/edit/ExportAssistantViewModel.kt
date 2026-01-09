@@ -1,8 +1,11 @@
 package com.scanium.app.items.edit
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.listing.ExportProfileRepository
@@ -20,9 +23,11 @@ import com.scanium.shared.core.models.model.ImageRef
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -112,14 +117,21 @@ sealed class ExportApplyResult {
  * Handles generating marketplace-ready titles and descriptions using AI.
  * The export content is stored in the item's export fields and can be
  * applied/copied from the UI.
+ *
+ * LOCALIZATION:
+ * - Uses the user's assistant language preference from SettingsRepository
+ * - Localizes attribute values in the context sent to the AI backend
+ * - Backend generates output in the requested language
  */
 class ExportAssistantViewModel
     @AssistedInject
     constructor(
         @Assisted private val itemId: String,
         @Assisted private val itemsViewModel: ItemsViewModel,
+        @ApplicationContext private val context: Context,
         private val assistantRepository: AssistantRepository,
         private val exportProfileRepository: ExportProfileRepository,
+        private val settingsRepository: SettingsRepository,
     ) : ViewModel() {
 
     @AssistedFactory
@@ -165,6 +177,11 @@ class ExportAssistantViewModel
     /**
      * Generate export listing content for the item.
      * Sends item context to the assistant and parses the response.
+     *
+     * LOCALIZATION:
+     * - Fetches the user's assistant language preference
+     * - Localizes attribute values in the context before sending
+     * - Passes language preference to backend for localized output
      */
     fun generateExport() {
         val currentItem = _item.value ?: run {
@@ -177,10 +194,14 @@ class ExportAssistantViewModel
 
         viewModelScope.launch {
             try {
-                Log.i(TAG, "Generating export for item ${currentItem.id} correlationId=$correlationId")
+                // Get user's assistant preferences including language
+                val assistantPrefs = settingsRepository.assistantPrefsFlow.first()
+                val languageTag = assistantPrefs.language ?: "en"
 
-                // Build item context snapshot
-                val snapshot = buildItemContextSnapshot(currentItem)
+                Log.i(TAG, "Generating export for item ${currentItem.id} correlationId=$correlationId languageTag=$languageTag")
+
+                // Build item context snapshot with localized attribute values
+                val snapshot = buildItemContextSnapshot(currentItem, languageTag)
 
                 // Build image attachment if available
                 val imageAttachments = buildImageAttachments(currentItem)
@@ -190,7 +211,7 @@ class ExportAssistantViewModel
                 val profile = exportProfileRepository.getProfile(defaultProfileId)
                     ?: com.scanium.shared.core.models.listing.ExportProfiles.generic()
 
-                // Send request
+                // Send request with language preferences
                 val response = assistantRepository.send(
                     items = listOf(snapshot),
                     history = emptyList(),
@@ -198,7 +219,7 @@ class ExportAssistantViewModel
                     exportProfile = profile,
                     correlationId = correlationId,
                     imageAttachments = imageAttachments,
-                    assistantPrefs = null,
+                    assistantPrefs = assistantPrefs,
                 )
 
                 Log.i(TAG, "Export response received: suggestedDraftUpdates=${response.suggestedDraftUpdates.size}")
@@ -274,18 +295,35 @@ class ExportAssistantViewModel
 
     /**
      * Build item context snapshot for the assistant request.
+     *
+     * LOCALIZATION:
+     * - Localizes attribute values (color, material, condition) for the specified language
+     * - Uses ItemAttributeLocalizer to convert canonical English values to localized display values
+     * - This ensures the LLM sees content in the user's language, improving output quality
+     *
+     * @param item The scanned item to build context for
+     * @param languageTag BCP-47 language tag (e.g., "it", "de", "fr")
      */
-    private fun buildItemContextSnapshot(item: ScannedItem): ItemContextSnapshot {
-        // Build attribute snapshots from structured attributes
+    private fun buildItemContextSnapshot(item: ScannedItem, languageTag: String): ItemContextSnapshot {
+        // Helper to localize attribute values for constrained vocabularies
+        fun localizeValue(key: String, value: String): String {
+            // Only localize for non-English languages
+            if (languageTag.startsWith("en", ignoreCase = true)) {
+                return value
+            }
+            return ItemAttributeLocalizer.localizeAttributeValue(context, key, value)
+        }
+
+        // Build attribute snapshots from structured attributes with localization
         val attributes = item.attributes.entries.map { (key, attr) ->
             ItemAttributeSnapshot(
                 key = key,
-                value = attr.value,
+                value = localizeValue(key, attr.value),
                 confidence = attr.confidence,
             )
         }.toMutableList()
 
-        // Add vision attributes as additional context
+        // Add vision attributes as additional context (also localized)
         item.visionAttributes.ocrText?.let { ocr ->
             if (ocr.isNotBlank()) {
                 attributes.add(ItemAttributeSnapshot(key = "ocrText", value = ocr.take(500), confidence = 0.8f))
@@ -298,7 +336,8 @@ class ExportAssistantViewModel
         }
         item.visionAttributes.primaryColor?.let { color ->
             if (attributes.none { it.key == "color" }) {
-                attributes.add(ItemAttributeSnapshot(key = "color", value = color.name, confidence = color.score))
+                val localizedColor = localizeValue("color", color.name)
+                attributes.add(ItemAttributeSnapshot(key = "color", value = localizedColor, confidence = color.score))
             }
         }
         item.visionAttributes.itemType?.let { type ->
@@ -310,6 +349,15 @@ class ExportAssistantViewModel
         // Add user's summary if they edited it
         if (item.summaryTextUserEdited && item.attributesSummaryText.isNotBlank()) {
             attributes.add(ItemAttributeSnapshot(key = "userNotes", value = item.attributesSummaryText, confidence = 1.0f))
+        }
+
+        // DEBUG: Log language violation detection
+        if (!languageTag.startsWith("en", ignoreCase = true)) {
+            val attrMap = attributes.associate { it.key to it.value }
+            val violations = ItemAttributeLocalizer.detectEnglishViolations(attrMap, languageTag)
+            if (violations.isNotEmpty()) {
+                Log.w(TAG, "PROMPT_LANGUAGE_VIOLATION: Found ${violations.size} English values in $languageTag context: $violations")
+            }
         }
 
         return ItemContextSnapshot(

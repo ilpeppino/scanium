@@ -601,6 +601,58 @@
     <string name="item_condition_refurbished">Recondicionado</string>
     <string name="item_condition_refurbished_desc">Restaurado para condição de funcionamento</string>
 
+    <!-- Attribute Value Vocabulary: Colors -->
+    <string name="attr_color_red">Vermelho</string>
+    <string name="attr_color_orange">Laranja</string>
+    <string name="attr_color_yellow">Amarelo</string>
+    <string name="attr_color_green">Verde</string>
+    <string name="attr_color_blue">Azul</string>
+    <string name="attr_color_purple">Roxo</string>
+    <string name="attr_color_pink">Rosa</string>
+    <string name="attr_color_brown">Marrom</string>
+    <string name="attr_color_black">Preto</string>
+    <string name="attr_color_white">Branco</string>
+    <string name="attr_color_gray">Cinza</string>
+    <string name="attr_color_beige">Bege</string>
+    <string name="attr_color_gold">Dourado</string>
+    <string name="attr_color_silver">Prata</string>
+    <string name="attr_color_navy">Azul marinho</string>
+    <string name="attr_color_teal">Azul petróleo</string>
+    <string name="attr_color_turquoise">Turquesa</string>
+    <string name="attr_color_maroon">Bordô</string>
+    <string name="attr_color_olive">Oliva</string>
+    <string name="attr_color_coral">Coral</string>
+    <string name="attr_color_cream">Creme</string>
+    <string name="attr_color_tan">Castanho</string>
+    <string name="attr_color_multicolor">Multicolorido</string>
+
+    <!-- Attribute Value Vocabulary: Materials -->
+    <string name="attr_material_cotton">Algodão</string>
+    <string name="attr_material_polyester">Poliéster</string>
+    <string name="attr_material_wool">Lã</string>
+    <string name="attr_material_silk">Seda</string>
+    <string name="attr_material_leather">Couro</string>
+    <string name="attr_material_denim">Jeans</string>
+    <string name="attr_material_linen">Linho</string>
+    <string name="attr_material_nylon">Nylon</string>
+    <string name="attr_material_plastic">Plástico</string>
+    <string name="attr_material_metal">Metal</string>
+    <string name="attr_material_wood">Madeira</string>
+    <string name="attr_material_glass">Vidro</string>
+    <string name="attr_material_rubber">Borracha</string>
+    <string name="attr_material_ceramic">Cerâmica</string>
+    <string name="attr_material_fabric">Tecido</string>
+    <string name="attr_material_velvet">Veludo</string>
+    <string name="attr_material_suede">Camurça</string>
+    <string name="attr_material_canvas">Lona</string>
+    <string name="attr_material_synthetic">Sintético</string>
+    <string name="attr_material_acrylic">Acrílico</string>
+    <string name="attr_material_stainless_steel">Aço inoxidável</string>
+    <string name="attr_material_aluminum">Alumínio</string>
+    <string name="attr_material_brass">Latão</string>
+    <string name="attr_material_copper">Cobre</string>
+    <string name="attr_material_porcelain">Porcelana</string>
+
     <!-- Attribute Sources (localized labels) -->
     <string name="attribute_source_vision">Detecção visual</string>
     <string name="attribute_source_vision_color">Detecção de cor</string>
