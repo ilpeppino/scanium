@@ -91,44 +91,35 @@ query_grafana_api() {
 validate_mimir() {
     log "Validating Mimir (Metrics)..."
 
-    local datasources
-    datasources=$(query_grafana_api "/api/datasources")
-
-    local mimir_uid
-    mimir_uid=$(echo "$datasources" | jq -r '.[] | select(.type == "prometheus") | .uid' | head -1)
-
-    if [[ -z "$mimir_uid" || "$mimir_uid" == "null" ]]; then
-        error "Mimir datasource not found"
-        return 1
-    fi
-
-    # Query for up metric to get series count
-    local query='{"queries":[{"refId":"A","expr":"up","datasource":{"type":"prometheus","uid":"'"$mimir_uid"'"}}]}'
+    # Query Mimir directly for up metric
+    local mimir_url="http://127.0.0.1:9009"
     local response
-    response=$(query_grafana_api "/api/ds/query" -X POST -H "Content-Type: application/json" -d "$query")
+    response=$(curl -s "${mimir_url}/prometheus/api/v1/query?query=up" 2>/dev/null || echo '{"data":{"result":[]}}')
 
     local series_count
-    series_count=$(echo "$response" | jq -r '.results.A.frames[0].data.values[0] | length' 2>/dev/null || echo "0")
+    series_count=$(echo "$response" | jq '.data.result | length' 2>/dev/null || echo "0")
 
-    # Query for job labels to check for application metrics
-    local jobs_query='{"queries":[{"refId":"A","expr":"label_values(up, job)","datasource":{"type":"prometheus","uid":"'"$mimir_uid"'"}}]}'
+    # Get all job labels
     local jobs_response
-    jobs_response=$(query_grafana_api "/api/ds/query" -X POST -H "Content-Type: application/json" -d "$jobs_query")
+    jobs_response=$(curl -s "${mimir_url}/prometheus/api/v1/label/job/values" 2>/dev/null || echo '{"data":[]}')
 
-    local jobs
-    jobs=$(echo "$jobs_response" | jq -r '.results.A.frames[0].data.values[0][]?' 2>/dev/null | grep -v '^\(alloy\|loki\|mimir\|tempo\)$' || echo "")
+    local all_jobs
+    all_jobs=$(echo "$jobs_response" | jq -r '.data[]?' 2>/dev/null || echo "")
+
+    local app_jobs
+    app_jobs=$(echo "$all_jobs" | grep -v '^\(alloy\|loki\|mimir\|tempo\)$' || echo "")
 
     if [[ "$series_count" -eq 0 ]]; then
         error "Mimir: No data series found"
         return 1
-    elif [[ -z "$jobs" ]]; then
-        warning "Mimir: Only LGTM stack metrics found, no application metrics"
+    elif [[ -z "$app_jobs" ]]; then
+        warning "Mimir: Only LGTM stack metrics found ($series_count series), no application metrics"
         if [[ "$STRICT_MODE" == "true" ]]; then
             return 1
         fi
         return 0
     else
-        success "Mimir: $series_count series, application jobs: $(echo "$jobs" | tr '\n' ',' | sed 's/,$//')"
+        success "Mimir: $series_count series, application jobs: $(echo "$app_jobs" | tr '\n' ',' | sed 's/,$//')"
         return 0
     fi
 }
