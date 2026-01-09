@@ -63,16 +63,17 @@ class FeatureFlagsTest {
     }
 
     @Test
-    fun `beta and prod builds have restricted features`() {
+    fun `beta and prod builds have AI assistant enabled but restricted dev features`() {
         // This test verifies the expected beta/prod build configuration
         // It will only pass when run against betaDebug or prodDebug variants
         if (!BuildConfig.DEV_MODE_ENABLED) {
             assertThat(FeatureFlags.allowDeveloperMode).isFalse()
-            assertThat(FeatureFlags.allowScreenshots).isFalse()
-            assertThat(FeatureFlags.allowAiAssistant).isFalse()
-            assertThat(FeatureFlags.maxImageResolution).isEqualTo("NORMAL")
-            assertThat(FeatureFlags.showItemDiagnostics).isFalse()
-            assertThat(FeatureFlags.allowHighResolution).isFalse()
+            assertThat(FeatureFlags.allowScreenshots).isTrue()
+            // AI Assistant is now enabled in beta/prod (no subscription required)
+            assertThat(FeatureFlags.allowAiAssistant).isTrue()
+            assertThat(FeatureFlags.maxImageResolution).isEqualTo("HIGH")
+            assertThat(FeatureFlags.showItemDiagnostics).isTrue()
+            assertThat(FeatureFlags.allowHighResolution).isTrue()
         }
     }
 }
