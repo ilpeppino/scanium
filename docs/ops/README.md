@@ -127,3 +127,8 @@ These scripts are designed as Phase 1 of the ops toolkit. Future phases may incl
 - Prometheus metrics export
 - Automated alerting integration
 - Log aggregation
+
+***REMOVED******REMOVED*** Build Tooling
+
+- AGP upgraded to 8.6.0 to align with compileSdk 35 (Android 15 API support) and remove the compileSdk warning.
+- Gradle wrapper remains 8.7, which is the minimum required for AGP 8.6.
