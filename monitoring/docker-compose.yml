@@ -17,6 +17,7 @@ services:
       - "127.0.0.1:12345:12345" ***REMOVED*** Alloy UI/metrics (localhost only - debugging)
     volumes:
       - ./alloy/alloy.hcl:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     command:
       - run
       - /etc/alloy/config.alloy

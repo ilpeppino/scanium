@@ -31,6 +31,19 @@ otelcol.receiver.otlp "mobile_grpc" {
   }
 }
 
+// OTLP HTTP receiver (backend API)
+otelcol.receiver.otlp "backend_http" {
+  http {
+    endpoint = "0.0.0.0:4319"
+  }
+
+  output {
+    logs    = [otelcol.processor.batch.backend.input]
+    metrics = [otelcol.processor.batch.backend.input]
+    traces  = [otelcol.processor.batch.backend.input]
+  }
+}
+
 // ============================================================================
 // Processors
 // ============================================================================
@@ -49,6 +62,18 @@ otelcol.processor.batch "mobile" {
   }
 }
 
+otelcol.processor.batch "backend" {
+  send_batch_size         = 100
+  send_batch_max_size     = 200
+  timeout                 = "5s"
+
+  output {
+    logs    = [otelcol.exporter.loki.backend.input]
+    metrics = [otelcol.exporter.prometheus.backend.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
 // ============================================================================
 // Exporters
 // ============================================================================
@@ -56,6 +81,10 @@ otelcol.processor.batch "mobile" {
 // Loki exporter for logs
 otelcol.exporter.loki "mobile" {
   forward_to = [loki.process.mobile.receiver]
+}
+
+otelcol.exporter.loki "backend" {
+  forward_to = [loki.write.backend.receiver]
 }
 
 // Process logs to extract labels
@@ -91,9 +120,39 @@ loki.write "mobile" {
   }
 }
 
+loki.write "backend" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+
+  external_labels = {
+    source = "scanium-backend",
+    env    = "dev",
+  }
+}
+
+
+// Docker logs -> Loki (backend)
+loki.source.docker "backend" {
+  host = "unix:///var/run/docker.sock"
+
+  targets = [
+    {
+      container_name = "scanium-backend",
+      labels = "source=scanium-backend,env=dev",
+    },
+  ]
+
+  forward_to = [loki.write.backend.receiver]
+}
+
 // Prometheus remote write exporter for metrics (to Mimir)
 otelcol.exporter.prometheus "mobile" {
   forward_to = [prometheus.remote_write.mobile.receiver]
+}
+
+otelcol.exporter.prometheus "backend" {
+  forward_to = [prometheus.remote_write.backend.receiver]
 }
 
 prometheus.remote_write "mobile" {
@@ -183,6 +242,37 @@ prometheus.scrape "mimir" {
   forward_to      = [prometheus.remote_write.pipeline.receiver]
   scrape_interval = "60s"
   scrape_timeout  = "10s"
+}
+
+
+// Scrape Backend metrics
+prometheus.scrape "backend" {
+  targets = [
+    {
+      __address__      = "scanium-backend:8080",
+      __metrics_path__ = "/metrics",
+      job              = "scanium-backend",
+      instance         = "scanium-backend",
+    },
+  ]
+  forward_to      = [prometheus.remote_write.backend.receiver]
+  scrape_interval = "60s"  // Reduced frequency for NAS resource constraints
+  scrape_timeout  = "10s"
+}
+
+
+// Remote write for backend metrics
+prometheus.remote_write "backend" {
+  endpoint {
+    url = "http://mimir:9009/api/v1/push"
+  }
+
+  external_labels = {
+    source                  = "scanium-backend",
+    env                     = "dev",
+    service_name            = "scanium-backend",
+    deployment_environment  = "dev",
+  }
 }
 
 // Remote write for pipeline self-observability metrics
