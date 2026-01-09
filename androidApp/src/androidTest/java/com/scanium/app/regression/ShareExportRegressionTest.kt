@@ -352,4 +352,93 @@ class ShareExportRegressionTest {
 
             zipFileObj.delete()
         }
+
+    @Test
+    fun testItemThumbnails_PersistAfterShareOperations() =
+        runTest {
+            // REGRESSION TEST: Validates that item thumbnails are preserved after share operations
+            // Bug: After sharing, Android kills app process. On restart, items showed photo placeholders
+            // Root cause: ImageRef.CacheKey was not being persisted, only ImageRef.Bytes should be saved
+
+            // Arrange - Create items with thumbnails
+            val itemsWithThumbnails = listOf(
+                createTestItem(id = "persist_test_1", label = "Item 1"),
+                createTestItem(id = "persist_test_2", label = "Item 2"),
+                createTestItem(id = "persist_test_3", label = "Item 3"),
+            )
+
+            // Verify items have valid thumbnail bytes
+            itemsWithThumbnails.forEach { item ->
+                assertThat(item.thumbnail).isInstanceOf(ImageRef.Bytes::class.java)
+                val bytes = (item.thumbnail as ImageRef.Bytes).bytes
+                assertThat(bytes).isNotEmpty()
+                assertThat(bytes.size).isGreaterThan(100) // JPEG should be non-trivial size
+            }
+
+            // Simulate persistence cycle (what happens during share)
+            val entities = itemsWithThumbnails.map { it.toEntity() }
+
+            // Assert - Entities should have thumbnail bytes (not null)
+            entities.forEach { entity ->
+                assertThat(entity.thumbnailBytes).isNotNull()
+                assertThat(entity.thumbnailBytes).isNotEmpty()
+                assertThat(entity.thumbnailMimeType).isEqualTo("image/jpeg")
+                assertThat(entity.thumbnailWidth).isEqualTo(200)
+                assertThat(entity.thumbnailHeight).isEqualTo(200)
+            }
+
+            // Simulate app restart - load from database
+            val restoredItems = entities.map { it.toModel() }
+
+            // Assert - Restored items should have valid thumbnails (not null, not placeholders)
+            restoredItems.forEach { item ->
+                assertThat(item.thumbnail).isNotNull()
+                assertThat(item.thumbnail).isInstanceOf(ImageRef.Bytes::class.java)
+                val bytes = (item.thumbnail as ImageRef.Bytes).bytes
+                assertThat(bytes).isNotEmpty()
+                assertThat(bytes.size).isGreaterThan(100)
+            }
+        }
+
+    @Test
+    fun testCacheKeyThumbnails_ResolveBeforePersistence() =
+        runTest {
+            // REGRESSION TEST: Validates that CacheKey thumbnails are resolved to Bytes before persistence
+            // This simulates the runtime scenario where items use CacheKey for performance
+
+            // Arrange - Create item with Bytes thumbnail
+            val originalItem = createTestItem(id = "cache_key_test", label = "Cache Key Item")
+            val originalBytes = (originalItem.thumbnail as ImageRef.Bytes).bytes
+
+            // Simulate runtime caching (what ItemsStateManager.cacheThumbnails() does)
+            com.scanium.app.items.ThumbnailCache.put("cache_key_test", originalItem.thumbnail as ImageRef.Bytes)
+
+            // Create item with CacheKey reference (simulating UI state)
+            val cachedItem = originalItem.copy(
+                thumbnail = ImageRef.CacheKey(
+                    key = "cache_key_test",
+                    mimeType = "image/jpeg",
+                    width = 200,
+                    height = 200,
+                )
+            )
+
+            // Act - Persist item with CacheKey thumbnail
+            val entity = cachedItem.toEntity()
+
+            // Assert - Entity should have resolved bytes from cache (not null)
+            assertThat(entity.thumbnailBytes).isNotNull()
+            assertThat(entity.thumbnailBytes).isNotEmpty()
+            assertThat(entity.thumbnailBytes).isEqualTo(originalBytes)
+
+            // Verify restoration works correctly
+            val restored = entity.toModel()
+            assertThat(restored.thumbnail).isNotNull()
+            assertThat(restored.thumbnail).isInstanceOf(ImageRef.Bytes::class.java)
+            val restoredBytes = (restored.thumbnail as ImageRef.Bytes).bytes
+            assertThat(restoredBytes).isEqualTo(originalBytes)
+
+            // Cleanup
+            com.scanium.app.items.ThumbnailCache.remove("cache_key_test")
+        }
 }

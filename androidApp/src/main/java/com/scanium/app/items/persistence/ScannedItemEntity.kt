@@ -249,7 +249,14 @@ private data class ImageFields(
 private fun ImageRef?.toImageFields(): ImageFields? {
     return when (this) {
         is ImageRef.Bytes -> ImageFields(bytes = bytes, mimeType = mimeType, width = width, height = height)
-        is ImageRef.CacheKey -> null // CacheKey cannot be persisted directly, would need resolution first
+        is ImageRef.CacheKey -> {
+            // CRITICAL FIX: Resolve CacheKey from ThumbnailCache before persisting
+            // This prevents photo placeholders after app process death (e.g., returning from share intents)
+            val resolved = ThumbnailCache.get(key)
+            resolved?.let {
+                ImageFields(bytes = it.bytes, mimeType = it.mimeType, width = it.width, height = it.height)
+            }
+        }
         null -> null
     }
 }
