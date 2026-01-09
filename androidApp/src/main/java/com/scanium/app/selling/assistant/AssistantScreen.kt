@@ -5,11 +5,21 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -65,6 +76,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -77,6 +89,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -759,106 +772,116 @@ private fun MessageBubble(
     getExistingAttribute: ((String) -> com.scanium.shared.core.models.items.ItemAttribute?)? = null,
     visionInsightsEnabled: Boolean = false,
 ) {
-    val isUser = entry.message.role == AssistantRole.USER
-    val background = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-    val alignment = if (isUser) Alignment.End else Alignment.Start
-    var pendingConfirmAction by remember { mutableStateOf<AssistantAction?>(null) }
+    // Only animate entrance for the assistant's latest message or user message
+    // We rely on the parent LazyColumn's state for "newness", but here we just animate appearance
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(animationSpec = tween(300)) + 
+                expandVertically(expandFrom = Alignment.Bottom) +
+                scaleIn(initialScale = 0.9f, animationSpec = tween(300)),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        val isUser = entry.message.role == AssistantRole.USER
+        val background = if (isUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+        val alignment = if (isUser) Alignment.End else Alignment.Start
+        var pendingConfirmAction by remember { mutableStateOf<AssistantAction?>(null) }
 
-    // Confirmation dialog
-    pendingConfirmAction?.let { action ->
-        ConfirmActionDialog(
-            action = action,
-            onConfirm = {
-                onAction(action)
-                pendingConfirmAction = null
-            },
-            onDismiss = { pendingConfirmAction = null },
-        )
-    }
-
-    Column(horizontalAlignment = alignment, modifier = modifier.fillMaxWidth()) {
-        Card(
-            colors = CardDefaults.cardColors(containerColor = background),
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                // Confidence tier label (if present)
-                entry.confidenceTier?.let { tier ->
-                    ConfidenceLabel(tier)
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-
-                Text(
-                    text = entry.message.content,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-
-                // Evidence section (if present)
-                if (entry.evidence.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    EvidenceSection(evidence = entry.evidence)
-                }
-
-                // Suggested next photo (if present)
-                entry.suggestedNextPhoto?.let { suggestion ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    SuggestedPhotoHint(suggestion = suggestion)
-                }
-            }
-        }
-
-        // Vision Insights section (for assistant messages with suggested attributes)
-        if (!isUser &&
-            visionInsightsEnabled &&
-            entry.suggestedAttributes.isNotEmpty() &&
-            onApplyVisionAttribute != null &&
-            onVisionAttributeConflict != null &&
-            getExistingAttribute != null
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
-            VisionInsightsSection(
-                suggestedAttributes = entry.suggestedAttributes,
-                onApplyAttribute = onApplyVisionAttribute,
-                onAttributeConflict = onVisionAttributeConflict,
-                getExistingAttribute = getExistingAttribute,
-                enabled = true,
+        // Confirmation dialog
+        pendingConfirmAction?.let { action ->
+            ConfirmActionDialog(
+                action = action,
+                onConfirm = {
+                    onAction(action)
+                    pendingConfirmAction = null
+                },
+                onDismiss = { pendingConfirmAction = null },
             )
         }
 
-        if (entry.actions.isNotEmpty() && !isUser) {
-            Row(
-                modifier =
-                    Modifier
-                        .padding(top = 8.dp)
-                        .horizontalScroll(rememberScrollState())
-                        .then(
-                            if (actionTraversalIndex != null) {
-                                Modifier.semantics { traversalIndex = actionTraversalIndex }
-                            } else {
-                                Modifier
-                            },
-                        ),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(horizontalAlignment = alignment, modifier = Modifier.fillMaxWidth()) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = background),
             ) {
-                entry.actions.forEach { action ->
-                    if (action.requiresConfirmation) {
-                        OutlinedButton(
-                            onClick = { pendingConfirmAction = action },
-                            modifier =
-                                Modifier
-                                    .sizeIn(minHeight = 48.dp)
-                                    .semantics { contentDescription = actionContentDescription(action) },
-                        ) {
-                            Text(text = actionLabel(action), textAlign = TextAlign.Center)
-                        }
-                    } else {
-                        Button(
-                            onClick = { onAction(action) },
-                            modifier =
-                                Modifier
-                                    .sizeIn(minHeight = 48.dp)
-                                    .semantics { contentDescription = actionContentDescription(action) },
-                        ) {
-                            Text(text = actionLabel(action), textAlign = TextAlign.Center)
+                Column(modifier = Modifier.padding(12.dp)) {
+                    // Confidence tier label (if present)
+                    entry.confidenceTier?.let { tier ->
+                        ConfidenceLabel(tier)
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    Text(
+                        text = entry.message.content,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+
+                    // Evidence section (if present)
+                    if (entry.evidence.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        EvidenceSection(evidence = entry.evidence)
+                    }
+
+                    // Suggested next photo (if present)
+                    entry.suggestedNextPhoto?.let { suggestion ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SuggestedPhotoHint(suggestion = suggestion)
+                    }
+                }
+            }
+
+            // Vision Insights section (for assistant messages with suggested attributes)
+            if (!isUser &&
+                visionInsightsEnabled &&
+                entry.suggestedAttributes.isNotEmpty() &&
+                onApplyVisionAttribute != null &&
+                onVisionAttributeConflict != null &&
+                getExistingAttribute != null
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+                VisionInsightsSection(
+                    suggestedAttributes = entry.suggestedAttributes,
+                    onApplyAttribute = onApplyVisionAttribute,
+                    onAttributeConflict = onVisionAttributeConflict,
+                    getExistingAttribute = getExistingAttribute,
+                    enabled = true,
+                )
+            }
+
+            if (entry.actions.isNotEmpty() && !isUser) {
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(top = 8.dp)
+                            .horizontalScroll(rememberScrollState())
+                            .then(
+                                if (actionTraversalIndex != null) {
+                                    Modifier.semantics { traversalIndex = actionTraversalIndex }
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    entry.actions.forEach { action ->
+                        if (action.requiresConfirmation) {
+                            OutlinedButton(
+                                onClick = { pendingConfirmAction = action },
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minHeight = 48.dp)
+                                        .semantics { contentDescription = actionContentDescription(action) },
+                            ) {
+                                Text(text = actionLabel(action), textAlign = TextAlign.Center)
+                            }
+                        } else {
+                            Button(
+                                onClick = { onAction(action) },
+                                modifier =
+                                    Modifier
+                                        .sizeIn(minHeight = 48.dp)
+                                        .semantics { contentDescription = actionContentDescription(action) },
+                            ) {
+                                Text(text = actionLabel(action), textAlign = TextAlign.Center)
+                            }
                         }
                     }
                 }
@@ -1020,6 +1043,41 @@ private fun ProgressIndicatorSection(
     }
 }
 
+@Composable
+fun TypingIndicator(
+    modifier: Modifier = Modifier,
+    dotColor: Color = MaterialTheme.colorScheme.primary,
+) {
+    val transition = rememberInfiniteTransition(label = "typing_dots")
+    val dotSize = 6.dp
+    val spaceBetween = 4.dp
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spaceBetween)
+    ) {
+        val dots = listOf(0, 150, 300)
+        dots.forEach { delay ->
+            val offset by transition.animateFloat(
+                initialValue = 0f,
+                targetValue = -6f, // Bounce up by 6 pixels
+                animationSpec = infiniteRepeatable(
+                    animation = tween(300, delayMillis = delay, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "dot_offset"
+            )
+            Box(
+                modifier = Modifier
+                    .size(dotSize)
+                    .offset { IntOffset(0, offset.toInt()) }
+                    .background(dotColor, shape = androidx.compose.foundation.shape.CircleShape)
+            )
+        }
+    }
+}
+
 /**
  * A single-line progress row with optional spinner and progress bar.
  * Maintains stable height to prevent layout jumps.
@@ -1038,14 +1096,18 @@ private fun ProgressStageRow(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.height(20.dp), // Fixed height for stability
+            modifier = Modifier.height(24.dp), // Increased height for bounce
         ) {
             if (showSpinner) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                if (label.contains("Thinking") || label.contains("Drafting")) {
+                    TypingIndicator(modifier = Modifier.padding(end = 4.dp))
+                } else {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
             Text(
                 text = label,
