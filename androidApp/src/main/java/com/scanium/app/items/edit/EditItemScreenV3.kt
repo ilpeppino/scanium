@@ -67,6 +67,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
+import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.model.toImageBitmap
@@ -106,13 +107,26 @@ fun EditItemScreenV3(
     }
 
     // Field state (local draft, synchronized with item.attributes)
+    // LOCALIZATION: Display values are localized for UI; save canonicalizes back to English
     var brandField by remember(item) { mutableStateOf(item?.attributes?.get("brand")?.value ?: "") }
     var productTypeField by remember(item) { mutableStateOf(item?.attributes?.get("itemType")?.value ?: "") }
     var modelField by remember(item) { mutableStateOf(item?.attributes?.get("model")?.value ?: "") }
-    var colorField by remember(item) { mutableStateOf(item?.attributes?.get("color")?.value ?: "") }
+    // Color: localize canonical value for display
+    var colorField by remember(item) {
+        val rawColor = item?.attributes?.get("color")?.value ?: ""
+        mutableStateOf(if (rawColor.isNotEmpty()) ItemAttributeLocalizer.localizeColor(context, rawColor) else "")
+    }
     var sizeField by remember(item) { mutableStateOf(item?.attributes?.get("size")?.value ?: "") }
-    var materialField by remember(item) { mutableStateOf(item?.attributes?.get("material")?.value ?: "") }
-    var conditionField by remember(item) { mutableStateOf(item?.attributes?.get("condition")?.value ?: item?.condition?.name ?: "") }
+    // Material: localize canonical value for display
+    var materialField by remember(item) {
+        val rawMaterial = item?.attributes?.get("material")?.value ?: ""
+        mutableStateOf(if (rawMaterial.isNotEmpty()) ItemAttributeLocalizer.localizeMaterial(context, rawMaterial) else "")
+    }
+    // Condition: localize canonical value for display
+    var conditionField by remember(item) {
+        val rawCondition = item?.attributes?.get("condition")?.value ?: item?.condition?.name ?: ""
+        mutableStateOf(if (rawCondition.isNotEmpty()) ItemAttributeLocalizer.localizeCondition(context, rawCondition) else "")
+    }
     var notesField by remember(item) { mutableStateOf(item?.attributesSummaryText ?: "") }
 
     val currentItem = item
@@ -180,6 +194,7 @@ fun EditItemScreenV3(
                         onClick = {
                             // Save fields to attributes BEFORE calling AI
                             saveFieldsToAttributes(
+                                context = context,
                                 itemsViewModel = itemsViewModel,
                                 itemId = itemId,
                                 brandField = brandField,
@@ -213,6 +228,7 @@ fun EditItemScreenV3(
                     Button(
                         onClick = {
                             saveFieldsToAttributes(
+                                context = context,
                                 itemsViewModel = itemsViewModel,
                                 itemId = itemId,
                                 brandField = brandField,
@@ -574,8 +590,12 @@ private fun AddPhotoButtonV3(onClick: () -> Unit) {
 /**
  * Save field values to item attributes with USER source.
  * This ensures the AI export uses the latest edited values.
+ *
+ * LOCALIZATION: Converts localized display values back to canonical (English)
+ * form before saving. This ensures internal storage remains language-neutral.
  */
 private fun saveFieldsToAttributes(
+    context: android.content.Context,
     itemsViewModel: ItemsViewModel,
     itemId: String,
     brandField: String,
@@ -612,11 +632,13 @@ private fun saveFieldsToAttributes(
         )
     }
 
+    // LOCALIZATION: Canonicalize color back to English before saving
     if (colorField.isNotBlank()) {
+        val canonicalColor = ItemAttributeLocalizer.canonicalizeColor(context, colorField)
         itemsViewModel.updateItemAttribute(
             itemId,
             "color",
-            ItemAttribute(value = colorField, confidence = 1.0f, source = "USER"),
+            ItemAttribute(value = canonicalColor, confidence = 1.0f, source = "USER"),
         )
     }
 
@@ -628,19 +650,23 @@ private fun saveFieldsToAttributes(
         )
     }
 
+    // LOCALIZATION: Canonicalize material back to English before saving
     if (materialField.isNotBlank()) {
+        val canonicalMaterial = ItemAttributeLocalizer.canonicalizeMaterial(context, materialField)
         itemsViewModel.updateItemAttribute(
             itemId,
             "material",
-            ItemAttribute(value = materialField, confidence = 1.0f, source = "USER"),
+            ItemAttribute(value = canonicalMaterial, confidence = 1.0f, source = "USER"),
         )
     }
 
+    // LOCALIZATION: Canonicalize condition back to English before saving
     if (conditionField.isNotBlank()) {
+        val canonicalCondition = ItemAttributeLocalizer.canonicalizeCondition(context, conditionField)
         itemsViewModel.updateItemAttribute(
             itemId,
             "condition",
-            ItemAttribute(value = conditionField, confidence = 1.0f, source = "USER"),
+            ItemAttribute(value = canonicalCondition, confidence = 1.0f, source = "USER"),
         )
     }
 

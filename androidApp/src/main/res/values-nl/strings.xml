@@ -600,6 +600,58 @@
     <string name="item_condition_refurbished">Gereviseerd</string>
     <string name="item_condition_refurbished_desc">Hersteld naar werkende conditie</string>
 
+    <!-- Attribute Value Vocabulary: Colors -->
+    <string name="attr_color_red">Rood</string>
+    <string name="attr_color_orange">Oranje</string>
+    <string name="attr_color_yellow">Geel</string>
+    <string name="attr_color_green">Groen</string>
+    <string name="attr_color_blue">Blauw</string>
+    <string name="attr_color_purple">Paars</string>
+    <string name="attr_color_pink">Roze</string>
+    <string name="attr_color_brown">Bruin</string>
+    <string name="attr_color_black">Zwart</string>
+    <string name="attr_color_white">Wit</string>
+    <string name="attr_color_gray">Grijs</string>
+    <string name="attr_color_beige">Beige</string>
+    <string name="attr_color_gold">Goud</string>
+    <string name="attr_color_silver">Zilver</string>
+    <string name="attr_color_navy">Marineblauw</string>
+    <string name="attr_color_teal">Blauwgroen</string>
+    <string name="attr_color_turquoise">Turquoise</string>
+    <string name="attr_color_maroon">Bordeauxrood</string>
+    <string name="attr_color_olive">Olijf</string>
+    <string name="attr_color_coral">Koraal</string>
+    <string name="attr_color_cream">Crème</string>
+    <string name="attr_color_tan">Lichtbruin</string>
+    <string name="attr_color_multicolor">Meerkleurig</string>
+
+    <!-- Attribute Value Vocabulary: Materials -->
+    <string name="attr_material_cotton">Katoen</string>
+    <string name="attr_material_polyester">Polyester</string>
+    <string name="attr_material_wool">Wol</string>
+    <string name="attr_material_silk">Zijde</string>
+    <string name="attr_material_leather">Leer</string>
+    <string name="attr_material_denim">Denim</string>
+    <string name="attr_material_linen">Linnen</string>
+    <string name="attr_material_nylon">Nylon</string>
+    <string name="attr_material_plastic">Plastic</string>
+    <string name="attr_material_metal">Metaal</string>
+    <string name="attr_material_wood">Hout</string>
+    <string name="attr_material_glass">Glas</string>
+    <string name="attr_material_rubber">Rubber</string>
+    <string name="attr_material_ceramic">Keramiek</string>
+    <string name="attr_material_fabric">Stof</string>
+    <string name="attr_material_velvet">Fluweel</string>
+    <string name="attr_material_suede">Suède</string>
+    <string name="attr_material_canvas">Canvas</string>
+    <string name="attr_material_synthetic">Synthetisch</string>
+    <string name="attr_material_acrylic">Acryl</string>
+    <string name="attr_material_stainless_steel">Roestvrij staal</string>
+    <string name="attr_material_aluminum">Aluminium</string>
+    <string name="attr_material_brass">Messing</string>
+    <string name="attr_material_copper">Koper</string>
+    <string name="attr_material_porcelain">Porselein</string>
+
     <!-- Attribute Sources (localized labels) -->
     <string name="attribute_source_vision">Visuele detectie</string>
     <string name="attribute_source_vision_color">Kleurdetectie</string>
