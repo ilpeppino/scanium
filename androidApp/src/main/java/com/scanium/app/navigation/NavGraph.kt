@@ -21,7 +21,7 @@ import com.scanium.app.billing.ui.PaywallViewModel
 import com.scanium.app.camera.CameraScreen
 import com.scanium.app.camera.CameraViewModel
 import com.scanium.app.items.EditItemsScreen
-import com.scanium.app.items.edit.EditItemScreenV2
+import com.scanium.app.items.edit.EditItemScreenV3
 import com.scanium.app.items.edit.ExportAssistantViewModel
 import com.scanium.app.items.edit.rememberAddPhotoHandler
 import com.scanium.app.items.ItemsListScreen
@@ -255,7 +255,7 @@ fun ScaniumNavGraph(
                 ?.split(",")
                 ?.filter { it.isNotBlank() }
                 ?: emptyList()
-            // V2: Single-item edit page (uses first ID from selection)
+            // V3: Single-item edit page with structured fields (uses first ID from selection)
             val itemId = ids.firstOrNull() ?: ""
             if (itemId.isNotEmpty()) {
                 // Add Photo handler - manages camera/gallery capture flow
@@ -270,7 +270,7 @@ fun ScaniumNavGraph(
                     },
                 )
 
-                EditItemScreenV2(
+                EditItemScreenV3(
                     itemId = itemId,
                     onBack = { navController.popBackStack() },
                     onAddPhotos = { targetItemId ->
