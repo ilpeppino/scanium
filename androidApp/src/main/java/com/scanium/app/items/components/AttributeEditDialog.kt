@@ -33,9 +33,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.shared.core.models.items.AttributeConfidenceTier
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.VisionAttributes
@@ -68,6 +70,7 @@ fun AttributeEditDialog(
     onDismiss: () -> Unit,
     onConfirm: (ItemAttribute) -> Unit,
 ) {
+    val context = LocalContext.current
     var editedValue by remember { mutableStateOf(attribute.value) }
 
     // Generate suggestions based on attribute key
@@ -102,6 +105,11 @@ fun AttributeEditDialog(
     val attributeLabel = getAttributeLabelResource(attributeKey)?.let { stringResource(it) }
         ?: attributeKey.replaceFirstChar { it.uppercase() }
 
+    val displayDetectedValue = detectedValue?.let {
+        AttributeDisplayFormatter.formatForDisplay(context, attributeKey, it)
+    }
+    val displayAttributeValue = AttributeDisplayFormatter.formatForDisplay(context, attributeKey, attribute.value)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -115,12 +123,15 @@ fun AttributeEditDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 // Current confidence indicator
-                CurrentConfidenceRow(attribute = attribute)
+                CurrentConfidenceRow(
+                    attribute = attribute,
+                    displayValue = displayAttributeValue,
+                )
 
                 // Show original detected value if different
-                if (detectedValue != null && detectedValue != attribute.value) {
+                if (displayDetectedValue != null && detectedValue != attribute.value) {
                     Text(
-                        text = stringResource(R.string.items_attribute_originally_detected, detectedValue),
+                        text = stringResource(R.string.items_attribute_originally_detected, displayDetectedValue),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                     )
@@ -135,6 +146,7 @@ fun AttributeEditDialog(
                     label = { Text(attributeLabel) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = AttributeDisplayFormatter.visualTransformation(context, attributeKey),
                 )
 
                 // Suggestions section
@@ -153,9 +165,14 @@ fun AttributeEditDialog(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             suggestions.forEach { suggestion ->
+                                val displaySuggestion = AttributeDisplayFormatter.formatForDisplay(
+                                    context,
+                                    attributeKey,
+                                    suggestion,
+                                )
                                 SuggestionChip(
                                     onClick = { editedValue = suggestion },
-                                    label = { Text(suggestion) },
+                                    label = { Text(displaySuggestion) },
                                     colors = SuggestionChipDefaults.suggestionChipColors(
                                         containerColor = if (editedValue == suggestion) {
                                             MaterialTheme.colorScheme.primaryContainer
@@ -216,7 +233,10 @@ fun AttributeEditDialog(
 }
 
 @Composable
-private fun CurrentConfidenceRow(attribute: ItemAttribute) {
+private fun CurrentConfidenceRow(
+    attribute: ItemAttribute,
+    displayValue: String,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -266,7 +286,7 @@ private fun CurrentConfidenceRow(attribute: ItemAttribute) {
 
         Column {
             Text(
-                text = stringResource(R.string.attribute_current_value, attribute.value),
+                text = stringResource(R.string.attribute_current_value, displayValue),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
