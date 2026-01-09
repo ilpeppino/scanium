@@ -73,12 +73,8 @@ class TelemetryTest {
     private class CapturingTracePort : TracePort {
         val spans = mutableListOf<Pair<String, Map<String, String>>>()
 
-        override fun beginSpan(
-            name: String,
-            attributes: Map<String, String>,
-        ): SpanContext {
-            spans.add(Pair(name, attributes))
-            return object : SpanContext {
+        private fun createTestSpanContext(): SpanContext =
+            object : SpanContext {
                 override fun end(additionalAttributes: Map<String, String>) {}
 
                 override fun setAttribute(
@@ -90,7 +86,29 @@ class TelemetryTest {
                     error: String,
                     attributes: Map<String, String>,
                 ) {}
+
+                override fun getTraceId(): String = "00000000000000000000000000000001"
+
+                override fun getSpanId(): String = "0000000000000001"
+
+                override fun getTraceFlags(): String = "01"
             }
+
+        override fun beginSpan(
+            name: String,
+            attributes: Map<String, String>,
+        ): SpanContext {
+            spans.add(Pair(name, attributes))
+            return createTestSpanContext()
+        }
+
+        override fun beginChildSpan(
+            name: String,
+            parent: SpanContext,
+            attributes: Map<String, String>,
+        ): SpanContext {
+            spans.add(Pair(name, attributes))
+            return createTestSpanContext()
         }
     }
 

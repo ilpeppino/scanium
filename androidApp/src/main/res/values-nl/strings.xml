@@ -525,6 +525,10 @@
     <string name="common_prev">Vorige</string>
     <string name="common_copied_label">%1$s gekopieerd naar klembord</string>
 
+    <!-- Photo Gallery -->
+    <string name="photo_gallery_page_indicator">%1$d / %2$d</string>
+    <string name="photo_gallery_image_description">Afbeelding %1$d van %2$d</string>
+
     <!-- Edit Item Screen -->
     <string name="edit_item_not_found">Item niet gevonden</string>
     <string name="edit_item_photos">Foto\'s</string>

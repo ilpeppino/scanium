@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -74,6 +75,7 @@ import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Redesigned Edit Item screen with structured labeled fields (Phase 3 UX redesign).
@@ -107,6 +109,10 @@ fun EditItemScreenV3(
     val exportAssistantViewModel = remember(exportAssistantViewModelFactory, itemId) {
         exportAssistantViewModelFactory?.create(itemId, itemsViewModel)
     }
+
+    // Photo Gallery Dialog state
+    var showPhotoGallery by remember { mutableStateOf(false) }
+    var galleryStartIndex by remember { mutableStateOf(0) }
 
     // Field state (local draft, synchronized with item.attributes)
     // LOCALIZATION: Display values are localized for UI; save canonicalizes back to English
@@ -279,11 +285,15 @@ fun EditItemScreenV3(
                         bitmap = thumbnailBitmap,
                         label = stringResource(R.string.edit_item_photo_primary),
                         isPrimary = true,
+                        onClick = {
+                            galleryStartIndex = 0
+                            showPhotoGallery = true
+                        },
                     )
                 }
 
                 // Additional photos
-                items(currentItem.additionalPhotos) { photo ->
+                itemsIndexed(currentItem.additionalPhotos) { index, photo ->
                     val photoBitmap = remember(photo.uri) {
                         photo.uri?.let { uri ->
                             try {
@@ -297,6 +307,11 @@ fun EditItemScreenV3(
                         bitmap = photoBitmap?.asImageBitmap(),
                         label = null,
                         isPrimary = false,
+                        onClick = {
+                            // Index is offset by 1 because primary photo is at index 0
+                            galleryStartIndex = index + 1
+                            showPhotoGallery = true
+                        },
                     )
                 }
 
@@ -433,6 +448,33 @@ fun EditItemScreenV3(
         }
     }
 
+    // Photo Gallery Dialog
+    if (showPhotoGallery) {
+        // Build list of gallery photo refs
+        val galleryPhotos = remember(currentItem) {
+            buildList {
+                // Add primary thumbnail first
+                (currentItem.thumbnailRef ?: currentItem.thumbnail)?.let { imageRef ->
+                    add(GalleryPhotoRef.FromImageRef(imageRef))
+                }
+                // Add additional photos
+                currentItem.additionalPhotos.forEach { photo ->
+                    photo.uri?.let { path ->
+                        add(GalleryPhotoRef.FromFilePath(path))
+                    }
+                }
+            }
+        }
+
+        if (galleryPhotos.isNotEmpty()) {
+            PhotoGalleryDialog(
+                photos = galleryPhotos,
+                initialIndex = galleryStartIndex,
+                onDismiss = { showPhotoGallery = false },
+            )
+        }
+    }
+
     // Export Assistant Bottom Sheet
     if (showExportAssistantSheet && exportAssistantViewModel != null) {
         ExportAssistantSheet(
@@ -508,6 +550,7 @@ private fun PhotoThumbnailV3(
     bitmap: androidx.compose.ui.graphics.ImageBitmap?,
     label: String?,
     isPrimary: Boolean,
+    onClick: (() -> Unit)? = null,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -515,6 +558,13 @@ private fun PhotoThumbnailV3(
         Card(
             modifier = Modifier
                 .size(100.dp)
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable(onClick = onClick)
+                    } else {
+                        Modifier
+                    },
+                )
                 .then(
                     if (isPrimary) {
                         Modifier.border(
