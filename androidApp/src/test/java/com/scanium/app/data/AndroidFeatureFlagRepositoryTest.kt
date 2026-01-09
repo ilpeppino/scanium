@@ -149,7 +149,7 @@ class AndroidFeatureFlagRepositoryTest {
         }
 
     @Test
-    fun `assistant disabled for free users even with flags enabled`() =
+    fun `assistant enabled for free users when BuildConfig allows (subscription bypass)`() =
         runTest {
             val repository = createRepository()
 
@@ -157,20 +157,23 @@ class AndroidFeatureFlagRepositoryTest {
             remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
             entitlementFlow.value = FreeEntitlements // Free has canUseAssistant = false
 
-            assertFalse(repository.isAssistantEnabled.first())
+            // With BuildConfig.FEATURE_AI_ASSISTANT = true for all flavors, subscription checks are bypassed
+            assertTrue(repository.isAssistantEnabled.first())
         }
 
     @Test
-    fun `assistant available reflects remote and entitlement only`() =
+    fun `assistant available when BuildConfig allows (bypasses subscription check)`() =
         runTest {
             val repository = createRepository()
 
-            // User pref OFF but available should still be true if remote + entitlement OK
+            // User pref OFF but available should be true due to BuildConfig.FEATURE_AI_ASSISTANT = true
             allowAssistantFlow.value = false
-            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
-            entitlementFlow.value = ProEntitlements
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = false))
+            entitlementFlow.value = FreeEntitlements // No subscription
 
+            // With BuildConfig.FEATURE_AI_ASSISTANT = true, assistant is available regardless of subscription
             assertTrue(repository.isAssistantAvailable.first())
+            // But not enabled because user preference is OFF
             assertFalse(repository.isAssistantEnabled.first())
         }
 
@@ -203,17 +206,36 @@ class AndroidFeatureFlagRepositoryTest {
         }
 
     @Test
-    fun `setAssistantEnabled fails when prerequisites not met`() =
+    fun `setAssistantEnabled succeeds for free users when BuildConfig allows (subscription bypass)`() =
         runTest {
             val repository = createRepository()
 
-            // Prerequisites not met: free user
-            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+            // Previously would fail: free user
+            // Now succeeds: BuildConfig.FEATURE_AI_ASSISTANT = true bypasses subscription check
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = false))
             entitlementFlow.value = FreeEntitlements
             connectivityFlow.value = ConnectivityStatus.ONLINE
 
             val result = repository.setAssistantEnabled(true)
 
+            // Succeeds because BuildConfig allows AI assistant for all flavors
+            assertTrue(result)
+            coVerify { settingsRepository.setAllowAssistant(true) }
+        }
+
+    @Test
+    fun `setAssistantEnabled fails when infrastructure prerequisites not met`() =
+        runTest {
+            val repository = createRepository()
+
+            // Prerequisites not met: no connectivity
+            remoteConfigFlow.value = RemoteConfig(featureFlags = FeatureFlags(enableAssistant = true))
+            entitlementFlow.value = ProEntitlements
+            connectivityFlow.value = ConnectivityStatus.OFFLINE
+
+            val result = repository.setAssistantEnabled(true)
+
+            // Fails due to infrastructure (connectivity), not subscription
             assertFalse(result)
             coVerify(exactly = 0) { settingsRepository.setAllowAssistant(true) }
         }

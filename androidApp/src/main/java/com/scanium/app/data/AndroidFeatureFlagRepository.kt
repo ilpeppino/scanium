@@ -2,6 +2,7 @@ package com.scanium.app.data
 
 import android.util.Log
 import com.scanium.app.BuildConfig
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.model.config.AssistantPrerequisite
 import com.scanium.app.model.config.AssistantPrerequisiteState
@@ -84,7 +85,11 @@ class AndroidFeatureFlagRepository(
             entitlementPolicyFlow.map { it.canUseAssistant },
             settingsRepository.developerModeFlow,
         ) { remoteEnabled, entitled, developerMode ->
-            // In DEBUG builds with developer mode, bypass subscription and remote config checks
+            // If BuildConfig allows AI assistant for this flavor (dev/beta/prod), bypass subscription checks
+            if (FeatureFlags.allowAiAssistant) {
+                return@combine true
+            }
+            // Fallback: In DEBUG builds with developer mode, bypass subscription and remote config checks
             val isDeveloperOverride = BuildConfig.DEBUG && developerMode
             isDeveloperOverride || (remoteEnabled && entitled)
         }
@@ -107,23 +112,34 @@ class AndroidFeatureFlagRepository(
             val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
             val apiKey = apiKeyStore.getApiKey()
 
+            // If BuildConfig allows AI assistant for this flavor (dev/beta/prod), bypass subscription and remote checks
+            val isFlavorAllowed = FeatureFlags.allowAiAssistant
             // In DEBUG builds with developer mode enabled, bypass subscription and remote flag checks
             val isDeveloperOverride = BuildConfig.DEBUG && developerMode
+            val bypassSubAndRemote = isFlavorAllowed || isDeveloperOverride
 
             val prerequisites =
                 listOf(
                     AssistantPrerequisite(
                         id = "subscription",
                         displayName = "Pro or Developer subscription",
-                        description = if (isDeveloperOverride) "Bypassed (Developer Mode)" else "Assistant requires a Pro or Developer subscription",
-                        satisfied = isDeveloperOverride || entitlement.canUseAssistant,
+                        description = when {
+                            isFlavorAllowed -> "Enabled for this app version"
+                            isDeveloperOverride -> "Bypassed (Developer Mode)"
+                            else -> "Assistant requires a Pro or Developer subscription"
+                        },
+                        satisfied = bypassSubAndRemote || entitlement.canUseAssistant,
                         category = PrerequisiteCategory.SUBSCRIPTION,
                     ),
                     AssistantPrerequisite(
                         id = "remote_flag",
                         displayName = "Feature enabled by server",
-                        description = if (isDeveloperOverride) "Bypassed (Developer Mode)" else "Assistant feature must be enabled on the server",
-                        satisfied = isDeveloperOverride || config.featureFlags.enableAssistant,
+                        description = when {
+                            isFlavorAllowed -> "Enabled for this app version"
+                            isDeveloperOverride -> "Bypassed (Developer Mode)"
+                            else -> "Assistant feature must be enabled on the server"
+                        },
+                        satisfied = bypassSubAndRemote || config.featureFlags.enableAssistant,
                         category = PrerequisiteCategory.REMOTE_CONFIG,
                     ),
                     AssistantPrerequisite(
