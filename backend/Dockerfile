@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 ***REMOVED*** Install production dependencies
-RUN npm ci --only=production && \
+RUN npm ci --only=production --legacy-peer-deps && \
     npm cache clean --force
 
 ***REMOVED*** Prisma schema is needed for generate
@@ -28,7 +28,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 ***REMOVED*** Install all dependencies (including dev)
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 ***REMOVED*** Copy source code
 COPY . .
