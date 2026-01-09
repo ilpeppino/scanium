@@ -39,6 +39,16 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateRotation
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.positionChanged
+import kotlin.math.PI
+import kotlin.math.abs
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
@@ -279,35 +289,38 @@ private fun ZoomableImage(
             .fillMaxSize()
             .onSizeChanged { containerSize = it }
             .pointerInput(bitmap) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    // Apply zoom
-                    val newScale = (scale * zoom).coerceIn(minScale, maxScale)
+                detectPagerFriendlyTransformGestures(
+                    isZoomed = { scale > 1f },
+                    onGesture = { _, pan, zoom, _ ->
+                        // Apply zoom
+                        val newScale = (scale * zoom).coerceIn(minScale, maxScale)
 
-                    // Calculate max offset based on current scale
-                    val maxX = if (newScale > 1f) {
-                        (containerSize.width * (newScale - 1f)) / 2f
-                    } else {
-                        0f
-                    }
-                    val maxY = if (newScale > 1f) {
-                        (containerSize.height * (newScale - 1f)) / 2f
-                    } else {
-                        0f
-                    }
+                        // Calculate max offset based on current scale
+                        val maxX = if (newScale > 1f) {
+                            (containerSize.width * (newScale - 1f)) / 2f
+                        } else {
+                            0f
+                        }
+                        val maxY = if (newScale > 1f) {
+                            (containerSize.height * (newScale - 1f)) / 2f
+                        } else {
+                            0f
+                        }
 
-                    // Apply pan with constraints
-                    val newOffset = if (newScale > 1f) {
-                        Offset(
-                            x = (offset.x + pan.x * newScale).coerceIn(-maxX, maxX),
-                            y = (offset.y + pan.y * newScale).coerceIn(-maxY, maxY),
-                        )
-                    } else {
-                        Offset.Zero
-                    }
+                        // Apply pan with constraints
+                        val newOffset = if (newScale > 1f) {
+                            Offset(
+                                x = (offset.x + pan.x * newScale).coerceIn(-maxX, maxX),
+                                y = (offset.y + pan.y * newScale).coerceIn(-maxY, maxY),
+                            )
+                        } else {
+                            Offset.Zero
+                        }
 
-                    scale = newScale
-                    offset = newOffset
-                }
+                        scale = newScale
+                        offset = newOffset
+                    }
+                )
             }
             .pointerInput(bitmap) {
                 detectTapGestures(
@@ -370,5 +383,73 @@ private fun ImageRef.toBitmap(): Bitmap? {
                 }
             }
         }
+    }
+}
+
+/**
+ * Custom gesture detector that plays nicely with Pagers.
+ * If the content is not zoomed (scale == 1f) and only one finger is used,
+ * it ignores the gesture so the parent Pager can handle the swipe.
+ */
+private suspend fun PointerInputScope.detectPagerFriendlyTransformGestures(
+    isZoomed: () -> Boolean,
+    onGesture: (centroid: Offset, pan: Offset, zoom: Float, rotation: Float) -> Unit
+) {
+    awaitEachGesture {
+        var rotation = 0f
+        var zoom = 1f
+        var pan = Offset.Zero
+        var pastTouchSlop = false
+        val touchSlop = viewConfiguration.touchSlop
+
+        awaitFirstDown(requireUnconsumed = false)
+
+        do {
+            val event = awaitPointerEvent()
+            val canceled = event.changes.any { it.isConsumed }
+            if (canceled) break
+
+            val pointerCount = event.changes.size
+
+            // Pager-friendly check:
+            // If not zoomed and single pointer, let the Pager handle it (don't consume)
+            if (!isZoomed() && pointerCount == 1) {
+                continue
+            }
+
+            val zoomChange = event.calculateZoom()
+            val rotationChange = event.calculateRotation()
+            val panChange = event.calculatePan()
+
+            if (!pastTouchSlop) {
+                zoom *= zoomChange
+                rotation += rotationChange
+                pan += panChange
+
+                val centroid = event.calculateCentroid(useCurrent = false)
+                val panMagnitude = pan.getDistance()
+                val zoomMotion = abs(1 - zoom) * centroid.getDistance(Offset.Zero)
+                val rotationMotion = abs(rotation * PI.toFloat() * centroid.getDistance(Offset.Zero) / 180f)
+
+                if (zoomMotion > touchSlop ||
+                    rotationMotion > touchSlop ||
+                    panMagnitude > touchSlop
+                ) {
+                    pastTouchSlop = true
+                }
+            }
+
+            if (pastTouchSlop) {
+                val centroid = event.calculateCentroid(useCurrent = false)
+                if (rotationChange != 0f || zoomChange != 1f || panChange != Offset.Zero) {
+                    onGesture(centroid, panChange, zoomChange, rotationChange)
+                }
+                event.changes.forEach {
+                    if (it.positionChanged()) {
+                        it.consume()
+                    }
+                }
+            }
+        } while (event.changes.any { it.pressed })
     }
 }
