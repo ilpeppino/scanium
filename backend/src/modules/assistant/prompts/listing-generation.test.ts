@@ -14,7 +14,7 @@ describe('Listing Generation Prompts', () => {
       const prompt = buildListingSystemPrompt();
 
       expect(prompt).toContain('marketplace listing assistant');
-      expect(prompt).toContain('Reply in English');
+      expect(prompt).toContain('ENTIRELY in English');
       expect(prompt).toContain('neutral');
       expect(prompt).toContain('EUR');
     });
@@ -22,51 +22,57 @@ describe('Listing Generation Prompts', () => {
     it('includes Dutch language instruction when specified', () => {
       const prompt = buildListingSystemPrompt({ language: 'NL' });
 
-      expect(prompt).toContain('Dutch');
-      expect(prompt).toContain('Nederlands');
+      // Prompt should be in Dutch
+      expect(prompt).toContain('VOLLEDIG in het Nederlands');
+      expect(prompt).toContain('marktplaats');
     });
 
     it('includes German language instruction when specified', () => {
       const prompt = buildListingSystemPrompt({ language: 'DE' });
 
-      expect(prompt).toContain('German');
-      expect(prompt).toContain('Deutsch');
+      // Prompt should be in German
+      expect(prompt).toContain('VOLLSTÄNDIG auf Deutsch');
+      expect(prompt).toContain('Marktplatz');
     });
 
     it('includes French language instruction when specified', () => {
       const prompt = buildListingSystemPrompt({ language: 'FR' });
 
-      expect(prompt).toContain('French');
-      expect(prompt).toContain('Français');
+      // Prompt should be in French
+      expect(prompt).toContain('ENTIÈREMENT en français');
+      expect(prompt).toContain('marketplace');
     });
 
     it('includes Italian language instruction when specified', () => {
       const prompt = buildListingSystemPrompt({ language: 'IT' });
 
-      expect(prompt).toContain('Italian');
-      expect(prompt).toContain('Italiano');
+      // Prompt should be in Italian
+      expect(prompt).toContain('INTERAMENTE in italiano');
+      expect(prompt).toContain('inserzioni');
     });
 
     it('includes Spanish language instruction when specified', () => {
       const prompt = buildListingSystemPrompt({ language: 'ES' });
 
-      expect(prompt).toContain('Spanish');
-      expect(prompt).toContain('Español');
+      // Prompt should be in Spanish
+      expect(prompt).toContain('COMPLETAMENTE en español');
+      expect(prompt).toContain('marketplace');
     });
 
     it('includes Portuguese language instruction when specified', () => {
       const prompt = buildListingSystemPrompt({ language: 'PT_BR' });
 
-      expect(prompt).toContain('Portuguese');
-      expect(prompt).toContain('Português');
+      // Prompt should be in Portuguese
+      expect(prompt).toContain('INTEIRAMENTE em português');
+      expect(prompt).toContain('marketplace');
     });
 
-    it('enforces strict language compliance with "Do not mix languages"', () => {
+    it('enforces strict language compliance with CRITICAL instruction', () => {
       const prompt = buildListingSystemPrompt({ language: 'EN' });
 
-      expect(prompt).toContain('Do not mix languages');
-      expect(prompt).toContain('All output');
-      expect(prompt).toContain('must be in English');
+      expect(prompt).toContain('CRITICAL');
+      expect(prompt).toContain('ENTIRELY in English');
+      expect(prompt).toContain('Do not use any other language');
     });
 
     it('enforces language compliance for all supported languages', () => {
@@ -74,15 +80,17 @@ describe('Listing Generation Prompts', () => {
 
       for (const lang of languages) {
         const prompt = buildListingSystemPrompt({ language: lang });
-        expect(prompt).toContain('Do not mix languages');
+        // All localized prompts contain CRITICAL language enforcement
+        expect(prompt).toMatch(/CRITICO|CRITICAL|KRITISCH|CRITIQUE|CRÍTICO|KRITIEK/i);
       }
     });
 
     it('falls back to English for unsupported language codes', () => {
       const prompt = buildListingSystemPrompt({ language: 'ZZ' });
 
-      expect(prompt).toContain('Reply in English');
-      expect(prompt).toContain('Do not mix languages');
+      // Should fall back to English
+      expect(prompt).toContain('ENTIRELY in English');
+      expect(prompt).toContain('Do not use any other language');
     });
 
     it('includes friendly tone instruction when specified', () => {
@@ -213,7 +221,8 @@ describe('Listing Generation Prompts', () => {
 
       expect(prompt).toContain('Test Item');
       expect(prompt).toContain('Electronics');
-      expect(prompt).toContain('brand');
+      // Attribute label is now localized (English: "Brand" with capital B)
+      expect(prompt).toContain('Brand');
       expect(prompt).toContain('Sony');
     });
 
@@ -258,10 +267,11 @@ describe('Listing Generation Prompts', () => {
       const prompt = buildListingUserPrompt([{ itemId: 'item-1' }], resolvedAttrs);
 
       expect(prompt).toContain('Vision-extracted attributes');
-      expect(prompt).toContain('brand');
+      // Attribute labels are now localized (English: capitalized)
+      expect(prompt).toContain('Brand');
       expect(prompt).toContain('IKEA');
       expect(prompt).toContain('HIGH');
-      expect(prompt).toContain('color');
+      expect(prompt).toContain('Color');
       expect(prompt).toContain('white');
     });
 
@@ -479,6 +489,77 @@ describe('Listing Generation Prompts', () => {
         expect(prompt).toContain('Like New');
         const userSection = prompt.slice(0, prompt.indexOf('Detected attributes') || prompt.length);
         expect(userSection).toContain('[USER]');
+      });
+    });
+
+    describe('localized user prompts', () => {
+      it('generates Italian user prompt with localized headers and labels', () => {
+        const prompt = buildListingUserPrompt(
+          [
+            {
+              itemId: 'item-1',
+              title: 'Sedia IKEA',
+              category: 'Arredamento',
+              attributes: [
+                { key: 'brand', value: 'IKEA', source: 'USER' },
+                { key: 'color', value: 'Bianco', source: 'DETECTED', confidence: 0.9 },
+              ],
+            },
+          ],
+          undefined,
+          undefined,
+          'IT'
+        );
+
+        // Should contain Italian section headers
+        expect(prompt).toContain('Genera un\'inserzione');
+        expect(prompt).toContain('Articolo');
+        expect(prompt).toContain('Titolo attuale');
+        expect(prompt).toContain('Categoria');
+
+        // Should contain Italian attribute labels
+        expect(prompt).toContain('Marca'); // Italian for Brand
+        expect(prompt).toContain('Colore'); // Italian for Color
+
+        // Should contain the values
+        expect(prompt).toContain('IKEA');
+        expect(prompt).toContain('Bianco');
+      });
+
+      it('generates German user prompt with localized headers and labels', () => {
+        const prompt = buildListingUserPrompt(
+          [
+            {
+              itemId: 'item-1',
+              title: 'IKEA Stuhl',
+              attributes: [{ key: 'brand', value: 'IKEA', source: 'USER' }],
+            },
+          ],
+          undefined,
+          undefined,
+          'DE'
+        );
+
+        // Should contain German section headers
+        expect(prompt).toContain('Erstelle eine marktplatzfertige');
+        expect(prompt).toContain('Artikel');
+
+        // Should contain German attribute label
+        expect(prompt).toContain('Marke'); // German for Brand
+      });
+
+      it('defaults to English when no language specified', () => {
+        const prompt = buildListingUserPrompt([
+          {
+            itemId: 'item-1',
+            attributes: [{ key: 'brand', value: 'Test', source: 'USER' }],
+          },
+        ]);
+
+        // Should contain English section headers
+        expect(prompt).toContain('Generate a marketplace-ready listing');
+        expect(prompt).toContain('Item');
+        expect(prompt).toContain('Brand'); // English for brand
       });
     });
   });

@@ -18,6 +18,10 @@ import {
   parseListingResponse,
 } from './prompts/listing-generation.js';
 import {
+  checkResponseLanguage,
+  recordLanguageCheck,
+} from './language-consistency.js';
+import {
   recordOpenAIRequest,
   recordOpenAITokens,
   updateRateLimitState,
@@ -106,12 +110,14 @@ export class OpenAIAssistantProvider implements AssistantProvider {
       }
     }
 
-    // Build prompts
+    // Build prompts with language localization
+    const language = request.assistantPrefs?.language ?? 'EN';
     const systemPrompt = buildListingSystemPrompt(request.assistantPrefs);
     const userPrompt = buildListingUserPrompt(
       request.items,
       resolvedAttributesMap,
-      visualRequest.visualFacts
+      visualRequest.visualFacts,
+      language
     );
 
     // Combine user message with generated prompt context
@@ -173,6 +179,19 @@ export class OpenAIAssistantProvider implements AssistantProvider {
 
       // Extract text content from response
       const textContent = response.choices[0]?.message?.content ?? '';
+
+      // Check response language consistency
+      if (language && language !== 'EN') {
+        const langCheck = checkResponseLanguage(
+          textContent,
+          language,
+          request.correlationId
+        );
+        recordLanguageCheck('response', langCheck.matchesExpected);
+
+        // Log mismatch in DEV mode (handled by checkResponseLanguage)
+        // Future: Could implement retry logic here if needed
+      }
 
       // Parse the structured response
       const parsed = parseListingResponse(textContent);

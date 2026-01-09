@@ -6,30 +6,11 @@ import {
 } from '../types.js';
 import { ResolvedAttributes } from '../../vision/attribute-resolver.js';
 import { VisualFacts } from '../../vision/types.js';
-
-/**
- * Language-specific instructions for response generation.
- * These instructions enforce strict language compliance for all output.
- */
-const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
-  EN: 'Reply in English. Do not mix languages. All output (title, description, warnings, etc.) must be in English.',
-  NL: 'Reply in Dutch (Nederlands). Do not mix languages. All output (title, description, warnings, etc.) must be in Dutch.',
-  DE: 'Reply in German (Deutsch). Do not mix languages. All output (title, description, warnings, etc.) must be in German.',
-  FR: 'Reply in French (Français). Do not mix languages. All output (title, description, warnings, etc.) must be in French.',
-  IT: 'Reply in Italian (Italiano). Do not mix languages. All output (title, description, warnings, etc.) must be in Italian.',
-  ES: 'Reply in Spanish (Español). Do not mix languages. All output (title, description, warnings, etc.) must be in Spanish.',
-  PT_BR: 'Reply in Brazilian Portuguese (Português Brasileiro). Do not mix languages. All output (title, description, warnings, etc.) must be in Portuguese.',
-};
-
-/**
- * Tone-specific instructions for response style.
- */
-const TONE_INSTRUCTIONS: Record<string, string> = {
-  NEUTRAL: 'Use a neutral, informative tone.',
-  FRIENDLY: 'Use a friendly, approachable tone with helpful suggestions.',
-  PROFESSIONAL: 'Use a formal, professional business tone.',
-  MARKETPLACE: 'Use concise, matter-of-fact marketplace copy. No marketing hype, exclamation marks, or emojis. Avoid phrases like "perfect for", "don\'t miss out", "amazing". Title: short, includes key identifiers (type + brand + model + size/color if available). Description: 3-6 bullet lines max covering condition, key specs, what\'s included, defects (if known). Only use detected attributes; do not invent details. If info is missing, mark as "Unknown" or omit.',
-};
+import {
+  getLocalizedContent,
+  getLocalizedAttributeLabel,
+  LocalizedPromptContent,
+} from './prompt-localization.js';
 
 /**
  * Region-specific marketplace context.
@@ -45,7 +26,38 @@ const REGION_CONTEXT: Record<string, { currency: string; marketplaces: string }>
 };
 
 /**
+ * Get localized tone instruction.
+ */
+function getLocalizedTone(tone: string, content: LocalizedPromptContent): string {
+  switch (tone) {
+    case 'FRIENDLY':
+      return content.tones.friendly;
+    case 'PROFESSIONAL':
+      return content.tones.professional;
+    case 'MARKETPLACE':
+      return content.tones.marketplace;
+    default:
+      return content.tones.neutral;
+  }
+}
+
+/**
+ * Get localized verbosity instruction.
+ */
+function getLocalizedVerbosity(verbosity: string, content: LocalizedPromptContent): string {
+  switch (verbosity) {
+    case 'CONCISE':
+      return content.verbosity.concise;
+    case 'DETAILED':
+      return content.verbosity.detailed;
+    default:
+      return content.verbosity.normal;
+  }
+}
+
+/**
  * Build the system prompt for marketplace listing generation.
+ * All prompt text is fully localized based on the user's language preference.
  */
 export function buildListingSystemPrompt(prefs?: AssistantPrefs): string {
   const language = prefs?.language ?? 'EN';
@@ -53,64 +65,60 @@ export function buildListingSystemPrompt(prefs?: AssistantPrefs): string {
   const region = prefs?.region ?? 'EU';
   const verbosity = prefs?.verbosity ?? 'NORMAL';
 
-  const langInstruction = LANGUAGE_INSTRUCTIONS[language] ?? LANGUAGE_INSTRUCTIONS.EN;
-  const toneInstruction = TONE_INSTRUCTIONS[tone] ?? TONE_INSTRUCTIONS.NEUTRAL;
+  // Get fully localized content
+  const content = getLocalizedContent(language);
+  const toneInstruction = getLocalizedTone(tone, content);
+  const verbosityGuide = getLocalizedVerbosity(verbosity, content);
   const regionCtx = REGION_CONTEXT[region] ?? REGION_CONTEXT.EU;
 
-  const verbosityGuide = verbosity === 'CONCISE'
-    ? 'Keep responses brief and to the point.'
-    : verbosity === 'DETAILED'
-    ? 'Provide comprehensive details and explanations.'
-    : 'Balance detail with clarity.';
+  // Build fully localized system prompt
+  return `${content.roleDescription}
 
-  return `You are a marketplace listing assistant helping sellers create effective, marketplace-ready listings for second-hand items.
-
-${langInstruction}
+${content.languageEnforcement}
 ${toneInstruction}
 ${verbosityGuide}
 
-CONTEXT:
+${content.contextSection}:
 - Target marketplaces: ${regionCtx.marketplaces}
 - Currency: ${regionCtx.currency}
 
-ATTRIBUTE HANDLING - CRITICAL:
-1. USER-PROVIDED attributes (marked [USER]) are AUTHORITATIVE - use them exactly as given without questioning.
-2. DETECTED attributes (marked [DETECTED]) with HIGH confidence - use with confidence, cite source.
-3. DETECTED attributes with MED confidence - use with "Please verify" warning.
-4. DETECTED attributes with LOW confidence - mention as "Possibly [value]" or omit.
-5. NEVER invent specifications not provided (storage, RAM, screen size, dimensions, etc.).
+${content.attributeHandling.title}:
+1. ${content.attributeHandling.userProvided}
+2. ${content.attributeHandling.detectedHigh}
+3. ${content.attributeHandling.detectedMed}
+4. ${content.attributeHandling.detectedLow}
+5. ${content.attributeHandling.neverInvent}
 
-TITLE RULES:
-- Maximum 80 characters
-- Include brand (if known) + model/type + key differentiator
-- Front-load important keywords for search visibility
-- Format: "[Brand] [Model/Type] - [Key Feature/Condition]"
-- Examples: "Dell XPS 13 Laptop - 16GB RAM, Excellent Condition" (55 chars)
+${content.titleRules.title}:
+- ${content.titleRules.maxChars}
+- ${content.titleRules.include}
+- ${content.titleRules.frontLoad}
+- ${content.titleRules.format}
+- ${content.titleRules.example}
 
-DESCRIPTION RULES:
-- Start with 1-2 sentence overview
-- Use bullet points (•) for features and specifications
-- Include condition details
-- End with shipping/pickup info if relevant
-- Structure: Overview → Key Features (bullets) → Condition → Notes
+${content.descriptionRules.title}:
+- ${content.descriptionRules.startWith}
+- ${content.descriptionRules.useBullets}
+- ${content.descriptionRules.includeCondition}
+- ${content.descriptionRules.structure}
 
-OUTPUT FORMAT (JSON):
+${content.outputFormat.title}:
 {
-  "title": "Keyword-rich title (max 80 chars)",
-  "description": "Full description with bullet points",
+  "title": "${content.outputFormat.fields.title}",
+  "description": "${content.outputFormat.fields.description}",
   "suggestedDraftUpdates": [
     { "field": "title", "value": "...", "confidence": "HIGH|MED|LOW", "requiresConfirmation": false },
     { "field": "description", "value": "...", "confidence": "HIGH|MED|LOW", "requiresConfirmation": false }
   ],
-  "warnings": ["Items needing verification (only for DETECTED non-HIGH)"],
-  "missingInfo": ["Information that would improve the listing"],
-  "suggestedNextPhoto": "Photo suggestion if evidence is insufficient (or null)"
+  "warnings": ["${content.outputFormat.fields.warnings}"],
+  "missingInfo": ["${content.outputFormat.fields.missingInfo}"],
+  "suggestedNextPhoto": "${content.outputFormat.fields.suggestedNextPhoto}"
 }
 
-CONFIDENCE ASSIGNMENT:
-- HIGH: User-provided values OR detected with strong visual evidence
-- MED: Detected with moderate evidence, needs verification
-- LOW: Speculative, insufficient evidence`;
+${content.confidenceAssignment.title}:
+- ${content.confidenceAssignment.high}
+- ${content.confidenceAssignment.med}
+- ${content.confidenceAssignment.low}`;
 }
 
 /**
@@ -149,13 +157,15 @@ function formatSourceTag(source?: AttributeSource): string {
 /**
  * Format attribute for prompt inclusion.
  * User-provided attributes are marked as authoritative.
+ * Attribute labels are localized based on language preference.
  */
 function formatAttribute(
   key: string,
   value: string,
   confidence: ConfidenceTier | 'HIGH' | 'MED' | 'LOW',
   source?: AttributeSource | string,
-  evidenceSource?: string
+  evidenceSource?: string,
+  language?: string
 ): string {
   // Determine if this is a user-provided value
   const isUserProvided = source === 'USER';
@@ -170,43 +180,51 @@ function formatAttribute(
   // Evidence note for detected values
   const evidenceNote = evidenceSource && !isUserProvided ? ` (from: ${evidenceSource})` : '';
 
-  return `- ${key}: "${value}" ${sourceTag} [${confidenceStr}]${evidenceNote}`;
+  // Get localized attribute label
+  const localizedKey = language ? getLocalizedAttributeLabel(key, language) : key;
+
+  return `- ${localizedKey}: "${value}" ${sourceTag} [${confidenceStr}]${evidenceNote}`;
 }
 
 /**
  * Build the user prompt for listing generation with item context and visual evidence.
  * Prioritizes user-provided attributes over detected ones.
+ * All section headers and attribute labels are localized based on language preference.
  */
 export function buildListingUserPrompt(
   items: ItemContextSnapshot[],
   resolvedAttributes?: Map<string, ResolvedAttributes>,
-  visualFacts?: Map<string, VisualFacts>
+  visualFacts?: Map<string, VisualFacts>,
+  language?: string
 ): string {
+  const lang = language ?? 'EN';
+  const content = getLocalizedContent(lang);
+
   if (items.length === 0) {
     return 'No items provided. Please describe the item you want to list.';
   }
 
   const parts: string[] = [];
-  parts.push('Generate a marketplace-ready listing for the following item(s):\n');
+  parts.push(`${content.userPrompt.generateListing}\n`);
 
   for (const item of items) {
-    parts.push(`***REMOVED******REMOVED*** Item: ${item.itemId}`);
+    parts.push(`***REMOVED******REMOVED*** ${content.userPrompt.itemHeader}: ${item.itemId}`);
 
-    // Basic info
+    // Basic info with localized labels
     if (item.title) {
-      parts.push(`Current title: "${item.title}"`);
+      parts.push(`${content.userPrompt.currentTitle}: "${item.title}"`);
     }
     if (item.category) {
-      parts.push(`Category: ${item.category}`);
+      parts.push(`${content.userPrompt.category}: ${item.category}`);
     }
     if (item.description) {
-      parts.push(`Current description: "${item.description}"`);
+      parts.push(`${content.userPrompt.currentDescription}: "${item.description}"`);
     }
     if (item.priceEstimate) {
-      parts.push(`Price estimate: €${item.priceEstimate.toFixed(0)}`);
+      parts.push(`${content.userPrompt.priceEstimate}: €${item.priceEstimate.toFixed(0)}`);
     }
     if (item.photosCount) {
-      parts.push(`Photos attached: ${item.photosCount}`);
+      parts.push(`${content.userPrompt.photosAttached}: ${item.photosCount}`);
     }
 
     // Separate user-provided from detected attributes
@@ -215,20 +233,20 @@ export function buildListingUserPrompt(
 
     // User-provided attributes (authoritative - show first)
     if (userAttributes.length > 0) {
-      parts.push('\n**User-provided attributes (use as-is):**');
+      parts.push(`\n**${content.userPrompt.userProvidedAttributes}:**`);
       for (const attr of userAttributes) {
-        parts.push(formatAttribute(attr.key, attr.value, 'HIGH', 'USER'));
+        parts.push(formatAttribute(attr.key, attr.value, 'HIGH', 'USER', undefined, lang));
       }
     }
 
     // Detected attributes from item context
     if (detectedAttributes.length > 0) {
-      parts.push('\nDetected attributes:');
+      parts.push(`\n${content.userPrompt.detectedAttributes}:`);
       for (const attr of detectedAttributes) {
         const confidence = attr.confidence
           ? attr.confidence >= 0.8 ? 'HIGH' : attr.confidence >= 0.5 ? 'MED' : 'LOW'
           : 'MED';
-        parts.push(formatAttribute(attr.key, attr.value, confidence as ConfidenceTier, attr.source ?? 'DETECTED'));
+        parts.push(formatAttribute(attr.key, attr.value, confidence as ConfidenceTier, attr.source ?? 'DETECTED', undefined, lang));
       }
     }
 
@@ -246,7 +264,8 @@ export function buildListingUserPrompt(
           resolved.brand.value,
           resolved.brand.confidence,
           'DETECTED',
-          resolved.brand.evidenceRefs[0]?.type
+          resolved.brand.evidenceRefs[0]?.type,
+          lang
         ));
       }
       if (resolved.model && !userAttrKeys.has('model')) {
@@ -255,7 +274,8 @@ export function buildListingUserPrompt(
           resolved.model.value,
           resolved.model.confidence,
           'DETECTED',
-          resolved.model.evidenceRefs[0]?.type
+          resolved.model.evidenceRefs[0]?.type,
+          lang
         ));
       }
       if (resolved.color && !userAttrKeys.has('color')) {
@@ -264,16 +284,18 @@ export function buildListingUserPrompt(
           resolved.color.value,
           resolved.color.confidence,
           'DETECTED',
-          'color extraction'
+          'color extraction',
+          lang
         ));
       }
       if (resolved.secondaryColor && !userAttrKeys.has('secondary_color')) {
         visionAttrs.push(formatAttribute(
-          'secondary color',
+          'secondary_color',
           resolved.secondaryColor.value,
           resolved.secondaryColor.confidence,
           'DETECTED',
-          'color extraction'
+          'color extraction',
+          lang
         ));
       }
       if (resolved.material && !userAttrKeys.has('material')) {
@@ -282,17 +304,18 @@ export function buildListingUserPrompt(
           resolved.material.value,
           resolved.material.confidence,
           'DETECTED',
-          'label detection'
+          'label detection',
+          lang
         ));
       }
 
       if (visionAttrs.length > 0) {
-        parts.push('\nVision-extracted attributes:');
+        parts.push(`\n${content.userPrompt.visionExtractedAttributes}:`);
         parts.push(...visionAttrs);
       }
 
       if (resolved.suggestedNextPhoto) {
-        parts.push(`\nNote: ${resolved.suggestedNextPhoto}`);
+        parts.push(`\n${content.userPrompt.note}: ${resolved.suggestedNextPhoto}`);
       }
     }
 
@@ -303,26 +326,26 @@ export function buildListingUserPrompt(
 
       if (facts.dominantColors.length > 0) {
         const colors = facts.dominantColors.slice(0, 3).map(c => `${c.name} (${c.pct}%)`).join(', ');
-        factParts.push(`- Dominant colors: ${colors}`);
+        factParts.push(`- ${content.userPrompt.dominantColors}: ${colors}`);
       }
 
       if (facts.ocrSnippets.length > 0) {
         const texts = facts.ocrSnippets.slice(0, 5).map(s => `"${s.text}"`).join(', ');
-        factParts.push(`- OCR text detected: ${texts}`);
+        factParts.push(`- ${content.userPrompt.ocrTextDetected}: ${texts}`);
       }
 
       if (facts.logoHints && facts.logoHints.length > 0) {
         const logos = facts.logoHints.slice(0, 3).map(l => `${l.brand} (${Math.round(l.score * 100)}%)`).join(', ');
-        factParts.push(`- Detected logos: ${logos}`);
+        factParts.push(`- ${content.userPrompt.detectedLogos}: ${logos}`);
       }
 
       if (facts.labelHints.length > 0) {
         const labels = facts.labelHints.slice(0, 5).map(l => l.label).join(', ');
-        factParts.push(`- Image labels: ${labels}`);
+        factParts.push(`- ${content.userPrompt.imageLabels}: ${labels}`);
       }
 
       if (factParts.length > 0) {
-        parts.push('\nVisual evidence (for reference):');
+        parts.push(`\n${content.userPrompt.visualEvidence}:`);
         parts.push(...factParts);
       }
     }
@@ -330,7 +353,7 @@ export function buildListingUserPrompt(
     parts.push(''); // Empty line between items
   }
 
-  parts.push('\nGenerate the listing following the output format. Remember: [USER] attributes are authoritative.');
+  parts.push(`\n${content.userPrompt.generateReminder}`);
 
   return parts.join('\n');
 }
