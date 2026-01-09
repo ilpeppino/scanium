@@ -66,7 +66,7 @@ data class ExportItemBundle(
 
     /**
      * Number of photos available.
-     * Note: primaryPhotoUri (if present) is always included as the first item in photoUris,
+     * Note: primaryPhotoUri (if present) should be included as the first item in photoUris,
      * so we only count photoUris to avoid double-counting.
      */
     val photoCount: Int

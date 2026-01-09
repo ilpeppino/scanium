@@ -54,11 +54,21 @@ object ListingJsonFormatter {
         put("attributes", formatAttributes(bundle))
 
         // Photos (relative paths for ZIP, absolute for standalone)
+        // Primary photo is first, followed by additional photos (deduplicated)
         val photos = JSONArray()
-        bundle.primaryPhotoUri?.let { photos.put(it) }
-        bundle.photoUris.forEach { photos.put(it) }
+        val seenPaths = mutableSetOf<String>()
+        bundle.primaryPhotoUri?.let {
+            photos.put(it)
+            seenPaths.add(it)
+        }
+        bundle.photoUris.forEach { uri ->
+            if (uri !in seenPaths) {
+                photos.put(uri)
+                seenPaths.add(uri)
+            }
+        }
         put("photos", photos)
-        put("photoCount", bundle.photoCount)
+        put("photoCount", photos.length())
 
         // Timestamps
         put("createdAt", isoFormat.format(Date(bundle.createdAt)))

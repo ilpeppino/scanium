@@ -23,15 +23,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -201,11 +212,9 @@ private fun PhotoPage(
         contentAlignment = Alignment.Center,
     ) {
         if (bitmap != null) {
-            Image(
+            ZoomableImage(
                 bitmap = bitmap,
                 contentDescription = contentDescription,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit,
             )
         } else {
             // Fallback for failed loads
@@ -220,6 +229,105 @@ private fun PhotoPage(
                 )
             }
         }
+    }
+}
+
+/**
+ * Zoomable image composable with pinch-to-zoom and pan support.
+ *
+ * Features:
+ * - Pinch to zoom (1x to 5x)
+ * - Pan when zoomed in
+ * - Double-tap to toggle between 1x and 2x zoom
+ * - Constrained panning to keep image in view
+ */
+@Composable
+private fun ZoomableImage(
+    bitmap: ImageBitmap,
+    contentDescription: String,
+    minScale: Float = 1f,
+    maxScale: Float = 5f,
+) {
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Reset zoom when bitmap changes (navigating to different page)
+    LaunchedEffect(bitmap) {
+        scale = 1f
+        offset = Offset.Zero
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .onSizeChanged { containerSize = it }
+            .pointerInput(bitmap) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    // Apply zoom
+                    val newScale = (scale * zoom).coerceIn(minScale, maxScale)
+
+                    // Calculate max offset based on current scale
+                    val maxX = if (newScale > 1f) {
+                        (containerSize.width * (newScale - 1f)) / 2f
+                    } else {
+                        0f
+                    }
+                    val maxY = if (newScale > 1f) {
+                        (containerSize.height * (newScale - 1f)) / 2f
+                    } else {
+                        0f
+                    }
+
+                    // Apply pan with constraints
+                    val newOffset = if (newScale > 1f) {
+                        Offset(
+                            x = (offset.x + pan.x * newScale).coerceIn(-maxX, maxX),
+                            y = (offset.y + pan.y * newScale).coerceIn(-maxY, maxY),
+                        )
+                    } else {
+                        Offset.Zero
+                    }
+
+                    scale = newScale
+                    offset = newOffset
+                }
+            }
+            .pointerInput(bitmap) {
+                detectTapGestures(
+                    onDoubleTap = { tapOffset ->
+                        // Toggle between 1x and 2x zoom on double-tap
+                        if (scale > 1.5f) {
+                            scale = 1f
+                            offset = Offset.Zero
+                        } else {
+                            scale = 2f
+                            // Center zoom on tap position
+                            val centerX = containerSize.width / 2f
+                            val centerY = containerSize.height / 2f
+                            offset = Offset(
+                                x = (centerX - tapOffset.x),
+                                y = (centerY - tapOffset.y),
+                            )
+                        }
+                    },
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            bitmap = bitmap,
+            contentDescription = contentDescription,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = offset.x
+                    translationY = offset.y
+                },
+            contentScale = ContentScale.Fit,
+        )
     }
 }
 
