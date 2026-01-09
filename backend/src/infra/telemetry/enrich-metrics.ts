@@ -5,12 +5,14 @@
  */
 
 import { Counter, Histogram, Gauge } from 'prom-client';
+import { metricsRegistry } from '../observability/metrics.js';
 
 // Request counter
 const enrichRequestCounter = new Counter({
   name: 'scanium_enrich_requests_total',
   help: 'Total enrichment requests',
   labelNames: ['status', 'errorType'] as const,
+  registers: [metricsRegistry],
 });
 
 // Stage counter
@@ -18,6 +20,7 @@ const enrichStageCounter = new Counter({
   name: 'scanium_enrich_stage_transitions_total',
   help: 'Total enrichment stage transitions',
   labelNames: ['stage'] as const,
+  registers: [metricsRegistry],
 });
 
 // Stage latency histogram
@@ -26,6 +29,7 @@ const enrichStageLatency = new Histogram({
   help: 'Enrichment stage latency in seconds',
   labelNames: ['stage'] as const,
   buckets: [0.1, 0.5, 1, 2, 5, 10, 30],
+  registers: [metricsRegistry],
 });
 
 // Completion counter
@@ -33,6 +37,7 @@ const enrichCompletionCounter = new Counter({
   name: 'scanium_enrich_completions_total',
   help: 'Total enrichment completions',
   labelNames: ['success', 'hasVision', 'hasDraft'] as const,
+  registers: [metricsRegistry],
 });
 
 // Vision cache counter
@@ -40,12 +45,14 @@ const visionCacheCounter = new Counter({
   name: 'scanium_enrich_vision_cache_total',
   help: 'Vision cache hits and misses',
   labelNames: ['result'] as const,
+  registers: [metricsRegistry],
 });
 
 // Active jobs gauge
 const enrichActiveJobsGauge = new Gauge({
   name: 'scanium_enrich_active_jobs',
   help: 'Current number of active enrichment jobs',
+  registers: [metricsRegistry],
 });
 
 // Total latency histogram
@@ -53,6 +60,7 @@ const enrichTotalLatency = new Histogram({
   name: 'scanium_enrich_total_latency_seconds',
   help: 'Total enrichment latency in seconds',
   buckets: [1, 2, 5, 10, 30, 60, 120],
+  registers: [metricsRegistry],
 });
 
 /**
