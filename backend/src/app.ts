@@ -18,6 +18,7 @@ import { billingRoutes } from './modules/billing/billing.routes.js';
 import { configRoutes } from './modules/config/config.routes.js';
 import { enrichRoutes } from './modules/enrich/routes.js';
 import { pricingRoutes } from './modules/pricing/routes.js';
+import { mobileTelemetryRoutes } from './modules/mobile-telemetry/routes.js';
 import { apiGuardPlugin } from './infra/security/api-guard.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
@@ -182,6 +183,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Remote Config
   await app.register(configRoutes, { prefix: '/v1', config });
+
+  // Mobile Telemetry Ingestion
+  await app.register(mobileTelemetryRoutes, { prefix: '/v1' });
 
   // Root endpoint
   app.get('/', async (_request, reply) => {

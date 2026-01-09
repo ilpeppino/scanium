@@ -24,6 +24,7 @@ services:
       - --storage.path=/var/lib/alloy/data
     networks:
       - observability
+      - backend_scanium-network
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/ready"]
       interval: 10s
@@ -144,6 +145,8 @@ networks:
   observability:
     name: scanium-observability
     driver: bridge
+  backend_scanium-network:
+    external: true
 
 volumes:
   ***REMOVED*** Named volumes for easier backup/restore
