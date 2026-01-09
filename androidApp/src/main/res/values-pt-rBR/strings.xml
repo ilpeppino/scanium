@@ -538,6 +538,15 @@
     <string name="edit_item_user_provided">Fornecido pelo usuário</string>
     <string name="edit_item_new_attributes">Novos atributos detectados</string>
     <string name="edit_item_missing_fields">Faltando: %1$s</string>
+    <string name="edit_item_field_brand">Marca</string>
+    <string name="edit_item_field_product_type">Produto/Tipo</string>
+    <string name="edit_item_field_model">Modelo</string>
+    <string name="edit_item_field_color">Cor</string>
+    <string name="edit_item_field_size">Tamanho</string>
+    <string name="edit_item_field_material">Material</string>
+    <string name="edit_item_field_condition">Condição</string>
+    <string name="edit_item_field_notes">Notas</string>
+    <string name="edit_item_notes_placeholder">Detalhes adicionais…</string>
 
     <!-- Generated Listing Screen -->
     <string name="generated_listing_title">Anúncio gerado</string>
@@ -569,4 +578,36 @@
     <!-- Condition options -->
     <string name="condition_label">Condição</string>
     <string name="category_label">Categoria</string>
+
+    <!-- Item Categories (localized display names) -->
+    <string name="category_fashion">Moda</string>
+    <string name="category_home_good">Artigo doméstico</string>
+    <string name="category_food">Produto alimentício</string>
+    <string name="category_place">Lugar</string>
+    <string name="category_plant">Planta</string>
+    <string name="category_electronics">Eletrônicos</string>
+    <string name="category_document">Documento</string>
+    <string name="category_barcode">Código de barras</string>
+    <string name="category_qr_code">Código QR</string>
+    <string name="category_unknown">Desconhecido</string>
+
+    <!-- Item Conditions (localized display names) -->
+    <string name="item_condition_new">Novo</string>
+    <string name="item_condition_new_desc">Novo em folha, nunca usado</string>
+    <string name="item_condition_as_good_as_new">Como novo</string>
+    <string name="item_condition_as_good_as_new_desc">Condição como novo com sinais mínimos de uso</string>
+    <string name="item_condition_used">Usado</string>
+    <string name="item_condition_used_desc">Usado anteriormente com desgaste visível</string>
+    <string name="item_condition_refurbished">Recondicionado</string>
+    <string name="item_condition_refurbished_desc">Restaurado para condição de funcionamento</string>
+
+    <!-- Attribute Sources (localized labels) -->
+    <string name="attribute_source_vision">Detecção visual</string>
+    <string name="attribute_source_vision_color">Detecção de cor</string>
+    <string name="attribute_source_vision_logo">Detecção de logo</string>
+    <string name="attribute_source_vision_label">Detecção de rótulo</string>
+    <string name="attribute_source_vision_ocr">Reconhecimento de texto</string>
+    <string name="attribute_source_user">Fornecido pelo usuário</string>
+    <string name="attribute_source_enrichment">Enriquecimento</string>
+    <string name="attribute_source_unknown">Fonte desconhecida</string>
 </resources>

@@ -14,7 +14,7 @@ describe('Listing Generation Prompts', () => {
       const prompt = buildListingSystemPrompt();
 
       expect(prompt).toContain('marketplace listing assistant');
-      expect(prompt).toContain('Respond in English');
+      expect(prompt).toContain('Reply in English');
       expect(prompt).toContain('neutral');
       expect(prompt).toContain('EUR');
     });
@@ -31,6 +31,58 @@ describe('Listing Generation Prompts', () => {
 
       expect(prompt).toContain('German');
       expect(prompt).toContain('Deutsch');
+    });
+
+    it('includes French language instruction when specified', () => {
+      const prompt = buildListingSystemPrompt({ language: 'FR' });
+
+      expect(prompt).toContain('French');
+      expect(prompt).toContain('Français');
+    });
+
+    it('includes Italian language instruction when specified', () => {
+      const prompt = buildListingSystemPrompt({ language: 'IT' });
+
+      expect(prompt).toContain('Italian');
+      expect(prompt).toContain('Italiano');
+    });
+
+    it('includes Spanish language instruction when specified', () => {
+      const prompt = buildListingSystemPrompt({ language: 'ES' });
+
+      expect(prompt).toContain('Spanish');
+      expect(prompt).toContain('Español');
+    });
+
+    it('includes Portuguese language instruction when specified', () => {
+      const prompt = buildListingSystemPrompt({ language: 'PT_BR' });
+
+      expect(prompt).toContain('Portuguese');
+      expect(prompt).toContain('Português');
+    });
+
+    it('enforces strict language compliance with "Do not mix languages"', () => {
+      const prompt = buildListingSystemPrompt({ language: 'EN' });
+
+      expect(prompt).toContain('Do not mix languages');
+      expect(prompt).toContain('All output');
+      expect(prompt).toContain('must be in English');
+    });
+
+    it('enforces language compliance for all supported languages', () => {
+      const languages = ['EN', 'NL', 'DE', 'FR', 'IT', 'ES', 'PT_BR'];
+
+      for (const lang of languages) {
+        const prompt = buildListingSystemPrompt({ language: lang });
+        expect(prompt).toContain('Do not mix languages');
+      }
+    });
+
+    it('falls back to English for unsupported language codes', () => {
+      const prompt = buildListingSystemPrompt({ language: 'ZZ' });
+
+      expect(prompt).toContain('Reply in English');
+      expect(prompt).toContain('Do not mix languages');
     });
 
     it('includes friendly tone instruction when specified', () => {

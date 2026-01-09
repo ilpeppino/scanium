@@ -83,6 +83,7 @@ fun SettingsAssistantScreen(
             "FR" to stringResource(R.string.settings_language_fr),
             "ES" to stringResource(R.string.settings_language_es),
             "IT" to stringResource(R.string.settings_language_it),
+            "PT_BR" to stringResource(R.string.settings_language_pt_br),
         )
     val assistantLanguageLabel =
         languageOptions.firstOrNull { it.first == assistantLanguage }?.second

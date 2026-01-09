@@ -1386,7 +1386,7 @@ private fun ConditionBadge(condition: ItemCondition) {
         color = backgroundColor,
     ) {
         Text(
-            text = condition.displayName,
+            text = ItemLocalizer.getConditionName(condition),
             style = MaterialTheme.typography.labelSmall,
             color = textColor,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

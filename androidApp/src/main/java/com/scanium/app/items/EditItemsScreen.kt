@@ -475,7 +475,7 @@ private fun ConditionDropdown(
             // All condition options
             ItemCondition.entries.forEach { condition ->
                 DropdownMenuItem(
-                    text = { Text(condition.displayName) },
+                    text = { Text(ItemLocalizer.getConditionName(condition)) },
                     onClick = {
                         onConditionSelected(condition)
                         expanded = false
@@ -573,7 +573,7 @@ private fun CategoryDropdown(
         ) {
             com.scanium.app.ml.ItemCategory.entries.forEach { category ->
                 DropdownMenuItem(
-                    text = { Text(category.displayName) },
+                    text = { Text(ItemLocalizer.getCategoryName(category)) },
                     onClick = {
                         onCategorySelected(category)
                         expanded = false
