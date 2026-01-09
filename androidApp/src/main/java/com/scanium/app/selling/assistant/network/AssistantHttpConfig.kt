@@ -49,8 +49,17 @@ data class AssistantHttpConfig(
         const val WARMUP_CALL_TIMEOUT_SECONDS = 15L
         const val WARMUP_RETRY_COUNT = 0 // No retries for warmup
 
+        // Vision/Enrichment defaults - aligned with backend VISION_TIMEOUT_MS=10000
+        // Client timeout must be > backend timeout to avoid false "unavailable" errors
+        const val VISION_CONNECT_TIMEOUT_SECONDS = 10L
+        const val VISION_READ_TIMEOUT_SECONDS = 30L  // Backend: 10s + buffer
+        const val VISION_WRITE_TIMEOUT_SECONDS = 30L // For multipart photo uploads
+        const val VISION_CALL_TIMEOUT_SECONDS = 40L  // Overall budget
+        const val VISION_RETRY_COUNT = 1 // Retry once on transient errors
+
         /**
          * Default production configuration for chat and multipart requests.
+         * Aligned with backend ASSIST_PROVIDER_TIMEOUT_MS=30000.
          */
         val DEFAULT = AssistantHttpConfig()
 
@@ -76,6 +85,19 @@ data class AssistantHttpConfig(
             writeTimeoutSeconds = WARMUP_WRITE_TIMEOUT_SECONDS,
             callTimeoutSeconds = WARMUP_CALL_TIMEOUT_SECONDS,
             retryCount = WARMUP_RETRY_COUNT,
+        )
+
+        /**
+         * Configuration for vision insights and enrichment operations.
+         * Aligned with backend VISION_TIMEOUT_MS=10000.
+         * Client timeout > backend timeout to avoid false "unavailable" errors.
+         */
+        val VISION = AssistantHttpConfig(
+            connectTimeoutSeconds = VISION_CONNECT_TIMEOUT_SECONDS,
+            readTimeoutSeconds = VISION_READ_TIMEOUT_SECONDS,
+            writeTimeoutSeconds = VISION_WRITE_TIMEOUT_SECONDS,
+            callTimeoutSeconds = VISION_CALL_TIMEOUT_SECONDS,
+            retryCount = VISION_RETRY_COUNT,
         )
 
         /**

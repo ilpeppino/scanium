@@ -6,6 +6,8 @@ import com.scanium.app.BuildConfig
 import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.network.security.RequestSigner
+import com.scanium.app.selling.assistant.network.AssistantHttpConfig
+import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import com.scanium.shared.core.models.items.VisionAttributes
 import com.scanium.shared.core.models.items.VisionColor
 import com.scanium.shared.core.models.items.VisionLabel
@@ -26,7 +28,6 @@ import java.net.SocketTimeoutException
 import java.net.URI
 import java.net.UnknownHostException
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
 
 /**
  * Response from the vision insights endpoint.
@@ -113,34 +114,36 @@ class VisionInsightsRepository(
 ) {
     companion object {
         private const val TAG = "VisionInsightsRepo"
-        // Unified timeout policy for enrichment/vision calls (Phase 3)
-        private const val CONNECT_TIMEOUT_SECONDS = 10L
-        private const val READ_TIMEOUT_SECONDS = 30L  // Increased from 15s for vision processing
-        private const val WRITE_TIMEOUT_SECONDS = 30L // For multipart photo uploads
         private const val JPEG_QUALITY = 85
         private const val MAX_IMAGE_DIMENSION = 1024 // Resize large images
     }
 
-    private val client: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-        .apply {
-            // Certificate pinning for MITM protection
-            val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
-            val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
-            if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
-                val host = runCatching { URI(baseUrl).host }.getOrNull()
-                if (!host.isNullOrBlank()) {
-                    certificatePinner(
+    private val client: OkHttpClient = run {
+        val baseClient = AssistantOkHttpClientFactory.create(
+            config = AssistantHttpConfig.VISION,
+            logStartupPolicy = false,
+        )
+
+        // Add certificate pinning if configured
+        val certificatePin = BuildConfig.SCANIUM_API_CERTIFICATE_PIN
+        val baseUrl = BuildConfig.SCANIUM_API_BASE_URL
+        if (certificatePin.isNotBlank() && baseUrl.isNotBlank()) {
+            val host = runCatching { URI(baseUrl).host }.getOrNull()
+            if (!host.isNullOrBlank()) {
+                baseClient.newBuilder()
+                    .certificatePinner(
                         CertificatePinner.Builder()
                             .add(host, certificatePin)
                             .build()
                     )
-                }
+                    .build()
+            } else {
+                baseClient
             }
+        } else {
+            baseClient
         }
-        .build()
+    }
 
     private val json = Json {
         ignoreUnknownKeys = true

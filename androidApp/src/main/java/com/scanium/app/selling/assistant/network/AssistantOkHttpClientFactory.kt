@@ -130,6 +130,7 @@ object AssistantOkHttpClientFactory {
         "default" to AssistantHttpConfig.DEFAULT.toLogString(),
         "preflight" to AssistantHttpConfig.PREFLIGHT.toLogString(),
         "warmup" to AssistantHttpConfig.WARMUP.toLogString(),
+        "vision" to AssistantHttpConfig.VISION.toLogString(),
         "test" to AssistantHttpConfig.TEST.toLogString(),
     )
 }
