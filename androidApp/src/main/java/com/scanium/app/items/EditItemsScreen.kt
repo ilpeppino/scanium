@@ -444,7 +444,7 @@ private fun ConditionDropdown(
         modifier = modifier,
     ) {
         OutlinedTextField(
-            value = selectedCondition?.displayName ?: "",
+            value = selectedCondition?.let { ItemLocalizer.getConditionName(it) } ?: "",
             onValueChange = {},
             readOnly = true,
             label = { Text(stringResource(R.string.edit_item_condition_label)) },

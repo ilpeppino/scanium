@@ -55,8 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.di.DraftReviewViewModelFactoryEntryPoint
+import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.listing.DraftField
 import com.scanium.app.listing.DraftFieldKey
+import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.DraftStatus
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraft
@@ -159,7 +162,19 @@ fun DraftReviewScreen(
                                     val selectedProfile =
                                         state.profiles.firstOrNull { it.id == state.selectedProfileId }
                                             ?: ExportProfiles.generic()
-                                    val export = ListingDraftFormatter.format(draft, selectedProfile)
+
+                                    // Localize condition for export
+                                    val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                        ItemAttributeLocalizer.localizeCondition(context, it)
+                                    }
+                                    val exportDraft = if (localizedCondition != null) {
+                                        val newFields = draft.fields.toMutableMap()
+                                        newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                            ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                                        draft.copy(fields = newFields)
+                                    } else draft
+
+                                    val export = ListingDraftFormatter.format(exportDraft, selectedProfile)
                                     ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
                                     scope.launch { snackbarHostState.showSnackbar("Listing copied") }
                                 } else {
@@ -185,7 +200,19 @@ fun DraftReviewScreen(
                         val selectedProfile =
                             state.profiles.firstOrNull { it.id == state.selectedProfileId }
                                 ?: ExportProfiles.generic()
-                        val export = ListingDraftFormatter.format(draft, selectedProfile)
+
+                        // Localize condition for export
+                        val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                            ItemAttributeLocalizer.localizeCondition(context, it)
+                        }
+                        val exportDraft = if (localizedCondition != null) {
+                            val newFields = draft.fields.toMutableMap()
+                            newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                            draft.copy(fields = newFields)
+                        } else draft
+
+                        val export = ListingDraftFormatter.format(exportDraft, selectedProfile)
                         val shareImages =
                             draft.photos.map { it.image }.ifEmpty {
                                 listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)

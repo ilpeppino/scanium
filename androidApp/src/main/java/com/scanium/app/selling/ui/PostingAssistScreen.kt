@@ -60,7 +60,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.di.PostingAssistViewModelFactoryEntryPoint
+import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.listing.DraftField
+import com.scanium.app.listing.DraftFieldKey
+import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraftFormatter
 import com.scanium.app.listing.PostingStep
@@ -157,7 +161,18 @@ fun PostingAssistScreen(
                             onClick = {
                                 moreExpanded = false
                                 if (draft != null) {
-                                    val export = ListingDraftFormatter.format(draft, profile)
+                                    // Localize condition
+                                    val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                        ItemAttributeLocalizer.localizeCondition(context, it)
+                                    }
+                                    val exportDraft = if (localizedCondition != null) {
+                                        val newFields = draft.fields.toMutableMap()
+                                        newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                            ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                                        draft.copy(fields = newFields)
+                                    } else draft
+
+                                    val export = ListingDraftFormatter.format(exportDraft, profile)
                                     ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
                                     Log.d("PostingAssist", "step copied: all")
                                     scope.launch { snackbarHostState.showSnackbar("Listing copied") }
@@ -193,7 +208,18 @@ fun PostingAssistScreen(
                 },
                 onCopyAll = {
                     if (draft != null) {
-                        val export = ListingDraftFormatter.format(draft, profile)
+                        // Localize condition
+                        val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                            ItemAttributeLocalizer.localizeCondition(context, it)
+                        }
+                        val exportDraft = if (localizedCondition != null) {
+                            val newFields = draft.fields.toMutableMap()
+                            newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                            draft.copy(fields = newFields)
+                        } else draft
+
+                        val export = ListingDraftFormatter.format(exportDraft, profile)
                         ListingClipboardHelper.copy(context, "Listing package", export.clipboardText)
                         scope.launch { snackbarHostState.showSnackbar("Listing copied") }
                     }
@@ -206,7 +232,19 @@ fun PostingAssistScreen(
                     scope.launch {
                         Log.d("PostingAssist", "share invoked")
                         val currentItem = items.firstOrNull { it.id == draft.itemId }
-                        val export = ListingDraftFormatter.format(draft, profile)
+
+                        // Localize condition
+                        val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                            ItemAttributeLocalizer.localizeCondition(context, it)
+                        }
+                        val exportDraft = if (localizedCondition != null) {
+                            val newFields = draft.fields.toMutableMap()
+                            newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                            draft.copy(fields = newFields)
+                        } else draft
+
+                        val export = ListingDraftFormatter.format(exportDraft, profile)
                         val shareImages =
                             draft.photos.map { it.image }.ifEmpty {
                                 listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)

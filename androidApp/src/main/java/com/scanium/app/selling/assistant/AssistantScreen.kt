@@ -99,7 +99,11 @@ import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.di.AssistantViewModelFactoryEntryPoint
+import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
+import com.scanium.app.listing.DraftField
+import com.scanium.app.listing.DraftFieldKey
+import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.ExportProfiles
 import com.scanium.app.listing.ListingDraftBuilder
 import com.scanium.app.listing.ListingDraftFormatter
@@ -435,7 +439,19 @@ fun AssistantScreen(
                                             val profile =
                                                 state.profile.takeIf { it.id == draft.profile }
                                                     ?: ExportProfiles.generic()
-                                            val export = ListingDraftFormatter.format(draft, profile)
+
+                                            // Localize condition
+                                            val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                                ItemAttributeLocalizer.localizeCondition(context, it)
+                                            }
+                                            val exportDraft = if (localizedCondition != null) {
+                                                val newFields = draft.fields.toMutableMap()
+                                                newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                                    ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                                                draft.copy(fields = newFields)
+                                            } else draft
+
+                                            val export = ListingDraftFormatter.format(exportDraft, profile)
                                             val currentItem = itemsViewModel.items.value.firstOrNull { it.id == draft.itemId }
                                             val shareImages =
                                                 draft.photos.map { it.image }.ifEmpty {

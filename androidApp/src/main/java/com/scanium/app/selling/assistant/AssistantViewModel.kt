@@ -1,10 +1,12 @@
 package com.scanium.app.selling.assistant
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.items.ItemLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.listing.DraftField
 import com.scanium.app.listing.DraftFieldKey
@@ -37,6 +39,7 @@ import com.scanium.app.selling.persistence.ListingDraftStore
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -434,6 +437,7 @@ class AssistantViewModel
     constructor(
         @Assisted private val itemIds: List<String>,
         @Assisted private val itemsViewModel: ItemsViewModel,
+        @ApplicationContext private val context: Context,
         private val draftStore: ListingDraftStore,
         private val exportProfileRepository: ExportProfileRepository,
         private val exportProfilePreferences: ExportProfilePreferences,
@@ -1044,6 +1048,18 @@ class AssistantViewModel
                     value = attr.value,
                     confidence = attr.confidence,
                     source = source,
+                )
+            }
+
+            // Add localized condition
+            item.condition?.let { condition ->
+                addIfMissing(
+                    ItemAttributeSnapshot(
+                        key = "condition",
+                        value = ItemLocalizer.getConditionName(context, condition),
+                        confidence = 1.0f,
+                        source = AttributeSource.USER,
+                    ),
                 )
             }
 
