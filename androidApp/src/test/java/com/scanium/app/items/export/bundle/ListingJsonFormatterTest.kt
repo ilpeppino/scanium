@@ -81,6 +81,7 @@ class ListingJsonFormatterTest {
 
     @Test
     fun `formatSingle includes photos array`() {
+        // Primary photo is separate from photoUris; formatter deduplicates and puts primary first
         val bundle = createTestBundle(
             primaryPhotoUri = "/path/primary.jpg",
             photoUris = listOf("/path/1.jpg", "/path/2.jpg"),
@@ -89,11 +90,11 @@ class ListingJsonFormatterTest {
         val json = ListingJsonFormatter.formatSingle(bundle)
 
         val photos = json.getJSONArray("photos")
-        assertEquals(3, photos.length())
-        assertEquals("/path/primary.jpg", photos.getString(0))
+        assertEquals(3, photos.length()) // primary + 2 additional (deduplicated)
+        assertEquals("/path/primary.jpg", photos.getString(0)) // primary first
         assertEquals("/path/1.jpg", photos.getString(1))
         assertEquals("/path/2.jpg", photos.getString(2))
-        assertEquals(3, json.getInt("photoCount"))
+        assertEquals(3, json.getInt("photoCount")) // photos.length()
     }
 
     @Test
