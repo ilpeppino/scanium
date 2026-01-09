@@ -113,7 +113,7 @@ fun EditItemScreenV3(
     var sizeField by remember(item) { mutableStateOf(item?.attributes?.get("size")?.value ?: "") }
     var materialField by remember(item) { mutableStateOf(item?.attributes?.get("material")?.value ?: "") }
     var conditionField by remember(item) { mutableStateOf(item?.attributes?.get("condition")?.value ?: item?.condition?.name ?: "") }
-    var notesField by remember(item) { mutableStateOf(item?.displayLabel ?: "") }
+    var notesField by remember(item) { mutableStateOf(item?.attributesSummaryText ?: "") }
 
     val currentItem = item
     if (currentItem == null) {
@@ -644,6 +644,11 @@ private fun saveFieldsToAttributes(
         )
     }
 
-    // Update display label (notes field maps to labelText)
-    itemsViewModel.updateItemFields(itemId, labelText = notesField.takeIf { it.isNotBlank() })
+    // Update summary text (notes field maps to attributesSummaryText)
+    // Mark as user-edited to preserve manual changes
+    itemsViewModel.updateSummaryText(
+        itemId = itemId,
+        summaryText = notesField,
+        userEdited = notesField.isNotBlank(),
+    )
 }
