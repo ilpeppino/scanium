@@ -17,8 +17,8 @@ RUN npm ci --only=production --legacy-peer-deps && \
 COPY prisma ./prisma
 
 # Generate Prisma client into production node_modules
-# Use local prisma from node_modules to avoid version mismatch
-RUN ./node_modules/.bin/prisma generate
+# Use prisma@5 to avoid pulling Prisma 7 which has breaking changes
+RUN npx prisma@5 generate
 
 # Stage 2: Builder
 FROM node:20-bookworm-slim AS builder
@@ -35,8 +35,8 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 
 # Generate Prisma client
-# Use local prisma from node_modules to avoid version mismatch
-RUN ./node_modules/.bin/prisma generate
+# Builder stage has dev dependencies including prisma CLI
+RUN npx prisma generate
 
 # Build TypeScript
 RUN npm run build
