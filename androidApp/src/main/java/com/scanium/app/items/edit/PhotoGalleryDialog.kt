@@ -120,6 +120,9 @@ private fun PhotoGalleryContent(
         pageCount = { photos.size },
     )
 
+    // Track whether current page is zoomed (scale > 1f)
+    var isZoomed by remember { mutableStateOf(false) }
+
     // Remember the initial page to scroll to on first composition
     val rememberedInitialIndex = rememberSaveable { initialIndex }
 
@@ -139,6 +142,7 @@ private fun PhotoGalleryContent(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
             beyondBoundsPageCount = 1, // Prefetch adjacent images
+            userScrollEnabled = !isZoomed, // Disable swipe when zoomed, enable when at 1x
         ) { page ->
             PhotoPage(
                 photoRef = photos[page],
@@ -147,6 +151,7 @@ private fun PhotoGalleryContent(
                     page + 1,
                     photos.size,
                 ),
+                onZoomChanged = { zoomed -> isZoomed = zoomed },
             )
         }
 
@@ -191,6 +196,7 @@ private fun PhotoGalleryContent(
 private fun PhotoPage(
     photoRef: GalleryPhotoRef,
     contentDescription: String,
+    onZoomChanged: (Boolean) -> Unit,
 ) {
     val bitmap: ImageBitmap? = remember(photoRef) {
         when (photoRef) {
@@ -215,6 +221,7 @@ private fun PhotoPage(
             ZoomableImage(
                 bitmap = bitmap,
                 contentDescription = contentDescription,
+                onZoomChanged = onZoomChanged,
             )
         } else {
             // Fallback for failed loads
@@ -240,11 +247,14 @@ private fun PhotoPage(
  * - Pan when zoomed in
  * - Double-tap to toggle between 1x and 2x zoom
  * - Constrained panning to keep image in view
+ *
+ * @param onZoomChanged Callback invoked when zoom state changes (true = zoomed, false = not zoomed)
  */
 @Composable
 private fun ZoomableImage(
     bitmap: ImageBitmap,
     contentDescription: String,
+    onZoomChanged: (Boolean) -> Unit,
     minScale: Float = 1f,
     maxScale: Float = 5f,
 ) {
@@ -256,6 +266,12 @@ private fun ZoomableImage(
     LaunchedEffect(bitmap) {
         scale = 1f
         offset = Offset.Zero
+        onZoomChanged(false)
+    }
+
+    // Notify parent when zoom state changes
+    LaunchedEffect(scale) {
+        onZoomChanged(scale > 1f)
     }
 
     Box(
