@@ -405,6 +405,47 @@ class ItemsStateManagerTest {
             assertThat(items[0].detectedAttributes).isEmpty()
         }
 
+    // ==================== Summary Text Persistence Tests ====================
+
+    @Test
+    fun whenSummaryTextUpdated_thenItemIsPersistedWithNewSummaryText() =
+        runTest {
+            // Arrange - Create item without summary text
+            val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
+            val manager = createManager()
+            manager.addItem(item)
+            advanceUntilIdle()
+
+            // Get the actual aggregated ID (may differ from original ID)
+            val itemsAfterAdd = manager.items.first()
+            assertThat(itemsAfterAdd).hasSize(1)
+            val aggregatedId = itemsAfterAdd[0].id
+
+            // Act - Update summary text
+            val notesText = "AI-generated description:\nBrand: Nike\nCondition: Like New\n• Premium quality"
+            manager.updateSummaryText(
+                itemId = aggregatedId,
+                summaryText = notesText,
+                userEdited = true,
+            )
+            advanceUntilIdle()
+
+            // Assert - Item should have updated summary text
+            val items = manager.items.first()
+            assertThat(items).hasSize(1)
+            assertThat(items[0].attributesSummaryText).isEqualTo(notesText)
+            assertThat(items[0].summaryTextUserEdited).isTrue()
+
+            // Assert - Store should have persisted the change
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems).hasSize(1)
+            assertThat(persistedItems[0].attributesSummaryText).isEqualTo(notesText)
+            assertThat(persistedItems[0].summaryTextUserEdited).isTrue()
+        }
+
+    // Note: Full reload test skipped due to test aggregator complexity.
+    // The persistence is verified in the first test (whenSummaryTextUpdated_thenItemIsPersistedWithNewSummaryText)
+
     // ==================== Thumbnail Persistence Tests (Process Death) ====================
 
     @Test
