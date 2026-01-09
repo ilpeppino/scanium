@@ -64,9 +64,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
+import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
@@ -317,6 +319,7 @@ fun EditItemScreenV3(
                 value = brandField,
                 onValueChange = { brandField = it },
                 onClear = { brandField = "" },
+                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "brand"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
             )
@@ -329,6 +332,7 @@ fun EditItemScreenV3(
                 value = productTypeField,
                 onValueChange = { productTypeField = it },
                 onClear = { productTypeField = "" },
+                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "itemType"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
             )
@@ -341,6 +345,7 @@ fun EditItemScreenV3(
                 value = modelField,
                 onValueChange = { modelField = it },
                 onClear = { modelField = "" },
+                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "model"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
             )
@@ -353,6 +358,7 @@ fun EditItemScreenV3(
                 value = colorField,
                 onValueChange = { colorField = it },
                 onClear = { colorField = "" },
+                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "color"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
             )
@@ -365,6 +371,7 @@ fun EditItemScreenV3(
                 value = sizeField,
                 onValueChange = { sizeField = it },
                 onClear = { sizeField = "" },
+                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "size"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
             )
@@ -377,6 +384,7 @@ fun EditItemScreenV3(
                 value = materialField,
                 onValueChange = { materialField = it },
                 onClear = { materialField = "" },
+                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "material"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
             )
@@ -389,6 +397,7 @@ fun EditItemScreenV3(
                 value = conditionField,
                 onValueChange = { conditionField = it },
                 onClear = { conditionField = "" },
+                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "condition"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
             )
@@ -462,6 +471,7 @@ private fun LabeledTextField(
     value: String,
     onValueChange: (String) -> Unit,
     onClear: () -> Unit,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
     imeAction: ImeAction = ImeAction.Next,
     onNext: () -> Unit = {},
 ) {
@@ -476,6 +486,7 @@ private fun LabeledTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
+            visualTransformation = visualTransformation,
             trailingIcon = {
                 if (value.isNotEmpty()) {
                     IconButton(onClick = onClear) {

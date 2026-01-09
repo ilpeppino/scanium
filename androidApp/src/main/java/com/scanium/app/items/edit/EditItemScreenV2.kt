@@ -74,6 +74,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.items.summary.AttributeSummaryGenerator
@@ -730,6 +731,7 @@ private fun DetectedAttributesSection(
             ) {
                 displayAttrs.forEach { attr ->
                     AttributeChip(
+                        attributeKey = attr.key,
                         label = attr.displayName,
                         value = attr.value,
                         isUserProvided = attr.isUserProvided,
@@ -747,13 +749,16 @@ private fun DetectedAttributesSection(
  */
 @Composable
 private fun AttributeChip(
+    attributeKey: String,
     label: String,
     value: String,
     isUserProvided: Boolean,
     evidenceType: String?,
     confidence: Float,
 ) {
+    val context = LocalContext.current
     val userProvidedText = stringResource(R.string.edit_item_user_provided)
+    val displayValue = AttributeDisplayFormatter.formatForDisplay(context, attributeKey, value)
     val containerColor = when {
         isUserProvided -> MaterialTheme.colorScheme.primaryContainer
         confidence >= 0.8f -> MaterialTheme.colorScheme.tertiaryContainer
@@ -771,7 +776,7 @@ private fun AttributeChip(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = value,
+                    text = displayValue,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                 )
