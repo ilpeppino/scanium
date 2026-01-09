@@ -69,7 +69,7 @@ class CsvExportSerializerTest {
         val output = StringBuilder()
 
         CsvExportSerializer().writeTo(output, listOf(item)) {
-            "images/item_${it.id}.jpg"
+            listOf("images/item_${it.id}.jpg")
         }
 
         val lines = output.toString().split("\n")

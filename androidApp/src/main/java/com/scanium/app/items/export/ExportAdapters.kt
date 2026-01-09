@@ -3,8 +3,11 @@ package com.scanium.app.items.export
 import com.scanium.app.items.ScannedItem
 import com.scanium.core.export.ExportItem
 import com.scanium.core.export.ExportPayload
+import com.scanium.shared.core.models.items.ItemPhoto
+import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import java.io.File
 
 /**
  * Convert a generic ScannedItem<Uri> to ExportItem.
@@ -30,11 +33,11 @@ fun ScannedItem.toExportItem(): ExportItem {
         }
 
         // 2. Additional photos
-        additionalPhotos.forEach { photo ->
-            // For now, we can only include photos that have an ImageRef representation
-            // URI-only photos would need conversion to ImageRef (future enhancement)
-            // This is acceptable as the primary use case is for items scanned in the app
-        }
+        additionalPhotos
+            .sortedWith(compareBy<ItemPhoto> { it.capturedAt }.thenBy { it.id })
+            .forEach { photo ->
+                resolvePhotoRef(photo)?.let { add(it) }
+            }
     }
 
     return ExportItem(
@@ -48,6 +51,36 @@ fun ScannedItem.toExportItem(): ExportItem {
         imageRef = imageRefs.firstOrNull(),
         imageRefs = imageRefs,
     )
+}
+
+private fun resolvePhotoRef(photo: ItemPhoto): ImageRef? {
+    photo.bytes?.let { bytes ->
+        return ImageRef.Bytes(
+            bytes = bytes,
+            mimeType = photo.mimeType,
+            width = photo.width,
+            height = photo.height,
+        )
+    }
+
+    val uri = photo.uri ?: return null
+    val file = File(uri)
+    if (!file.exists()) {
+        return null
+    }
+    val mimeType = when (file.extension.lowercase()) {
+        "png" -> "image/png"
+        "jpg", "jpeg" -> "image/jpeg"
+        else -> photo.mimeType
+    }
+    return runCatching {
+        ImageRef.Bytes(
+            bytes = file.readBytes(),
+            mimeType = mimeType,
+            width = photo.width,
+            height = photo.height,
+        )
+    }.getOrNull()
 }
 
 /**

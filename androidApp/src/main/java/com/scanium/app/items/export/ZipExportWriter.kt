@@ -28,27 +28,50 @@ class ZipExportWriter(
         const val JPG_MIME = "image/jpg"
     }
 
+    data class ExportZipResult(
+        val zipFile: File,
+        val photosRequested: Int,
+        val photosWritten: Int,
+        val photosSkipped: Int,
+    )
+
     suspend fun writeToCache(
         context: Context,
         payload: ExportPayload,
-    ): Result<File> =
+    ): Result<ExportZipResult> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val timestamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
                 val fileName = "scanium-export-$timestamp.zip"
                 val outputDir = File(context.cacheDir, EXPORTS_DIR).apply { mkdirs() }
                 val file = File(outputDir, fileName)
-                val imageFilenames = mutableMapOf<String, String>()
+                val imageFilenames = mutableMapOf<String, List<String>>()
+                var photosRequested = 0
+                var photosWritten = 0
+                var photosSkipped = 0
 
                 ZipOutputStream(BufferedOutputStream(FileOutputStream(file))).use { zip ->
                     payload.items.forEach { item ->
-                        val imageBytes = resolveImageBytes(item.imageRef)?.let { ensureJpegBytes(it) }
-                        if (imageBytes != null) {
-                            val entryName = imageEntryName(item.id)
-                            zip.putNextEntry(ZipEntry(entryName))
-                            zip.write(imageBytes)
-                            zip.closeEntry()
-                            imageFilenames[item.id] = entryName
+                        val imageRefs = item.imageRefs.ifEmpty { listOfNotNull(item.imageRef) }
+                        val entryNames = mutableListOf<String>()
+                        photosRequested += imageRefs.size
+
+                        imageRefs.forEachIndexed { index, imageRef ->
+                            val imageBytes = resolveImageBytes(imageRef)?.let { ensureJpegBytes(it) }
+                            if (imageBytes != null) {
+                                val entryName = imageEntryName(item.id, index)
+                                zip.putNextEntry(ZipEntry(entryName))
+                                zip.write(imageBytes)
+                                zip.closeEntry()
+                                entryNames.add(entryName)
+                                photosWritten++
+                            } else {
+                                photosSkipped++
+                            }
+                        }
+
+                        if (entryNames.isNotEmpty()) {
+                            imageFilenames[item.id] = entryNames
                         }
                     }
 
@@ -61,7 +84,12 @@ class ZipExportWriter(
                     zip.closeEntry()
                 }
 
-                file
+                ExportZipResult(
+                    zipFile = file,
+                    photosRequested = photosRequested,
+                    photosWritten = photosWritten,
+                    photosSkipped = photosSkipped,
+                )
             }
         }
 
@@ -83,5 +111,6 @@ class ZipExportWriter(
         }.getOrNull()
     }
 
-    internal fun imageEntryName(itemId: String): String = "$IMAGES_DIR/item_$itemId.jpg"
+    internal fun imageEntryName(itemId: String, index: Int): String =
+        "$IMAGES_DIR/item_${itemId}_${String.format("%03d", index + 1)}.jpg"
 }
