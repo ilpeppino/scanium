@@ -55,7 +55,28 @@ otelcol.processor.batch "mobile" {
 
 // Loki exporter for logs
 otelcol.exporter.loki "mobile" {
+  forward_to = [loki.process.mobile.receiver]
+}
+
+// Process logs to extract labels
+loki.process "mobile" {
   forward_to = [loki.write.mobile.receiver]
+
+  stage.json {
+    expressions = {
+      event_name  = "attributes.event_name",
+      platform    = "attributes.platform",
+      app_version = "attributes.app_version",
+    }
+  }
+
+  stage.labels {
+    values = {
+      event_name  = "event_name",
+      platform    = "platform",
+      app_version = "app_version",
+    }
+  }
 }
 
 // Loki write component
