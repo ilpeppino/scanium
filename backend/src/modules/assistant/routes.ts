@@ -213,6 +213,19 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         })
       : new MockVisionExtractor();
 
+  // Log vision provider initialization with credential status
+  const credPath = config.googleCredentialsPath || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const credStatus = credPath ? 'configured' : 'not configured';
+  fastify.log.info(
+    {
+      provider: visionConfig.provider,
+      enabled: visionConfig.enabled,
+      credentialsPath: credPath ? credPath.replace(/^(.{10}).*(.{10})$/, '$1...$2') : 'none',
+      credentialStatus: credStatus,
+    },
+    'Vision extractor initialized'
+  );
+
   const visionCache = new VisualFactsCache({
     ttlMs: visionConfig.cacheTtlSeconds * 1000,
     maxEntries: visionConfig.cacheMaxEntries,
