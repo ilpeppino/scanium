@@ -9,14 +9,16 @@ import { VisualFacts } from '../../vision/types.js';
 
 /**
  * Language-specific instructions for response generation.
+ * These instructions enforce strict language compliance for all output.
  */
 const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
-  EN: 'Respond in English.',
-  NL: 'Respond in Dutch (Nederlands).',
-  DE: 'Respond in German (Deutsch).',
-  FR: 'Respond in French (Français).',
-  IT: 'Respond in Italian (Italiano).',
-  ES: 'Respond in Spanish (Español).',
+  EN: 'Reply in English. Do not mix languages. All output (title, description, warnings, etc.) must be in English.',
+  NL: 'Reply in Dutch (Nederlands). Do not mix languages. All output (title, description, warnings, etc.) must be in Dutch.',
+  DE: 'Reply in German (Deutsch). Do not mix languages. All output (title, description, warnings, etc.) must be in German.',
+  FR: 'Reply in French (Français). Do not mix languages. All output (title, description, warnings, etc.) must be in French.',
+  IT: 'Reply in Italian (Italiano). Do not mix languages. All output (title, description, warnings, etc.) must be in Italian.',
+  ES: 'Reply in Spanish (Español). Do not mix languages. All output (title, description, warnings, etc.) must be in Spanish.',
+  PT_BR: 'Reply in Brazilian Portuguese (Português Brasileiro). Do not mix languages. All output (title, description, warnings, etc.) must be in Portuguese.',
 };
 
 /**

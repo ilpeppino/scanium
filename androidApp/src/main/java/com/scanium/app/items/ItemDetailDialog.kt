@@ -123,7 +123,7 @@ fun ItemDetailDialog(
 
                 // Details
                 DetailRow(label = stringResource(R.string.item_detail_classification_label), value = item.displayLabel)
-                DetailRow(label = stringResource(R.string.item_detail_category_label), value = item.category.displayName)
+                DetailRow(label = stringResource(R.string.item_detail_category_label), value = ItemLocalizer.getCategoryName(item.category))
                 DetailRow(label = stringResource(R.string.item_detail_price_range_label), value = item.formattedPriceRange)
                 DetailRow(label = stringResource(R.string.item_detail_confidence_label), value = item.formattedConfidence)
                 DetailRow(

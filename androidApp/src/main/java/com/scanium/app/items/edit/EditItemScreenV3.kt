@@ -297,7 +297,7 @@ fun EditItemScreenV3(
 
             // Brand
             LabeledTextField(
-                label = "Brand",
+                label = stringResource(R.string.edit_item_field_brand),
                 value = brandField,
                 onValueChange = { brandField = it },
                 onClear = { brandField = "" },
@@ -309,7 +309,7 @@ fun EditItemScreenV3(
 
             // Product/Type
             LabeledTextField(
-                label = "Product/Type",
+                label = stringResource(R.string.edit_item_field_product_type),
                 value = productTypeField,
                 onValueChange = { productTypeField = it },
                 onClear = { productTypeField = "" },
@@ -321,7 +321,7 @@ fun EditItemScreenV3(
 
             // Model
             LabeledTextField(
-                label = "Model",
+                label = stringResource(R.string.edit_item_field_model),
                 value = modelField,
                 onValueChange = { modelField = it },
                 onClear = { modelField = "" },
@@ -333,7 +333,7 @@ fun EditItemScreenV3(
 
             // Color
             LabeledTextField(
-                label = "Color",
+                label = stringResource(R.string.edit_item_field_color),
                 value = colorField,
                 onValueChange = { colorField = it },
                 onClear = { colorField = "" },
@@ -345,7 +345,7 @@ fun EditItemScreenV3(
 
             // Size
             LabeledTextField(
-                label = "Size",
+                label = stringResource(R.string.edit_item_field_size),
                 value = sizeField,
                 onValueChange = { sizeField = it },
                 onClear = { sizeField = "" },
@@ -357,7 +357,7 @@ fun EditItemScreenV3(
 
             // Material
             LabeledTextField(
-                label = "Material",
+                label = stringResource(R.string.edit_item_field_material),
                 value = materialField,
                 onValueChange = { materialField = it },
                 onClear = { materialField = "" },
@@ -369,7 +369,7 @@ fun EditItemScreenV3(
 
             // Condition
             LabeledTextField(
-                label = "Condition",
+                label = stringResource(R.string.edit_item_field_condition),
                 value = conditionField,
                 onValueChange = { conditionField = it },
                 onClear = { conditionField = "" },
@@ -381,7 +381,7 @@ fun EditItemScreenV3(
 
             // Notes (multiline)
             Text(
-                text = "Notes",
+                text = stringResource(R.string.edit_item_field_notes),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 4.dp),
@@ -392,7 +392,7 @@ fun EditItemScreenV3(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp),
-                placeholder = { Text("Additional details...") },
+                placeholder = { Text(stringResource(R.string.edit_item_notes_placeholder)) },
                 trailingIcon = {
                     if (notesField.isNotEmpty()) {
                         IconButton(onClick = { notesField = "" }) {
