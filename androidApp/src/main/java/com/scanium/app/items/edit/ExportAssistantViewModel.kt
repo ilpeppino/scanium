@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.BuildConfig
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemsViewModel
@@ -222,9 +223,22 @@ class ExportAssistantViewModel
                     assistantPrefs = assistantPrefs,
                 )
 
+                // DEV-only logging (safe - no raw response body in release builds)
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, """
+                        Export response debug:
+                        - correlationId=$correlationId
+                        - suggestedDraftUpdates count=${response.suggestedDraftUpdates.size}
+                        - title length=${response.suggestedDraftUpdates.find { it.field == "title" }?.value?.length ?: 0}
+                        - description length=${response.suggestedDraftUpdates.find { it.field == "description" }?.value?.length ?: 0}
+                        - bullets count=${response.suggestedDraftUpdates.count { it.field.startsWith("bullet") }}
+                        - response.text length=${response.text.length}
+                    """.trimIndent())
+                }
+
                 Log.i(TAG, "Export response received: suggestedDraftUpdates=${response.suggestedDraftUpdates.size}")
 
-                // Parse response
+                // Parse response from structured suggestedDraftUpdates
                 val title = response.suggestedDraftUpdates
                     .find { it.field == "title" }?.value
                 val description = response.suggestedDraftUpdates
@@ -234,10 +248,37 @@ class ExportAssistantViewModel
                     .sortedBy { it.field }
                     .map { it.value }
 
-                // If no structured response, try to parse from response text
-                val finalTitle = title ?: parseTitle(response.text)
-                val finalDescription = description ?: parseDescription(response.text)
-                val finalBullets = bullets.ifEmpty { parseBullets(response.text) }
+                // CRITICAL: Only use fallback parsing if NO structured data exists
+                // to prevent JSON leakage from response.text into the UI
+                val hasStructuredData = response.suggestedDraftUpdates.isNotEmpty()
+
+                val finalTitle = if (hasStructuredData) {
+                    title
+                } else {
+                    title ?: parseTitle(response.text)
+                }
+
+                val finalDescription = if (hasStructuredData) {
+                    description
+                } else {
+                    description ?: parseDescription(response.text)
+                }
+
+                val finalBullets = if (hasStructuredData) {
+                    bullets
+                } else {
+                    bullets.ifEmpty { parseBullets(response.text) }
+                }
+
+                // Defensive check: Detect JSON leakage in description
+                if (finalDescription != null && containsJsonPattern(finalDescription)) {
+                    Log.e(TAG, "CRITICAL: JSON detected in description field - rejecting response")
+                    _state.value = ExportAssistantState.Error(
+                        message = "Invalid response format. Please try again.",
+                        isRetryable = true,
+                    )
+                    return@launch
+                }
 
                 // Update item with export fields
                 itemsViewModel.updateExportFields(
@@ -483,5 +524,26 @@ class ExportAssistantViewModel
         }
 
         return bullets.take(5)
+    }
+
+    /**
+     * Detect JSON patterns in text that indicate leakage.
+     * Returns true if the text contains JSON keys/syntax that should not be in user-visible content.
+     */
+    private fun containsJsonPattern(text: String): Boolean {
+        // Check for common JSON patterns that indicate raw response leakage
+        val jsonPatterns = listOf(
+            """"suggestedDraftUpdates"""",
+            """"confidence"""",
+            """"requiresConfirmation"""",
+            """": \{""",
+            """": \[""",
+            """\{[\s]*"field"""",
+            """\{[\s]*"value"""",
+        )
+
+        return jsonPatterns.any { pattern ->
+            Regex(pattern).containsMatchIn(text)
+        }
     }
 }

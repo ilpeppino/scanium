@@ -373,5 +373,93 @@ describe('OpenAIAssistantProvider', () => {
       expect(photoAction).toBeDefined();
       expect(response.suggestedNextPhoto).toBe('Take a photo of the label');
     });
+
+    it('never includes raw JSON in content field when suggestedDraftUpdates are present', async () => {
+      // Simulate backend response with suggestedDraftUpdates in JSON
+      const rawJsonResponse = JSON.stringify({
+        title: 'Vintage Nike Sneakers - Size 42',
+        description: 'Great condition sneakers with minimal wear. Perfect for collectors.',
+        suggestedDraftUpdates: [
+          { field: 'title', value: 'Vintage Nike Sneakers - Size 42', confidence: 'HIGH', requiresConfirmation: false },
+          { field: 'description', value: 'Great condition sneakers with minimal wear. Perfect for collectors.', confidence: 'HIGH', requiresConfirmation: false },
+        ],
+      });
+
+      const { parseListingResponse } = await import('./prompts/listing-generation.js');
+      vi.mocked(parseListingResponse).mockReturnValueOnce({
+        title: 'Vintage Nike Sneakers - Size 42',
+        description: 'Great condition sneakers with minimal wear. Perfect for collectors.',
+        suggestedDraftUpdates: [
+          { field: 'title', value: 'Vintage Nike Sneakers - Size 42', confidence: 'HIGH', requiresConfirmation: false },
+          { field: 'description', value: 'Great condition sneakers with minimal wear. Perfect for collectors.', confidence: 'HIGH', requiresConfirmation: false },
+        ],
+      });
+
+      const mockCreate = vi.fn().mockResolvedValue({
+        choices: [{ message: { content: rawJsonResponse } }],
+      });
+
+      (provider as unknown as { client: { chat: { completions: { create: typeof mockCreate } } } }).client = {
+        chat: { completions: { create: mockCreate } },
+      };
+
+      const request: AssistantChatRequestWithVision = {
+        items: [{ itemId: 'item-1', title: 'Sneakers' }],
+        message: 'Generate listing',
+      };
+
+      const response = await provider.respond(request);
+
+      // CRITICAL: content field must NOT contain raw JSON patterns
+      expect(response.content).toBeDefined();
+      expect(response.content).not.toContain('"suggestedDraftUpdates"');
+      expect(response.content).not.toContain('"confidence"');
+      expect(response.content).not.toContain('"requiresConfirmation"');
+      expect(response.content).not.toContain('": {');
+      expect(response.content).not.toContain('": [');
+
+      // Content should contain clean, formatted text for display
+      expect(response.content).toContain('Vintage Nike Sneakers');
+      expect(response.content).toContain('Great condition sneakers');
+
+      // Structured data should be in suggestedDraftUpdates
+      expect(response.suggestedDraftUpdates).toBeDefined();
+      expect(response.suggestedDraftUpdates?.length).toBeGreaterThan(0);
+      expect(response.suggestedDraftUpdates?.[0]?.field).toBe('title');
+      expect(response.suggestedDraftUpdates?.[0]?.value).toContain('Vintage Nike Sneakers');
+    });
+
+    it('ensures content field is empty string when only suggestedDraftUpdates exist (no top-level fields)', async () => {
+      // This tests the edge case where LLM returns ONLY suggestedDraftUpdates array
+      const { parseListingResponse } = await import('./prompts/listing-generation.js');
+      vi.mocked(parseListingResponse).mockReturnValueOnce({
+        // No top-level title/description
+        suggestedDraftUpdates: [
+          { field: 'title', value: 'Test Title', confidence: 'MED', requiresConfirmation: false },
+          { field: 'description', value: 'Test Description', confidence: 'MED', requiresConfirmation: false },
+        ],
+      });
+
+      const mockCreate = vi.fn().mockResolvedValue({
+        choices: [{ message: { content: '{"suggestedDraftUpdates":[...]}' } }],
+      });
+
+      (provider as unknown as { client: { chat: { completions: { create: typeof mockCreate } } } }).client = {
+        chat: { completions: { create: mockCreate } },
+      };
+
+      const request: AssistantChatRequestWithVision = {
+        items: [{ itemId: 'item-1' }],
+        message: 'Generate listing',
+      };
+
+      const response = await provider.respond(request);
+
+      // Content should contain clean formatted text from suggestedDraftUpdates, not raw JSON
+      expect(response.content).toBeDefined();
+      expect(response.content).toContain('Test Title');
+      expect(response.content).toContain('Test Description');
+      expect(response.content).not.toContain('"suggestedDraftUpdates"');
+    });
   });
 });

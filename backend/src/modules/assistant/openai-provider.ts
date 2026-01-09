@@ -136,6 +136,11 @@ export class OpenAIAssistantProvider implements AssistantProvider {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: fullUserMessage },
         ],
+        // Enforce strict JSON-only output using OpenAI Structured Outputs
+        // This ensures no prose appears before/after JSON, preventing UI leakage
+        response_format: {
+          type: 'json_object',
+        },
       });
 
       // Calculate duration
@@ -360,25 +365,33 @@ export class OpenAIAssistantProvider implements AssistantProvider {
       }
 
       // Build response content
-      let content = textContent;
+      // IMPORTANT: Never return raw JSON in content field when structured data exists
+      // to prevent JSON leakage in the UI
+      let content = '';
 
-      // If we have a structured response, create a cleaner summary
-      if (parsed.title || parsed.description) {
+      // If we have structured draft updates, create a clean summary for display
+      if (suggestedDraftUpdates.length > 0 || parsed.title || parsed.description) {
         const parts: string[] = [];
 
-        if (parsed.title) {
-          parts.push(`**Suggested Title:**\n${parsed.title}`);
+        const titleValue = parsed.suggestedDraftUpdates?.find(u => u.field === 'title')?.value ?? parsed.title;
+        const descValue = parsed.suggestedDraftUpdates?.find(u => u.field === 'description')?.value ?? parsed.description;
+
+        if (titleValue) {
+          parts.push(`**Suggested Title:**\n${titleValue}`);
         }
 
-        if (parsed.description) {
-          parts.push(`**Suggested Description:**\n${parsed.description}`);
+        if (descValue) {
+          parts.push(`**Suggested Description:**\n${descValue}`);
         }
 
         if (warnings.length > 0) {
           parts.push(`**Please Verify:**\n${warnings.map(w => `- ${w}`).join('\n')}`);
         }
 
-        content = parts.join('\n\n');
+        content = parts.length > 0 ? parts.join('\n\n') : '';
+      } else {
+        // Fallback: use cleaned text content only if no structured data
+        content = textContent;
       }
 
       return {
