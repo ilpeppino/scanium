@@ -1,15 +1,15 @@
 ***REMOVED*** Telemetry Status Report
 
-**Last Updated**: 2026-01-09 21:07 UTC
-**Status**: Metrics ✅ | Logs ❌ | Traces ❌
+**Last Updated**: 2026-01-09 21:37 UTC
+**Status**: Metrics ✅ | Logs ✅ | Traces ✅
 
 ***REMOVED******REMOVED*** Quick Summary
 
 | Signal  | Status | Details |
 |---------|--------|---------|
 | **Metrics** | ✅ **WORKING** | 80 series in Mimir, including `scanium-backend` |
-| **Logs** | ❌ Not working | Infrastructure ready, application not emitting |
-| **Traces** | ❌ Not working | Infrastructure ready, application not emitting |
+| **Logs** | ✅ **WORKING** | 5 labels in Loki, Pino integrated with OTLP |
+| **Traces** | ✅ **WORKING** | scanium-backend service in Tempo with HTTP traces |
 
 ***REMOVED******REMOVED*** What's Working
 
@@ -243,9 +243,15 @@ curl -s http://localhost:3200/api/search/tags | jq
 ***REMOVED******REMOVED*** Success Criteria
 
 - [x] Mimir shows scanium-backend metrics ✅
-- [ ] Loki shows backend logs ❌ (needs Pino integration)
-- [ ] Tempo shows backend traces ❌ (needs investigation)
-- [x] Telemetry proof script created ✅
-- [ ] Dashboards show data (partial: metrics yes, logs/traces no)
+- [x] Loki shows backend logs ✅ (Pino integrated with OTLP)
+- [x] Tempo shows backend traces ✅ (HttpInstrumentation working)
+- [x] Telemetry proof script created and fixed ✅
+- [ ] Dashboards show data (needs verification)
 
-**Current Score**: 2/5 (40%)
+**Current Score**: 4/5 (80%)
+
+***REMOVED******REMOVED*** Fixes Applied
+
+1. **Pino OTLP Integration** - Installed `pino-opentelemetry-transport` and configured Pino to send logs to OpenTelemetry LoggerProvider
+2. **Dockerfile Updates** - Added `--legacy-peer-deps` flag and specified `prisma@5` to avoid dependency conflicts
+3. **Telemetry Proof Script** - Fixed Tempo service query to correctly parse `.tagValues[]` array
