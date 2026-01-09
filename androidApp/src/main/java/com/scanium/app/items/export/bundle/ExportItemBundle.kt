@@ -64,9 +64,13 @@ data class ExportItemBundle(
     val hasNoPhotos: Boolean
         get() = ExportBundleFlag.NO_PHOTOS in flags
 
-    /** Number of photos available */
+    /**
+     * Number of photos available.
+     * Note: primaryPhotoUri (if present) is always included as the first item in photoUris,
+     * so we only count photoUris to avoid double-counting.
+     */
     val photoCount: Int
-        get() = photoUris.size + if (primaryPhotoUri != null) 1 else 0
+        get() = photoUris.size
 }
 
 /**

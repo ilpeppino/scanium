@@ -170,22 +170,31 @@ class BundleZipExporter @Inject constructor(
         zip.write(listingJson.toByteArray(Charsets.UTF_8))
         zip.closeEntry()
 
-        // Write photos
+        // Write all photos from photoUris (which includes primary photo as first item)
+        // photoUris now contains all photos in deterministic order:
+        // 1. Primary photo (fullImagePath) - if available
+        // 2. Photos from item_photos directory
+        // 3. Additional photos from item model
         var photoIndex = 0
+        var skippedCount = 0
 
-        // Write primary photo (thumbnail) if available
-        bundle.primaryPhotoUri?.let { uri ->
-            if (writePhoto(zip, "$itemPath/photos", photoIndex, File(uri))) {
+        for (photoUri in bundle.photoUris) {
+            val photoFile = File(photoUri)
+            if (!photoFile.exists()) {
+                Log.w(TAG, "Photo file not found during export: ${photoFile.name}")
+                skippedCount++
+                continue
+            }
+
+            if (writePhoto(zip, "$itemPath/photos", photoIndex, photoFile)) {
                 photoIndex++
+            } else {
+                skippedCount++
             }
         }
 
-        // Write additional photos
-        for (photoUri in bundle.photoUris) {
-            val photoFile = File(photoUri)
-            if (photoFile.exists() && writePhoto(zip, "$itemPath/photos", photoIndex, photoFile)) {
-                photoIndex++
-            }
+        if (skippedCount > 0) {
+            Log.w(TAG, "Skipped $skippedCount photo(s) for item ${bundle.itemId} (files not readable)")
         }
 
         return photoIndex

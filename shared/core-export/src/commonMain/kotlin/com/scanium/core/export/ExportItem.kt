@@ -14,4 +14,10 @@ data class ExportItem(
     val priceMin: Double? = null,
     val priceMax: Double? = null,
     val imageRef: ImageRef? = null,
+    /**
+     * List of all image references for this item.
+     * Used for multi-photo export (CSV, ZIP).
+     * First image is the primary/thumbnail.
+     */
+    val imageRefs: List<ImageRef> = emptyList(),
 )

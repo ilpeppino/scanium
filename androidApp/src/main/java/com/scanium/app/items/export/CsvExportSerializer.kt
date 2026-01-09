@@ -40,6 +40,15 @@ class CsvExportSerializer(
                 MapSerializer(String.serializer(), String.serializer()),
                 item.attributes.toSortedMap(),
             )
+
+        // Generate semicolon-separated list of all image filenames
+        val allImageFilenames = if (item.imageRefs.isNotEmpty()) {
+            item.imageRefs.mapNotNull { ref -> imageFilename(ref).takeIf { it.isNotBlank() } }
+                .joinToString(";")
+        } else {
+            imageFilename // Fallback to single image for backward compatibility
+        }
+
         val values =
             listOf(
                 item.id,
@@ -49,7 +58,7 @@ class CsvExportSerializer(
                 attributesJson,
                 item.priceMin?.toString().orEmpty(),
                 item.priceMax?.toString().orEmpty(),
-                imageFilename,
+                allImageFilenames,
             )
         return values.joinToString(",") { csvEscape(it) }
     }
@@ -79,7 +88,7 @@ class CsvExportSerializer(
                 "attributes_json",
                 "price_min",
                 "price_max",
-                "image_filename",
+                "image_filenames", // Changed from image_filename to image_filenames (semicolon-separated list)
             )
     }
 }
