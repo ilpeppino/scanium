@@ -112,39 +112,51 @@ class ExportBundleRepository @Inject constructor(
     }
 
     /**
-     * Gather all photo URIs for an item.
+     * Gather all photo URIs for an item in deterministic order.
+     *
+     * Order priority:
+     * 1. fullImagePath (primary/thumbnail) - always first if available
+     * 2. Photos from item_photos directory (sorted by name)
+     * 3. Additional photos from item model (in order)
+     *
+     * This ensures consistent ordering and that all photos are included exactly once.
      */
     private fun gatherPhotoUris(item: ScannedItem, maxPhotos: Int): List<String> {
         val uris = mutableListOf<String>()
+        val seen = mutableSetOf<String>()
 
-        // Check for photos in item_photos directory
+        // 1. Add fullImagePath FIRST (primary photo)
+        item.fullImagePath?.let { path ->
+            val file = File(path)
+            if (file.exists()) {
+                uris.add(path)
+                seen.add(path)
+            }
+        }
+
+        // 2. Add photos from item_photos directory (sorted by name)
         val itemDir = File(photosBaseDir, item.id)
         if (itemDir.exists() && itemDir.isDirectory) {
             val photoFiles = itemDir.listFiles { file ->
                 file.isFile && file.extension.lowercase() in listOf("jpg", "jpeg", "png")
             }
-            photoFiles?.sortedBy { it.name }?.take(maxPhotos)?.forEach { file ->
-                uris.add(file.absolutePath)
-            }
-        }
-
-        // Add additional photos from item model
-        item.additionalPhotos.forEach { photo ->
-            val photoUri = photo.uri
-            if (uris.size < maxPhotos && photoUri != null) {
-                val file = File(photoUri)
-                if (file.exists() && photoUri !in uris) {
-                    uris.add(photoUri)
+            photoFiles?.sortedBy { it.name }?.forEach { file ->
+                val path = file.absolutePath
+                if (uris.size < maxPhotos && path !in seen) {
+                    uris.add(path)
+                    seen.add(path)
                 }
             }
         }
 
-        // Add fullImagePath if available and not already included
-        item.fullImagePath?.let { path ->
-            if (uris.size < maxPhotos && path !in uris) {
-                val file = File(path)
-                if (file.exists()) {
-                    uris.add(path)
+        // 3. Add additional photos from item model
+        item.additionalPhotos.forEach { photo ->
+            val photoUri = photo.uri
+            if (uris.size < maxPhotos && photoUri != null) {
+                val file = File(photoUri)
+                if (file.exists() && photoUri !in seen) {
+                    uris.add(photoUri)
+                    seen.add(photoUri)
                 }
             }
         }

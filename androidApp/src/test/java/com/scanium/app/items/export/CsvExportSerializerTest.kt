@@ -77,6 +77,103 @@ class CsvExportSerializerTest {
         assertThat(lines[1]).contains(",images/item_${item.id}.jpg")
     }
 
+    @Test
+    fun serialize_withMultipleImages_includesSemicolonSeparatedList() {
+        // Given: item with multiple images
+        val imageRefs = listOf(
+            com.scanium.shared.core.models.model.ImageRef.CacheKey("image1.jpg", "image/jpeg", 100, 100),
+            com.scanium.shared.core.models.model.ImageRef.CacheKey("image2.jpg", "image/jpeg", 100, 100),
+            com.scanium.shared.core.models.model.ImageRef.CacheKey("image3.jpg", "image/jpeg", 100, 100),
+        )
+
+        val item =
+            ExportItem(
+                id = "item-multi",
+                title = "Multi Photo Item",
+                description = "Item with multiple photos",
+                category = "Test",
+                attributes = emptyMap(),
+                priceMin = 10.0,
+                priceMax = 20.0,
+                imageRef = imageRefs.first(),
+                imageRefs = imageRefs,
+            )
+        val payload = ExportPayload(items = listOf(item), createdAt = Instant.DISTANT_PAST)
+
+        // When: serializing to CSV
+        val csv = CsvExportSerializer().serialize(payload)
+
+        // Then: all images are included as semicolon-separated list
+        val lines = csv.split("\n")
+        assertThat(lines).hasSize(2) // Header + 1 data row
+
+        // Verify header changed to image_filenames (plural)
+        assertThat(lines[0]).contains("image_filenames")
+
+        // Verify data row contains all images separated by semicolons
+        val dataRow = lines[1]
+        assertThat(dataRow).contains("image1.jpg;image2.jpg;image3.jpg")
+
+        // Verify no duplicates (each image appears exactly once)
+        val imageColumn = dataRow.split(",").last() // Last column is images
+        val imageList = imageColumn.split(";")
+        assertThat(imageList).hasSize(3)
+        assertThat(imageList.toSet()).hasSize(3) // No duplicates
+    }
+
+    @Test
+    fun serialize_withSingleImage_fallsBackToCompatibleFormat() {
+        // Given: item with single image (backward compatibility case)
+        val imageRef = com.scanium.shared.core.models.model.ImageRef.CacheKey("single.jpg", "image/jpeg", 100, 100)
+
+        val item =
+            ExportItem(
+                id = "item-single",
+                title = "Single Photo Item",
+                description = "Item with one photo",
+                category = "Test",
+                attributes = emptyMap(),
+                imageRef = imageRef,
+                imageRefs = emptyList(), // Empty imageRefs, should fallback to imageRef
+            )
+        val payload = ExportPayload(items = listOf(item), createdAt = Instant.DISTANT_PAST)
+
+        // When: serializing to CSV
+        val csv = CsvExportSerializer().serialize(payload)
+
+        // Then: single image is included without semicolon
+        val lines = csv.split("\n")
+        val dataRow = lines[1]
+        assertThat(dataRow).contains("single.jpg")
+        assertThat(dataRow).doesNotContain(";") // No semicolon for single image
+    }
+
+    @Test
+    fun serialize_withNoImages_outputsEmptyImageColumn() {
+        // Given: item with no images
+        val item =
+            ExportItem(
+                id = "item-no-photo",
+                title = "No Photo Item",
+                description = "Item without photos",
+                category = "Test",
+                attributes = emptyMap(),
+                imageRef = null,
+                imageRefs = emptyList(),
+            )
+        val payload = ExportPayload(items = listOf(item), createdAt = Instant.DISTANT_PAST)
+
+        // When: serializing to CSV
+        val csv = CsvExportSerializer().serialize(payload)
+
+        // Then: image column is empty
+        val lines = csv.split("\n")
+        val dataRow = lines[1]
+        val columns = dataRow.split(",")
+        val imageColumn = columns.last()
+        assertThat(imageColumn).isEmpty()
+    }
+
     private fun csvEscape(value: String): String {
         val needsQuotes = value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")
         if (!needsQuotes) {

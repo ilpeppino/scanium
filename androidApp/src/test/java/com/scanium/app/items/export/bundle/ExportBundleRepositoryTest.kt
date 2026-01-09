@@ -221,6 +221,102 @@ class ExportBundleRepositoryTest {
         assertEquals("vision", bundle.attributes["brand"]?.source)
     }
 
+    @Test
+    fun `buildBundles with multiple photos includes all photos in photoUris`() {
+        // Given: item with primary photo and additional photos
+        // Create temporary test files
+        val testDir = File(context.filesDir, "test_photos")
+        testDir.mkdirs()
+
+        val primaryPhoto = File(testDir, "primary.jpg").apply {
+            writeText("primary photo content")
+        }
+        val additionalPhoto1 = File(testDir, "additional1.jpg").apply {
+            writeText("additional photo 1 content")
+        }
+        val additionalPhoto2 = File(testDir, "additional2.jpg").apply {
+            writeText("additional photo 2 content")
+        }
+
+        val item = createTestItem(
+            id = "test-multi-photo",
+            fullImagePath = primaryPhoto.absolutePath,
+            additionalPhotos = listOf(
+                com.scanium.shared.core.models.items.ItemPhoto(
+                    id = "photo-1",
+                    uri = additionalPhoto1.absolutePath,
+                ),
+                com.scanium.shared.core.models.items.ItemPhoto(
+                    id = "photo-2",
+                    uri = additionalPhoto2.absolutePath,
+                ),
+            ),
+        )
+
+        // When: building bundles
+        val result = repository.buildBundles(listOf(item))
+
+        // Then: all photos are included in photoUris in correct order
+        val bundle = result.bundles[0]
+        assertEquals(3, bundle.photoUris.size)
+        // Primary photo should be first
+        assertEquals(primaryPhoto.absolutePath, bundle.photoUris[0])
+        // Additional photos should follow
+        assertTrue(bundle.photoUris.contains(additionalPhoto1.absolutePath))
+        assertTrue(bundle.photoUris.contains(additionalPhoto2.absolutePath))
+        // No duplicates
+        assertEquals(3, bundle.photoUris.toSet().size)
+        assertEquals(3, bundle.photoCount)
+
+        // Cleanup
+        testDir.deleteRecursively()
+    }
+
+    @Test
+    fun `buildBundles deduplicates primary photo from photoUris`() {
+        // Given: item where primary photo is also in additionalPhotos (potential duplicate)
+        val testDir = File(context.filesDir, "test_photos_dedup")
+        testDir.mkdirs()
+
+        val primaryPhoto = File(testDir, "primary.jpg").apply {
+            writeText("primary photo content")
+        }
+        val additionalPhoto = File(testDir, "additional.jpg").apply {
+            writeText("additional photo content")
+        }
+
+        val item = createTestItem(
+            id = "test-dedup",
+            fullImagePath = primaryPhoto.absolutePath,
+            additionalPhotos = listOf(
+                // Intentionally include the primary photo again
+                com.scanium.shared.core.models.items.ItemPhoto(
+                    id = "photo-primary-dup",
+                    uri = primaryPhoto.absolutePath,
+                ),
+                com.scanium.shared.core.models.items.ItemPhoto(
+                    id = "photo-additional",
+                    uri = additionalPhoto.absolutePath,
+                ),
+            ),
+        )
+
+        // When: building bundles
+        val result = repository.buildBundles(listOf(item))
+
+        // Then: primary photo appears only once (deduplicated)
+        val bundle = result.bundles[0]
+        assertEquals(2, bundle.photoUris.size)
+        assertEquals(primaryPhoto.absolutePath, bundle.photoUris[0])
+        assertEquals(additionalPhoto.absolutePath, bundle.photoUris[1])
+        // Verify no duplicates
+        assertEquals(2, bundle.photoUris.toSet().size)
+        assertEquals(2, bundle.photoCount)
+
+        // Cleanup
+        testDir.deleteRecursively()
+    }
+
     private fun createTestItem(
         id: String,
         exportTitle: String? = null,
@@ -230,6 +326,7 @@ class ExportBundleRepositoryTest {
         summaryTextUserEdited: Boolean = false,
         attributes: Map<String, ItemAttribute> = emptyMap(),
         fullImagePath: String? = "/fake/path/to/image.jpg",
+        additionalPhotos: List<com.scanium.shared.core.models.items.ItemPhoto> = emptyList(),
     ): ScannedItem {
         return ScannedItem(
             id = id,
@@ -243,6 +340,7 @@ class ExportBundleRepositoryTest {
             summaryTextUserEdited = summaryTextUserEdited,
             attributes = attributes,
             fullImagePath = fullImagePath,
+            additionalPhotos = additionalPhotos,
         )
     }
 }
