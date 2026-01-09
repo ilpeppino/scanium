@@ -31,9 +31,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -46,6 +48,7 @@ import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.tourTarget
+import com.scanium.app.ui.shimmerEffect
 import com.scanium.app.items.components.AttributeChipsRow
 import com.scanium.app.items.components.AttributeEditDialog
 import com.scanium.app.items.export.CsvExportWriter
@@ -114,6 +117,7 @@ fun ItemsListScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val soundManager = LocalSoundManager.current
+    val haptic = LocalHapticFeedback.current
     val csvExportWriter = remember { CsvExportWriter() }
     val zipExportWriter = remember { ZipExportWriter() }
 
@@ -156,6 +160,7 @@ fun ItemsListScreen(
         }
         selectionMode = selectedIds.isNotEmpty()
         soundManager.play(AppSound.SELECT)
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     fun enterSelectionMode(item: ScannedItem) {
@@ -164,6 +169,7 @@ fun ItemsListScreen(
             selectedIds.clear()
             selectedIds.add(item.id)
             soundManager.play(AppSound.SELECT)
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
         }
     }
 
@@ -178,6 +184,7 @@ fun ItemsListScreen(
             selectedIds.addAll(items.map { it.id })
         }
         soundManager.play(AppSound.SELECT)
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
     }
 
     fun deleteItem(item: ScannedItem) {
@@ -927,6 +934,8 @@ fun ItemsListScreen(
     }
 }
 
+
+
 /**
  * Single item row in the list.
  *
@@ -1054,7 +1063,8 @@ private fun ItemRow(
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant,
                                 shape = MaterialTheme.shapes.small,
-                            ),
+                            )
+                            .shimmerEffect(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(stringResource(R.string.common_question_mark), style = MaterialTheme.typography.headlineMedium)

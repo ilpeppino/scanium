@@ -439,6 +439,8 @@ dependencies {
     testImplementation("androidx.test:core:1.5.0") // For ApplicationProvider
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0") // For HTTP request testing
     testImplementation(project(":shared:test-utils"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.test.ext:junit:1.1.5")
 
     // Testing - Instrumented Tests
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
