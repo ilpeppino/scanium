@@ -114,7 +114,7 @@ services:
       - GF_PATHS_DATA=/var/lib/grafana
 
       ***REMOVED*** Server
-      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_SERVER_ROOT_URL=http://REDACTED_INTERNAL_IP:3000
 
       ***REMOVED*** Disable usage stats
       - GF_ANALYTICS_REPORTING_ENABLED=false
