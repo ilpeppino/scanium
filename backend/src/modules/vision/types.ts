@@ -135,7 +135,7 @@ export type VisionExtractionResult = {
   /** Error message if failed */
   error?: string;
   /** Error code for programmatic handling */
-  errorCode?: 'VISION_UNAVAILABLE' | 'INVALID_IMAGE' | 'QUOTA_EXCEEDED' | 'TIMEOUT';
+  errorCode?: 'VISION_UNAVAILABLE' | 'INVALID_IMAGE' | 'QUOTA_EXCEEDED' | 'TIMEOUT' | 'CREDENTIALS_ERROR';
 };
 
 /**

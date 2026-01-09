@@ -228,9 +228,24 @@ export class VisionExtractor {
         };
       }
 
+      // Detect credential errors
+      if (
+        errorMessage.includes('credentials') ||
+        errorMessage.includes('authentication') ||
+        errorMessage.includes('UNAUTHENTICATED') ||
+        errorMessage.includes('Could not load the default credentials') ||
+        errorMessage.includes('GOOGLE_APPLICATION_CREDENTIALS')
+      ) {
+        return {
+          success: false,
+          error: `Vision API credentials error: ${errorMessage}`,
+          errorCode: 'CREDENTIALS_ERROR',
+        };
+      }
+
       return {
         success: false,
-        error: 'Vision extraction failed',
+        error: `Vision extraction failed: ${errorMessage}`,
         errorCode: 'VISION_UNAVAILABLE',
       };
     }
