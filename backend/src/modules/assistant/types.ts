@@ -303,6 +303,8 @@ export type AssistantChatRequest = {
     parentSpanId: string; // 16 hex chars - identifies the parent span (mobile)
     flags: string;        // 2 hex chars - trace flags
   };
+  /** Request correlation ID for logging and tracking */
+  correlationId?: string;
 };
 
 /**
