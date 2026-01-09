@@ -269,6 +269,102 @@ export const httpRequestsCounter = new Counter({
 });
 
 // =============================================================================
+// Business Metrics
+// =============================================================================
+
+/**
+ * Counter for items processed by category.
+ */
+export const itemsByCategoryCounter = new Counter({
+  name: 'scanium_items_by_category_total',
+  help: 'Total items processed by eBay category',
+  labelNames: ['category_id', 'category_name'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for API quota usage by key.
+ */
+export const apiQuotaUsageCounter = new Counter({
+  name: 'scanium_api_quota_usage_total',
+  help: 'API quota usage by key',
+  labelNames: ['api_key_id', 'endpoint', 'status'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Gauge for current API quota remaining.
+ */
+export const apiQuotaRemainingGauge = new Gauge({
+  name: 'scanium_api_quota_remaining',
+  help: 'Remaining API quota for each key',
+  labelNames: ['api_key_id'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for cache operations (general).
+ */
+export const cacheOperationsCounter = new Counter({
+  name: 'scanium_cache_operations_total',
+  help: 'Cache operations by type and result',
+  labelNames: ['cache_name', 'operation', 'result'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for business errors by type.
+ */
+export const businessErrorsCounter = new Counter({
+  name: 'scanium_business_errors_total',
+  help: 'Business logic errors by type',
+  labelNames: ['error_type', 'operation', 'severity'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Histogram for database query duration.
+ */
+export const databaseQueryDurationHistogram = new Histogram({
+  name: 'scanium_database_query_duration_ms',
+  help: 'Database query duration in milliseconds',
+  labelNames: ['operation', 'table'] as const,
+  buckets: [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500],
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for database queries by type.
+ */
+export const databaseQueriesCounter = new Counter({
+  name: 'scanium_database_queries_total',
+  help: 'Total database queries by operation',
+  labelNames: ['operation', 'table', 'status'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for external API calls.
+ */
+export const externalApiCallsCounter = new Counter({
+  name: 'scanium_external_api_calls_total',
+  help: 'External API calls by service',
+  labelNames: ['service', 'operation', 'status'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Histogram for external API call duration.
+ */
+export const externalApiDurationHistogram = new Histogram({
+  name: 'scanium_external_api_duration_ms',
+  help: 'External API call duration in milliseconds',
+  labelNames: ['service', 'operation'] as const,
+  buckets: [50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000],
+  registers: [metricsRegistry],
+});
+
+// =============================================================================
 // Helper Functions
 // =============================================================================
 
@@ -429,4 +525,77 @@ export async function getMetrics(): Promise<string> {
  */
 export function getMetricsContentType(): string {
   return metricsRegistry.contentType;
+}
+
+/**
+ * Record item processing by category.
+ */
+export function recordItemByCategory(categoryId: string, categoryName: string): void {
+  itemsByCategoryCounter.inc({ category_id: categoryId, category_name: categoryName });
+}
+
+/**
+ * Record API quota usage.
+ */
+export function recordApiQuotaUsage(
+  apiKeyId: string,
+  endpoint: string,
+  status: 'success' | 'error' | 'rate_limited'
+): void {
+  apiQuotaUsageCounter.inc({ api_key_id: apiKeyId, endpoint, status });
+}
+
+/**
+ * Update API quota remaining gauge.
+ */
+export function updateApiQuotaRemaining(apiKeyId: string, remaining: number): void {
+  apiQuotaRemainingGauge.set({ api_key_id: apiKeyId }, remaining);
+}
+
+/**
+ * Record cache operation.
+ */
+export function recordCacheOperation(
+  cacheName: string,
+  operation: 'get' | 'set' | 'delete' | 'clear',
+  result: 'hit' | 'miss' | 'success' | 'error'
+): void {
+  cacheOperationsCounter.inc({ cache_name: cacheName, operation, result });
+}
+
+/**
+ * Record business error.
+ */
+export function recordBusinessError(
+  errorType: string,
+  operation: string,
+  severity: 'low' | 'medium' | 'high' | 'critical'
+): void {
+  businessErrorsCounter.inc({ error_type: errorType, operation, severity });
+}
+
+/**
+ * Record database query.
+ */
+export function recordDatabaseQuery(
+  operation: 'select' | 'insert' | 'update' | 'delete' | 'upsert',
+  table: string,
+  durationMs: number,
+  status: 'success' | 'error'
+): void {
+  databaseQueryDurationHistogram.observe({ operation, table }, durationMs);
+  databaseQueriesCounter.inc({ operation, table, status });
+}
+
+/**
+ * Record external API call.
+ */
+export function recordExternalApiCall(
+  service: string,
+  operation: string,
+  durationMs: number,
+  status: 'success' | 'error' | 'timeout'
+): void {
+  externalApiDurationHistogram.observe({ service, operation }, durationMs);
+  externalApiCallsCounter.inc({ service, operation, status });
 }
