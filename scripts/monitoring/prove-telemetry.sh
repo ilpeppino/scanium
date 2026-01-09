@@ -194,7 +194,7 @@ main() {
         log "Testing Tempo..."
 
         TEMPO_RESPONSE=$(query_tempo "$TEMPO_UID")
-        TEMPO_SERVICES=$(echo "$TEMPO_RESPONSE" | jq -r '.tagValues[]?.value? // empty' 2>/dev/null | sort || echo "")
+        TEMPO_SERVICES=$(echo "$TEMPO_RESPONSE" | jq -r '.tagValues[]? // empty' 2>/dev/null | sort || echo "")
         if [[ -z "$TEMPO_SERVICES" ]]; then
             TEMPO_SERVICE_COUNT="0"
         else
