@@ -729,9 +729,17 @@ fun ItemsListScreen(
                                 isExporting = false
                                 val message =
                                     result.fold(
-                                        onSuccess = { file ->
-                                            shareZip(file)
-                                            context.getString(R.string.items_export_zip_ready)
+                                        onSuccess = { exportResult ->
+                                            shareZip(exportResult.zipFile)
+                                            if (exportResult.photosSkipped > 0) {
+                                                context.getString(
+                                                    R.string.items_export_zip_partial,
+                                                    exportResult.photosWritten,
+                                                    exportResult.photosRequested,
+                                                )
+                                            } else {
+                                                context.getString(R.string.items_export_zip_ready)
+                                            }
                                         },
                                         onFailure = {
                                             soundManager.play(AppSound.ERROR)

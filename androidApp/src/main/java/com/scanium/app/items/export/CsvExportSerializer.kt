@@ -22,18 +22,18 @@ class CsvExportSerializer(
     fun writeTo(
         output: Appendable,
         items: List<ExportItem>,
-        imageFilenameProvider: (ExportItem) -> String = { item -> imageFilename(item.imageRef) },
+        imageFilenamesProvider: (ExportItem) -> List<String> = { item -> defaultImageFilenames(item) },
     ) {
         output.append(COLUMN_ORDER.joinToString(","))
         items.forEach { item ->
             output.append("\n")
-            output.append(serializeItem(item, imageFilenameProvider(item)))
+            output.append(serializeItem(item, imageFilenamesProvider(item)))
         }
     }
 
     private fun serializeItem(
         item: ExportItem,
-        imageFilename: String,
+        imageFilenames: List<String>,
     ): String {
         val attributesJson =
             json.encodeToString(
@@ -42,12 +42,7 @@ class CsvExportSerializer(
             )
 
         // Generate semicolon-separated list of all image filenames
-        val allImageFilenames = if (item.imageRefs.isNotEmpty()) {
-            item.imageRefs.mapNotNull { ref -> imageFilename(ref).takeIf { it.isNotBlank() } }
-                .joinToString(";")
-        } else {
-            imageFilename // Fallback to single image for backward compatibility
-        }
+        val allImageFilenames = imageFilenames.joinToString(";")
 
         val values =
             listOf(
@@ -63,9 +58,20 @@ class CsvExportSerializer(
         return values.joinToString(",") { csvEscape(it) }
     }
 
-    private fun imageFilename(imageRef: ImageRef?): String =
+    private fun defaultImageFilenames(item: ExportItem): List<String> {
+        val refs = item.imageRefs.ifEmpty { listOfNotNull(item.imageRef) }
+        if (refs.isEmpty()) {
+            return emptyList()
+        }
+        return refs.mapIndexedNotNull { index, ref ->
+            imageFilename(item.id, ref, index).takeIf { it.isNotBlank() }
+        }
+    }
+
+    private fun imageFilename(itemId: String, imageRef: ImageRef?, index: Int): String =
         when (imageRef) {
             is ImageRef.CacheKey -> imageRef.key
+            is ImageRef.Bytes -> "item_${itemId}_${String.format("%03d", index + 1)}.jpg"
             else -> ""
         }
 
