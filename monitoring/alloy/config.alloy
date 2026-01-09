@@ -112,15 +112,29 @@ loki.write "backend" {
 
 
 // Docker logs -> Loki (backend)
+// Note: loki.source.docker automatically discovers containers
+// Use relabel_rules to filter to specific containers
 loki.source.docker "backend" {
   host = "unix:///var/run/docker.sock"
 
-  targets = [
-    {
-      container_name = "scanium-backend",
-      labels = "source=scanium-backend,env=dev",
-    },
-  ]
+  relabel_rules {
+    // Keep only scanium-backend container
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/scanium-backend"
+    action        = "keep"
+  }
+
+  relabel_rules {
+    // Add source label
+    target_label = "source"
+    replacement  = "scanium-backend"
+  }
+
+  relabel_rules {
+    // Add env label
+    target_label = "env"
+    replacement  = "dev"
+  }
 
   forward_to = [loki.write.backend.receiver]
 }
