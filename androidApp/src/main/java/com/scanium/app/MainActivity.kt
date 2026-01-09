@@ -52,49 +52,59 @@ class MainActivity : AppCompatActivity() {
         // Install splash screen BEFORE super.onCreate() - this is required!
         val splashScreen = installSplashScreen()
 
-        // Configure splash exit animation with optional lightning flash accent
-        splashScreen.setOnExitAnimationListener { splashScreenView ->
-            // Quick flash effect: briefly increase alpha then fade out
-            // Duration: 150-200ms as per spec (one-time only)
-            val flashDuration = 175L
-            val fadeOutDuration = 100L
+        // Only show splash animation on fresh start (not when resuming from background)
+        // This prevents crashes when returning from Share functionality
+        if (savedInstanceState == null) {
+            // Configure splash exit animation with optional lightning flash accent
+            splashScreen.setOnExitAnimationListener { splashScreenView ->
+                try {
+                    // Quick flash effect: briefly increase alpha then fade out
+                    // Duration: 150-200ms as per spec (one-time only)
+                    val flashDuration = 175L
+                    val fadeOutDuration = 100L
 
-            // Guard against null iconView (can happen if splash icon isn't animated)
-            val iconView = splashScreenView.iconView
+                    // Guard against null iconView (can happen if splash icon isn't animated)
+                    val iconView = splashScreenView.iconView
 
-            // Fade out the entire splash
-            val fadeOutAnimator =
-                ObjectAnimator.ofFloat(
-                    splashScreenView.view,
-                    View.ALPHA,
-                    1f,
-                    0f,
-                ).apply {
-                    duration = fadeOutDuration
-                    interpolator = AccelerateInterpolator()
-                    doOnEnd { splashScreenView.remove() }
-                }
+                    // Fade out the entire splash
+                    val fadeOutAnimator =
+                        ObjectAnimator.ofFloat(
+                            splashScreenView.view,
+                            View.ALPHA,
+                            1f,
+                            0f,
+                        ).apply {
+                            duration = fadeOutDuration
+                            interpolator = AccelerateInterpolator()
+                            doOnEnd { splashScreenView.remove() }
+                        }
 
-            // Only apply flash effect if iconView exists
-            if (iconView != null) {
-                val flashAnimator =
-                    ObjectAnimator.ofFloat(
-                        iconView,
-                        View.ALPHA,
-                        1f,
-                        1.2f,
-                        1f, // Subtle brightness pulse
-                    ).apply {
-                        duration = flashDuration
-                        interpolator = AccelerateInterpolator()
+                    // Only apply flash effect if iconView exists
+                    if (iconView != null) {
+                        val flashAnimator =
+                            ObjectAnimator.ofFloat(
+                                iconView,
+                                View.ALPHA,
+                                1f,
+                                1.2f,
+                                1f, // Subtle brightness pulse
+                            ).apply {
+                                duration = flashDuration
+                                interpolator = AccelerateInterpolator()
+                            }
+
+                        // Chain animations: flash then fade
+                        flashAnimator.doOnEnd { fadeOutAnimator.start() }
+                        flashAnimator.start()
+                    } else {
+                        // No icon, just fade out
+                        fadeOutAnimator.start()
                     }
-
-                // Chain animations: flash then fade
-                flashAnimator.doOnEnd { fadeOutAnimator.start() }
-                flashAnimator.start()
-            } else {
-                // No icon, just fade out
-                fadeOutAnimator.start()
+                } catch (e: Exception) {
+                    // Safely handle any splash screen animation errors
+                    Log.e(TAG, "Error during splash screen exit animation", e)
+                    splashScreenView.remove()
+                }
             }
         }
 

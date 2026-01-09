@@ -191,6 +191,8 @@ private class CloudAssistantRepository(
                 "message.length=${requestPayload.message.length} " +
                 "hasExportProfile=${requestPayload.exportProfile != null} " +
                 "hasPrefs=${requestPayload.assistantPrefs != null}")
+            // DEBUG: Log full JSON payload for validation debugging
+            Log.d("ScaniumAssist", "Request JSON payload (full): $payloadJson")
 
             // Use multipart when images are attached, otherwise use JSON
             val request =

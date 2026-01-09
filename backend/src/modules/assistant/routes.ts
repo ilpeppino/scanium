@@ -559,15 +559,28 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         itemsCount: Array.isArray((requestBody as any)?.items) ? (requestBody as any).items.length : 'not-array',
         historyCount: Array.isArray((requestBody as any)?.history) ? (requestBody as any).history.length : 'not-array-or-missing',
       };
+
+      // EXPLICIT CONSOLE LOG FOR DEBUGGING
+      console.error('===== VALIDATION ERROR =====');
+      console.error('Zod Errors:', JSON.stringify(zodErrors, null, 2));
+      console.error('Request Shape:', JSON.stringify(requestShape, null, 2));
+      console.error('============================');
+
       request.log.warn(
         { correlationId, zodErrors, firstError: zodErrors[0], requestShape },
         'Request validation failed'
       );
+
+      // Include Zod errors for debugging (TEMP: always include for troubleshooting)
+      const errorMessage = `Validation failed: ${zodErrors[0]?.message || 'Unknown error'} at ${zodErrors[0]?.path || 'unknown path'}`;
+
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Message could not be processed',
           correlationId,
+          zodErrors, // TEMP: Always include for debugging
+          requestShape, // TEMP: Always include for debugging
         },
         assistantError: buildAssistantError(
           'validation_error',
@@ -575,7 +588,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           false,
           'VALIDATION_ERROR',
           undefined,
-          'Validation failed'
+          errorMessage
         ),
         safety: buildSafetyResponse(true, 'VALIDATION_ERROR', requestId),
       });
