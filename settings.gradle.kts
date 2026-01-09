@@ -8,7 +8,7 @@ pluginManagement {
     resolutionStrategy {
         eachPlugin {
             if (requested.id.id == "com.android.application" || requested.id.id == "com.android.library") {
-                useModule("com.android.tools.build:gradle:8.5.0")
+                useModule("com.android.tools.build:gradle:8.6.0")
             }
         }
     }
