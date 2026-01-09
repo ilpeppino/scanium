@@ -15,9 +15,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
@@ -36,7 +39,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,10 +77,12 @@ import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemAttributeLocalizer
+import com.scanium.app.items.ItemLocalizer
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.ItemAttribute
+import com.scanium.shared.core.models.items.ItemCondition
 import com.scanium.shared.core.models.model.ImageRef
 
 /**
@@ -130,10 +138,15 @@ fun EditItemScreenV3(
         val rawMaterial = item?.attributes?.get("material")?.value ?: ""
         mutableStateOf(if (rawMaterial.isNotEmpty()) ItemAttributeLocalizer.localizeMaterial(context, rawMaterial) else "")
     }
-    // Condition: localize canonical value for display
+    // Condition: parse from attributes or item.condition
     var conditionField by remember(item) {
         val rawCondition = item?.attributes?.get("condition")?.value ?: item?.condition?.name ?: ""
-        mutableStateOf(if (rawCondition.isNotEmpty()) ItemAttributeLocalizer.localizeCondition(context, rawCondition) else "")
+        val parsedCondition = if (rawCondition.isNotEmpty()) {
+            runCatching { ItemCondition.valueOf(rawCondition.uppercase()) }.getOrNull()
+        } else {
+            null
+        }
+        mutableStateOf(parsedCondition)
     }
     var notesField by remember(item) { mutableStateOf(item?.attributesSummaryText ?: "") }
 
@@ -141,6 +154,7 @@ fun EditItemScreenV3(
     if (currentItem == null) {
         // Item not found - show empty state
         Scaffold(
+            contentWindowInsets = WindowInsets.statusBars.union(WindowInsets.navigationBars),
             topBar = {
                 TopAppBar(
                     title = { Text(stringResource(R.string.edit_item_title)) },
@@ -167,6 +181,7 @@ fun EditItemScreenV3(
     val focusManager = LocalFocusManager.current
 
     Scaffold(
+        contentWindowInsets = WindowInsets.statusBars.union(WindowInsets.navigationBars),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.edit_item_title)) },
@@ -262,6 +277,7 @@ fun EditItemScreenV3(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .windowInsetsPadding(WindowInsets.ime)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
         ) {
@@ -407,14 +423,10 @@ fun EditItemScreenV3(
             Spacer(Modifier.height(12.dp))
 
             // Condition
-            LabeledTextField(
+            LabeledConditionDropdown(
                 label = stringResource(R.string.edit_item_field_condition),
-                value = conditionField,
-                onValueChange = { conditionField = it },
-                onClear = { conditionField = "" },
-                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "condition"),
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                selectedCondition = conditionField,
+                onConditionSelected = { conditionField = it },
             )
 
             Spacer(Modifier.height(12.dp))
@@ -545,6 +557,69 @@ private fun LabeledTextField(
     }
 }
 
+/**
+ * Labeled dropdown selector for item condition.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LabeledConditionDropdown(
+    label: String,
+    selectedCondition: ItemCondition?,
+    onConditionSelected: (ItemCondition?) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
+        ) {
+            OutlinedTextField(
+                value = selectedCondition?.let { ItemLocalizer.getConditionName(it) } ?: "",
+                onValueChange = {},
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                trailingIcon = {
+                    if (selectedCondition != null) {
+                        IconButton(onClick = { onConditionSelected(null) }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
+                        }
+                    } else {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    }
+                },
+                placeholder = { Text(stringResource(R.string.common_select)) },
+                singleLine = true,
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                // All condition options
+                ItemCondition.entries.forEach { condition ->
+                    DropdownMenuItem(
+                        text = { Text(ItemLocalizer.getConditionName(condition)) },
+                        onClick = {
+                            onConditionSelected(condition)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun PhotoThumbnailV3(
     bitmap: androidx.compose.ui.graphics.ImageBitmap?,
@@ -665,7 +740,7 @@ private fun saveFieldsToAttributes(
     colorField: String,
     sizeField: String,
     materialField: String,
-    conditionField: String,
+    conditionField: ItemCondition?,
     notesField: String,
 ) {
     // Update each attribute if value is non-blank
@@ -721,13 +796,12 @@ private fun saveFieldsToAttributes(
         )
     }
 
-    // LOCALIZATION: Canonicalize condition back to English before saving
-    if (conditionField.isNotBlank()) {
-        val canonicalCondition = ItemAttributeLocalizer.canonicalizeCondition(context, conditionField)
+    // Save condition enum value in canonical form (uppercase enum name)
+    if (conditionField != null) {
         itemsViewModel.updateItemAttribute(
             itemId,
             "condition",
-            ItemAttribute(value = canonicalCondition, confidence = 1.0f, source = "USER"),
+            ItemAttribute(value = conditionField.name, confidence = 1.0f, source = "USER"),
         )
     }
 
