@@ -16,6 +16,10 @@ import {
   buildListingUserPrompt,
   parseListingResponse,
 } from './prompts/listing-generation.js';
+import {
+  checkResponseLanguage,
+  recordLanguageCheck,
+} from './language-consistency.js';
 
 export interface ClaudeProviderConfig {
   apiKey: string;
@@ -57,12 +61,14 @@ export class ClaudeAssistantProvider implements AssistantProvider {
       }
     }
 
-    // Build prompts
+    // Build prompts with language localization
+    const language = request.assistantPrefs?.language ?? 'EN';
     const systemPrompt = buildListingSystemPrompt(request.assistantPrefs);
     const userPrompt = buildListingUserPrompt(
       request.items,
       resolvedAttributesMap,
-      visualRequest.visualFacts
+      visualRequest.visualFacts,
+      language
     );
 
     // Combine user message with generated prompt context
@@ -83,6 +89,19 @@ export class ClaudeAssistantProvider implements AssistantProvider {
         .filter((block): block is Anthropic.TextBlock => block.type === 'text')
         .map((block) => block.text)
         .join('\n');
+
+      // Check response language consistency
+      if (language && language !== 'EN') {
+        const langCheck = checkResponseLanguage(
+          textContent,
+          language,
+          request.correlationId
+        );
+        recordLanguageCheck('response', langCheck.matchesExpected);
+
+        // Log mismatch in DEV mode (handled by checkResponseLanguage)
+        // Future: Could implement retry logic here if needed
+      }
 
       // Parse the structured response
       const parsed = parseListingResponse(textContent);
