@@ -1,0 +1,250 @@
+package com.scanium.app.items.edit
+
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.scanium.app.R
+import com.scanium.app.items.ThumbnailCache
+import com.scanium.shared.core.models.model.ImageRef
+
+/**
+ * Represents a photo reference that can be displayed in the gallery.
+ * This sealed class abstracts over different photo sources (ImageRef or file path).
+ */
+sealed class GalleryPhotoRef {
+    /**
+     * Photo from an ImageRef (primary thumbnail).
+     */
+    data class FromImageRef(val imageRef: ImageRef) : GalleryPhotoRef()
+
+    /**
+     * Photo from a file path (additional photos).
+     */
+    data class FromFilePath(val path: String) : GalleryPhotoRef()
+}
+
+/**
+ * Full-screen modal overlay gallery for viewing item photos.
+ *
+ * Features:
+ * - Horizontal swipe to navigate between photos
+ * - Opens at the specified initial index
+ * - Shows "current / total" indicator
+ * - Close via X button or back gesture
+ *
+ * @param photos List of photo references to display
+ * @param initialIndex Index of the photo to show initially
+ * @param onDismiss Callback when the dialog is dismissed
+ */
+@Composable
+fun PhotoGalleryDialog(
+    photos: List<GalleryPhotoRef>,
+    initialIndex: Int,
+    onDismiss: () -> Unit,
+) {
+    if (photos.isEmpty()) {
+        onDismiss()
+        return
+    }
+
+    val safeInitialIndex = initialIndex.coerceIn(0, photos.lastIndex)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        PhotoGalleryContent(
+            photos = photos,
+            initialIndex = safeInitialIndex,
+            onClose = onDismiss,
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PhotoGalleryContent(
+    photos: List<GalleryPhotoRef>,
+    initialIndex: Int,
+    onClose: () -> Unit,
+) {
+    val pagerState = rememberPagerState(
+        initialPage = initialIndex,
+        pageCount = { photos.size },
+    )
+
+    // Remember the initial page to scroll to on first composition
+    val rememberedInitialIndex = rememberSaveable { initialIndex }
+
+    LaunchedEffect(rememberedInitialIndex) {
+        if (pagerState.currentPage != rememberedInitialIndex) {
+            pagerState.scrollToPage(rememberedInitialIndex)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+    ) {
+        // Main photo pager
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            beyondBoundsPageCount = 1, // Prefetch adjacent images
+        ) { page ->
+            PhotoPage(
+                photoRef = photos[page],
+                contentDescription = stringResource(
+                    R.string.photo_gallery_image_description,
+                    page + 1,
+                    photos.size,
+                ),
+            )
+        }
+
+        // Top bar with close button and page indicator
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .background(Color.Black.copy(alpha = 0.5f))
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Close button
+            IconButton(onClick = onClose) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringResource(R.string.common_close),
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+
+            // Page indicator
+            Text(
+                text = stringResource(
+                    R.string.photo_gallery_page_indicator,
+                    pagerState.currentPage + 1,
+                    photos.size,
+                ),
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+            )
+
+            // Spacer to balance the layout
+            Box(modifier = Modifier.size(48.dp))
+        }
+    }
+}
+
+@Composable
+private fun PhotoPage(
+    photoRef: GalleryPhotoRef,
+    contentDescription: String,
+) {
+    val bitmap: ImageBitmap? = remember(photoRef) {
+        when (photoRef) {
+            is GalleryPhotoRef.FromImageRef -> {
+                photoRef.imageRef.toBitmap()?.asImageBitmap()
+            }
+            is GalleryPhotoRef.FromFilePath -> {
+                try {
+                    BitmapFactory.decodeFile(photoRef.path)?.asImageBitmap()
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = contentDescription,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+            )
+        } else {
+            // Fallback for failed loads
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.items_no_image),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.7f),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Extension function to convert ImageRef to Bitmap.
+ * Handles both Bytes and CacheKey variants.
+ */
+private fun ImageRef.toBitmap(): Bitmap? {
+    return when (this) {
+        is ImageRef.Bytes -> {
+            try {
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            } catch (e: Exception) {
+                null
+            }
+        }
+        is ImageRef.CacheKey -> {
+            // Try to get from thumbnail cache
+            ThumbnailCache.get(key)?.let { cached ->
+                try {
+                    BitmapFactory.decodeByteArray(cached.bytes, 0, cached.bytes.size)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+}

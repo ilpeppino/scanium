@@ -525,6 +525,10 @@
     <string name="common_prev">Préc</string>
     <string name="common_copied_label">%1$s copié dans le presse-papiers</string>
 
+    <!-- Photo Gallery -->
+    <string name="photo_gallery_page_indicator">%1$d / %2$d</string>
+    <string name="photo_gallery_image_description">Image %1$d sur %2$d</string>
+
     <!-- Edit Item Screen -->
     <string name="edit_item_not_found">Élément introuvable</string>
     <string name="edit_item_photos">Photos</string>
