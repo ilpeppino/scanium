@@ -29,6 +29,32 @@ import { recordHttpRequest } from './infra/observability/metrics.js';
  * Registers all plugins and routes
  */
 export async function buildApp(config: Config): Promise<FastifyInstance> {
+  // Configure Pino transports based on environment
+  const transports =
+    config.nodeEnv === 'development'
+      ? {
+          targets: [
+            {
+              target: 'pino-pretty',
+              level: 'debug',
+              options: {
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname',
+                colorize: true,
+              },
+            },
+            {
+              target: 'pino-opentelemetry-transport',
+              level: 'info',
+              options: {},
+            },
+          ],
+        }
+      : {
+          target: 'pino-opentelemetry-transport',
+          options: {},
+        };
+
   const app = Fastify({
     trustProxy: true,
     logger: {
@@ -43,17 +69,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
         ],
         censor: '[REDACTED]',
       },
-      transport:
-        config.nodeEnv === 'development'
-          ? {
-              target: 'pino-pretty',
-              options: {
-                translateTime: 'HH:MM:ss Z',
-                ignore: 'pid,hostname',
-                colorize: true,
-              },
-            }
-          : undefined,
+      transport: transports,
     },
   });
 
