@@ -76,6 +76,26 @@ sealed class ExportAssistantState {
     val isLoading: Boolean get() = this is Generating
     val isError: Boolean get() = this is Error
     val isSuccess: Boolean get() = this is Success
+
+    /**
+     * Returns a user-friendly status message for this state.
+     * Used to show progress indicators without blocking the UI.
+     */
+    fun getStatusMessage(): String? = when (this) {
+        is Idle -> null
+        is Generating -> "Drafting description…"
+        is Success -> null // Don't show message when complete
+        is Error -> message
+    }
+
+    /**
+     * Returns true if this is a long-running operation that needs a "Still working…" indicator.
+     * Shown after 10 seconds of generation.
+     */
+    fun isLongRunning(): Boolean = when (this) {
+        is Generating -> (System.currentTimeMillis() - startedAt) > 10_000
+        else -> false
+    }
 }
 
 /**
