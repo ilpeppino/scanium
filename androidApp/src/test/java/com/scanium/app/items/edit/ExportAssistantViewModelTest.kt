@@ -78,7 +78,7 @@ class ExportAssistantViewModelTest {
     fun `structured response with suggestedDraftUpdates should not trigger fallback parsing`() {
         // Simulate a backend response with structured data
         val response = AssistantResponse(
-            content = """{"title": "...", "description": "...", "suggestedDraftUpdates": [...]}""",
+            reply = """{"title": "...", "description": "...", "suggestedDraftUpdates": [...]}""",
             suggestedDraftUpdates = listOf(
                 SuggestedDraftUpdate(
                     field = "title",
@@ -116,7 +116,7 @@ class ExportAssistantViewModelTest {
     fun `response parsing prioritizes suggestedDraftUpdates over text field`() {
         // Create a response where both structured data AND raw text exist
         val response = AssistantResponse(
-            content = """
+            reply = """
                 RAW JSON RESPONSE THAT SHOULD BE IGNORED:
                 {"suggestedDraftUpdates": [...], "title": "Wrong Title"}
             """.trimIndent(),
@@ -156,7 +156,7 @@ class ExportAssistantViewModelTest {
     fun `empty suggestedDraftUpdates allows fallback parsing`() {
         // Response with no structured data - fallback parsing should be allowed
         val response = AssistantResponse(
-            content = "Title: Fallback Title\nDescription: Fallback Description",
+            reply = "Title: Fallback Title\nDescription: Fallback Description",
             suggestedDraftUpdates = emptyList()
         )
 
