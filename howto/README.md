@@ -17,7 +17,7 @@ This directory consolidates **all documentation, runbooks, operational scripts, 
 
 ***REMOVED******REMOVED******REMOVED*** Operations
 - [Backend Deploy Runbook](backend/deploy/)
-- [Monitoring Deploy](monitoring/scripts/)
+- [Monitoring Scripts](monitoring/scripts/)
 - [NAS Infrastructure](infra/deploy/)
 - [Incident Reports](monitoring/incidents/)
 

@@ -405,13 +405,13 @@ The `scripts/monitoring/inventory-telemetry.sh` script discovers what telemetry 
 
 ```bash
 ***REMOVED*** Basic usage (requires monitoring stack to be running)
-./scripts/monitoring/inventory-telemetry.sh
+./howto/monitoring/scripts/verify-monitoring.sh
 
 ***REMOVED*** With custom Grafana URL
-./scripts/monitoring/inventory-telemetry.sh --grafana-url http://localhost:3000
+./howto/monitoring/scripts/verify-monitoring.sh --grafana-url http://localhost:3000
 
 ***REMOVED*** With API token (if anonymous auth is disabled)
-./scripts/monitoring/inventory-telemetry.sh --token "your-grafana-api-token"
+./howto/monitoring/scripts/verify-monitoring.sh --token "your-grafana-api-token"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** What It Discovers
@@ -450,7 +450,7 @@ Regenerate dashboards when:
 
 1. **Discover current telemetry:**
    ```bash
-   ./scripts/monitoring/inventory-telemetry.sh
+   ./howto/monitoring/scripts/verify-monitoring.sh
    ```
 
 2. **Review the inventory:**
