@@ -128,7 +128,13 @@ export class OpenAIAssistantProvider implements AssistantProvider {
     // Start timing for metrics
     const startTime = Date.now();
 
+    // DEBUG: Log request start
+    console.error('[OpenAI Provider] ===== STARTING OPENAI REQUEST =====');
+    console.error('[OpenAI Provider] Model:', this.model);
+    console.error('[OpenAI Provider] CorrelationId:', request.correlationId);
+
     try {
+      console.error('[OpenAI Provider] Calling OpenAI API...');
       const response = await clientToUse.chat.completions.create({
         model: this.model,
         max_tokens: this.maxTokens,
@@ -142,6 +148,9 @@ export class OpenAIAssistantProvider implements AssistantProvider {
           type: 'json_object',
         },
       });
+
+      console.error('[OpenAI Provider] API call completed successfully');
+      console.error('[OpenAI Provider] Response status:', response.id ? 'OK' : 'UNKNOWN');
 
       // Calculate duration
       const durationSeconds = (Date.now() - startTime) / 1000;
@@ -185,6 +194,10 @@ export class OpenAIAssistantProvider implements AssistantProvider {
       // Extract text content from response
       const textContent = response.choices[0]?.message?.content ?? '';
 
+      // DEBUG: Log the raw AI response
+      console.error('[OpenAI Provider] Raw AI response (FULL):', textContent);
+      console.error('[OpenAI Provider] Response length:', textContent.length);
+
       // Check response language consistency
       if (language && language !== 'EN') {
         const langCheck = checkResponseLanguage(
@@ -200,6 +213,11 @@ export class OpenAIAssistantProvider implements AssistantProvider {
 
       // Parse the structured response
       const parsed = parseListingResponse(textContent);
+
+      // DEBUG: Log parsed results
+      console.error('[OpenAI Provider] Parsed title:', parsed.title);
+      console.error('[OpenAI Provider] Parsed description length:', parsed.description?.length ?? 0);
+      console.error('[OpenAI Provider] Parsed suggestedDraftUpdates:', parsed.suggestedDraftUpdates?.length ?? 0);
 
       // Build response components
       const suggestedDraftUpdates: SuggestedDraftUpdate[] = [];
@@ -406,6 +424,11 @@ export class OpenAIAssistantProvider implements AssistantProvider {
     } catch (error) {
       // Calculate duration for error case
       const durationSeconds = (Date.now() - startTime) / 1000;
+
+      // DEBUG: Log the actual error
+      console.error('[OpenAI Provider] Error generating listing:', error);
+      console.error('[OpenAI Provider] Error type:', typeof error);
+      console.error('[OpenAI Provider] Error constructor:', error?.constructor?.name);
 
       // Map OpenAI errors to domain error structure
       const openaiError = error as { status?: number; code?: string; message?: string };
