@@ -29,7 +29,7 @@ Added `/metrics` to the HTTPS_EXEMPT_PATHS list in the backend security plugin, 
    - Added `/metrics` to `HTTPS_EXEMPT_PATHS` array
    - This exempts the metrics endpoint from HTTPS enforcement, similar to health check endpoints
 
-2. **scripts/monitoring/generate-openai-traffic.sh**
+2. **monitoring/howto/testing/generate-openai-traffic.sh**
    - Created traffic generator for testing OpenAI metrics
    - Generates controlled traffic to `/v1/assist/chat` endpoint
    - Includes both successful requests and intentional errors
@@ -80,7 +80,7 @@ API_KEY=$(grep SCANIUM_API_KEYS backend/.env | cut -d= -f2 | cut -d, -f1)
 BACKEND_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' scanium-backend)
 
 # Run traffic generator (generates 3 requests + 1 error over ~60 seconds)
-SCANIUM_API_KEY=$API_KEY bash scripts/monitoring/generate-openai-traffic.sh http://$BACKEND_IP:8080
+SCANIUM_API_KEY=$API_KEY bash monitoring/howto/testing/generate-openai-traffic.sh http://$BACKEND_IP:8080
 ```
 
 ## Dashboard Status
