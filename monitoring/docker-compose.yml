@@ -18,6 +18,7 @@ services:
     volumes:
       - ./alloy/alloy.hcl:/etc/alloy/config.alloy:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/alloy:/var/lib/alloy/data
     command:
       - run
       - /etc/alloy/config.alloy
@@ -28,7 +29,7 @@ services:
       - backend_scanium-network
       - compose_scanium_net
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/-/ready"]
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/12345 && echo -e 'GET /-/ready HTTP/1.0\\r\\n\\r\\n' >&3 && timeout 2 cat <&3 | grep -q '200 OK'"]
       interval: 10s
       timeout: 5s
       retries: 3
