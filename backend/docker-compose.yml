@@ -22,6 +22,7 @@ services:
 
   ***REMOVED*** Scanium Backend API
   api:
+    image: scanium-backend:${BACKEND_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
