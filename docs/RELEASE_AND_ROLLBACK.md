@@ -1,18 +1,30 @@
-# Scanium Backend Release and Rollback Guide
+# Scanium Release and Rollback Guide
 
-This guide covers deploying and rolling back the Scanium backend on NAS using locally tagged Docker images.
+This guide covers deploying and rolling back the Scanium backend and monitoring stack on NAS.
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Why dist/ Changes Don't Deploy](#why-dist-changes-dont-deploy)
-- [Image Tagging Strategy](#image-tagging-strategy)
-- [Deploying a New Version](#deploying-a-new-version)
-- [Rolling Back](#rolling-back)
-- [Managing Image Storage](#managing-image-storage)
-- [Troubleshooting](#troubleshooting)
+- [Backend Releases](#backend-releases)
+  - [Overview](#backend-overview)
+  - [Why dist/ Changes Don't Deploy](#why-dist-changes-dont-deploy)
+  - [Image Tagging Strategy](#backend-tagging-strategy)
+  - [Deploying a New Version](#deploying-backend)
+  - [Rolling Back](#rolling-back-backend)
+  - [Managing Image Storage](#managing-image-storage)
+  - [Troubleshooting](#backend-troubleshooting)
+- [Monitoring Releases](#monitoring-releases)
+  - [Overview](#monitoring-overview)
+  - [Git Tag Strategy](#monitoring-tagging-strategy)
+  - [Deploying Monitoring Changes](#deploying-monitoring)
+  - [Rolling Back Monitoring](#rolling-back-monitoring)
+  - [Verification Gates](#monitoring-verification)
+  - [Troubleshooting](#monitoring-troubleshooting)
 
-## Overview
+---
+
+# Backend Releases
+
+## Backend Overview
 
 The Scanium backend deployment system uses **NAS-local Docker image tagging** for version control and rollback capability. This approach:
 
@@ -35,7 +47,7 @@ The backend Docker image is built **from source code** inside the Docker build p
 
 **TL;DR:** Commit source changes to `main`, then run the deploy script. The `dist/` directory is an artifact, not a deployment input.
 
-## Image Tagging Strategy
+## Backend Tagging Strategy
 
 Images are tagged with: `YYYY.MM.DD-<shortSHA>`
 
@@ -49,7 +61,7 @@ This provides:
 - Traceability back to exact git commit
 - Uniqueness (no tag collisions)
 
-## Deploying a New Version
+## Deploying Backend
 
 ### Prerequisites
 
@@ -120,7 +132,7 @@ DEPLOYMENT COMPLETE
 DEPLOYED_BACKEND_TAG=2026.01.10-abc123f
 ```
 
-## Rolling Back
+## Rolling Back Backend
 
 ### When to Roll Back
 
@@ -251,7 +263,7 @@ docker images scanium-backend --format '{{.Tag}}' | \
   xargs -r -I {} docker rmi scanium-backend:{} || true
 ```
 
-## Troubleshooting
+## Backend Troubleshooting
 
 ### Health Check Fails After Deploy
 
@@ -347,6 +359,403 @@ ssh nas "docker inspect scanium-backend --format='{{.Config.Image}}'"
 ```bash
 ssh nas "cd /volume1/docker/scanium/repo && bash scripts/app/rollback-backend-nas.sh <TAG>"
 ```
+
+---
+
+# Monitoring Releases
+
+## Monitoring Overview
+
+The Scanium monitoring stack (Grafana, Mimir, Loki, Tempo, Alloy) uses **git tags** for version control instead of Docker image tags. This is because:
+
+- Monitoring services use upstream images (Grafana Labs official images)
+- Configuration changes (compose, Alloy config, dashboards) are tracked in git
+- Rollback means checking out a previous git tag, not swapping Docker images
+
+**Key differences from backend:**
+- Backend: Docker image tags (e.g., `scanium-backend:2026.01.10-abc123`)
+- Monitoring: Git tags (e.g., `monitoring-2026.01.10-abc123`)
+
+## Monitoring Tagging Strategy
+
+Tags follow the format: `monitoring-YYYY.MM.DD-<shortSHA>`
+
+**Example:** `monitoring-2026.01.10-abc123f`
+
+- `monitoring-` prefix distinguishes from backend tags
+- `YYYY.MM.DD` - UTC date of deployment
+- `shortSHA` - 7-character git commit hash
+
+**When to create a tag:**
+- After successful monitoring stack deployment
+- After configuration changes (Alloy, Grafana datasources, dashboards)
+- Before risky changes (for easy rollback)
+
+## Deploying Monitoring
+
+### Prerequisites
+
+- Changes merged to `main` branch
+- SSH access to NAS
+- Docker permissions on NAS
+
+### Deploy Command
+
+From your local machine:
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo && bash scripts/monitoring/deploy-monitoring-nas.sh"
+```
+
+Or directly on NAS:
+
+```bash
+cd /volume1/docker/scanium/repo
+bash scripts/monitoring/deploy-monitoring-nas.sh
+```
+
+### What the Deploy Script Does
+
+1. **Preflight checks:**
+   - Detects orphan/duplicate containers (prevents DNS poisoning)
+   - Warns about exited containers
+
+2. **Repository update:**
+   - Pulls latest `main` branch
+   - Computes deployment tag
+
+3. **Stack deployment:**
+   - Runs `docker-compose down --remove-orphans`
+   - Runs `docker-compose up -d`
+   - Waits for all containers to become healthy
+
+4. **Verification:**
+   - Runs `verify-monitoring.sh` to check:
+     - Grafana API and datasources
+     - Mimir metrics queries
+     - Tempo traces API
+     - Loki logs API
+
+5. **Tag suggestion:**
+   - Prints suggested tag for this deployment
+   - Instructions for creating the tag
+
+### Expected Output
+
+```
+════════════════════════════════════════════════════════════
+Scanium Monitoring Stack Deployment
+════════════════════════════════════════════════════════════
+
+[PREFLIGHT] Checking for orphan containers...
+✓ No existing monitoring containers found (clean slate)
+
+[1/5] Updating repository from origin/main...
+✓ Repository updated
+
+Deploy tag: monitoring-2026.01.10-abc123f
+
+[2/5] Stopping monitoring stack...
+✓ Stack stopped and orphans removed
+
+[3/5] Starting monitoring stack...
+✓ Stack started
+
+[4/5] Waiting for health checks (max 90s)...
+   Health: 5/5 containers healthy (waiting...)
+✓ All containers healthy
+
+[5/5] Running monitoring verification...
+════════════════════════════════════════════════════════════
+Scanium Monitoring Stack Verification
+════════════════════════════════════════════════════════════
+
+[1/4] Grafana Health...
+✓ Grafana: API healthy
+✓ Grafana: All datasources configured (Mimir, Loki, Tempo)
+
+[2/4] Mimir Metrics...
+✓ Mimir: Ready endpoint OK
+✓ Mimir: Pipeline metrics present (up{source="pipeline"})
+✓ Mimir: Backend metrics present (up{job="scanium-backend"})
+
+[3/4] Tempo Traces...
+✓ Tempo: Ready endpoint OK
+✓ Tempo: API responding
+⚠ Tempo: No traffic validation (empty trace store is normal initially)
+
+[4/4] Loki Logs...
+✓ Loki: Ready endpoint OK
+⚠ Loki: No labels found (logs ingestion may not be working)
+
+════════════════════════════════════════════════════════════
+Verification Summary
+════════════════════════════════════════════════════════════
+⚠ PASSED WITH WARNINGS
+  - 2 warning(s) detected
+  - All critical systems operational
+  - Review warnings above for non-critical issues
+
+════════════════════════════════════════════════════════════
+DEPLOYMENT COMPLETE
+════════════════════════════════════════════════════════════
+Deployed at: 2026-01-10 18:00:00 UTC
+Git commit: abc123f
+Suggested tag: monitoring-2026.01.10-abc123f
+
+To tag this release:
+  git tag -a monitoring-2026.01.10-abc123f -m 'Monitoring release'
+  git push origin monitoring-2026.01.10-abc123f
+```
+
+### Creating a Monitoring Tag
+
+After successful deployment, create a git tag on NAS:
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo && \
+  git tag -a monitoring-2026.01.10-abc123f -m 'Monitoring release' && \
+  git push origin monitoring-2026.01.10-abc123f"
+```
+
+## Rolling Back Monitoring
+
+### When to Roll Back
+
+- New monitoring configuration causes issues
+- Dashboard changes break visualizations
+- Alloy configuration errors
+- Need to revert to known-good state quickly
+
+### List Available Tags
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo && git tag -l 'monitoring-*'"
+```
+
+### Rollback Command
+
+Replace `<TAG>` with the target monitoring tag:
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo && bash scripts/monitoring/rollback-monitoring-nas.sh <TAG>"
+```
+
+**Example:**
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo && bash scripts/monitoring/rollback-monitoring-nas.sh monitoring-2026.01.09-def4567"
+```
+
+### What the Rollback Script Does
+
+1. Verifies target git tag exists
+2. Shows current vs target commit
+3. Checks out target tag (detached HEAD state)
+4. Runs `docker-compose down --remove-orphans`
+5. Runs `docker-compose up -d`
+6. Waits for health checks
+7. Runs verification script
+
+### Expected Output
+
+```
+════════════════════════════════════════════════════════════
+Scanium Monitoring Stack Rollback
+════════════════════════════════════════════════════════════
+
+Target tag: monitoring-2026.01.09-def4567
+
+[1/5] Verifying git tag exists...
+✓ Tag exists
+
+[2/5] Checking current state...
+   Current: main @ abc123f
+   Target:  monitoring-2026.01.09-def4567 @ def4567
+
+[3/5] Checking out tag monitoring-2026.01.09-def4567...
+✓ Checked out monitoring-2026.01.09-def4567
+
+[4/5] Redeploying monitoring stack...
+✓ Stack redeployed
+
+Waiting for health checks (max 90s)...
+✓ All containers healthy
+
+[5/5] Running monitoring verification...
+[... verification output ...]
+
+════════════════════════════════════════════════════════════
+ROLLBACK COMPLETE
+════════════════════════════════════════════════════════════
+Rolled back to: monitoring-2026.01.09-def4567
+Commit: def4567
+
+⚠ NOTE: You are now in detached HEAD state
+To return to main branch:
+  git checkout main
+```
+
+**Important:** After rollback, you're in detached HEAD state. Return to main when ready:
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo && git checkout main"
+```
+
+## Monitoring Verification
+
+The `verify-monitoring.sh` script checks critical monitoring components:
+
+### What It Checks
+
+**1. Grafana:**
+- API health endpoint
+- Datasources configured (Mimir, Loki, Tempo)
+
+**2. Mimir (Metrics):**
+- Ready endpoint
+- Pipeline metrics: `up{source="pipeline"}`
+- Backend metrics: `up{job="scanium-backend"}`
+
+**3. Tempo (Traces):**
+- Ready endpoint
+- API responding
+- (Note: Empty trace store is normal if no traffic)
+
+**4. Loki (Logs):**
+- Ready endpoint
+- Labels present
+- (Warning: Logs ingestion may be optional/not yet working)
+
+### Exit Codes
+
+- `0` - All checks passed (warnings OK)
+- `1` - Critical failure (deployment should be considered failed)
+
+### Manual Verification
+
+Run verification independently:
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo && bash scripts/monitoring/verify-monitoring.sh"
+```
+
+## Monitoring Troubleshooting
+
+### Orphan Container DNS Issues
+
+**Symptom:** Queries fail even though services are running. Alloy can't reach Mimir/Loki/Tempo.
+
+**Cause:** Duplicate containers cause Docker DNS to resolve to the wrong (stopped) container.
+
+**Fix:**
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo/monitoring && \
+  docker-compose down --remove-orphans && \
+  docker ps -a --filter 'name=scanium-' | grep -E 'mimir|loki|tempo|grafana|alloy' | awk '{print \$1}' | xargs docker rm -f && \
+  docker-compose up -d"
+```
+
+**Prevention:** Always use `--remove-orphans` flag (deploy script does this automatically).
+
+**Verify DNS resolution from Alloy:**
+
+```bash
+ssh nas "docker exec scanium-alloy getent hosts mimir"
+ssh nas "docker exec scanium-alloy getent hosts loki"
+ssh nas "docker exec scanium-alloy getent hosts tempo"
+```
+
+### Mimir Not Showing Recent Metrics
+
+**Symptom:** Metrics from last few hours missing in Grafana.
+
+**Cause:** Mimir querier not configured to query ingesters for recent data.
+
+**Fix:** Ensure these flags are in `monitoring/docker-compose.yml` (already included):
+
+```yaml
+command:
+  - -querier.query-ingesters-within=12h
+  - -querier.query-store-after=0s
+```
+
+**Verify:**
+
+```bash
+ssh nas "docker exec scanium-mimir wget -q -O- 'http://localhost:9009/prometheus/api/v1/query?query=up{source=\"pipeline\"}' | jq"
+```
+
+### Loki Logs Not Appearing
+
+**Status:** Loki logs ingestion may be optional or not yet fully configured.
+
+**Expected:** Verification warns about missing labels but doesn't fail deployment.
+
+**Debug:**
+
+1. Check Loki is ready:
+   ```bash
+   ssh nas "docker exec scanium-loki wget -q -O- http://localhost:3100/ready"
+   ```
+
+2. Check Alloy logs for Loki write errors:
+   ```bash
+   ssh nas "docker logs scanium-alloy --tail 100 | grep -i loki"
+   ```
+
+3. Check docker.sock permissions (if using docker log scraping):
+   ```bash
+   ssh nas "docker exec scanium-alloy ls -la /var/run/docker.sock"
+   ```
+
+### Grafana Datasources Missing
+
+**Symptom:** Dashboards show "Data source not found".
+
+**Fix:**
+
+1. Check datasource provisioning:
+   ```bash
+   ssh nas "docker exec scanium-grafana ls -la /etc/grafana/provisioning/datasources/"
+   ```
+
+2. Check datasource UIDs match dashboard JSON:
+   - Mimir UID: `MIMIR`
+   - Loki UID: `LOKI`
+   - Tempo UID: `TEMPO`
+
+3. Restart Grafana:
+   ```bash
+   ssh nas "cd /volume1/docker/scanium/repo/monitoring && docker-compose restart grafana"
+   ```
+
+### All Containers Unhealthy After Deploy
+
+**Check logs:**
+
+```bash
+ssh nas "docker logs scanium-grafana --tail 50"
+ssh nas "docker logs scanium-mimir --tail 50"
+ssh nas "docker logs scanium-loki --tail 50"
+ssh nas "docker logs scanium-tempo --tail 50"
+ssh nas "docker logs scanium-alloy --tail 50"
+```
+
+**Common causes:**
+- Config file syntax errors
+- Port conflicts
+- Permission issues on data volumes
+- Network issues
+
+**Quick restart:**
+
+```bash
+ssh nas "cd /volume1/docker/scanium/repo/monitoring && docker-compose restart"
+```
+
+---
 
 ## Best Practices
 
