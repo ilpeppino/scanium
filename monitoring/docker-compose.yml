@@ -28,7 +28,7 @@ services:
       - backend_scanium-network
       - compose_scanium_net
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/ready"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/-/ready"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -88,8 +88,12 @@ services:
     command:
       - -config.file=/etc/mimir/config.yaml
       - -target=all
+      ***REMOVED*** Querier config: ensure recent data from ingesters is queryable
+      - -querier.query-ingesters-within=12h
+      - -querier.query-store-after=0s
     networks:
       - observability
+      - compose_scanium_net
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9009/ready"]
       interval: 10s
