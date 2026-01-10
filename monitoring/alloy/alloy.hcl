@@ -56,9 +56,24 @@ otelcol.processor.batch "mobile" {
   timeout                 = "5s"
 
   output {
-    logs    = [otelcol.exporter.loki.mobile.input]
+    logs    = [otelcol.processor.attributes.mobile.input]
     metrics = [otelcol.exporter.prometheus.mobile.input]
     traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+// Extract key attributes for Loki labels (low-cardinality only)
+otelcol.processor.attributes "mobile" {
+  // Promote specific attributes to resource attributes
+  // This allows otelcol.exporter.loki to map them to Loki labels
+  action {
+    key = "loki.attribute.labels"
+    action = "insert"
+    value = "event_name, platform, app_version, build_type, env"
+  }
+
+  output {
+    logs = [otelcol.exporter.loki.mobile.input]
   }
 }
 
@@ -78,37 +93,17 @@ otelcol.processor.batch "backend" {
 // Exporters
 // ============================================================================
 
-// Loki exporter for logs
+// Loki exporter for mobile OTLP logs
+// Automatically maps OTLP log attributes specified in loki.attribute.labels to Loki labels
 otelcol.exporter.loki "mobile" {
-  forward_to = [loki.process.mobile.receiver]
+  forward_to = [loki.write.mobile.receiver]
 }
 
 otelcol.exporter.loki "backend" {
   forward_to = [loki.write.backend_logs.receiver]
 }
 
-// Process logs to extract labels
-loki.process "mobile" {
-  forward_to = [loki.write.mobile.receiver]
-
-  stage.json {
-    expressions = {
-      event_name  = "attributes.event_name",
-      platform    = "attributes.platform",
-      app_version = "attributes.app_version",
-    }
-  }
-
-  stage.labels {
-    values = {
-      event_name  = "event_name",
-      platform    = "platform",
-      app_version = "app_version",
-    }
-  }
-}
-
-// Loki write component
+// Loki write component for mobile telemetry
 loki.write "mobile" {
   endpoint {
     url = "http://loki:3100/loki/api/v1/push"
@@ -116,7 +111,6 @@ loki.write "mobile" {
 
   external_labels = {
     source = "scanium-mobile",
-    env    = "dev",
   }
 }
 
@@ -337,6 +331,6 @@ prometheus.remote_write "pipeline" {
 // }
 
 // To enable debugging, also add this to processors output:
-// logs    = [otelcol.exporter.logging.debug.input, otelcol.exporter.loki.mobile.input]
+// logs    = [otelcol.exporter.logging.debug.input, otelcol.processor.attributes.mobile.input]
 // metrics = [otelcol.exporter.logging.debug.input, otelcol.exporter.prometheus.mobile.input]
 // traces  = [otelcol.exporter.logging.debug.input, otelcol.exporter.otlp.tempo.input]
