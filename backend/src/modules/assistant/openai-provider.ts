@@ -26,6 +26,7 @@ import {
   recordOpenAITokens,
   updateRateLimitState,
 } from '../../infra/telemetry/openai-metrics.js';
+import { recordAssistantTokens } from '../../infra/observability/metrics.js';
 
 export interface OpenAIProviderConfig {
   apiKey: string;
@@ -166,12 +167,20 @@ export class OpenAIAssistantProvider implements AssistantProvider {
 
       // Record token usage if available
       if (response.usage) {
+        const inputTokens = response.usage.prompt_tokens || 0;
+        const outputTokens = response.usage.completion_tokens || 0;
+        const totalTokens = response.usage.total_tokens || 0;
+
+        // Record to OpenTelemetry
         recordOpenAITokens({
           model: this.model,
-          inputTokens: response.usage.prompt_tokens || 0,
-          outputTokens: response.usage.completion_tokens || 0,
-          totalTokens: response.usage.total_tokens || 0,
+          inputTokens,
+          outputTokens,
+          totalTokens,
         });
+
+        // Record to Prometheus for dashboard
+        recordAssistantTokens('openai', inputTokens, outputTokens, totalTokens);
       }
 
       // Update rate limit state from headers if available
