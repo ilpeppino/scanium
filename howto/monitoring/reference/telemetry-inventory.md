@@ -1,7 +1,7 @@
 ***REMOVED*** Telemetry Inventory Report
 
 > Auto-generated reference based on configuration analysis.
-> Re-run `scripts/monitoring/inventory-telemetry.sh` with running stack for live data.
+> Re-run `./scripts/monitoring/inventory-telemetry.sh` with running stack for live data.
 
 **Generated:** 2025-12-30 (configuration-based, not live)
 
@@ -193,7 +193,7 @@ These dashboards require the mobile app to be sending OTLP data:
 
 After starting the monitoring stack, verify:
 
-- [ ] Run inventory script: `./scripts/monitoring/inventory-telemetry.sh`
+- [ ] Run inventory script: `././scripts/monitoring/inventory-telemetry.sh`
 - [ ] Restart Grafana: `docker compose -p scanium-monitoring restart grafana`
 - [ ] Verify dashboards appear: `curl -s localhost:3000/api/search | jq`
 - [ ] Check LGTM Stack Health dashboard (should show UP status for all services)
@@ -204,5 +204,5 @@ After starting the monitoring stack, verify:
 
 *To regenerate this report with live data:*
 ```bash
-./scripts/monitoring/inventory-telemetry.sh
+././scripts/monitoring/inventory-telemetry.sh
 ```

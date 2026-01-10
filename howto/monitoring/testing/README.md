@@ -19,7 +19,7 @@ API_KEY=$(grep SCANIUM_API_KEYS backend/.env | cut -d= -f2 | cut -d, -f1)
 BACKEND_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' scanium-backend)
 
 ***REMOVED*** Run traffic generator
-SCANIUM_API_KEY=$API_KEY bash monitoring/howto/testing/generate-openai-traffic.sh http://$BACKEND_IP:8080
+SCANIUM_API_KEY=$API_KEY bash howto/monitoring/testing/generate-openai-traffic.sh http://$BACKEND_IP:8080
 ```
 
 ***REMOVED******REMOVED*** Creating New Test Scripts

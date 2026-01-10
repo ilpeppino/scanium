@@ -140,7 +140,7 @@ Wait 90 seconds after traffic generation for scrape and ingestion.
 ***REMOVED******REMOVED*** Files Modified
 
 - `monitoring/grafana/dashboards/backend-api-performance.json` - Dashboard definition (NO CHANGES NEEDED)
-- `monitoring/alloy/alloy.hcl` - Alloy config (attempted fix with docker discovery, may need revert)
+- `monitoring/alloy/config.alloy` - Alloy config (attempted fix with docker discovery, may need revert)
 
 ***REMOVED******REMOVED*** Next Steps
 

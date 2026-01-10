@@ -466,11 +466,11 @@ Use the monitoring scripts to verify telemetry:
 
 ```bash
 ***REMOVED*** Comprehensive verification with proof of data
-bash scripts/monitoring/prove-telemetry.sh
+bash ./scripts/monitoring/prove-telemetry.sh
 
 ***REMOVED*** CI/CD regression guard
-bash scripts/monitoring/verify-ingestion.sh
-bash scripts/monitoring/verify-ingestion.sh --strict
+bash ./scripts/monitoring/verify-ingestion.sh
+bash ./scripts/monitoring/verify-ingestion.sh --strict
 ```
 
 ***REMOVED******REMOVED*** Troubleshooting
