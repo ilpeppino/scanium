@@ -469,7 +469,7 @@ private data class AssistantChatResponse(
 ) {
     fun toModel(): AssistantResponse {
         return AssistantResponse(
-            content = content,
+            reply = content,
             actions = actions.map { it.toModel() },
             citationsMetadata = citationsMetadata,
             confidenceTier = confidenceTier?.let { parseConfidenceTier(it) },
