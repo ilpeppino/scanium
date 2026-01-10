@@ -27,7 +27,6 @@ services:
     networks:
       - observability
       - backend_scanium-network
-      - compose_scanium_net
     healthcheck:
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/12345 && echo -e 'GET /-/ready HTTP/1.0\\r\\n\\r\\n' >&3 && timeout 2 cat <&3 | grep -q '200 OK'"]
       interval: 10s
@@ -94,7 +93,6 @@ services:
       - -querier.query-store-after=0s
     networks:
       - observability
-      - compose_scanium_net
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9009/ready"]
       interval: 10s
@@ -153,8 +151,6 @@ networks:
     name: scanium-observability
     driver: bridge
   backend_scanium-network:
-    external: true
-  compose_scanium_net:
     external: true
 
 volumes:
