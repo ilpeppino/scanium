@@ -1,12 +1,12 @@
 # Telemetry Truth Report
 
-Generated: Fri Jan  9 20:47:19 CET 2026
+Generated: Fri Jan  9 21:37:04 CET 2026
 
 ## Summary
 
 ✅ Mimir has data (80 series)
-❌ Loki has NO labels
-❌ Tempo has NO services
+✅ Loki has labels (5 labels)
+✅ Tempo has services (1 services)
 
 ## Mimir (Metrics)
 
@@ -20,16 +20,20 @@ Generated: Fri Jan  9 20:47:19 CET 2026
 
 ## Loki (Logs)
 
-- **Label count**: 0
-- **Has 'source' label**: N/A
+- **Label count**: 5
+- **Has 'source' label**: true
 - **Labels found**:
-
+  - env
+  - exporter
+  - job
+  - level
+  - source
 
 ## Tempo (Traces)
 
-- **Service count**: 0
+- **Service count**: 1
 - **Services found**:
-
+  - scanium-backend
 
 ## Decision Gate
 
@@ -39,7 +43,7 @@ Generated: Fri Jan  9 20:47:19 CET 2026
 
 ```json
 {
-  "timestamp": "2026-01-09T19:47:19Z",
+  "timestamp": "2026-01-09T20:37:04Z",
   "datasources": {
     "mimir": {
       "status": "queried",
@@ -54,14 +58,22 @@ Generated: Fri Jan  9 20:47:19 CET 2026
     },
     "loki": {
       "status": "queried",
-      "label_count": 0,
-      "labels": [],
-      "has_source_label": false
+      "label_count": 5,
+      "labels": [
+        "env",
+        "exporter",
+        "job",
+        "level",
+        "source"
+      ],
+      "has_source_label": true
     },
     "tempo": {
       "status": "queried",
-      "service_count": 0,
-      "services": []
+      "service_count": 1,
+      "services": [
+        "scanium-backend"
+      ]
     }
   }
 }
