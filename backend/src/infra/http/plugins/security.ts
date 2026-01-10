@@ -3,9 +3,9 @@ import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { Config } from '../../../config/index.js';
 
 /**
- * Paths exempt from HTTPS enforcement (for Docker healthchecks).
+ * Paths exempt from HTTPS enforcement (for Docker healthchecks and metrics scraping).
  */
-const HTTPS_EXEMPT_PATHS = ['/health', '/healthz', '/readyz'];
+const HTTPS_EXEMPT_PATHS = ['/health', '/healthz', '/readyz', '/metrics'];
 const LOOPBACK_HOSTS = new Set(['localhost', 'localhost.localdomain']);
 
 /**
