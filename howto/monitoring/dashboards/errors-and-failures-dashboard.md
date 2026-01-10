@@ -46,7 +46,7 @@ curl -G "http://localhost:3100/loki/api/v1/query" \
 
 ### Why Logs Are Not in Loki
 
-#### Alloy Configuration (monitoring/alloy/alloy.hcl)
+#### Alloy Configuration (monitoring/alloy/config.alloy)
 The pipeline is correctly configured to:
 1. Scrape Docker logs via `loki.source.docker.backend`
 2. Parse JSON and extract labels via `loki.process.backend_logs`

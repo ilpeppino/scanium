@@ -108,7 +108,7 @@ scanium.otlp.enabled=true
 scanium.telemetry.data_region=US
 ```
 
-### Alloy (`monitoring/alloy/alloy.hcl`)
+### Alloy (`monitoring/alloy/config.alloy`)
 
 OTLP receiver and attribute extraction are configured in the Alloy pipeline:
 
@@ -292,6 +292,6 @@ Mobile App → Alloy (OTLP HTTP :4318) → Loki
 ## See Also
 
 - [Telemetry Facade](../../howto/app/TELEMETRY_FACADE.md) - Shared telemetry API
-- [Alloy Configuration](../alloy/alloy.hcl) - OTLP receiver setup
-- [Mobile App Health Dashboard](./dashboards/mobile-app-health.json) - Grafana dashboard
-- [Proof Script](../../scripts/monitoring/prove-mobile-telemetry.sh) - Verification tool
+- [Alloy Configuration](../../../monitoring/alloy/config.alloy) - OTLP receiver setup
+- [Mobile App Health Dashboard](../../../monitoring/grafana/dashboards/mobile-app-health.json) - Grafana dashboard
+- [Proof Script](../../../scripts/monitoring/prove-mobile-telemetry.sh) - Verification tool
