@@ -1,10 +1,4 @@
-***REMOVED***!/usr/bin/env bash
-set -euo pipefail
-
-COMPOSE_FILE="deploy/nas/compose/docker-compose.nas.monitoring.yml"
-
-echo "■ Stopping monitoring stack..."
-docker-compose -f "$COMPOSE_FILE" down
-
-echo
-echo "✔ Monitoring stack stopped"
+***REMOVED***!/bin/bash
+***REMOVED*** STUB: This script has moved to howto/monitoring/scripts/
+***REMOVED*** Forwarding to new location for compatibility
+exec "$(dirname "$0")/../../../howto/monitoring/scripts/monitoring-down.sh" "$@"
