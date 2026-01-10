@@ -55,7 +55,7 @@ This provides:
 
 - Changes merged to `main` branch
 - SSH access to NAS
-- Sudo privileges on NAS
+- Docker permissions on NAS
 
 ***REMOVED******REMOVED******REMOVED*** Deploy Command
 
@@ -137,7 +137,7 @@ ssh nas "cd /volume1/docker/scanium/repo && bash scripts/app/deploy-backend-nas.
 Or:
 
 ```bash
-ssh nas "sudo docker images scanium-backend"
+ssh nas "docker images scanium-backend"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Rollback Command
@@ -207,7 +207,7 @@ Docker images consume disk space. Each backend image is approximately 570MB.
 ***REMOVED******REMOVED******REMOVED*** List Images with Sizes
 
 ```bash
-ssh nas "sudo docker images scanium-backend --format 'table {{.Tag}}\t{{.CreatedAt}}\t{{.Size}}'"
+ssh nas "docker images scanium-backend --format 'table {{.Tag}}\t{{.CreatedAt}}\t{{.Size}}'"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Cleanup Strategy
@@ -215,7 +215,7 @@ ssh nas "sudo docker images scanium-backend --format 'table {{.Tag}}\t{{.Created
 **Keep last N deployments** (e.g., keep last 10):
 
 ```bash
-ssh nas "sudo docker images scanium-backend --format '{{.Tag}}' | grep -v 'latest' | tail -n +11 | xargs -r -I {} sudo docker rmi scanium-backend:{}"
+ssh nas "docker images scanium-backend --format '{{.Tag}}' | grep -v 'latest' | tail -n +11 | xargs -r -I {} docker rmi scanium-backend:{}"
 ```
 
 This keeps:
@@ -227,10 +227,10 @@ This keeps:
 
 ```bash
 ***REMOVED*** Remove a specific tag
-ssh nas "sudo docker rmi scanium-backend:2026.01.05-xyz9876"
+ssh nas "docker rmi scanium-backend:2026.01.05-xyz9876"
 
 ***REMOVED*** Remove dangling images (untagged)
-ssh nas "sudo docker image prune -f"
+ssh nas "docker image prune -f"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Recommended Cleanup Schedule
@@ -244,11 +244,11 @@ ssh nas "sudo docker image prune -f"
 ```bash
 ***REMOVED***!/usr/bin/env bash
 ***REMOVED*** cleanup-old-backend-images.sh
-sudo docker images scanium-backend --format '{{.Tag}}' | \
+docker images scanium-backend --format '{{.Tag}}' | \
   grep -E '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}' | \
   sort -r | \
   tail -n +16 | \
-  xargs -r -I {} sudo docker rmi scanium-backend:{} || true
+  xargs -r -I {} docker rmi scanium-backend:{} || true
 ```
 
 ***REMOVED******REMOVED*** Troubleshooting
@@ -258,7 +258,7 @@ sudo docker images scanium-backend --format '{{.Tag}}' | \
 **Check logs:**
 
 ```bash
-ssh nas "sudo docker logs scanium-backend --tail 100"
+ssh nas "docker logs scanium-backend --tail 100"
 ```
 
 **Common issues:**
@@ -273,13 +273,13 @@ ssh nas "sudo docker logs scanium-backend --tail 100"
 **Check if build succeeded:**
 
 ```bash
-ssh nas "sudo docker images | grep scanium-backend"
+ssh nas "docker images | grep scanium-backend"
 ```
 
 **Manual tag if needed:**
 
 ```bash
-ssh nas "sudo docker tag backend_api:latest scanium-backend:2026.01.10-abc123f"
+ssh nas "docker tag backend_api:latest scanium-backend:2026.01.10-abc123f"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Container Won't Start
@@ -287,14 +287,14 @@ ssh nas "sudo docker tag backend_api:latest scanium-backend:2026.01.10-abc123f"
 **Check container status:**
 
 ```bash
-ssh nas "sudo docker ps -a | grep scanium-backend"
-ssh nas "sudo docker inspect scanium-backend"
+ssh nas "docker ps -a | grep scanium-backend"
+ssh nas "docker inspect scanium-backend"
 ```
 
 **Force remove and recreate:**
 
 ```bash
-ssh nas "cd /volume1/docker/scanium/repo/backend && sudo docker-compose down api && sudo docker-compose up -d api"
+ssh nas "cd /volume1/docker/scanium/repo/backend && docker-compose down api && docker-compose up -d api"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Out of Disk Space
@@ -302,18 +302,18 @@ ssh nas "cd /volume1/docker/scanium/repo/backend && sudo docker-compose down api
 **Check Docker disk usage:**
 
 ```bash
-ssh nas "sudo docker system df"
+ssh nas "docker system df"
 ```
 
 **Clean up:**
 
 ```bash
 ***REMOVED*** Remove unused images
-ssh nas "sudo docker image prune -a -f"
+ssh nas "docker image prune -a -f"
 
 ***REMOVED*** Remove unused volumes (CAREFUL - check what will be removed first)
-ssh nas "sudo docker volume ls"
-ssh nas "sudo docker volume prune -f"
+ssh nas "docker volume ls"
+ssh nas "docker volume prune -f"
 ```
 
 ***REMOVED******REMOVED******REMOVED*** Git Pull Fails (Dirty Repo)
@@ -339,7 +339,7 @@ ssh nas "cd /volume1/docker/scanium/repo && git reset --hard origin/main"
 **Check what image is actually running:**
 
 ```bash
-ssh nas "sudo docker inspect scanium-backend --format='{{.Config.Image}}'"
+ssh nas "docker inspect scanium-backend --format='{{.Config.Image}}'"
 ```
 
 **Force recreate with specific tag:**

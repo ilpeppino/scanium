@@ -11,15 +11,16 @@ set -euo pipefail
 ***REMOVED***   bash scripts/app/deploy-backend-nas.sh
 ***REMOVED***
 ***REMOVED*** Requirements:
-***REMOVED***   - Must run on NAS (uses sudo docker)
+***REMOVED***   - Must run on NAS
+***REMOVED***   - Docker and docker-compose in PATH
 ***REMOVED***   - Repo at /volume1/docker/scanium/repo
 ***REMOVED***   - Main branch must be up to date
 ***REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED******REMOVED***
 
 REPO_ROOT="/volume1/docker/scanium/repo"
 BACKEND_DIR="$REPO_ROOT/backend"
-DOCKER="sudo /usr/local/bin/docker"
-DOCKER_COMPOSE="sudo env PATH=/usr/local/bin:/usr/bin:/bin /usr/local/bin/docker-compose"
+DOCKER="/usr/local/bin/docker"
+DOCKER_COMPOSE="/usr/local/bin/docker-compose"
 
 ***REMOVED*** Ensure docker is in PATH
 export PATH="/usr/local/bin:$PATH"
