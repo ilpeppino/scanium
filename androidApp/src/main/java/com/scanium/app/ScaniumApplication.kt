@@ -266,5 +266,34 @@ class ScaniumApplication : Application() {
         // Initialize PerformanceMonitor for global access to performance telemetry
         PerformanceMonitor.init(telemetry)
         android.util.Log.i("ScaniumApplication", "PerformanceMonitor initialized")
+
+        // Initialize mobile telemetry client (Option C - HTTPS → Backend → Loki)
+        // This is separate from OTLP telemetry and sends events to /v1/telemetry/mobile
+        initializeMobileTelemetry()
+    }
+
+    private fun initializeMobileTelemetry() {
+        try {
+            val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.removeSuffix("/")
+            // Enable mobile telemetry for beta and release builds
+            // For dev builds, check if explicitly enabled via build config
+            val enabled = !BuildConfig.DEBUG || System.getenv("MOBILE_TELEMETRY_ENABLED") == "true"
+
+            MobileTelemetryClient.initialize(
+                context = this,
+                baseUrl = baseUrl,
+                enabled = enabled
+            )
+
+            if (enabled) {
+                // Send initial app_launch event
+                TelemetryEvents.appLaunch()
+                android.util.Log.i("ScaniumApplication", "Mobile telemetry initialized (baseUrl=$baseUrl)")
+            } else {
+                android.util.Log.i("ScaniumApplication", "Mobile telemetry disabled (debug build)")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ScaniumApplication", "Failed to initialize mobile telemetry", e)
+        }
     }
 }

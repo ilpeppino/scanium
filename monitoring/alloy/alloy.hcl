@@ -84,7 +84,7 @@ otelcol.exporter.loki "mobile" {
 }
 
 otelcol.exporter.loki "backend" {
-  forward_to = [loki.write.backend.receiver]
+  forward_to = [loki.write.backend_logs.receiver]
 }
 
 // Process logs to extract labels
@@ -120,17 +120,6 @@ loki.write "mobile" {
   }
 }
 
-loki.write "backend" {
-  endpoint {
-    url = "http://loki:3100/loki/api/v1/push"
-  }
-
-  external_labels = {
-    source = "scanium-backend",
-    env    = "dev",
-  }
-}
-
 
 // Docker container discovery for logs
 discovery.docker "backend" {
@@ -138,16 +127,60 @@ discovery.docker "backend" {
 }
 
 // Docker logs -> Loki (backend)
+// This captures logs from scanium-backend container and parses mobile telemetry events
 loki.source.docker "backend" {
   host = "unix:///var/run/docker.sock"
   targets = discovery.docker.backend.targets
 
+  // Initial labels (will be overridden by relabeling if mobile telemetry)
   labels = {
     source = "scanium-backend",
     env = "dev",
   }
 
-  forward_to = [loki.write.backend.receiver]
+  // Forward to processing pipeline that extracts mobile telemetry labels
+  forward_to = [loki.process.backend_logs.receiver]
+}
+
+// Process backend container logs to extract mobile telemetry events
+loki.process "backend_logs" {
+  forward_to = [loki.write.backend_logs.receiver]
+
+  // Try to parse as JSON
+  stage.json {
+    expressions = {
+      source       = "source",
+      event_name   = "event_name",
+      platform     = "platform",
+      app_version  = "app_version",
+      build_type   = "build_type",
+      session_id   = "session_id",
+      timestamp_ms = "timestamp_ms",
+    }
+  }
+
+  // Conditionally relabel if source=scanium-mobile
+  // This extracts low-cardinality labels for mobile telemetry
+  stage.labels {
+    values = {
+      source       = "source",
+      event_name   = "event_name",
+      platform     = "platform",
+      app_version  = "app_version",
+      build_type   = "build_type",
+    }
+  }
+}
+
+// Write processed logs to Loki
+loki.write "backend_logs" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+
+  external_labels = {
+    env = "dev",
+  }
 }
 
 // Prometheus remote write exporter for metrics (to Mimir)
