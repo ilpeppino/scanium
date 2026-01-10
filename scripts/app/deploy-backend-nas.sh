@@ -19,7 +19,10 @@ set -euo pipefail
 REPO_ROOT="/volume1/docker/scanium/repo"
 BACKEND_DIR="$REPO_ROOT/backend"
 DOCKER="sudo /usr/local/bin/docker"
-DOCKER_COMPOSE="sudo /usr/local/bin/docker-compose"
+DOCKER_COMPOSE="sudo -E PATH=/usr/local/bin:\$PATH /usr/local/bin/docker-compose"
+
+# Ensure docker is in PATH for docker-compose
+export PATH="/usr/local/bin:$PATH"
 
 # Helper function to list recent image tags
 list_tags() {
