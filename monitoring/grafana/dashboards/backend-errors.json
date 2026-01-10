@@ -84,7 +84,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"$status_code\"}[1h]))",
+          "expr": "sum(increase(scanium_http_requests_total{service_name=~\"$service\", deployment_environment=~\"$env\", route=~\"$route\", status_code=~\"$status_code\"}[1h])) or vector(0)",
           "legendFormat": "errors"
         }
       ],
