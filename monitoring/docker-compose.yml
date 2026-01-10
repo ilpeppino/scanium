@@ -26,6 +26,7 @@ services:
     networks:
       - observability
       - backend_scanium-network
+      - compose_scanium_net
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/ready"]
       interval: 10s
@@ -147,6 +148,8 @@ networks:
     name: scanium-observability
     driver: bridge
   backend_scanium-network:
+    external: true
+  compose_scanium_net:
     external: true
 
 volumes:
