@@ -248,24 +248,35 @@ class ExportAssistantViewModel
                     .sortedBy { it.field }
                     .map { it.value }
 
-                // CRITICAL: Only use fallback parsing if NO structured data exists
-                // to prevent JSON leakage from response.text into the UI
+                // CRITICAL: If description is null/empty (even with structured data),
+                // DO NOT apply empty content. Treat as error to prevent data loss.
+                // Only use text fallback if description field is completely missing AND
+                // no other structured data exists (to prevent JSON leakage).
                 val hasStructuredData = response.suggestedDraftUpdates.isNotEmpty()
 
-                val finalTitle = if (hasStructuredData) {
+                val finalTitle = if (hasStructuredData && title != null) {
                     title
+                } else if (hasStructuredData) {
+                    // Structured data exists but title is missing - try fallback
+                    parseTitle(response.text)
                 } else {
                     title ?: parseTitle(response.text)
                 }
 
-                val finalDescription = if (hasStructuredData) {
+                val finalDescription = if (hasStructuredData && description != null) {
                     description
+                } else if (hasStructuredData) {
+                    // Structured data exists but description is missing - try fallback
+                    parseDescription(response.text)
                 } else {
                     description ?: parseDescription(response.text)
                 }
 
-                val finalBullets = if (hasStructuredData) {
+                val finalBullets = if (hasStructuredData && bullets.isNotEmpty()) {
                     bullets
+                } else if (hasStructuredData) {
+                    // Structured data exists but bullets are missing - try fallback
+                    parseBullets(response.text)
                 } else {
                     bullets.ifEmpty { parseBullets(response.text) }
                 }
@@ -275,6 +286,18 @@ class ExportAssistantViewModel
                     Log.e(TAG, "CRITICAL: JSON detected in description field - rejecting response")
                     _state.value = ExportAssistantState.Error(
                         message = "Invalid response format. Please try again.",
+                        isRetryable = true,
+                    )
+                    return@launch
+                }
+
+                // CRITICAL: Do not apply empty description - treat as generation failure
+                // This prevents data loss when backend returns success but no usable content
+                if (finalDescription.isNullOrBlank()) {
+                    Log.e(TAG, "CRITICAL: Generated description is empty - rejecting response to prevent data loss")
+                    Log.e(TAG, "Debug: hasStructuredData=$hasStructuredData, structuredUpdatesCount=${response.suggestedDraftUpdates.size}, responseTextLength=${response.text.length}")
+                    _state.value = ExportAssistantState.Error(
+                        message = "Failed to generate description. Please try again.",
                         isRetryable = true,
                     )
                     return@launch
