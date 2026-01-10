@@ -1,0 +1,33 @@
+=== PHASE 0 BASELINE - 2026-01-10 ===
+
+CONTAINER STATUS:
+scanium-alloy: Up 13 minutes (UNHEALTHY) ⚠️
+scanium-mimir: Up 44 minutes (healthy)
+scanium-loki: Up 5 hours (healthy)
+scanium-backend: Up 5 hours (healthy)
+
+MIMIR QUERIES:
+1. up{source="pipeline"}: 0 results (EMPTY)
+2. up{job="scanium-backend"}: 0 results (EMPTY)
+3. up (generic): 0 results (EMPTY)
+
+MIMIR SERIES INDEX:
+Series EXIST with labels:
+- up{job="scanium-backend",instance="scanium-backend",source="scanium-backend"}
+- up{job="alloy",instance="scanium-alloy",source="pipeline"}
+- up{job="loki",instance="scanium-loki",source="pipeline"}
+- up{job="mimir",instance="scanium-mimir",source="pipeline"}
+- up{job="tempo",instance="scanium-tempo",source="pipeline"}
+
+DIAGNOSIS:
+✓ Series exist in Mimir label index
+✗ Queries return empty results
+→ CONFIRMS: Querier NOT reading from ingesters
+
+LOKI:
+- Labels endpoint returns incomplete response (no data array)
+- Alloy is UNHEALTHY - likely cause of Loki ingestion failure
+
+ROOT CAUSE HYPOTHESIS:
+1. Mimir: Querier not configured to query ingesters for recent data
+2. Loki: Alloy unhealthy preventing log ingestion
