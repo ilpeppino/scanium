@@ -10,6 +10,14 @@
 *.iml
 .DS_Store
 
+***REMOVED*** macOS resource forks and metadata
+._*
+
+***REMOVED*** Synology NAS metadata
+@eADir/
+*@SynoResource
+*@SynoEAStream
+
 ***REMOVED*** Android/NDK intermediates
 /.cxx/
 local.properties
