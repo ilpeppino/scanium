@@ -1,62 +1,99 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { LoggerProvider, BatchLogRecordProcessor } from '@opentelemetry/sdk-logs';
-import { Resource } from '@opentelemetry/resources';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { SeverityNumber } from '@opentelemetry/api-logs';
 
-// Create a dedicated exporter for mobile telemetry
-// This points to Alloy's mobile receiver which adds source="scanium-mobile"
-const OTLP_ENDPOINT = process.env.MOBILE_TELEMETRY_OTLP_ENDPOINT || 'http://scanium-alloy:4318';
+/**
+ * Mobile telemetry ingestion endpoint (Option C implementation)
+ *
+ * Flow: Mobile App → HTTPS Backend → Structured JSON logs (stdout) → Alloy docker pipeline → Loki
+ *
+ * This implementation:
+ * 1. Validates the incoming event against schema
+ * 2. Redacts any PII-like patterns
+ * 3. Logs ONE structured JSON line to stdout
+ * 4. Docker log driver captures it
+ * 5. Alloy processes it and sends to Loki with labels
+ * 6. Grafana queries Loki via {source="scanium-mobile"}
+ *
+ * See: docs/telemetry/MOBILE_TELEMETRY_SCHEMA.md
+ */
 
-const exporter = new OTLPLogExporter({
-  url: `${OTLP_ENDPOINT}/v1/logs`,
-});
+interface MobileTelemetryEvent {
+  event_name: string;
+  platform: string;
+  app_version: string;
+  build_type: string;
+  timestamp_ms: number;
+  session_id?: string;
+  request_id?: string;
+  attributes?: Record<string, any>;
+}
 
-const resource = new Resource({
-  [ATTR_SERVICE_NAME]: 'scanium-mobile', // This matches what we want, though Alloy overrides it via external_labels
-});
+/**
+ * Disallowed attribute keys (PII/high-cardinality)
+ */
+const DISALLOWED_ATTRIBUTES = [
+  'user_id', 'email', 'phone', 'device_id', 'imei', 'android_id',
+  'gps', 'latitude', 'longitude', 'location', 'ip_address', 'city',
+  'item_name', 'barcode', 'receipt_text', 'prompt', 'photo',
+  'token', 'password', 'api_key', 'secret'
+];
 
-const loggerProvider = new LoggerProvider({ resource });
-loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(exporter));
-const logger = loggerProvider.getLogger('scanium-mobile');
+/**
+ * Validate and sanitize event attributes
+ */
+function sanitizeAttributes(attributes?: Record<string, any>): Record<string, any> {
+  if (!attributes) return {};
+
+  const sanitized: Record<string, any> = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    // Reject disallowed keys
+    if (DISALLOWED_ATTRIBUTES.some(blocked => key.toLowerCase().includes(blocked))) {
+      continue; // Skip this attribute
+    }
+
+    // Only allow primitive types (no nested objects, arrays, etc.)
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      sanitized[key] = value;
+    }
+  }
+
+  return sanitized;
+}
 
 export async function postMobileTelemetryHandler(
   request: FastifyRequest<{
-    Body: {
-      event_name: string;
-      platform: string;
-      app_version: string;
-      env?: string;
-      session_id?: string;
-      properties?: Record<string, any>;
-      count?: number;
-      duration_ms?: number;
-    };
+    Body: MobileTelemetryEvent;
   }>,
   reply: FastifyReply
 ) {
-  const { event_name, platform, app_version, env, session_id, properties, count, duration_ms } = request.body;
+  const { event_name, platform, app_version, build_type, timestamp_ms, session_id, request_id, attributes } = request.body;
 
-  // Emit log to OTLP
-  logger.emit({
-    severityNumber: SeverityNumber.INFO,
-    severityText: 'INFO',
-    body: `Mobile event: ${event_name}`,
-    attributes: {
-      event_name,
-      platform,
-      app_version,
-      env: env || 'unknown',
-      session_id: session_id || 'unknown',
-      ...properties, // Flatten properties for easier querying
-      ...(count !== undefined ? { count } : {}),
-      ...(duration_ms !== undefined ? { duration_ms } : {}),
-      source: 'scanium-mobile', // Explicitly add source attribute as well
-    },
+  // Sanitize attributes (remove PII, high-cardinality data)
+  const sanitizedAttributes = sanitizeAttributes(attributes);
+
+  // Create structured log event
+  // This will be captured by docker log driver, then Alloy, then sent to Loki
+  const logEvent = {
+    source: 'scanium-mobile',
+    event_name,
+    platform,
+    app_version,
+    build_type,
+    timestamp_ms,
+    ...(session_id && { session_id }),
+    ...(request_id && { request_id }),
+    ...(Object.keys(sanitizedAttributes).length > 0 && { attributes: sanitizedAttributes }),
+  };
+
+  // Log to stdout as single-line JSON (critical: must be single line for docker log driver)
+  console.log(JSON.stringify(logEvent));
+
+  // Also log via Fastify logger for debugging (this goes to OTLP if configured)
+  request.log.debug({
+    msg: 'Mobile telemetry event received',
+    event_name,
+    platform,
+    build_type,
   });
-
-  request.log.debug({ msg: 'Mobile telemetry ingested', event_name });
 
   return reply.status(202).send({ success: true });
 }

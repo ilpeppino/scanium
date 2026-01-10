@@ -1,11 +1,11 @@
 {
   "uid": "scanium-mobile-app-health",
   "title": "Scanium - Mobile App Health",
-  "description": "Mobile app functional correctness and usage funnel (requires mobile OTLP events)",
+  "description": "Mobile app functional correctness and usage telemetry (Option C: HTTPS → Backend → Loki)",
   "tags": ["scanium", "mobile", "health", "app"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "time": {
     "from": "now-1h",
@@ -28,15 +28,15 @@
         "multi": true
       },
       {
-        "name": "env",
-        "label": "Environment",
+        "name": "build_type",
+        "label": "Build Type",
         "type": "custom",
-        "query": "dev,stage,prod",
+        "query": "dev,beta,prod",
         "current": { "text": "All", "value": "$__all" },
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
           { "text": "dev", "value": "dev", "selected": false },
-          { "text": "stage", "value": "stage", "selected": false },
+          { "text": "beta", "value": "beta", "selected": false },
           { "text": "prod", "value": "prod", "selected": false }
         ],
         "includeAll": true,
@@ -58,53 +58,96 @@
   "panels": [
     {
       "id": 1,
-      "title": "Mobile Telemetry Status",
+      "title": "Mobile Telemetry Overview",
       "type": "text",
       "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
       "options": {
         "mode": "markdown",
-        "content": "**No data until mobile OTLP events are shipped.** This dashboard depends on Loki logs from `source=\"scanium-mobile\"` with `event_name`, `platform`, and `app_version` labels."
+        "content": "**Mobile telemetry is active.** Events flow: Mobile App → HTTPS (`/v1/telemetry/mobile`) → Backend (structured JSON logs) → Alloy → Loki.\n\n**Event catalog**: `app_launch`, `scan_started`, `scan_completed`, `assist_clicked`, `share_started`, `error_shown`, `crash_marker`.\n\nSee [MOBILE_TELEMETRY_SCHEMA.md](../../../docs/telemetry/MOBILE_TELEMETRY_SCHEMA.md) for details."
       }
     },
     {
       "id": 2,
-      "title": "Scan Funnel (Started -> Created -> Confirmed)",
+      "title": "Event Rate by Type",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 3, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_started\" [5m]))",
-          "legendFormat": "Session Started"
-        },
-        {
-          "refId": "B",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_created\" [5m]))",
-          "legendFormat": "Candidate Created"
-        },
-        {
-          "refId": "C",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_confirmed\" [5m]))",
-          "legendFormat": "Candidate Confirmed"
+          "expr": "sum by (event_name) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\"} [1m]))",
+          "legendFormat": "{{event_name}}"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": { "fillOpacity": 10, "drawStyle": "bars" }
+          "custom": { "fillOpacity": 10, "drawStyle": "line", "lineWidth": 2, "spanNulls": true },
+          "unit": "reqps"
         }
       }
     },
     {
       "id": 3,
-      "title": "Confirmation Ratio (Confirmed / Created)",
-      "type": "stat",
+      "title": "Platform Distribution",
+      "type": "piechart",
       "gridPos": { "x": 12, "y": 3, "w": 6, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_confirmed\" [1h])) / sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.candidate_created\" [1h]))",
+          "expr": "sum by (platform) (count_over_time({source=\"scanium-mobile\", build_type=~\"$build_type\", app_version=~\"$app_version\"} [1h]))",
+          "legendFormat": "{{platform}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Version Adoption",
+      "type": "piechart",
+      "gridPos": { "x": 18, "y": 3, "w": 6, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_version) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\"} [1h]))",
+          "legendFormat": "{{app_version}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Scan Funnel (Started → Completed)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\", event_name=\"scan_started\"} [5m]))",
+          "legendFormat": "Scan Started"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\", event_name=\"scan_completed\"} [5m]))",
+          "legendFormat": "Scan Completed"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 15, "drawStyle": "bars" }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Scan Success Rate (Completed / Started)",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 11, "w": 6, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\", event_name=\"scan_completed\"} [1h])) / sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\", event_name=\"scan_started\"} [1h]))",
           "instant": true
         }
       ],
@@ -117,58 +160,127 @@
             "mode": "absolute",
             "steps": [
               { "color": "red", "value": null },
-              { "color": "green", "value": 0.5 }
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.8 }
             ]
           }
+        }
+      },
+      "options": {
+        "graphMode": "none",
+        "textMode": "value_and_name"
+      }
+    },
+    {
+      "id": 7,
+      "title": "AI Assistant Usage",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 11, "w": 6, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\", event_name=\"assist_clicked\"} [1h]))",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "colorMode": "value"
+      }
+    },
+    {
+      "id": 8,
+      "title": "Error Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 19, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\", event_name=\"error_shown\"} [1m]))",
+          "legendFormat": "Errors"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\", event_name=\"crash_marker\"} [1m]))",
+          "legendFormat": "Crashes"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "fillOpacity": 10, "drawStyle": "line", "lineWidth": 2, "spanNulls": true },
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Crashes" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "title": "Session Activity",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 19, "w": 6, "h": 8 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(count by (session_id) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\"} | json | __error__=\"\" [1h])))",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      },
+      "options": {
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "colorMode": "value",
+        "text": {
+          "titleSize": 16,
+          "valueSize": 32
         }
       }
     },
     {
-      "id": 4,
-      "title": "Scan Mode Usage",
-      "type": "piechart",
-      "gridPos": { "x": 18, "y": 3, "w": 6, "h": 8 },
+      "id": 10,
+      "title": "Recent Events (Log View)",
+      "type": "logs",
+      "gridPos": { "x": 18, "y": 19, "w": 6, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (scan_mode) (count_over_time({source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_started\" [1h]))",
-          "legendFormat": "{{scan_mode}}"
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "title": "Session Duration Distribution",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "quantile_over_time(0.5, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_stopped\" | unwrap duration_ms [5m])",
-          "legendFormat": "p50"
-        },
-        {
-          "refId": "B",
-          "expr": "quantile_over_time(0.95, {source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_stopped\" | unwrap duration_ms [5m])",
-          "legendFormat": "p95"
+          "expr": "{source=\"scanium-mobile\", platform=~\"$platform\", build_type=~\"$build_type\", app_version=~\"$app_version\"}"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "ms" } }
-    },
-    {
-      "id": 6,
-      "title": "Sessions by ID (Drilldown)",
-      "type": "logs",
-      "gridPos": { "x": 12, "y": 11, "w": 12, "h": 8 },
-      "datasource": { "type": "loki", "uid": "LOKI" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "{source=\"scanium-mobile\", platform=~\"$platform\", env=~\"$env\", app_version=~\"$app_version\"} | json | event_name=\"scan.session_started\""
-        }
-      ]
+      "options": {
+        "showTime": true,
+        "showLabels": false,
+        "showCommonLabels": true,
+        "wrapLogMessage": false,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      }
     }
   ]
 }
