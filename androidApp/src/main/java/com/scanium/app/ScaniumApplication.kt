@@ -273,27 +273,23 @@ class ScaniumApplication : Application() {
     }
 
     private fun initializeMobileTelemetry() {
+        // DEPRECATED: MobileTelemetryClient (Option C - HTTPS → Backend → Loki)
+        // Now using OTLP telemetry (Option 2 - Direct to Alloy → Loki)
+        //
+        // The Telemetry facade is initialized in initializeTelemetry() and sends
+        // OTLP logs directly to Alloy on the NAS, which then forwards to Loki.
+        //
+        // Send initial app_start event using OTLP telemetry
         try {
-            val baseUrl = BuildConfig.SCANIUM_API_BASE_URL.removeSuffix("/")
-            // Enable mobile telemetry for beta and release builds
-            // For dev builds, check if explicitly enabled via build config
-            val enabled = !BuildConfig.DEBUG || System.getenv("MOBILE_TELEMETRY_ENABLED") == "true"
-
-            MobileTelemetryClient.initialize(
-                context = this,
-                baseUrl = baseUrl,
-                enabled = enabled
+            telemetry.info(
+                name = "app.started",
+                userAttributes = mapOf(
+                    "launch_type" to "cold_start"
+                )
             )
-
-            if (enabled) {
-                // Send initial app_launch event
-                TelemetryEvents.appLaunch()
-                android.util.Log.i("ScaniumApplication", "Mobile telemetry initialized (baseUrl=$baseUrl)")
-            } else {
-                android.util.Log.i("ScaniumApplication", "Mobile telemetry disabled (debug build)")
-            }
+            android.util.Log.i("ScaniumApplication", "Sent app.started event via OTLP telemetry")
         } catch (e: Exception) {
-            android.util.Log.e("ScaniumApplication", "Failed to initialize mobile telemetry", e)
+            android.util.Log.e("ScaniumApplication", "Failed to send app.started event", e)
         }
     }
 }
