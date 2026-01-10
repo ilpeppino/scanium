@@ -20,6 +20,7 @@ import {
   checkResponseLanguage,
   recordLanguageCheck,
 } from './language-consistency.js';
+import { recordAssistantTokens } from '../../infra/observability/metrics.js';
 
 export interface ClaudeProviderConfig {
   apiKey: string;
@@ -83,6 +84,15 @@ export class ClaudeAssistantProvider implements AssistantProvider {
         system: systemPrompt,
         messages: [{ role: 'user', content: fullUserMessage }],
       });
+
+      // Record token usage if available
+      if (response.usage) {
+        const inputTokens = response.usage.input_tokens || 0;
+        const outputTokens = response.usage.output_tokens || 0;
+        const totalTokens = inputTokens + outputTokens;
+
+        recordAssistantTokens('claude', inputTokens, outputTokens, totalTokens);
+      }
 
       // Extract text content from response
       const textContent = response.content

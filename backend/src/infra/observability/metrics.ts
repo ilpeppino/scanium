@@ -393,6 +393,20 @@ export function recordAssistantError(
 }
 
 /**
+ * Record assistant token usage metrics.
+ */
+export function recordAssistantTokens(
+  provider: string,
+  inputTokens: number,
+  outputTokens: number,
+  totalTokens: number
+): void {
+  assistantTokensHistogram.observe({ provider, token_type: 'input' }, inputTokens);
+  assistantTokensHistogram.observe({ provider, token_type: 'output' }, outputTokens);
+  assistantTokensHistogram.observe({ provider, token_type: 'total' }, totalTokens);
+}
+
+/**
  * Record classification metrics.
  */
 export function recordClassification(
