@@ -14,15 +14,16 @@ set -euo pipefail
 #   bash scripts/app/rollback-backend-nas.sh latest
 #
 # Requirements:
-#   - Must run on NAS (uses sudo docker)
+#   - Must run on NAS
+#   - Docker and docker-compose in PATH
 #   - Target image tag must exist locally
 #   - Repo at /volume1/docker/scanium/repo
 ##############################################################################
 
 REPO_ROOT="/volume1/docker/scanium/repo"
 BACKEND_DIR="$REPO_ROOT/backend"
-DOCKER="sudo /usr/local/bin/docker"
-DOCKER_COMPOSE="sudo env PATH=/usr/local/bin:/usr/bin:/bin /usr/local/bin/docker-compose"
+DOCKER="/usr/local/bin/docker"
+DOCKER_COMPOSE="/usr/local/bin/docker-compose"
 
 # Ensure docker is in PATH
 export PATH="/usr/local/bin:$PATH"
