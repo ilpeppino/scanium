@@ -36,6 +36,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 8080
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       SECURITY_ENFORCE_HTTPS: ${SECURITY_ENFORCE_HTTPS:-true}
       SECURITY_ENABLE_HSTS: ${SECURITY_ENABLE_HSTS:-true}
       ALLOW_INSECURE_HTTP: ${ALLOW_INSECURE_HTTP:-false}
