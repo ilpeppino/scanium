@@ -88,7 +88,7 @@ echo ""
 
 ***REMOVED*** Step 6: Deploy (recreate container with new image)
 echo "[6/8] Deploying backend container..."
-$DOCKER_COMPOSE up -d --force-recreate api
+$DOCKER_COMPOSE up -d --force-recreate --no-deps api
 echo "✓ Container recreated"
 echo ""
 
