@@ -234,6 +234,7 @@ class ExportAssistantViewModel
                         - bullets count=${response.suggestedDraftUpdates.count { it.field.startsWith("bullet") }}
                         - response.text length=${response.text.length}
                     """.trimIndent())
+                    Log.d(TAG, "Raw response.text: '${response.text}'")
                 }
 
                 Log.i(TAG, "Export response received: suggestedDraftUpdates=${response.suggestedDraftUpdates.size}")
@@ -279,6 +280,11 @@ class ExportAssistantViewModel
                     parseBullets(response.text)
                 } else {
                     bullets.ifEmpty { parseBullets(response.text) }
+                }
+
+                // DEBUG: Log parsed values
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Parsed values - finalTitle: ${finalTitle?.take(50)}, finalDescription: ${finalDescription?.take(100)}, finalBullets: ${finalBullets.size}")
                 }
 
                 // Defensive check: Detect JSON leakage in description
