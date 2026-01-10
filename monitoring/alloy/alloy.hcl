@@ -132,16 +132,20 @@ loki.write "backend" {
 }
 
 
+// Docker container discovery for logs
+discovery.docker "backend" {
+  host = "unix:///var/run/docker.sock"
+}
+
 // Docker logs -> Loki (backend)
 loki.source.docker "backend" {
   host = "unix:///var/run/docker.sock"
+  targets = discovery.docker.backend.targets
 
-  targets = [
-    {
-      container_name = "scanium-backend",
-      labels = "source=scanium-backend,env=dev",
-    },
-  ]
+  labels = {
+    source = "scanium-backend",
+    env = "dev",
+  }
 
   forward_to = [loki.write.backend.receiver]
 }
