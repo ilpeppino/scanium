@@ -79,7 +79,7 @@ fi
 echo "[3/5] Setting BACKEND_TAG and redeploying..."
 export BACKEND_TAG="$TARGET_TAG"
 cd "$BACKEND_DIR"
-$DOCKER_COMPOSE up -d --force-recreate api
+$DOCKER_COMPOSE up -d --force-recreate --no-deps api
 echo "✓ Container recreated"
 echo ""
 
