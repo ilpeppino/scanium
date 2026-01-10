@@ -58,6 +58,13 @@ curl -sG 'http://127.0.0.1:9009/prometheus/api/v1/query' \
 ***REMOVED*** Expected: Number of requests (e.g., "1", "2", etc.)
 ```
 
+***REMOVED******REMOVED******REMOVED*** 4. Verify token metrics
+```bash
+curl -sG 'http://127.0.0.1:9009/prometheus/api/v1/query' \
+  --data-urlencode 'query=scanium_assistant_tokens_used_sum{provider="openai"}' | jq '.data.result[] | {token_type: .metric.token_type, value: .value[1]}'
+***REMOVED*** Expected: Three results showing input, output, and total token counts
+```
+
 ***REMOVED******REMOVED*** Traffic Generator Usage
 
 Generate test traffic to populate the dashboard:
@@ -82,25 +89,31 @@ SCANIUM_API_KEY=$API_KEY bash scripts/monitoring/generate-openai-traffic.sh http
 - ✅ **Request Rate**: Shows requests/second
 - ✅ **p95 Latency**: Shows 95th percentile latency in milliseconds
 - ✅ **Request Rate by Model**: Breakdown by provider
+- ✅ **Tokens/Min**: Shows token usage rate by type (input/output/total)
+- ✅ **Token Breakdown**: Shows token distribution by type
 - ⚠️ **Error Rate**: May show 0% if no errors have been generated
-
-***REMOVED******REMOVED******REMOVED*** Limited/Not Working Panels
-- ⚠️ **Tokens/Min**: Token metrics are not currently tracked in Prometheus metrics
-  - The histogram `scanium_assistant_tokens_used` is defined but never populated
-  - Token tracking would require additional instrumentation in the backend
 
 ***REMOVED******REMOVED******REMOVED*** Expected Behavior
 After running the traffic generator once:
 - Request count and latency panels should show data within 1-2 minutes
+- Token panels will show data after 2+ scrapes (rate calculation requires time series)
 - Error rate will be 0% unless error traffic is generated
-- Token panels will remain empty (instrumentation not implemented)
 
-***REMOVED******REMOVED*** Next Steps (If Needed)
+***REMOVED******REMOVED*** Token Tracking Implementation
 
-If token tracking is required:
-1. Add `recordAssistantTokens()` function to `backend/src/infra/observability/metrics.ts`
-2. Call it from `backend/src/modules/assistant/routes.ts` when processing responses
-3. Redeploy backend
+Token tracking was implemented in commit `e3e3394`:
+
+1. **Added `recordAssistantTokens()` function** in `backend/src/infra/observability/metrics.ts`
+   - Records input, output, and total tokens to Prometheus histogram
+   - Uses labels: `provider` and `token_type` (input/output/total)
+
+2. **Instrumented OpenAI provider** (`backend/src/modules/assistant/openai-provider.ts`)
+   - Extracts token usage from OpenAI API response
+   - Records to both OpenTelemetry (existing) and Prometheus (new)
+
+3. **Instrumented Claude provider** (`backend/src/modules/assistant/claude-provider.ts`)
+   - Extracts token usage from Anthropic API response
+   - Records to Prometheus metrics
 
 ***REMOVED******REMOVED*** Success Criteria Met
 - ✅ Alloy successfully scrapes backend `/metrics` endpoint (up=1)
