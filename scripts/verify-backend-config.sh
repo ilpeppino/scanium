@@ -1,1 +1,0 @@
-dev/verify-backend-config.sh

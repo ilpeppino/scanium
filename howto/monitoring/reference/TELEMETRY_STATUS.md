@@ -21,7 +21,7 @@
 
 **Verification**:
 ```bash
-./scripts/monitoring/prove-telemetry.sh
+./howto/monitoring/scripts/verify-monitoring.sh
 # Shows: series_count: 80, jobs: [alloy, loki, mimir, scanium-backend, tempo]
 ```
 
@@ -181,7 +181,7 @@ OTEL_ENABLED=true ✅
 
 3. **Restart backend and verify**:
    ```bash
-   ./scripts/monitoring/prove-telemetry.sh
+   ./howto/monitoring/scripts/verify-monitoring.sh
    # Should show: label_count > 2
    ```
 
@@ -221,7 +221,7 @@ OTEL_ENABLED=true ✅
 
 ## Files Created
 
-1. `./scripts/monitoring/prove-telemetry.sh` - Telemetry verification script
+1. `./howto/monitoring/scripts/verify-monitoring.sh` - Telemetry verification script
 2. `monitoring/grafana/telemetry-truth.md` - Latest proof report
 3. `monitoring/incident_data/INCIDENT_NO_DATA_20260109.md` - Full investigation
 4. `monitoring/TELEMETRY_STATUS.md` - This file
@@ -231,7 +231,7 @@ OTEL_ENABLED=true ✅
 ```bash
 # Run telemetry proof (comprehensive)
 cd /volume1/docker/scanium/repo
-bash ./scripts/monitoring/prove-telemetry.sh
+bash ./howto/monitoring/scripts/verify-monitoring.sh
 
 # Quick checks
 curl -s http://localhost:3000/api/datasources | jq '.[] | {name, type, uid}'

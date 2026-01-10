@@ -145,16 +145,16 @@ The easiest way to start both the backend and monitoring stack together:
 
 ```bash
 # From repo root - starts PostgreSQL, backend server, ngrok, AND monitoring stack
-scripts/backend/start-dev.sh
+howto/backend/scripts/start-dev.sh
 
 # Or explicitly enable monitoring (already the default)
-scripts/backend/start-dev.sh --with-monitoring
+howto/backend/scripts/start-dev.sh --with-monitoring
 
 # Skip monitoring if you only need the backend
-scripts/backend/start-dev.sh --no-monitoring
+howto/backend/scripts/start-dev.sh --no-monitoring
 
 # Or use environment variable
-MONITORING=0 scripts/backend/start-dev.sh
+MONITORING=0 howto/backend/scripts/start-dev.sh
 ```
 
 **What this does:**
@@ -174,10 +174,10 @@ MONITORING=0 scripts/backend/start-dev.sh
 **To stop everything:**
 ```bash
 # Stop backend + monitoring
-scripts/backend/stop-dev.sh --with-monitoring
+howto/backend/scripts/stop-dev.sh --with-monitoring
 
 # Stop only backend (leaves monitoring running)
-scripts/backend/stop-dev.sh
+howto/backend/scripts/stop-dev.sh
 ```
 
 ### Alternative: Standalone Monitoring Startup
@@ -188,7 +188,7 @@ If you only want to run the monitoring stack without the backend:
 
 ```bash
 # Option 1: Use helper script (recommended)
-scripts/monitoring/start-monitoring.sh
+howto/monitoring/scripts/start-monitoring.sh
 
 # Option 2: Use docker compose directly
 cd monitoring
@@ -199,7 +199,7 @@ docker compose -p scanium-monitoring up -d
 
 ```bash
 # Display all URLs, health checks, and management commands
-scripts/monitoring/print-urls.sh
+howto/monitoring/scripts/print-urls.sh
 ```
 
 This script provides:
@@ -244,7 +244,7 @@ Open http://localhost:3000 in your browser.
 
 ```bash
 # Option 1: Use helper script
-scripts/monitoring/stop-monitoring.sh
+howto/monitoring/scripts/stop-monitoring.sh
 
 # Option 2: Use docker compose directly
 cd monitoring

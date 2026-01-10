@@ -193,7 +193,7 @@ curl -X POST http://192.168.178.45:4318/v1/logs \
 
 ```bash
 # Run proof script
-./scripts/monitoring/prove-mobile-telemetry.sh
+./howto/monitoring/scripts/verify-monitoring.sh
 
 # Or query manually
 ssh nas 'curl -G "http://127.0.0.1:3100/loki/api/v1/query_range" \
@@ -207,7 +207,7 @@ ssh nas 'curl -G "http://127.0.0.1:3100/loki/api/v1/query_range" \
 1. Build and install app: `./gradlew installDevDebug`
 2. Launch app on device (emulator or physical)
 3. Perform actions: open app → scan → save
-4. Run proof script: `./scripts/monitoring/prove-mobile-telemetry.sh`
+4. Run proof script: `./howto/monitoring/scripts/verify-monitoring.sh`
 5. Open Grafana dashboard: `Scanium - Mobile App Health`
 
 ### 4. Verify Dashboard
@@ -294,4 +294,4 @@ Mobile App → Alloy (OTLP HTTP :4318) → Loki
 - [Telemetry Facade](../../howto/app/TELEMETRY_FACADE.md) - Shared telemetry API
 - [Alloy Configuration](../../../monitoring/alloy/config.alloy) - OTLP receiver setup
 - [Mobile App Health Dashboard](../../../monitoring/grafana/dashboards/mobile-app-health.json) - Grafana dashboard
-- [Proof Script](../../../scripts/monitoring/prove-mobile-telemetry.sh) - Verification tool
+- [Proof Script](../../../howto/monitoring/scripts/verify-monitoring.sh) - Verification tool
