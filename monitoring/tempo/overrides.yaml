@@ -1,0 +1,15 @@
+***REMOVED*** Tempo per-tenant overrides
+***REMOVED*** Enables metrics generator for all tenants including single-tenant mode
+
+overrides:
+  "*":  ***REMOVED*** Wildcard for all tenants
+    ***REMOVED*** Ingestion rate limits (required in Tempo v2.7+)
+    ingestion_rate_limit_bytes: 15000000  ***REMOVED*** 15MB/s
+    ingestion_burst_size_bytes: 20000000  ***REMOVED*** 20MB burst
+    max_bytes_per_trace: 5000000          ***REMOVED*** 5MB per trace
+    max_traces_per_user: 10000
+
+    ***REMOVED*** Enable metrics generator processors
+    metrics_generator_processors:
+      - service-graphs
+      - span-metrics
