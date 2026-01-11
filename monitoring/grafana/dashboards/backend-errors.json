@@ -30,6 +30,7 @@
         "type": "custom",
         "query": "dev,stage,prod",
         "current": { "text": "All", "value": "$__all" },
+        "allValue": ".*",
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
           { "text": "dev", "value": "dev", "selected": false },
@@ -56,6 +57,7 @@
         "type": "custom",
         "query": "4..,5..",
         "current": { "text": "All", "value": "$__all" },
+        "allValue": "4..|5..",
         "options": [
           { "text": "All", "value": "$__all", "selected": true },
           { "text": "4xx", "value": "4..", "selected": false },
