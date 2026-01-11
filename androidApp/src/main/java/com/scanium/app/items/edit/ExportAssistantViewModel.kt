@@ -285,13 +285,13 @@ class ExportAssistantViewModel
                         - description length=${response.suggestedDraftUpdates.find { it.field == "description" }?.value?.length ?: 0}
                         - bullets count=${response.suggestedDraftUpdates.count { it.field.startsWith("bullet") }}
                         - response.text length=${response.text.length}
-                        - pricingInsights: ${response.pricingInsights?.let { "status=${it.status}, result=${it.result != null}" } ?: "null"}
+                        - pricingInsights: ${response.pricingInsights?.let { "status=${it.status}, range=${it.range != null}" } ?: "null"}
                     """.trimIndent())
                     Log.d(TAG, "Raw response.text: '${response.text}'")
                     response.pricingInsights?.let { pricing ->
-                        Log.d(TAG, "Pricing insights: status=${pricing.status}")
-                        pricing.result?.let { result ->
-                            Log.d(TAG, "Pricing range: ${result.priceRange.min}-${result.priceRange.max} ${result.priceRange.currency}, ${result.comparables.size} comparables")
+                        Log.d(TAG, "Pricing insights: status=${pricing.status}, country=${pricing.countryCode}")
+                        pricing.range?.let { range ->
+                            Log.d(TAG, "Pricing range: ${range.low}-${range.high} ${range.currency}, ${pricing.results.size} results, confidence=${pricing.confidence}")
                         }
                     }
                 }

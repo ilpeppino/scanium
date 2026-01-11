@@ -181,59 +181,87 @@ data class SuggestedDraftUpdate(
 // ============================================================================
 
 /**
- * Price range for an item based on marketplace data.
+ * Confidence level for pricing results (matches backend schema).
+ */
+enum class PricingConfidence {
+    LOW,
+    MED,
+    HIGH,
+}
+
+/**
+ * Price information with amount and currency.
+ */
+@Serializable
+data class PriceInfo(
+    /** Price amount */
+    val amount: Double,
+    /** 3-letter currency code */
+    val currency: String,
+)
+
+/**
+ * Price range (low/high) from market data.
  */
 @Serializable
 data class PriceRange(
-    /** Minimum price in local currency */
-    val min: Double,
-    /** Maximum price in local currency */
-    val max: Double,
+    /** Lowest price found */
+    val low: Double,
+    /** Highest price found */
+    val high: Double,
     /** Currency code (e.g., 'EUR', 'USD') */
     val currency: String,
 )
 
 /**
- * Individual comparable listing from a marketplace.
- */
-@Serializable
-data class ComparableListing(
-    /** Title of the listing */
-    val title: String,
-    /** Price in local currency */
-    val price: Double,
-    /** Currency code */
-    val currency: String,
-    /** Marketplace name (e.g., 'Marktplaats', 'eBay') */
-    val marketplace: String,
-    /** Optional URL to the listing */
-    val url: String? = null,
-)
-
-/**
- * Pricing analysis result.
+ * Single pricing result from a marketplace listing.
  */
 @Serializable
 data class PricingResult(
-    /** Price range derived from comparables */
-    val priceRange: PriceRange,
-    /** Top comparable listings (up to 5) */
-    val comparables: List<ComparableListing> = emptyList(),
-    /** Number of listings analyzed */
-    val sampleSize: Int = 0,
+    /** Listing title */
+    val title: String,
+    /** Price information */
+    val price: PriceInfo,
+    /** Full URL to the listing */
+    val url: String,
+    /** Marketplace ID (e.g., 'marktplaats', 'amazon') */
+    val sourceMarketplaceId: String,
 )
 
 /**
- * Pricing insights status and data.
+ * Marketplace that was queried for pricing data.
+ */
+@Serializable
+data class MarketplaceUsed(
+    /** Marketplace ID */
+    val id: String,
+    /** Display name */
+    val name: String,
+    /** Base URL/domain */
+    val baseUrl: String,
+)
+
+/**
+ * Complete pricing insights response from backend.
  */
 @Serializable
 data class PricingInsights(
-    /** Status: 'success', 'not_supported', 'error', 'timeout' */
+    /** Status: OK, NOT_SUPPORTED, DISABLED, ERROR, TIMEOUT, NO_RESULTS */
     val status: String,
-    /** Pricing result if status is 'success' */
-    val result: PricingResult? = null,
-    /** Error message if status is 'error' or 'timeout' */
-    val errorMessage: String? = null,
+    /** Country code used for lookup */
+    val countryCode: String,
+    /** Marketplaces that were queried */
+    val marketplacesUsed: List<MarketplaceUsed> = emptyList(),
+    /** Summary of search query (no secrets) */
+    val querySummary: String? = null,
+    /** Top pricing results (max 5, only if status = OK) */
+    val results: List<PricingResult> = emptyList(),
+    /** Price range derived from results */
+    val range: PriceRange? = null,
+    /** Confidence in the pricing data */
+    val confidence: PricingConfidence? = null,
+    /** Error code if status is ERROR/TIMEOUT/NO_RESULTS */
+    val errorCode: String? = null,
 )
 
 /**

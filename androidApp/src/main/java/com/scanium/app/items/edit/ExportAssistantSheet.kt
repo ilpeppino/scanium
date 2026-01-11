@@ -641,27 +641,33 @@ private fun PriceInsightsCard(
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
-            when (pricingInsights.status) {
-                "success" -> {
-                    pricingInsights.result?.let { result ->
+            when (pricingInsights.status.uppercase()) {
+                "OK" -> {
+                    pricingInsights.range?.let { range ->
                         // Price range with currency symbol
-                        val currencySymbol = getCurrencySymbol(result.priceRange.currency)
+                        val currencySymbol = getCurrencySymbol(range.currency)
                         Text(
-                            text = "$currencySymbol${result.priceRange.min.toInt()}–$currencySymbol${result.priceRange.max.toInt()}",
+                            text = "$currencySymbol${range.low.toInt()}–$currencySymbol${range.high.toInt()}",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.primary,
                         )
 
-                        // Sample size
+                        // Result count and confidence
+                        val confidenceText = when (pricingInsights.confidence) {
+                            com.scanium.shared.core.models.assistant.PricingConfidence.HIGH -> " (high confidence)"
+                            com.scanium.shared.core.models.assistant.PricingConfidence.MED -> ""
+                            com.scanium.shared.core.models.assistant.PricingConfidence.LOW -> " (low confidence)"
+                            null -> ""
+                        }
                         Text(
-                            text = "Based on ${result.sampleSize} comparable listings",
+                            text = "Based on ${pricingInsights.results.size} listing${if (pricingInsights.results.size != 1) "s" else ""}$confidenceText",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
 
-                        // Comparables - Top results (up to 5)
-                        if (result.comparables.isNotEmpty()) {
+                        // Top results (up to 5)
+                        if (pricingInsights.results.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Top results",
@@ -670,19 +676,12 @@ private fun PriceInsightsCard(
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
 
-                            result.comparables.take(5).forEach { comparable ->
-                                val url = comparable.url  // Capture for smart cast
+                            pricingInsights.results.take(5).forEach { result ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .let { mod ->
-                                            if (url != null) {
-                                                mod.clickable {
-                                                    openUrl(context, url)
-                                                }
-                                            } else {
-                                                mod
-                                            }
+                                        .clickable {
+                                            openUrl(context, result.url)
                                         }
                                         .padding(vertical = 4.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -690,25 +689,24 @@ private fun PriceInsightsCard(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = comparable.title,
+                                            text = result.title,
                                             style = MaterialTheme.typography.bodySmall,
                                             maxLines = 2,
                                             overflow = TextOverflow.Ellipsis,
-                                            color = if (url != null) {
-                                                MaterialTheme.colorScheme.primary
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface
-                                            },
+                                            color = MaterialTheme.colorScheme.primary,
                                         )
+                                        // Show marketplace name from marketplacesUsed
+                                        val marketplace = pricingInsights.marketplacesUsed
+                                            .firstOrNull { it.id == result.sourceMarketplaceId }
                                         Text(
-                                            text = comparable.marketplace,
+                                            text = marketplace?.name ?: result.sourceMarketplaceId,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "${getCurrencySymbol(comparable.currency)}${comparable.price.toInt()}",
+                                        text = "${getCurrencySymbol(result.price.currency)}${result.price.amount.toInt()}",
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurface,
@@ -718,37 +716,37 @@ private fun PriceInsightsCard(
                         }
                     }
                 }
-                "disabled" -> {
+                "DISABLED" -> {
                     Text(
-                        text = pricingInsights.errorMessage ?: "Price insights are disabled",
+                        text = "Price insights are disabled",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                "unsupported_country", "not_supported" -> {
+                "NOT_SUPPORTED" -> {
                     Text(
-                        text = pricingInsights.errorMessage ?: "Price insights not available for this country",
+                        text = "Price insights not available for ${pricingInsights.countryCode}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                "no_results" -> {
+                "NO_RESULTS" -> {
                     Text(
-                        text = pricingInsights.errorMessage ?: "No comparable listings found",
+                        text = "No comparable listings found",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                "timeout" -> {
+                "TIMEOUT" -> {
                     Text(
-                        text = pricingInsights.errorMessage ?: "Request timed out",
+                        text = "Request timed out",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
-                "error" -> {
+                "ERROR" -> {
                     Text(
-                        text = pricingInsights.errorMessage ?: "Couldn't fetch prices right now",
+                        text = "Couldn't fetch prices right now",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )

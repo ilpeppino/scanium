@@ -145,9 +145,10 @@ PRICING_CATALOG_PATH=config/marketplaces/marketplaces.eu.json
 
 - Uses same OpenAI credentials as assistant (`OPENAI_API_KEY`)
 - Model: Same as assistant model (e.g., `gpt-4o-mini`)
-- Temperature: 0.3 (for consistent pricing extraction)
+- Temperature: 0.2 (lowered for factual extraction)
 - Max Tokens: 2000
 - Response Format: JSON object
+- **Note**: As of Phase 3, OpenAI's standard API doesn't have built-in web browsing. The service is designed to support web_search when OpenAI makes it available in the API (currently only in ChatGPT). The code includes placeholders for `tools: [{ type: 'web_search' }]` for future integration.
 
 ***REMOVED******REMOVED*** Security
 

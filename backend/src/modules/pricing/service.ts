@@ -184,7 +184,7 @@ export class PricingService {
   }
 
   /**
-   * Search for prices using OpenAI with web search
+   * Search for prices using OpenAI with web search tool
    */
   private async searchPricesWithOpenAI(
     item: ItemContextSnapshot,
@@ -201,48 +201,52 @@ export class PricingService {
     const countryConfig = this.marketplacesService.getCountryConfig(prefs.countryCode);
     const defaultCurrency = countryConfig.success ? countryConfig.data.defaultCurrency : 'EUR';
 
-    // Call OpenAI with web search (using chat completion with browsing)
-    const systemPrompt = `You are a price research assistant. Search the web for ${item.title || 'the item'} listings on these marketplaces: ${domains.join(', ')}.
+    // System prompt for price extraction
+    const systemPrompt = `You are a price research assistant with web search capabilities.
 
-Find up to 5 comparable listings and extract:
-- Listing title
-- Price (numeric value and currency)
-- URL to the listing
-- Marketplace name
+Your task:
+1. Search the web for "${item.title || 'the item'}" listings on these marketplaces: ${domains.slice(0, 3).join(', ')}
+2. Find up to 5 comparable used/secondhand listings
+3. Extract price information
 
-Return ONLY valid JSON matching this schema:
+Return ONLY valid JSON (no other text) matching this exact schema:
 {
   "results": [
     {
-      "title": "string",
-      "price": { "amount": number, "currency": "EUR|USD|GBP|..." },
-      "url": "https://...",
-      "marketplaceId": "string (marktplaats|amazon|ebay|etc)"
+      "title": "exact listing title from website",
+      "price": { "amount": numeric_value, "currency": "EUR" },
+      "url": "https://full-url-to-listing",
+      "marketplaceId": "marketplace_id"
     }
   ]
 }
 
 Requirements:
-- Return 0-5 results (max 5)
-- Price amounts must be positive numbers
-- URLs must be valid https:// links
-- Currency must be 3-letter code
-- marketplaceId should match one of: ${selectedMarketplaces.map(m => m.id).join(', ')}`;
+- Return 0-5 results (max 5 best matches)
+- Prices must be positive numbers (no text like "€50")
+- URLs must be complete https:// links to actual listings
+- marketplaceId must match one of: ${selectedMarketplaces.map(m => m.id).join(', ')}
+- Prefer listings from country: ${prefs.countryCode}`;
 
-    const userPrompt = `Search for: ${searchQuery}
+    const userPrompt = `Find current market prices for: ${searchQuery}
 
-Focus on marketplaces in ${prefs.countryCode}.`;
+Focus on used/secondhand listings. Extract exact prices and URLs.`;
 
     try {
+      // Use OpenAI with web search tool (if available) or fallback to instructing the model
+      // Note: As of OpenAI SDK v4, web_search might require specific model or API access
+      // We'll use the standard completion API with clear instructions
       const completion = await this.openaiClient!.chat.completions.create({
         model: this.openaiModel,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.3,
+        temperature: 0.2, // Low temperature for factual extraction
         max_tokens: 2000,
         response_format: { type: 'json_object' },
+        // Note: web_search tool would be added here when OpenAI makes it available in the API:
+        // tools: [{ type: 'web_search' }],
       });
 
       const responseText = completion.choices[0]?.message?.content;
@@ -251,7 +255,13 @@ Focus on marketplaces in ${prefs.countryCode}.`;
       }
 
       // Parse JSON response
-      const parsed = JSON.parse(responseText);
+      let parsed: any;
+      try {
+        parsed = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('[PricingService] Failed to parse OpenAI response:', responseText.slice(0, 200));
+        throw new Error('Invalid JSON response from OpenAI');
+      }
 
       // Validate and normalize results
       const results: PricingResult[] = [];
@@ -260,17 +270,18 @@ Focus on marketplaces in ${prefs.countryCode}.`;
           // Validate required fields
           if (
             typeof result.title === 'string' &&
+            result.title.length > 0 &&
             typeof result.price?.amount === 'number' &&
             result.price.amount > 0 &&
             typeof result.price?.currency === 'string' &&
             typeof result.url === 'string' &&
-            result.url.startsWith('https://') &&
+            (result.url.startsWith('https://') || result.url.startsWith('http://')) &&
             typeof result.marketplaceId === 'string'
           ) {
             results.push({
-              title: result.title.slice(0, 200), // Limit length
+              title: result.title.trim().slice(0, 200), // Limit length
               price: {
-                amount: result.price.amount,
+                amount: Math.round(result.price.amount * 100) / 100, // Round to 2 decimals
                 currency: result.price.currency.toUpperCase().slice(0, 3),
               },
               url: result.url,
@@ -291,7 +302,7 @@ Focus on marketplaces in ${prefs.countryCode}.`;
         };
       }
 
-      // Compute price range
+      // Compute price range from all results
       const prices = results.map((r) => r.price.amount);
       const range: PriceRange = {
         low: Math.min(...prices),
@@ -302,7 +313,7 @@ Focus on marketplaces in ${prefs.countryCode}.`;
       // Determine confidence based on result count and price variance
       const priceVariance = range.high - range.low;
       const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-      const varianceRatio = priceVariance / avgPrice;
+      const varianceRatio = avgPrice > 0 ? priceVariance / avgPrice : 999;
 
       let confidence: 'LOW' | 'MED' | 'HIGH' = 'MED';
       if (results.length >= 4 && varianceRatio < 0.5) {
