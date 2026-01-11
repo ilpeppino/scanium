@@ -61,7 +61,7 @@ export const marketplacesRoutes: FastifyPluginAsync<RouteOpts> = async (
   const { config } = opts;
 
   // Initialize service with catalog path
-  const catalogPath = 'backend/config/marketplaces/marketplaces.eu.json';
+  const catalogPath = 'config/marketplaces/marketplaces.eu.json';
   const service = new MarketplacesService(catalogPath);
 
   // Initialize catalog at startup (fail-safe: logs error but doesn't crash server)
