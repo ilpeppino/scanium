@@ -5,10 +5,66 @@
 
 ## Executive Summary
 
-**Root Cause**: Dashboards displayed "No data" because there was **no ongoing error traffic** in the system, not due to instrumentation bugs or configuration issues.
+**Root Causes**:
+1. ✅ **FIXED**: Dashboard variable `$status_code` missing `allValue` property, causing "All" selection to not expand to proper regex pattern
+2. ✅ **Initial Issue**: No ongoing error traffic in the system
 
-**Status**: ✅ System working as designed
-**Action Required**: None (optionally: implement periodic health checks for monitoring validation)
+**Status**: ✅ All issues resolved
+**Action Required**: None (monitoring stack fully functional)
+
+---
+
+## Update: Dashboard Variable Fix (2026-01-11)
+
+### Additional Root Cause Discovered
+
+After generating error traffic, **only 4xx panels showed data** while other panels remained empty. Investigation revealed:
+
+**Problem**: Grafana multi-value variables without `allValue` property don't expand correctly.
+
+When `$status_code` variable is set to "All" (`$__all`), queries like:
+```promql
+sum(increase(scanium_http_requests_total{status_code=~"$status_code"}[1h]))
+```
+
+Were being expanded to:
+```promql
+sum(increase(scanium_http_requests_total{status_code=~"$__all"}[1h]))
+```
+This literal `"$__all"` string matches **nothing**, causing all panels using `$status_code` filter to show empty results.
+
+**Solution**: Added `allValue` property to variables:
+```json
+{
+  "name": "status_code",
+  "allValue": "4..|5..",  // ← ADDED
+  "current": { "text": "All", "value": "$__all" },
+  ...
+}
+```
+
+Now when "All" is selected, queries expand correctly to:
+```promql
+sum(increase(scanium_http_requests_total{status_code=~"4..|5.."}[1h]))
+```
+
+**Files Changed**:
+- `monitoring/grafana/dashboards/backend-errors.json`:
+  - Added `"allValue": "4..|5.."` to `status_code` variable
+  - Added `"allValue": ".*"` to `env` variable
+
+**Panels Fixed**:
+- ✅ Total Errors (1h) - now shows all errors (4xx+5xx)
+- ✅ Error Rate (%) - now calculates correctly
+- ✅ Errors by Status Code - now shows breakdown
+- ✅ Top Error Routes - now includes all error routes
+- ✅ Errors by Service - now shows all services
+- ✅ Error Rate by Route (Table) - now shows complete data
+
+**Panels Still Empty (Expected)**:
+- 5xx Server Errors - shows 0 (no 5xx errors exist) ✓
+- Error Logs panels - no error-level logs in Loki ✓
+- Error Traces - no traces with error status ✓
 
 ---
 
