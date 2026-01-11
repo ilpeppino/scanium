@@ -1,5 +1,10 @@
 package com.scanium.app.ui.settings
 
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,10 +22,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.scanium.app.R
 import com.scanium.app.camera.ConfidenceTiers
 import com.scanium.app.config.FeatureFlags
@@ -39,13 +50,14 @@ import java.util.Locale
  * Developer Options screen with System Health diagnostics.
  * Only visible in debug builds.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun DeveloperOptionsScreen(
     viewModel: DeveloperOptionsViewModel,
     classificationViewModel: com.scanium.app.settings.ClassificationModeViewModel,
     onNavigateBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     val diagnosticsState by viewModel.diagnosticsState.collectAsState()
     val assistantDiagnosticsState by viewModel.assistantDiagnosticsState.collectAsState()
     val preflightState by viewModel.preflightState.collectAsState()
@@ -104,6 +116,12 @@ fun DeveloperOptionsScreen(
             // Diagnostics description (DEV-only)
             if (FeatureFlags.isDevBuild) {
                 DiagnosticsDescriptionCard()
+            }
+
+            // Notification Permission Section (DEV-only, Android 13+)
+            if (FeatureFlags.isDevBuild && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                NotificationPermissionSection()
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
 
             // System Health Section
@@ -1890,6 +1908,38 @@ private fun HealthMonitorSection(
                     )
                 }
 
+                // Notification diagnostics (Android 13+)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    val context = LocalContext.current
+                    val notificationManager = NotificationManagerCompat.from(context)
+                    val notificationsEnabled = notificationManager.areNotificationsEnabled()
+
+                    Text(
+                        text = "Notification Status",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            if (notificationsEnabled) Icons.Default.Notifications else Icons.Default.NotificationsOff,
+                            contentDescription = null,
+                            tint = if (notificationsEnabled) Color(0xFF4CAF50) else Color(0xFFF44336),
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = if (notificationsEnabled) "Enabled" else "Disabled - check permission above",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (notificationsEnabled) Color(0xFF4CAF50) else Color(0xFFF44336),
+                        )
+                    }
+                }
+
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // Run now button
@@ -2017,6 +2067,145 @@ private fun DiagnosticsDescriptionCard() {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+// ==================== Notification Permission Section (DEV-only) ====================
+
+/**
+ * Notification permission card for DEV builds on Android 13+.
+ * Requests POST_NOTIFICATIONS permission and provides settings deep link if denied.
+ */
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun NotificationPermissionSection() {
+    val context = LocalContext.current
+    val notificationPermissionState = rememberPermissionState(
+        Manifest.permission.POST_NOTIFICATIONS
+    )
+
+    // Check if notifications are enabled at system level
+    val areNotificationsEnabled = remember {
+        NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+
+    val hasPermission = notificationPermissionState.status.isGranted
+    val shouldShowRationale = notificationPermissionState.status.shouldShowRationale
+
+    Surface(
+        color = when {
+            hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+            else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+        },
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    when {
+                        hasPermission && areNotificationsEnabled -> Icons.Default.Notifications
+                        else -> Icons.Default.NotificationsOff
+                    },
+                    contentDescription = null,
+                    tint = when {
+                        hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.error
+                    },
+                    modifier = Modifier.size(24.dp),
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Notification Permission",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = when {
+                            hasPermission && areNotificationsEnabled ->
+                                "✓ Granted - Background monitor can send notifications"
+                            !hasPermission && shouldShowRationale ->
+                                "Permission needed for background health monitor notifications"
+                            !hasPermission ->
+                                "Permission needed for background health monitor notifications"
+                            !areNotificationsEnabled ->
+                                "Notifications disabled at system level"
+                            else ->
+                                "Status unknown"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = when {
+                            hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.error
+                        },
+                    )
+                }
+            }
+
+            // Action buttons
+            if (!hasPermission || !areNotificationsEnabled) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    // Request permission button
+                    if (!hasPermission) {
+                        Button(
+                            onClick = { notificationPermissionState.launchPermissionRequest() },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                Icons.Default.NotificationsActive,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Grant Permission")
+                        }
+                    }
+
+                    // Open settings button (always show if notifications aren't working)
+                    if (!hasPermission || !areNotificationsEnabled) {
+                        OutlinedButton(
+                            onClick = {
+                                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                    }
+                                } else {
+                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                        data = Uri.parse("package:${context.packageName}")
+                                    }
+                                }
+                                context.startActivity(intent)
+                            },
+                            modifier = if (!hasPermission) Modifier else Modifier.weight(1f),
+                        ) {
+                            Icon(
+                                Icons.Default.Settings,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Open Settings")
+                        }
+                    }
+                }
             }
         }
     }
