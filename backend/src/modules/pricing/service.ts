@@ -202,9 +202,6 @@ export class PricingService {
     const countryConfig = this.marketplacesService.getCountryConfig(prefs.countryCode);
     const defaultCurrency = countryConfig.success ? countryConfig.data.defaultCurrency : 'EUR';
 
-    // Build domain filter for marketplace-focused search
-    const domainFilter = domains.slice(0, 100); // OpenAI supports up to 100 domains
-
     // System prompt for price extraction using web search
     const systemPrompt = `You are a price research assistant with web search capabilities.
 
