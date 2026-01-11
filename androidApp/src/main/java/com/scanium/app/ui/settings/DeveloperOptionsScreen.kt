@@ -358,7 +358,7 @@ private fun SystemHealthSection(
         // Header with actions
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -367,43 +367,43 @@ private fun SystemHealthSection(
                 fontWeight = FontWeight.Bold,
             )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Auto-refresh toggle
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = "Auto",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Switch(
-                        checked = autoRefreshEnabled,
-                        onCheckedChange = onAutoRefreshChange,
-                        modifier = Modifier.height(24.dp),
-                    )
-                }
+            Spacer(modifier = Modifier.weight(1f))
 
-                // Refresh button
-                FilledTonalIconButton(
-                    onClick = onRefresh,
-                    enabled = !diagnosticsState.isRefreshing,
-                ) {
-                    if (diagnosticsState.isRefreshing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
+            // Refresh button
+            FilledTonalIconButton(
+                onClick = onRefresh,
+                enabled = !diagnosticsState.isRefreshing,
+            ) {
+                if (diagnosticsState.isRefreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                 }
+            }
 
-                // Copy button
-                FilledTonalIconButton(onClick = onCopyDiagnostics) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy diagnostics")
-                }
+            // Copy button
+            FilledTonalIconButton(onClick = onCopyDiagnostics) {
+                Icon(Icons.Default.ContentCopy, contentDescription = "Copy diagnostics")
+            }
+
+            // Auto-refresh toggle
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = "Auto",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Switch(
+                    checked = autoRefreshEnabled,
+                    onCheckedChange = onAutoRefreshChange,
+                    modifier = Modifier.height(24.dp),
+                )
             }
         }
 

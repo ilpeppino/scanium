@@ -2,16 +2,21 @@ package com.scanium.app.ui.settings
 
 import android.Manifest
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import android.speech.SpeechRecognizer
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.diagnostics.AssistantDiagnosticsState
 import com.scanium.app.diagnostics.BackendReachabilityStatus
@@ -164,7 +169,7 @@ class DeveloperOptionsViewModel
                 )
 
         // Auto-refresh state
-        private val _autoRefreshEnabled = MutableStateFlow(false)
+        private val _autoRefreshEnabled = MutableStateFlow(FeatureFlags.isDevBuild)
         val autoRefreshEnabled: StateFlow<Boolean> = _autoRefreshEnabled.asStateFlow()
 
         private var autoRefreshJob: Job? = null
@@ -172,6 +177,16 @@ class DeveloperOptionsViewModel
         // Copy result feedback
         private val _copyResult = MutableStateFlow<String?>(null)
         val copyResult: StateFlow<String?> = _copyResult.asStateFlow()
+
+        // Error state tracking for notifications (DEV-only)
+        private var lastErrorState: Set<String> = emptySet()
+
+        private data class MonitorCheckData(
+            val diagnostics: DiagnosticsState,
+            val assistant: AssistantDiagnosticsState,
+            val preflight: PreflightResult,
+            val enabled: Boolean,
+        )
 
         init {
             // Initial refresh on creation
@@ -191,6 +206,22 @@ class DeveloperOptionsViewModel
 
             // Initial assistant diagnostics check
             refreshAssistantDiagnostics()
+
+            // Monitor for errors (DEV-only)
+            if (FeatureFlags.isDevBuild) {
+                viewModelScope.launch {
+                    combine(
+                        diagnosticsState,
+                        assistantDiagnosticsState,
+                        preflightState,
+                        healthMonitorConfig,
+                    ) { diagnostics, assistant, preflight, config ->
+                        MonitorCheckData(diagnostics, assistant, preflight, config.enabled)
+                    }.collect { data ->
+                        checkAndNotifyErrors(data)
+                    }
+                }
+            }
         }
 
         /**
@@ -510,6 +541,97 @@ class DeveloperOptionsViewModel
         fun getHealthMonitorEffectiveBaseUrl(): String {
             val config = healthMonitorConfig.value
             return healthMonitorStateStore.getEffectiveBaseUrl(config)
+        }
+
+        private fun checkAndNotifyErrors(data: MonitorCheckData) {
+            if (!data.enabled) {
+                lastErrorState = emptySet()
+                return
+            }
+
+            val currentErrors = mutableSetOf<String>()
+            val errorDetails = mutableListOf<String>()
+
+            // System Health
+            if (data.diagnostics.backendHealth.status == com.scanium.app.diagnostics.HealthStatus.DOWN) {
+                currentErrors.add("System Health")
+                errorDetails.add("Backend: ${data.diagnostics.backendHealth.detail ?: "Down"}")
+            }
+
+            // AI Assistant
+            if (data.assistant.backendReachable == BackendReachabilityStatus.UNREACHABLE ||
+                data.assistant.backendReachable == BackendReachabilityStatus.SERVER_ERROR
+            ) {
+                currentErrors.add("AI Assistant")
+                errorDetails.add(
+                    "Assistant: ${
+                        data.assistant.connectionTestResult?.let {
+                            BackendStatusClassifier.getStatusMessage(it)
+                        } ?: "Unreachable"
+                    }",
+                )
+            }
+
+            // Preflight
+            if (data.preflight.status == PreflightStatus.OFFLINE ||
+                data.preflight.status == PreflightStatus.ENDPOINT_NOT_FOUND
+            ) {
+                currentErrors.add("Preflight")
+                errorDetails.add("Preflight: ${data.preflight.status.name}")
+            }
+
+            // Check for new errors (Transition OK -> ERROR)
+            val newErrors = currentErrors - lastErrorState
+
+            if (newErrors.isNotEmpty()) {
+                sendErrorNotification(errorDetails.joinToString("\n"))
+            }
+
+            lastErrorState = currentErrors
+        }
+
+        private fun sendErrorNotification(message: String) {
+            val context = getApplication<Application>()
+            val channelId = "scanium_dev_monitoring"
+            val notificationId = 1001
+
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel =
+                    NotificationChannel(
+                        channelId,
+                        "Scanium Dev Monitoring",
+                        NotificationManager.IMPORTANCE_HIGH,
+                    ).apply {
+                        description = "Notifications for background monitoring errors in DEV builds"
+                    }
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            // Check permission if needed (Android 13+)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                if (ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    return
+                }
+            }
+
+            val notification =
+                NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(android.R.drawable.stat_notify_error)
+                    .setContentTitle("Scanium Dev: Monitoring errors")
+                    .setContentText("Subsystems failing. Expand for details.")
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .build()
+
+            notificationManager.notify(notificationId, notification)
         }
 
         override fun onCleared() {
