@@ -118,7 +118,8 @@ services:
       - GF_PATHS_DATA=/var/lib/grafana
 
       # Server
-      - GF_SERVER_ROOT_URL=http://192.168.178.45:3000
+      - GF_SERVER_ROOT_URL=https://grafana.gtemp1.com
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
 
       # Disable usage stats
       - GF_ANALYTICS_REPORTING_ENABLED=false
@@ -132,6 +133,7 @@ services:
       - ./data/grafana:/var/lib/grafana
     networks:
       - observability
+      - backend_scanium-network  # Connect to backend network for cloudflared access
     depends_on:
       loki:
         condition: service_healthy
