@@ -75,6 +75,15 @@ data class AssistantPrefs(
     val verbosity: AssistantVerbosity? = null,
 )
 
+/**
+ * Pricing preferences for marketplace price insights.
+ */
+@Serializable
+data class PricingPrefs(
+    /** Country code for pricing (e.g., 'NL', 'DE', 'US') */
+    val countryCode: String,
+)
+
 @Serializable
 data class AssistantMessage(
     val role: AssistantRole,
@@ -167,6 +176,66 @@ data class SuggestedDraftUpdate(
     val requiresConfirmation: Boolean = false,
 )
 
+// ============================================================================
+// Pricing Insights Models (Phase 3)
+// ============================================================================
+
+/**
+ * Price range for an item based on marketplace data.
+ */
+@Serializable
+data class PriceRange(
+    /** Minimum price in local currency */
+    val min: Double,
+    /** Maximum price in local currency */
+    val max: Double,
+    /** Currency code (e.g., 'EUR', 'USD') */
+    val currency: String,
+)
+
+/**
+ * Individual comparable listing from a marketplace.
+ */
+@Serializable
+data class ComparableListing(
+    /** Title of the listing */
+    val title: String,
+    /** Price in local currency */
+    val price: Double,
+    /** Currency code */
+    val currency: String,
+    /** Marketplace name (e.g., 'Marktplaats', 'eBay') */
+    val marketplace: String,
+    /** Optional URL to the listing */
+    val url: String? = null,
+)
+
+/**
+ * Pricing analysis result.
+ */
+@Serializable
+data class PricingResult(
+    /** Price range derived from comparables */
+    val priceRange: PriceRange,
+    /** Top comparable listings (up to 5) */
+    val comparables: List<ComparableListing> = emptyList(),
+    /** Number of listings analyzed */
+    val sampleSize: Int = 0,
+)
+
+/**
+ * Pricing insights status and data.
+ */
+@Serializable
+data class PricingInsights(
+    /** Status: 'success', 'not_supported', 'error', 'timeout' */
+    val status: String,
+    /** Pricing result if status is 'success' */
+    val result: PricingResult? = null,
+    /** Error message if status is 'error' or 'timeout' */
+    val errorMessage: String? = null,
+)
+
 /**
  * Response from the AI Gateway.
  * The gateway may use 'reply' or 'content' for the text response.
@@ -191,6 +260,8 @@ data class AssistantResponse(
     val suggestedDraftUpdates: List<SuggestedDraftUpdate> = emptyList(),
     /** Suggested next photo instruction when evidence is insufficient */
     val suggestedNextPhoto: String? = null,
+    /** Pricing insights from marketplace data (Phase 3) */
+    val pricingInsights: PricingInsights? = null,
 ) {
     /** Get the response text, preferring 'reply' over 'content' */
     val text: String get() = reply ?: content ?: ""
@@ -248,6 +319,10 @@ data class AssistantPromptRequest(
     val systemPrompt: String,
     /** User's personalization preferences */
     val assistantPrefs: AssistantPrefs? = null,
+    /** Whether to include pricing insights in the response */
+    val includePricing: Boolean = false,
+    /** Pricing preferences (country code, etc.) */
+    val pricingPrefs: PricingPrefs? = null,
 )
 
 object AssistantPromptBuilder {

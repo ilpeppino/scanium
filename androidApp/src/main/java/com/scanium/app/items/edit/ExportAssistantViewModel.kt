@@ -69,6 +69,7 @@ sealed class ExportAssistantState {
         val confidenceTier: ConfidenceTier?,
         val fromCache: Boolean,
         val model: String?,
+        val pricingInsights: com.scanium.shared.core.models.assistant.PricingInsights? = null,
         val generatedAt: Long = System.currentTimeMillis(),
     ) : ExportAssistantState()
 
@@ -170,6 +171,7 @@ class ExportAssistantViewModel
                 },
                 fromCache = current.exportFromCache,
                 model = current.exportModel,
+                pricingInsights = null, // Pricing insights not persisted yet
                 generatedAt = current.exportGeneratedAt ?: System.currentTimeMillis(),
             )
         }
@@ -212,7 +214,10 @@ class ExportAssistantViewModel
                 val profile = exportProfileRepository.getProfile(defaultProfileId)
                     ?: com.scanium.shared.core.models.listing.ExportProfiles.generic()
 
-                // Send request with language preferences
+                // Convert region to country code for pricing
+                val pricingCountryCode = assistantPrefs.region?.name
+
+                // Send request with language and pricing preferences
                 val response = assistantRepository.send(
                     items = listOf(snapshot),
                     history = emptyList(),
@@ -221,6 +226,8 @@ class ExportAssistantViewModel
                     correlationId = correlationId,
                     imageAttachments = imageAttachments,
                     assistantPrefs = assistantPrefs,
+                    includePricing = true,
+                    pricingCountryCode = pricingCountryCode,
                 )
 
                 // DEV-only logging (safe - no raw response body in release builds)
@@ -228,13 +235,21 @@ class ExportAssistantViewModel
                     Log.d(TAG, """
                         Export response debug:
                         - correlationId=$correlationId
+                        - includePricing=true, countryCode=$pricingCountryCode
                         - suggestedDraftUpdates count=${response.suggestedDraftUpdates.size}
                         - title length=${response.suggestedDraftUpdates.find { it.field == "title" }?.value?.length ?: 0}
                         - description length=${response.suggestedDraftUpdates.find { it.field == "description" }?.value?.length ?: 0}
                         - bullets count=${response.suggestedDraftUpdates.count { it.field.startsWith("bullet") }}
                         - response.text length=${response.text.length}
+                        - pricingInsights: ${response.pricingInsights?.let { "status=${it.status}, result=${it.result != null}" } ?: "null"}
                     """.trimIndent())
                     Log.d(TAG, "Raw response.text: '${response.text}'")
+                    response.pricingInsights?.let { pricing ->
+                        Log.d(TAG, "Pricing insights: status=${pricing.status}")
+                        pricing.result?.let { result ->
+                            Log.d(TAG, "Pricing range: ${result.priceRange.min}-${result.priceRange.max} ${result.priceRange.currency}, ${result.comparables.size} comparables")
+                        }
+                    }
                 }
 
                 Log.i(TAG, "Export response received: suggestedDraftUpdates=${response.suggestedDraftUpdates.size}")
@@ -330,9 +345,10 @@ class ExportAssistantViewModel
                     confidenceTier = response.confidenceTier,
                     fromCache = false,
                     model = null,
+                    pricingInsights = response.pricingInsights,
                 )
 
-                Log.i(TAG, "Export generated successfully: title=${finalTitle?.take(30)}...")
+                Log.i(TAG, "Export generated successfully: title=${finalTitle?.take(30)}..., pricing=${response.pricingInsights?.status}")
             } catch (e: AssistantBackendException) {
                 Log.e(TAG, "Export generation failed: ${e.failure.message}", e)
                 _state.value = ExportAssistantState.Error(
