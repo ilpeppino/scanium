@@ -13,6 +13,9 @@ distributor:
           endpoint: 0.0.0.0:4317
         http:
           endpoint: 0.0.0.0:4318
+  ring:
+    kvstore:
+      store: inmemory
 
 ingester:
   max_block_duration: 5m               # Cut blocks after 5 minutes
@@ -62,6 +65,15 @@ metrics_generator:
     remote_write:
       - url: http://mimir:9009/api/v1/push
         send_exemplars: true
+  traces_storage:
+    path: /var/tempo/generator/traces
   processor:
-    service_graphs: {}
+    service_graphs:
+      max_items: 10000
+      wait: 10s
     span_metrics: {}
+
+# Required for single-tenant mode to enable metrics generation
+# See: https://github.com/grafana/tempo/issues/5479
+overrides:
+  per_tenant_override_config: /etc/tempo/overrides.yaml
