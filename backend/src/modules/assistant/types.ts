@@ -206,6 +206,8 @@ export type AssistantResponse = {
   suggestedNextPhoto?: string;
   /** Structured selling help (template-driven) */
   structuredHelp?: StructuredSellingHelp;
+  /** Pricing insights (Phase 2 feature - optional) */
+  pricingInsights?: import('../pricing/schema.js').PricingInsights;
 };
 
 export type AssistantErrorType =
@@ -288,6 +290,7 @@ export type ExportProfileSnapshot = {
  */
 export type { VisualFacts } from '../vision/types.js';
 export type { ResolvedAttributes, ResolvedAttribute, EvidenceRef, AttributeConfidenceTier } from '../vision/attribute-resolver.js';
+export type { PricingInsights, PricingPrefs } from '../pricing/schema.js';
 
 export type AssistantChatRequest = {
   items: ItemContextSnapshot[];
@@ -305,6 +308,10 @@ export type AssistantChatRequest = {
   };
   /** Request correlation ID for logging and tracking */
   correlationId?: string;
+  /** Include pricing insights in response (Phase 2 feature) */
+  includePricing?: boolean;
+  /** Pricing preferences (country, max results, etc.) */
+  pricingPrefs?: import('../pricing/schema.js').PricingPrefs;
 };
 
 /**
