@@ -98,6 +98,13 @@ cd backend && npm run typecheck       # TypeScript type checking
 - Library manifests rely on Gradle `namespace`; do not set `package` attributes.
 - Run `./gradlew lint` (or Android Studio formatting) before sending changes; avoid storing secrets in code or `local.properties`.
 
+## Mac + NAS Invariant Workflow (Mandatory)
+- **Repo alignment:** Always check `git rev-parse HEAD` on Mac and NAS before any change. If they differ, stop and align both to the same commit. Never hot-fix runtime state.
+- **Runtime inventory:** Before diagnosing, collect NAS state: `docker ps`, `docker network ls`, and `docker inspect` for `scanium-backend`, `scanium-alloy`, `scanium-grafana` (include networks and compose labels).
+- **Network drift handling:** Treat drift as normal; do not permanently fix with `docker network connect`. Encode final fixes in compose files with explicit shared networks.
+- **Compose consistency:** Detect whether NAS uses `docker compose` or `docker-compose` and use only that binary from the correct working directory.
+- **Redeploy + verify:** All fixes must be committed and redeployed. Verify container health, DNS resolution, and telemetry/log/metrics flow post-deploy.
+
 ## Testing Guidelines
 
 ### Test Organization
