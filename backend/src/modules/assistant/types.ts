@@ -206,8 +206,8 @@ export type AssistantResponse = {
   suggestedNextPhoto?: string;
   /** Structured selling help (template-driven) */
   structuredHelp?: StructuredSellingHelp;
-  /** Pricing insights (Phase 2 feature - optional) */
-  pricingInsights?: import('../pricing/schema.js').PricingInsights;
+  /** Market price insights (Phase 4 feature - optional) */
+  marketPrice?: import('../pricing/schema.js').PricingInsights;
 };
 
 export type AssistantErrorType =

@@ -271,6 +271,11 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     dailyLimit: config.assistant.dailyQuota,
   });
 
+  // Pricing quota store (separate from assistant quota)
+  const pricingQuotaStore = new DailyQuotaStore({
+    dailyLimit: config.pricing.dailyQuota,
+  });
+
   // Pricing service (Phase 5 feature - with OpenAI web search)
   const pricingService = new PricingService({
     enabled: config.pricing.enabled,
@@ -336,6 +341,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
   fastify.addHook('onClose', async () => {
     assistantReadinessRegistry.unregister();
     quotaStore.stop();
+    pricingQuotaStore.stop();
     visionCache.stop();
     responseCache.stop();
     stagedRequestManager.stop();
@@ -895,70 +901,104 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         'Assistant response'
       );
 
-      // Compute pricing insights if requested (Phase 2 feature)
-      let pricingInsights;
-      if (parsed.data.includePricing && parsed.data.pricingPrefs) {
-        const pricingStartTime = performance.now();
-        try {
-          // Get pricing insights (with timeout budget)
-          const pricingPromise = pricingService.computePricingInsights(
-            primaryItem,
-            parsed.data.pricingPrefs
-          );
+      // Compute market price insights if feature enabled (Phase 4)
+      let marketPrice;
+      if (config.pricing.enabled && primaryItem) {
+        // Extract country from assistantPrefs.region with fallback
+        const countryCode = sanitizedRequest.assistantPrefs?.region ?? config.assistant.defaultRegion;
 
-          // Apply timeout
-          const timeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error('Pricing timeout')), config.pricing.timeoutMs);
-          });
+        // Check if we have sufficient item context (title or attributes)
+        const hasSufficientContext = Boolean(
+          primaryItem.title ||
+          (primaryItem.attributes && primaryItem.attributes.length > 0)
+        );
 
-          pricingInsights = await Promise.race([pricingPromise, timeoutPromise]);
+        if (!hasSufficientContext) {
+          // Skip pricing for insufficient context
+          request.log.debug({ correlationId }, 'Skipping market price - insufficient item context');
+        } else {
+          // Check pricing quota (separate from assistant quota)
+          const pricingQuotaKey = deviceId ?? sha256Hex(apiKey).slice(0, 16);
+          const pricingQuotaResult = pricingQuotaStore.consume(pricingQuotaKey);
 
-          const pricingLatency = performance.now() - pricingStartTime;
+          if (!pricingQuotaResult.allowed) {
+            // Pricing quota exhausted - skip pricing but continue with assistant response
+            const resetIn = Math.ceil((pricingQuotaResult.resetAt - Date.now()) / 1000);
+            request.log.debug(
+              { quotaKey: pricingQuotaKey.slice(0, 8), remaining: 0, resetInSeconds: resetIn, correlationId },
+              'Pricing quota exhausted - skipping market price lookup'
+            );
+          } else {
+            const pricingStartTime = performance.now();
+            try {
+              // Build pricing preferences from country
+              const pricingPrefs = {
+                countryCode: countryCode.toUpperCase(),
+                maxResults: config.pricing.maxResults,
+              };
 
-          // Record pricing metrics
-          recordPricingRequest(
-            pricingInsights.status,
-            pricingInsights.countryCode,
-            pricingLatency,
-            pricingInsights.errorCode
-          );
+              // Get market price insights (with timeout budget)
+              const pricingPromise = pricingService.computePricingInsights(
+                primaryItem,
+                pricingPrefs
+              );
 
-          request.log.info(
-            {
-              correlationId,
-              pricingStatus: pricingInsights.status,
-              countryCode: pricingInsights.countryCode,
-              latencyMs: Math.round(pricingLatency),
-            },
-            'Pricing insights computed'
-          );
-        } catch (error) {
-          const pricingLatency = performance.now() - pricingStartTime;
+              // Apply timeout
+              const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => reject(new Error('Pricing timeout')), config.pricing.timeoutMs);
+              });
 
-          // Record timeout/error metrics
-          recordPricingRequest(
-            'TIMEOUT',
-            parsed.data.pricingPrefs.countryCode,
-            pricingLatency,
-            'TIMEOUT'
-          );
+              marketPrice = await Promise.race([pricingPromise, timeoutPromise]);
 
-          request.log.warn(
-            {
-              correlationId,
-              error: error instanceof Error ? error.message : String(error),
-              latencyMs: Math.round(pricingLatency),
-            },
-            'Pricing insights failed or timed out'
-          );
+              const pricingLatency = performance.now() - pricingStartTime;
 
-          // Return timeout status on failure (never block assistant response)
-          pricingInsights = {
-            status: 'TIMEOUT' as const,
-            countryCode: parsed.data.pricingPrefs.countryCode,
-            marketplacesUsed: [],
-            errorCode: 'TIMEOUT' as const,
-          };
+              // Record pricing metrics
+              recordPricingRequest(
+                marketPrice.status,
+                marketPrice.countryCode,
+                pricingLatency,
+                marketPrice.errorCode
+              );
+
+              request.log.info(
+                {
+                  correlationId,
+                  pricingStatus: marketPrice.status,
+                  countryCode: marketPrice.countryCode,
+                  latencyMs: Math.round(pricingLatency),
+                  quotaRemaining: pricingQuotaResult.remaining,
+                },
+                'Market price computed'
+              );
+            } catch (error) {
+              const pricingLatency = performance.now() - pricingStartTime;
+
+              // Record timeout/error metrics
+              recordPricingRequest(
+                'TIMEOUT',
+                countryCode.toUpperCase(),
+                pricingLatency,
+                'TIMEOUT'
+              );
+
+              request.log.warn(
+                {
+                  correlationId,
+                  error: error instanceof Error ? error.message : String(error),
+                  latencyMs: Math.round(pricingLatency),
+                },
+                'Market price lookup failed or timed out'
+              );
+
+              // Return timeout status on failure (never block assistant response)
+              marketPrice = {
+                status: 'TIMEOUT' as const,
+                countryCode: countryCode.toUpperCase(),
+                marketplacesUsed: [],
+                errorCode: 'TIMEOUT' as const,
+              };
+            }
+          }
         }
       }
 
@@ -979,7 +1019,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         suggestedAttributes: response.suggestedAttributes,
         suggestedDraftUpdates: response.suggestedDraftUpdates,
         suggestedNextPhoto: response.suggestedNextPhoto,
-        pricingInsights, // Phase 2: Optional pricing insights
+        marketPrice, // Phase 4: Optional market price insights
         safety: buildSafetyResponse(false, null, requestId),
         correlationId,
       });
