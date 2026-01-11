@@ -1,26 +1,28 @@
 #!/bin/bash
-# Wrapper script to deploy cloudflared from Mac to NAS
-# Usage: ./deploy-cloudflared.sh
+##############################################################################
+# CLOUDFLARED ULTIMATE DEPLOYMENT (from Mac)
+#
+# Deploys cloudflared with guaranteed network configuration.
+# Uses single source of truth: git repo on NAS
+##############################################################################
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DEPLOY_SCRIPT="$SCRIPT_DIR/deploy/nas/cloudflared/redeploy.sh"
-
-if [ ! -f "$DEPLOY_SCRIPT" ]; then
-    echo "❌ Error: Deploy script not found at $DEPLOY_SCRIPT"
-    exit 1
-fi
-
-echo "🚀 Deploying Cloudflared to NAS..."
+echo "🚀 ULTIMATE Cloudflared Deployment"
+echo "   Deploying from git repo (single source of truth)"
 echo ""
 
-# Copy deploy script to NAS using ssh+cat (more reliable than scp)
-ssh nas "mkdir -p /tmp/scanium-deploy"
-cat "$DEPLOY_SCRIPT" | ssh nas "cat > /tmp/scanium-deploy/redeploy.sh"
-ssh nas "chmod +x /tmp/scanium-deploy/redeploy.sh"
-ssh nas "bash /tmp/scanium-deploy/redeploy.sh"
+# Deploy directly from repo on NAS (no file copying needed!)
+ssh nas "bash /volume1/docker/scanium/repo/deploy/nas/cloudflared/deploy-ultimate.sh"
 
 echo ""
-echo "✅ Deployment complete!"
-echo "   Test: curl https://scanium.gtemp1.com/health"
+echo "═══════════════════════════════════════════════════════"
+echo "  ✅ DEPLOYMENT COMPLETE FROM MAC"
+echo "═══════════════════════════════════════════════════════"
+echo ""
+echo "Test tunnel:"
+echo "  curl https://scanium.gtemp1.com/health"
+echo ""
+echo "View logs:"
+echo "  ssh nas 'docker logs -f scanium-cloudflared'"
+echo ""
