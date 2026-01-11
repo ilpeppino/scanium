@@ -74,6 +74,10 @@ deploy/nas/env/monitoring.env
 # NAS compose environment file (contains secrets)
 deploy/nas/compose/.env
 !deploy/nas/compose/.env.example
+
+# Cloudflared .env symlink (points to /volume1/docker/cloudflared/.env)
+deploy/nas/cloudflared/.env
+
 keystore.properties
 keystore/*.jks
 
