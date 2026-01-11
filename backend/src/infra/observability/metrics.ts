@@ -196,6 +196,50 @@ export const attributeExtractionSuccessCounter = new Counter({
 });
 
 // =============================================================================
+// Pricing Insights Metrics
+// =============================================================================
+
+/**
+ * Histogram for pricing insights lookup latency in milliseconds.
+ */
+export const pricingLatencyHistogram = new Histogram({
+  name: 'scanium_pricing_request_latency_ms',
+  help: 'Pricing insights request latency in milliseconds',
+  labelNames: ['status', 'country_code'] as const,
+  buckets: [50, 100, 250, 500, 1000, 2500, 5000, 10000],
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for pricing insights requests by status.
+ */
+export const pricingRequestsCounter = new Counter({
+  name: 'scanium_pricing_requests_total',
+  help: 'Total number of pricing insights requests',
+  labelNames: ['status', 'country_code', 'error_code'] as const,
+  registers: [metricsRegistry],
+});
+
+/**
+ * Gauge for pricing cache size.
+ */
+export const pricingCacheSizeGauge = new Gauge({
+  name: 'scanium_pricing_cache_size',
+  help: 'Number of entries in pricing cache',
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for pricing cache hits vs misses.
+ */
+export const pricingCacheHitsCounter = new Counter({
+  name: 'scanium_pricing_cache_hits_total',
+  help: 'Total number of pricing cache hits and misses',
+  labelNames: ['result'] as const, // 'hit' or 'miss'
+  registers: [metricsRegistry],
+});
+
+// =============================================================================
 // Rate Limiting Metrics
 // =============================================================================
 
@@ -476,6 +520,39 @@ export function recordAttributeExtraction(
   // Map confidence tier to numeric value for histogram
   const confidenceValue = confidence === 'HIGH' ? 0.9 : confidence === 'MED' ? 0.6 : 0.3;
   attributeConfidenceHistogram.observe({ attribute_type: attributeType }, confidenceValue);
+}
+
+/**
+ * Record pricing insights request metrics.
+ */
+export function recordPricingRequest(
+  status: string,
+  countryCode: string,
+  latencyMs: number,
+  errorCode?: string,
+  cacheHit?: boolean
+): void {
+  // Record latency
+  pricingLatencyHistogram.observe({ status, country_code: countryCode }, latencyMs);
+
+  // Record request counter
+  pricingRequestsCounter.inc({
+    status,
+    country_code: countryCode,
+    error_code: errorCode || 'none',
+  });
+
+  // Record cache hit/miss if provided
+  if (cacheHit !== undefined) {
+    pricingCacheHitsCounter.inc({ result: cacheHit ? 'hit' : 'miss' });
+  }
+}
+
+/**
+ * Update pricing cache size gauge.
+ */
+export function updatePricingCacheSize(size: number): void {
+  pricingCacheSizeGauge.set(size);
 }
 
 /**
