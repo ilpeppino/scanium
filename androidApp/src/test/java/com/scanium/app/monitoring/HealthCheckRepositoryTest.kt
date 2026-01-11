@@ -46,16 +46,14 @@ class HealthCheckRepositoryTest {
     private fun setDispatcher(
         healthCode: Int = 200,
         configCode: Int = 200,
-        preflightCode: Int = 200,
-        assistStatusCode: Int = 200,
+        warmupCode: Int = 200,
     ) {
         mockWebServer.dispatcher = object : Dispatcher() {
             override fun dispatch(request: RecordedRequest): MockResponse {
                 return when (request.path) {
                     "/health" -> MockResponse().setResponseCode(healthCode)
                     "/v1/config" -> MockResponse().setResponseCode(configCode)
-                    "/v1/preflight" -> MockResponse().setResponseCode(preflightCode)
-                    "/v1/assist/status" -> MockResponse().setResponseCode(assistStatusCode)
+                    "/v1/assist/warmup" -> MockResponse().setResponseCode(warmupCode)
                     else -> MockResponse().setResponseCode(404)
                 }
             }
@@ -68,7 +66,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `health 200 passes`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -79,7 +77,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `health 500 fails`() = runTest {
-        setDispatcher(healthCode = 500, configCode = 200, preflightCode = 200, assistStatusCode = 200)
+        setDispatcher(healthCode = 500, configCode = 200, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -95,7 +93,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 200 with API key passes`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-api-key", true)
         val result = repository.performHealthCheck(config)
@@ -105,7 +103,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 401 with API key fails`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 401, preflightCode = 200, assistStatusCode = 200)
+        setDispatcher(healthCode = 200, configCode = 401, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-api-key", true)
         val result = repository.performHealthCheck(config)
@@ -120,7 +118,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 401 without API key passes - endpoint is reachable`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 401, preflightCode = 401, assistStatusCode = 403)
+        setDispatcher(healthCode = 200, configCode = 401, warmupCode = 401)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -131,7 +129,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `config 200 without API key passes`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -140,12 +138,12 @@ class HealthCheckRepositoryTest {
     }
 
     // =========================================================================
-    // /v1/preflight endpoint tests
+    // /v1/assist/warmup endpoint tests
     // =========================================================================
 
     @Test
-    fun `preflight 401 without API key passes`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 401, assistStatusCode = 200)
+    fun `warmup 401 without API key passes`() = runTest {
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 401)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
@@ -154,49 +152,40 @@ class HealthCheckRepositoryTest {
     }
 
     @Test
-    fun `preflight 500 fails`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 500, assistStatusCode = 200)
+    fun `warmup 403 without API key passes`() = runTest {
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 403)
+
+        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val result = repository.performHealthCheck(config)
+
+        assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
+    }
+
+    @Test
+    fun `warmup 500 fails`() = runTest {
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 500)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.FAIL)
-        assertThat(result.failures.any { it.endpoint == "/v1/preflight" }).isTrue()
+        assertThat(result.failures.any { it.endpoint == "/v1/assist/warmup" }).isTrue()
     }
 
     // =========================================================================
-    // /v1/assist/status endpoint tests
+    // /v1/assist/warmup method validation
     // =========================================================================
 
     @Test
-    fun `assist-status 403 accepted - protected but reachable`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 403)
-
-        val config = HealthMonitorConfig(baseUrl(), null, true)
-        val result = repository.performHealthCheck(config)
-
-        assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
-    }
-
-    @Test
-    fun `assist-status 200 passes`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
+    fun `warmup uses POST`() = runTest {
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-key", true)
-        val result = repository.performHealthCheck(config)
+        repository.performHealthCheck(config)
 
-        assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
-    }
-
-    @Test
-    fun `assist-status 500 fails`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 500)
-
-        val config = HealthMonitorConfig(baseUrl(), null, true)
-        val result = repository.performHealthCheck(config)
-
-        assertThat(result.status).isEqualTo(MonitorHealthStatus.FAIL)
-        assertThat(result.failures.any { it.endpoint == "/v1/assist/status" }).isTrue()
+        val requests = (0 until mockWebServer.requestCount).map { mockWebServer.takeRequest() }
+        val warmupRequest = requests.first { it.path == "/v1/assist/warmup" }
+        assertThat(warmupRequest.method).isEqualTo("POST")
     }
 
     // =========================================================================
@@ -205,7 +194,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `failure signature format is correct`() = runTest {
-        setDispatcher(healthCode = 500, configCode = 401, preflightCode = 200, assistStatusCode = 200)
+        setDispatcher(healthCode = 500, configCode = 401, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), "test-key", true)
         val result = repository.performHealthCheck(config)
@@ -217,7 +206,7 @@ class HealthCheckRepositoryTest {
 
     @Test
     fun `OK result has empty failure signature`() = runTest {
-        setDispatcher(healthCode = 200, configCode = 200, preflightCode = 200, assistStatusCode = 200)
+        setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
         val config = HealthMonitorConfig(baseUrl(), null, true)
         val result = repository.performHealthCheck(config)
