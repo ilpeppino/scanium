@@ -240,17 +240,21 @@ export const configSchema = z.object({
 
   googleCredentialsPath: z.string().optional(),
 
-  // Pricing insights (Phase 2 feature)
+  // Pricing insights (Phase 4 feature)
   pricing: z
     .object({
       /** Enable pricing insights feature */
       enabled: z.coerce.boolean().default(false),
       /** Timeout for pricing lookup in milliseconds */
       timeoutMs: z.coerce.number().int().min(1000).max(10000).default(6000),
-      /** Cache TTL in seconds (default 24h) */
-      cacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(86400),
+      /** Cache TTL in seconds (default 6h for Phase 4) */
+      cacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(21600),
       /** Path to marketplaces catalog */
       catalogPath: z.string().default('config/marketplaces/marketplaces.eu.json'),
+      /** Daily quota per device/user (default 30) */
+      dailyQuota: z.coerce.number().int().min(1).default(30),
+      /** Maximum results to return per lookup (default 5) */
+      maxResults: z.coerce.number().int().min(1).max(10).default(5),
     })
     .default({}),
 
@@ -399,6 +403,8 @@ export function loadConfig(): Config {
       timeoutMs: process.env.PRICING_TIMEOUT_MS,
       cacheTtlSeconds: process.env.PRICING_CACHE_TTL_SECONDS,
       catalogPath: process.env.PRICING_CATALOG_PATH,
+      dailyQuota: process.env.ASSIST_PRICE_LOOKUP_DAILY_QUOTA,
+      maxResults: process.env.ASSIST_PRICE_LOOKUP_MAX_RESULTS,
     },
     ebay: {
       env: process.env.EBAY_ENV,
