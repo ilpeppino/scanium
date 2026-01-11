@@ -183,3 +183,111 @@ describe('Assistant Routes E2E - Security', () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe('Assistant Routes E2E - Pricing Insights', () => {
+  /**
+   * Contract test for Phase 4: Pricing Insights feature.
+   * Verifies that when includePricing=true, the response includes pricingInsights
+   * with expected status and structure.
+   */
+  it('POST /v1/assist/chat accepts includePricing and pricingPrefs', async () => {
+    const app = await appPromise;
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/assist/chat',
+      headers: { 'x-api-key': 'e2e-test-key' },
+      payload: {
+        items: [
+          {
+            itemId: 'e2e-pricing-item-1',
+            title: 'Nike Air Max 90',
+            category: 'Shoes',
+            attributes: [
+              { key: 'brand', value: 'Nike' },
+              { key: 'model', value: 'Air Max 90' },
+            ],
+          },
+        ],
+        message: 'What should I price this at?',
+        includePricing: true,
+        pricingPrefs: {
+          countryCode: 'NL',
+          maxResults: 5,
+        },
+      },
+    });
+
+    // Request should succeed
+    expect(res.statusCode).toBe(200);
+
+    const body = JSON.parse(res.body);
+
+    // Core assistant response should be present
+    expect(body.reply).toBeDefined();
+    expect(body.correlationId).toBeDefined();
+
+    // Pricing insights should be present (Phase 4)
+    expect(body.pricingInsights).toBeDefined();
+    expect(body.pricingInsights.status).toBeDefined();
+    expect(body.pricingInsights.countryCode).toBe('NL');
+
+    // Status should be one of the allowed values
+    expect(['OK', 'NOT_SUPPORTED', 'DISABLED', 'ERROR', 'TIMEOUT', 'NO_RESULTS']).toContain(
+      body.pricingInsights.status
+    );
+
+    // Marketplaces should be defined
+    expect(body.pricingInsights.marketplacesUsed).toBeDefined();
+    expect(Array.isArray(body.pricingInsights.marketplacesUsed)).toBe(true);
+  });
+
+  it('POST /v1/assist/chat works without includePricing (backward compatible)', async () => {
+    const app = await appPromise;
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/assist/chat',
+      headers: { 'x-api-key': 'e2e-test-key' },
+      payload: {
+        items: [
+          {
+            itemId: 'e2e-no-pricing-item-1',
+            title: 'Test Item',
+            category: 'Test',
+          },
+        ],
+        message: 'Describe this item',
+        // No includePricing or pricingPrefs
+      },
+    });
+
+    // Request should succeed
+    expect(res.statusCode).toBe(200);
+
+    const body = JSON.parse(res.body);
+
+    // Core assistant response should be present
+    expect(body.reply).toBeDefined();
+    expect(body.correlationId).toBeDefined();
+
+    // Pricing insights should NOT be present when not requested
+    expect(body.pricingInsights).toBeUndefined();
+  });
+
+  it('Cache stats endpoint includes pricing cache stats', async () => {
+    const app = await appPromise;
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/assist/cache/stats',
+      headers: { 'x-api-key': 'e2e-test-key' },
+    });
+
+    expect(res.statusCode).toBe(200);
+
+    const body = JSON.parse(res.body);
+    expect(body.vision).toBeDefined();
+    expect(body.response).toBeDefined();
+    expect(body.pricing).toBeDefined();
+    expect(body.pricing.size).toBeDefined();
+    expect(body.pricing.maxTtlMs).toBeDefined();
+  });
+});

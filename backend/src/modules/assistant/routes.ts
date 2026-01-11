@@ -56,6 +56,8 @@ import {
   recordVisionCost,
   visionCacheSizeGauge,
   assistantCacheHitRateGauge,
+  recordPricingRequest,
+  updatePricingCacheSize,
 } from '../../infra/observability/metrics.js';
 import {
   StagedRequestManager,
@@ -909,6 +911,15 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           pricingInsights = await Promise.race([pricingPromise, timeoutPromise]);
 
           const pricingLatency = performance.now() - pricingStartTime;
+
+          // Record pricing metrics
+          recordPricingRequest(
+            pricingInsights.status,
+            pricingInsights.countryCode,
+            pricingLatency,
+            pricingInsights.errorCode
+          );
+
           request.log.info(
             {
               correlationId,
@@ -920,6 +931,15 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
           );
         } catch (error) {
           const pricingLatency = performance.now() - pricingStartTime;
+
+          // Record timeout/error metrics
+          recordPricingRequest(
+            'TIMEOUT',
+            parsed.data.pricingPrefs.countryCode,
+            pricingLatency,
+            'TIMEOUT'
+          );
+
           request.log.warn(
             {
               correlationId,
@@ -1040,6 +1060,10 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     const visionStats = visionCache.stats();
     const responseStats = responseCache.getStats();
     const stagedStats = stagedRequestManager.getStats();
+    const pricingStats = pricingService.getCacheStats();
+
+    // Update pricing cache size gauge
+    updatePricingCacheSize(pricingStats.size);
 
     return reply.status(200).send({
       vision: {
@@ -1055,6 +1079,10 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         evictions: responseStats.evictions,
       },
       staged: stagedStats,
+      pricing: {
+        size: pricingStats.size,
+        maxTtlMs: pricingStats.maxTtlMs,
+      },
     });
   });
 };
