@@ -6,9 +6,10 @@ services:
     container_name: scanium-cloudflared
     restart: unless-stopped
 
-    ***REMOVED*** Use env var logging flags instead of CLI --loglevel (your current CLI parsing breaks on it)
+    ***REMOVED*** Use absolute path to .env (single source of truth for secrets)
+    ***REMOVED*** This file lives in /volume1/docker/cloudflared/.env and contains CLOUDFLARED_TOKEN
     env_file:
-      - .env
+      - /volume1/docker/cloudflared/.env
     environment:
       - TUNNEL_LOGLEVEL=debug
       - TUNNEL_TRANSPORT_LOGLEVEL=debug
@@ -19,8 +20,9 @@ services:
     ***REMOVED*** - We only provide the subcommand + token.
     command: ["tunnel","--config","/etc/cloudflared/config.yml","run","--token","${CLOUDFLARED_TOKEN}"]
 
+    ***REMOVED*** Use absolute path to config.yml
     volumes:
-      - ./config.yml:/etc/cloudflared/config.yml:ro
+      - /volume1/docker/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
 
     networks:
       - backend_scanium-network
