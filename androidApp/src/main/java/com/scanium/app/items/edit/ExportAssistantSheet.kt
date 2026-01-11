@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -612,12 +613,14 @@ private fun ExportErrorContent(
     }
 }
 
-// ==================== Price Insights Card (Phase 3) ====================
+// ==================== Price Insights Card (Phase 3/5) ====================
 
 @Composable
 private fun PriceInsightsCard(
     pricingInsights: com.scanium.shared.core.models.assistant.PricingInsights,
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -632,7 +635,7 @@ private fun PriceInsightsCard(
         ) {
             // Header
             Text(
-                text = "Price Insights",
+                text = "Market price",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -641,9 +644,10 @@ private fun PriceInsightsCard(
             when (pricingInsights.status) {
                 "success" -> {
                     pricingInsights.result?.let { result ->
-                        // Price range
+                        // Price range with currency symbol
+                        val currencySymbol = getCurrencySymbol(result.priceRange.currency)
                         Text(
-                            text = "Suggested range: ${result.priceRange.currency} ${result.priceRange.min.toInt()}-${result.priceRange.max.toInt()}",
+                            text = "$currencySymbol${result.priceRange.min.toInt()}–$currencySymbol${result.priceRange.max.toInt()}",
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.primary,
@@ -656,20 +660,30 @@ private fun PriceInsightsCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
 
-                        // Comparables
+                        // Comparables - Top results (up to 5)
                         if (result.comparables.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Similar listings:",
+                                text = "Top results",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
 
                             result.comparables.take(5).forEach { comparable ->
+                                val url = comparable.url  // Capture for smart cast
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .let { mod ->
+                                            if (url != null) {
+                                                mod.clickable {
+                                                    openUrl(context, url)
+                                                }
+                                            } else {
+                                                mod
+                                            }
+                                        }
                                         .padding(vertical = 4.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically,
@@ -678,9 +692,13 @@ private fun PriceInsightsCard(
                                         Text(
                                             text = comparable.title,
                                             style = MaterialTheme.typography.bodySmall,
-                                            maxLines = 1,
+                                            maxLines = 2,
                                             overflow = TextOverflow.Ellipsis,
-                                            color = MaterialTheme.colorScheme.onSurface,
+                                            color = if (url != null) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
                                         )
                                         Text(
                                             text = comparable.marketplace,
@@ -688,8 +706,9 @@ private fun PriceInsightsCard(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "${comparable.currency} ${comparable.price.toInt()}",
+                                        text = "${getCurrencySymbol(comparable.currency)}${comparable.price.toInt()}",
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurface,
@@ -699,14 +718,35 @@ private fun PriceInsightsCard(
                         }
                     }
                 }
-                "not_supported" -> {
+                "disabled" -> {
+                    Text(
+                        text = pricingInsights.errorMessage ?: "Price insights are disabled",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                "unsupported_country", "not_supported" -> {
                     Text(
                         text = pricingInsights.errorMessage ?: "Price insights not available for this country",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                "error", "timeout" -> {
+                "no_results" -> {
+                    Text(
+                        text = pricingInsights.errorMessage ?: "No comparable listings found",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                "timeout" -> {
+                    Text(
+                        text = pricingInsights.errorMessage ?: "Request timed out",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                "error" -> {
                     Text(
                         text = pricingInsights.errorMessage ?: "Couldn't fetch prices right now",
                         style = MaterialTheme.typography.bodySmall,
@@ -722,6 +762,34 @@ private fun PriceInsightsCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * Get currency symbol for common currencies.
+ * Falls back to currency code if symbol is unknown.
+ */
+private fun getCurrencySymbol(currencyCode: String): String {
+    return when (currencyCode.uppercase()) {
+        "EUR" -> "€"
+        "USD" -> "$"
+        "GBP" -> "£"
+        "CHF" -> "CHF "
+        "JPY" -> "¥"
+        "CNY" -> "¥"
+        else -> "$currencyCode "
+    }
+}
+
+/**
+ * Open URL in external browser.
+ */
+private fun openUrl(context: Context, url: String) {
+    try {
+        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        android.util.Log.e("ExportAssistant", "Failed to open URL: $url", e)
     }
 }
 
