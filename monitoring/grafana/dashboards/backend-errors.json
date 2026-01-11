@@ -442,16 +442,16 @@
     },
     {
       "id": 14,
-      "title": "Top Error Messages (from Logs)",
-      "description": "Most frequent error messages extracted from logs",
+      "title": "Top Error Messages (from OTLP Logs)",
+      "description": "Most frequent error messages from structured OTLP logs",
       "type": "barchart",
       "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, sum by (error_message) (count_over_time({source=\"scanium-backend\", env=~\"$env\"} | json | level=~\"error|fatal\" | error_message!=\"\" [1h])))",
-          "legendFormat": "{{error_message}}"
+          "expr": "topk(10, sum by (body) (count_over_time({source=\"otlp\", env=~\"$env\", level=~\"ERROR|FATAL\"} | json | body!=\"\" [1h])))",
+          "legendFormat": "{{body}}"
         }
       ],
       "options": {
@@ -467,19 +467,19 @@
     {
       "id": 15,
       "title": "Error Log Volume Over Time",
-      "description": "Error and warning log rate",
+      "description": "Error and warning log rate from OTLP logs",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=\"scanium-backend\", env=~\"$env\"} | json | level=\"error\" [5m]))",
+          "expr": "sum(count_over_time({source=\"otlp\", env=~\"$env\", level=\"ERROR\"} [5m]))",
           "legendFormat": "Errors"
         },
         {
           "refId": "B",
-          "expr": "sum(count_over_time({source=\"scanium-backend\", env=~\"$env\"} | json | level=\"warn\" [5m]))",
+          "expr": "sum(count_over_time({source=\"otlp\", env=~\"$env\", level=\"WARN\"} [5m]))",
           "legendFormat": "Warnings"
         }
       ],
@@ -510,15 +510,15 @@
     },
     {
       "id": 16,
-      "title": "Recent Error Logs",
-      "description": "Latest error log entries with trace links",
+      "title": "Recent Error Logs (OTLP)",
+      "description": "Latest error log entries from structured OTLP logs with trace correlation",
       "type": "logs",
       "gridPos": { "x": 0, "y": 40, "w": 24, "h": 10 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
           "refId": "A",
-          "expr": "{source=\"scanium-backend\", env=~\"$env\"} | json | level=~\"error|fatal\""
+          "expr": "{source=\"otlp\", env=~\"$env\", level=~\"ERROR|FATAL\"}"
         }
       ],
       "options": {
