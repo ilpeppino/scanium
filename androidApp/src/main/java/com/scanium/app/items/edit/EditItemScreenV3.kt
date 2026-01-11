@@ -71,7 +71,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
@@ -149,6 +151,33 @@ fun EditItemScreenV3(
         mutableStateOf(parsedCondition)
     }
     var notesField by remember(item) { mutableStateOf(item?.attributesSummaryText ?: "") }
+
+    // Price field (Phase 2 - Pricing)
+    var priceField by remember(item) {
+        mutableStateOf(item?.userPriceCents?.let { cents -> "%.2f".format(cents / 100.0) } ?: "")
+    }
+
+    // Pricing insights from AI assistant (Phase 2 - transient, not persisted)
+    var pricingInsights by remember { mutableStateOf<com.scanium.shared.core.models.assistant.PricingInsights?>(null) }
+
+    // Observe Export Assistant state and extract pricing insights (Phase 2)
+    if (exportAssistantViewModel != null) {
+        val exportState by exportAssistantViewModel.state.collectAsState()
+        LaunchedEffect(exportState) {
+            if (exportState is ExportAssistantState.Success) {
+                val successState = exportState as ExportAssistantState.Success
+                // Update pricing insights
+                pricingInsights = successState.pricingInsights
+
+                // Auto-populate price with median (USER DECISION)
+                if (pricingInsights?.status == "success" && pricingInsights?.result != null) {
+                    val result = pricingInsights!!.result!!
+                    val median = (result.priceRange.min + result.priceRange.max) / 2.0
+                    priceField = "%.2f".format(median)
+                }
+            }
+        }
+    }
 
     val currentItem = item
     if (currentItem == null) {
@@ -428,6 +457,31 @@ fun EditItemScreenV3(
                 selectedCondition = conditionField,
                 onConditionSelected = { conditionField = it },
             )
+
+            Spacer(Modifier.height(12.dp))
+
+            // Price (Phase 2 - Pricing)
+            LabeledTextField(
+                label = stringResource(R.string.edit_item_field_price),
+                value = priceField,
+                onValueChange = { priceField = it },
+                onClear = { priceField = "" },
+                imeAction = ImeAction.Next,
+                onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Next
+                ),
+            )
+
+            // AI Pricing Insights (Phase 2 - shown when available)
+            if (pricingInsights != null && pricingInsights?.status == "success") {
+                Spacer(Modifier.height(8.dp))
+                PriceInsightsCompactCard(
+                    insights = pricingInsights!!,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
             Spacer(Modifier.height(12.dp))
 
@@ -812,4 +866,100 @@ private fun saveFieldsToAttributes(
         summaryText = notesField,
         userEdited = notesField.isNotBlank(),
     )
+}
+
+/**
+ * Compact pricing insights card for Edit Item screen (Phase 2).
+ * Shows AI-generated market price range with collapsible comparable listings.
+ */
+@Composable
+private fun PriceInsightsCompactCard(
+    insights: com.scanium.shared.core.models.assistant.PricingInsights,
+    modifier: Modifier = Modifier,
+) {
+    val result = insights.result ?: return
+
+    var showComparables by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Header with price range
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "AI Market Price",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Text(
+                        text = "${result.priceRange.currency} ${result.priceRange.min.toInt()}-${result.priceRange.max.toInt()}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Text(
+                    text = "Based on ${result.sampleSize} listings",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            // Show comparables button
+            if (result.comparables.isNotEmpty()) {
+                OutlinedButton(
+                    onClick = { showComparables = !showComparables },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (showComparables) "Hide matches (${result.comparables.size})" else "Show matches (${result.comparables.size})")
+                }
+
+                // Comparables list (collapsible)
+                if (showComparables) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        result.comparables.forEach { comparable ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = comparable.title,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = comparable.marketplace,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Text(
+                                    text = "${comparable.currency} ${comparable.price.toInt()}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
