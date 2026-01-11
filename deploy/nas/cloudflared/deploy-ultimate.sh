@@ -47,6 +47,16 @@ fi
 echo "✓ Required files exist (.env, config.yml)"
 echo ""
 
+***REMOVED*** Create symlink to .env in repo directory for docker-compose variable substitution
+***REMOVED*** This allows docker-compose to substitute ${CLOUDFLARED_TOKEN} in the command
+echo "Setting up .env symlink for docker-compose..."
+if [ -L "$REPO_DIR/.env" ] || [ -f "$REPO_DIR/.env" ]; then
+    rm -f "$REPO_DIR/.env"
+fi
+ln -s "$OLD_DIR/.env" "$REPO_DIR/.env"
+echo "  ✓ Symlinked $OLD_DIR/.env → $REPO_DIR/.env"
+echo ""
+
 ***REMOVED*** Check Docker networks
 echo "Verifying Docker networks..."
 REQUIRED_NETWORKS=(
