@@ -60,6 +60,8 @@ import {
 import {
   StagedRequestManager,
 } from './staged-request.js';
+import { PricingService } from '../pricing/service.js';
+import { pricingPrefsSchema } from '../pricing/schema.js';
 
 type RouteOpts = { config: Config };
 
@@ -108,6 +110,8 @@ const requestSchema = z.object({
     })
     .optional(),
   assistantPrefs: assistantPrefsSchema,
+  includePricing: z.boolean().optional(),
+  pricingPrefs: pricingPrefsSchema.optional(),
 });
 
 // Image upload limits
@@ -265,6 +269,23 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     dailyLimit: config.assistant.dailyQuota,
   });
 
+  // Pricing service (Phase 2 feature)
+  const pricingService = new PricingService({
+    enabled: config.pricing.enabled,
+    timeoutMs: config.pricing.timeoutMs,
+    cacheTtlMs: config.pricing.cacheTtlSeconds * 1000,
+    catalogPath: config.pricing.catalogPath,
+  });
+
+  fastify.log.info(
+    {
+      enabled: config.pricing.enabled,
+      timeoutMs: config.pricing.timeoutMs,
+      cacheTtlSeconds: config.pricing.cacheTtlSeconds,
+    },
+    'Pricing service initialized'
+  );
+
   const redisClient = await createRedisClient(
     config.assistant.rateLimitRedisUrl,
     fastify.log
@@ -313,6 +334,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     visionCache.stop();
     responseCache.stop();
     stagedRequestManager.stop();
+    pricingService.stop();
     await redisClient?.quit?.();
   });
 
@@ -868,6 +890,55 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         'Assistant response'
       );
 
+      // Compute pricing insights if requested (Phase 2 feature)
+      let pricingInsights;
+      if (parsed.data.includePricing && parsed.data.pricingPrefs) {
+        const pricingStartTime = performance.now();
+        try {
+          // Get pricing insights (with timeout budget)
+          const pricingPromise = pricingService.computePricingInsights(
+            primaryItem,
+            parsed.data.pricingPrefs
+          );
+
+          // Apply timeout
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Pricing timeout')), config.pricing.timeoutMs);
+          });
+
+          pricingInsights = await Promise.race([pricingPromise, timeoutPromise]);
+
+          const pricingLatency = performance.now() - pricingStartTime;
+          request.log.info(
+            {
+              correlationId,
+              pricingStatus: pricingInsights.status,
+              countryCode: pricingInsights.countryCode,
+              latencyMs: Math.round(pricingLatency),
+            },
+            'Pricing insights computed'
+          );
+        } catch (error) {
+          const pricingLatency = performance.now() - pricingStartTime;
+          request.log.warn(
+            {
+              correlationId,
+              error: error instanceof Error ? error.message : String(error),
+              latencyMs: Math.round(pricingLatency),
+            },
+            'Pricing insights failed or timed out'
+          );
+
+          // Return timeout status on failure (never block assistant response)
+          pricingInsights = {
+            status: 'TIMEOUT' as const,
+            countryCode: parsed.data.pricingPrefs.countryCode,
+            marketplacesUsed: [],
+            errorCode: 'TIMEOUT' as const,
+          };
+        }
+      }
+
       return reply.status(200).send({
         reply: response.content,
         actions: response.actions,
@@ -885,6 +956,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         suggestedAttributes: response.suggestedAttributes,
         suggestedDraftUpdates: response.suggestedDraftUpdates,
         suggestedNextPhoto: response.suggestedNextPhoto,
+        pricingInsights, // Phase 2: Optional pricing insights
         safety: buildSafetyResponse(false, null, requestId),
         correlationId,
       });
