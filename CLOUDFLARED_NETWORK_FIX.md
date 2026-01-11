@@ -2,7 +2,10 @@
 
 ## The Problem
 
-Cloudflared tunnel was repeatedly losing connection to the `scanium_net` Docker network, causing 502 errors. This happened because:
+Cloudflared tunnel was experiencing two critical issues:
+
+### Issue 1: Network Connectivity (502 Errors)
+The tunnel was repeatedly losing connection to the `scanium_net` Docker network, causing 502 errors. This happened because:
 
 1. **Two compose file locations** that could get out of sync:
    - `/volume1/docker/cloudflared/docker-compose.yml` (active deployment)
@@ -11,6 +14,13 @@ Cloudflared tunnel was repeatedly losing connection to the `scanium_net` Docker 
 2. **Manual container restarts** didn't preserve network connections
 
 3. **No automated verification** that networks were properly connected
+
+### Issue 2: Token Substitution (Error 1033)
+After implementing the single source of truth deployment, the tunnel failed with error 1033. The root cause was:
+
+- Docker-compose's `${CLOUDFLARED_TOKEN}` variable substitution requires a `.env` file in the working directory
+- The `env_file:` directive only affects the container's environment, NOT docker-compose's variable substitution
+- Deploying from `/volume1/docker/scanium/repo/deploy/nas/cloudflared/` without a local `.env` file meant the token was empty in the command
 
 ## The Structural Fix
 
@@ -39,10 +49,18 @@ docker-compose up -d
 # The compose file will ensure all networks are connected
 ```
 
-### 3. Deployment Script Features
+### 3. .env Symlink for Variable Substitution
+Fixed the token substitution issue by creating a symlink:
+```bash
+ln -s /volume1/docker/cloudflared/.env /volume1/docker/scanium/repo/deploy/nas/cloudflared/.env
+```
+
+This allows docker-compose to substitute `${CLOUDFLARED_TOKEN}` during deployment while keeping secrets in a single location.
+
+### 4. Deployment Script Features
 The `deploy-cloudflared.sh` script:
 - ✅ Verifies all required networks exist
-- ✅ Syncs docker-compose.yml from git to active location
+- ✅ Creates .env symlink for docker-compose variable substitution
 - ✅ Backs up current configuration
 - ✅ Force removes existing container
 - ✅ Restarts with all networks connected
@@ -108,14 +126,23 @@ ssh nas "docker logs scanium-cloudflared --tail 20 | grep -E 'ERR|no such host'"
 
 Deployment was tested and verified:
 - ✅ Script runs successfully from Mac
+- ✅ .env symlink created automatically
+- ✅ Token properly substituted in command
 - ✅ All networks connected automatically
 - ✅ Tunnel responding: https://scanium.gtemp1.com/health
 - ✅ Backend connectivity working
 - ✅ No DNS resolution errors
+- ✅ No error 1033 or other tunnel errors
 
 ## Summary
 
-**Before:** Manual network connection required after every restart
-**After:** Automated deployment with guaranteed network connectivity
+**Before:**
+- Manual network connection required after every restart (502 errors)
+- Token substitution failures (error 1033)
 
-This structural fix ensures cloudflared always has the correct network configuration, eliminating 502 errors permanently.
+**After:**
+- Automated deployment with guaranteed network connectivity
+- Proper token substitution via .env symlink
+- Single source of truth deployment from git repo
+
+This structural fix ensures cloudflared always has the correct network configuration and proper authentication, eliminating 502 and 1033 errors permanently.
