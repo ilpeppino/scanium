@@ -148,6 +148,12 @@ shared:test-utils -> shared:core-models, shared:core-tracking
   - `ssh nas "docker ps -a"`
   - `ssh nas "ls -la /volume1/docker/scanium/"`
   - Never run Docker commands directly on the local machine - the monitoring stack runs on the NAS.
+- **Mac + NAS Invariant Workflow (Mandatory):**
+  - **Repo alignment:** Check `git rev-parse HEAD` on Mac and NAS before any change; stop if they differ and align both to the same commit. Never hot-fix runtime state.
+  - **Runtime inventory:** Before diagnosing, collect NAS state (`docker ps`, `docker network ls`, `docker inspect` for `scanium-backend`, `scanium-alloy`, `scanium-grafana` including networks and compose labels).
+  - **Network drift handling:** Treat drift as normal; do not permanently fix with `docker network connect`. Encode final fixes in compose files with explicit shared networks.
+  - **Compose consistency:** Detect whether NAS uses `docker compose` or `docker-compose` and use only that binary from the correct working directory.
+  - **Redeploy + verify:** All fixes must be committed and redeployed; verify container health, DNS resolution, and data flow after redeploy.
 
 ***REMOVED******REMOVED*** F) Item Enrichment & Attribute Contract
 
