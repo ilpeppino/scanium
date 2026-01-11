@@ -239,7 +239,8 @@ Requirements:
 Find used/secondhand listings with clear prices. Extract exact prices and URLs.`;
 
     try {
-      // Use OpenAI with native web search tool
+      // Use OpenAI search preview model with built-in web search
+      // Note: gpt-4o-mini-search-preview has web search capabilities built-in
       const completion = await this.openaiClient!.chat.completions.create({
         model: this.openaiModel,
         messages: [
@@ -249,15 +250,6 @@ Find used/secondhand listings with clear prices. Extract exact prices and URLs.`
         temperature: 0.2, // Low temperature for factual extraction
         max_tokens: 2000,
         response_format: { type: 'json_object' },
-        // Enable web search tool with domain filtering
-        tools: [
-          {
-            type: 'web_search' as any,
-            web_search: {
-              domain_filter: domainFilter.length > 0 ? domainFilter : undefined,
-            },
-          },
-        ],
       });
 
       const responseText = completion.choices[0]?.message?.content;
