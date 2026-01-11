@@ -340,8 +340,25 @@ class SettingsRepository(
     val assistantRegionFlow: Flow<AssistantRegion> =
         dataStore.data.map { preferences ->
             val raw = preferences[ASSISTANT_REGION_KEY]
-            raw?.let { runCatching { AssistantRegion.valueOf(it) }.getOrNull() } ?: AssistantRegion.EU
+            raw?.let { runCatching { AssistantRegion.valueOf(it) }.getOrNull() } ?: detectRegionFromLocale()
         }
+
+    /**
+     * Detect region from device locale with fallback to EU.
+     * Maps common European country codes to AssistantRegion.
+     */
+    private fun detectRegionFromLocale(): AssistantRegion {
+        val countryCode = java.util.Locale.getDefault().country.uppercase()
+        return when (countryCode) {
+            "NL" -> AssistantRegion.NL
+            "DE", "AT", "CH" -> AssistantRegion.DE
+            "BE" -> AssistantRegion.BE
+            "FR" -> AssistantRegion.FR
+            "GB", "UK" -> AssistantRegion.UK
+            "US" -> AssistantRegion.US
+            else -> AssistantRegion.EU // Fallback for all other EU countries
+        }
+    }
 
     suspend fun setAssistantRegion(region: AssistantRegion) {
         dataStore.edit { preferences ->
