@@ -7,6 +7,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -17,8 +18,7 @@ import java.util.concurrent.TimeUnit
  * Endpoints checked:
  * 1. GET /health - PASS if HTTP 200
  * 2. GET /v1/config - PASS if 200; or 401 when no API key
- * 3. GET /v1/preflight - PASS if 200; or 401 when no API key
- * 4. GET /v1/assist/status - PASS if 200 or 403 (reachable but protected)
+ * 3. POST /v1/assist/warmup - PASS if 200; or 401/403 when no API key
  */
 class HealthCheckRepository {
     companion object {
@@ -29,18 +29,31 @@ class HealthCheckRepository {
          * Endpoints to check with their pass conditions.
          */
         private val ENDPOINTS = listOf(
-            EndpointSpec("/health", requiresAuth = false, allowedCodes = setOf(200)),
-            EndpointSpec("/v1/config", requiresAuth = true, allowedCodes = setOf(200), unauthAllowedCodes = setOf(200, 401)),
-            EndpointSpec("/v1/preflight", requiresAuth = true, allowedCodes = setOf(200), unauthAllowedCodes = setOf(200, 401)),
-            EndpointSpec("/v1/assist/status", requiresAuth = false, allowedCodes = setOf(200, 403), unauthAllowedCodes = setOf(200, 403)),
+            EndpointSpec("/health", HttpMethod.GET, requiresAuth = false, allowedCodes = setOf(200)),
+            EndpointSpec("/v1/config", HttpMethod.GET, requiresAuth = true, allowedCodes = setOf(200), unauthAllowedCodes = setOf(200, 401)),
+            EndpointSpec(
+                "/v1/assist/warmup",
+                HttpMethod.POST,
+                requiresAuth = true,
+                allowedCodes = setOf(200),
+                unauthAllowedCodes = setOf(200, 401, 403),
+                bodyBytes = ByteArray(0),
+            ),
         )
+    }
+
+    private enum class HttpMethod {
+        GET,
+        POST,
     }
 
     private data class EndpointSpec(
         val path: String,
+        val method: HttpMethod,
         val requiresAuth: Boolean,
         val allowedCodes: Set<Int>,
         val unauthAllowedCodes: Set<Int> = allowedCodes,
+        val bodyBytes: ByteArray? = null,
     )
 
     private val httpClient = OkHttpClient.Builder()
@@ -101,7 +114,11 @@ class HealthCheckRepository {
 
         val requestBuilder = Request.Builder()
             .url(url)
-            .get()
+
+        when (spec.method) {
+            HttpMethod.GET -> requestBuilder.get()
+            HttpMethod.POST -> requestBuilder.post((spec.bodyBytes ?: ByteArray(0)).toRequestBody(null))
+        }
 
         // Add API key header if provided (but don't log it!)
         if (hasKey && spec.requiresAuth) {
