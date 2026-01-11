@@ -97,12 +97,12 @@ describe('PricingService', () => {
         }
       );
 
-      expect(result.status).toBe('NOT_SUPPORTED');
+      // Without OpenAI API key, returns ERROR with NO_TOOLING
+      expect(result.status).toBe('ERROR');
       expect(result.countryCode).toBe('NL');
       expect(result.errorCode).toBe('NO_TOOLING');
       expect(result.marketplacesUsed).toHaveLength(2);
       expect(result.marketplacesUsed[0].id).toBe('bol');
-      expect(result.querySummary).toContain('Nike Air Max 90');
 
       service.stop();
     });
@@ -156,7 +156,9 @@ describe('PricingService', () => {
         }
       );
 
-      expect(result.status).toBe('NOT_SUPPORTED');
+      // Without OpenAI API key, returns ERROR with NO_TOOLING
+      expect(result.status).toBe('ERROR');
+      expect(result.errorCode).toBe('NO_TOOLING');
       expect(result.marketplacesUsed).toHaveLength(1);
       expect(result.marketplacesUsed[0].id).toBe('bol');
 
@@ -183,18 +185,19 @@ describe('PricingService', () => {
         maxResults: 5,
       };
 
-      // First call
+      // First call - returns ERROR due to no OpenAI key
       const result1 = await service.computePricingInsights(item, prefs);
-      expect(result1.status).toBe('NOT_SUPPORTED');
+      expect(result1.status).toBe('ERROR');
+      expect(result1.errorCode).toBe('NO_TOOLING');
 
-      // Second call should be cached
+      // Second call should return same error (errors not cached)
       const result2 = await service.computePricingInsights(item, prefs);
-      expect(result2.status).toBe('NOT_SUPPORTED');
-      expect(result2).toEqual(result1);
+      expect(result2.status).toBe('ERROR');
+      expect(result2.errorCode).toBe('NO_TOOLING');
 
-      // Cache stats should show 1 entry
+      // Cache should be empty (errors not cached)
       const stats = service.getCacheStats();
-      expect(stats.size).toBe(1);
+      expect(stats.size).toBe(0);
 
       service.stop();
     });

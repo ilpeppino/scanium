@@ -271,12 +271,14 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     dailyLimit: config.assistant.dailyQuota,
   });
 
-  // Pricing service (Phase 2 feature)
+  // Pricing service (Phase 5 feature - with OpenAI web search)
   const pricingService = new PricingService({
     enabled: config.pricing.enabled,
     timeoutMs: config.pricing.timeoutMs,
     cacheTtlMs: config.pricing.cacheTtlSeconds * 1000,
     catalogPath: config.pricing.catalogPath,
+    openaiApiKey: config.assistant.openaiApiKey,
+    openaiModel: config.assistant.openaiModel,
   });
 
   fastify.log.info(
@@ -284,8 +286,9 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       enabled: config.pricing.enabled,
       timeoutMs: config.pricing.timeoutMs,
       cacheTtlSeconds: config.pricing.cacheTtlSeconds,
+      model: config.assistant.openaiModel,
     },
-    'Pricing service initialized'
+    'Pricing service initialized with OpenAI web search'
   );
 
   const redisClient = await createRedisClient(
