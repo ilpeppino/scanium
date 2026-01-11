@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.BuildConfig
+import com.scanium.app.config.FeatureFlags
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -65,7 +66,7 @@ class DevHealthMonitorStateStore(private val context: Context) {
      */
     val configFlow: Flow<MonitorConfig> = context.devHealthMonitorDataStore.data.map { prefs ->
         MonitorConfig(
-            enabled = prefs[KEY_ENABLED] ?: false,
+            enabled = prefs[KEY_ENABLED] ?: FeatureFlags.isDevBuild,
             baseUrlOverride = prefs[KEY_BASE_URL_OVERRIDE],
             notifyOnRecovery = prefs[KEY_NOTIFY_ON_RECOVERY] ?: true,
         )
