@@ -47,3 +47,6 @@ temp/
 # Prisma.env.migration
 
 # Docker (docker-compose files are tracked; .dockerignore should be tracked too)
+
+# Synology NAS metadata
+@eaDir/
