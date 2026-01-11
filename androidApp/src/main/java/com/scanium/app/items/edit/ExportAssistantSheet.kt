@@ -325,6 +325,11 @@ private fun ExportSuccessContent(
             )
         }
 
+        // Price Insights section (Phase 3)
+        state.pricingInsights?.let { pricing ->
+            PriceInsightsCard(pricingInsights = pricing)
+        }
+
         // Copied feedback
         AnimatedVisibility(visible = showCopiedFeedback) {
             Row(
@@ -601,6 +606,119 @@ private fun ExportErrorContent(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.common_retry))
+                }
+            }
+        }
+    }
+}
+
+// ==================== Price Insights Card (Phase 3) ====================
+
+@Composable
+private fun PriceInsightsCard(
+    pricingInsights: com.scanium.shared.core.models.assistant.PricingInsights,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            // Header
+            Text(
+                text = "Price Insights",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            when (pricingInsights.status) {
+                "success" -> {
+                    pricingInsights.result?.let { result ->
+                        // Price range
+                        Text(
+                            text = "Suggested range: ${result.priceRange.currency} ${result.priceRange.min.toInt()}-${result.priceRange.max.toInt()}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+
+                        // Sample size
+                        Text(
+                            text = "Based on ${result.sampleSize} comparable listings",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+
+                        // Comparables
+                        if (result.comparables.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Similar listings:",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+
+                            result.comparables.take(5).forEach { comparable ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = comparable.title,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                        Text(
+                                            text = comparable.marketplace,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    Text(
+                                        text = "${comparable.currency} ${comparable.price.toInt()}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                "not_supported" -> {
+                    Text(
+                        text = pricingInsights.errorMessage ?: "Price insights not available for this country",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                "error", "timeout" -> {
+                    Text(
+                        text = pricingInsights.errorMessage ?: "Couldn't fetch prices right now",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                else -> {
+                    Text(
+                        text = "Loading price insights...",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
