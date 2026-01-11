@@ -15,6 +15,11 @@ This directory consolidates **all documentation, runbooks, operational scripts, 
 
 ***REMOVED******REMOVED*** Quick Links
 
+***REMOVED******REMOVED******REMOVED*** Canonical HOWTOs
+- [Android App HOWTO](android-app.md)
+- [Backend HOWTO](backend.md)
+- [Monitoring HOWTO](monitoring.md)
+
 ***REMOVED******REMOVED******REMOVED*** Operations
 - [Backend Deploy Runbook](backend/deploy/)
 - [Monitoring Scripts](monitoring/scripts/)
