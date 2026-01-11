@@ -19,6 +19,7 @@ import { configRoutes } from './modules/config/config.routes.js';
 import { enrichRoutes } from './modules/enrich/routes.js';
 import { pricingRoutes } from './modules/pricing/routes.js';
 import { mobileTelemetryRoutes } from './modules/mobile-telemetry/routes.js';
+import { marketplacesRoutes } from './modules/marketplaces/routes.js';
 import { apiGuardPlugin } from './infra/security/api-guard.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
@@ -138,7 +139,7 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   app.setErrorHandler(errorHandlerPlugin);
 
   await app.register(apiGuardPlugin, {
-    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/vision/', '/v1/admin/', '/v1/items/enrich', '/v1/pricing/estimate'],
+    protectedPrefixes: ['/v1/assist/', '/v1/classify', '/v1/vision/', '/v1/admin/', '/v1/items/enrich', '/v1/pricing/estimate', '/v1/marketplaces'],
     maxRequests: Number(process.env.SECURITY_RATE_LIMIT_MAX ?? 30),
     windowMs: Number(process.env.SECURITY_RATE_LIMIT_WINDOW_MS ?? 10_000),
   });
@@ -202,6 +203,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Mobile Telemetry Ingestion
   await app.register(mobileTelemetryRoutes, { prefix: '/v1' });
+
+  // Marketplaces Catalog
+  await app.register(marketplacesRoutes, { prefix: '/v1', config });
 
   // Root endpoint
   app.get('/', async (_request, reply) => {
