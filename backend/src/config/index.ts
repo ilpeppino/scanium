@@ -246,7 +246,7 @@ export const configSchema = z.object({
       /** Enable pricing insights feature */
       enabled: z.coerce.boolean().default(false),
       /** Timeout for pricing lookup in milliseconds */
-      timeoutMs: z.coerce.number().int().min(1000).max(10000).default(6000),
+      timeoutMs: z.coerce.number().int().min(1000).max(30000).default(6000),
       /** Cache TTL in seconds (default 6h for Phase 4) */
       cacheTtlSeconds: z.coerce.number().int().min(60).max(86400).default(21600),
       /** Path to marketplaces catalog */
@@ -255,6 +255,10 @@ export const configSchema = z.object({
       dailyQuota: z.coerce.number().int().min(1).default(30),
       /** Maximum results to return per lookup (default 5) */
       maxResults: z.coerce.number().int().min(1).max(10).default(5),
+      /** OpenAI API key for web search and price extraction */
+      openaiApiKey: z.string().optional(),
+      /** OpenAI model for pricing (default gpt-4o-mini-search-preview for web search) */
+      openaiModel: z.string().default('gpt-4o-mini-search-preview'),
     })
     .default({}),
 
@@ -405,6 +409,8 @@ export function loadConfig(): Config {
       catalogPath: process.env.PRICING_CATALOG_PATH,
       dailyQuota: process.env.ASSIST_PRICE_LOOKUP_DAILY_QUOTA,
       maxResults: process.env.ASSIST_PRICE_LOOKUP_MAX_RESULTS,
+      openaiApiKey: process.env.OPENAI_API_KEY,
+      openaiModel: process.env.OPENAI_MODEL,
     },
     ebay: {
       env: process.env.EBAY_ENV,

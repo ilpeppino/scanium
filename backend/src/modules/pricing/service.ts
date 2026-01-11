@@ -44,7 +44,8 @@ export class PricingService {
   constructor(private readonly config: PricingServiceConfig) {
     this.marketplacesService = new MarketplacesService(config.catalogPath);
     this.cache = new Map();
-    this.openaiModel = config.openaiModel || 'gpt-4o-mini';
+    // Default to search preview model for web search capabilities
+    this.openaiModel = config.openaiModel || 'gpt-4o-mini-search-preview';
 
     // Initialize OpenAI client if API key provided
     if (config.openaiApiKey) {
@@ -184,7 +185,7 @@ export class PricingService {
   }
 
   /**
-   * Search for prices using OpenAI with web search tool
+   * Search for prices using OpenAI's native web search
    */
   private async searchPricesWithOpenAI(
     item: ItemContextSnapshot,
@@ -201,13 +202,16 @@ export class PricingService {
     const countryConfig = this.marketplacesService.getCountryConfig(prefs.countryCode);
     const defaultCurrency = countryConfig.success ? countryConfig.data.defaultCurrency : 'EUR';
 
-    // System prompt for price extraction
+    // Build domain filter for marketplace-focused search
+    const domainFilter = domains.slice(0, 100); // OpenAI supports up to 100 domains
+
+    // System prompt for price extraction using web search
     const systemPrompt = `You are a price research assistant with web search capabilities.
 
 Your task:
-1. Search the web for "${item.title || 'the item'}" listings on these marketplaces: ${domains.slice(0, 3).join(', ')}
-2. Find up to 5 comparable used/secondhand listings
-3. Extract price information
+1. Search the web for "${item.title || 'the item'}" listings on secondhand/used marketplaces
+2. Find up to 5 comparable used/secondhand listings with clear prices
+3. Extract exact prices and URLs
 
 Return ONLY valid JSON (no other text) matching this exact schema:
 {
@@ -226,16 +230,16 @@ Requirements:
 - Prices must be positive numbers (no text like "€50")
 - URLs must be complete https:// links to actual listings
 - marketplaceId must match one of: ${selectedMarketplaces.map(m => m.id).join(', ')}
-- Prefer listings from country: ${prefs.countryCode}`;
+- Only include results where you found a clear, current price
+- Prefer listings from country: ${prefs.countryCode}
+- Focus on used/secondhand condition`;
 
-    const userPrompt = `Find current market prices for: ${searchQuery}
+    const userPrompt = `Search for current market prices: ${searchQuery}
 
-Focus on used/secondhand listings. Extract exact prices and URLs.`;
+Find used/secondhand listings with clear prices. Extract exact prices and URLs.`;
 
     try {
-      // Use OpenAI with web search tool (if available) or fallback to instructing the model
-      // Note: As of OpenAI SDK v4, web_search might require specific model or API access
-      // We'll use the standard completion API with clear instructions
+      // Use OpenAI with native web search tool
       const completion = await this.openaiClient!.chat.completions.create({
         model: this.openaiModel,
         messages: [
@@ -245,8 +249,15 @@ Focus on used/secondhand listings. Extract exact prices and URLs.`;
         temperature: 0.2, // Low temperature for factual extraction
         max_tokens: 2000,
         response_format: { type: 'json_object' },
-        // Note: web_search tool would be added here when OpenAI makes it available in the API:
-        // tools: [{ type: 'web_search' }],
+        // Enable web search tool with domain filtering
+        tools: [
+          {
+            type: 'web_search' as any,
+            web_search: {
+              domain_filter: domainFilter.length > 0 ? domainFilter : undefined,
+            },
+          },
+        ],
       });
 
       const responseText = completion.choices[0]?.message?.content;
