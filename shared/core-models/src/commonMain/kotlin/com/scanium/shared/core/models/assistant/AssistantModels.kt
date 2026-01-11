@@ -288,7 +288,10 @@ data class AssistantResponse(
     val suggestedDraftUpdates: List<SuggestedDraftUpdate> = emptyList(),
     /** Suggested next photo instruction when evidence is insufficient */
     val suggestedNextPhoto: String? = null,
-    /** Pricing insights from marketplace data (Phase 3) */
+    /** Market price insights from marketplace data (Phase 4) */
+    val marketPrice: PricingInsights? = null,
+    /** Legacy field (backward compatibility) - prefer marketPrice */
+    @Deprecated("Use marketPrice instead", replaceWith = ReplaceWith("marketPrice"))
     val pricingInsights: PricingInsights? = null,
 ) {
     /** Get the response text, preferring 'reply' over 'content' */
