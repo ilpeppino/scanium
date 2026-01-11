@@ -90,19 +90,16 @@ class CloudClassifier(
 ) : ItemClassifier {
     companion object {
         private const val TAG = "CloudClassifier"
-        // Unified timeout policy for enrichment/vision calls (Phase 3)
-        private const val CONNECT_TIMEOUT_SECONDS = 10L
-        private const val READ_TIMEOUT_SECONDS = 30L  // Increased from 10s for cloud classification
-        private const val WRITE_TIMEOUT_SECONDS = 30L // For multipart photo uploads
         private const val JPEG_QUALITY = 85
         private val TIMESTAMP_FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
     }
 
+    // Phase 2: Use centralized timeout factory for consistency across assistant-related HTTP clients
     private val client =
-        OkHttpClient.Builder()
-            .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .readTimeout(READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .writeTimeout(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory.create(
+            httpConfig = com.scanium.app.selling.assistant.network.AssistantHttpConfig.VISION,
+            logStartupPolicy = false
+        ).newBuilder()
             .addInterceptor(com.scanium.app.telemetry.TraceContextInterceptor())
             .apply {
                 // SEC-003: Add certificate pinning for MITM protection

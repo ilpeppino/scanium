@@ -556,6 +556,7 @@
     <string name="edit_item_field_size">Size</string>
     <string name="edit_item_field_material">Material</string>
     <string name="edit_item_field_condition">Condition</string>
+    <string name="edit_item_field_price">Price</string>
     <string name="edit_item_field_notes">Notes</string>
     <string name="edit_item_notes_placeholder">Additional details…</string>
 

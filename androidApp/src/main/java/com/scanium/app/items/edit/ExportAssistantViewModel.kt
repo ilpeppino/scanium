@@ -25,6 +25,8 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,7 +57,24 @@ sealed class ExportAssistantState {
     /** Initial state, ready to generate */
     data object Idle : ExportAssistantState()
 
-    /** Currently generating export content */
+    /** Currently generating export content (Phase 2: dual progress states) */
+    sealed class Loading : ExportAssistantState() {
+        abstract val startedAt: Long
+        abstract val correlationId: String?
+
+        data class DraftingListing(
+            override val startedAt: Long = System.currentTimeMillis(),
+            override val correlationId: String? = null,
+        ) : Loading()
+
+        data class CheckingPrices(
+            override val startedAt: Long = System.currentTimeMillis(),
+            override val correlationId: String? = null,
+        ) : Loading()
+    }
+
+    // Legacy alias for backward compatibility
+    @Deprecated("Use Loading.DraftingListing instead", ReplaceWith("Loading.DraftingListing"))
     data class Generating(
         val startedAt: Long = System.currentTimeMillis(),
         val correlationId: String? = null,
@@ -80,17 +99,21 @@ sealed class ExportAssistantState {
         val occurredAt: Long = System.currentTimeMillis(),
     ) : ExportAssistantState()
 
-    val isLoading: Boolean get() = this is Generating
+    val isLoading: Boolean get() = this is Loading || this is Generating
     val isError: Boolean get() = this is Error
     val isSuccess: Boolean get() = this is Success
 
     /**
      * Returns a user-friendly status message for this state.
      * Used to show progress indicators without blocking the UI.
+     * Phase 2: Shows dual progress states (Drafting → Checking prices).
      */
+    @Suppress("DEPRECATION")
     fun getStatusMessage(): String? = when (this) {
         is Idle -> null
-        is Generating -> "Drafting description…"
+        is Loading.DraftingListing -> "Drafting listing…"
+        is Loading.CheckingPrices -> "Checking market prices…"
+        is Generating -> "Drafting description…" // Legacy fallback
         is Success -> null // Don't show message when complete
         is Error -> message
     }
@@ -99,7 +122,9 @@ sealed class ExportAssistantState {
      * Returns true if this is a long-running operation that needs a "Still working…" indicator.
      * Shown after 10 seconds of generation.
      */
+    @Suppress("DEPRECATION")
     fun isLongRunning(): Boolean = when (this) {
+        is Loading -> (System.currentTimeMillis() - startedAt) > 10_000
         is Generating -> (System.currentTimeMillis() - startedAt) > 10_000
         else -> false
     }
@@ -151,9 +176,17 @@ class ExportAssistantViewModel
     private val _item = MutableStateFlow<ScannedItem?>(null)
     val item: StateFlow<ScannedItem?> = _item.asStateFlow()
 
+    /** Job for auto-transitioning between progress states (Phase 2) */
+    private var progressTransitionJob: Job? = null
+
     init {
         // Load item on creation
         loadItem()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        progressTransitionJob?.cancel()
     }
 
     private fun loadItem() {
@@ -193,7 +226,18 @@ class ExportAssistantViewModel
         }
 
         val correlationId = CorrelationIds.newAssistRequestId()
-        _state.update { ExportAssistantState.Generating(correlationId = correlationId) }
+
+        // Phase 2: Start with DraftingListing state
+        _state.update { ExportAssistantState.Loading.DraftingListing(correlationId = correlationId) }
+
+        // Phase 2: Auto-transition to CheckingPrices after 3 seconds (USER DECISION)
+        progressTransitionJob?.cancel()
+        progressTransitionJob = viewModelScope.launch {
+            delay(3000)
+            if (_state.value is ExportAssistantState.Loading.DraftingListing) {
+                _state.update { ExportAssistantState.Loading.CheckingPrices(correlationId = correlationId) }
+            }
+        }
 
         viewModelScope.launch {
             try {
@@ -305,6 +349,7 @@ class ExportAssistantViewModel
                 // Defensive check: Detect JSON leakage in description
                 if (finalDescription != null && containsJsonPattern(finalDescription)) {
                     Log.e(TAG, "CRITICAL: JSON detected in description field - rejecting response")
+                    progressTransitionJob?.cancel()
                     _state.value = ExportAssistantState.Error(
                         message = "Invalid response format. Please try again.",
                         isRetryable = true,
@@ -317,6 +362,7 @@ class ExportAssistantViewModel
                 if (finalDescription.isNullOrBlank()) {
                     Log.e(TAG, "CRITICAL: Generated description is empty - rejecting response to prevent data loss")
                     Log.e(TAG, "Debug: hasStructuredData=$hasStructuredData, structuredUpdatesCount=${response.suggestedDraftUpdates.size}, responseTextLength=${response.text.length}")
+                    progressTransitionJob?.cancel()
                     _state.value = ExportAssistantState.Error(
                         message = "Failed to generate description. Please try again.",
                         isRetryable = true,
@@ -338,6 +384,9 @@ class ExportAssistantViewModel
                 // Refresh item
                 _item.value = itemsViewModel.getItem(itemId)
 
+                // Phase 2: Cancel progress transition job when response arrives
+                progressTransitionJob?.cancel()
+
                 _state.value = ExportAssistantState.Success(
                     title = finalTitle,
                     description = finalDescription,
@@ -351,12 +400,14 @@ class ExportAssistantViewModel
                 Log.i(TAG, "Export generated successfully: title=${finalTitle?.take(30)}..., pricing=${response.pricingInsights?.status}")
             } catch (e: AssistantBackendException) {
                 Log.e(TAG, "Export generation failed: ${e.failure.message}", e)
+                progressTransitionJob?.cancel()
                 _state.value = ExportAssistantState.Error(
                     message = e.failure.message ?: "Failed to generate export",
                     isRetryable = e.failure.retryable,
                 )
             } catch (e: Exception) {
                 Log.e(TAG, "Export generation failed", e)
+                progressTransitionJob?.cancel()
                 _state.value = ExportAssistantState.Error(
                     message = e.message ?: "An unexpected error occurred",
                     isRetryable = true,
