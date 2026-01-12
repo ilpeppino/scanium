@@ -270,6 +270,8 @@
     <string name="common_question_mark">?</string>
     <string name="common_bullet">•</string>
     <string name="common_regenerate">Regenerate</string>
+    <string name="common_read_aloud">Read aloud</string>
+    <string name="common_stop_speaking">Stop speaking</string>
     <string name="common_undo">Undo</string>
     <string name="common_unknown">Unknown</string>
     <string name="common_view">View</string>

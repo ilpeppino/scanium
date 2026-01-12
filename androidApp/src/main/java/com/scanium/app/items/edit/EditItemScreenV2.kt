@@ -74,6 +74,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.items.ScannedItem
@@ -363,8 +364,10 @@ fun EditItemScreenV2(
 
     // Export Assistant Bottom Sheet
     if (showExportAssistantSheet && exportAssistantViewModel != null) {
+        val settingsRepository = remember { SettingsRepository(context) }
         ExportAssistantSheet(
             viewModel = exportAssistantViewModel,
+            settingsRepository = settingsRepository,
             onDismiss = { showExportAssistantSheet = false },
             onApply = { title, description, bullets ->
                 // Apply export content to summary text (user can then edit/save)

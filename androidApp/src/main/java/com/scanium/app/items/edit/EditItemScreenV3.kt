@@ -77,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
+import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemAttributeLocalizer
@@ -574,8 +575,10 @@ fun EditItemScreenV3(
 
     // Export Assistant Bottom Sheet
     if (showExportAssistantSheet && exportAssistantViewModel != null) {
+        val settingsRepository = remember { SettingsRepository(context) }
         ExportAssistantSheet(
             viewModel = exportAssistantViewModel,
+            settingsRepository = settingsRepository,
             onDismiss = { showExportAssistantSheet = false },
             onApply = { title, description, bullets ->
                 // Update notes field with export content
