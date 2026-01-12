@@ -1155,21 +1155,10 @@ class SettingsRepository(
 
     /**
      * Get the effective AI output language.
-     * - If AI language is AutoDetect: prefer lastDetected, else fall back to primary
-     * - Otherwise: resolve to language tag
+     * Per product requirements: AI language now always follows General → Language setting.
+     * This ensures consistent language across app UI, AI responses, and TTS.
      */
-    val effectiveAiOutputLanguageFlow: Flow<String> =
-        combine(
-            primaryLanguageFlow,
-            aiLanguageSettingFlow,
-            lastDetectedSpokenLanguageFlow,
-        ) { primary, aiSetting, lastDetected ->
-            val aiChoice = aiSetting.resolve(AiLanguageChoice.LanguageTag(primary))
-            when (aiChoice) {
-                is AiLanguageChoice.LanguageTag -> aiChoice.tag
-                is AiLanguageChoice.AutoDetect -> lastDetected ?: primary
-            }
-        }
+    val effectiveAiOutputLanguageFlow: Flow<String> = effectiveAppLanguageFlow
 
     /**
      * Get the effective marketplace country code.
@@ -1180,20 +1169,11 @@ class SettingsRepository(
         }
 
     /**
-     * Get the effective TTS language, resolving follows to the appropriate language.
+     * Get the effective TTS language.
+     * Per product requirements: TTS language now always follows General → Language setting.
+     * This ensures TTS voice matches the app language for consistent user experience.
      */
-    val effectiveTtsLanguageFlow: Flow<String> =
-        combine(
-            primaryLanguageFlow,
-            effectiveAiOutputLanguageFlow,
-            ttsLanguageSettingFlow,
-        ) { primary, aiOutput, ttsSetting ->
-            when (ttsSetting) {
-                is TtsLanguageChoice.FollowAiLanguage -> aiOutput
-                is TtsLanguageChoice.FollowPrimary -> primary
-                is TtsLanguageChoice.Custom -> ttsSetting.languageTag
-            }
-        }
+    val effectiveTtsLanguageFlow: Flow<String> = effectiveAppLanguageFlow
 
     // -------------------------------------------------------------------------
     // Serialization Helpers for DataStore

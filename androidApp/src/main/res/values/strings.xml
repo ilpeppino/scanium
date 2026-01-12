@@ -169,6 +169,7 @@
     <string name="settings_verbosity_normal">Normal</string>
     <string name="settings_verbosity_detailed">Detailed</string>
     <string name="settings_section_voice_mode">Voice &amp; input</string>
+    <string name="settings_section_voice">Voice</string>
     <string name="settings_voice_mode_title">Voice input (microphone)</string>
     <string name="settings_voice_mode_subtitle">Use the mic button for hands-free questions</string>
     <string name="settings_voice_mode_permission_denied">Microphone permission denied</string>
