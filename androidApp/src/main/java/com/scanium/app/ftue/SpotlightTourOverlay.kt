@@ -304,7 +304,7 @@ private fun TooltipBubble(
         Column(modifier = Modifier.padding(16.dp)) {
             // Title
             Text(
-                text = step.title,
+                text = stringResource(step.titleRes),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -313,7 +313,7 @@ private fun TooltipBubble(
 
             // Description
             Text(
-                text = step.description,
+                text = stringResource(step.descriptionRes),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

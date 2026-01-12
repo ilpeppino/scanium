@@ -290,6 +290,26 @@
     <string name="ftue_skip_tour">Skip Tour</string>
     <string name="ftue_start_tour">Start Tour</string>
 
+    <!-- FTUE Tour Steps -->
+    <string name="ftue_tour_welcome_title">Welcome to Scanium!</string>
+    <string name="ftue_tour_welcome_desc">Let\'s take a quick tour to learn how to scan, edit, and share your items.</string>
+    <string name="ftue_tour_take_photo_title">Capture Your First Item</string>
+    <string name="ftue_tour_take_photo_desc">Tap the shutter button to take a photo of your first item. Point your camera at any object you want to catalog.</string>
+    <string name="ftue_tour_open_list_title">View Your Items</string>
+    <string name="ftue_tour_open_list_desc">Tap here to open your scanned items list. The badge shows how many items you\'ve captured.</string>
+    <string name="ftue_tour_add_photos_title">Add More Photos</string>
+    <string name="ftue_tour_add_photos_desc">Capture additional angles or details. Multiple photos help buyers see your item better and improve AI descriptions.</string>
+    <string name="ftue_tour_edit_attrs_title">Improve Item Details</string>
+    <string name="ftue_tour_edit_attrs_desc">Fill in brand, type, color, size, and other attributes. Better details mean better listings and faster sales.</string>
+    <string name="ftue_tour_use_ai_title">Generate with AI</string>
+    <string name="ftue_tour_use_ai_desc">Let AI create a professional marketplace description using your photos and attributes. Get pricing insights too!</string>
+    <string name="ftue_tour_save_title">Save Your Work</string>
+    <string name="ftue_tour_save_desc">Tap Save to keep your changes. Your item will be ready for export.</string>
+    <string name="ftue_tour_share_title">Export &amp; Share</string>
+    <string name="ftue_tour_share_desc">Select items and tap the share button to export them as images, text, or a ZIP bundle for listing platforms.</string>
+    <string name="ftue_tour_completion_title">You\'re Ready!</string>
+    <string name="ftue_tour_completion_desc">You\'re all set to scan, catalog, and sell your items. Happy scanning!</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium is a camera-first application that uses machine learning to detect and identify objects in real-time, helping you value and list items for resale.</string>
     <string name="about_copyright">© 2025 Scanium Team</string>

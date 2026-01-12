@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.R
 import com.scanium.app.items.ItemsViewModel
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -203,8 +204,8 @@ class TourViewModel
                         key = TourStepKey.WELCOME,
                         screen = TourScreen.CAMERA,
                         targetKey = null,
-                        title = "Welcome to Scanium!",
-                        description = "Let's take a quick tour to learn how to scan, edit, and share your items.",
+                        titleRes = R.string.ftue_tour_welcome_title,
+                        descriptionRes = R.string.ftue_tour_welcome_desc,
                         requiresUserAction = false,
                     ),
                     // Step 1: Take First Photo
@@ -212,8 +213,8 @@ class TourViewModel
                         key = TourStepKey.TAKE_FIRST_PHOTO,
                         screen = TourScreen.CAMERA,
                         targetKey = "camera_shutter",
-                        title = "Capture Your First Item",
-                        description = "Tap the shutter button to take a photo of your first item. Point your camera at any object you want to catalog.",
+                        titleRes = R.string.ftue_tour_take_photo_title,
+                        descriptionRes = R.string.ftue_tour_take_photo_desc,
                         requiresUserAction = true, // Advances when item is added
                         spotlightShape = SpotlightShape.CIRCLE,
                     ),
@@ -222,8 +223,8 @@ class TourViewModel
                         key = TourStepKey.OPEN_ITEM_LIST,
                         screen = TourScreen.CAMERA,
                         targetKey = "camera_items_button",
-                        title = "View Your Items",
-                        description = "Tap here to open your scanned items list. The badge shows how many items you've captured.",
+                        titleRes = R.string.ftue_tour_open_list_title,
+                        descriptionRes = R.string.ftue_tour_open_list_desc,
                         requiresUserAction = true, // Advances when navigating to items list
                         spotlightShape = SpotlightShape.ROUNDED_RECT,
                     ),
@@ -232,8 +233,8 @@ class TourViewModel
                         key = TourStepKey.ADD_EXTRA_PHOTOS,
                         screen = TourScreen.EDIT_ITEM,
                         targetKey = "edit_add_photo",
-                        title = "Add More Photos",
-                        description = "Capture additional angles or details. Multiple photos help buyers see your item better and improve AI descriptions.",
+                        titleRes = R.string.ftue_tour_add_photos_title,
+                        descriptionRes = R.string.ftue_tour_add_photos_desc,
                         requiresUserAction = false,
                         spotlightShape = SpotlightShape.ROUNDED_RECT,
                     ),
@@ -242,8 +243,8 @@ class TourViewModel
                         key = TourStepKey.EDIT_ATTRIBUTES,
                         screen = TourScreen.EDIT_ITEM,
                         targetKey = "edit_brand_field",
-                        title = "Improve Item Details",
-                        description = "Fill in brand, type, color, size, and other attributes. Better details mean better listings and faster sales.",
+                        titleRes = R.string.ftue_tour_edit_attrs_title,
+                        descriptionRes = R.string.ftue_tour_edit_attrs_desc,
                         requiresUserAction = false,
                         spotlightShape = SpotlightShape.ROUNDED_RECT,
                     ),
@@ -252,8 +253,8 @@ class TourViewModel
                         key = TourStepKey.USE_AI_ASSISTANT,
                         screen = TourScreen.EDIT_ITEM,
                         targetKey = "edit_ai_button",
-                        title = "Generate with AI",
-                        description = "Let AI create a professional marketplace description using your photos and attributes. Get pricing insights too!",
+                        titleRes = R.string.ftue_tour_use_ai_title,
+                        descriptionRes = R.string.ftue_tour_use_ai_desc,
                         requiresUserAction = false,
                         spotlightShape = SpotlightShape.ROUNDED_RECT,
                     ),
@@ -262,8 +263,8 @@ class TourViewModel
                         key = TourStepKey.SAVE_CHANGES,
                         screen = TourScreen.EDIT_ITEM,
                         targetKey = "edit_save_button",
-                        title = "Save Your Work",
-                        description = "Tap Save to keep your changes. Your item will be ready for export.",
+                        titleRes = R.string.ftue_tour_save_title,
+                        descriptionRes = R.string.ftue_tour_save_desc,
                         requiresUserAction = true, // Advances when navigating back to items list
                         spotlightShape = SpotlightShape.ROUNDED_RECT,
                     ),
@@ -272,8 +273,8 @@ class TourViewModel
                         key = TourStepKey.SHARE_BUNDLE,
                         screen = TourScreen.ITEMS_LIST,
                         targetKey = "items_share_button",
-                        title = "Export & Share",
-                        description = "Select items and tap the share button to export them as images, text, or a ZIP bundle for listing platforms.",
+                        titleRes = R.string.ftue_tour_share_title,
+                        descriptionRes = R.string.ftue_tour_share_desc,
                         requiresUserAction = false,
                         spotlightShape = SpotlightShape.CIRCLE,
                     ),
@@ -282,8 +283,8 @@ class TourViewModel
                         key = TourStepKey.COMPLETION,
                         screen = TourScreen.ITEMS_LIST,
                         targetKey = null,
-                        title = "You're Ready!",
-                        description = "You're all set to scan, catalog, and sell your items. Happy scanning!",
+                        titleRes = R.string.ftue_tour_completion_title,
+                        descriptionRes = R.string.ftue_tour_completion_desc,
                         requiresUserAction = false,
                     ),
                 )

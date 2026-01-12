@@ -1,5 +1,7 @@
 package com.scanium.app.ftue
 
+import androidx.annotation.StringRes
+
 /**
  * Represents which screen a tour step belongs to.
  */
@@ -47,8 +49,8 @@ enum class SpotlightShape {
  * @param key Unique identifier for this step
  * @param screen Which screen this step is shown on
  * @param targetKey Key for capturing target bounds (null for full-screen overlays)
- * @param title Title text for the tooltip
- * @param description Detailed description text for the tooltip
+ * @param titleRes String resource ID for the tooltip title
+ * @param descriptionRes String resource ID for the tooltip description
  * @param requiresUserAction If true, user must interact with highlighted control to proceed
  * @param spotlightShape Shape of the spotlight cutout (default: ROUNDED_RECT)
  */
@@ -56,8 +58,8 @@ data class TourStep(
     val key: TourStepKey,
     val screen: TourScreen,
     val targetKey: String?,
-    val title: String,
-    val description: String,
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int,
     val requiresUserAction: Boolean = false,
     val spotlightShape: SpotlightShape = SpotlightShape.ROUNDED_RECT,
 )
