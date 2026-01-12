@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -45,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,9 +62,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
+import com.scanium.app.assistant.tts.TtsController
+import com.scanium.app.assistant.tts.buildSpeakableText
+import com.scanium.app.data.SettingsRepository
+import com.scanium.app.model.AppLanguage
 import com.scanium.shared.core.models.assistant.ConfidenceTier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * Export Assistant bottom sheet for generating marketplace-ready listings.
@@ -78,6 +85,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ExportAssistantSheet(
     viewModel: ExportAssistantViewModel,
+    settingsRepository: SettingsRepository,
     onDismiss: () -> Unit,
     onApply: (title: String?, description: String?, bullets: List<String>) -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -85,6 +93,40 @@ fun ExportAssistantSheet(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    // TTS settings
+    val speakAnswersEnabled by settingsRepository.speakAnswersEnabledFlow.collectAsState(initial = false)
+    val appLanguage by settingsRepository.appLanguageFlow.collectAsState(initial = AppLanguage.SYSTEM)
+
+    // TTS controller with lifecycle management
+    val ttsController = remember { TtsController(context) }
+    DisposableEffect(Unit) {
+        onDispose {
+            ttsController.shutdown()
+        }
+    }
+
+    // Update TTS language when app language changes
+    LaunchedEffect(appLanguage) {
+        val locale = when (appLanguage) {
+            AppLanguage.SYSTEM -> Locale.getDefault()
+            AppLanguage.EN -> Locale.ENGLISH
+            AppLanguage.ES -> Locale("es")
+            AppLanguage.IT -> Locale.ITALIAN
+            AppLanguage.FR -> Locale.FRENCH
+            AppLanguage.NL -> Locale("nl")
+            AppLanguage.DE -> Locale.GERMAN
+            AppLanguage.PT_BR -> Locale("pt", "BR")
+        }
+        ttsController.setLanguage(locale)
+    }
+
+    // Stop TTS when state changes (e.g., regeneration)
+    LaunchedEffect(state) {
+        if (state.isLoading) {
+            ttsController.stop()
+        }
+    }
 
     // Auto-generate on first open if idle
     LaunchedEffect(Unit) {
@@ -134,8 +176,28 @@ fun ExportAssistantSheet(
                         val descriptionLabel = stringResource(R.string.export_assistant_description_label)
                         val bulletsLabel = stringResource(R.string.export_assistant_bullets_label)
                         val bulletSymbol = stringResource(R.string.common_bullet)
+
+                        // Build speakable text for TTS
+                        val speakableText = remember(currentState) {
+                            buildSpeakableText(
+                                title = currentState.title,
+                                description = currentState.description,
+                                bullets = currentState.bullets,
+                            )
+                        }
+
                         ExportSuccessContent(
                             state = currentState,
+                            speakAnswersEnabled = speakAnswersEnabled,
+                            speakableText = speakableText,
+                            isSpeaking = ttsController.isSpeaking(),
+                            onToggleSpeech = {
+                                if (ttsController.isSpeaking()) {
+                                    ttsController.stop()
+                                } else {
+                                    ttsController.speakOnce(speakableText)
+                                }
+                            },
                             onCopyAll = { copyAllToClipboard(context, currentState) },
                             onCopyTitle = {
                                 currentState.title?.let {
@@ -266,6 +328,10 @@ private fun ExportLoadingContent() {
 @Composable
 private fun ExportSuccessContent(
     state: ExportAssistantState.Success,
+    speakAnswersEnabled: Boolean,
+    speakableText: String,
+    isSpeaking: Boolean,
+    onToggleSpeech: () -> Unit,
     onCopyAll: () -> Unit,
     onCopyTitle: () -> Unit,
     onCopyDescription: () -> Unit,
@@ -286,9 +352,38 @@ private fun ExportSuccessContent(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Confidence tier indicator
-        state.confidenceTier?.let { tier ->
-            ConfidenceTierChip(tier = tier)
+        // Header row with confidence tier and TTS button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Confidence tier indicator
+            state.confidenceTier?.let { tier ->
+                ConfidenceTierChip(tier = tier)
+            } ?: Spacer(modifier = Modifier.width(0.dp))
+
+            // TTS button (only shown if toggle is ON and content is available)
+            if (speakAnswersEnabled && speakableText.isNotBlank()) {
+                IconButton(
+                    onClick = onToggleSpeech,
+                    modifier = Modifier.size(40.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VolumeUp,
+                        contentDescription = if (isSpeaking) {
+                            stringResource(R.string.common_stop_speaking)
+                        } else {
+                            stringResource(R.string.common_read_aloud)
+                        },
+                        tint = if (isSpeaking) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+            }
         }
 
         // Title section
