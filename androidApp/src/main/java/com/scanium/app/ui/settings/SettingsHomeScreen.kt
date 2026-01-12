@@ -130,6 +130,17 @@ fun SettingsHomeScreen(
                 )
             }
 
+            // Donation banner - always first item after description
+            item {
+                SettingsDonationCard(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    onDonationClicked = { amount ->
+                        // Optional: emit analytics event
+                        // TelemetryService.trackEvent("donation_clicked", mapOf("amount" to amount))
+                    },
+                )
+            }
+
             items(categories) { category ->
                 SettingNavigationRow(
                     title = category.title,

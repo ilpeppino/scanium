@@ -4,6 +4,15 @@
     <string name="settings_title">Configurações</string>
     <string name="settings_back">Voltar</string>
     <string name="settings_home_description">Personalize como o Scanium aparece, escaneia e protege seus dados.</string>
+
+    <!-- Donation Banner -->
+    <string name="settings_donation_title">Apoie o Scanium ☕</string>
+    <string name="settings_donation_body">O Scanium é desenvolvido e mantido de forma independente. Se o aplicativo ajuda você a economizar tempo ou dinheiro, você pode apoiar seu desenvolvimento me oferecendo um café. Cada contribuição ajuda a manter o aplicativo melhorando — obrigado!</string>
+    <string name="settings_donation_coffee_one">Um café</string>
+    <string name="settings_donation_coffee_five">5 cafés</string>
+    <string name="settings_donation_coffee_many">Muito café</string>
+    <string name="settings_donation_footer">Doe com segurança pelo PayPal</string>
+
     <string name="settings_category_general_title">Geral</string>
     <string name="settings_category_general_desc">Tema, idioma e preferências básicas</string>
     <string name="settings_category_camera_title">Câmera e Escaneamento</string>
