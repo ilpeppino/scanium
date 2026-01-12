@@ -2,6 +2,7 @@ package com.scanium.app.items
 
 import com.scanium.app.items.persistence.NoopScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemStore
+import com.scanium.app.ml.CropBasedEnricher
 import com.scanium.app.ml.LocalVisionExtractor
 import com.scanium.app.ml.VisionInsightsPrefiller
 import com.scanium.app.ml.VisionInsightsRepository
@@ -29,6 +30,14 @@ private object NoopVisionInsightsPrefiller {
     }
 }
 
+private object NoopCropBasedEnricher {
+    fun create(): CropBasedEnricher {
+        val mockRepository = mockk<VisionInsightsRepository>(relaxed = true)
+        val mockLocalExtractor = mockk<LocalVisionExtractor>(relaxed = true)
+        return CropBasedEnricher(mockRepository, mockLocalExtractor)
+    }
+}
+
 fun createAndroidTestItemsViewModel(
     classificationMode: StateFlow<ClassificationMode> = MutableStateFlow(ClassificationMode.ON_DEVICE),
     cloudClassificationEnabled: StateFlow<Boolean> = MutableStateFlow(false),
@@ -37,6 +46,8 @@ fun createAndroidTestItemsViewModel(
     itemsStore: ScannedItemStore = NoopScannedItemStore,
     stableItemCropper: ClassificationThumbnailProvider = NoopClassificationThumbnailProvider,
     visionInsightsPrefiller: VisionInsightsPrefiller = NoopVisionInsightsPrefiller.create(),
+    cropBasedEnricher: CropBasedEnricher = NoopCropBasedEnricher.create(),
+    settingsRepository: com.scanium.app.data.SettingsRepository = mockk(relaxed = true),
     telemetry: Telemetry? = null,
     workerDispatcher: CoroutineDispatcher = Dispatchers.Main.immediate,
     mainDispatcher: CoroutineDispatcher = workerDispatcher,
@@ -49,6 +60,8 @@ fun createAndroidTestItemsViewModel(
         itemsStore = itemsStore,
         stableItemCropper = stableItemCropper,
         visionInsightsPrefiller = visionInsightsPrefiller,
+        cropBasedEnricher = cropBasedEnricher,
+        settingsRepository = settingsRepository,
         telemetry = telemetry,
         workerDispatcher = workerDispatcher,
         mainDispatcher = mainDispatcher,
