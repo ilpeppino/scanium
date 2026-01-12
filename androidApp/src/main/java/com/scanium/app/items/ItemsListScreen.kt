@@ -617,6 +617,11 @@ fun ItemsListScreen(
                     onClick = { showShareMenu = true },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = if (tourViewModel != null) {
+                        Modifier.tourTarget("items_share_button", tourViewModel)
+                    } else {
+                        Modifier
+                    }
                 ) {
                     if (isExporting) {
                         CircularProgressIndicator(
@@ -795,10 +800,7 @@ fun ItemsListScreen(
         // FTUE Tour Overlays
         if (isTourActive && currentTourStep?.screen == com.scanium.app.ftue.TourScreen.ITEMS_LIST) {
             when (currentTourStep?.key) {
-                com.scanium.app.ftue.TourStepKey.ITEMS_ACTION_FAB,
-                com.scanium.app.ftue.TourStepKey.ITEMS_SWIPE_DELETE,
-                com.scanium.app.ftue.TourStepKey.ITEMS_SELECTION,
-                -> {
+                com.scanium.app.ftue.TourStepKey.SHARE_BUNDLE -> {
                     currentTourStep?.let { step ->
                         val bounds = step.targetKey?.let { targetBounds[it] }
                         if (bounds != null || step.targetKey == null) {
@@ -817,7 +819,7 @@ fun ItemsListScreen(
                         onDismiss = { tourViewModel?.completeTour() },
                     )
                 }
-                else -> { /* Camera steps */ }
+                else -> { /* Camera or EditItem steps */ }
             }
         }
     }
