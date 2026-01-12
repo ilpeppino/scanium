@@ -235,9 +235,13 @@ fun CameraScreen(
     // Animation state for newly added items
     var lastAddedItem by remember { mutableStateOf<com.scanium.app.items.ScannedItem?>(null) }
 
-    LaunchedEffect(itemsViewModel) {
+    LaunchedEffect(itemsViewModel, tourViewModel) {
         itemsViewModel.itemAddedEvents.collect { item: com.scanium.app.items.ScannedItem ->
             lastAddedItem = item
+            // Advance tour if on TAKE_FIRST_PHOTO step
+            if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.TAKE_FIRST_PHOTO) {
+                tourViewModel?.nextStep()
+            }
         }
     }
 
@@ -772,17 +776,13 @@ fun CameraScreen(
                     cameraState = cameraState,
                     captureResolution = captureResolution,
                     onNavigateToItems = {
-                        // If tour is on Items button step, advance before navigation
-                        if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS_BUTTON) {
+                        // If tour is on OPEN_ITEM_LIST step, advance before navigation
+                        if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.OPEN_ITEM_LIST) {
                             tourViewModel?.nextStep()
                         }
                         onNavigateToItems()
                     },
                     onOpenSettings = {
-                        // Tour may highlight settings button; honor step progression.
-                        if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.CAMERA_SETTINGS) {
-                            tourViewModel?.nextStep()
-                        }
                         onNavigateToSettings()
                     },
                     tourViewModel = tourViewModel,
@@ -988,9 +988,8 @@ fun CameraScreen(
                                 onSkip = { tourViewModel?.skipTour() },
                             )
                         }
-                        com.scanium.app.ftue.TourStepKey.CAMERA_SETTINGS,
-                        com.scanium.app.ftue.TourStepKey.CAMERA_SHUTTER,
-                        com.scanium.app.ftue.TourStepKey.CAMERA_ITEMS_BUTTON,
+                        com.scanium.app.ftue.TourStepKey.TAKE_FIRST_PHOTO,
+                        com.scanium.app.ftue.TourStepKey.OPEN_ITEM_LIST,
                         -> {
                             currentTourStep?.let { step ->
                                 val bounds = step.targetKey?.let { targetBounds[it] }
@@ -1005,7 +1004,7 @@ fun CameraScreen(
                                 }
                             }
                         }
-                        else -> { /* Other steps handled in ItemsListScreen */ }
+                        else -> { /* Other steps handled in ItemsListScreen or EditItemScreen */ }
                     }
                 }
             }

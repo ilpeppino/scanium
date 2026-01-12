@@ -6,20 +6,30 @@ package com.scanium.app.ftue
 enum class TourScreen {
     CAMERA,
     ITEMS_LIST,
+    EDIT_ITEM,
 }
 
 /**
  * Unique identifiers for each step in the FTUE tour.
+ *
+ * Updated to match the 7-step guided onboarding flow:
+ * 1. TAKE_FIRST_PHOTO - Capture your first item
+ * 2. OPEN_ITEM_LIST - View your scanned items
+ * 3. ADD_EXTRA_PHOTOS - Add more photos to items
+ * 4. EDIT_ATTRIBUTES - Improve item details
+ * 5. USE_AI_ASSISTANT - Generate descriptions with AI
+ * 6. SAVE_CHANGES - Save your edits
+ * 7. SHARE_BUNDLE - Export and share items
  */
 enum class TourStepKey {
     WELCOME,
-    CAMERA_SETTINGS,
-    CAMERA_SHUTTER,
-    CAMERA_ITEMS_BUTTON,
-    ITEMS_ACTION_FAB,
-    ITEMS_AI_ASSISTANT,
-    ITEMS_SWIPE_DELETE,
-    ITEMS_SELECTION,
+    TAKE_FIRST_PHOTO,
+    OPEN_ITEM_LIST,
+    ADD_EXTRA_PHOTOS,
+    EDIT_ATTRIBUTES,
+    USE_AI_ASSISTANT,
+    SAVE_CHANGES,
+    SHARE_BUNDLE,
     COMPLETION,
 }
 

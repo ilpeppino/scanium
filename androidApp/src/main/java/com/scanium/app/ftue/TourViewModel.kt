@@ -190,6 +190,11 @@ class TourViewModel
         companion object {
             /**
              * Complete ordered list of tour steps.
+             *
+             * Updated to match the 7-step guided onboarding flow that teaches beta testers
+             * how to use Scanium's core functionality:
+             * 1. Take first photo → 2. Open item list → 3. Add extra photos →
+             * 4. Edit attributes → 5. Use AI assistant → 6. Save changes → 7. Share bundle
              */
             val TOUR_STEPS =
                 listOf(
@@ -199,86 +204,86 @@ class TourViewModel
                         screen = TourScreen.CAMERA,
                         targetKey = null,
                         title = "Welcome to Scanium!",
-                        description = "Let's take a quick tour of the main features.",
+                        description = "Let's take a quick tour to learn how to scan, edit, and share your items.",
                         requiresUserAction = false,
                     ),
-                    // Step 1: Camera Settings Icon
+                    // Step 1: Take First Photo
                     TourStep(
-                        key = TourStepKey.CAMERA_SETTINGS,
-                        screen = TourScreen.CAMERA,
-                        targetKey = "camera_settings",
-                        title = "Settings Menu",
-                        description = "Access theme, resolution, and processing settings here. You can also navigate to full app settings.",
-                        requiresUserAction = false,
-                        spotlightShape = SpotlightShape.ROUNDED_RECT,
-                    ),
-                    // Step 2: Shutter Button
-                    TourStep(
-                        key = TourStepKey.CAMERA_SHUTTER,
+                        key = TourStepKey.TAKE_FIRST_PHOTO,
                         screen = TourScreen.CAMERA,
                         targetKey = "camera_shutter",
-                        title = "Capture Button",
-                        description = "Tap to capture a single frame, or long-press to start continuous scanning. Tap again to stop scanning.",
-                        requiresUserAction = false,
+                        title = "Capture Your First Item",
+                        description = "Tap the shutter button to take a photo of your first item. Point your camera at any object you want to catalog.",
+                        requiresUserAction = true, // Advances when item is added
                         spotlightShape = SpotlightShape.CIRCLE,
                     ),
-                    // Step 3: Items List Button (transition - requires user tap)
+                    // Step 2: Open Item List
                     TourStep(
-                        key = TourStepKey.CAMERA_ITEMS_BUTTON,
+                        key = TourStepKey.OPEN_ITEM_LIST,
                         screen = TourScreen.CAMERA,
                         targetKey = "camera_items_button",
-                        title = "Items List",
-                        description = "View all your scanned items here. The badge shows the current count. Tap this button to continue the tour.",
-                        requiresUserAction = true,
+                        title = "View Your Items",
+                        description = "Tap here to open your scanned items list. The badge shows how many items you've captured.",
+                        requiresUserAction = true, // Advances when navigating to items list
                         spotlightShape = SpotlightShape.ROUNDED_RECT,
                     ),
-                    // Step 5: Action Dropdown FAB
+                    // Step 3: Add Extra Photos (in Edit Item screen)
                     TourStep(
-                        key = TourStepKey.ITEMS_ACTION_FAB,
-                        screen = TourScreen.ITEMS_LIST,
-                        targetKey = "items_action_fab",
-                        title = "Quick Actions",
-                        description = "After selecting items, use this menu to export them, review drafts, or perform bulk actions.",
+                        key = TourStepKey.ADD_EXTRA_PHOTOS,
+                        screen = TourScreen.EDIT_ITEM,
+                        targetKey = "edit_add_photo",
+                        title = "Add More Photos",
+                        description = "Capture additional angles or details. Multiple photos help buyers see your item better and improve AI descriptions.",
                         requiresUserAction = false,
                         spotlightShape = SpotlightShape.ROUNDED_RECT,
                     ),
-                    // Step 6: AI Assistant Button
+                    // Step 4: Edit Attributes
                     TourStep(
-                        key = TourStepKey.ITEMS_AI_ASSISTANT,
+                        key = TourStepKey.EDIT_ATTRIBUTES,
+                        screen = TourScreen.EDIT_ITEM,
+                        targetKey = "edit_brand_field",
+                        title = "Improve Item Details",
+                        description = "Fill in brand, type, color, size, and other attributes. Better details mean better listings and faster sales.",
+                        requiresUserAction = false,
+                        spotlightShape = SpotlightShape.ROUNDED_RECT,
+                    ),
+                    // Step 5: Use AI Assistant
+                    TourStep(
+                        key = TourStepKey.USE_AI_ASSISTANT,
+                        screen = TourScreen.EDIT_ITEM,
+                        targetKey = "edit_ai_button",
+                        title = "Generate with AI",
+                        description = "Let AI create a professional marketplace description using your photos and attributes. Get pricing insights too!",
+                        requiresUserAction = false,
+                        spotlightShape = SpotlightShape.ROUNDED_RECT,
+                    ),
+                    // Step 6: Save Changes
+                    TourStep(
+                        key = TourStepKey.SAVE_CHANGES,
+                        screen = TourScreen.EDIT_ITEM,
+                        targetKey = "edit_save_button",
+                        title = "Save Your Work",
+                        description = "Tap Save to keep your changes. Your item will be ready for export.",
+                        requiresUserAction = true, // Advances when navigating back to items list
+                        spotlightShape = SpotlightShape.ROUNDED_RECT,
+                    ),
+                    // Step 7: Share Bundle
+                    TourStep(
+                        key = TourStepKey.SHARE_BUNDLE,
                         screen = TourScreen.ITEMS_LIST,
-                        targetKey = "items_ai_assistant",
-                        title = "AI Assistant",
-                        description = "Get help with pricing, descriptions, and export strategies for your selected items.",
+                        targetKey = "items_share_button",
+                        title = "Export & Share",
+                        description = "Select items and tap the share button to export them as images, text, or a ZIP bundle for listing platforms.",
                         requiresUserAction = false,
                         spotlightShape = SpotlightShape.CIRCLE,
                     ),
-                    // Step 7: Swipe to Delete
-                    TourStep(
-                        key = TourStepKey.ITEMS_SWIPE_DELETE,
-                        screen = TourScreen.ITEMS_LIST,
-                        targetKey = "items_first_item",
-                        title = "Swipe to Delete",
-                        description = "Swipe right on any item to delete it. You can undo immediately after deletion.",
-                        requiresUserAction = false,
-                        spotlightShape = SpotlightShape.ROUNDED_RECT,
-                    ),
-                    // Step 8: Selection & Long-Press
-                    TourStep(
-                        key = TourStepKey.ITEMS_SELECTION,
-                        screen = TourScreen.ITEMS_LIST,
-                        targetKey = "items_first_item",
-                        title = "Select & Preview",
-                        description = "Tap items to select them for bulk actions. Long-press any item to preview its full-resolution image.",
-                        requiresUserAction = false,
-                        spotlightShape = SpotlightShape.ROUNDED_RECT,
-                    ),
-                    // Step 9: Completion (full-screen overlay)
+                    // Step 8: Completion (full-screen overlay)
                     TourStep(
                         key = TourStepKey.COMPLETION,
                         screen = TourScreen.ITEMS_LIST,
                         targetKey = null,
                         title = "You're Ready!",
-                        description = "You're all set to start scanning and cataloging objects. Happy scanning!",
+                        description = "You're all set to scan, catalog, and sell your items. Happy scanning!",
                         requiresUserAction = false,
                     ),
                 )

@@ -77,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
+import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemAttributeLocalizer
 import com.scanium.app.items.ItemLocalizer
@@ -107,12 +108,18 @@ fun EditItemScreenV3(
     onAiGenerate: (String) -> Unit,
     itemsViewModel: ItemsViewModel,
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory? = null,
+    tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val context = LocalContext.current
     val allItems by itemsViewModel.items.collectAsState()
     val item by remember(allItems, itemId) {
         derivedStateOf { allItems.find { it.id == itemId } }
     }
+
+    // FTUE Tour State
+    val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
+    val isTourActive by tourViewModel?.isTourActive?.collectAsState() ?: remember { mutableStateOf(false) }
+    val targetBounds by tourViewModel?.targetBounds?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
 
     // Export Assistant state
     var showExportAssistantSheet by remember { mutableStateOf(false) }
@@ -265,7 +272,11 @@ fun EditItemScreenV3(
                                 onAiGenerate(itemId)
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = if (tourViewModel != null) {
+                            Modifier.weight(1f).tourTarget("edit_ai_button", tourViewModel)
+                        } else {
+                            Modifier.weight(1f)
+                        }
                     ) {
                         Icon(
                             Icons.Default.AutoAwesome,
@@ -292,9 +303,17 @@ fun EditItemScreenV3(
                                 conditionField = conditionField,
                                 notesField = notesField,
                             )
+                            // Advance tour if on SAVE_CHANGES step
+                            if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.SAVE_CHANGES) {
+                                tourViewModel?.nextStep()
+                            }
                             onBack()
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = if (tourViewModel != null) {
+                            Modifier.weight(1f).tourTarget("edit_save_button", tourViewModel)
+                        } else {
+                            Modifier.weight(1f)
+                        }
                     ) {
                         Text(stringResource(R.string.common_save))
                     }
@@ -362,7 +381,14 @@ fun EditItemScreenV3(
 
                 // Add photo button
                 item {
-                    AddPhotoButtonV3(onClick = { onAddPhotos(itemId) })
+                    AddPhotoButtonV3(
+                        onClick = { onAddPhotos(itemId) },
+                        modifier = if (tourViewModel != null) {
+                            Modifier.tourTarget("edit_add_photo", tourViewModel)
+                        } else {
+                            Modifier
+                        }
+                    )
                 }
             }
 
@@ -382,6 +408,11 @@ fun EditItemScreenV3(
                 visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "brand"),
                 imeAction = ImeAction.Next,
                 onNext = { focusManager.moveFocus(FocusDirection.Down) },
+                modifier = if (tourViewModel != null) {
+                    Modifier.tourTarget("edit_brand_field", tourViewModel)
+                } else {
+                    Modifier
+                }
             )
 
             Spacer(Modifier.height(12.dp))
@@ -568,6 +599,23 @@ fun EditItemScreenV3(
             },
         )
     }
+
+    // FTUE Tour Overlay
+    if (isTourActive && currentTourStep?.screen == com.scanium.app.ftue.TourScreen.EDIT_ITEM) {
+        currentTourStep?.let { step ->
+            tourViewModel?.let { vm ->
+                val bounds = targetBounds[step.targetKey]
+
+                com.scanium.app.ftue.SpotlightTourOverlay(
+                    step = step,
+                    targetBounds = bounds,
+                    onNext = { vm.nextStep() },
+                    onBack = { vm.previousStep() },
+                    onSkip = { vm.skipTour() },
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -583,8 +631,9 @@ private fun LabeledTextField(
     imeAction: ImeAction = ImeAction.Next,
     onNext: () -> Unit = {},
     keyboardOptions: KeyboardOptions? = null,
+    modifier: Modifier = Modifier,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
@@ -743,11 +792,14 @@ private fun PhotoThumbnailV3(
 }
 
 @Composable
-private fun AddPhotoButtonV3(onClick: () -> Unit) {
+private fun AddPhotoButtonV3(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val addPhotoText = stringResource(R.string.edit_item_add_photo)
     val addText = stringResource(R.string.common_add)
     Card(
-        modifier = Modifier
+        modifier = modifier
             .size(100.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
