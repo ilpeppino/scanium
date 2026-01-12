@@ -37,10 +37,21 @@
     <string name="settings_theme_light_desc">Usa sempre il tema chiaro</string>
     <string name="settings_theme_dark">Scuro</string>
     <string name="settings_theme_dark_desc">Usa sempre il tema scuro</string>
+    <string name="settings_recommended">Consigliato</string>
     <string name="settings_section_language">Lingua</string>
+
+    <!-- Unified Settings: Primary Region & Language -->
+    <string name="settings_primary_country_label">Regione</string>
+    <string name="settings_primary_language_label">Lingua</string>
+
     <string name="settings_language_system_title">Lingua app</string>
     <string name="settings_language_system_desc">Scegli la lingua usata nell\'app</string>
     <string name="settings_language_system_default">Predefinito di sistema</string>
+    <string name="settings_language_follow_primary">Segui primaria (%1$s)</string>
+    <string name="settings_language_custom">Lingua personalizzata</string>
+    <string name="settings_section_preferences">Preferenze</string>
+    <string name="settings_replay_guide_title">Riproduci guida iniziale</string>
+    <string name="settings_replay_guide_subtitle">Mostra di nuovo il tour per rivedere le funzioni dell\'app</string>
     <string name="settings_section_account">Account e edizione</string>
     <string name="settings_current_edition_title">Edizione attuale</string>
     <string name="settings_edition_free">Gratuita</string>
@@ -111,8 +122,14 @@
     <string name="settings_tone_neutral">Neutro</string>
     <string name="settings_tone_friendly">Amichevole</string>
     <string name="settings_tone_professional">Professionale</string>
+    <string name="settings_tone_marketplace">Marketplace (conciso)</string>
+    <string name="settings_assistant_language_follow_primary">Segui primaria (%1$s)</string>
+    <string name="settings_assistant_language_auto_detect">Rileva automaticamente (dal parlato)</string>
+    <string name="settings_assistant_language_custom">Lingua personalizzata</string>
     <string name="settings_assistant_country_title">Paese</string>
     <string name="settings_assistant_country_subtitle">Influisce su valuta e suggerimenti marketplace</string>
+    <string name="settings_assistant_country_follow_primary">Segui primaria (%1$s)</string>
+    <string name="settings_assistant_country_custom">Paese personalizzato</string>
     <string name="settings_assistant_units_title">Unità</string>
     <string name="settings_assistant_units_subtitle">Sistema di misura per i calcoli</string>
     <string name="settings_units_metric">Metrico (cm, kg)</string>
@@ -123,11 +140,18 @@
     <string name="settings_verbosity_normal">Normale</string>
     <string name="settings_verbosity_detailed">Dettagliato</string>
     <string name="settings_section_voice_mode">Voce e input</string>
+    <string name="settings_section_voice">Voce</string>
     <string name="settings_voice_mode_title">Input vocale (microfono)</string>
     <string name="settings_voice_mode_subtitle">Usa il pulsante mic per domande a mani libere</string>
     <string name="settings_voice_mode_permission_denied">Permesso microfono negato</string>
     <string name="settings_speak_answers_title">Leggi risposte assistente</string>
     <string name="settings_speak_answers_subtitle">Pronuncia le risposte finali usando TTS</string>
+    <string name="settings_tts_language_title">Lingua uscita vocale (TTS)</string>
+    <string name="settings_tts_language_subtitle">Lingua per le risposte vocali dell\'assistente</string>
+    <string name="settings_tts_language_follow_ai">Segui lingua AI (%1$s)</string>
+    <string name="settings_tts_language_follow_primary">Segui primaria (%1$s)</string>
+    <string name="settings_tts_language_custom">Lingua personalizzata</string>
+    <string name="settings_tts_language_not_supported">Voce per %1$s non installata. Uso %2$s.</string>
     <string name="settings_auto_send_voice_title">Invia auto dopo dettatura</string>
     <string name="settings_auto_send_voice_subtitle">Invia automaticamente quando il riconoscimento finisce</string>
     <string name="settings_voice_language_title">Lingua voce</string>

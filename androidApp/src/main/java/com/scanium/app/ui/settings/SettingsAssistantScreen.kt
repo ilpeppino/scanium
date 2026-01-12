@@ -341,37 +341,8 @@ fun SettingsAssistantScreen(
             if (allowAssistant) {
                 SettingsSectionHeader(title = stringResource(R.string.settings_section_personalization))
 
-                // AI Language picker (Unified Settings)
-                ValuePickerSettingRow(
-                    title = stringResource(R.string.settings_assistant_language_title),
-                    subtitle = when (aiLanguageSetting) {
-                        is FollowOrCustom.FollowPrimary -> stringResource(R.string.settings_assistant_language_follow_primary, getLanguageDisplayName(effectiveAiOutputLanguage))
-                        is FollowOrCustom.Custom -> {
-                            when (val choice = (aiLanguageSetting as FollowOrCustom.Custom).value) {
-                                is AiLanguageChoice.AutoDetect -> stringResource(R.string.settings_assistant_language_auto_detect)
-                                is AiLanguageChoice.LanguageTag -> "${stringResource(R.string.settings_assistant_language_custom)}: ${getLanguageDisplayName(choice.tag)}"
-                            }
-                        }
-                    },
-                    icon = Icons.Filled.Language,
-                    currentValue = when (aiLanguageSetting) {
-                        is FollowOrCustom.FollowPrimary -> "follow"
-                        is FollowOrCustom.Custom -> {
-                            when (val choice = (aiLanguageSetting as FollowOrCustom.Custom).value) {
-                                is AiLanguageChoice.AutoDetect -> "auto_detect"
-                                is AiLanguageChoice.LanguageTag -> choice.tag
-                            }
-                        }
-                    },
-                    options = aiLanguageOptions,
-                    onValueSelected = { selectedValue ->
-                        when (selectedValue) {
-                            "follow" -> viewModel.setAiLanguageSetting(FollowOrCustom.followPrimary())
-                            "auto_detect" -> viewModel.setAiLanguageSetting(FollowOrCustom.custom(AiLanguageChoice.AutoDetect))
-                            else -> viewModel.setAiLanguageSetting(FollowOrCustom.custom(AiLanguageChoice.LanguageTag(selectedValue)))
-                        }
-                    },
-                )
+                // Note: AI Language now always follows General → Language setting
+                // (removed dedicated AI language picker per product requirements)
 
                 // Tone picker with bottom sheet
                 ValuePickerSettingRow(
@@ -383,39 +354,8 @@ fun SettingsAssistantScreen(
                     onValueSelected = viewModel::setAssistantTone,
                 )
 
-                // Marketplace Country picker (Unified Settings)
-                ValuePickerSettingRow(
-                    title = stringResource(R.string.settings_assistant_country_title),
-                    subtitle = when (marketplaceCountrySetting) {
-                        is FollowOrCustom.FollowPrimary -> {
-                            val country = countries.find { it.code == effectiveMarketplaceCountry }
-                            val label = country?.let {
-                                "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage.lowercase())}"
-                            } ?: effectiveMarketplaceCountry
-                            stringResource(R.string.settings_assistant_country_follow_primary, label)
-                        }
-                        is FollowOrCustom.Custom -> {
-                            val country = countries.find { it.code == (marketplaceCountrySetting as FollowOrCustom.Custom).value }
-                            val label = country?.let {
-                                "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage.lowercase())}"
-                            } ?: (marketplaceCountrySetting as FollowOrCustom.Custom).value
-                            "${stringResource(R.string.settings_assistant_country_custom)}: $label"
-                        }
-                    },
-                    icon = Icons.Filled.Language,
-                    currentValue = when (marketplaceCountrySetting) {
-                        is FollowOrCustom.FollowPrimary -> "follow"
-                        is FollowOrCustom.Custom -> (marketplaceCountrySetting as FollowOrCustom.Custom).value
-                    },
-                    options = marketplaceCountryOptions,
-                    onValueSelected = { selectedValue ->
-                        if (selectedValue == "follow") {
-                            viewModel.setMarketplaceCountrySetting(FollowOrCustom.followPrimary())
-                        } else {
-                            viewModel.setMarketplaceCountrySetting(FollowOrCustom.custom(selectedValue))
-                        }
-                    },
-                )
+                // Note: Country/Marketplace selector removed - uses General → Region setting
+                // (removed per product requirements - marketplace country comes from General)
 
                 // Units picker with bottom sheet
                 ValuePickerSettingRow(
@@ -437,30 +377,10 @@ fun SettingsAssistantScreen(
                     onValueSelected = viewModel::setAssistantVerbosity,
                 )
 
-                SettingsSectionHeader(title = stringResource(R.string.settings_section_voice_mode))
-                SettingSwitchRow(
-                    title = stringResource(R.string.settings_voice_mode_title),
-                    subtitle = stringResource(R.string.settings_voice_mode_subtitle),
-                    icon = Icons.Filled.Mic,
-                    checked = voiceModeEnabled,
-                    onCheckedChange = { enabled ->
-                        if (enabled) {
-                            val permissionGranted =
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.RECORD_AUDIO,
-                                ) == PackageManager.PERMISSION_GRANTED
-                            if (permissionGranted) {
-                                viewModel.setVoiceModeEnabled(true)
-                            } else {
-                                micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            }
-                        } else {
-                            viewModel.setVoiceModeEnabled(false)
-                        }
-                    },
-                )
+                // Voice section (Voice Input removed per product requirements)
+                SettingsSectionHeader(title = stringResource(R.string.settings_section_voice))
 
+                // Read assistant toggle (TTS output)
                 SettingSwitchRow(
                     title = stringResource(R.string.settings_speak_answers_title),
                     subtitle = stringResource(R.string.settings_speak_answers_subtitle),
@@ -469,51 +389,8 @@ fun SettingsAssistantScreen(
                     onCheckedChange = viewModel::setSpeakAnswersEnabled,
                 )
 
-                // TTS (Voice output) language picker (Unified Settings)
-                if (speakAnswersEnabled) {
-                    ValuePickerSettingRow(
-                        title = stringResource(R.string.settings_tts_language_title),
-                        subtitle = when (ttsLanguageSetting) {
-                            is TtsLanguageChoice.FollowAiLanguage -> stringResource(R.string.settings_tts_language_follow_ai, getLanguageDisplayName(effectiveTtsLanguage))
-                            is TtsLanguageChoice.FollowPrimary -> stringResource(R.string.settings_tts_language_follow_primary, getLanguageDisplayName(effectiveTtsLanguage))
-                            is TtsLanguageChoice.Custom -> "${stringResource(R.string.settings_tts_language_custom)}: ${getLanguageDisplayName((ttsLanguageSetting as TtsLanguageChoice.Custom).languageTag)}"
-                        },
-                        icon = Icons.Filled.SettingsVoice,
-                        currentValue = when (ttsLanguageSetting) {
-                            is TtsLanguageChoice.FollowAiLanguage -> "follow_ai"
-                            is TtsLanguageChoice.FollowPrimary -> "follow_primary"
-                            is TtsLanguageChoice.Custom -> (ttsLanguageSetting as TtsLanguageChoice.Custom).languageTag
-                        },
-                        options = ttsLanguageOptions,
-                        onValueSelected = { selectedValue ->
-                            when (selectedValue) {
-                                "follow_ai" -> viewModel.setTtsLanguageSetting(TtsLanguageChoice.FollowAiLanguage)
-                                "follow_primary" -> viewModel.setTtsLanguageSetting(TtsLanguageChoice.FollowPrimary)
-                                else -> viewModel.setTtsLanguageSetting(TtsLanguageChoice.Custom(selectedValue))
-                            }
-                        },
-                    )
-                }
-
-                SettingSwitchRow(
-                    title = stringResource(R.string.settings_auto_send_voice_title),
-                    subtitle = stringResource(R.string.settings_auto_send_voice_subtitle),
-                    icon = Icons.AutoMirrored.Filled.Send,
-                    checked = autoSendTranscript,
-                    enabled = voiceModeEnabled,
-                    onCheckedChange = viewModel::setAutoSendTranscript,
-                )
-
-                // Voice language picker with bottom sheet
-                ValuePickerSettingRow(
-                    title = stringResource(R.string.settings_voice_language_title),
-                    subtitle = stringResource(R.string.settings_voice_language_subtitle),
-                    icon = Icons.Filled.Language,
-                    currentValue = voiceLanguage,
-                    options = voiceLanguageOptions,
-                    onValueSelected = viewModel::setVoiceLanguage,
-                    enabled = voiceModeEnabled,
-                )
+                // Note: TTS language now always follows General → Language setting
+                // (removed dedicated TTS language picker per product requirements)
             }
         }
     }
