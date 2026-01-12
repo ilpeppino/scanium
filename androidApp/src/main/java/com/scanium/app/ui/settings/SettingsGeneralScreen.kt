@@ -7,7 +7,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
@@ -43,6 +45,7 @@ fun SettingsGeneralScreen(
     val appLanguage by viewModel.appLanguage.collectAsState()
     val currentEdition by viewModel.currentEdition.collectAsState()
     val entitlementState by viewModel.entitlementState.collectAsState()
+    val soundsEnabled by viewModel.soundsEnabled.collectAsState()
 
     val editionLabel =
         when (currentEdition) {
@@ -171,7 +174,7 @@ fun SettingsGeneralScreen(
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
 
-            // Theme picker with bottom sheet
+            // 1) Theme picker with bottom sheet
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_theme_label),
                 subtitle = stringResource(R.string.settings_theme_subtitle),
@@ -181,9 +184,7 @@ fun SettingsGeneralScreen(
                 onValueSelected = viewModel::setThemeMode,
             )
 
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_language))
-
-            // Language picker with bottom sheet
+            // 2) Language picker with bottom sheet
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_language_system_title),
                 subtitle = stringResource(R.string.settings_language_system_desc),
@@ -191,6 +192,25 @@ fun SettingsGeneralScreen(
                 currentValue = appLanguage,
                 options = languageOptions,
                 onValueSelected = viewModel::setAppLanguage,
+            )
+
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_preferences))
+
+            // 3) Sounds toggle
+            SettingSwitchRow(
+                title = stringResource(R.string.settings_sounds_title),
+                subtitle = stringResource(R.string.settings_sounds_subtitle),
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
+                checked = soundsEnabled,
+                onCheckedChange = viewModel::setSoundsEnabled,
+            )
+
+            // 4) First-time guide replay
+            SettingActionRow(
+                title = stringResource(R.string.settings_replay_guide_title),
+                subtitle = stringResource(R.string.settings_replay_guide_subtitle),
+                icon = Icons.Filled.Info,
+                onClick = viewModel::resetFtueTour,
             )
         }
     }

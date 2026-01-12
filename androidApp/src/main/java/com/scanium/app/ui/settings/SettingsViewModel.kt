@@ -1,5 +1,6 @@
 package com.scanium.app.ui.settings
 
+import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
@@ -30,8 +31,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -92,6 +95,17 @@ class SettingsViewModel
         val saveDirectoryUri: StateFlow<String?> =
             settingsRepository.saveDirectoryUriFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+        val exportFormat: StateFlow<ExportFormat> =
+            settingsRepository.exportFormatFlow
+                .map { formatString ->
+                    when (formatString) {
+                        "CSV" -> ExportFormat.CSV
+                        "JSON" -> ExportFormat.JSON
+                        else -> ExportFormat.ZIP
+                    }
+                }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ExportFormat.ZIP)
 
         val allowAssistantImages: StateFlow<Boolean> =
             settingsRepository.allowAssistantImagesFlow
@@ -257,6 +271,32 @@ class SettingsViewModel
 
         fun setSaveDirectoryUri(uri: String?) {
             viewModelScope.launch { settingsRepository.setSaveDirectoryUri(uri) }
+        }
+
+        fun setExportFormat(format: ExportFormat) {
+            viewModelScope.launch {
+                val formatString =
+                    when (format) {
+                        ExportFormat.ZIP -> "ZIP"
+                        ExportFormat.CSV -> "CSV"
+                        ExportFormat.JSON -> "JSON"
+                    }
+                settingsRepository.setExportFormat(formatString)
+            }
+        }
+
+        /**
+         * Clears cached data including temporary files and thumbnails.
+         * This clears the app's cache directory.
+         */
+        fun clearCache(context: Context) {
+            viewModelScope.launch {
+                try {
+                    context.cacheDir.deleteRecursively()
+                } catch (e: Exception) {
+                    android.util.Log.e("SettingsViewModel", "Failed to clear cache", e)
+                }
+            }
         }
 
         fun setAllowAssistantImages(allow: Boolean) {

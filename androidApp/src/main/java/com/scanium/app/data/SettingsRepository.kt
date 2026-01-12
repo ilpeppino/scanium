@@ -54,6 +54,7 @@ class SettingsRepository(
         private val DEVELOPER_MODE_KEY = booleanPreferencesKey("developer_mode")
         private val AUTO_SAVE_ENABLED_KEY = booleanPreferencesKey("auto_save_enabled")
         private val SAVE_DIRECTORY_URI_KEY = stringPreferencesKey("save_directory_uri")
+        private val EXPORT_FORMAT_KEY = stringPreferencesKey("export_format")
         private val ALLOW_ASSISTANT_IMAGES_KEY = booleanPreferencesKey("allow_assistant_images")
         private val SOUNDS_ENABLED_KEY = booleanPreferencesKey("sounds_enabled")
 
@@ -267,6 +268,17 @@ class SettingsRepository(
             } else {
                 preferences.remove(SAVE_DIRECTORY_URI_KEY)
             }
+        }
+    }
+
+    val exportFormatFlow: Flow<String> =
+        dataStore.data.map { preferences ->
+            preferences[EXPORT_FORMAT_KEY] ?: "ZIP"
+        }
+
+    suspend fun setExportFormat(format: String) {
+        dataStore.edit { preferences ->
+            preferences[EXPORT_FORMAT_KEY] = format
         }
     }
 
