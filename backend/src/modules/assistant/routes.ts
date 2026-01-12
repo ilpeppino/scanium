@@ -293,7 +293,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       cacheTtlSeconds: config.pricing.cacheTtlSeconds,
       model: config.pricing.openaiModel,
     },
-    'Pricing service initialized with OpenAI native web search'
+    'Pricing service initialized with OpenAI (note: no web search in standard API)'
   );
 
   const redisClient = await createRedisClient(
