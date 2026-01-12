@@ -141,25 +141,24 @@ export async function postMobileTelemetryHandler(
     // Sanitize attributes (remove PII, high-cardinality data)
     const sanitizedAttributes = sanitizeAttributes(attributes);
 
-    // Create structured log event
-    // This will be captured by docker log driver, then Alloy, then sent to Loki
-    const logEvent = {
-      source: 'scanium-mobile',
-      event_name,
-      platform,
-      app_version,
-      build_type,
-      timestamp_ms,
-      ...(session_id && { session_id }),
-      ...(request_id && { request_id }),
-      ...(result && { result }),
-      ...(error_code && { error_code }),
-      ...(latency_ms !== undefined && { latency_ms }),
-      ...(Object.keys(sanitizedAttributes).length > 0 && { attributes: sanitizedAttributes }),
-    };
-
-    // Log to stdout as single-line JSON (critical: must be single line for docker log driver)
-    console.log(JSON.stringify(logEvent));
+    // Log via Pino (goes to OTLP transport → Alloy → Loki with proper labels)
+    request.log.info(
+      {
+        source: 'scanium-mobile',
+        event_name,
+        platform,
+        app_version,
+        build_type,
+        env: process.env.NODE_ENV || 'development',
+        ...(session_id && { session_id }),
+        ...(request_id && { request_id }),
+        ...(result && { result }),
+        ...(error_code && { error_code }),
+        ...(latency_ms !== undefined && { latency_ms }),
+        ...(Object.keys(sanitizedAttributes).length > 0 && { attributes: sanitizedAttributes }),
+      },
+      'Mobile telemetry event'
+    );
 
     // Record Prometheus metrics
     mobileEventsTotal.inc({

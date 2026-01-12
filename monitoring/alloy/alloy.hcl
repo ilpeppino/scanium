@@ -77,13 +77,28 @@ otelcol.processor.attributes "mobile" {
   }
 }
 
+// Extract mobile telemetry labels from backend OTLP logs
+otelcol.processor.attributes "backend_logs" {
+  // Promote mobile telemetry attributes to resource attributes for Loki labeling
+  // This allows otelcol.exporter.loki to map them to Loki labels
+  action {
+    key = "loki.attribute.labels"
+    action = "insert"
+    value = "source, event_name, platform, app_version, build_type, env"
+  }
+
+  output {
+    logs = [otelcol.exporter.loki.backend.input]
+  }
+}
+
 otelcol.processor.batch "backend" {
   send_batch_size         = 100
   send_batch_max_size     = 200
   timeout                 = "5s"
 
   output {
-    logs    = [otelcol.exporter.loki.backend.input]
+    logs    = [otelcol.processor.attributes.backend_logs.input]
     metrics = [otelcol.exporter.prometheus.backend.input]
     traces  = [otelcol.exporter.otlp.tempo.input]
   }
