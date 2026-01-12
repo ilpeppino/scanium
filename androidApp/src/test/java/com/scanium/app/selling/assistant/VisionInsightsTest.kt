@@ -265,6 +265,8 @@ class VisionInsightsTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): AssistantResponse = response
     }
 

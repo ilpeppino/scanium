@@ -124,6 +124,7 @@ fun ExportAssistantSheet(
                         )
                     }
 
+                    is ExportAssistantState.Loading,
                     is ExportAssistantState.Generating -> {
                         ExportLoadingContent()
                     }

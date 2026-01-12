@@ -1,7 +1,8 @@
 package com.scanium.app.items.edit
 
-import com.scanium.shared.core.models.assistant.ComparableListing
+import com.scanium.shared.core.models.assistant.PriceInfo
 import com.scanium.shared.core.models.assistant.PriceRange
+import com.scanium.shared.core.models.assistant.PricingConfidence
 import com.scanium.shared.core.models.assistant.PricingInsights
 import com.scanium.shared.core.models.assistant.PricingResult
 import org.junit.Assert.assertEquals
@@ -13,200 +14,160 @@ import org.junit.Test
  * Phase 5 acceptance test: Verify pricing insights parsing.
  *
  * Tests:
- * - Parsing OK status with price range and top 5 comparables
- * - Handling all status types (success, disabled, unsupported, no_results, timeout, error)
+ * - Parsing OK status with price range and top 5 results
+ * - Handling all status types (OK, DISABLED, NOT_SUPPORTED, NO_RESULTS, TIMEOUT, ERROR)
  * - Graceful handling of missing/null fields
  */
 class PricingInsightsParsingTest {
 
     @Test
-    fun `test parsing success status with price range and comparables`() {
-        // Given: A pricing insights response with success status
+    fun `test parsing OK status with price range and results`() {
+        // Given: A pricing insights response with OK status
         val pricingInsights = PricingInsights(
-            status = "success",
-            result = PricingResult(
-                priceRange = PriceRange(
-                    min = 25.0,
-                    max = 45.0,
-                    currency = "EUR"
-                ),
-                comparables = listOf(
-                    ComparableListing(
-                        title = "Nike Air Max 90 - Size 42",
-                        price = 35.0,
-                        currency = "EUR",
-                        marketplace = "Marktplaats",
-                        url = "https://www.marktplaats.nl/item/123"
-                    ),
-                    ComparableListing(
-                        title = "Nike Air Max 90 - White/Blue",
-                        price = 40.0,
-                        currency = "EUR",
-                        marketplace = "Vinted",
-                        url = "https://www.vinted.nl/item/456"
-                    ),
-                    ComparableListing(
-                        title = "Nike Air Max 90 - Like New",
-                        price = 30.0,
-                        currency = "EUR",
-                        marketplace = "eBay",
-                        url = "https://www.ebay.nl/item/789"
-                    ),
-                    ComparableListing(
-                        title = "Nike Air Max 90 - Excellent Condition",
-                        price = 38.0,
-                        currency = "EUR",
-                        marketplace = "Marktplaats",
-                        url = "https://www.marktplaats.nl/item/101"
-                    ),
-                    ComparableListing(
-                        title = "Nike Air Max 90 - Black",
-                        price = 42.0,
-                        currency = "EUR",
-                        marketplace = "Vinted",
-                        url = "https://www.vinted.nl/item/112"
-                    )
-                ),
-                sampleSize = 15
+            status = "OK",
+            countryCode = "NL",
+            range = PriceRange(
+                low = 25.0,
+                high = 45.0,
+                currency = "EUR"
             ),
-            errorMessage = null
+            results = listOf(
+                PricingResult(
+                    title = "Nike Air Max 90 - Size 42",
+                    price = PriceInfo(35.0, "EUR"),
+                    sourceMarketplaceId = "marktplaats",
+                    url = "https://www.marktplaats.nl/item/123"
+                ),
+                PricingResult(
+                    title = "Nike Air Max 90 - White/Blue",
+                    price = PriceInfo(40.0, "EUR"),
+                    sourceMarketplaceId = "vinted",
+                    url = "https://www.vinted.nl/item/456"
+                ),
+                PricingResult(
+                    title = "Nike Air Max 90 - Like New",
+                    price = PriceInfo(30.0, "EUR"),
+                    sourceMarketplaceId = "ebay",
+                    url = "https://www.ebay.nl/item/789"
+                ),
+                PricingResult(
+                    title = "Nike Air Max 90 - Excellent Condition",
+                    price = PriceInfo(38.0, "EUR"),
+                    sourceMarketplaceId = "marktplaats",
+                    url = "https://www.marktplaats.nl/item/101"
+                ),
+                PricingResult(
+                    title = "Nike Air Max 90 - Black",
+                    price = PriceInfo(42.0, "EUR"),
+                    sourceMarketplaceId = "vinted",
+                    url = "https://www.vinted.nl/item/112"
+                )
+            ),
+            confidence = PricingConfidence.HIGH
         )
 
         // Then: All fields are correctly accessible
-        assertEquals("success", pricingInsights.status)
-        assertNotNull(pricingInsights.result)
+        assertEquals("OK", pricingInsights.status)
+        assertEquals("NL", pricingInsights.countryCode)
+        assertNotNull(pricingInsights.range)
 
-        val result = pricingInsights.result!!
-        assertEquals(25.0, result.priceRange.min, 0.01)
-        assertEquals(45.0, result.priceRange.max, 0.01)
-        assertEquals("EUR", result.priceRange.currency)
-        assertEquals(15, result.sampleSize)
-        assertEquals(5, result.comparables.size)
+        val range = pricingInsights.range!!
+        assertEquals(25.0, range.low, 0.01)
+        assertEquals(45.0, range.high, 0.01)
+        assertEquals("EUR", range.currency)
+        assertEquals(5, pricingInsights.results.size)
+        assertEquals(PricingConfidence.HIGH, pricingInsights.confidence)
 
-        // Verify first comparable
-        val firstComparable = result.comparables[0]
-        assertEquals("Nike Air Max 90 - Size 42", firstComparable.title)
-        assertEquals(35.0, firstComparable.price, 0.01)
-        assertEquals("EUR", firstComparable.currency)
-        assertEquals("Marktplaats", firstComparable.marketplace)
-        assertEquals("https://www.marktplaats.nl/item/123", firstComparable.url)
+        // Verify first result
+        val firstResult = pricingInsights.results[0]
+        assertEquals("Nike Air Max 90 - Size 42", firstResult.title)
+        assertEquals(35.0, firstResult.price.amount, 0.01)
+        assertEquals("EUR", firstResult.price.currency)
+        assertEquals("marktplaats", firstResult.sourceMarketplaceId)
+        assertEquals("https://www.marktplaats.nl/item/123", firstResult.url)
     }
 
     @Test
-    fun `test parsing disabled status`() {
+    fun `test parsing DISABLED status`() {
         val pricingInsights = PricingInsights(
-            status = "disabled",
-            result = null,
-            errorMessage = "Price insights are disabled for your account"
+            status = "DISABLED",
+            countryCode = "NL",
+            errorCode = "DISABLED_BY_POLICY"
         )
 
-        assertEquals("disabled", pricingInsights.status)
-        assertNull(pricingInsights.result)
-        assertEquals("Price insights are disabled for your account", pricingInsights.errorMessage)
+        assertEquals("DISABLED", pricingInsights.status)
+        assertNull(pricingInsights.range)
+        assertEquals("DISABLED_BY_POLICY", pricingInsights.errorCode)
     }
 
     @Test
-    fun `test parsing unsupported_country status`() {
+    fun `test parsing NOT_SUPPORTED status`() {
         val pricingInsights = PricingInsights(
-            status = "unsupported_country",
-            result = null,
-            errorMessage = "Price insights not available for country: US"
+            status = "NOT_SUPPORTED",
+            countryCode = "US",
+            errorCode = "UNSUPPORTED_COUNTRY"
         )
 
-        assertEquals("unsupported_country", pricingInsights.status)
-        assertNull(pricingInsights.result)
-        assertNotNull(pricingInsights.errorMessage)
+        assertEquals("NOT_SUPPORTED", pricingInsights.status)
+        assertNull(pricingInsights.range)
+        assertEquals("UNSUPPORTED_COUNTRY", pricingInsights.errorCode)
     }
 
     @Test
-    fun `test parsing no_results status`() {
+    fun `test parsing NO_RESULTS status`() {
         val pricingInsights = PricingInsights(
-            status = "no_results",
-            result = null,
-            errorMessage = "No comparable listings found for this item"
+            status = "NO_RESULTS",
+            countryCode = "NL",
+            errorCode = "NO_MATCHES_FOUND"
         )
 
-        assertEquals("no_results", pricingInsights.status)
-        assertNull(pricingInsights.result)
-        assertNotNull(pricingInsights.errorMessage)
+        assertEquals("NO_RESULTS", pricingInsights.status)
+        assertNull(pricingInsights.range)
+        assertEquals("NO_MATCHES_FOUND", pricingInsights.errorCode)
     }
 
     @Test
-    fun `test parsing timeout status`() {
+    fun `test parsing TIMEOUT status`() {
         val pricingInsights = PricingInsights(
-            status = "timeout",
-            result = null,
-            errorMessage = "Pricing request timed out"
+            status = "TIMEOUT",
+            countryCode = "NL",
+            errorCode = "BACKEND_TIMEOUT"
         )
 
-        assertEquals("timeout", pricingInsights.status)
-        assertNull(pricingInsights.result)
-        assertNotNull(pricingInsights.errorMessage)
+        assertEquals("TIMEOUT", pricingInsights.status)
+        assertNull(pricingInsights.range)
+        assertEquals("BACKEND_TIMEOUT", pricingInsights.errorCode)
     }
 
     @Test
-    fun `test parsing error status`() {
+    fun `test parsing ERROR status`() {
         val pricingInsights = PricingInsights(
-            status = "error",
-            result = null,
-            errorMessage = "Internal error fetching pricing data"
+            status = "ERROR",
+            countryCode = "NL",
+            errorCode = "INTERNAL_SERVER_ERROR"
         )
 
-        assertEquals("error", pricingInsights.status)
-        assertNull(pricingInsights.result)
-        assertNotNull(pricingInsights.errorMessage)
+        assertEquals("ERROR", pricingInsights.status)
+        assertNull(pricingInsights.range)
+        assertEquals("INTERNAL_SERVER_ERROR", pricingInsights.errorCode)
     }
 
     @Test
-    fun `test parsing success with empty comparables`() {
+    fun `test parsing OK with empty results`() {
         val pricingInsights = PricingInsights(
-            status = "success",
-            result = PricingResult(
-                priceRange = PriceRange(
-                    min = 20.0,
-                    max = 30.0,
-                    currency = "EUR"
-                ),
-                comparables = emptyList(),
-                sampleSize = 3
+            status = "OK",
+            countryCode = "NL",
+            range = PriceRange(
+                low = 20.0,
+                high = 30.0,
+                currency = "EUR"
             ),
-            errorMessage = null
+            results = emptyList()
         )
 
-        assertEquals("success", pricingInsights.status)
-        assertNotNull(pricingInsights.result)
-        assertEquals(0, pricingInsights.result!!.comparables.size)
-        assertEquals(3, pricingInsights.result!!.sampleSize)
-    }
-
-    @Test
-    fun `test parsing success with comparables without URLs`() {
-        val pricingInsights = PricingInsights(
-            status = "success",
-            result = PricingResult(
-                priceRange = PriceRange(
-                    min = 25.0,
-                    max = 45.0,
-                    currency = "USD"
-                ),
-                comparables = listOf(
-                    ComparableListing(
-                        title = "Test Item 1",
-                        price = 30.0,
-                        currency = "USD",
-                        marketplace = "eBay",
-                        url = null
-                    )
-                ),
-                sampleSize = 1
-            ),
-            errorMessage = null
-        )
-
-        assertEquals("success", pricingInsights.status)
-        assertNotNull(pricingInsights.result)
-        assertEquals(1, pricingInsights.result!!.comparables.size)
-        assertNull(pricingInsights.result!!.comparables[0].url)
+        assertEquals("OK", pricingInsights.status)
+        assertNotNull(pricingInsights.range)
+        assertEquals(0, pricingInsights.results.size)
     }
 
     @Test
@@ -215,20 +176,17 @@ class PricingInsightsParsingTest {
 
         currencies.forEach { currency ->
             val pricingInsights = PricingInsights(
-                status = "success",
-                result = PricingResult(
-                    priceRange = PriceRange(
-                        min = 10.0,
-                        max = 20.0,
-                        currency = currency
-                    ),
-                    comparables = emptyList(),
-                    sampleSize = 5
+                status = "OK",
+                countryCode = "NL",
+                range = PriceRange(
+                    low = 10.0,
+                    high = 20.0,
+                    currency = currency
                 ),
-                errorMessage = null
+                results = emptyList()
             )
 
-            assertEquals(currency, pricingInsights.result?.priceRange?.currency)
+            assertEquals(currency, pricingInsights.range?.currency)
         }
     }
 }

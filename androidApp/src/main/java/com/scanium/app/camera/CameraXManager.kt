@@ -1470,82 +1470,9 @@ class CameraXManager(
 
             // Route to the appropriate scanner based on mode
             when (scanMode) {
-                ScanMode.OBJECT_DETECTION -> {
-                    // PIPELINE ALIGNMENT FIX: Use tracking pipeline for continuous scanning
-                    // This enables quality gating (LOCKED state), ROI filtering, and dedup
-                    // Detection always uses SINGLE_IMAGE_MODE to avoid blinking bboxes
-                    if (isScanning) {
-                        Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (isScanning=$isScanning)")
-                        val (items, detections) =
-                            processObjectDetectionWithTracking(
-                                inputImage = inputImage,
-                                lazyBitmapProvider = lazyBitmapProvider,
-                                cropRect = imageBoundsForFiltering,
-                                edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
-                            )
-                        Log.i(
-                            TAG,
-                            ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results",
-                        )
-                        val event = detectionRouter.processObjectResults(items, detections)
-                        onDetectionEvent(event)
-                        Pair(items, detections)
-                    } else {
-                        // Single-shot detection without tracking
-                        Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (useStreamMode=$useStreamMode, isScanning=$isScanning)")
-                        val response =
-                            objectDetector.detectObjects(
-                                image = inputImage,
-                                sourceBitmap = lazyBitmapProvider,
-                                useStreamMode = useStreamMode,
-                                cropRect = imageBoundsForFiltering,
-                                edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
-                            )
-                        Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
-                        val event =
-                            detectionRouter.processObjectResults(
-                                response.scannedItems,
-                                response.detectionResults,
-                            )
-                        onDetectionEvent(event)
-                        Pair(response.scannedItems, response.detectionResults)
-                    }
-                }
-                ScanMode.BARCODE -> {
-                    // Check throttle before running barcode detection
-                    val canRun = detectionRouter.tryInvokeBarcodeDetection()
-                    if (!canRun) {
-                        Log.d(TAG, "[BARCODE] Throttled - skipping frame")
-                        Pair(emptyList(), emptyList())
-                    } else {
-                        // Run barcode detection
-                        val rawItems =
-                            barcodeDetector.scanBarcodes(
-                                image = inputImage,
-                                sourceBitmap = lazyBitmapProvider,
-                            )
-
-                        if (rawItems.isEmpty()) {
-                            Pair(emptyList(), emptyList())
-                        } else {
-                            // Process through router for deduplication
-                            val (event, uniqueItems) = detectionRouter.processBarcodeResults(rawItems)
-                            onDetectionEvent(event)
-                            Log.i(TAG, "[BARCODE] Detected ${rawItems.size} barcodes, ${uniqueItems.size} unique after dedupe")
-                            Pair(uniqueItems, emptyList())
-                        }
-                    }
-                }
-                ScanMode.DOCUMENT_TEXT -> {
-                    val items =
-                        textRecognizer.recognizeText(
-                            image = inputImage,
-                            sourceBitmap = lazyBitmapProvider,
-                        )
-                    val event = detectionRouter.processDocumentResults(items)
-                    onDetectionEvent(event)
-                    Pair(items, emptyList())
-                }
+                ScanMode.OBJECT_DETECTION -> processObjectDetectionMode(inputImage, lazyBitmapProvider, imageBoundsForFiltering, onDetectionEvent)
+                ScanMode.BARCODE -> processBarcodeMode(inputImage, lazyBitmapProvider, onDetectionEvent)
+                ScanMode.DOCUMENT_TEXT -> processDocumentTextMode(inputImage, lazyBitmapProvider, onDetectionEvent)
             }
         } catch (e: Exception) {
             Log.e(TAG, ">>> processImageProxy: ERROR", e)
@@ -1569,6 +1496,95 @@ class CameraXManager(
             }
             imageProxy.close()
         }
+    }
+
+    private suspend fun processObjectDetectionMode(
+        inputImage: InputImage,
+        lazyBitmapProvider: () -> Bitmap?,
+        imageBoundsForFiltering: android.graphics.Rect,
+        onDetectionEvent: (DetectionEvent) -> Unit,
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        return if (isScanning) {
+            Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (isScanning=$isScanning)")
+            val (items, detections) =
+                processObjectDetectionWithTracking(
+                    inputImage = inputImage,
+                    lazyBitmapProvider = lazyBitmapProvider,
+                    cropRect = imageBoundsForFiltering,
+                    edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
+                )
+            Log.i(
+                TAG,
+                ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results",
+            )
+            val event = detectionRouter.processObjectResults(items, detections)
+            onDetectionEvent(event)
+            Pair(items, detections)
+        } else {
+            // Single-shot detection without tracking
+            Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (isScanning=$isScanning)")
+            val response =
+                objectDetector.detectObjects(
+                    image = inputImage,
+                    sourceBitmap = lazyBitmapProvider,
+                    useStreamMode = false,
+                    cropRect = imageBoundsForFiltering,
+                    edgeInsetRatio = EDGE_INSET_MARGIN_RATIO,
+                )
+            Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
+            val event =
+                detectionRouter.processObjectResults(
+                    response.scannedItems,
+                    response.detectionResults,
+                )
+            onDetectionEvent(event)
+            Pair(response.scannedItems, response.detectionResults)
+        }
+    }
+
+    private suspend fun processBarcodeMode(
+        inputImage: InputImage,
+        lazyBitmapProvider: () -> Bitmap?,
+        onDetectionEvent: (DetectionEvent) -> Unit,
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        // Check throttle before running barcode detection
+        val canRun = detectionRouter.tryInvokeBarcodeDetection()
+        return if (!canRun) {
+            Log.d(TAG, "[BARCODE] Throttled - skipping frame")
+            Pair(emptyList(), emptyList())
+        } else {
+            // Run barcode detection
+            val rawItems =
+                barcodeDetector.scanBarcodes(
+                    image = inputImage,
+                    sourceBitmap = lazyBitmapProvider,
+                )
+
+            if (rawItems.isEmpty()) {
+                Pair(emptyList(), emptyList())
+            } else {
+                // Process through router for deduplication
+                val (event, uniqueItems) = detectionRouter.processBarcodeResults(rawItems)
+                onDetectionEvent(event)
+                Log.i(TAG, "[BARCODE] Detected ${rawItems.size} barcodes, ${uniqueItems.size} unique after dedupe")
+                Pair(uniqueItems, emptyList())
+            }
+        }
+    }
+
+    private suspend fun processDocumentTextMode(
+        inputImage: InputImage,
+        lazyBitmapProvider: () -> Bitmap?,
+        onDetectionEvent: (DetectionEvent) -> Unit,
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        val items =
+            textRecognizer.recognizeText(
+                image = inputImage,
+                sourceBitmap = lazyBitmapProvider,
+            )
+        val event = detectionRouter.processDocumentResults(items)
+        onDetectionEvent(event)
+        return Pair(items, emptyList())
     }
 
     /**

@@ -566,6 +566,8 @@ class AssistantViewModelTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): com.scanium.app.model.AssistantResponse {
             lastImageAttachments = imageAttachments
             return com.scanium.app.model.AssistantResponse("ok")
@@ -581,6 +583,8 @@ class AssistantViewModelTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): com.scanium.app.model.AssistantResponse {
             // Simulate a long-running request that never completes
             kotlinx.coroutines.delay(Long.MAX_VALUE)
@@ -597,6 +601,8 @@ class AssistantViewModelTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): com.scanium.app.model.AssistantResponse {
             throw RuntimeException("Network error")
         }
@@ -613,6 +619,8 @@ class AssistantViewModelTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): com.scanium.app.model.AssistantResponse {
             callCount++
             if (callCount == 1) {
@@ -1138,6 +1146,8 @@ class AssistantViewModelTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): com.scanium.app.model.AssistantResponse {
             throw AssistantBackendException(
                 AssistantBackendFailure(
@@ -1159,6 +1169,8 @@ class AssistantViewModelTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): com.scanium.app.model.AssistantResponse {
             throw AssistantBackendException(
                 AssistantBackendFailure(
@@ -1180,6 +1192,8 @@ class AssistantViewModelTest {
             correlationId: String,
             imageAttachments: List<ItemImageAttachment>,
             assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
         ): com.scanium.app.model.AssistantResponse {
             throw AssistantBackendException(
                 AssistantBackendFailure(
