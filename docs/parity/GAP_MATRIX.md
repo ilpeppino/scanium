@@ -1,0 +1,183 @@
+# Android-iOS Parity Gap Matrix
+
+**Document Version:** 1.0
+**Last Updated:** 2026-01-13
+**Purpose:** Evidence-based gap analysis for iOS parity roadmap
+
+---
+
+## Reading This Document
+
+### Column Definitions
+1. **Capability:** Feature or component area
+2. **Android Status:** Implementation status with file evidence
+3. **iOS Status:** Implementation status with file evidence
+4. **Gap Description:** What's missing on iOS
+5. **Root Cause Type:** Why the gap exists
+6. **Risk:** Impact of gap (Low/Med/High) with reasoning
+7. **Dependencies:** Prerequisites for implementing
+8. **Proposed Solution:** High-level approach
+9. **Estimation:** Size bucket (S/M/L) based on complexity
+
+### Estimation Buckets
+- **S (Small):** 1-3 days, <500 LOC, single file/module, low risk
+- **M (Medium):** 4-10 days, 500-2000 LOC, multiple files, medium complexity
+- **L (Large):** 2-4 weeks, >2000 LOC, cross-cutting, high complexity, new architecture
+
+---
+
+## GAP MATRIX
+
+| # | Capability | Android Status | iOS Status | Gap Description | Root Cause Type | Risk | Dependencies | Proposed Solution | Size |
+|---|---|---|---|---|---|---|---|---|---|
+| **1. CAPTURE - CAMERA UI** |
+| 1.1 | Camera Preview Screen | ✅ Done<br>`CameraScreen.kt`<br>`CameraXManager.kt` | ❌ None<br>Searched: `iosApp/` | No camera feed UI, no preview view controller, no capture interface | Missing UI | **HIGH**<br>Core functionality blocker | - AVFoundationFrameSource.swift (exists)<br>- SwiftUI camera view patterns | Create `CameraView.swift` with AVCaptureVideoPreviewLayer wrapper, integrate AVFoundationFrameSource, add to NavigationStack | **M** |
+| 1.2 | Shutter Button (Tap/Long-Press) | ✅ Done<br>`ShutterButton.kt`<br>Dual-mode interaction | ❌ None | No shutter control, no tap/long-press gestures for capture modes | Missing UI | **HIGH**<br>User cannot capture | - CameraView implementation | Create `ShutterButton.swift` with SwiftUI gesture recognizers (TapGesture, LongPressGesture), wire to capture logic | **S** |
+| 1.3 | Detection Overlay (Real-Time) | ✅ Done<br>`DetectionOverlay.kt`<br>`DocumentScanOverlay.kt`<br>`CameraGuidanceOverlay.kt` | ❌ None | No live bounding boxes, no confidence display, no guidance feedback | Missing UI | **MED**<br>User lacks visual feedback | - CameraView<br>- Detection services wired | Create SwiftUI overlay views (Shape + Canvas) for bounding boxes, integrate with Vision framework results | **M** |
+| 1.4 | Settings Overlay (In-Session) | ✅ Done<br>`SettingsCameraScreen.kt`<br>In-session parameter tuning | ❌ None | No in-camera settings for resolution, thresholds, FPS | Missing UI | **LOW**<br>Can use separate settings screen | - CameraView<br>- UserDefaults for settings | Add settings sheet presented from camera view, bind to AVCaptureSession properties | **S** |
+| 1.5 | Resolution Configuration | ✅ Done<br>`CaptureResolution.kt`<br>LOW/NORMAL/HIGH modes | ⚠️ Hardcoded<br>`AVFoundationFrameSource.swift:31`<br>`.high` preset only | No user-configurable resolution, no feature flag gating | Missing Configuration | **LOW**<br>Workaround: hardcode high | - UserDefaults integration | Add enum `CaptureResolution`, map to AVCaptureSession preset, wire to settings | **S** |
+| 1.6 | Orientation Handling | ✅ Done<br>`CameraXManager.kt`<br>OrientationEventListener | ✅ Done<br>`AVFoundationFrameSource.swift:78-87`<br>Orientation conversion | None (parity achieved) | N/A | **N/A** | N/A | N/A | **N/A** |
+| 1.7 | Frame Processing Pipeline | ✅ Done<br>`ImageUtils.kt`<br>YUV→JPEG, lazy bitmap | ✅ Done (Not Connected)<br>`AVFoundationFrameSource.swift:89-101`<br>JPEG at 65% quality | Pipeline exists but not connected to any consumer (ML or UI) | Missing Wiring | **HIGH**<br>No frame analysis | - Detection orchestrator | Wire frame delegate to detection orchestrator, call ML services on frames | **M** |
+| **2. ML - DETECTION** |
+| 2.1 | Object Detection Service | ✅ Done<br>`ObjectDetectorClient.kt`<br>ML Kit OD API | ⚠️ Partial<br>`CoreMLObjectDetectionService.swift`<br>Framework ready, no model | CoreML wrapper exists but no .mlmodel file, no model initialization, not connected | Missing Model + Wiring | **HIGH**<br>Core feature missing | - CoreML model (YOLO or MobileNet)<br>- Model download/bundling | Obtain/train CoreML model, add to Xcode project, initialize VNCoreMLModel, wire to detection pipeline | **L** |
+| 2.2 | Barcode Scanning Service | ✅ Done<br>`BarcodeDetectorClient.kt`<br>ML Kit Barcode API | ✅ Done (Not Connected)<br>`VisionBarcodeService.swift`<br>Vision framework | Service ready but not called from camera pipeline | Missing Wiring | **MED**<br>Feature exists, needs plumbing | - Detection orchestrator | Call `detectBarcodes()` on camera frames, display results in overlay | **S** |
+| 2.3 | Text Recognition (OCR) | ✅ Done<br>`DocumentTextRecognitionClient.kt`<br>ML Kit Text API | ✅ Done (Not Connected)<br>`VisionTextService.swift`<br>Vision framework | Service ready but not called from camera pipeline | Missing Wiring | **MED**<br>Feature exists, needs plumbing | - Detection orchestrator | Call `recognizeText()` on camera frames, display results in list | **S** |
+| 2.4 | Detection Orchestration | ✅ Done<br>`DetectionRouter.kt`<br>`AdaptiveThrottlePolicy.kt`<br>Multi-detector coordination | ❌ None | No orchestrator to run multiple detectors (barcode+OCR+OD) in parallel, no throttling, no result aggregation | Missing Orchestration Layer | **HIGH**<br>Individual services useless without coordination | - All detection services ready<br>- Camera frame pipeline | Create `DetectionOrchestrator.swift`: dispatches frames to services via DispatchQueue, aggregates results, throttles via time-based policy | **M** |
+| **3. ML - CLASSIFICATION** |
+| 3.1 | On-Device Classification | ✅ Done<br>`OnDeviceClassifier.kt`<br>CLIP model | ❌ None | No on-device classifier, no CLIP model integration | Missing Classifier | **MED**<br>Cloud fallback exists | - CoreML CLIP model<br>- Domain Pack integration | Port CLIP model to CoreML, create `OnDeviceClassifier.swift`, integrate with shared KMP ClassificationOrchestrator | **L** |
+| 3.2 | Cloud Classification | ✅ Done<br>`CloudClassifier.kt`<br>Backend API + HMAC signing | ❌ None | No HTTP client, no backend API integration | Missing Networking + Wiring | **HIGH**<br>Critical for MVP classification | - Backend API client<br>- Request signing | Create `URLSession`-based client, implement HMAC-SHA256 signing (port from RequestSigner.kt), call `/v1/classify` | **M** |
+| 3.3 | Classification Orchestrator | ✅ Done<br>`ClassificationOrchestrator.kt`<br>Dual-mode (on-device + cloud) | ❌ None | No orchestrator for classification flow, no retry logic, no concurrency control | Missing Orchestration + Shared API Wiring | **HIGH**<br>No classification flow | - Shared KMP `ClassificationOrchestrator` callable from iOS<br>- On-device + cloud classifiers | Call shared KMP orchestrator from iOS, pass iOS platform adapters (ImageRef, network client) | **M** |
+| 3.4 | Cloud Call Gating | ✅ Done<br>`CloudCallGate.kt`<br>Cost-aware throttling | ❌ None | No gating logic to prevent excessive cloud requests | Missing Logic | **LOW**<br>Cost concern, not blocker | - Cloud classifier | Port `CloudCallGate.kt` logic to Swift, integrate with settings (UserDefaults) | **S** |
+| **4. TRACKING** |
+| 4.1 | Object Tracking | ✅ Done<br>`core-tracking/ObjectTracker.kt`<br>KMP shared | ❌ Not Called | Shared KMP module exists but not initialized from iOS | Missing Shared API Wiring | **MED**<br>Affects overlay stability | - Shared KMP initialization<br>- Detection pipeline | Call shared `ObjectTracker` from iOS detection orchestrator, pass detections, render tracked bounding boxes | **S** |
+| 4.2 | Item Aggregation | ✅ Done<br>`core-tracking/ItemAggregator.kt`<br>KMP shared | ❌ Not Called | Shared KMP module exists but not initialized from iOS | Missing Shared API Wiring | **MED**<br>Affects deduplication | - Shared KMP initialization<br>- Detection pipeline | Call shared `ItemAggregator` from iOS, configure aggregation preset from settings | **S** |
+| **5. DOMAIN PACKS** |
+| 5.1 | Domain Pack Loading | ✅ Done<br>`DomainPackProvider.kt`<br>Loads from res/raw JSON | ❌ None | No JSON asset loading from iOS bundle, no initialization of shared module | Missing Asset Loading + Shared API Wiring | **MED**<br>Affects classification taxonomy | - Shared KMP initialization<br>- JSON asset in bundle | Add `home_resale_domain_pack.json` to iOS bundle, load via Bundle.main, pass to shared `DomainPackProvider` | **S** |
+| 5.2 | Domain Pack Validation | ✅ Done<br>`DomainPack.kt`<br>Schema validation | ❌ None | No validation logic, assumes shared KMP handles | Missing Shared API Wiring | **LOW**<br>Shared handles if initialized | - Domain Pack loading | Ensure shared validation runs when pack loaded | **S** |
+| 5.3 | Category Mapping | ✅ Done<br>`CategoryEngine.kt`<br>Taxonomy rules | ❌ None | No category mapping from coarse to fine-grained taxonomy | Missing Shared API Wiring | **MED**<br>Affects classification accuracy | - Domain Pack loading<br>- Classification orchestrator | Call shared `CategoryEngine` from iOS after classification | **S** |
+| **6. STORAGE - PERSISTENCE** |
+| 6.1 | Local Database | ✅ Done<br>`ScannedItemDatabase.kt`<br>Room with 3 tables | ❌ None | No Core Data, Realm, or SQLite implementation, items lost on app restart | Missing Persistence Layer | **HIGH**<br>Data loss on restart | - Choose persistence (Core Data or shared SQL) | Option A: Core Data stack with 3 entities<br>Option B: Use shared KMP SQLDelight (better parity) | **L** |
+| 6.2 | History Tracking | ✅ Done<br>`ScannedItemDao.kt`<br>Audit trail with timestamps | ❌ None | No history table, no change tracking | Missing Persistence Layer | **MED**<br>Audit trail missing | - Local database | Add history table to chosen persistence, implement insert triggers | **M** |
+| 6.3 | Listing Draft Storage | ✅ Done<br>`ListingDraftDao.kt`<br>eBay draft persistence | ❌ None | No draft storage, listings cannot be saved/resumed | Missing Persistence Layer | **MED**<br>Affects eBay flow | - Local database | Add drafts table, implement CRUD operations | **M** |
+| **7. STORAGE - IMAGE HANDLING** |
+| 7.1 | Image Saving (Gallery) | ✅ Done<br>`MediaStoreSaver.kt`<br>MediaStore scoped storage | ❌ None | No PHPhotoLibrary integration, cannot save to Photos app | Missing Platform Integration | **MED**<br>User cannot export images | - PHPhotoLibrary permission | Implement PHPhotoLibrary.shared().performChanges, request add-only permission, save JPEG | **S** |
+| 7.2 | Image File Storage (Cache) | ✅ Done<br>`StorageHelper.kt`<br>Cache directory mgmt | ❌ None | No file manager integration, no cache cleanup | Missing File Handling | **MED**<br>Disk space issues | - FileManager APIs | Create cache directory in FileManager.default.temporaryDirectory, implement cleanup policy | **S** |
+| 7.3 | Thumbnail Cache | ✅ Done<br>`ThumbnailCache.kt`<br>In-memory LRU cache | ❌ None | No thumbnail caching, images re-decoded each time | Missing Caching | **LOW**<br>Performance impact | - Image loading | Implement NSCache-based thumbnail cache, key by itemId | **S** |
+| **8. STORAGE - EXPORT** |
+| 8.1 | CSV Export | ✅ Done<br>`CsvExportWriter.kt`<br>Tabular export with headers | ❌ None | No CSV generation, cannot export item data | Missing Export Logic | **MED**<br>User productivity feature | - Shared `core-export` module | Call shared CSV export, write to temporary file, present via UIActivityViewController (ShareSheet) | **S** |
+| 8.2 | Zip Export | ✅ Done<br>Referenced in ItemsListScreen | ❌ None | No zip archive creation, cannot bundle images+data | Missing Export Logic | **MED**<br>User productivity feature | - CSV export<br>- ZipArchive library or native Compression | Use Apple Compression framework to create zip, bundle images+CSV, present ShareSheet | **M** |
+| **9. UI - SCREENS** |
+| 9.1 | Items List Screen (Interactive) | ✅ Done<br>`ItemsListScreen.kt`<br>Full CRUD + selection | ⚠️ Partial<br>`ContentView.swift`<br>Read-only display | List shows items but no tap handlers, no edit/delete/share actions | Missing UI Logic | **HIGH**<br>User cannot manage items | - Persistence layer<br>- Navigation to detail | Add tap gestures → navigate to detail, swipe actions for delete, toolbar buttons for export/share | **M** |
+| 9.2 | Item Detail/Edit Screen | ✅ Done<br>`EditItemScreenV3.kt`<br>Full editor with image zoom | ❌ None | No detail view, cannot edit item properties, no image preview | Missing UI | **HIGH**<br>User cannot edit items | - List screen navigation<br>- Persistence for saving | Create `ItemDetailView.swift`: display image with zoom, text fields for editing, save button → update database | **M** |
+| 9.3 | Settings Screens | ✅ Done<br>`settings/` (7 screens)<br>General, Camera, Assistant, Storage, Privacy, Developer | ❌ None | No settings UI, user cannot configure app behavior | Missing UI | **MED**<br>Workaround: hardcode defaults | - UserDefaults for settings | Create settings navigation: root → subsections, bind to UserDefaults, match Android settings structure | **M** |
+| 9.4 | Paywall Screen | ✅ Done<br>`PaywallScreen.kt`<br>Premium upsell | ❌ None | No paywall, cannot prompt for IAP | Missing UI + Billing | **LOW**<br>Monetization deferred | - StoreKit integration | Create paywall SwiftUI view, integrate with StoreKit 2 | **M** |
+| 9.5 | eBay Listing Screens | ✅ Done<br>`selling/` module<br>Draft, Review, Assistant | ❌ None | No eBay listing flow, cannot create listings | Missing UI + Integration | **HIGH** (if eBay is MVP)<br>Core feature for resale use case | - eBay API integration<br>- Persistence for drafts | Create listing flow: item → draft form → review → submit → status, integrate eBay API | **L** |
+| **10. UI - COMPONENTS** |
+| 10.1 | Pull-to-Refresh | ✅ Done<br>Compose SwipeRefresh | ❌ None | No refresh gesture on list | Missing UI Component | **LOW**<br>Nice-to-have | - List screen | Add `.refreshable {}` modifier to List view | **S** |
+| 10.2 | Empty State Handling | ✅ Done<br>Conditional "No items" display | ❌ None | No empty state UI when list is empty | Missing UI Logic | **LOW**<br>UX polish | - List screen | Add conditional view: if items.isEmpty { EmptyStateView() } | **S** |
+| 10.3 | Selection Mode (Multi-Select) | ✅ Done<br>Long-press → multi-select UI | ❌ None | No selection state, cannot batch delete/export | Missing UI State | **MED**<br>User productivity | - List screen | Add EditMode environment, checkboxes, toolbar with batch actions | **M** |
+| 10.4 | Image Zoom (Pinch-to-Zoom) | ✅ Done<br>Compose Zoomable modifier | ❌ None | No pinch-to-zoom on image preview | Missing UI Component | **LOW**<br>UX polish | - Detail screen | Use MagnificationGesture + scaleEffect in SwiftUI | **S** |
+| 10.5 | Confirmation Dialogs | ✅ Done<br>Material AlertDialog | ❌ None | No delete confirmation, accidental deletions possible | Missing UI Component | **MED**<br>User safety | - Delete action | Use `.confirmationDialog()` modifier for destructive actions | **S** |
+| **11. NETWORKING** |
+| 11.1 | Backend API Client | ✅ Done<br>`RequestSigner.kt` + OkHttp | ❌ None | No URLSession client, cannot call backend | Missing Networking Layer | **HIGH**<br>Cloud features blocked | - None (native iOS APIs) | Create `BackendClient.swift`: URLSession + async/await, implement endpoints (/v1/classify, /v1/items) | **M** |
+| 11.2 | Request Signing (HMAC) | ✅ Done<br>`RequestSigner.kt`<br>SEC-003 HMAC-SHA256 | ❌ None | No request authentication, backend will reject | Missing Security | **HIGH**<br>API calls will fail | - Backend client | Port HMAC-SHA256 signing logic to Swift (CryptoKit), add X-Request-Timestamp + X-Request-Signature headers | **S** |
+| 11.3 | Retry Logic with Backoff | ✅ Done<br>OkHttp interceptor | ❌ None | No retry on transient failures | Missing Resilience | **MED**<br>Poor UX on flaky networks | - Backend client | Add retry logic to URLSession: exponential backoff, max 3 retries, only for 5xx/timeout | **S** |
+| 11.4 | Certificate Pinning | ✅ Done<br>Optional in RequestSigner (SEC-003) | ❌ None | No cert pinning, vulnerable to MITM | Missing Security | **LOW**<br>Enterprise/security hardening | - Backend client | Implement URLSessionDelegate with certificate validation, pin SHA-256 hash | **S** |
+| **12. NETWORKING - EBAY** |
+| 12.1 | eBay API Client | ✅ Done<br>`EbayMarketplaceService.kt`<br>OAuth 2.0 + listing CRUD | ❌ None | No eBay API integration, cannot create listings | Missing Integration | **HIGH** (if eBay is MVP) | - Backend client (for OAuth flow) | Implement eBay OAuth 2.0 flow (web redirect), create listing API calls, store tokens in Keychain | **L** |
+| 12.2 | OAuth 2.0 Flow | ✅ Done<br>WebView-based flow | ❌ None | No OAuth flow, cannot authenticate with eBay | Missing Integration | **HIGH** (if eBay is MVP) | - eBay API client | Use ASWebAuthenticationSession for OAuth, handle redirect URL scheme, store tokens | **M** |
+| **13. LOGGING/MONITORING** |
+| 13.1 | Sentry Crash Reporting | ✅ Done<br>`AndroidCrashPortAdapter.kt`<br>Sentry SDK integrated | ❌ None | No crash capture, crashes go unreported | Missing Observability | **MED**<br>Production blind spot | - Sentry iOS SDK | Add Sentry SDK to iOS project, initialize in AppDelegate, implement crash adapter | **S** |
+| 13.2 | Sentry Breadcrumbs | ✅ Done<br>Breadcrumb logging in adapter | ❌ None | No event sequence tracking before crashes | Missing Observability | **LOW**<br>Debugging aid | - Sentry integration | Use Sentry.addBreadcrumb() for key events (screen transitions, API calls) | **S** |
+| 13.3 | Sentry Tags (Grouping) | ✅ Done<br>Tags for flavor, build type, edition | ❌ None | No tag-based filtering in Sentry dashboard | Missing Observability | **LOW**<br>Dashboard usability | - Sentry integration | Set tags via Sentry.configureScope(): app.flavor, user.edition, device.model | **S** |
+| 13.4 | OTLP Telemetry | ✅ Done<br>`shared/telemetry/`<br>OTLP export configured | ❌ None | No telemetry export, cannot trace requests or metrics | Missing Observability | **LOW** (non-MVP)<br>Advanced observability | - OpenTelemetry iOS SDK<br>- Shared telemetry module | Integrate OpenTelemetry Swift SDK, configure OTLP exporter, call shared telemetry facade | **M** |
+| 13.5 | Structured Logging | ✅ Done<br>`ScaniumLog.kt`<br>Centralized logging | ❌ None | No logging facade, uses print() only | Missing Observability | **LOW**<br>Debugging aid | - None | Create `ScaniumLog.swift` wrapper around OSLog, add log levels (debug/info/error) | **S** |
+| 13.6 | Correlation IDs | ✅ Done<br>`CorrelationIds.kt`<br>UUID trace propagation | ❌ None | No distributed tracing, cannot correlate client-server requests | Missing Observability | **LOW**<br>Advanced debugging | - Structured logging<br>- Backend client | Generate UUID per request, propagate in X-Correlation-ID header, log with all events | **S** |
+| **14. SECURITY/PRIVACY** |
+| 14.1 | Camera Permission Handling | ✅ Done<br>`PermissionEducationDialog.kt`<br>Accompanist Permissions | ❌ None<br>`Info.plist` missing NSCameraUsageDescription | No permission request flow, app will crash on camera access | Missing Permissions | **HIGH**<br>App Store rejection risk | - Info.plist keys | Add NSCameraUsageDescription key, implement permission check with AVCaptureDevice.authorizationStatus | **S** |
+| 14.2 | Photo Library Permission | ✅ Done<br>Runtime permission request | ❌ None<br>`Info.plist` missing keys | No permission for saving/loading photos | Missing Permissions | **MED**<br>Image save/load blocked | - Info.plist keys | Add NSPhotoLibraryAddUsageDescription + NSPhotoLibraryUsageDescription, request via PHPhotoLibrary | **S** |
+| 14.3 | API Key Management | ✅ Done<br>BuildConfig from local.properties | ❌ None | No API key configuration, hardcoded or missing | Missing Configuration | **HIGH**<br>Backend auth will fail | - None | Add API key to Xcode build settings (user-defined), access via Bundle.main.infoDictionary | **S** |
+| 14.4 | Keychain Integration | ✅ Done<br>Android Keystore (future enhancement) | ❌ None | No secure storage for tokens/keys | Missing Security | **MED**<br>Sensitive data at risk | - None | Use Keychain Services API for secure storage of OAuth tokens, API keys | **S** |
+| 14.5 | Data Privacy (Terms/Policy) | ✅ Done<br>`SettingsPrivacyScreen.kt`<br>Links to terms/policy | ❌ None | No privacy screen, no terms acceptance | Missing UI | **MED**<br>App Store requirement | - Settings screens | Add privacy settings screen with links to terms/policy, track acceptance in UserDefaults | **S** |
+| **15. ADDITIONAL FEATURES** |
+| 15.1 | Audio Feedback (Sounds) | ✅ Done<br>`AndroidSoundManager.kt`<br>8 sound types | ❌ None | No capture sounds, no success/error feedback | Missing Feature | **LOW**<br>UX polish | - AVFoundation SystemSoundID | Use AVAudioPlayer or SystemSoundID for capture/success/error sounds, gate with settings | **S** |
+| 15.2 | FTUE (First-Time UX) | ✅ Done<br>`ftue/TourViewModel.kt`<br>Guided walkthrough | ❌ None | No onboarding, user dropped into app | Missing Feature | **LOW**<br>UX onboarding | - Permissions<br>- Settings | Create onboarding flow with SwiftUI sheets, permission education, feature highlights | **M** |
+| 15.3 | Billing (StoreKit) | ✅ Done<br>`BillingRepository.kt`<br>Play Billing + entitlements | ❌ None | No in-app purchases, cannot monetize | Missing Feature | **MED** (if monetization is MVP) | - StoreKit 2 | Integrate StoreKit 2, fetch products, implement purchase flow, verify transactions, store entitlements | **M** |
+| 15.4 | Voice/Assistant | ✅ Done<br>`VoiceStateMachine.kt`<br>AI-powered listing assistant | ❌ None | No voice input, no AI assistant | Missing Feature | **LOW** (deferred feature) | - Speech framework<br>- Backend AI endpoint | Integrate Speech framework for voice input, create assistant UI, call backend AI endpoint | **L** |
+| 15.5 | Theme System | ✅ Done<br>`ScaniumTheme.kt`<br>Material 3 + SYSTEM/LIGHT/DARK modes | ⚠️ Minimal<br>System default only | No custom theme, uses SwiftUI defaults | Missing Design System | **LOW**<br>UX branding | - None | Define custom Color palette, create ThemeManager with UserDefaults, apply to all views | **M** |
+| 15.6 | Motion Components | ✅ Done<br>`ui/motion/`<br>Lightning pulse, scan frame appear, price count-up | ❌ None | No motion effects, flat UX | Missing Feature | **LOW**<br>UX polish | - Detection overlay | Create SwiftUI animation modifiers (withAnimation + spring curves) for scan feedback | **S** |
+| **16. KMP INTEGRATION** |
+| 16.1 | Shared Module Initialization | ✅ Done<br>Android calls shared modules at startup | ⚠️ Stub<br>`SharedBridge.swift:74-78`<br>TODOs present | SharedBridge architecture exists but KMP session not initialized, always uses mocks | Missing Shared API Wiring | **HIGH**<br>Shared brain unused | - XCFramework build<br>- Gradle KMP tasks | Build shared XCFramework via Gradle (`./gradlew :shared:...:assembleXCFramework`), add to iOS project, initialize in AppDelegate | **M** |
+| 16.2 | XCFramework Distribution | ✅ Done<br>Android consumes AAR | ❌ Not Distributed<br>No XCFramework in iosApp/Frameworks/ | No XCFramework binary, iOS cannot link shared code | Build Integration | **HIGH**<br>Shared code inaccessible | - Gradle KMP configuration<br>- Xcode framework search paths | Configure Gradle to build XCFramework target, copy to iosApp/Frameworks/, add to Xcode "Frameworks, Libraries, and Embedded Content" | **M** |
+| 16.3 | Type Mapping (Kotlin ↔ Swift) | ✅ Done<br>Android uses Kotlin types directly | ⚠️ Partial<br>`SharedBridge.swift:102-171`<br>Mapping exists but unused | Type mapping implemented but not active (useMocks=true) | Missing Shared API Wiring | **MED**<br>Data marshalling risk | - XCFramework integration | Test type mapping with real shared data, fix any Kotlin/Swift interop issues (nullability, generics) | **S** |
+| 16.4 | Feature Flag Toggle | ✅ Done<br>BuildConfig-driven | ✅ Done<br>`FeatureFlags.swift:4`<br>`useMocks = true` | Feature flag exists but hardcoded to true, should be dynamic | Missing Configuration | **LOW**<br>Dev/test aid | - Shared integration working | Make `useMocks` read from UserDefaults or build setting, toggle at runtime for testing | **S** |
+| **17. BUILD & DEPLOYMENT** |
+| 17.1 | Product Flavors (Prod/Dev/Beta) | ✅ Done<br>3 flavors with distinct app IDs | ❌ None | No schemes for side-by-side installation, single configuration | Build Integration | **LOW**<br>Dev productivity | - Xcode schemes | Create Xcode schemes: Prod, Dev, Beta with distinct bundle IDs, configure build settings per scheme | **S** |
+| 17.2 | Feature Flags (Build-Time) | ✅ Done<br>BuildConfig fields gated per flavor | ❌ None | No build-time feature gates | Build Integration | **LOW**<br>Feature gating | - Xcode build settings | Use preprocessor macros (#if DEBUG) or Swift compiler flags for feature gating | **S** |
+| 17.3 | ProGuard/R8 (Code Obfuscation) | ✅ Done<br>Release builds minified | ❌ None | No code obfuscation, IPA reversible | Build Integration | **LOW**<br>IP protection | - Xcode release config | Enable "Strip Swift Symbols" + "Make Swift Symbols Hidden" in release build settings | **S** |
+| 17.4 | SBOM Generation | ✅ Done<br>CycloneDX plugin | ❌ None | No software bill of materials, supply chain blind spot | Build Integration | **LOW**<br>Security compliance | - CocoaPods or SPM plugin | Add SBOM generation plugin to Xcode build phases (if required for compliance) | **S** |
+| 17.5 | CVE Scanning | ✅ Done<br>OWASP Dependency-Check | ❌ None | No automated vulnerability scanning | Build Integration | **LOW**<br>Security compliance | - CI/CD pipeline | Integrate dependency scanning tool (e.g., Snyk, OWASP) into CI | **S** |
+| **18. TESTING (Out of Scope for This Doc)** |
+| - | Unit Tests | ✅ Extensive | ❌ None | iOS has no tests | Missing Tests | **MED** | - Implementation complete | Write XCTest unit tests for ViewModels, services, utilities | **L** |
+| - | UI Tests | ✅ Espresso tests | ❌ None | iOS has no UI tests | Missing Tests | **LOW** | - Implementation complete | Write XCUITest for critical flows (capture, list, detail) | **M** |
+| - | Integration Tests | ✅ Instrumented tests | ❌ None | iOS has no integration tests | Missing Tests | **LOW** | - Implementation complete | Write integration tests for detection pipeline, backend client | **M** |
+
+---
+
+## SUMMARY STATISTICS
+
+### Gap Counts by Root Cause
+- **Missing UI:** 15 gaps
+- **Missing Platform Integration:** 8 gaps
+- **Missing Networking Layer:** 6 gaps
+- **Missing Wiring:** 12 gaps
+- **Missing Shared API Wiring:** 8 gaps
+- **Missing Orchestration Layer:** 3 gaps
+- **Missing Persistence Layer:** 6 gaps
+- **Missing Configuration:** 5 gaps
+- **Missing Security:** 5 gaps
+- **Missing Observability:** 7 gaps
+- **Missing Feature:** 8 gaps
+- **Missing Model:** 1 gap
+- **Build Integration:** 6 gaps
+- **Missing Tests:** 3 gaps (out of scope)
+
+### Gap Counts by Risk Level
+- **HIGH:** 19 gaps (must-fix for MVP)
+- **MED:** 28 gaps (important for parity)
+- **LOW:** 31 gaps (polish/future enhancements)
+
+### Gap Counts by Size Estimate
+- **S (Small):** 40 gaps (40-120 days total)
+- **M (Medium):** 28 gaps (112-280 days total)
+- **L (Large):** 6 gaps (12-24 weeks total)
+
+---
+
+## CRITICAL PATH (HIGH-Risk Gaps)
+
+These 19 HIGH-risk gaps block MVP:
+
+1. Camera Preview Screen (1.1)
+2. Shutter Button (1.2)
+3. Frame Processing Wiring (1.7)
+4. Object Detection Model + Wiring (2.1)
+5. Detection Orchestration (2.4)
+6. Cloud Classification (3.2)
+7. Classification Orchestrator (3.3)
+8. Local Database (6.1)
+9. Items List Interactivity (9.1)
+10. Item Detail/Edit Screen (9.2)
+11. eBay Listing Screens (9.5) - *if eBay is MVP*
+12. Backend API Client (11.1)
+13. Request Signing (11.2)
+14. eBay API Client (12.1) - *if eBay is MVP*
+15. eBay OAuth Flow (12.2) - *if eBay is MVP*
+16. Camera Permission Handling (14.1)
+17. API Key Management (14.3)
+18. Shared Module Initialization (16.1)
+19. XCFramework Distribution (16.2)
+
+---
+
+## END OF GAP MATRIX
