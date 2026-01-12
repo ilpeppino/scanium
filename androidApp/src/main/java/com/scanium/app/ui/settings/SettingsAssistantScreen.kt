@@ -329,29 +329,6 @@ fun SettingsAssistantScreen(
                 },
             )
 
-            SettingActionRow(
-                title = stringResource(R.string.settings_assistant_test_connection),
-                subtitle =
-                    when (connectionTestState) {
-                        is ConnectionTestState.Testing -> stringResource(R.string.settings_assistant_connection_testing)
-                        is ConnectionTestState.Success -> stringResource(R.string.settings_assistant_connection_success)
-                        is ConnectionTestState.Failed -> (connectionTestState as ConnectionTestState.Failed).message
-                        else -> stringResource(R.string.settings_assistant_connection_idle)
-                    },
-                icon =
-                    when (connectionTestState) {
-                        is ConnectionTestState.Success -> Icons.Filled.CheckCircle
-                        is ConnectionTestState.Failed -> Icons.Filled.Warning
-                        is ConnectionTestState.Testing -> null
-                        else -> Icons.Filled.SettingsVoice
-                    },
-                onClick = {
-                    if (connectionTestState !is ConnectionTestState.Testing) {
-                        viewModel.testAssistantConnection()
-                    }
-                },
-            )
-
             SettingSwitchRow(
                 title = stringResource(R.string.settings_assistant_images_title),
                 subtitle = stringResource(R.string.settings_assistant_images_subtitle),
