@@ -58,6 +58,7 @@ run_test() {
 ***REMOVED*** Run all proof scripts
 run_test "Metrics Pipeline (Backend → Mimir)" "prove-metrics.sh"
 run_test "Logs Pipeline (Backend → Loki)" "prove-logs.sh"
+run_test "Mobile Telemetry Pipeline (End-to-End)" "prove-mobile-telemetry.sh"
 run_test "Mobile Dashboard Wiring" "prove-mobile-dashboard-wiring.sh"
 run_test "Grafana Dashboards Provisioned" "prove-grafana-dashboards.sh"
 

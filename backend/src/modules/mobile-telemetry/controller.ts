@@ -1,17 +1,20 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
+import prom from 'prom-client';
 
 /**
- * Mobile telemetry ingestion endpoint (Option C implementation)
+ * Mobile telemetry ingestion endpoint (batch support)
  *
  * Flow: Mobile App → HTTPS Backend → Structured JSON logs (stdout) → Alloy docker pipeline → Loki
  *
  * This implementation:
- * 1. Validates the incoming event against schema
- * 2. Redacts any PII-like patterns
- * 3. Logs ONE structured JSON line to stdout
- * 4. Docker log driver captures it
- * 5. Alloy processes it and sends to Loki with labels
- * 6. Grafana queries Loki via {source="scanium-mobile"}
+ * 1. Validates batch of events against schema (with event_name allowlist)
+ * 2. Validates timestamp bounds (within +-24h to prevent Loki rejections)
+ * 3. Redacts any PII-like patterns
+ * 4. Logs ONE structured JSON line per event to stdout
+ * 5. Records Prometheus metrics for each event
+ * 6. Docker log driver captures logs
+ * 7. Alloy processes and sends to Loki with labels
+ * 8. Grafana queries Loki via {source="scanium-mobile"}
  *
  * See: docs/telemetry/MOBILE_TELEMETRY_SCHEMA.md
  */
@@ -24,8 +27,35 @@ interface MobileTelemetryEvent {
   timestamp_ms: number;
   session_id?: string;
   request_id?: string;
+  result?: 'ok' | 'fail';
+  error_code?: string;
+  latency_ms?: number;
   attributes?: Record<string, any>;
 }
+
+interface MobileTelemetryBatch {
+  events: MobileTelemetryEvent[];
+}
+
+// Prometheus metrics
+const mobileEventsTotal = new prom.Counter({
+  name: 'scanium_mobile_events_total',
+  help: 'Total number of mobile telemetry events received',
+  labelNames: ['event_name', 'platform', 'app_version', 'build_type', 'result'],
+});
+
+const mobileErrorsTotal = new prom.Counter({
+  name: 'scanium_mobile_errors_total',
+  help: 'Total number of mobile telemetry errors',
+  labelNames: ['event_name', 'error_code', 'platform', 'app_version', 'build_type'],
+});
+
+const mobileEventLatency = new prom.Histogram({
+  name: 'scanium_mobile_event_latency_ms',
+  help: 'Mobile event latency in milliseconds',
+  labelNames: ['event_name', 'platform', 'app_version', 'build_type'],
+  buckets: [50, 100, 200, 500, 1000, 2000, 5000, 10000],
+});
 
 /**
  * Disallowed attribute keys (PII/high-cardinality)
@@ -38,6 +68,15 @@ const DISALLOWED_ATTRIBUTES = [
 ];
 
 /**
+ * Validate timestamp is within sane bounds (+-24h) to prevent Loki rejections
+ */
+function isTimestampValid(timestamp_ms: number): boolean {
+  const now = Date.now();
+  const dayInMs = 24 * 60 * 60 * 1000;
+  return timestamp_ms > now - dayInMs && timestamp_ms < now + dayInMs;
+}
+
+/**
  * Validate and sanitize event attributes
  */
 function sanitizeAttributes(attributes?: Record<string, any>): Record<string, any> {
@@ -46,7 +85,7 @@ function sanitizeAttributes(attributes?: Record<string, any>): Record<string, an
   const sanitized: Record<string, any> = {};
   for (const [key, value] of Object.entries(attributes)) {
     // Reject disallowed keys
-    if (DISALLOWED_ATTRIBUTES.some(blocked => key.toLowerCase().includes(blocked))) {
+    if (DISALLOWED_ATTRIBUTES.some((blocked) => key.toLowerCase().includes(blocked))) {
       continue; // Skip this attribute
     }
 
@@ -61,39 +100,110 @@ function sanitizeAttributes(attributes?: Record<string, any>): Record<string, an
 
 export async function postMobileTelemetryHandler(
   request: FastifyRequest<{
-    Body: MobileTelemetryEvent;
+    Body: MobileTelemetryBatch;
   }>,
   reply: FastifyReply
 ) {
-  const { event_name, platform, app_version, build_type, timestamp_ms, session_id, request_id, attributes } = request.body;
+  const { events } = request.body;
 
-  // Sanitize attributes (remove PII, high-cardinality data)
-  const sanitizedAttributes = sanitizeAttributes(attributes);
+  let accepted = 0;
+  let rejected = 0;
 
-  // Create structured log event
-  // This will be captured by docker log driver, then Alloy, then sent to Loki
-  const logEvent = {
-    source: 'scanium-mobile',
-    event_name,
-    platform,
-    app_version,
-    build_type,
-    timestamp_ms,
-    ...(session_id && { session_id }),
-    ...(request_id && { request_id }),
-    ...(Object.keys(sanitizedAttributes).length > 0 && { attributes: sanitizedAttributes }),
-  };
+  for (const event of events) {
+    const {
+      event_name,
+      platform,
+      app_version,
+      build_type,
+      timestamp_ms,
+      session_id,
+      request_id,
+      result,
+      error_code,
+      latency_ms,
+      attributes,
+    } = event;
 
-  // Log to stdout as single-line JSON (critical: must be single line for docker log driver)
-  console.log(JSON.stringify(logEvent));
+    // Validate timestamp bounds
+    if (!isTimestampValid(timestamp_ms)) {
+      request.log.warn(
+        {
+          event_name,
+          timestamp_ms,
+          now: Date.now(),
+        },
+        'Mobile telemetry event rejected: timestamp out of bounds'
+      );
+      rejected++;
+      continue;
+    }
 
-  // Also log via Fastify logger for debugging (this goes to OTLP if configured)
-  request.log.debug({
-    msg: 'Mobile telemetry event received',
-    event_name,
-    platform,
-    build_type,
-  });
+    // Sanitize attributes (remove PII, high-cardinality data)
+    const sanitizedAttributes = sanitizeAttributes(attributes);
 
-  return reply.status(202).send({ success: true });
+    // Create structured log event
+    // This will be captured by docker log driver, then Alloy, then sent to Loki
+    const logEvent = {
+      source: 'scanium-mobile',
+      event_name,
+      platform,
+      app_version,
+      build_type,
+      timestamp_ms,
+      ...(session_id && { session_id }),
+      ...(request_id && { request_id }),
+      ...(result && { result }),
+      ...(error_code && { error_code }),
+      ...(latency_ms !== undefined && { latency_ms }),
+      ...(Object.keys(sanitizedAttributes).length > 0 && { attributes: sanitizedAttributes }),
+    };
+
+    // Log to stdout as single-line JSON (critical: must be single line for docker log driver)
+    console.log(JSON.stringify(logEvent));
+
+    // Record Prometheus metrics
+    mobileEventsTotal.inc({
+      event_name,
+      platform,
+      app_version,
+      build_type,
+      result: result || 'ok',
+    });
+
+    if (result === 'fail' && error_code) {
+      mobileErrorsTotal.inc({
+        event_name,
+        error_code,
+        platform,
+        app_version,
+        build_type,
+      });
+    }
+
+    if (latency_ms !== undefined) {
+      mobileEventLatency.observe(
+        {
+          event_name,
+          platform,
+          app_version,
+          build_type,
+        },
+        latency_ms
+      );
+    }
+
+    accepted++;
+  }
+
+  // Log batch summary via Fastify logger for debugging
+  request.log.info(
+    {
+      accepted,
+      rejected,
+      total: events.length,
+    },
+    'Mobile telemetry batch processed'
+  );
+
+  return reply.status(200).send({ accepted, rejected });
 }

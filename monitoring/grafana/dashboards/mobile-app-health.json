@@ -67,10 +67,68 @@
       }
     },
     {
+      "id": 11,
+      "title": "Telemetry Status",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 3, "w": 6, "h": 4 },
+      "datasource": { "type": "loki", "uid": "LOKI" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({source=\"scanium-mobile\"} [15m]))",
+          "instant": true
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "special",
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "NO DATA",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 0,
+                "to": 0,
+                "result": {
+                  "text": "NO DATA",
+                  "color": "red"
+                }
+              }
+            },
+            {
+              "type": "range",
+              "options": {
+                "from": 1,
+                "to": 999999,
+                "result": {
+                  "text": "ACTIVE",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "noValue": "NO DATA"
+        }
+      },
+      "options": {
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "colorMode": "background"
+      }
+    },
+    {
       "id": 2,
       "title": "Event Rate by Type",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 3, "w": 12, "h": 8 },
+      "gridPos": { "x": 6, "y": 3, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
@@ -90,7 +148,7 @@
       "id": 3,
       "title": "Platform Distribution",
       "type": "piechart",
-      "gridPos": { "x": 12, "y": 3, "w": 6, "h": 8 },
+      "gridPos": { "x": 18, "y": 3, "w": 6, "h": 4 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
@@ -104,7 +162,7 @@
       "id": 4,
       "title": "Version Adoption",
       "type": "piechart",
-      "gridPos": { "x": 18, "y": 3, "w": 6, "h": 8 },
+      "gridPos": { "x": 0, "y": 7, "w": 6, "h": 4 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
@@ -118,7 +176,7 @@
       "id": 5,
       "title": "Scan Funnel (Started → Completed)",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
+      "gridPos": { "x": 6, "y": 11, "w": 12, "h": 8 },
       "datasource": { "type": "loki", "uid": "LOKI" },
       "targets": [
         {
