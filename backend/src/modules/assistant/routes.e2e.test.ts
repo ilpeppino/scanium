@@ -269,8 +269,20 @@ describe('Assistant Routes E2E - Market Price Insights', () => {
     expect(body.reply).toBeDefined();
     expect(body.correlationId).toBeDefined();
 
-    // Market price may or may not be present depending on pricing.enabled flag
-    // This test just ensures backward compatibility (no crash)
+    // Regression test: Verify pricing works with default region (not ERROR)
+    // Background: Default region was 'EU', which is not a valid country code
+    // in marketplaces.eu.json, causing pricing to fail with ERROR/VALIDATION.
+    // Fix: Changed default region to 'NL' (a valid country code).
+    if (body.marketPrice) {
+      // Pricing should use default region (NL) and NOT return ERROR status
+      expect(body.marketPrice.countryCode).toBe('NL');
+      expect(body.marketPrice.status).not.toBe('ERROR');
+
+      // Status should be one of the non-error states
+      expect(['OK', 'NOT_SUPPORTED', 'DISABLED', 'TIMEOUT', 'NO_RESULTS']).toContain(
+        body.marketPrice.status
+      );
+    }
   });
 
   it('Cache stats endpoint includes pricing cache stats', async () => {
