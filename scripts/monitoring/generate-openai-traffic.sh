@@ -49,7 +49,7 @@ make_request() {
   echo -e "${YELLOW}→ ${description}${NC}"
 
   response=$(curl -s -w "\n%{http_code}" -X POST \
-    "${BASE_URL}/assist/chat" \
+    "${BASE_URL}/v1/assist/chat" \
     -H "Content-Type: application/json" \
     -H "X-API-Key: ${API_KEY}" \
     -d "$payload")
