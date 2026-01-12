@@ -9,7 +9,7 @@ export async function mobileTelemetryRoutes(app: FastifyInstance) {
       schema: postMobileTelemetrySchema,
       config: {
         rateLimit: {
-          max: 100,
+          max: 60,
           timeWindow: '1 minute',
         },
       },
