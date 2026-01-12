@@ -45,10 +45,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.scanium.app.R
+import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
+import com.scanium.app.model.Country
 import com.scanium.app.model.config.AssistantPrerequisiteState
 import kotlinx.coroutines.launch
 
@@ -66,7 +68,7 @@ fun SettingsAssistantScreen(
     val allowAssistantImages by viewModel.allowAssistantImages.collectAsState()
     val assistantLanguage by viewModel.assistantLanguage.collectAsState()
     val assistantTone by viewModel.assistantTone.collectAsState()
-    val assistantRegion by viewModel.assistantRegion.collectAsState()
+    val assistantCountryCode by viewModel.assistantCountryCode.collectAsState()
     val assistantUnits by viewModel.assistantUnits.collectAsState()
     val assistantVerbosity by viewModel.assistantVerbosity.collectAsState()
     val voiceModeEnabled by viewModel.voiceModeEnabled.collectAsState()
@@ -76,6 +78,10 @@ fun SettingsAssistantScreen(
     val assistantPrerequisiteState by viewModel.assistantPrerequisiteState.collectAsState()
     val showPrerequisiteDialog by viewModel.showPrerequisiteDialog.collectAsState()
     val connectionTestState by viewModel.connectionTestState.collectAsState()
+
+    // Load countries from marketplace JSON
+    val marketplaceRepository = remember { MarketplaceRepository(context) }
+    val countries = remember { marketplaceRepository.loadCountries() }
 
     // Language options using SettingOption
     val languageOptions =
@@ -105,22 +111,15 @@ fun SettingsAssistantScreen(
             )
         }
 
-    // Region options using SettingOption
-    val regionOptions =
-        AssistantRegion.values().map { region ->
-            SettingOption(
-                value = region,
-                label =
-                    when (region) {
-                        AssistantRegion.EU -> stringResource(R.string.settings_region_europe)
-                        AssistantRegion.NL -> stringResource(R.string.settings_region_netherlands)
-                        AssistantRegion.DE -> stringResource(R.string.settings_region_germany)
-                        AssistantRegion.FR -> stringResource(R.string.settings_region_france)
-                        AssistantRegion.BE -> stringResource(R.string.settings_region_belgium)
-                        AssistantRegion.UK -> stringResource(R.string.settings_region_uk)
-                        AssistantRegion.US -> stringResource(R.string.settings_region_us)
-                    },
-            )
+    // Country options from marketplace JSON with flag emojis
+    val countryOptions =
+        remember(countries, assistantLanguage) {
+            countries.map { country ->
+                SettingOption(
+                    value = country.code,
+                    label = "${country.getFlagEmoji()} ${country.getDisplayName(assistantLanguage.lowercase())}",
+                )
+            }
         }
 
     // Units options using SettingOption
@@ -277,14 +276,14 @@ fun SettingsAssistantScreen(
                     onValueSelected = viewModel::setAssistantTone,
                 )
 
-                // Region picker with bottom sheet
+                // Country picker with bottom sheet
                 ValuePickerSettingRow(
-                    title = stringResource(R.string.settings_assistant_region_title),
-                    subtitle = stringResource(R.string.settings_assistant_region_subtitle),
+                    title = stringResource(R.string.settings_assistant_country_title),
+                    subtitle = stringResource(R.string.settings_assistant_country_subtitle),
                     icon = Icons.Filled.Language,
-                    currentValue = assistantRegion,
-                    options = regionOptions,
-                    onValueSelected = viewModel::setAssistantRegion,
+                    currentValue = assistantCountryCode,
+                    options = countryOptions,
+                    onValueSelected = viewModel::setAssistantCountryCode,
                 )
 
                 // Units picker with bottom sheet

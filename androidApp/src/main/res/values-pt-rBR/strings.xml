@@ -112,14 +112,8 @@
     <string name="settings_tone_neutral">Neutro</string>
     <string name="settings_tone_friendly">Amigável</string>
     <string name="settings_tone_professional">Profissional</string>
-    <string name="settings_assistant_region_title">Região</string>
-    <string name="settings_assistant_region_subtitle">Afeta moeda e sugestões de marketplace</string>
-    <string name="settings_region_europe">Europa (Geral)</string>
-    <string name="settings_region_netherlands">Países Baixos</string>
-    <string name="settings_region_germany">Alemanha</string>
-    <string name="settings_region_france">França</string>
-    <string name="settings_region_belgium">Bélgica</string>
-    <string name="settings_region_uk">Reino Unido</string>
+    <string name="settings_assistant_country_title">País</string>
+    <string name="settings_assistant_country_subtitle">Afeta moeda e sugestões de marketplace</string>
     <string name="settings_region_us">Estados Unidos</string>
     <string name="settings_assistant_units_title">Unidades</string>
     <string name="settings_assistant_units_subtitle">Sistema de medidas para cálculos</string>

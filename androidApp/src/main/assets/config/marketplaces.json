@@ -1,0 +1,299 @@
+{
+  "version": 1,
+  "countries": [
+    {
+      "code": "AL",
+      "defaultCurrency": "ALL",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de", "amazon.it"], "type": "global" },
+        { "id": "aliexpress", "name": "AliExpress", "domains": ["aliexpress.com"], "type": "global" }
+      ]
+    },
+    {
+      "code": "AD",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.es", "amazon.fr"], "type": "global" }
+      ]
+    },
+    {
+      "code": "AT",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "willhaben", "name": "Willhaben", "domains": ["willhaben.at"], "type": "classifieds" },
+        { "id": "shpock", "name": "Shpock", "domains": ["shpock.com"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "BE",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de", "amazon.fr"], "type": "global" },
+        { "id": "bol", "name": "Bol.com", "domains": ["bol.com"], "type": "marketplace" },
+        { "id": "2dehands", "name": "2dehands", "domains": ["2dehands.be"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "BG",
+      "defaultCurrency": "BGN",
+      "marketplaces": [
+        { "id": "aliexpress", "name": "AliExpress", "domains": ["aliexpress.com"], "type": "global" },
+        { "id": "olx_bg", "name": "OLX", "domains": ["olx.bg"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "CH",
+      "defaultCurrency": "CHF",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de", "amazon.fr"], "type": "global" },
+        { "id": "ricardo", "name": "Ricardo", "domains": ["ricardo.ch"], "type": "classifieds" },
+        { "id": "galaxus", "name": "Galaxus", "domains": ["galaxus.ch"], "type": "marketplace" }
+      ]
+    },
+    {
+      "code": "CY",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de", "amazon.co.uk"], "type": "global" },
+        { "id": "bazaraki", "name": "Bazaraki", "domains": ["bazaraki.com"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "CZ",
+      "defaultCurrency": "CZK",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "alza", "name": "Alza", "domains": ["alza.cz"], "type": "marketplace" },
+        { "id": "heureka", "name": "Heureka", "domains": ["heureka.cz"], "type": "marketplace" }
+      ]
+    },
+    {
+      "code": "DE",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "ebay", "name": "eBay", "domains": ["ebay.de"], "type": "global" },
+        { "id": "otto", "name": "Otto", "domains": ["otto.de"], "type": "marketplace" },
+        { "id": "kleinanzeigen", "name": "Kleinanzeigen", "domains": ["kleinanzeigen.de"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "DK",
+      "defaultCurrency": "DKK",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "dba", "name": "DBA", "domains": ["dba.dk"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "EE",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "osta", "name": "Osta", "domains": ["osta.ee"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "ES",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.es"], "type": "global" },
+        { "id": "wallapop", "name": "Wallapop", "domains": ["wallapop.com"], "type": "classifieds" },
+        { "id": "milanuncios", "name": "Milanuncios", "domains": ["milanuncios.com"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "FI",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "tori", "name": "Tori", "domains": ["tori.fi"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "FR",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.fr"], "type": "global" },
+        { "id": "cdiscount", "name": "Cdiscount", "domains": ["cdiscount.com"], "type": "marketplace" },
+        { "id": "leboncoin", "name": "Leboncoin", "domains": ["leboncoin.fr"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "GB",
+      "defaultCurrency": "GBP",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.co.uk"], "type": "global" },
+        { "id": "ebay", "name": "eBay", "domains": ["ebay.co.uk"], "type": "global" },
+        { "id": "gumtree", "name": "Gumtree", "domains": ["gumtree.com"], "type": "classifieds" },
+        { "id": "onbuy", "name": "OnBuy", "domains": ["onbuy.com"], "type": "marketplace" }
+      ]
+    },
+    {
+      "code": "GR",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "skroutz", "name": "Skroutz", "domains": ["skroutz.gr"], "type": "marketplace" }
+      ]
+    },
+    {
+      "code": "HR",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" },
+        { "id": "njuskalo", "name": "Njuskalo", "domains": ["njuskalo.hr"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "HU",
+      "defaultCurrency": "HUF",
+      "marketplaces": [
+        { "id": "aliexpress", "name": "AliExpress", "domains": ["aliexpress.com"], "type": "global" },
+        { "id": "emag", "name": "eMAG", "domains": ["emag.hu"], "type": "marketplace" }
+      ]
+    },
+    {
+      "code": "IE",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.co.uk"], "type": "global" },
+        { "id": "donedeal", "name": "DoneDeal", "domains": ["donedeal.ie"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "IT",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.it"], "type": "global" },
+        { "id": "subito", "name": "Subito", "domains": ["subito.it"], "type": "classifieds" },
+        { "id": "ebay", "name": "eBay", "domains": ["ebay.it"], "type": "global" }
+      ]
+    },
+    {
+      "code": "LI",
+      "defaultCurrency": "CHF",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" }
+      ]
+    },
+    {
+      "code": "LT",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "pigu", "name": "Pigu", "domains": ["pigu.lt"], "type": "marketplace" },
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" }
+      ]
+    },
+    {
+      "code": "LU",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de", "amazon.fr"], "type": "global" }
+      ]
+    },
+    {
+      "code": "LV",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "220", "name": "220.lv", "domains": ["220.lv"], "type": "marketplace" },
+        { "id": "ss", "name": "SS", "domains": ["ss.lv"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "MC",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.fr"], "type": "global" }
+      ]
+    },
+    {
+      "code": "MT",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.co.uk"], "type": "global" },
+        { "id": "maltapark", "name": "MaltaPark", "domains": ["maltapark.com"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "NL",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "bol", "name": "Bol.com", "domains": ["bol.com"], "type": "marketplace" },
+        { "id": "marktplaats", "name": "Marktplaats", "domains": ["marktplaats.nl"], "type": "classifieds" },
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.nl"], "type": "global" }
+      ]
+    },
+    {
+      "code": "NO",
+      "defaultCurrency": "NOK",
+      "marketplaces": [
+        { "id": "finn", "name": "Finn", "domains": ["finn.no"], "type": "classifieds" },
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.de"], "type": "global" }
+      ]
+    },
+    {
+      "code": "PL",
+      "defaultCurrency": "PLN",
+      "marketplaces": [
+        { "id": "allegro", "name": "Allegro", "domains": ["allegro.pl"], "type": "marketplace" },
+        { "id": "olx", "name": "OLX", "domains": ["olx.pl"], "type": "classifieds" },
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.pl"], "type": "global" }
+      ]
+    },
+    {
+      "code": "PT",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "olx", "name": "OLX", "domains": ["olx.pt"], "type": "classifieds" },
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.es"], "type": "global" }
+      ]
+    },
+    {
+      "code": "RO",
+      "defaultCurrency": "RON",
+      "marketplaces": [
+        { "id": "emag", "name": "eMAG", "domains": ["emag.ro"], "type": "marketplace" },
+        { "id": "olx", "name": "OLX", "domains": ["olx.ro"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "SE",
+      "defaultCurrency": "SEK",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.se"], "type": "global" },
+        { "id": "blocket", "name": "Blocket", "domains": ["blocket.se"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "SI",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "bolha", "name": "Bolha", "domains": ["bolha.com"], "type": "classifieds" }
+      ]
+    },
+    {
+      "code": "SK",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "alza", "name": "Alza", "domains": ["alza.sk"], "type": "marketplace" },
+        { "id": "heureka", "name": "Heureka", "domains": ["heureka.sk"], "type": "marketplace" }
+      ]
+    },
+    {
+      "code": "SM",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.it"], "type": "global" }
+      ]
+    },
+    {
+      "code": "VA",
+      "defaultCurrency": "EUR",
+      "marketplaces": [
+        { "id": "amazon", "name": "Amazon", "domains": ["amazon.it"], "type": "global" }
+      ]
+    }
+  ]
+}

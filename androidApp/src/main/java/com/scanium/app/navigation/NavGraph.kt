@@ -557,7 +557,9 @@ fun ObjectaNavGraph(
                     override fun <T : ViewModel> create(modelClass: Class<T>): T {
                         if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
                             return SettingsViewModel(
+                                context = context,
                                 settingsRepository = settingsRepository,
+                                marketplaceRepository = com.scanium.app.data.MarketplaceRepository(context),
                                 entitlementManager = entitlementManager,
                                 configProvider = configProvider,
                                 featureFlagRepository = featureFlagRepository,
