@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Named
@@ -704,6 +705,100 @@ class ItemsViewModel
                     )
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to add photo to item $itemId", e)
+                }
+            }
+        }
+
+        /**
+         * Delete multiple photos from an item.
+         *
+         * This method:
+         * - Removes the photos from the item's additionalPhotos list
+         * - Deletes the actual files from disk
+         * - Updates the item in state
+         * - Triggers re-enrichment using remaining photos (including primary thumbnail)
+         *
+         * @param context Android context for file operations
+         * @param itemId The ID of the item
+         * @param photoIds Set of photo IDs to delete
+         * @param onComplete Callback invoked when deletion completes
+         */
+        fun deletePhotosFromItem(
+            context: Context,
+            itemId: String,
+            photoIds: Set<String>,
+            onComplete: () -> Unit = {}
+        ) {
+            if (photoIds.isEmpty()) {
+                onComplete()
+                return
+            }
+
+            viewModelScope.launch(workerDispatcher) {
+                try {
+                    Log.i(TAG, "Deleting ${photoIds.size} photo(s) from item $itemId")
+
+                    // Get the item
+                    val item = stateManager.getItem(itemId)
+                    if (item == null) {
+                        Log.e(TAG, "Cannot delete photos - item not found: $itemId")
+                        withContext(mainDispatcher) { onComplete() }
+                        return@launch
+                    }
+
+                    // Find photos to delete
+                    val photosToDelete = item.additionalPhotos.filter { it.id in photoIds }
+                    if (photosToDelete.isEmpty()) {
+                        Log.w(TAG, "No photos found to delete for item $itemId")
+                        withContext(mainDispatcher) { onComplete() }
+                        return@launch
+                    }
+
+                    // Delete files from disk
+                    var deletedCount = 0
+                    photosToDelete.forEach { photo ->
+                        photo.uri?.let { uri ->
+                            try {
+                                val file = java.io.File(uri)
+                                if (file.exists() && file.delete()) {
+                                    deletedCount++
+                                    Log.d(TAG, "Deleted photo file: ${file.name}")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Failed to delete photo file: ${photo.uri}", e)
+                            }
+                        }
+                    }
+                    Log.i(TAG, "Deleted $deletedCount file(s) from disk")
+
+                    // Remove photos from item in state
+                    stateManager.removePhotosFromItem(itemId, photoIds)
+
+                    Log.i(TAG, "Photos removed from item state, triggering re-enrichment")
+
+                    // Trigger re-enrichment with remaining photos
+                    // Use the primary thumbnail for re-classification
+                    val updatedItem = stateManager.getItem(itemId)
+                    if (updatedItem != null) {
+                        val thumbnailRef = updatedItem.thumbnailRef ?: updatedItem.thumbnail
+                        visionInsightsPrefiller.extractAndApply(
+                            context = context,
+                            scope = viewModelScope,
+                            stateManager = stateManager,
+                            itemId = itemId,
+                            imageUri = null,
+                            thumbnail = thumbnailRef,
+                        )
+                    }
+
+                    withContext(mainDispatcher) {
+                        onComplete()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to delete photos from item $itemId", e)
+                    withContext(mainDispatcher) {
+                        onComplete()
+                    }
                 }
             }
         }

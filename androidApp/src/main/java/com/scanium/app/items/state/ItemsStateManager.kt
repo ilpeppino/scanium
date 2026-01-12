@@ -952,6 +952,40 @@ class ItemsStateManager(
     }
 
     /**
+     * Remove multiple photos from an item by their IDs.
+     *
+     * This updates the item's additionalPhotos list by filtering out
+     * the photos with the specified IDs, and persists the changes.
+     *
+     * @param itemId The ID of the item
+     * @param photoIds Set of photo IDs to remove
+     */
+    fun removePhotosFromItem(
+        itemId: String,
+        photoIds: Set<String>,
+    ) {
+        if (photoIds.isEmpty()) return
+
+        val updatedItems =
+            _items.value.map { item ->
+                if (item.id == itemId) {
+                    val remainingPhotos = item.additionalPhotos.filter { it.id !in photoIds }
+                    Log.i(TAG, "Removing ${photoIds.size} photo(s) from item $itemId, ${remainingPhotos.size} remaining")
+                    item.copy(additionalPhotos = remainingPhotos)
+                } else {
+                    item
+                }
+            }
+        _items.value = updatedItems
+
+        // Update aggregator
+        itemAggregator.removePhotosFromItem(itemId, photoIds)
+
+        persistItems(updatedItems)
+        onStateChanged?.invoke()
+    }
+
+    /**
      * Update export assistant fields for an item.
      *
      * @param itemId The ID of the item to update

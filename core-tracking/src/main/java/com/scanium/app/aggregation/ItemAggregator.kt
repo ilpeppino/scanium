@@ -688,6 +688,22 @@ class ItemAggregator(
     }
 
     /**
+     * Remove multiple photos from an aggregated item by their IDs.
+     *
+     * @param aggregatedId The ID of the aggregated item
+     * @param photoIds Set of photo IDs to remove
+     */
+    @Synchronized
+    fun removePhotosFromItem(
+        aggregatedId: String,
+        photoIds: Set<String>,
+    ) {
+        aggregatedItems[aggregatedId]?.let { item ->
+            item.additionalPhotos = item.additionalPhotos.filter { it.id !in photoIds }
+        }
+    }
+
+    /**
      * Update export assistant fields for an aggregated item.
      */
     fun updateExportFields(
