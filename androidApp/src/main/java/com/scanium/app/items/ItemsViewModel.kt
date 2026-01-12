@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -73,6 +74,7 @@ class ItemsViewModel
         private val stableItemCropper: ClassificationThumbnailProvider,
         private val visionInsightsPrefiller: VisionInsightsPrefiller,
         private val cropBasedEnricher: CropBasedEnricher,
+        private val settingsRepository: com.scanium.app.data.SettingsRepository,
         telemetry: Telemetry?,
     ) : ViewModel() {
         // Default dispatchers (override in tests if needed)
@@ -88,6 +90,7 @@ class ItemsViewModel
             stableItemCropper: ClassificationThumbnailProvider,
             visionInsightsPrefiller: VisionInsightsPrefiller,
             cropBasedEnricher: CropBasedEnricher,
+            settingsRepository: com.scanium.app.data.SettingsRepository,
             telemetry: Telemetry?,
             workerDispatcher: CoroutineDispatcher,
             mainDispatcher: CoroutineDispatcher,
@@ -100,6 +103,7 @@ class ItemsViewModel
             stableItemCropper = stableItemCropper,
             visionInsightsPrefiller = visionInsightsPrefiller,
             cropBasedEnricher = cropBasedEnricher,
+            settingsRepository = settingsRepository,
             telemetry = telemetry,
         ) {
             this.workerDispatcher = workerDispatcher
@@ -189,6 +193,10 @@ class ItemsViewModel
         private val _persistenceAlerts = MutableSharedFlow<PersistenceAlert>(extraBufferCapacity = 1)
         val persistenceAlerts: SharedFlow<PersistenceAlert> = _persistenceAlerts.asSharedFlow()
 
+        /** UI events (e.g., navigation triggers) */
+        private val _uiEvents = MutableSharedFlow<ItemsUiEvent>(extraBufferCapacity = 1)
+        val uiEvents: SharedFlow<ItemsUiEvent> = _uiEvents.asSharedFlow()
+
         /** Current similarity threshold for aggregation */
         val similarityThreshold: StateFlow<Float> = stateManager.similarityThreshold
 
@@ -226,19 +234,41 @@ class ItemsViewModel
         // ==================== Item CRUD Operations (Delegated to StateManager) ====================
 
         /**
+         * Emits a navigation event to open the item list if the setting is enabled and items were found.
+         * This is called after items are successfully added to the list.
+         *
+         * @param itemCount Number of items added
+         */
+        private fun emitNavigateToItemListIfEnabled(itemCount: Int) {
+            if (itemCount > 0) {
+                viewModelScope.launch {
+                    val shouldAutoOpen = settingsRepository.openItemListAfterScanFlow.first()
+                    if (shouldAutoOpen) {
+                        Log.i(TAG, "Auto-opening item list after scan (items added: $itemCount)")
+                        _uiEvents.emit(ItemsUiEvent.NavigateToItemList)
+                    }
+                }
+            }
+        }
+
+        /**
          * Adds a single detected item to the list.
+         * If auto-open setting is enabled, emits a navigation event to the items list.
          * @see ItemsStateManager.addItem
          */
         fun addItem(item: ScannedItem) {
             stateManager.addItem(item)
+            emitNavigateToItemListIfEnabled(1)
         }
 
         /**
          * Adds multiple detected items at once.
+         * If auto-open setting is enabled, emits a navigation event to the items list.
          * @see ItemsStateManager.addItems
          */
         fun addItems(newItems: List<ScannedItem>) {
             stateManager.addItems(newItems)
+            emitNavigateToItemListIfEnabled(newItems.size)
         }
 
         /**
@@ -303,6 +333,9 @@ class ItemsViewModel
                     Log.w(TAG, "SCAN_ENRICH: ⚠ Item ${aggregated.aggregatedId} has no thumbnail or URI - vision prefill SKIPPED!")
                 }
             }
+
+            // Emit navigation event if auto-open is enabled
+            emitNavigateToItemListIfEnabled(aggregatedItems.size)
         }
 
         /**
@@ -375,6 +408,9 @@ class ItemsViewModel
                     stateManager = stateManager,
                 )
             }
+
+            // Emit navigation event if auto-open is enabled
+            emitNavigateToItemListIfEnabled(aggregatedItems.size)
 
             // Note: fullImageBitmap should be recycled by the caller after this returns
             // The enricher makes copies of crops as needed
@@ -785,3 +821,15 @@ data class PersistenceAlert(
     val operation: String,
     val throwable: Throwable,
 )
+
+/**
+ * UI events emitted by ItemsViewModel.
+ * These are one-shot events that trigger navigation or UI updates in the composable.
+ */
+sealed class ItemsUiEvent {
+    /**
+     * Navigate to the items list screen.
+     * Emitted after scan completion when the auto-open setting is enabled and items were found.
+     */
+    object NavigateToItemList : ItemsUiEvent()
+}
