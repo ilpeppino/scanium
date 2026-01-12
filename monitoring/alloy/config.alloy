@@ -239,7 +239,7 @@ prometheus.scrape "mimir" {
 prometheus.scrape "backend" {
   targets = [
     {
-      __address__      = "scanium-backend:8080",
+      __address__      = "backend:8080",
       __metrics_path__ = "/metrics",
       job              = "scanium-backend",
       instance         = "scanium-backend",
