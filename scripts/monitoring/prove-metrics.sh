@@ -32,8 +32,7 @@ sleep 2
 
 ***REMOVED*** Step 2: Query Mimir - Check backend scrape target is UP
 echo "[prove-metrics] Step 2: Checking backend scrape target..."
-UP_QUERY="$MIMIR_URL/prometheus/api/v1/query?query=up{job=\"scanium-backend\"}"
-UP_RESULT=$(curl -sf "$UP_QUERY")
+UP_RESULT=$(curl -sf -G "$MIMIR_URL/prometheus/api/v1/query" --data-urlencode 'query=up{job="scanium-backend"}')
 
 UP_VALUE=$(echo "$UP_RESULT" | grep -o '"value":\[[^]]*\]' | grep -o '[01]"' | tr -d '"' | head -1)
 
@@ -47,8 +46,7 @@ fi
 
 ***REMOVED*** Step 3: Check backend-specific metrics exist
 echo "[prove-metrics] Step 3: Checking backend metrics exist..."
-METRICS_QUERY="$MIMIR_URL/prometheus/api/v1/query?query=scanium_process_cpu_seconds_total{job=\"scanium-backend\"}"
-METRICS_RESULT=$(curl -sf "$METRICS_QUERY")
+METRICS_RESULT=$(curl -sf -G "$MIMIR_URL/prometheus/api/v1/query" --data-urlencode 'query=scanium_process_cpu_seconds_total{job="scanium-backend"}')
 
 METRIC_COUNT=$(echo "$METRICS_RESULT" | grep -c '"__name__":"scanium_process_cpu_seconds_total"' || echo 0)
 
@@ -62,8 +60,7 @@ fi
 
 ***REMOVED*** Step 4: Verify metrics are being scraped recently
 echo "[prove-metrics] Step 4: Verifying recent scrape activity..."
-SCRAPE_QUERY="$MIMIR_URL/prometheus/api/v1/query?query=scrape_duration_seconds{job=\"scanium-backend\"}"
-SCRAPE_RESULT=$(curl -sf "$SCRAPE_QUERY")
+SCRAPE_RESULT=$(curl -sf -G "$MIMIR_URL/prometheus/api/v1/query" --data-urlencode 'query=scrape_duration_seconds{job="scanium-backend"}')
 
 SCRAPE_COUNT=$(echo "$SCRAPE_RESULT" | grep -c '"__name__":"scrape_duration_seconds"' || echo 0)
 

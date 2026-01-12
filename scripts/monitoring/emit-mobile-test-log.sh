@@ -47,11 +47,16 @@ PAYLOAD='{
 echo "[emit-mobile-test-log] Pushing synthetic mobile log to Loki..."
 echo "[emit-mobile-test-log] Target: $LOKI_URL/loki/api/v1/push"
 
-curl -sf -X POST "$LOKI_URL/loki/api/v1/push" \
+HTTP_CODE=$(curl -s -w "%{http_code}" -o /dev/null -X POST "$LOKI_URL/loki/api/v1/push" \
   -H "Content-Type: application/json" \
-  -d "$PAYLOAD" \
-  && echo "[emit-mobile-test-log] ✅ Synthetic mobile log pushed successfully" \
-  || { echo "[emit-mobile-test-log] ❌ Failed to push log"; exit 1; }
+  -d "$PAYLOAD")
+
+if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+  echo "[emit-mobile-test-log] ✅ Synthetic mobile log pushed successfully (HTTP $HTTP_CODE)"
+else
+  echo "[emit-mobile-test-log] ❌ Failed to push log (HTTP $HTTP_CODE)"
+  exit 1
+fi
 
 ***REMOVED*** Verify the log is queryable
 echo "[emit-mobile-test-log] Verifying log is queryable..."
