@@ -128,30 +128,33 @@ class AssistantPromptBuilderTest {
             {
                 "reply": "Here's a suggested price",
                 "pricingInsights": {
-                    "status": "success",
-                    "result": {
-                        "priceRange": {
-                            "min": 15.0,
-                            "max": 35.0,
-                            "currency": "EUR"
-                        },
-                        "comparables": [
-                            {
-                                "title": "Similar vintage lamp",
-                                "price": 25.0,
-                                "currency": "EUR",
-                                "marketplace": "Marktplaats",
-                                "url": "https://example.com/listing1"
+                    "status": "OK",
+                    "countryCode": "NL",
+                    "range": {
+                        "low": 15.0,
+                        "high": 35.0,
+                        "currency": "EUR"
+                    },
+                    "results": [
+                        {
+                            "title": "Similar vintage lamp",
+                            "price": {
+                                "amount": 25.0,
+                                "currency": "EUR"
                             },
-                            {
-                                "title": "Another lamp",
-                                "price": 20.0,
-                                "currency": "EUR",
-                                "marketplace": "2dehands"
-                            }
-                        ],
-                        "sampleSize": 12
-                    }
+                            "sourceMarketplaceId": "marktplaats",
+                            "url": "https://example.com/listing1"
+                        },
+                        {
+                            "title": "Another lamp",
+                            "price": {
+                                "amount": 20.0,
+                                "currency": "EUR"
+                            },
+                            "sourceMarketplaceId": "2dehands",
+                            "url": "https://example.com/listing2"
+                        }
+                    ]
                 }
             }
         """.trimIndent()
@@ -160,17 +163,16 @@ class AssistantPromptBuilderTest {
 
         assertEquals("Here's a suggested price", response.text)
         assertNotNull(response.pricingInsights)
-        assertEquals("success", response.pricingInsights!!.status)
-        assertNotNull(response.pricingInsights!!.result)
-        assertEquals(15.0, response.pricingInsights!!.result!!.priceRange.min)
-        assertEquals(35.0, response.pricingInsights!!.result!!.priceRange.max)
-        assertEquals("EUR", response.pricingInsights!!.result!!.priceRange.currency)
-        assertEquals(2, response.pricingInsights!!.result!!.comparables.size)
-        assertEquals("Similar vintage lamp", response.pricingInsights!!.result!!.comparables[0].title)
-        assertEquals(25.0, response.pricingInsights!!.result!!.comparables[0].price)
-        assertEquals("Marktplaats", response.pricingInsights!!.result!!.comparables[0].marketplace)
-        assertEquals("https://example.com/listing1", response.pricingInsights!!.result!!.comparables[0].url)
-        assertEquals(12, response.pricingInsights!!.result!!.sampleSize)
+        assertEquals("OK", response.pricingInsights!!.status)
+        assertNotNull(response.pricingInsights!!.range)
+        assertEquals(15.0, response.pricingInsights!!.range!!.low)
+        assertEquals(35.0, response.pricingInsights!!.range!!.high)
+        assertEquals("EUR", response.pricingInsights!!.range!!.currency)
+        assertEquals(2, response.pricingInsights!!.results.size)
+        assertEquals("Similar vintage lamp", response.pricingInsights!!.results[0].title)
+        assertEquals(25.0, response.pricingInsights!!.results[0].price.amount)
+        assertEquals("marktplaats", response.pricingInsights!!.results[0].sourceMarketplaceId)
+        assertEquals("https://example.com/listing1", response.pricingInsights!!.results[0].url)
     }
 
     @Test
@@ -195,8 +197,9 @@ class AssistantPromptBuilderTest {
             {
                 "reply": "Here's a suggested price",
                 "pricingInsights": {
-                    "status": "not_supported",
-                    "errorMessage": "Country not supported for pricing insights"
+                    "status": "NOT_SUPPORTED",
+                    "countryCode": "US",
+                    "errorCode": "COUNTRY_NOT_SUPPORTED"
                 }
             }
         """.trimIndent()
@@ -205,8 +208,8 @@ class AssistantPromptBuilderTest {
 
         assertEquals("Here's a suggested price", response.text)
         assertNotNull(response.pricingInsights)
-        assertEquals("not_supported", response.pricingInsights!!.status)
-        assertNull(response.pricingInsights!!.result)
-        assertEquals("Country not supported for pricing insights", response.pricingInsights!!.errorMessage)
+        assertEquals("NOT_SUPPORTED", response.pricingInsights!!.status)
+        assertNull(response.pricingInsights!!.range)
+        assertEquals("COUNTRY_NOT_SUPPORTED", response.pricingInsights!!.errorCode)
     }
 }

@@ -170,9 +170,9 @@ fun EditItemScreenV3(
                 pricingInsights = successState.pricingInsights
 
                 // Auto-populate price with median (USER DECISION)
-                if (pricingInsights?.status == "success" && pricingInsights?.result != null) {
-                    val result = pricingInsights!!.result!!
-                    val median = (result.priceRange.min + result.priceRange.max) / 2.0
+                val range = pricingInsights?.range
+                if (pricingInsights?.status?.uppercase() == "OK" && range != null) {
+                    val median = (range.low + range.high) / 2.0
                     priceField = "%.2f".format(median)
                 }
             }
@@ -475,7 +475,7 @@ fun EditItemScreenV3(
             )
 
             // AI Pricing Insights (Phase 2 - shown when available)
-            if (pricingInsights != null && pricingInsights?.status == "success") {
+            if (pricingInsights?.status?.uppercase() == "OK") {
                 Spacer(Modifier.height(8.dp))
                 PriceInsightsCompactCard(
                     insights = pricingInsights!!,
@@ -582,6 +582,7 @@ private fun LabeledTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     imeAction: ImeAction = ImeAction.Next,
     onNext: () -> Unit = {},
+    keyboardOptions: KeyboardOptions? = null,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -603,7 +604,7 @@ private fun LabeledTextField(
                 }
             },
             singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = imeAction),
+            keyboardOptions = keyboardOptions ?: KeyboardOptions(imeAction = imeAction),
             keyboardActions = KeyboardActions(
                 onNext = { onNext() },
             ),
@@ -877,7 +878,10 @@ private fun PriceInsightsCompactCard(
     insights: com.scanium.shared.core.models.assistant.PricingInsights,
     modifier: Modifier = Modifier,
 ) {
-    val result = insights.result ?: return
+    val range = insights.range ?: return
+    val marketplacesById = remember(insights.marketplacesUsed) {
+        insights.marketplacesUsed.associateBy { it.id }
+    }
 
     var showComparables by remember { mutableStateOf(false) }
 
@@ -906,31 +910,37 @@ private fun PriceInsightsCompactCard(
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        text = "${result.priceRange.currency} ${result.priceRange.min.toInt()}-${result.priceRange.max.toInt()}",
+                        text = "${range.currency} ${range.low.toInt()}-${range.high.toInt()}",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
                 Text(
-                    text = "Based on ${result.sampleSize} listings",
+                    text = "Based on ${insights.results.size} listings",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             // Show comparables button
-            if (result.comparables.isNotEmpty()) {
+            if (insights.results.isNotEmpty()) {
                 OutlinedButton(
                     onClick = { showComparables = !showComparables },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (showComparables) "Hide matches (${result.comparables.size})" else "Show matches (${result.comparables.size})")
+                    Text(
+                        if (showComparables) {
+                            "Hide matches (${insights.results.size})"
+                        } else {
+                            "Show matches (${insights.results.size})"
+                        }
+                    )
                 }
 
                 // Comparables list (collapsible)
                 if (showComparables) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        result.comparables.forEach { comparable ->
+                        insights.results.forEach { comparable ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -945,13 +955,14 @@ private fun PriceInsightsCompactCard(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = comparable.marketplace,
+                                        text = marketplacesById[comparable.sourceMarketplaceId]?.name
+                                            ?: comparable.sourceMarketplaceId,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 Text(
-                                    text = "${comparable.currency} ${comparable.price.toInt()}",
+                                    text = "${comparable.price.currency} ${comparable.price.amount.toInt()}",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )

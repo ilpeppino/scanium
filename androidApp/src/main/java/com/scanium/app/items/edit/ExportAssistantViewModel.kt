@@ -274,6 +274,8 @@ class ExportAssistantViewModel
                     pricingCountryCode = pricingCountryCode,
                 )
 
+                val pricing = response.marketPrice ?: response.pricingInsights
+
                 // DEV-only logging (safe - no raw response body in release builds)
                 if (BuildConfig.DEBUG) {
                     Log.d(TAG, """
@@ -285,13 +287,16 @@ class ExportAssistantViewModel
                         - description length=${response.suggestedDraftUpdates.find { it.field == "description" }?.value?.length ?: 0}
                         - bullets count=${response.suggestedDraftUpdates.count { it.field.startsWith("bullet") }}
                         - response.text length=${response.text.length}
-                        - pricingInsights: ${response.pricingInsights?.let { "status=${it.status}, range=${it.range != null}" } ?: "null"}
+                        - pricingInsights: ${pricing?.let { "status=${it.status}, range=${it.range != null}" } ?: "null"}
                     """.trimIndent())
                     Log.d(TAG, "Raw response.text: '${response.text}'")
-                    response.pricingInsights?.let { pricing ->
-                        Log.d(TAG, "Pricing insights: status=${pricing.status}, country=${pricing.countryCode}")
-                        pricing.range?.let { range ->
-                            Log.d(TAG, "Pricing range: ${range.low}-${range.high} ${range.currency}, ${pricing.results.size} results, confidence=${pricing.confidence}")
+                    pricing?.let { pricingInsights ->
+                        Log.d(TAG, "Pricing insights: status=${pricingInsights.status}, country=${pricingInsights.countryCode}")
+                        pricingInsights.range?.let { range ->
+                            Log.d(
+                                TAG,
+                                "Pricing range: ${range.low}-${range.high} ${range.currency}, ${pricingInsights.results.size} results, confidence=${pricingInsights.confidence}"
+                            )
                         }
                     }
                 }
@@ -394,10 +399,10 @@ class ExportAssistantViewModel
                     confidenceTier = response.confidenceTier,
                     fromCache = false,
                     model = null,
-                    pricingInsights = response.pricingInsights,
+                    pricingInsights = pricing,
                 )
 
-                Log.i(TAG, "Export generated successfully: title=${finalTitle?.take(30)}..., pricing=${response.pricingInsights?.status}")
+                Log.i(TAG, "Export generated successfully: title=${finalTitle?.take(30)}..., pricing=${pricing?.status}")
             } catch (e: AssistantBackendException) {
                 Log.e(TAG, "Export generation failed: ${e.failure.message}", e)
                 progressTransitionJob?.cancel()

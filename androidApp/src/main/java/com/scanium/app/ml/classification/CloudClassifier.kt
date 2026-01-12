@@ -97,7 +97,7 @@ class CloudClassifier(
     // Phase 2: Use centralized timeout factory for consistency across assistant-related HTTP clients
     private val client =
         com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory.create(
-            httpConfig = com.scanium.app.selling.assistant.network.AssistantHttpConfig.VISION,
+            config = com.scanium.app.selling.assistant.network.AssistantHttpConfig.VISION,
             logStartupPolicy = false
         ).newBuilder()
             .addInterceptor(com.scanium.app.telemetry.TraceContextInterceptor())

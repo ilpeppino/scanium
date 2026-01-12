@@ -466,70 +466,6 @@ private data class PricingPrefsDto(
 )
 
 @Serializable
-private data class PriceRangeDto(
-    val min: Double,
-    val max: Double,
-    val currency: String,
-)
-
-@Serializable
-private data class ComparableListingDto(
-    val title: String,
-    val price: Double,
-    val currency: String,
-    val marketplace: String,
-    val url: String? = null,
-)
-
-@Serializable
-private data class PricingResultDto(
-    val priceRange: PriceRangeDto,
-    val comparables: List<ComparableListingDto> = emptyList(),
-    val sampleSize: Int = 0,
-)
-
-@Serializable
-private data class PricingInsightsDto(
-    val status: String,
-    val result: PricingResultDto? = null,
-    val errorMessage: String? = null,
-) {
-    fun toModel(): com.scanium.app.model.PricingInsights {
-        return com.scanium.app.model.PricingInsights(
-            status = status,
-            result = result?.toModel(),
-            errorMessage = errorMessage,
-        )
-    }
-}
-
-private fun PricingResultDto.toModel(): com.scanium.app.model.PricingResult {
-    return com.scanium.app.model.PricingResult(
-        priceRange = priceRange.toModel(),
-        comparables = comparables.map { it.toModel() },
-        sampleSize = sampleSize,
-    )
-}
-
-private fun PriceRangeDto.toModel(): com.scanium.app.model.PriceRange {
-    return com.scanium.app.model.PriceRange(
-        min = min,
-        max = max,
-        currency = currency,
-    )
-}
-
-private fun ComparableListingDto.toModel(): com.scanium.app.model.ComparableListing {
-    return com.scanium.app.model.ComparableListing(
-        title = title,
-        price = price,
-        currency = currency,
-        marketplace = marketplace,
-        url = url,
-    )
-}
-
-@Serializable
 private data class AssistantChatResponse(
     @SerialName("reply")
     val content: String,
@@ -542,10 +478,13 @@ private data class AssistantChatResponse(
     val suggestedAttributes: List<SuggestedAttributeDto> = emptyList(),
     val suggestedDraftUpdates: List<SuggestedDraftUpdateDto> = emptyList(),
     val suggestedNextPhoto: String? = null,
-    val pricingInsights: PricingInsightsDto? = null,
+    @SerialName("marketPrice")
+    val marketPrice: com.scanium.shared.core.models.assistant.PricingInsights? = null,
+    val pricingInsights: com.scanium.shared.core.models.assistant.PricingInsights? = null,
     val assistantError: AssistantErrorDto? = null,
 ) {
     fun toModel(): AssistantResponse {
+        val pricing = marketPrice ?: pricingInsights
         return AssistantResponse(
             reply = content,
             actions = actions.map { it.toModel() },
@@ -555,7 +494,8 @@ private data class AssistantChatResponse(
             suggestedAttributes = suggestedAttributes.map { it.toModel() },
             suggestedDraftUpdates = suggestedDraftUpdates.map { it.toModel() },
             suggestedNextPhoto = suggestedNextPhoto,
-            pricingInsights = pricingInsights?.toModel(),
+            marketPrice = pricing,
+            pricingInsights = pricing,
         )
     }
 

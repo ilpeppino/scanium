@@ -360,6 +360,8 @@ private class TestAssistantRepository(
         correlationId: String,
         imageAttachments: List<ItemImageAttachment>,
         assistantPrefs: AssistantPrefs?,
+        includePricing: Boolean,
+        pricingCountryCode: String?,
     ): AssistantResponse = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val requestPayload = buildPayload(items, history, userMessage, exportProfile, assistantPrefs)
         val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"

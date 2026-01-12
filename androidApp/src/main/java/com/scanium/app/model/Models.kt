@@ -29,4 +29,3 @@ typealias PricingPrefs = com.scanium.shared.core.models.assistant.PricingPrefs
 typealias PricingInsights = com.scanium.shared.core.models.assistant.PricingInsights
 typealias PricingResult = com.scanium.shared.core.models.assistant.PricingResult
 typealias PriceRange = com.scanium.shared.core.models.assistant.PriceRange
-typealias ComparableListing = com.scanium.shared.core.models.assistant.ComparableListing
