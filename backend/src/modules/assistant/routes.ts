@@ -905,7 +905,13 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       let marketPrice;
       if (config.pricing.enabled && primaryItem) {
         // Extract country from assistantPrefs.region with fallback
-        const countryCode = sanitizedRequest.assistantPrefs?.region ?? config.assistant.defaultRegion;
+        let countryCode = sanitizedRequest.assistantPrefs?.region ?? config.assistant.defaultRegion;
+
+        // Normalize EU to a concrete country code for pricing lookup
+        // EU is valid for assistant preferences but not supported by marketplaces catalog
+        if (countryCode === 'EU') {
+          countryCode = 'NL'; // Default to Netherlands for EU region
+        }
 
         // Check if we have sufficient item context (title or attributes)
         const hasSufficientContext = Boolean(
