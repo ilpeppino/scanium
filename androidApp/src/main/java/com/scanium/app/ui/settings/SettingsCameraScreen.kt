@@ -71,9 +71,10 @@ fun SettingsCameraScreen(
     val availableResolutions = CaptureResolution.values().filter { resolution ->
         resolution != CaptureResolution.HIGH || FeatureFlags.allowHighResolution
     }
+    // Resolution options using SettingOption
     val captureOptions =
         availableResolutions.map { resolution ->
-            SegmentOption(
+            SettingOption(
                 value = resolution,
                 label =
                     when (resolution) {
@@ -87,36 +88,41 @@ fun SettingsCameraScreen(
                         CaptureResolution.NORMAL -> stringResource(R.string.settings_resolution_normal_desc)
                         CaptureResolution.HIGH -> stringResource(R.string.settings_resolution_high_desc)
                     },
+                isRecommended = resolution == CaptureResolution.NORMAL,
             )
         }
 
+    // Classification mode options using SettingOption
     val classificationOptions =
         listOf(
-            SegmentOption(
+            SettingOption(
                 value = ClassificationMode.CLOUD,
                 label = stringResource(R.string.settings_classification_cloud),
                 description = stringResource(R.string.settings_classification_cloud_desc),
+                isRecommended = true,
             ),
-            SegmentOption(
+            SettingOption(
                 value = ClassificationMode.ON_DEVICE,
                 label = stringResource(R.string.settings_classification_on_device),
                 description = stringResource(R.string.settings_classification_on_device_desc),
             ),
         )
 
+    // Accuracy options using SettingOption
     val accuracyOptions =
         listOf(
-            SegmentOption(
+            SettingOption(
                 value = AccuracyLevel.LOW,
                 label = stringResource(R.string.settings_accuracy_low),
                 description = stringResource(R.string.settings_accuracy_low_desc),
             ),
-            SegmentOption(
+            SettingOption(
                 value = AccuracyLevel.MEDIUM,
                 label = stringResource(R.string.settings_accuracy_medium),
                 description = stringResource(R.string.settings_accuracy_medium_desc),
+                isRecommended = true,
             ),
-            SegmentOption(
+            SettingOption(
                 value = AccuracyLevel.HIGH,
                 label = stringResource(R.string.settings_accuracy_high),
                 description = stringResource(R.string.settings_accuracy_high_desc),
@@ -142,6 +148,56 @@ fun SettingsCameraScreen(
                     .padding(padding)
                     .verticalScroll(rememberScrollState()),
         ) {
+            // Section: Capture behavior
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_capture))
+
+            // Image resolution picker with bottom sheet
+            ValuePickerSettingRow(
+                title = stringResource(R.string.settings_resolution_title),
+                subtitle = stringResource(R.string.settings_resolution_subtitle),
+                icon = Icons.Filled.HighQuality,
+                currentValue = captureResolution,
+                options = captureOptions,
+                onValueSelected = cameraViewModel::updateCaptureResolution,
+            )
+
+            // Section: Detection & accuracy
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_scanning))
+
+            // Classification mode picker with bottom sheet
+            ValuePickerSettingRow(
+                title = stringResource(R.string.settings_classification_title),
+                subtitle = stringResource(R.string.settings_classification_subtitle),
+                icon = Icons.Filled.Cloud,
+                currentValue = classificationMode,
+                options = classificationOptions,
+                onValueSelected = classificationViewModel::updateMode,
+            )
+
+            // Aggregation accuracy picker with bottom sheet
+            val currentAccuracy = AccuracyLevel.fromThreshold(similarityThreshold)
+            ValuePickerSettingRow(
+                title = stringResource(R.string.settings_accuracy_title),
+                subtitle = stringResource(R.string.settings_accuracy_subtitle),
+                icon = Icons.Filled.Tune,
+                currentValue = currentAccuracy,
+                options = accuracyOptions,
+                onValueSelected = { level ->
+                    itemsViewModel.updateSimilarityThreshold(level.threshold)
+                },
+            )
+
+            // Live bounding boxes toggle
+            SettingSwitchRow(
+                title = stringResource(R.string.settings_detection_boxes_title),
+                subtitle = stringResource(R.string.settings_detection_boxes_subtitle),
+                icon = Icons.Filled.CropFree,
+                checked = showDetectionBoxes,
+                onCheckedChange = settingsViewModel::setShowDetectionBoxes,
+            )
+
+            // Additional settings (kept for compatibility)
+            // These may be moved to Storage & Export submenu later
             SettingsSectionHeader(title = stringResource(R.string.settings_section_storage))
             SettingSwitchRow(
                 title = stringResource(R.string.settings_auto_save_title),
@@ -167,26 +223,7 @@ fun SettingsCameraScreen(
                 enabled = autoSaveEnabled,
             )
 
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_capture))
-            SettingIconSegmentedRow(
-                title = stringResource(R.string.settings_resolution_title),
-                subtitle = stringResource(R.string.settings_resolution_subtitle),
-                icon = Icons.Filled.HighQuality,
-                options = captureOptions,
-                selected = captureResolution,
-                onSelect = cameraViewModel::updateCaptureResolution,
-            )
-
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_scanning))
-            SettingIconSegmentedRow(
-                title = stringResource(R.string.settings_classification_title),
-                subtitle = stringResource(R.string.settings_classification_subtitle),
-                icon = Icons.Filled.Cloud,
-                options = classificationOptions,
-                selected = classificationMode,
-                onSelect = classificationViewModel::updateMode,
-            )
-
+            // Other settings
             SettingSwitchRow(
                 title = stringResource(R.string.settings_low_data_mode_title),
                 subtitle = stringResource(R.string.settings_low_data_mode_subtitle),
@@ -194,32 +231,11 @@ fun SettingsCameraScreen(
                 onCheckedChange = classificationViewModel::updateLowDataMode,
             )
 
-            val currentAccuracy = AccuracyLevel.fromThreshold(similarityThreshold)
-            SettingIconSegmentedRow(
-                title = stringResource(R.string.settings_accuracy_title),
-                subtitle = stringResource(R.string.settings_accuracy_subtitle),
-                icon = Icons.Filled.Tune,
-                options = accuracyOptions,
-                selected = currentAccuracy,
-                onSelect = { level ->
-                    itemsViewModel.updateSimilarityThreshold(level.threshold)
-                },
-            )
-
             SettingSwitchRow(
                 title = stringResource(R.string.settings_open_item_list_after_scan_title),
                 subtitle = stringResource(R.string.settings_open_item_list_after_scan_subtitle),
                 checked = openItemListAfterScan,
                 onCheckedChange = settingsViewModel::setOpenItemListAfterScan,
-            )
-
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_overlay))
-            SettingSwitchRow(
-                title = stringResource(R.string.settings_detection_boxes_title),
-                subtitle = stringResource(R.string.settings_detection_boxes_subtitle),
-                icon = Icons.Filled.CropFree,
-                checked = showDetectionBoxes,
-                onCheckedChange = settingsViewModel::setShowDetectionBoxes,
             )
         }
     }

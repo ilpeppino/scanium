@@ -38,6 +38,7 @@
     <string name="settings_theme_light_desc">Always use light theme</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_theme_dark_desc">Always use dark theme</string>
+    <string name="settings_recommended">Recommended</string>
     <string name="settings_section_language">Language</string>
     <string name="settings_language_system_title">App language</string>
     <string name="settings_language_system_desc">Choose the language used in the app</string>
@@ -186,6 +187,7 @@
     <!-- Accessibility: Icon content descriptions -->
     <string name="cd_navigate_forward">Navigate forward</string>
     <string name="cd_expand_menu">Expand menu</string>
+    <string name="cd_selected">Selected</string>
     <string name="cd_feature_scan_items">Scan items feature</string>
     <string name="cd_feature_view_items">View scanned items feature</string>
     <string name="cd_feature_export_items">Export items feature</string>
