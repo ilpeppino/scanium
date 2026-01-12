@@ -4,7 +4,9 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +37,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -131,6 +136,12 @@ fun EditItemScreenV3(
     // Photo Gallery Dialog state
     var showPhotoGallery by remember { mutableStateOf(false) }
     var galleryStartIndex by remember { mutableStateOf(0) }
+
+    // Photo Selection state for multi-select deletion
+    var isSelectionMode by remember { mutableStateOf(false) }
+    var selectedPhotoIds by remember { mutableStateOf(setOf<String>()) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var isDeletingPhotos by remember { mutableStateOf(false) }
 
     // Field state (local draft, synchronized with item.attributes)
     // LOCALIZATION: Display values are localized for UI; save canonicalizes back to English
@@ -339,11 +350,73 @@ fun EditItemScreenV3(
                 modifier = Modifier.padding(bottom = 8.dp),
             )
 
+            // Contextual Action Bar for Selection Mode
+            if (isSelectionMode) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.edit_item_photos_selected, selectedPhotoIds.size),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            // Delete button
+                            IconButton(
+                                onClick = {
+                                    if (selectedPhotoIds.isNotEmpty()) {
+                                        showDeleteConfirmation = true
+                                    }
+                                },
+                                enabled = selectedPhotoIds.isNotEmpty() && !isDeletingPhotos,
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.common_delete),
+                                    tint = if (selectedPhotoIds.isNotEmpty()) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f)
+                                    }
+                                )
+                            }
+                            // Cancel/Close button
+                            IconButton(
+                                onClick = {
+                                    isSelectionMode = false
+                                    selectedPhotoIds = setOf()
+                                },
+                                enabled = !isDeletingPhotos,
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.common_cancel),
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(bottom = 16.dp),
             ) {
-                // Primary thumbnail
+                // Primary thumbnail - not deletable for now
                 item {
                     val thumbnailBitmap = (currentItem.thumbnailRef ?: currentItem.thumbnail).toImageBitmap()
                     PhotoThumbnailV3(
@@ -351,9 +424,14 @@ fun EditItemScreenV3(
                         label = stringResource(R.string.edit_item_photo_primary),
                         isPrimary = true,
                         onClick = {
-                            galleryStartIndex = 0
-                            showPhotoGallery = true
+                            if (!isSelectionMode) {
+                                galleryStartIndex = 0
+                                showPhotoGallery = true
+                            }
                         },
+                        // Primary photo doesn't participate in selection
+                        isSelectionMode = false,
+                        isSelected = false,
                     )
                 }
 
@@ -368,15 +446,34 @@ fun EditItemScreenV3(
                             }
                         }
                     }
+                    val isSelected = selectedPhotoIds.contains(photo.id)
                     PhotoThumbnailV3(
                         bitmap = photoBitmap?.asImageBitmap(),
                         label = null,
                         isPrimary = false,
                         onClick = {
-                            // Index is offset by 1 because primary photo is at index 0
-                            galleryStartIndex = index + 1
-                            showPhotoGallery = true
+                            if (isSelectionMode) {
+                                // Toggle selection
+                                selectedPhotoIds = if (isSelected) {
+                                    selectedPhotoIds - photo.id
+                                } else {
+                                    selectedPhotoIds + photo.id
+                                }
+                            } else {
+                                // Open gallery
+                                galleryStartIndex = index + 1
+                                showPhotoGallery = true
+                            }
                         },
+                        onLongClick = {
+                            if (!isSelectionMode) {
+                                // Enter selection mode and select this photo
+                                isSelectionMode = true
+                                selectedPhotoIds = setOf(photo.id)
+                            }
+                        },
+                        isSelected = isSelected,
+                        isSelectionMode = isSelectionMode,
                     )
                 }
 
@@ -573,6 +670,51 @@ fun EditItemScreenV3(
         }
     }
 
+    // Delete Confirmation Dialog
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text(stringResource(R.string.edit_item_delete_photos_title)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.edit_item_delete_photos_message,
+                        selectedPhotoIds.size
+                    )
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isDeletingPhotos = true
+                        showDeleteConfirmation = false
+                        itemsViewModel.deletePhotosFromItem(
+                            context = context,
+                            itemId = itemId,
+                            photoIds = selectedPhotoIds,
+                            onComplete = {
+                                isDeletingPhotos = false
+                                isSelectionMode = false
+                                selectedPhotoIds = setOf()
+                            }
+                        )
+                    },
+                    enabled = !isDeletingPhotos,
+                ) {
+                    Text(stringResource(R.string.common_delete))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDeleteConfirmation = false },
+                    enabled = !isDeletingPhotos,
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+
     // Export Assistant Bottom Sheet
     if (showExportAssistantSheet && exportAssistantViewModel != null) {
         val settingsRepository = remember { SettingsRepository(context) }
@@ -727,58 +869,99 @@ private fun LabeledConditionDropdown(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PhotoThumbnailV3(
     bitmap: androidx.compose.ui.graphics.ImageBitmap?,
     label: String?,
     isPrimary: Boolean,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    isSelected: Boolean = false,
+    isSelectionMode: Boolean = false,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Card(
-            modifier = Modifier
-                .size(100.dp)
-                .then(
-                    if (onClick != null) {
-                        Modifier.clickable(onClick = onClick)
-                    } else {
-                        Modifier
-                    },
-                )
-                .then(
-                    if (isPrimary) {
-                        Modifier.border(
-                            2.dp,
-                            MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(12.dp),
-                        )
-                    } else {
-                        Modifier
-                    },
+        Box {
+            Card(
+                modifier = Modifier
+                    .size(100.dp)
+                    .then(
+                        if (onClick != null || onLongClick != null) {
+                            Modifier.combinedClickable(
+                                onClick = { onClick?.invoke() },
+                                onLongClick = { onLongClick?.invoke() }
+                            )
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .then(
+                        if (isPrimary) {
+                            Modifier.border(
+                                2.dp,
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(12.dp),
+                            )
+                        } else if (isSelected) {
+                            Modifier.border(
+                                3.dp,
+                                MaterialTheme.colorScheme.tertiary,
+                                RoundedCornerShape(12.dp),
+                            )
+                        } else {
+                            Modifier
+                        },
+                    ),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 ),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
-        ) {
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = label,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                )
-            } else {
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap,
+                        contentDescription = label,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            stringResource(R.string.items_no_image),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            // Selection indicator overlay
+            if (isSelected && isSelectionMode) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .background(
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
+                            RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.TopEnd
                 ) {
-                    Text(
-                        stringResource(R.string.items_no_image),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = "Selected",
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(24.dp)
+                            .background(
+                                MaterialTheme.colorScheme.tertiary,
+                                RoundedCornerShape(12.dp)
+                            )
+                            .padding(4.dp),
+                        tint = MaterialTheme.colorScheme.onTertiary
                     )
                 }
             }

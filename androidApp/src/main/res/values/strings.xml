@@ -252,6 +252,7 @@
     <string name="common_ok">OK</string>
     <string name="common_cancel">Cancel</string>
     <string name="common_close">Close</string>
+    <string name="common_delete">Delete</string>
     <string name="common_back">Back</string>
     <string name="common_skip">Skip</string>
     <string name="common_continue">Continue</string>
@@ -599,6 +600,9 @@
     <string name="edit_item_photos">Photos</string>
     <string name="edit_item_photo_primary">Primary</string>
     <string name="edit_item_add_photo">Add photo</string>
+    <string name="edit_item_photos_selected">%1$d selected</string>
+    <string name="edit_item_delete_photos_title">Delete selected photos?</string>
+    <string name="edit_item_delete_photos_message">This will permanently delete %1$d photo(s)</string>
     <string name="edit_item_analyzing">Analyzing photo…</string>
     <string name="edit_item_analyze_failed">Couldn\'t analyze photo</string>
     <string name="edit_item_analyzed">Photo analyzed</string>
