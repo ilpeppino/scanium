@@ -75,85 +75,96 @@ fun SettingsAssistantScreen(
     val showPrerequisiteDialog by viewModel.showPrerequisiteDialog.collectAsState()
     val connectionTestState by viewModel.connectionTestState.collectAsState()
 
+    // Language options using SettingOption
     val languageOptions =
         listOf(
-            "EN" to stringResource(R.string.settings_language_en),
-            "NL" to stringResource(R.string.settings_language_nl),
-            "DE" to stringResource(R.string.settings_language_de),
-            "FR" to stringResource(R.string.settings_language_fr),
-            "ES" to stringResource(R.string.settings_language_es),
-            "IT" to stringResource(R.string.settings_language_it),
-            "PT_BR" to stringResource(R.string.settings_language_pt_br),
+            SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)),
+            SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)),
+            SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)),
+            SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)),
+            SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)),
+            SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)),
+            SettingOption(value = "PT_BR", label = stringResource(R.string.settings_language_pt_br)),
         )
-    val assistantLanguageLabel =
-        languageOptions.firstOrNull { it.first == assistantLanguage }?.second
-            ?: languageOptions.first().second
 
+    // Tone options using SettingOption
     val toneOptions =
         AssistantTone.values().map { tone ->
-            val label =
-                when (tone) {
-                    AssistantTone.NEUTRAL -> stringResource(R.string.settings_tone_neutral)
-                    AssistantTone.FRIENDLY -> stringResource(R.string.settings_tone_friendly)
-                    AssistantTone.PROFESSIONAL -> stringResource(R.string.settings_tone_professional)
-                    AssistantTone.MARKETPLACE -> stringResource(R.string.settings_tone_marketplace)
-                }
-            tone.name to label
+            SettingOption(
+                value = tone,
+                label =
+                    when (tone) {
+                        AssistantTone.NEUTRAL -> stringResource(R.string.settings_tone_neutral)
+                        AssistantTone.FRIENDLY -> stringResource(R.string.settings_tone_friendly)
+                        AssistantTone.PROFESSIONAL -> stringResource(R.string.settings_tone_professional)
+                        AssistantTone.MARKETPLACE -> stringResource(R.string.settings_tone_marketplace)
+                    },
+                isRecommended = tone == AssistantTone.FRIENDLY,
+            )
         }
-    val selectedToneLabel = toneOptions.firstOrNull { it.first == assistantTone.name }?.second ?: assistantTone.name
 
+    // Region options using SettingOption
     val regionOptions =
         AssistantRegion.values().map { region ->
-            val label =
-                when (region) {
-                    AssistantRegion.EU -> stringResource(R.string.settings_region_europe)
-                    AssistantRegion.NL -> stringResource(R.string.settings_region_netherlands)
-                    AssistantRegion.DE -> stringResource(R.string.settings_region_germany)
-                    AssistantRegion.FR -> stringResource(R.string.settings_region_france)
-                    AssistantRegion.BE -> stringResource(R.string.settings_region_belgium)
-                    AssistantRegion.UK -> stringResource(R.string.settings_region_uk)
-                    AssistantRegion.US -> stringResource(R.string.settings_region_us)
-                }
-            region.name to label
+            SettingOption(
+                value = region,
+                label =
+                    when (region) {
+                        AssistantRegion.EU -> stringResource(R.string.settings_region_europe)
+                        AssistantRegion.NL -> stringResource(R.string.settings_region_netherlands)
+                        AssistantRegion.DE -> stringResource(R.string.settings_region_germany)
+                        AssistantRegion.FR -> stringResource(R.string.settings_region_france)
+                        AssistantRegion.BE -> stringResource(R.string.settings_region_belgium)
+                        AssistantRegion.UK -> stringResource(R.string.settings_region_uk)
+                        AssistantRegion.US -> stringResource(R.string.settings_region_us)
+                    },
+            )
         }
-    val selectedRegionLabel = regionOptions.firstOrNull { it.first == assistantRegion.name }?.second ?: assistantRegion.name
 
+    // Units options using SettingOption
     val unitOptions =
         AssistantUnits.values().map { units ->
-            val label =
-                when (units) {
-                    AssistantUnits.METRIC -> stringResource(R.string.settings_units_metric)
-                    AssistantUnits.IMPERIAL -> stringResource(R.string.settings_units_imperial)
-                }
-            units.name to label
+            SettingOption(
+                value = units,
+                label =
+                    when (units) {
+                        AssistantUnits.METRIC -> stringResource(R.string.settings_units_metric)
+                        AssistantUnits.IMPERIAL -> stringResource(R.string.settings_units_imperial)
+                    },
+            )
         }
-    val selectedUnitsLabel = unitOptions.firstOrNull { it.first == assistantUnits.name }?.second ?: assistantUnits.name
 
+    // Verbosity options using SettingOption
     val verbosityOptions =
         AssistantVerbosity.values().map { verbosity ->
-            val label =
-                when (verbosity) {
-                    AssistantVerbosity.CONCISE -> stringResource(R.string.settings_verbosity_concise)
-                    AssistantVerbosity.NORMAL -> stringResource(R.string.settings_verbosity_normal)
-                    AssistantVerbosity.DETAILED -> stringResource(R.string.settings_verbosity_detailed)
-                }
-            verbosity.name to label
+            SettingOption(
+                value = verbosity,
+                label =
+                    when (verbosity) {
+                        AssistantVerbosity.CONCISE -> stringResource(R.string.settings_verbosity_concise)
+                        AssistantVerbosity.NORMAL -> stringResource(R.string.settings_verbosity_normal)
+                        AssistantVerbosity.DETAILED -> stringResource(R.string.settings_verbosity_detailed)
+                    },
+                isRecommended = verbosity == AssistantVerbosity.NORMAL,
+            )
         }
-    val selectedVerbosityLabel = verbosityOptions.firstOrNull { it.first == assistantVerbosity.name }?.second ?: assistantVerbosity.name
 
+    // Voice language options using SettingOption
+    val currentLanguageLabel = languageOptions.find { it.value == assistantLanguage }?.label ?: ""
     val voiceLanguageOptions =
         listOf(
-            "" to stringResource(R.string.settings_voice_language_follow_assistant, assistantLanguageLabel),
-            "EN" to stringResource(R.string.settings_language_en),
-            "NL" to stringResource(R.string.settings_language_nl),
-            "DE" to stringResource(R.string.settings_language_de),
-            "FR" to stringResource(R.string.settings_language_fr),
-            "ES" to stringResource(R.string.settings_language_es),
-            "IT" to stringResource(R.string.settings_language_it),
+            SettingOption(
+                value = "",
+                label = stringResource(R.string.settings_voice_language_follow_assistant, currentLanguageLabel),
+                isRecommended = true,
+            ),
+            SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)),
+            SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)),
+            SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)),
+            SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)),
+            SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)),
+            SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)),
         )
-    val selectedVoiceLanguageLabel =
-        voiceLanguageOptions.firstOrNull { it.first == voiceLanguage }?.second
-            ?: voiceLanguageOptions.first().second
 
     val micPermissionLauncher =
         rememberLauncherForActivityResult(
@@ -242,57 +253,55 @@ fun SettingsAssistantScreen(
 
             if (allowAssistant) {
                 SettingsSectionHeader(title = stringResource(R.string.settings_section_personalization))
-                SettingDropdownRow(
+
+                // Language picker with bottom sheet
+                ValuePickerSettingRow(
                     title = stringResource(R.string.settings_assistant_language_title),
                     subtitle = stringResource(R.string.settings_assistant_language_subtitle),
                     icon = Icons.Filled.Language,
-                    selectedLabel = assistantLanguageLabel,
+                    currentValue = assistantLanguage,
                     options = languageOptions,
-                    onOptionSelected = viewModel::setAssistantLanguage,
+                    onValueSelected = viewModel::setAssistantLanguage,
                 )
 
-                SettingDropdownRow(
+                // Tone picker with bottom sheet
+                ValuePickerSettingRow(
                     title = stringResource(R.string.settings_assistant_tone_title),
                     subtitle = stringResource(R.string.settings_assistant_tone_subtitle),
                     icon = Icons.Filled.Tune,
-                    selectedLabel = selectedToneLabel,
+                    currentValue = assistantTone,
                     options = toneOptions,
-                    onOptionSelected = { value ->
-                        viewModel.setAssistantTone(AssistantTone.valueOf(value))
-                    },
+                    onValueSelected = viewModel::setAssistantTone,
                 )
 
-                SettingDropdownRow(
+                // Region picker with bottom sheet
+                ValuePickerSettingRow(
                     title = stringResource(R.string.settings_assistant_region_title),
                     subtitle = stringResource(R.string.settings_assistant_region_subtitle),
                     icon = Icons.Filled.Language,
-                    selectedLabel = selectedRegionLabel,
+                    currentValue = assistantRegion,
                     options = regionOptions,
-                    onOptionSelected = { value ->
-                        viewModel.setAssistantRegion(AssistantRegion.valueOf(value))
-                    },
+                    onValueSelected = viewModel::setAssistantRegion,
                 )
 
-                SettingDropdownRow(
+                // Units picker with bottom sheet
+                ValuePickerSettingRow(
                     title = stringResource(R.string.settings_assistant_units_title),
                     subtitle = stringResource(R.string.settings_assistant_units_subtitle),
                     icon = Icons.Filled.Tune,
-                    selectedLabel = selectedUnitsLabel,
+                    currentValue = assistantUnits,
                     options = unitOptions,
-                    onOptionSelected = { value ->
-                        viewModel.setAssistantUnits(AssistantUnits.valueOf(value))
-                    },
+                    onValueSelected = viewModel::setAssistantUnits,
                 )
 
-                SettingDropdownRow(
+                // Verbosity picker with bottom sheet
+                ValuePickerSettingRow(
                     title = stringResource(R.string.settings_assistant_verbosity_title),
                     subtitle = stringResource(R.string.settings_assistant_verbosity_subtitle),
                     icon = Icons.Filled.Tune,
-                    selectedLabel = selectedVerbosityLabel,
+                    currentValue = assistantVerbosity,
                     options = verbosityOptions,
-                    onOptionSelected = { value ->
-                        viewModel.setAssistantVerbosity(AssistantVerbosity.valueOf(value))
-                    },
+                    onValueSelected = viewModel::setAssistantVerbosity,
                 )
 
                 SettingsSectionHeader(title = stringResource(R.string.settings_section_voice_mode))
@@ -336,13 +345,14 @@ fun SettingsAssistantScreen(
                     onCheckedChange = viewModel::setAutoSendTranscript,
                 )
 
-                SettingDropdownRow(
+                // Voice language picker with bottom sheet
+                ValuePickerSettingRow(
                     title = stringResource(R.string.settings_voice_language_title),
                     subtitle = stringResource(R.string.settings_voice_language_subtitle),
                     icon = Icons.Filled.Language,
-                    selectedLabel = selectedVoiceLanguageLabel,
+                    currentValue = voiceLanguage,
                     options = voiceLanguageOptions,
-                    onOptionSelected = viewModel::setVoiceLanguage,
+                    onValueSelected = viewModel::setVoiceLanguage,
                     enabled = voiceModeEnabled,
                 )
             }

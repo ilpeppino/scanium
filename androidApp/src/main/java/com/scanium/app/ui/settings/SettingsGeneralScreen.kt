@@ -3,8 +3,12 @@ package com.scanium.app.ui.settings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,19 +72,63 @@ fun SettingsGeneralScreen(
             UserEdition.DEVELOPER -> null
         }
 
+    // Theme options using SettingOption
     val themeOptions =
         listOf(
-            SegmentOption(
-                ThemeMode.SYSTEM,
-                stringResource(R.string.settings_theme_system),
-                stringResource(R.string.settings_theme_system_desc),
+            SettingOption(
+                value = ThemeMode.SYSTEM,
+                label = stringResource(R.string.settings_theme_system),
+                description = stringResource(R.string.settings_theme_system_desc),
+                isRecommended = true,
             ),
-            SegmentOption(
-                ThemeMode.LIGHT,
-                stringResource(R.string.settings_theme_light),
-                stringResource(R.string.settings_theme_light_desc),
+            SettingOption(
+                value = ThemeMode.LIGHT,
+                label = stringResource(R.string.settings_theme_light),
+                description = stringResource(R.string.settings_theme_light_desc),
             ),
-            SegmentOption(ThemeMode.DARK, stringResource(R.string.settings_theme_dark), stringResource(R.string.settings_theme_dark_desc)),
+            SettingOption(
+                value = ThemeMode.DARK,
+                label = stringResource(R.string.settings_theme_dark),
+                description = stringResource(R.string.settings_theme_dark_desc),
+            ),
+        )
+
+    // Language options using SettingOption
+    val languageOptions =
+        listOf(
+            SettingOption(
+                value = AppLanguage.SYSTEM,
+                label = stringResource(R.string.settings_language_system_default),
+                isRecommended = true,
+            ),
+            SettingOption(
+                value = AppLanguage.EN,
+                label = stringResource(R.string.settings_language_en),
+            ),
+            SettingOption(
+                value = AppLanguage.ES,
+                label = stringResource(R.string.settings_language_es),
+            ),
+            SettingOption(
+                value = AppLanguage.IT,
+                label = stringResource(R.string.settings_language_it),
+            ),
+            SettingOption(
+                value = AppLanguage.FR,
+                label = stringResource(R.string.settings_language_fr),
+            ),
+            SettingOption(
+                value = AppLanguage.NL,
+                label = stringResource(R.string.settings_language_nl),
+            ),
+            SettingOption(
+                value = AppLanguage.DE,
+                label = stringResource(R.string.settings_language_de),
+            ),
+            SettingOption(
+                value = AppLanguage.PT_BR,
+                label = stringResource(R.string.settings_language_pt_br),
+            ),
         )
 
     Scaffold(
@@ -99,7 +147,8 @@ fun SettingsGeneralScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(padding),
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState()),
         ) {
             SettingsSectionHeader(title = stringResource(R.string.settings_section_account))
             ListItem(
@@ -121,42 +170,27 @@ fun SettingsGeneralScreen(
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
-            SettingSegmentedRow(
+
+            // Theme picker with bottom sheet
+            ValuePickerSettingRow(
                 title = stringResource(R.string.settings_theme_label),
                 subtitle = stringResource(R.string.settings_theme_subtitle),
+                icon = Icons.Filled.DarkMode,
+                currentValue = themeMode,
                 options = themeOptions,
-                selected = themeMode,
-                onSelect = viewModel::setThemeMode,
+                onValueSelected = viewModel::setThemeMode,
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_language))
-            
-            val languageOptions =
-                listOf(
-                    AppLanguage.SYSTEM.code to stringResource(R.string.settings_language_system_default),
-                    AppLanguage.EN.code to stringResource(R.string.settings_language_en),
-                    AppLanguage.ES.code to stringResource(R.string.settings_language_es),
-                    AppLanguage.IT.code to stringResource(R.string.settings_language_it),
-                    AppLanguage.FR.code to stringResource(R.string.settings_language_fr),
-                    AppLanguage.NL.code to stringResource(R.string.settings_language_nl),
-                    AppLanguage.DE.code to stringResource(R.string.settings_language_de),
-                    AppLanguage.PT_BR.code to stringResource(R.string.settings_language_pt_br),
-                )
 
-            val selectedLanguageLabel =
-                languageOptions.find { it.first == appLanguage.code }?.second
-                    ?: stringResource(R.string.settings_language_system_default)
-
-            SettingDropdownRow(
+            // Language picker with bottom sheet
+            ValuePickerSettingRow(
                 title = stringResource(R.string.settings_language_system_title),
                 subtitle = stringResource(R.string.settings_language_system_desc),
-                icon = null,
-                selectedLabel = selectedLanguageLabel,
+                icon = Icons.Filled.Language,
+                currentValue = appLanguage,
                 options = languageOptions,
-                onOptionSelected = { code ->
-                    viewModel.setAppLanguage(AppLanguage.fromCode(code))
-                },
-                enabled = true,
+                onValueSelected = viewModel::setAppLanguage,
             )
         }
     }
