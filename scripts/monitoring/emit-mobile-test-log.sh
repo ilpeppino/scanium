@@ -38,7 +38,7 @@ PAYLOAD='{
         "event_name": "monitor_smoke"
       },
       "values": [
-        ["'$TIMESTAMP_NS'", "'"$(echo "$LOG_ENTRY" | tr -d '\n')"'"]
+        ["'$TIMESTAMP_NS'", "'"$(echo "$LOG_ENTRY" | tr -d '\n' | sed 's/"/\\"/g')"'"]
       ]
     }
   ]
