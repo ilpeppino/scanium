@@ -237,6 +237,8 @@
     <string name="common_question_mark">?</string>
     <string name="common_bullet">•</string>
     <string name="common_regenerate">Opnieuw genereren</string>
+    <string name="common_read_aloud">Voorlezen</string>
+    <string name="common_stop_speaking">Stop voorlezen</string>
     <string name="common_undo">Ongedaan maken</string>
     <string name="common_unknown">Onbekend</string>
     <string name="common_view">Bekijken</string>

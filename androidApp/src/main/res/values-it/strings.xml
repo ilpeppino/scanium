@@ -237,6 +237,8 @@
     <string name="common_question_mark">?</string>
     <string name="common_bullet">•</string>
     <string name="common_regenerate">Rigenera</string>
+    <string name="common_read_aloud">Leggi ad alta voce</string>
+    <string name="common_stop_speaking">Ferma lettura</string>
     <string name="common_undo">Annulla</string>
     <string name="common_unknown">Sconosciuto</string>
     <string name="common_view">Visualizza</string>
