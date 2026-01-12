@@ -188,7 +188,7 @@ export const configSchema = z.object({
       /** Default assistant language */
       defaultLanguage: z.string().default('EN'),
       /** Default assistant tone */
-      defaultTone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL']).default('NEUTRAL'),
+      defaultTone: z.enum(['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL', 'MARKETPLACE']).default('NEUTRAL'),
       /** Default region for currency/marketplace */
       defaultRegion: z.enum(['NL', 'DE', 'BE', 'FR', 'UK', 'US', 'EU']).default('NL'),
     })
