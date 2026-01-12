@@ -11,12 +11,15 @@ import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.model.AiLanguageChoice
 import com.scanium.app.model.AppLanguage
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
+import com.scanium.app.model.FollowOrCustom
+import com.scanium.app.model.TtsLanguageChoice
 import com.scanium.app.model.billing.EntitlementState
 import com.scanium.app.model.config.AssistantPrerequisiteState
 import com.scanium.app.model.config.ConfigProvider
@@ -397,6 +400,116 @@ class SettingsViewModel
 
         fun setAssistantHapticsEnabled(enabled: Boolean) {
             viewModelScope.launch { settingsRepository.setAssistantHapticsEnabled(enabled) }
+        }
+
+        // =========================================================================
+        // Unified Settings (Primary Region & Language)
+        // =========================================================================
+
+        // Primary Settings
+        val primaryRegionCountry: StateFlow<String> =
+            settingsRepository.primaryRegionCountryFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "NL")
+
+        val primaryLanguage: StateFlow<String> =
+            settingsRepository.primaryLanguageFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
+
+        // Override Settings
+        val appLanguageSetting: StateFlow<FollowOrCustom<String>> =
+            settingsRepository.appLanguageSettingFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FollowOrCustom.followPrimary())
+
+        val aiLanguageSetting: StateFlow<FollowOrCustom<AiLanguageChoice>> =
+            settingsRepository.aiLanguageSettingFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FollowOrCustom.followPrimary())
+
+        val marketplaceCountrySetting: StateFlow<FollowOrCustom<String>> =
+            settingsRepository.marketplaceCountrySettingFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FollowOrCustom.followPrimary())
+
+        val ttsLanguageSetting: StateFlow<TtsLanguageChoice> =
+            settingsRepository.ttsLanguageSettingFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TtsLanguageChoice.FollowAiLanguage)
+
+        val lastDetectedSpokenLanguage: StateFlow<String?> =
+            settingsRepository.lastDetectedSpokenLanguageFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+        // Effective Values (resolved from primary + overrides)
+        val effectiveAppLanguage: StateFlow<String> =
+            settingsRepository.effectiveAppLanguageFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
+
+        val effectiveAiOutputLanguage: StateFlow<String> =
+            settingsRepository.effectiveAiOutputLanguageFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
+
+        val effectiveMarketplaceCountry: StateFlow<String> =
+            settingsRepository.effectiveMarketplaceCountryFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "NL")
+
+        val effectiveTtsLanguage: StateFlow<String> =
+            settingsRepository.effectiveTtsLanguageFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
+
+        // Setters for Primary Settings
+        fun setPrimaryRegionCountry(countryCode: String) {
+            viewModelScope.launch { settingsRepository.setPrimaryRegionCountry(countryCode) }
+        }
+
+        fun setPrimaryLanguage(languageTag: String) {
+            viewModelScope.launch {
+                settingsRepository.setPrimaryLanguage(languageTag)
+                // Also apply to app language if it follows primary
+                if (appLanguageSetting.value is FollowOrCustom.FollowPrimary) {
+                    val localeList = LocaleListCompat.forLanguageTags(languageTag)
+                    AppCompatDelegate.setApplicationLocales(localeList)
+                }
+            }
+        }
+
+        // Setters for Override Settings
+        fun setAppLanguageSetting(setting: FollowOrCustom<String>) {
+            viewModelScope.launch {
+                settingsRepository.setAppLanguageSetting(setting)
+                // Apply to AppCompatDelegate
+                val languageTag = setting.resolve(primaryLanguage.value)
+                val localeList = LocaleListCompat.forLanguageTags(languageTag)
+                AppCompatDelegate.setApplicationLocales(localeList)
+            }
+        }
+
+        fun setAiLanguageSetting(setting: FollowOrCustom<AiLanguageChoice>) {
+            viewModelScope.launch { settingsRepository.setAiLanguageSetting(setting) }
+        }
+
+        fun setMarketplaceCountrySetting(setting: FollowOrCustom<String>) {
+            viewModelScope.launch { settingsRepository.setMarketplaceCountrySetting(setting) }
+        }
+
+        fun setTtsLanguageSetting(setting: TtsLanguageChoice) {
+            viewModelScope.launch { settingsRepository.setTtsLanguageSetting(setting) }
+        }
+
+        fun setLastDetectedSpokenLanguage(languageTag: String?) {
+            viewModelScope.launch { settingsRepository.setLastDetectedSpokenLanguage(languageTag) }
+        }
+
+        // Helper to set both primary region and language at once
+        fun setPrimaryRegionAndLanguage(
+            countryCode: String,
+            languageTag: String,
+        ) {
+            viewModelScope.launch {
+                settingsRepository.setPrimaryRegionCountry(countryCode)
+                settingsRepository.setPrimaryLanguage(languageTag)
+                // Apply to app language if it follows primary
+                if (appLanguageSetting.value is FollowOrCustom.FollowPrimary) {
+                    val localeList = LocaleListCompat.forLanguageTags(languageTag)
+                    AppCompatDelegate.setApplicationLocales(localeList)
+                }
+            }
         }
 
         // Privacy Safe Mode

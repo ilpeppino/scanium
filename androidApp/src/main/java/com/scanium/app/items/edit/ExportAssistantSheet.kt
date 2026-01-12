@@ -62,7 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
-import com.scanium.app.assistant.tts.TtsController
+import com.scanium.app.assistant.tts.TtsManager
 import com.scanium.app.assistant.tts.buildSpeakableText
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.model.AppLanguage
@@ -86,6 +86,7 @@ import java.util.Locale
 fun ExportAssistantSheet(
     viewModel: ExportAssistantViewModel,
     settingsRepository: SettingsRepository,
+    ttsManager: TtsManager,
     onDismiss: () -> Unit,
     onApply: (title: String?, description: String?, bullets: List<String>) -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -96,35 +97,14 @@ fun ExportAssistantSheet(
 
     // TTS settings
     val speakAnswersEnabled by settingsRepository.speakAnswersEnabledFlow.collectAsState(initial = false)
-    val appLanguage by settingsRepository.appLanguageFlow.collectAsState(initial = AppLanguage.SYSTEM)
 
-    // TTS controller with lifecycle management
-    val ttsController = remember { TtsController(context) }
-    DisposableEffect(Unit) {
-        onDispose {
-            ttsController.shutdown()
-        }
-    }
-
-    // Update TTS language when app language changes
-    LaunchedEffect(appLanguage) {
-        val locale = when (appLanguage) {
-            AppLanguage.SYSTEM -> Locale.getDefault()
-            AppLanguage.EN -> Locale.ENGLISH
-            AppLanguage.ES -> Locale("es")
-            AppLanguage.IT -> Locale.ITALIAN
-            AppLanguage.FR -> Locale.FRENCH
-            AppLanguage.NL -> Locale("nl")
-            AppLanguage.DE -> Locale.GERMAN
-            AppLanguage.PT_BR -> Locale("pt", "BR")
-        }
-        ttsController.setLanguage(locale)
-    }
+    // TtsManager automatically uses effectiveTtsLanguage from SettingsRepository
+    // No need to manually manage language or lifecycle - it's a singleton
 
     // Stop TTS when state changes (e.g., regeneration)
     LaunchedEffect(state) {
         if (state.isLoading) {
-            ttsController.stop()
+            ttsManager.stop()
         }
     }
 
@@ -190,12 +170,12 @@ fun ExportAssistantSheet(
                             state = currentState,
                             speakAnswersEnabled = speakAnswersEnabled,
                             speakableText = speakableText,
-                            isSpeaking = ttsController.isSpeaking(),
+                            isSpeaking = ttsManager.isSpeaking.value,
                             onToggleSpeech = {
-                                if (ttsController.isSpeaking()) {
-                                    ttsController.stop()
+                                if (ttsManager.isSpeaking.value) {
+                                    ttsManager.stop()
                                 } else {
-                                    ttsController.speakOnce(speakableText)
+                                    ttsManager.speak(speakableText)
                                 }
                             },
                             onCopyAll = { copyAllToClipboard(context, currentState) },

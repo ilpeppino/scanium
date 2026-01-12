@@ -46,11 +46,14 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
+import com.scanium.app.model.AiLanguageChoice
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
 import com.scanium.app.model.Country
+import com.scanium.app.model.FollowOrCustom
+import com.scanium.app.model.TtsLanguageChoice
 import com.scanium.app.model.config.AssistantPrerequisiteState
 import kotlinx.coroutines.launch
 
@@ -79,11 +82,63 @@ fun SettingsAssistantScreen(
     val showPrerequisiteDialog by viewModel.showPrerequisiteDialog.collectAsState()
     val connectionTestState by viewModel.connectionTestState.collectAsState()
 
+    // Unified settings state
+    val primaryLanguage by viewModel.primaryLanguage.collectAsState()
+    val primaryRegionCountry by viewModel.primaryRegionCountry.collectAsState()
+    val aiLanguageSetting by viewModel.aiLanguageSetting.collectAsState()
+    val marketplaceCountrySetting by viewModel.marketplaceCountrySetting.collectAsState()
+    val ttsLanguageSetting by viewModel.ttsLanguageSetting.collectAsState()
+    val effectiveAiOutputLanguage by viewModel.effectiveAiOutputLanguage.collectAsState()
+    val effectiveMarketplaceCountry by viewModel.effectiveMarketplaceCountry.collectAsState()
+    val effectiveTtsLanguage by viewModel.effectiveTtsLanguage.collectAsState()
+
     // Load countries from marketplace JSON
     val marketplaceRepository = remember { MarketplaceRepository(context) }
     val countries = remember { marketplaceRepository.loadCountries() }
 
-    // Language options using SettingOption
+    // Helper to get language display name
+    @Composable
+    fun getLanguageDisplayName(languageTag: String): String {
+        return when (languageTag.uppercase()) {
+            "EN" -> stringResource(R.string.settings_language_en)
+            "NL" -> stringResource(R.string.settings_language_nl)
+            "DE" -> stringResource(R.string.settings_language_de)
+            "FR" -> stringResource(R.string.settings_language_fr)
+            "ES" -> stringResource(R.string.settings_language_es)
+            "IT" -> stringResource(R.string.settings_language_it)
+            "PT_BR", "PT-BR" -> stringResource(R.string.settings_language_pt_br)
+            else -> languageTag
+        }
+    }
+
+    // AI Language options with "Follow primary" and "Auto-detect"
+    val aiLanguageOptions = buildList {
+        // "Follow primary" option
+        add(
+            SettingOption(
+                value = "follow",
+                label = stringResource(R.string.settings_assistant_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
+                isRecommended = true,
+            )
+        )
+        // "Auto-detect" option
+        add(
+            SettingOption(
+                value = "auto_detect",
+                label = stringResource(R.string.settings_assistant_language_auto_detect),
+            )
+        )
+        // Individual language options
+        add(SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)))
+        add(SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)))
+        add(SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)))
+        add(SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)))
+        add(SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)))
+        add(SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)))
+        add(SettingOption(value = "PT_BR", label = stringResource(R.string.settings_language_pt_br)))
+    }
+
+    // Legacy language options (for backward compatibility if needed)
     val languageOptions =
         listOf(
             SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)),
@@ -111,7 +166,33 @@ fun SettingsAssistantScreen(
             )
         }
 
-    // Country options from marketplace JSON with flag emojis
+    // Marketplace country options with "Follow primary"
+    val primaryCountry = remember(primaryRegionCountry, countries) {
+        countries.find { it.code == primaryRegionCountry }
+    }
+    val primaryCountryLabel = primaryCountry?.let {
+        "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage.lowercase())}"
+    } ?: primaryRegionCountry
+
+    val marketplaceCountryOptions = buildList {
+        // "Follow primary" option
+        add(
+            SettingOption(
+                value = "follow",
+                label = stringResource(R.string.settings_assistant_country_follow_primary, primaryCountryLabel),
+                isRecommended = true,
+            )
+        )
+        // Individual country options
+        addAll(countries.map { country ->
+            SettingOption(
+                value = country.code,
+                label = "${country.getFlagEmoji()} ${country.getDisplayName(primaryLanguage.lowercase())}",
+            )
+        })
+    }
+
+    // Legacy country options (for backward compatibility if needed)
     val countryOptions =
         remember(countries, assistantLanguage) {
             countries.map { country ->
@@ -150,7 +231,34 @@ fun SettingsAssistantScreen(
             )
         }
 
-    // Voice language options using SettingOption
+    // TTS (Voice output) language options with unified settings
+    val ttsLanguageOptions = buildList {
+        // "Follow AI language" option (default)
+        add(
+            SettingOption(
+                value = "follow_ai",
+                label = stringResource(R.string.settings_tts_language_follow_ai, getLanguageDisplayName(effectiveAiOutputLanguage)),
+                isRecommended = true,
+            )
+        )
+        // "Follow primary" option
+        add(
+            SettingOption(
+                value = "follow_primary",
+                label = stringResource(R.string.settings_tts_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
+            )
+        )
+        // Individual language options
+        add(SettingOption(value = "EN", label = stringResource(R.string.settings_language_en)))
+        add(SettingOption(value = "NL", label = stringResource(R.string.settings_language_nl)))
+        add(SettingOption(value = "DE", label = stringResource(R.string.settings_language_de)))
+        add(SettingOption(value = "FR", label = stringResource(R.string.settings_language_fr)))
+        add(SettingOption(value = "ES", label = stringResource(R.string.settings_language_es)))
+        add(SettingOption(value = "IT", label = stringResource(R.string.settings_language_it)))
+        add(SettingOption(value = "PT_BR", label = stringResource(R.string.settings_language_pt_br)))
+    }
+
+    // Legacy voice language options (for backward compatibility)
     val currentLanguageLabel = languageOptions.find { it.value == assistantLanguage }?.label ?: ""
     val voiceLanguageOptions =
         listOf(
@@ -256,14 +364,36 @@ fun SettingsAssistantScreen(
             if (allowAssistant) {
                 SettingsSectionHeader(title = stringResource(R.string.settings_section_personalization))
 
-                // Language picker with bottom sheet
+                // AI Language picker (Unified Settings)
                 ValuePickerSettingRow(
                     title = stringResource(R.string.settings_assistant_language_title),
-                    subtitle = stringResource(R.string.settings_assistant_language_subtitle),
+                    subtitle = when (aiLanguageSetting) {
+                        is FollowOrCustom.FollowPrimary -> stringResource(R.string.settings_assistant_language_follow_primary, getLanguageDisplayName(effectiveAiOutputLanguage))
+                        is FollowOrCustom.Custom -> {
+                            when (val choice = (aiLanguageSetting as FollowOrCustom.Custom).value) {
+                                is AiLanguageChoice.AutoDetect -> stringResource(R.string.settings_assistant_language_auto_detect)
+                                is AiLanguageChoice.LanguageTag -> "${stringResource(R.string.settings_assistant_language_custom)}: ${getLanguageDisplayName(choice.tag)}"
+                            }
+                        }
+                    },
                     icon = Icons.Filled.Language,
-                    currentValue = assistantLanguage,
-                    options = languageOptions,
-                    onValueSelected = viewModel::setAssistantLanguage,
+                    currentValue = when (aiLanguageSetting) {
+                        is FollowOrCustom.FollowPrimary -> "follow"
+                        is FollowOrCustom.Custom -> {
+                            when (val choice = (aiLanguageSetting as FollowOrCustom.Custom).value) {
+                                is AiLanguageChoice.AutoDetect -> "auto_detect"
+                                is AiLanguageChoice.LanguageTag -> choice.tag
+                            }
+                        }
+                    },
+                    options = aiLanguageOptions,
+                    onValueSelected = { selectedValue ->
+                        when (selectedValue) {
+                            "follow" -> viewModel.setAiLanguageSetting(FollowOrCustom.followPrimary())
+                            "auto_detect" -> viewModel.setAiLanguageSetting(FollowOrCustom.custom(AiLanguageChoice.AutoDetect))
+                            else -> viewModel.setAiLanguageSetting(FollowOrCustom.custom(AiLanguageChoice.LanguageTag(selectedValue)))
+                        }
+                    },
                 )
 
                 // Tone picker with bottom sheet
@@ -276,14 +406,38 @@ fun SettingsAssistantScreen(
                     onValueSelected = viewModel::setAssistantTone,
                 )
 
-                // Country picker with bottom sheet
+                // Marketplace Country picker (Unified Settings)
                 ValuePickerSettingRow(
                     title = stringResource(R.string.settings_assistant_country_title),
-                    subtitle = stringResource(R.string.settings_assistant_country_subtitle),
+                    subtitle = when (marketplaceCountrySetting) {
+                        is FollowOrCustom.FollowPrimary -> {
+                            val country = countries.find { it.code == effectiveMarketplaceCountry }
+                            val label = country?.let {
+                                "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage.lowercase())}"
+                            } ?: effectiveMarketplaceCountry
+                            stringResource(R.string.settings_assistant_country_follow_primary, label)
+                        }
+                        is FollowOrCustom.Custom -> {
+                            val country = countries.find { it.code == (marketplaceCountrySetting as FollowOrCustom.Custom).value }
+                            val label = country?.let {
+                                "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage.lowercase())}"
+                            } ?: (marketplaceCountrySetting as FollowOrCustom.Custom).value
+                            "${stringResource(R.string.settings_assistant_country_custom)}: $label"
+                        }
+                    },
                     icon = Icons.Filled.Language,
-                    currentValue = assistantCountryCode,
-                    options = countryOptions,
-                    onValueSelected = viewModel::setAssistantCountryCode,
+                    currentValue = when (marketplaceCountrySetting) {
+                        is FollowOrCustom.FollowPrimary -> "follow"
+                        is FollowOrCustom.Custom -> (marketplaceCountrySetting as FollowOrCustom.Custom).value
+                    },
+                    options = marketplaceCountryOptions,
+                    onValueSelected = { selectedValue ->
+                        if (selectedValue == "follow") {
+                            viewModel.setMarketplaceCountrySetting(FollowOrCustom.followPrimary())
+                        } else {
+                            viewModel.setMarketplaceCountrySetting(FollowOrCustom.custom(selectedValue))
+                        }
+                    },
                 )
 
                 // Units picker with bottom sheet
@@ -337,6 +491,32 @@ fun SettingsAssistantScreen(
                     checked = speakAnswersEnabled,
                     onCheckedChange = viewModel::setSpeakAnswersEnabled,
                 )
+
+                // TTS (Voice output) language picker (Unified Settings)
+                if (speakAnswersEnabled) {
+                    ValuePickerSettingRow(
+                        title = stringResource(R.string.settings_tts_language_title),
+                        subtitle = when (ttsLanguageSetting) {
+                            is TtsLanguageChoice.FollowAiLanguage -> stringResource(R.string.settings_tts_language_follow_ai, getLanguageDisplayName(effectiveTtsLanguage))
+                            is TtsLanguageChoice.FollowPrimary -> stringResource(R.string.settings_tts_language_follow_primary, getLanguageDisplayName(effectiveTtsLanguage))
+                            is TtsLanguageChoice.Custom -> "${stringResource(R.string.settings_tts_language_custom)}: ${getLanguageDisplayName((ttsLanguageSetting as TtsLanguageChoice.Custom).languageTag)}"
+                        },
+                        icon = Icons.Filled.SettingsVoice,
+                        currentValue = when (ttsLanguageSetting) {
+                            is TtsLanguageChoice.FollowAiLanguage -> "follow_ai"
+                            is TtsLanguageChoice.FollowPrimary -> "follow_primary"
+                            is TtsLanguageChoice.Custom -> (ttsLanguageSetting as TtsLanguageChoice.Custom).languageTag
+                        },
+                        options = ttsLanguageOptions,
+                        onValueSelected = { selectedValue ->
+                            when (selectedValue) {
+                                "follow_ai" -> viewModel.setTtsLanguageSetting(TtsLanguageChoice.FollowAiLanguage)
+                                "follow_primary" -> viewModel.setTtsLanguageSetting(TtsLanguageChoice.FollowPrimary)
+                                else -> viewModel.setTtsLanguageSetting(TtsLanguageChoice.Custom(selectedValue))
+                            }
+                        },
+                    )
+                }
 
                 SettingSwitchRow(
                     title = stringResource(R.string.settings_auto_send_voice_title),

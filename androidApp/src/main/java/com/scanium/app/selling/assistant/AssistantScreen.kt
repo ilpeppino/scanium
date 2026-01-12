@@ -175,6 +175,9 @@ fun AssistantScreen(
     val assistantLanguage by settingsRepository.assistantLanguageFlow.collectAsState(initial = "EN")
     val assistantHapticsEnabled by settingsRepository.assistantHapticsEnabledFlow.collectAsState(initial = false)
 
+    // Unified Settings: Use effective TTS language
+    val effectiveTtsLanguage by settingsRepository.effectiveTtsLanguageFlow.collectAsState(initial = "EN")
+
     // Voice state from controller
     val voiceState by voiceController.voiceState.collectAsState()
     val partialTranscript by voiceController.partialTranscript.collectAsState()
@@ -184,10 +187,9 @@ fun AssistantScreen(
     val lastVoiceError by voiceController.lastError.collectAsState()
     val speechAvailable = voiceController.isSpeechAvailable
 
-    // Update voice language when settings change
-    LaunchedEffect(voiceLanguage, assistantLanguage) {
-        val effectiveLanguage = voiceLanguage.ifEmpty { assistantLanguage }
-        voiceController.setLanguage(effectiveLanguage)
+    // Update voice language when effective TTS language changes (Unified Settings)
+    LaunchedEffect(effectiveTtsLanguage) {
+        voiceController.setLanguage(effectiveTtsLanguage)
     }
 
     // Initialize TTS if speak answers is enabled
