@@ -111,15 +111,8 @@
     <string name="settings_tone_neutral">Neutraal</string>
     <string name="settings_tone_friendly">Vriendelijk</string>
     <string name="settings_tone_professional">Professioneel</string>
-    <string name="settings_assistant_region_title">Regio</string>
-    <string name="settings_assistant_region_subtitle">Beïnvloedt valuta en marktsuggesties</string>
-    <string name="settings_region_europe">Europa (Algemeen)</string>
-    <string name="settings_region_netherlands">Nederland</string>
-    <string name="settings_region_germany">Duitsland</string>
-    <string name="settings_region_france">Frankrijk</string>
-    <string name="settings_region_belgium">België</string>
-    <string name="settings_region_uk">Verenigd Koninkrijk</string>
-    <string name="settings_region_us">Verenigde Staten</string>
+    <string name="settings_assistant_country_title">Land</string>
+    <string name="settings_assistant_country_subtitle">Beïnvloedt valuta en marktsuggesties</string>
     <string name="settings_assistant_units_title">Eenheden</string>
     <string name="settings_assistant_units_subtitle">Meetsysteem voor berekeningen</string>
     <string name="settings_units_metric">Metrisch (cm, kg)</string>

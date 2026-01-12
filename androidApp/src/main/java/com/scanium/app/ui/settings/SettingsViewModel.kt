@@ -6,8 +6,10 @@ import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.scanium.app.data.EntitlementManager
+import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.data.ThemeMode
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.model.AppLanguage
 import com.scanium.app.model.AssistantPrefs
@@ -45,7 +47,9 @@ import javax.inject.Inject
 class SettingsViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val settingsRepository: SettingsRepository,
+        private val marketplaceRepository: MarketplaceRepository,
         private val entitlementManager: EntitlementManager,
         private val configProvider: ConfigProvider,
         private val featureFlagRepository: FeatureFlagRepository,
@@ -144,6 +148,19 @@ class SettingsViewModel
             settingsRepository.assistantToneFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantTone.NEUTRAL)
 
+        /**
+         * Country code for assistant (e.g., "NL", "DE", "PL").
+         * Supports all countries from marketplaces.json.
+         */
+        val assistantCountryCode: StateFlow<String> =
+            settingsRepository.assistantCountryCodeFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "NL")
+
+        /**
+         * Legacy region enum for backward compatibility.
+         * @deprecated Use assistantCountryCode instead
+         */
+        @Deprecated("Use assistantCountryCode for full country support")
         val assistantRegion: StateFlow<AssistantRegion> =
             settingsRepository.assistantRegionFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AssistantRegion.EU)
@@ -336,6 +353,19 @@ class SettingsViewModel
             viewModelScope.launch { settingsRepository.setAssistantTone(tone) }
         }
 
+        /**
+         * Set the assistant country code.
+         * Accepts any valid ISO 2-letter country code from marketplaces.json.
+         */
+        fun setAssistantCountryCode(countryCode: String) {
+            viewModelScope.launch { settingsRepository.setAssistantCountryCode(countryCode) }
+        }
+
+        /**
+         * Legacy setter for AssistantRegion enum.
+         * @deprecated Use setAssistantCountryCode instead
+         */
+        @Deprecated("Use setAssistantCountryCode for full country support")
         fun setAssistantRegion(region: AssistantRegion) {
             viewModelScope.launch { settingsRepository.setAssistantRegion(region) }
         }

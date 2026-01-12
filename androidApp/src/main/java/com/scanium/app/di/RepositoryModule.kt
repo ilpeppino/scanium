@@ -6,6 +6,7 @@ import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.data.AndroidFeatureFlagRepository
 import com.scanium.app.data.ClassificationPreferences
 import com.scanium.app.data.EntitlementManager
+import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.FtueRepository
 import com.scanium.app.ml.VisionInsightsRepository
@@ -35,6 +36,14 @@ object RepositoryModule {
         @ApplicationContext context: Context,
     ): SettingsRepository {
         return SettingsRepository(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMarketplaceRepository(
+        @ApplicationContext context: Context,
+    ): MarketplaceRepository {
+        return MarketplaceRepository(context)
     }
 
     @Provides

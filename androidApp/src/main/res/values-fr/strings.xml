@@ -111,15 +111,8 @@
     <string name="settings_tone_neutral">Neutre</string>
     <string name="settings_tone_friendly">Amical</string>
     <string name="settings_tone_professional">Professionnel</string>
-    <string name="settings_assistant_region_title">Région</string>
-    <string name="settings_assistant_region_subtitle">Affecte la devise et les suggestions</string>
-    <string name="settings_region_europe">Europe (Général)</string>
-    <string name="settings_region_netherlands">Pays-Bas</string>
-    <string name="settings_region_germany">Allemagne</string>
-    <string name="settings_region_france">France</string>
-    <string name="settings_region_belgium">Belgique</string>
-    <string name="settings_region_uk">Royaume-Uni</string>
-    <string name="settings_region_us">États-Unis</string>
+    <string name="settings_assistant_country_title">Pays</string>
+    <string name="settings_assistant_country_subtitle">Affecte la devise et les suggestions</string>
     <string name="settings_assistant_units_title">Unités</string>
     <string name="settings_assistant_units_subtitle">Système de mesure pour les calculs</string>
     <string name="settings_units_metric">Métrique (cm, kg)</string>

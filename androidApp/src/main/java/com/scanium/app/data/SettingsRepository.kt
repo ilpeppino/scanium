@@ -352,33 +352,83 @@ class SettingsRepository(
         }
     }
 
-    val assistantRegionFlow: Flow<AssistantRegion> =
+    /**
+     * Country code for assistant (ISO 2-letter code like "NL", "DE", "PL", "IT").
+     * This replaces the old region enum and supports all countries from marketplaces.json.
+     * Stored as string to support the full list of 36+ countries.
+     *
+     * Backward compatibility: Reads old enum values ("NL", "DE", "EU", etc.) seamlessly.
+     */
+    val assistantCountryCodeFlow: Flow<String> =
         dataStore.data.map { preferences ->
             val raw = preferences[ASSISTANT_REGION_KEY]
-            raw?.let { runCatching { AssistantRegion.valueOf(it) }.getOrNull() } ?: detectRegionFromLocale()
+            raw ?: detectCountryCodeFromLocale()
         }
 
     /**
-     * Detect region from device locale with fallback to EU.
-     * Maps common European country codes to AssistantRegion.
+     * Legacy flow that maps country code to AssistantRegion enum.
+     * Kept for backward compatibility with code that still uses the enum.
+     * Maps country codes to the nearest enum value.
+     *
+     * @deprecated Use assistantCountryCodeFlow instead for full country support
      */
-    private fun detectRegionFromLocale(): AssistantRegion {
+    @Deprecated("Use assistantCountryCodeFlow for full country support")
+    val assistantRegionFlow: Flow<AssistantRegion> =
+        assistantCountryCodeFlow.map { countryCode ->
+            mapCountryCodeToRegion(countryCode)
+        }
+
+    /**
+     * Detect country code from device locale with fallback to NL.
+     * Returns ISO 2-letter country code (e.g., "NL", "DE", "PL").
+     */
+    private fun detectCountryCodeFromLocale(): String {
         val countryCode = java.util.Locale.getDefault().country.uppercase()
-        return when (countryCode) {
-            "NL" -> AssistantRegion.NL
-            "DE", "AT", "CH" -> AssistantRegion.DE
-            "BE" -> AssistantRegion.BE
-            "FR" -> AssistantRegion.FR
-            "GB", "UK" -> AssistantRegion.UK
-            "US" -> AssistantRegion.US
-            else -> AssistantRegion.EU // Fallback for all other EU countries
+        // Return the device country code if it looks valid (2 letters)
+        return if (countryCode.length == 2) {
+            countryCode
+        } else {
+            "NL" // Fallback to Netherlands
         }
     }
 
-    suspend fun setAssistantRegion(region: AssistantRegion) {
-        dataStore.edit { preferences ->
-            preferences[ASSISTANT_REGION_KEY] = region.name
+    /**
+     * Map country code to AssistantRegion enum for backward compatibility.
+     * Groups countries by their closest regional match.
+     */
+    private fun mapCountryCodeToRegion(countryCode: String): AssistantRegion {
+        return when (countryCode.uppercase()) {
+            "NL" -> AssistantRegion.NL
+            "DE", "AT", "CH", "LI" -> AssistantRegion.DE
+            "BE" -> AssistantRegion.BE
+            "FR", "MC", "LU" -> AssistantRegion.FR
+            "GB", "UK", "IE" -> AssistantRegion.UK
+            "US" -> AssistantRegion.US
+            else -> AssistantRegion.EU // All other European countries
         }
+    }
+
+    /**
+     * Set the assistant country code.
+     * Accepts any valid ISO 2-letter country code.
+     *
+     * @param countryCode ISO 2-letter country code (e.g., "NL", "PL", "IT")
+     */
+    suspend fun setAssistantCountryCode(countryCode: String) {
+        dataStore.edit { preferences ->
+            preferences[ASSISTANT_REGION_KEY] = countryCode.uppercase()
+        }
+    }
+
+    /**
+     * Legacy setter for AssistantRegion enum.
+     * Kept for backward compatibility. Stores the enum name as country code.
+     *
+     * @deprecated Use setAssistantCountryCode instead
+     */
+    @Deprecated("Use setAssistantCountryCode for full country support")
+    suspend fun setAssistantRegion(region: AssistantRegion) {
+        setAssistantCountryCode(region.name)
     }
 
     val assistantUnitsFlow: Flow<AssistantUnits> =
