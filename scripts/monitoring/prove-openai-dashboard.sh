@@ -132,7 +132,8 @@ fi
 
 ***REMOVED*** Check assistant request metrics
 REQUEST_COUNT=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=scanium_assistant_requests_total{provider=\"openai\"}" | jq '[.data.result[].value[1] | tonumber] | add // 0' 2>/dev/null || echo "0")
-if [[ $(echo "$REQUEST_COUNT > 0" | bc -l 2>/dev/null || echo "0") == "1" ]]; then
+REQUEST_COUNT_INT=$(echo "$REQUEST_COUNT" | cut -d'.' -f1)
+if [[ "$REQUEST_COUNT_INT" =~ ^[0-9]+$ ]] && [[ "$REQUEST_COUNT_INT" -gt 0 ]]; then
   log_success "Assistant request metrics in Mimir (count=$REQUEST_COUNT)"
 else
   log_fail "Assistant request metrics NOT in Mimir or zero"
@@ -140,7 +141,8 @@ fi
 
 ***REMOVED*** Check latency metrics
 LATENCY_COUNT=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=scanium_assistant_request_latency_ms_count{provider=\"openai\"}" | jq '[.data.result[].value[1] | tonumber] | add // 0' 2>/dev/null || echo "0")
-if [[ $(echo "$LATENCY_COUNT > 0" | bc -l 2>/dev/null || echo "0") == "1" ]]; then
+LATENCY_COUNT_INT=$(echo "$LATENCY_COUNT" | cut -d'.' -f1)
+if [[ "$LATENCY_COUNT_INT" =~ ^[0-9]+$ ]] && [[ "$LATENCY_COUNT_INT" -gt 0 ]]; then
   log_success "Latency metrics in Mimir (count=$LATENCY_COUNT)"
 else
   log_warn "Latency metrics NOT in Mimir yet (may appear on next scrape)"
@@ -148,7 +150,8 @@ fi
 
 ***REMOVED*** Check token metrics
 TOKEN_SUM=$(curl -sf "${MIMIR_URL}/prometheus/api/v1/query?query=scanium_assistant_tokens_used_sum{provider=\"openai\",token_type=\"total\"}" | jq '[.data.result[].value[1] | tonumber] | add // 0' 2>/dev/null || echo "0")
-if [[ $(echo "$TOKEN_SUM > 0" | bc -l 2>/dev/null || echo "0") == "1" ]]; then
+TOKEN_SUM_INT=$(echo "$TOKEN_SUM" | cut -d'.' -f1)
+if [[ "$TOKEN_SUM_INT" =~ ^[0-9]+$ ]] && [[ "$TOKEN_SUM_INT" -gt 0 ]]; then
   log_success "Token metrics in Mimir (sum=$TOKEN_SUM)"
 else
   log_warn "Token metrics NOT in Mimir yet (may appear on next scrape)"
