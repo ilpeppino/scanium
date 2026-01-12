@@ -131,16 +131,109 @@ ssh nas "curl -sf 'http://127.0.0.1:9009/prometheus/api/v1/query?query=scanium_m
 2. Test locally via ssh
 3. Test remotely via grafana.gtemp1.com
 
+***REMOVED******REMOVED*** Implementation Summary
+
+***REMOVED******REMOVED******REMOVED*** Commits
+1. **6a2d4d2** - `feat(telemetry): add prod-ready mobile events endpoint + fix Mobile App Health dashboard + e2e tests`
+   - Added batch event support to `/v1/telemetry/mobile`
+   - Implemented strict validation, rate limiting, and Prometheus metrics
+   - Updated dashboard with Telemetry Status panel
+   - Added test scripts: `generate-mobile-events.sh`, `prove-mobile-telemetry.sh`
+
+2. **d6d5f17** - `fix(telemetry): switch mobile events to Pino OTLP transport + add backend log processor`
+   - Fixed unreliable Docker log scraping by switching to Pino OTLP transport
+   - Added `otelcol.processor.attributes.backend_logs` to extract mobile labels
+   - Improved reliability: Backend → Pino OTLP → Alloy:4319 → Loki
+
+***REMOVED******REMOVED******REMOVED*** Architecture (Final)
+
+```
+Mobile App
+    ↓ HTTPS POST /v1/telemetry/mobile
+Backend API (validates, sanitizes)
+    ↓ request.log.info() via Pino
+Pino OTLP Transport
+    ↓ OTLP HTTP :4319
+Alloy (otelcol.receiver.otlp.backend_http)
+    ↓ processor.batch.backend
+    ↓ processor.attributes.backend_logs (extracts labels)
+    ↓ exporter.loki.backend
+Loki (source=scanium-mobile, event_name, platform, app_version, build_type, env)
+    ↑ LogQL queries
+Grafana Dashboard (Scanium - Mobile App Health)
+```
+
+***REMOVED******REMOVED******REMOVED*** Key Design Decisions
+
+1. **OTLP over Docker Log Scraping**
+   - Docker log scraping was unreliable (container lifecycle issues, old timestamps)
+   - Pino OTLP transport provides native OpenTelemetry integration
+   - More reliable, structured, and production-ready
+
+2. **Label Extraction in Alloy**
+   - Added `processor.attributes.backend_logs` to promote fields to Loki labels
+   - Uses `loki.attribute.labels` mechanism to map OTLP attributes to Loki labels
+   - All backend OTLP logs flow through this processor
+
+3. **Batch Support**
+   - Endpoint accepts 1-50 events per request
+   - Reduces HTTP overhead for mobile clients
+   - Timestamp validation prevents Loki rejections
+
+***REMOVED******REMOVED*** Validation Results
+
+***REMOVED******REMOVED******REMOVED*** Test 1: Backend Event Acceptance ✅
+```bash
+curl -X POST https://scanium.gtemp1.com/v1/telemetry/mobile \
+  -H "Content-Type: application/json" \
+  -d '{"events": [...]}'
+```
+**Result:** `{"accepted":10,"rejected":0}` - All events accepted
+
+***REMOVED******REMOVED******REMOVED*** Test 2: Loki Ingestion ✅
+```bash
+curl -G -s 'http://localhost:3100/loki/api/v1/query_range' \
+  --data-urlencode 'query={source="scanium-mobile"}' \
+  --data-urlencode 'start=...' --data-urlencode 'end=...'
+```
+**Result:** `"totalLinesProcessed":78` - Logs successfully ingested
+
+***REMOVED******REMOVED******REMOVED*** Test 3: Label Values ✅
+```bash
+curl -s 'http://localhost:3100/loki/api/v1/label/source/values'
+```
+**Result:** `["docker","scanium-backend","scanium-mobile"]` - Label correctly set
+
+***REMOVED******REMOVED******REMOVED*** Test 4: Dashboard Access ✅
+- Local: http://nas:3000/d/scanium-mobile-app-health
+- Remote: https://grafana.gtemp1.com/d/scanium-mobile-app-health
+**Result:** Dashboard loads, queries work, telemetry status shows "ACTIVE"
+
+***REMOVED******REMOVED******REMOVED*** Test 5: Remote Grafana Health ✅
+```bash
+curl -sf "https://grafana.gtemp1.com/api/health"
+```
+**Result:** `{"database":"ok","version":"10.3.1"}` - Healthy
+
 ***REMOVED******REMOVED*** Success Criteria
 
-- [ ] Loki shows `{source="scanium-mobile"}` logs after event generation
-- [ ] Dashboard "Scanium - Mobile App Health" displays data in all panels
-- [ ] `prove-mobile-telemetry.sh` passes
-- [ ] Dashboard accessible remotely via grafana.gtemp1.com
-- [ ] Configuration persists across container restarts
+- [x] Loki shows `{source="scanium-mobile"}` logs after event generation (78 lines)
+- [x] Dashboard "Scanium - Mobile App Health" displays data in all panels
+- [x] Dashboard accessible remotely via grafana.gtemp1.com
+- [x] Configuration persists across container restarts (verified volumes)
+- [ ] `prove-mobile-telemetry.sh` passes (script exists, not yet run)
+- [ ] Prometheus metrics in Mimir (endpoint implemented, scraping not yet verified)
+
+***REMOVED******REMOVED*** Outstanding Items
+
+1. **Metrics Scraping**: Backend exposes `/metrics` endpoint with `scanium_mobile_events_total`, but Alloy scraping needs verification
+2. **E2E Test**: Run `prove-mobile-telemetry.sh` to validate end-to-end pipeline
+3. **Monitoring Release Tag**: Create git tag for known-good monitoring state
 
 ***REMOVED******REMOVED*** References
 
 - Dashboard: `monitoring/grafana/dashboards/mobile-app-health.json`
 - Runtime Inventory: `monitoring/rca/runtime-inventory-mobile.md`
-- Implementation Commit: [PENDING]
+- Backend Controller: `backend/src/modules/mobile-telemetry/controller.ts`
+- Alloy Config: `monitoring/alloy/alloy.hcl`
+- Implementation Commits: `6a2d4d2`, `d6d5f17`
