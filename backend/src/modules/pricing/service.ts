@@ -44,8 +44,8 @@ export class PricingService {
   constructor(private readonly config: PricingServiceConfig) {
     this.marketplacesService = new MarketplacesService(config.catalogPath);
     this.cache = new Map();
-    // Default to search preview model for web search capabilities
-    this.openaiModel = config.openaiModel || 'gpt-4o-mini-search-preview';
+    // Default to gpt-4o-mini (standard model - no web search in API yet)
+    this.openaiModel = config.openaiModel || 'gpt-4o-mini';
 
     // Initialize OpenAI client if API key provided
     if (config.openaiApiKey) {
@@ -236,8 +236,9 @@ Requirements:
 Find used/secondhand listings with clear prices. Extract exact prices and URLs.`;
 
     try {
-      // Use OpenAI search preview model with built-in web search
-      // Note: gpt-4o-mini-search-preview has web search capabilities built-in
+      // Use OpenAI model to extract price information
+      // Note: Standard OpenAI API does not support web search - this relies on the model's
+      // training data. For real-time web search, integrate with Brave Search, Serper, or similar.
       const completion = await this.openaiClient!.chat.completions.create({
         model: this.openaiModel,
         messages: [
