@@ -59,7 +59,11 @@ services:
       retries: 10
     networks:
       - scanium_net
+      - scanium-network
 
 networks:
   scanium_net:
     driver: bridge
+  scanium-network:
+    external: true
+    name: backend_scanium-network

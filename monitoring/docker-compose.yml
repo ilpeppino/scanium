@@ -28,11 +28,11 @@ services:
       - observability
       - backend_scanium-network
     healthcheck:
-      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/12345 && echo -e 'GET /-/ready HTTP/1.0\\r\\n\\r\\n' >&3 && timeout 2 cat <&3 | grep -q '200 OK'"]
-      interval: 10s
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/-/ready"]
+      interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 15s
 
   # Loki - Log aggregation
   loki:
@@ -103,7 +103,10 @@ services:
 
   # Grafana - Visualization and dashboards
   grafana:
-    image: grafana/grafana:10.3.1
+    build:
+      context: ./grafana
+      dockerfile: Dockerfile
+    image: scanium-grafana:latest
     container_name: scanium-grafana
     restart: unless-stopped
     ports:
