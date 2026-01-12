@@ -147,8 +147,11 @@ fun ScaniumNavGraph(
         }
 
         composable(Routes.SETTINGS_GENERAL) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val marketplaceRepository = remember { com.scanium.app.data.MarketplaceRepository(context) }
             SettingsGeneralScreen(
                 viewModel = settingsViewModel,
+                marketplaceRepository = marketplaceRepository,
                 onNavigateBack = { navController.popBackStack() },
                 onUpgradeClick = { navController.navigate(Routes.PAYWALL) },
             )

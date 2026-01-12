@@ -12,17 +12,24 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.scanium.app.config.FeatureFlags
+import com.scanium.app.model.AiLanguageChoice
 import com.scanium.app.model.AppLanguage
 import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantRegion
 import com.scanium.app.model.AssistantTone
 import com.scanium.app.model.AssistantUnits
 import com.scanium.app.model.AssistantVerbosity
+import com.scanium.app.model.FollowOrCustom
+import com.scanium.app.model.TtsLanguageChoice
 import com.scanium.app.model.user.UserEdition
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.io.IOException
 
 private const val SETTINGS_DATASTORE_TAG = "SettingsDataStore"
@@ -104,6 +111,40 @@ class SettingsRepository(
 
         // Auto-open item list after scan
         private val OPEN_ITEM_LIST_AFTER_SCAN_KEY = booleanPreferencesKey("open_item_list_after_scan")
+
+        // =========================================================================
+        // Unified Settings (Primary Region & Language)
+        // =========================================================================
+
+        // Schema version for migration tracking
+        private val SETTINGS_SCHEMA_VERSION_KEY = intPreferencesKey("settings_schema_version")
+        private const val CURRENT_SCHEMA_VERSION = 1
+
+        // Primary settings (source of truth)
+        private val PRIMARY_REGION_COUNTRY_KEY = stringPreferencesKey("primary_region_country")
+        private val PRIMARY_LANGUAGE_KEY = stringPreferencesKey("primary_language")
+
+        // Override settings (follow primary or custom)
+        private val APP_LANGUAGE_OVERRIDE_KEY = stringPreferencesKey("app_language_override")
+        private val AI_LANGUAGE_OVERRIDE_KEY = stringPreferencesKey("ai_language_override")
+        private val MARKETPLACE_COUNTRY_OVERRIDE_KEY = stringPreferencesKey("marketplace_country_override")
+
+        // TTS alignment setting
+        private val TTS_LANGUAGE_SETTING_KEY = stringPreferencesKey("tts_language_setting")
+
+        // Last detected spoken language (for AutoDetect fallback)
+        private val LAST_DETECTED_SPOKEN_LANGUAGE_KEY = stringPreferencesKey("last_detected_spoken_language")
+    }
+
+    // Coroutine scope for initialization tasks (migration)
+    private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    init {
+        // Trigger migration on repository creation
+        // This is safe to call on every app start as it checks schema version
+        initScope.launch {
+            runMigrationIfNeeded()
+        }
     }
 
     /**
@@ -897,6 +938,323 @@ class SettingsRepository(
     suspend fun setOpenItemListAfterScan(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[OPEN_ITEM_LIST_AFTER_SCAN_KEY] = enabled
+        }
+    }
+
+    // =========================================================================
+    // Unified Settings (Primary Region & Language) + Migration
+    // =========================================================================
+
+    /**
+     * Run migration if needed based on schema version.
+     * This is called once on app start and checks the version to avoid re-running.
+     */
+    private suspend fun runMigrationIfNeeded() {
+        dataStore.edit { preferences ->
+            val currentVersion = preferences[SETTINGS_SCHEMA_VERSION_KEY] ?: 0
+
+            if (currentVersion < CURRENT_SCHEMA_VERSION) {
+                Log.i(SETTINGS_DATASTORE_TAG, "Running settings migration from version $currentVersion to $CURRENT_SCHEMA_VERSION")
+
+                // Migration from version 0 to 1: Initialize unified settings
+                if (currentVersion < 1) {
+                    migrateToUnifiedSettings(preferences)
+                }
+
+                // Update schema version
+                preferences[SETTINGS_SCHEMA_VERSION_KEY] = CURRENT_SCHEMA_VERSION
+                Log.i(SETTINGS_DATASTORE_TAG, "Settings migration complete")
+            }
+        }
+    }
+
+    /**
+     * Migrate from legacy settings to unified settings model.
+     * Preserves existing user choices while initializing the new structure.
+     */
+    private fun migrateToUnifiedSettings(preferences: androidx.datastore.preferences.core.MutablePreferences) {
+        // 1) Initialize primaryRegionCountry from existing marketplace country, else system, else "NL"
+        val existingMarketplaceCountry = preferences[ASSISTANT_REGION_KEY]
+        val primaryCountry = existingMarketplaceCountry ?: detectCountryCodeFromLocale()
+        preferences[PRIMARY_REGION_COUNTRY_KEY] = primaryCountry
+
+        // 2) Initialize primaryLanguage from existing app language, else system, else "en"
+        val existingAppLanguage = preferences[APP_LANGUAGE_KEY]
+        val primaryLanguage = when {
+            existingAppLanguage != null && existingAppLanguage != "system" -> existingAppLanguage
+            else -> {
+                val systemLang = java.util.Locale.getDefault().language
+                if (systemLang.isNotEmpty()) systemLang else "en"
+            }
+        }
+        preferences[PRIMARY_LANGUAGE_KEY] = primaryLanguage
+
+        // 3) App language override
+        // If user explicitly set app language (not SYSTEM), store as Custom
+        // Otherwise, default to FollowPrimary
+        if (existingAppLanguage != null && existingAppLanguage != "system") {
+            preferences[APP_LANGUAGE_OVERRIDE_KEY] = "custom:$existingAppLanguage"
+        } else {
+            preferences[APP_LANGUAGE_OVERRIDE_KEY] = "follow"
+        }
+
+        // 4) AI language override
+        // If user explicitly set AI language (default is "EN"), check if it differs from primary
+        val existingAiLanguage = preferences[ASSISTANT_LANGUAGE_KEY]
+        if (existingAiLanguage != null && existingAiLanguage != primaryLanguage.uppercase()) {
+            preferences[AI_LANGUAGE_OVERRIDE_KEY] = "custom:$existingAiLanguage"
+        } else {
+            preferences[AI_LANGUAGE_OVERRIDE_KEY] = "follow"
+        }
+
+        // 5) Marketplace country override
+        // If user explicitly set marketplace country (assistant region), store as Custom
+        // Otherwise, default to FollowPrimary
+        if (existingMarketplaceCountry != null) {
+            preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY] = "custom:$existingMarketplaceCountry"
+        } else {
+            preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY] = "follow"
+        }
+
+        // 6) TTS migration
+        // Existing voice language setting: empty = follow assistant, non-empty = custom
+        val existingVoiceLanguage = preferences[VOICE_LANGUAGE_KEY]
+        if (existingVoiceLanguage != null && existingVoiceLanguage.isNotEmpty()) {
+            preferences[TTS_LANGUAGE_SETTING_KEY] = "custom:$existingVoiceLanguage"
+        } else {
+            preferences[TTS_LANGUAGE_SETTING_KEY] = "follow_ai"
+        }
+
+        Log.i(
+            SETTINGS_DATASTORE_TAG,
+            "Unified settings initialized: primary=$primaryCountry/$primaryLanguage",
+        )
+    }
+
+    // -------------------------------------------------------------------------
+    // Primary Settings Flows
+    // -------------------------------------------------------------------------
+
+    val primaryRegionCountryFlow: Flow<String> =
+        dataStore.data.safeMap(detectCountryCodeFromLocale()) { preferences ->
+            preferences[PRIMARY_REGION_COUNTRY_KEY] ?: detectCountryCodeFromLocale()
+        }
+
+    suspend fun setPrimaryRegionCountry(countryCode: String) {
+        dataStore.edit { preferences ->
+            preferences[PRIMARY_REGION_COUNTRY_KEY] = countryCode.uppercase()
+        }
+    }
+
+    val primaryLanguageFlow: Flow<String> =
+        dataStore.data.safeMap("en") { preferences ->
+            preferences[PRIMARY_LANGUAGE_KEY] ?: "en"
+        }
+
+    suspend fun setPrimaryLanguage(languageTag: String) {
+        dataStore.edit { preferences ->
+            preferences[PRIMARY_LANGUAGE_KEY] = languageTag
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // App Language Override Flow
+    // -------------------------------------------------------------------------
+
+    val appLanguageSettingFlow: Flow<FollowOrCustom<String>> =
+        dataStore.data.safeMap(FollowOrCustom.followPrimary<String>()) { preferences ->
+            val raw = preferences[APP_LANGUAGE_OVERRIDE_KEY]
+            parseFollowOrCustom(raw, "follow")
+        }
+
+    suspend fun setAppLanguageSetting(setting: FollowOrCustom<String>) {
+        dataStore.edit { preferences ->
+            preferences[APP_LANGUAGE_OVERRIDE_KEY] = serializeFollowOrCustom(setting)
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // AI Language Override Flow
+    // -------------------------------------------------------------------------
+
+    val aiLanguageSettingFlow: Flow<FollowOrCustom<AiLanguageChoice>> =
+        dataStore.data.safeMap(FollowOrCustom.followPrimary<AiLanguageChoice>()) { preferences ->
+            val raw = preferences[AI_LANGUAGE_OVERRIDE_KEY]
+            parseFollowOrCustomAiLanguage(raw, "follow")
+        }
+
+    suspend fun setAiLanguageSetting(setting: FollowOrCustom<AiLanguageChoice>) {
+        dataStore.edit { preferences ->
+            preferences[AI_LANGUAGE_OVERRIDE_KEY] = serializeFollowOrCustomAiLanguage(setting)
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Marketplace Country Override Flow
+    // -------------------------------------------------------------------------
+
+    val marketplaceCountrySettingFlow: Flow<FollowOrCustom<String>> =
+        dataStore.data.safeMap(FollowOrCustom.followPrimary<String>()) { preferences ->
+            val raw = preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY]
+            parseFollowOrCustom(raw, "follow")
+        }
+
+    suspend fun setMarketplaceCountrySetting(setting: FollowOrCustom<String>) {
+        dataStore.edit { preferences ->
+            preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY] = serializeFollowOrCustom(setting)
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // TTS Language Setting Flow
+    // -------------------------------------------------------------------------
+
+    val ttsLanguageSettingFlow: Flow<TtsLanguageChoice> =
+        dataStore.data.safeMap(TtsLanguageChoice.FollowAiLanguage) { preferences ->
+            val raw = preferences[TTS_LANGUAGE_SETTING_KEY]
+            parseTtsLanguageChoice(raw, "follow_ai")
+        }
+
+    suspend fun setTtsLanguageSetting(setting: TtsLanguageChoice) {
+        dataStore.edit { preferences ->
+            preferences[TTS_LANGUAGE_SETTING_KEY] = serializeTtsLanguageChoice(setting)
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Last Detected Spoken Language
+    // -------------------------------------------------------------------------
+
+    val lastDetectedSpokenLanguageFlow: Flow<String?> =
+        dataStore.data.map { preferences ->
+            preferences[LAST_DETECTED_SPOKEN_LANGUAGE_KEY]
+        }
+
+    suspend fun setLastDetectedSpokenLanguage(languageTag: String?) {
+        dataStore.edit { preferences ->
+            if (languageTag != null) {
+                preferences[LAST_DETECTED_SPOKEN_LANGUAGE_KEY] = languageTag
+            } else {
+                preferences.remove(LAST_DETECTED_SPOKEN_LANGUAGE_KEY)
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Effective Value Resolvers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Get the effective app language, resolving "Follow primary" to the primary language.
+     * Returns a language tag (e.g., "en", "nl", "pt-BR").
+     */
+    val effectiveAppLanguageFlow: Flow<String> =
+        combine(primaryLanguageFlow, appLanguageSettingFlow) { primary, setting ->
+            setting.resolve(primary)
+        }
+
+    /**
+     * Get the effective AI output language.
+     * - If AI language is AutoDetect: prefer lastDetected, else fall back to primary
+     * - Otherwise: resolve to language tag
+     */
+    val effectiveAiOutputLanguageFlow: Flow<String> =
+        combine(
+            primaryLanguageFlow,
+            aiLanguageSettingFlow,
+            lastDetectedSpokenLanguageFlow,
+        ) { primary, aiSetting, lastDetected ->
+            val aiChoice = aiSetting.resolve(AiLanguageChoice.LanguageTag(primary))
+            when (aiChoice) {
+                is AiLanguageChoice.LanguageTag -> aiChoice.tag
+                is AiLanguageChoice.AutoDetect -> lastDetected ?: primary
+            }
+        }
+
+    /**
+     * Get the effective marketplace country code.
+     */
+    val effectiveMarketplaceCountryFlow: Flow<String> =
+        combine(primaryRegionCountryFlow, marketplaceCountrySettingFlow) { primary, setting ->
+            setting.resolve(primary)
+        }
+
+    /**
+     * Get the effective TTS language, resolving follows to the appropriate language.
+     */
+    val effectiveTtsLanguageFlow: Flow<String> =
+        combine(
+            primaryLanguageFlow,
+            effectiveAiOutputLanguageFlow,
+            ttsLanguageSettingFlow,
+        ) { primary, aiOutput, ttsSetting ->
+            when (ttsSetting) {
+                is TtsLanguageChoice.FollowAiLanguage -> aiOutput
+                is TtsLanguageChoice.FollowPrimary -> primary
+                is TtsLanguageChoice.Custom -> ttsSetting.languageTag
+            }
+        }
+
+    // -------------------------------------------------------------------------
+    // Serialization Helpers for DataStore
+    // -------------------------------------------------------------------------
+
+    private fun parseFollowOrCustom(raw: String?, default: String): FollowOrCustom<String> {
+        return when {
+            raw == null || raw == "follow" -> FollowOrCustom.followPrimary()
+            raw.startsWith("custom:") -> FollowOrCustom.custom(raw.removePrefix("custom:"))
+            else -> FollowOrCustom.followPrimary()
+        }
+    }
+
+    private fun serializeFollowOrCustom(setting: FollowOrCustom<String>): String {
+        return when (setting) {
+            is FollowOrCustom.FollowPrimary -> "follow"
+            is FollowOrCustom.Custom -> "custom:${setting.value}"
+        }
+    }
+
+    private fun parseFollowOrCustomAiLanguage(
+        raw: String?,
+        default: String,
+    ): FollowOrCustom<AiLanguageChoice> {
+        return when {
+            raw == null || raw == "follow" -> FollowOrCustom.followPrimary()
+            raw == "custom:auto_detect" -> FollowOrCustom.custom(AiLanguageChoice.AutoDetect)
+            raw.startsWith("custom:") -> {
+                val tag = raw.removePrefix("custom:")
+                FollowOrCustom.custom(AiLanguageChoice.LanguageTag(tag))
+            }
+            else -> FollowOrCustom.followPrimary()
+        }
+    }
+
+    private fun serializeFollowOrCustomAiLanguage(setting: FollowOrCustom<AiLanguageChoice>): String {
+        return when (setting) {
+            is FollowOrCustom.FollowPrimary -> "follow"
+            is FollowOrCustom.Custom -> {
+                when (val choice = setting.value) {
+                    is AiLanguageChoice.AutoDetect -> "custom:auto_detect"
+                    is AiLanguageChoice.LanguageTag -> "custom:${choice.tag}"
+                }
+            }
+        }
+    }
+
+    private fun parseTtsLanguageChoice(raw: String?, default: String): TtsLanguageChoice {
+        return when {
+            raw == null || raw == "follow_ai" -> TtsLanguageChoice.FollowAiLanguage
+            raw == "follow_primary" -> TtsLanguageChoice.FollowPrimary
+            raw.startsWith("custom:") -> TtsLanguageChoice.Custom(raw.removePrefix("custom:"))
+            else -> TtsLanguageChoice.FollowAiLanguage
+        }
+    }
+
+    private fun serializeTtsLanguageChoice(setting: TtsLanguageChoice): String {
+        return when (setting) {
+            is TtsLanguageChoice.FollowAiLanguage -> "follow_ai"
+            is TtsLanguageChoice.FollowPrimary -> "follow_primary"
+            is TtsLanguageChoice.Custom -> "custom:${setting.languageTag}"
         }
     }
 }

@@ -25,27 +25,42 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
+import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.ThemeMode
 import com.scanium.app.model.AppLanguage
+import com.scanium.app.model.FollowOrCustom
 import com.scanium.app.model.user.UserEdition
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsGeneralScreen(
     viewModel: SettingsViewModel,
+    marketplaceRepository: MarketplaceRepository,
     onNavigateBack: () -> Unit,
     onUpgradeClick: () -> Unit,
 ) {
+    // Legacy state (still used for backward compatibility during transition)
     val themeMode by viewModel.themeMode.collectAsState()
     val appLanguage by viewModel.appLanguage.collectAsState()
     val currentEdition by viewModel.currentEdition.collectAsState()
     val entitlementState by viewModel.entitlementState.collectAsState()
     val soundsEnabled by viewModel.soundsEnabled.collectAsState()
+
+    // Unified settings state
+    val primaryRegionCountry by viewModel.primaryRegionCountry.collectAsState()
+    val primaryLanguage by viewModel.primaryLanguage.collectAsState()
+    val appLanguageSetting by viewModel.appLanguageSetting.collectAsState()
+    val effectiveAppLanguage by viewModel.effectiveAppLanguage.collectAsState()
+
+    // Load countries for primary region picker
+    val countries = remember { marketplaceRepository.loadCountries() }
 
     val editionLabel =
         when (currentEdition) {
@@ -96,7 +111,55 @@ fun SettingsGeneralScreen(
             ),
         )
 
-    // Language options using SettingOption
+    // Helper to get language display name
+    @Composable
+    fun getLanguageDisplayName(languageTag: String): String {
+        return when (languageTag.lowercase()) {
+            "en" -> stringResource(R.string.settings_language_en)
+            "nl" -> stringResource(R.string.settings_language_nl)
+            "de" -> stringResource(R.string.settings_language_de)
+            "fr" -> stringResource(R.string.settings_language_fr)
+            "es" -> stringResource(R.string.settings_language_es)
+            "it" -> stringResource(R.string.settings_language_it)
+            "pt-br" -> stringResource(R.string.settings_language_pt_br)
+            else -> languageTag
+        }
+    }
+
+    // Primary region/country options
+    val primaryCountryOptions = countries.map { country ->
+        SettingOption(
+            value = country.code,
+            label = "${country.getFlagEmoji()} ${country.getDisplayName(primaryLanguage)}",
+        )
+    }
+
+    // Primary language options
+    val primaryLanguageOptions = listOf(
+        SettingOption(value = "en", label = stringResource(R.string.settings_language_en)),
+        SettingOption(value = "nl", label = stringResource(R.string.settings_language_nl)),
+        SettingOption(value = "de", label = stringResource(R.string.settings_language_de)),
+        SettingOption(value = "fr", label = stringResource(R.string.settings_language_fr)),
+        SettingOption(value = "es", label = stringResource(R.string.settings_language_es)),
+        SettingOption(value = "it", label = stringResource(R.string.settings_language_it)),
+        SettingOption(value = "pt-BR", label = stringResource(R.string.settings_language_pt_br)),
+    )
+
+    // App language options (with "Follow primary" option)
+    val appLanguageOptions = buildList {
+        // "Follow primary" option
+        add(
+            SettingOption(
+                value = "follow",
+                label = stringResource(R.string.settings_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
+                isRecommended = true,
+            )
+        )
+        // Individual language options
+        addAll(primaryLanguageOptions)
+    }
+
+    // Legacy language options (for backward compatibility if needed)
     val languageOptions =
         listOf(
             SettingOption(
@@ -172,6 +235,31 @@ fun SettingsGeneralScreen(
                 trailingContent = trailingEditionAction,
             )
 
+            // Primary Region & Language Section
+            SettingsSectionHeader(title = stringResource(R.string.settings_section_language))
+
+            // Primary Region (Country)
+            ValuePickerSettingRow(
+                title = stringResource(R.string.settings_primary_country_label),
+                subtitle = countries.find { it.code == primaryRegionCountry }?.let {
+                    "${it.getFlagEmoji()} ${it.getDisplayName(primaryLanguage)}"
+                } ?: primaryRegionCountry,
+                icon = Icons.Filled.Language,
+                currentValue = primaryRegionCountry,
+                options = primaryCountryOptions,
+                onValueSelected = viewModel::setPrimaryRegionCountry,
+            )
+
+            // Primary Language
+            ValuePickerSettingRow(
+                title = stringResource(R.string.settings_primary_language_label),
+                subtitle = getLanguageDisplayName(primaryLanguage),
+                icon = Icons.Filled.Language,
+                currentValue = primaryLanguage,
+                options = primaryLanguageOptions,
+                onValueSelected = viewModel::setPrimaryLanguage,
+            )
+
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
 
             // 1) Theme picker with bottom sheet
@@ -184,14 +272,26 @@ fun SettingsGeneralScreen(
                 onValueSelected = viewModel::setThemeMode,
             )
 
-            // 2) Language picker with bottom sheet
+            // 2) App Language picker (Unified Settings)
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_language_system_title),
-                subtitle = stringResource(R.string.settings_language_system_desc),
+                subtitle = when (appLanguageSetting) {
+                    is FollowOrCustom.FollowPrimary -> stringResource(R.string.settings_language_follow_primary, getLanguageDisplayName(effectiveAppLanguage))
+                    is FollowOrCustom.Custom -> "${stringResource(R.string.settings_language_custom)}: ${getLanguageDisplayName((appLanguageSetting as FollowOrCustom.Custom).value)}"
+                },
                 icon = Icons.Filled.Language,
-                currentValue = appLanguage,
-                options = languageOptions,
-                onValueSelected = viewModel::setAppLanguage,
+                currentValue = when (appLanguageSetting) {
+                    is FollowOrCustom.FollowPrimary -> "follow"
+                    is FollowOrCustom.Custom -> (appLanguageSetting as FollowOrCustom.Custom).value
+                },
+                options = appLanguageOptions,
+                onValueSelected = { selectedValue ->
+                    if (selectedValue == "follow") {
+                        viewModel.setAppLanguageSetting(FollowOrCustom.followPrimary())
+                    } else {
+                        viewModel.setAppLanguageSetting(FollowOrCustom.custom(selectedValue))
+                    }
+                },
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_preferences))

@@ -718,9 +718,11 @@ fun EditItemScreenV3(
     // Export Assistant Bottom Sheet
     if (showExportAssistantSheet && exportAssistantViewModel != null) {
         val settingsRepository = remember { SettingsRepository(context) }
+        val ttsManager = remember { com.scanium.app.assistant.tts.TtsManager(context, settingsRepository) }
         ExportAssistantSheet(
             viewModel = exportAssistantViewModel,
             settingsRepository = settingsRepository,
+            ttsManager = ttsManager,
             onDismiss = { showExportAssistantSheet = false },
             onApply = { title, description, bullets ->
                 // Update notes field with export content
