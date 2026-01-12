@@ -100,6 +100,9 @@ class SettingsRepository(
 
         // Overlay accuracy filter (developer debug feature)
         private val DEV_OVERLAY_ACCURACY_STEP_KEY = intPreferencesKey("dev_overlay_accuracy_step")
+
+        // Auto-open item list after scan
+        private val OPEN_ITEM_LIST_AFTER_SCAN_KEY = booleanPreferencesKey("open_item_list_after_scan")
     }
 
     /**
@@ -810,6 +813,28 @@ class SettingsRepository(
     suspend fun setDevOverlayAccuracyStep(stepIndex: Int) {
         dataStore.edit { preferences ->
             preferences[DEV_OVERLAY_ACCURACY_STEP_KEY] = stepIndex
+        }
+    }
+
+    // =========================================================================
+    // Auto-navigation Settings
+    // =========================================================================
+
+    /**
+     * Whether to automatically open the item list after a scan when items are found.
+     * Default is OFF (false) to maintain existing UX behavior.
+     *
+     * When enabled, the app will automatically navigate to the item list screen
+     * after a successful scan that detects one or more items.
+     */
+    val openItemListAfterScanFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[OPEN_ITEM_LIST_AFTER_SCAN_KEY] ?: false
+        }
+
+    suspend fun setOpenItemListAfterScan(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[OPEN_ITEM_LIST_AFTER_SCAN_KEY] = enabled
         }
     }
 }

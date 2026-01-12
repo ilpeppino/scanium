@@ -145,6 +145,17 @@ fun CameraScreen(
         MotionConfig.setMotionOverlaysEnabled(motionOverlaysEnabled)
     }
 
+    // Collect UI events from itemsViewModel (e.g., auto-navigation after scan)
+    LaunchedEffect(itemsViewModel) {
+        itemsViewModel.uiEvents.collect { event ->
+            when (event) {
+                is com.scanium.app.items.ItemsUiEvent.NavigateToItemList -> {
+                    onNavigateToItems()
+                }
+            }
+        }
+    }
+
     // Permission education state (shown before first permission request)
     val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
     var showPermissionEducationDialog by remember { mutableStateOf(false) }

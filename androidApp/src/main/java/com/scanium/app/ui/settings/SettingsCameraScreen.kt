@@ -55,6 +55,7 @@ fun SettingsCameraScreen(
     val lowDataMode by classificationViewModel.lowDataMode.collectAsState()
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
     val showDetectionBoxes by settingsViewModel.showDetectionBoxes.collectAsState()
+    val openItemListAfterScan by settingsViewModel.openItemListAfterScan.collectAsState()
 
     val dirPickerLauncher =
         rememberLauncherForActivityResult(
@@ -203,6 +204,13 @@ fun SettingsCameraScreen(
                 onSelect = { level ->
                     itemsViewModel.updateSimilarityThreshold(level.threshold)
                 },
+            )
+
+            SettingSwitchRow(
+                title = stringResource(R.string.settings_open_item_list_after_scan_title),
+                subtitle = stringResource(R.string.settings_open_item_list_after_scan_subtitle),
+                checked = openItemListAfterScan,
+                onCheckedChange = settingsViewModel::setOpenItemListAfterScan,
             )
 
             SettingsSectionHeader(title = stringResource(R.string.settings_section_overlay))

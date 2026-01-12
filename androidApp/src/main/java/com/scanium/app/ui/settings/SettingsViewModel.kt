@@ -105,6 +105,10 @@ class SettingsViewModel
             settingsRepository.showDetectionBoxesFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+        val openItemListAfterScan: StateFlow<Boolean> =
+            settingsRepository.openItemListAfterScanFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
         val entitlements =
             entitlementManager.entitlementPolicyFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.scanium.app.model.user.FreeEntitlements)
@@ -265,6 +269,10 @@ class SettingsViewModel
 
         fun setShowDetectionBoxes(enabled: Boolean) {
             viewModelScope.launch { settingsRepository.setShowDetectionBoxes(enabled) }
+        }
+
+        fun setOpenItemListAfterScan(enabled: Boolean) {
+            viewModelScope.launch { settingsRepository.setOpenItemListAfterScan(enabled) }
         }
 
         fun setForceFtueTour(enabled: Boolean) {

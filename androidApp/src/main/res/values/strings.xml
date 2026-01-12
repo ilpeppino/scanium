@@ -75,6 +75,8 @@
     <string name="settings_accuracy_medium_desc">Balanced accuracy</string>
     <string name="settings_accuracy_high">High</string>
     <string name="settings_accuracy_high_desc">Stricter matching; keeps high-confidence items</string>
+    <string name="settings_open_item_list_after_scan_title">Open item list after scan</string>
+    <string name="settings_open_item_list_after_scan_subtitle">Automatically open the items list after a scan if items were found</string>
 
     <!-- Overlay -->
     <string name="settings_section_overlay">Overlay</string>
