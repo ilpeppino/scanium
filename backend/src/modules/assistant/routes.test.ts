@@ -50,6 +50,94 @@ afterAll(async () => {
   await app.close();
 });
 
+describe('Config validation', () => {
+  it('accepts MARKETPLACE as defaultTone in config', () => {
+    const testConfig = configSchema.parse({
+      nodeEnv: 'test',
+      port: 8090,
+      publicBaseUrl: 'http://localhost:8090',
+      databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+      classifier: {
+        provider: 'mock',
+        apiKeys: 'test-key',
+        domainPackPath: 'src/modules/classifier/domain/home-resale.json',
+      },
+      assistant: {
+        provider: 'mock',
+        apiKeys: 'assist-key',
+        defaultTone: 'MARKETPLACE',
+      },
+      vision: {
+        enabled: true,
+        provider: 'mock',
+      },
+      ebay: {
+        env: 'sandbox',
+        clientId: 'client',
+        clientSecret: 'client-secret-minimum-length-please',
+        scopes: 'scope',
+        tokenEncryptionKey: 'x'.repeat(32),
+      },
+      sessionSigningSecret: 'x'.repeat(64),
+      security: {
+        enforceHttps: false,
+        enableHsts: false,
+        apiKeyRotationEnabled: false,
+        apiKeyExpirationDays: 90,
+        logApiKeyUsage: false,
+      },
+      corsOrigins: 'http://localhost',
+    });
+
+    expect(testConfig.assistant.defaultTone).toBe('MARKETPLACE');
+  });
+
+  it('accepts all valid tone values in config', () => {
+    const tones = ['NEUTRAL', 'FRIENDLY', 'PROFESSIONAL', 'MARKETPLACE'] as const;
+
+    for (const tone of tones) {
+      const testConfig = configSchema.parse({
+        nodeEnv: 'test',
+        port: 8090,
+        publicBaseUrl: 'http://localhost:8090',
+        databaseUrl: 'postgresql://user:pass@localhost:5432/db',
+        classifier: {
+          provider: 'mock',
+          apiKeys: 'test-key',
+          domainPackPath: 'src/modules/classifier/domain/home-resale.json',
+        },
+        assistant: {
+          provider: 'mock',
+          apiKeys: 'assist-key',
+          defaultTone: tone,
+        },
+        vision: {
+          enabled: true,
+          provider: 'mock',
+        },
+        ebay: {
+          env: 'sandbox',
+          clientId: 'client',
+          clientSecret: 'client-secret-minimum-length-please',
+          scopes: 'scope',
+          tokenEncryptionKey: 'x'.repeat(32),
+        },
+        sessionSigningSecret: 'x'.repeat(64),
+        security: {
+          enforceHttps: false,
+          enableHsts: false,
+          apiKeyRotationEnabled: false,
+          apiKeyExpirationDays: 90,
+          logApiKeyUsage: false,
+        },
+        corsOrigins: 'http://localhost',
+      });
+
+      expect(testConfig.assistant.defaultTone).toBe(tone);
+    }
+  });
+});
+
 describe('POST /v1/assist/warmup', () => {
   it('returns readiness info when assistant is enabled', async () => {
     const app = await appPromise;
