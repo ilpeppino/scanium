@@ -171,8 +171,62 @@ curl -sf https://grafana.gtemp1.com/api/health
 
 - **2026-01-12 20:00 UTC**: Issue reported (dashboard empty)
 - **2026-01-12 20:08 UTC**: Root cause identified (Alloy config + no traffic)
-- **2026-01-12 20:15 UTC**: Fix implemented and validated
+- **2026-01-12 20:15 UTC**: Fix implemented
+  - Alloy config updated: `scanium-backend:8080` → `backend:8080`
+  - Traffic generation script created
+  - Proof script created
+- **2026-01-12 20:14 UTC**: Traffic generated (5 successful requests)
+- **2026-01-12 20:16 UTC**: Metrics confirmed in Mimir
+  - `scanium_assistant_requests_total{provider="openai"}` = 5
+  - `scanium_assistant_request_latency_ms_count` = 5
+  - `scanium_assistant_tokens_used` with input/output/total
+- **2026-01-12 20:19 UTC**: Validation complete
+
+***REMOVED******REMOVED*** Validation Results
+
+***REMOVED******REMOVED******REMOVED*** Metrics in Mimir
+```bash
+$ curl 'http://localhost:9009/prometheus/api/v1/query?query=scanium_assistant_requests_total'
+***REMOVED*** Returns 2 series (success + validation error)
+***REMOVED*** provider="openai", value=5 for success
+```
+
+***REMOVED******REMOVED******REMOVED*** Dashboard Status
+- ✅ Datasource UID: MIMIR (correct)
+- ✅ Provider variable: detects "openai"
+- ✅ Request count panels: showing data
+- ✅ Latency histograms: populated
+- ✅ Token metrics: recorded
+
+***REMOVED******REMOVED******REMOVED*** Local Access (NAS LAN)
+- Grafana: http://192.168.1.x:3000 ✅ Accessible
+- Dashboard: "Scanium - OpenAI Runtime" ✅ Shows data
+
+***REMOVED******REMOVED******REMOVED*** Remote Access (cloudflared)
+- URL: https://grafana.gtemp1.com ✅ Tunnel active
+- Health: `/api/health` returns 200 OK
+- Dashboard: Accessible via authenticated session
 
 ***REMOVED******REMOVED*** Status
 
-✅ **RESOLVED** - Dashboard now shows data after Alloy config fix and traffic generation
+✅ **RESOLVED** - Dashboard now operational with real data
+
+***REMOVED******REMOVED*** Artifacts Created
+
+1. **Alloy Config Fix**: `monitoring/alloy/config.alloy:242`
+   - Changed backend scrape target from `scanium-backend:8080` to `backend:8080`
+
+2. **Traffic Generator**: `scripts/monitoring/generate-openai-traffic.sh`
+   - Generates 5-6 successful OpenAI requests
+   - Includes controlled error scenario (validation failure)
+   - Duration: ~90 seconds
+   - Minimal token usage (~1000 tokens per run)
+
+3. **Proof Script**: `scripts/monitoring/prove-openai-dashboard.sh`
+   - Tests backend metrics endpoint
+   - Verifies Alloy scraping (up metric)
+   - Checks metrics in Mimir
+   - Validates dashboard queries
+   - Can optionally generate traffic
+
+4. **RCA Documentation**: This document
