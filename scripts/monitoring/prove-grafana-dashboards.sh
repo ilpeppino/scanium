@@ -19,7 +19,7 @@ echo "[prove-dashboards] ==========================================="
 echo "[prove-dashboards] Step 1: Checking Grafana health..."
 HEALTH=$(curl -sf "$GRAFANA_URL/api/health" || echo '{"database":"error"}')
 
-if echo "$HEALTH" | grep -q '"database":"ok"'; then
+if echo "$HEALTH" | grep -q '"database"[[:space:]]*:[[:space:]]*"ok"'; then
   echo "[prove-dashboards] ✅ Grafana is healthy"
 else
   echo "[prove-dashboards] ❌ Grafana health check failed"
