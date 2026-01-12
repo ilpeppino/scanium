@@ -43,6 +43,9 @@
     <string name="settings_language_system_title">App language</string>
     <string name="settings_language_system_desc">Choose the language used in the app</string>
     <string name="settings_language_system_default">System default</string>
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_replay_guide_title">Replay first-time guide</string>
+    <string name="settings_replay_guide_subtitle">Show the tour again to review app features</string>
     <string name="settings_section_account">Account &amp; edition</string>
     <string name="settings_current_edition_title">Current edition</string>
     <string name="settings_edition_free">Free</string>
@@ -87,6 +90,25 @@
     <string name="settings_accuracy_high_desc">Stricter matching; keeps high-confidence items</string>
     <string name="settings_open_item_list_after_scan_title">Open item list after scan</string>
     <string name="settings_open_item_list_after_scan_subtitle">Automatically open the items list after a scan if items were found</string>
+
+    <!-- Storage & Export -->
+    <string name="settings_storage_title">Storage &amp; Export</string>
+    <string name="settings_category_storage_title">Storage &amp; Export</string>
+    <string name="settings_category_storage_desc">Save locations, export formats, and cache management</string>
+    <string name="settings_section_storage_options">Storage options</string>
+    <string name="settings_section_export">Export</string>
+    <string name="settings_export_format_title">Default export format</string>
+    <string name="settings_export_format_subtitle">Format used when exporting items</string>
+    <string name="settings_export_format_zip">ZIP bundle</string>
+    <string name="settings_export_format_zip_desc">Images and data packaged together</string>
+    <string name="settings_export_format_csv">CSV spreadsheet</string>
+    <string name="settings_export_format_csv_desc">Text file with item details</string>
+    <string name="settings_export_format_json">JSON data</string>
+    <string name="settings_export_format_json_desc">Structured data format</string>
+    <string name="settings_section_cache">Cache &amp; data</string>
+    <string name="settings_clear_cache_title">Clear cached data</string>
+    <string name="settings_clear_cache_subtitle">Remove temporary files and thumbnails</string>
+    <string name="settings_cache_cleared">Cache cleared successfully</string>
 
     <!-- Overlay -->
     <string name="settings_section_overlay">Overlay</string>

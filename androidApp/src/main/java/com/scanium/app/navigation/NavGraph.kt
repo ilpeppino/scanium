@@ -50,6 +50,7 @@ import com.scanium.app.ui.settings.SettingsFeedbackScreen
 import com.scanium.app.ui.settings.SettingsGeneralScreen
 import com.scanium.app.ui.settings.SettingsHomeScreen
 import com.scanium.app.ui.settings.SettingsPrivacyScreen
+import com.scanium.app.ui.settings.SettingsStorageScreen
 import com.scanium.app.ui.settings.SettingsViewModel
 import com.scanium.app.ui.settings.TermsScreen
 
@@ -70,6 +71,7 @@ object Routes {
     const val SETTINGS_CAMERA = "settings/camera"
     const val SETTINGS_ASSISTANT = "settings/assistant"
     const val SETTINGS_FEEDBACK = "settings/feedback"
+    const val SETTINGS_STORAGE = "settings/storage"
     const val SETTINGS_PRIVACY = "settings/privacy"
     const val SETTINGS_DEVELOPER = "settings/developer"
     const val DATA_USAGE = "data_usage"
@@ -138,6 +140,7 @@ fun ScaniumNavGraph(
                 onCameraClick = { navController.navigate(Routes.SETTINGS_CAMERA) },
                 onAssistantClick = { navController.navigate(Routes.SETTINGS_ASSISTANT) },
                 onFeedbackClick = { navController.navigate(Routes.SETTINGS_FEEDBACK) },
+                onStorageClick = { navController.navigate(Routes.SETTINGS_STORAGE) },
                 onPrivacyClick = { navController.navigate(Routes.SETTINGS_PRIVACY) },
                 onDeveloperClick = { navController.navigate(Routes.SETTINGS_DEVELOPER) },
             )
@@ -175,6 +178,13 @@ fun ScaniumNavGraph(
 
         composable(Routes.SETTINGS_FEEDBACK) {
             SettingsFeedbackScreen(
+                viewModel = settingsViewModel,
+                onNavigateBack = { navController.popBackStack() },
+            )
+        }
+
+        composable(Routes.SETTINGS_STORAGE) {
+            SettingsStorageScreen(
                 viewModel = settingsViewModel,
                 onNavigateBack = { navController.popBackStack() },
             )

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -49,6 +50,7 @@ fun SettingsHomeScreen(
     onCameraClick: () -> Unit,
     onAssistantClick: () -> Unit,
     onFeedbackClick: () -> Unit,
+    onStorageClick: () -> Unit,
     onPrivacyClick: () -> Unit,
     onDeveloperClick: () -> Unit,
 ) {
@@ -82,6 +84,12 @@ fun SettingsHomeScreen(
                 description = stringResource(R.string.settings_category_feedback_desc),
                 icon = Icons.AutoMirrored.Filled.VolumeUp,
                 onClick = onFeedbackClick,
+            ),
+            SettingsCategory(
+                title = stringResource(R.string.settings_category_storage_title),
+                description = stringResource(R.string.settings_category_storage_desc),
+                icon = Icons.Filled.Storage,
+                onClick = onStorageClick,
             ),
             SettingsCategory(
                 title = stringResource(R.string.settings_category_privacy_title),

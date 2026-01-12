@@ -1,8 +1,5 @@
 package com.scanium.app.ui.settings
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -12,9 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CropFree
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.HighQuality
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -26,14 +21,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.camera.CameraViewModel
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.camera.CaptureResolution
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.media.StorageHelper
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.settings.ClassificationModeViewModel
 
@@ -46,26 +39,10 @@ fun SettingsCameraScreen(
     cameraViewModel: CameraViewModel,
     onNavigateBack: () -> Unit,
 ) {
-    val context = LocalContext.current
-
-    val autoSaveEnabled by settingsViewModel.autoSaveEnabled.collectAsState()
-    val saveDirectoryUri by settingsViewModel.saveDirectoryUri.collectAsState()
     val captureResolution by cameraViewModel.captureResolution.collectAsState()
     val classificationMode by classificationViewModel.classificationMode.collectAsState()
-    val lowDataMode by classificationViewModel.lowDataMode.collectAsState()
     val similarityThreshold by itemsViewModel.similarityThreshold.collectAsState()
     val showDetectionBoxes by settingsViewModel.showDetectionBoxes.collectAsState()
-    val openItemListAfterScan by settingsViewModel.openItemListAfterScan.collectAsState()
-
-    val dirPickerLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocumentTree(),
-        ) { uri ->
-            uri?.let {
-                StorageHelper.takePersistablePermissions(context, it)
-                settingsViewModel.setSaveDirectoryUri(it.toString())
-            }
-        }
 
     // Filter resolution options: HIGH only available in dev builds
     val availableResolutions = CaptureResolution.values().filter { resolution ->
@@ -151,7 +128,7 @@ fun SettingsCameraScreen(
             // Section: Capture behavior
             SettingsSectionHeader(title = stringResource(R.string.settings_section_capture))
 
-            // Image resolution picker with bottom sheet
+            // 1) Image resolution picker with bottom sheet
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_resolution_title),
                 subtitle = stringResource(R.string.settings_resolution_subtitle),
@@ -164,7 +141,7 @@ fun SettingsCameraScreen(
             // Section: Detection & accuracy
             SettingsSectionHeader(title = stringResource(R.string.settings_section_scanning))
 
-            // Classification mode picker with bottom sheet
+            // 2) Classification mode picker with bottom sheet
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_classification_title),
                 subtitle = stringResource(R.string.settings_classification_subtitle),
@@ -174,7 +151,7 @@ fun SettingsCameraScreen(
                 onValueSelected = classificationViewModel::updateMode,
             )
 
-            // Aggregation accuracy picker with bottom sheet
+            // 3) Aggregation accuracy picker with bottom sheet
             val currentAccuracy = AccuracyLevel.fromThreshold(similarityThreshold)
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_accuracy_title),
@@ -187,55 +164,13 @@ fun SettingsCameraScreen(
                 },
             )
 
-            // Live bounding boxes toggle
+            // 4) Live bounding boxes toggle
             SettingSwitchRow(
                 title = stringResource(R.string.settings_detection_boxes_title),
                 subtitle = stringResource(R.string.settings_detection_boxes_subtitle),
                 icon = Icons.Filled.CropFree,
                 checked = showDetectionBoxes,
                 onCheckedChange = settingsViewModel::setShowDetectionBoxes,
-            )
-
-            // Additional settings (kept for compatibility)
-            // These may be moved to Storage & Export submenu later
-            SettingsSectionHeader(title = stringResource(R.string.settings_section_storage))
-            SettingSwitchRow(
-                title = stringResource(R.string.settings_auto_save_title),
-                subtitle = stringResource(R.string.settings_auto_save_subtitle),
-                icon = Icons.Filled.Storage,
-                checked = autoSaveEnabled,
-                onCheckedChange = settingsViewModel::setAutoSaveEnabled,
-            )
-
-            val folderName =
-                saveDirectoryUri?.let { StorageHelper.getFolderDisplayName(context, Uri.parse(it)) }
-                    ?: stringResource(R.string.settings_save_location_default)
-
-            SettingActionRow(
-                title = stringResource(R.string.settings_save_location_title),
-                subtitle = folderName,
-                icon = Icons.Filled.Folder,
-                onClick = {
-                    if (autoSaveEnabled) {
-                        dirPickerLauncher.launch(saveDirectoryUri?.let { Uri.parse(it) })
-                    }
-                },
-                enabled = autoSaveEnabled,
-            )
-
-            // Other settings
-            SettingSwitchRow(
-                title = stringResource(R.string.settings_low_data_mode_title),
-                subtitle = stringResource(R.string.settings_low_data_mode_subtitle),
-                checked = lowDataMode,
-                onCheckedChange = classificationViewModel::updateLowDataMode,
-            )
-
-            SettingSwitchRow(
-                title = stringResource(R.string.settings_open_item_list_after_scan_title),
-                subtitle = stringResource(R.string.settings_open_item_list_after_scan_subtitle),
-                checked = openItemListAfterScan,
-                onCheckedChange = settingsViewModel::setOpenItemListAfterScan,
             )
         }
     }
