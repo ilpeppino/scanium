@@ -281,6 +281,26 @@
     <string name="ftue_skip_tour">Passer la visite</string>
     <string name="ftue_start_tour">Démarrer la visite</string>
 
+    <!-- FTUE Tour Steps -->
+    <string name="ftue_tour_welcome_title">Bienvenue dans Scanium !</string>
+    <string name="ftue_tour_welcome_desc">Faisons un rapide tour pour apprendre à scanner, modifier et partager vos articles.</string>
+    <string name="ftue_tour_take_photo_title">Capturez votre premier article</string>
+    <string name="ftue_tour_take_photo_desc">Touchez le bouton de l\'obturateur pour prendre une photo de votre premier article. Pointez votre appareil photo sur n\'importe quel objet que vous souhaitez cataloguer.</string>
+    <string name="ftue_tour_open_list_title">Voir vos articles</string>
+    <string name="ftue_tour_open_list_desc">Touchez ici pour ouvrir votre liste d\'articles scannés. Le badge indique combien d\'articles vous avez capturés.</string>
+    <string name="ftue_tour_add_photos_title">Ajouter plus de photos</string>
+    <string name="ftue_tour_add_photos_desc">Capturez des angles ou détails supplémentaires. Plusieurs photos aident les acheteurs à mieux voir votre article et améliorent les descriptions IA.</string>
+    <string name="ftue_tour_edit_attrs_title">Améliorer les détails de l\'article</string>
+    <string name="ftue_tour_edit_attrs_desc">Remplissez la marque, le type, la couleur, la taille et d\'autres attributs. De meilleurs détails signifient de meilleures annonces et des ventes plus rapides.</string>
+    <string name="ftue_tour_use_ai_title">Générer avec l\'IA</string>
+    <string name="ftue_tour_use_ai_desc">Laissez l\'IA créer une description professionnelle de marketplace en utilisant vos photos et attributs. Obtenez aussi des informations sur les prix !</string>
+    <string name="ftue_tour_save_title">Enregistrer votre travail</string>
+    <string name="ftue_tour_save_desc">Touchez Enregistrer pour conserver vos modifications. Votre article sera prêt pour l\'exportation.</string>
+    <string name="ftue_tour_share_title">Exporter et partager</string>
+    <string name="ftue_tour_share_desc">Sélectionnez des articles et touchez le bouton de partage pour les exporter sous forme d\'images, de texte ou d\'un bundle ZIP pour les plateformes de vente.</string>
+    <string name="ftue_tour_completion_title">Vous êtes prêt !</string>
+    <string name="ftue_tour_completion_desc">Vous êtes prêt à scanner, cataloguer et vendre vos articles. Bon scan !</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium est une application centrée sur la caméra qui utilise le machine learning pour détecter et identifier des objets en temps réel, vous aidant à les estimer et à les lister pour la revente.</string>
     <string name="about_copyright">© 2025 Équipe Scanium</string>

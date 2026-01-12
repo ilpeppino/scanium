@@ -281,6 +281,26 @@
     <string name="ftue_skip_tour">Tour overslaan</string>
     <string name="ftue_start_tour">Tour starten</string>
 
+    <!-- FTUE Tour Steps -->
+    <string name="ftue_tour_welcome_title">Welkom bij Scanium!</string>
+    <string name="ftue_tour_welcome_desc">Laten we een snelle tour maken om te leren hoe je items scant, bewerkt en deelt.</string>
+    <string name="ftue_tour_take_photo_title">Leg je eerste item vast</string>
+    <string name="ftue_tour_take_photo_desc">Tik op de sluiterknop om een foto van je eerste item te maken. Richt je camera op elk object dat je wilt catalogiseren.</string>
+    <string name="ftue_tour_open_list_title">Bekijk je items</string>
+    <string name="ftue_tour_open_list_desc">Tik hier om je lijst met gescande items te openen. De badge toont hoeveel items je hebt vastgelegd.</string>
+    <string name="ftue_tour_add_photos_title">Meer foto\'s toevoegen</string>
+    <string name="ftue_tour_add_photos_desc">Leg extra hoeken of details vast. Meerdere foto\'s helpen kopers je item beter te zien en verbeteren AI-beschrijvingen.</string>
+    <string name="ftue_tour_edit_attrs_title">Itemdetails verbeteren</string>
+    <string name="ftue_tour_edit_attrs_desc">Vul merk, type, kleur, maat en andere kenmerken in. Betere details betekenen betere aanbiedingen en snellere verkoop.</string>
+    <string name="ftue_tour_use_ai_title">Genereer met AI</string>
+    <string name="ftue_tour_use_ai_desc">Laat AI een professionele marktplaatsbeschrijving maken met je foto\'s en kenmerken. Krijg ook prijsinzichten!</string>
+    <string name="ftue_tour_save_title">Sla je werk op</string>
+    <string name="ftue_tour_save_desc">Tik op Opslaan om je wijzigingen te behouden. Je item is dan klaar voor export.</string>
+    <string name="ftue_tour_share_title">Exporteer en deel</string>
+    <string name="ftue_tour_share_desc">Selecteer items en tik op de deelknop om ze te exporteren als afbeeldingen, tekst of een ZIP-bundel voor verkoopplatforms.</string>
+    <string name="ftue_tour_completion_title">Je bent klaar!</string>
+    <string name="ftue_tour_completion_desc">Je bent klaar om items te scannen, catalogiseren en verkopen. Veel scanplezier!</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium is een cameragerichte app die machine learning gebruikt om objecten realtime te detecteren en te identificeren, zodat je items kunt waarderen en aanbieden voor verkoop.</string>
     <string name="about_copyright">© 2025 Scanium-team</string>
