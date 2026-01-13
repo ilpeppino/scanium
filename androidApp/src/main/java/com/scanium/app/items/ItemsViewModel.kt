@@ -216,14 +216,7 @@ class ItemsViewModel
         /**
          * Adds items from a multi-object capture and triggers crop-based enrichment.
          *
-         * This is the primary entry point for the multi-object scanning flow:
-         * 1. Adds all detected items to the state manager
-         * 2. Triggers crop-based Vision enrichment for each item
-         * 3. Items share the same sourcePhotoId for linking
-         *
-         * @param context Android context for content resolver
-         * @param captureResult The result from CameraXManager.captureMultiObjectFrame()
-         * @see CropBasedEnricher.enrichFromCrop
+         * This is the primary entry point for the multi-object scanning flow.
          */
         fun addItemsFromMultiObjectCapture(
             context: Context,
@@ -235,33 +228,11 @@ class ItemsViewModel
             Log.i(TAG, "║ sourcePhotoId=${captureResult.sourcePhotoId}")
             Log.i(TAG, "╚════════════════════════════════════════════════════════════════")
 
-            // Add items to state manager synchronously
-            val aggregatedItems = stateManager.addItemsSync(captureResult.items)
-
-            Log.i(TAG, "MULTI_OBJECT: Aggregated ${aggregatedItems.size} items")
-
-            // Trigger crop-based enrichment for each item
-            for (aggregated in aggregatedItems) {
-                val boundingBox = aggregated.boundingBox
-
-                Log.i(
-                    TAG,
-                    "MULTI_OBJECT: Triggering crop enrichment for ${aggregated.aggregatedId} " +
-                        "bbox=(${boundingBox.left}, ${boundingBox.top}, ${boundingBox.right}, ${boundingBox.bottom})",
-                )
-
-                cropBasedEnricher.enrichFromCrop(
-                    context = context,
-                    scope = viewModelScope,
-                    fullImage = captureResult.fullImageBitmap,
-                    boundingBox = boundingBox,
-                    itemId = aggregated.aggregatedId,
-                    stateManager = stateManager,
-                )
-            }
-
-            // Emit navigation event if auto-open is enabled
-            emitNavigateToItemListIfEnabled(aggregatedItems.size)
+            facade.addItemsFromMultiObjectCapture(
+                context = context,
+                items = captureResult.items,
+                fullImageBitmap = captureResult.fullImageBitmap,
+            )
 
             // Note: fullImageBitmap should be recycled by the caller after this returns
             // The enricher makes copies of crops as needed
