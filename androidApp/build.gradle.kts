@@ -442,7 +442,9 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
     testImplementation("com.google.truth:truth:1.1.5")
+    testImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.7.0")
     testImplementation("androidx.arch.core:core-testing:2.2.0") // For LiveData/Flow testing
     testImplementation("org.robolectric:robolectric:4.11.1") // For Android framework classes in unit tests
     testImplementation("androidx.test:core:1.5.0") // For ApplicationProvider
@@ -463,6 +465,8 @@ dependencies {
     androidTestImplementation("io.mockk:mockk-android:1.13.8")
     androidTestImplementation("com.google.truth:truth:1.1.5")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.7.0")
 
     // Debug implementations
     debugImplementation("androidx.compose.ui:ui-tooling")

@@ -78,10 +78,11 @@ class ItemsViewModel
         private val settingsRepository: com.scanium.app.data.SettingsRepository,
         telemetry: Telemetry?,
     ) : ViewModel() {
-        // Default dispatchers (override in tests if needed)
+        // Default dispatchers (can be overridden in tests)
         private var workerDispatcher: CoroutineDispatcher = Dispatchers.Default
         private var mainDispatcher: CoroutineDispatcher = Dispatchers.Main
 
+        // Internal constructor for testing with custom dispatchers
         internal constructor(
             classificationMode: StateFlow<ClassificationMode>,
             cloudClassificationEnabled: StateFlow<Boolean>,
@@ -107,9 +108,9 @@ class ItemsViewModel
             settingsRepository = settingsRepository,
             telemetry = telemetry,
         ) {
+            // Set test dispatchers before facade is lazily initialized
             this.workerDispatcher = workerDispatcher
             this.mainDispatcher = mainDispatcher
-            // Dispatchers are now passed to facade constructor above
         }
 
         companion object {
@@ -122,8 +123,9 @@ class ItemsViewModel
         /**
          * Facade that encapsulates manager coordination.
          * Delegates to ItemsStateManager, OverlayTrackManager, ItemClassificationCoordinator, and ListingStatusManager.
+         * Lazily initialized to ensure dispatchers are set first.
          */
-        private val facade =
+        private val facade by lazy {
             ItemsUiFacade(
                 scope = viewModelScope,
                 classificationMode = classificationMode,
@@ -138,7 +140,10 @@ class ItemsViewModel
                 telemetry = telemetry,
                 workerDispatcher = workerDispatcher,
                 mainDispatcher = mainDispatcher,
-            )
+            ).also {
+                Log.i(TAG, "ItemsViewModel initialized with facade")
+            }
+        }
 
         // ==================== Public State (Delegated to Facade) ====================
 
