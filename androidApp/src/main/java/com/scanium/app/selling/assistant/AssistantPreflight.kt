@@ -2,6 +2,7 @@ package com.scanium.app.selling.assistant
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import com.scanium.app.BuildConfig
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey

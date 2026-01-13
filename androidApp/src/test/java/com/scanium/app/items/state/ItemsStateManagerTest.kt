@@ -563,7 +563,7 @@ class ItemsStateManagerTest {
                 createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
                 createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
                 createTestItem(id = "item-4", category = ItemCategory.PLANT),
-                createTestItem(id = "item-5", category = ItemCategory.TOY),
+                createTestItem(id = "item-5", category = ItemCategory.UNKNOWN),
             )
 
             // Add items one by one rapidly
