@@ -8,11 +8,14 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.RobolectricTestRunner
 import java.io.ByteArrayInputStream
 
+@RunWith(RobolectricTestRunner::class)
 class MarketplaceRepositoryTest {
     private lateinit var context: Context
     private lateinit var assetManager: AssetManager
