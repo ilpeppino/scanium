@@ -1,6 +1,7 @@
 package com.scanium.app.camera
 
 import android.Manifest
+import androidx.annotation.VisibleForTesting
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -1697,8 +1698,9 @@ private fun CameraErrorContent(
  * - Permanently denied: Guides user to open system settings
  */
 @OptIn(ExperimentalPermissionsApi::class)
+@VisibleForTesting
 @Composable
-private fun PermissionDeniedContent(
+internal fun PermissionDeniedContent(
     permissionState: com.google.accompanist.permissions.PermissionState,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,

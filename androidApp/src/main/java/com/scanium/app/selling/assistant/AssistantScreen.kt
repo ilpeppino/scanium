@@ -54,6 +54,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.annotation.VisibleForTesting
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -987,8 +988,9 @@ private fun ConfirmActionDialog(
  * Rich progress indicator section with animated transitions.
  * Shows detailed progress states during assistant request lifecycle.
  */
+@VisibleForTesting
 @Composable
-private fun ProgressIndicatorSection(
+internal fun ProgressIndicatorSection(
     progress: AssistantRequestProgress,
     onRetry: () -> Unit,
 ) {
