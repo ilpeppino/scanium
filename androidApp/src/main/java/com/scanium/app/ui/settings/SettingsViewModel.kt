@@ -638,15 +638,12 @@ class SettingsViewModel
         /**
          * Initiates Google Sign-In flow via Credential Manager.
          * Exchanges Google ID token with backend and stores session token.
+         *
+         * @param activity The Activity context required for showing the Google Sign-In UI
+         * @return Result indicating success or failure
          */
-        fun signInWithGoogle() {
-            viewModelScope.launch {
-                val result = authRepository.signInWithGoogle()
-                if (result.isFailure) {
-                    // Optional: Show error toast/snackbar
-                    android.util.Log.e("SettingsViewModel", "Sign in failed", result.exceptionOrNull())
-                }
-            }
+        suspend fun signInWithGoogle(activity: android.app.Activity): Result<Unit> {
+            return authRepository.signInWithGoogle(activity)
         }
 
         /**

@@ -1,12 +1,8 @@
 package com.scanium.app.auth
 
+import android.app.Activity
 import android.content.Context
-import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import androidx.credentials.GetCredentialResponse
-import androidx.credentials.exceptions.GetCredentialException
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import android.util.Log
 import com.scanium.app.config.SecureApiKeyStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,37 +11,33 @@ class AuthRepository(
     private val context: Context,
     private val apiKeyStore: SecureApiKeyStore,
     private val authApi: GoogleAuthApi,
+    private val authLauncher: AuthLauncher = CredentialManagerAuthLauncher(),
 ) {
-    private val credentialManager = CredentialManager.create(context)
+    companion object {
+        private const val TAG = "AuthRepository"
+    }
 
-    suspend fun signInWithGoogle(): Result<Unit> =
+    /**
+     * Initiates Google Sign-In flow via AuthLauncher (Credential Manager).
+     * Exchanges Google ID token with backend and stores session token.
+     *
+     * @param activity The Activity context required for showing the Google Sign-In UI
+     * @return Result indicating success or failure with exception details
+     */
+    suspend fun signInWithGoogle(activity: Activity): Result<Unit> =
         withContext(Dispatchers.IO) {
             try {
-                // Step 1: Get Google ID token via Credential Manager
-                val googleIdOption =
-                    GetGoogleIdOption
-                        .Builder()
-                        .setFilterByAuthorizedAccounts(false)
-                        .setServerClientId(GOOGLE_SERVER_CLIENT_ID)
-                        .build()
+                Log.i(TAG, "Auth flow initiated - requesting Google Sign-In")
 
-                val request =
-                    GetCredentialRequest
-                        .Builder()
-                        .addCredentialOption(googleIdOption)
-                        .build()
+                // Step 1: Launch Google Sign-In UI and obtain ID token
+                val idToken = authLauncher.startGoogleSignIn(activity).getOrThrow()
 
-                val result: GetCredentialResponse =
-                    credentialManager.getCredential(
-                        request = request,
-                        context = context,
-                    )
-
-                val credential = GoogleIdTokenCredential.createFrom(result.credential.data)
-                val idToken = credential.idToken
+                Log.i(TAG, "Auth flow - obtained Google ID token, exchanging with backend")
 
                 // Step 2: Exchange with backend
                 val authResponse = authApi.exchangeToken(idToken).getOrThrow()
+
+                Log.i(TAG, "Auth flow - backend exchange successful, storing session data")
 
                 // Step 3: Store session token, refresh token, expiry times, and user info
                 apiKeyStore.setAuthToken(authResponse.accessToken)
@@ -71,10 +63,10 @@ class AuthRepository(
                     ),
                 )
 
+                Log.i(TAG, "Auth flow completed - user signed in successfully")
                 Result.success(Unit)
-            } catch (e: GetCredentialException) {
-                Result.failure(e)
             } catch (e: Exception) {
+                Log.e(TAG, "Auth flow failed - ${e.javaClass.simpleName}: ${e.message}", e)
                 Result.failure(e)
             }
         }
@@ -196,10 +188,4 @@ class AuthRepository(
                 Result.failure(e)
             }
         }
-
-    companion object {
-        // This must match GOOGLE_OAUTH_CLIENT_ID in backend .env
-        // TODO: Replace with actual Android OAuth Client ID from Google Cloud Console
-        private const val GOOGLE_SERVER_CLIENT_ID = "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com"
-    }
 }
