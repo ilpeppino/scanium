@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
@@ -272,13 +273,49 @@ fun SettingsGeneralScreen(
                     }
                 )
             } else {
+                // Sign-in state management
+                var isSigningIn by remember { mutableStateOf(false) }
+                val activity = LocalContext.current as? android.app.Activity
+
+                // Extract strings for use in coroutine
+                val errorUnknown = stringResource(R.string.settings_sign_in_error_unknown)
+                val errorTemplate = stringResource(R.string.settings_sign_in_error_template)
+
                 ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_sign_in_google)) },
-                    supportingContent = { Text(stringResource(R.string.settings_sign_in_google_desc)) },
+                    headlineContent = {
+                        Text(
+                            if (isSigningIn) {
+                                stringResource(R.string.settings_signing_in)
+                            } else {
+                                stringResource(R.string.settings_sign_in_google)
+                            }
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            if (isSigningIn) {
+                                stringResource(R.string.settings_signing_in_desc)
+                            } else {
+                                stringResource(R.string.settings_sign_in_google_desc)
+                            }
+                        )
+                    },
                     leadingContent = {
                         Icon(Icons.Filled.Login, contentDescription = null)
                     },
-                    modifier = Modifier.clickable { viewModel.signInWithGoogle() }
+                    modifier = Modifier.clickable(enabled = !isSigningIn && activity != null) {
+                        activity?.let { act ->
+                            isSigningIn = true
+                            coroutineScope.launch {
+                                val result = viewModel.signInWithGoogle(act)
+                                isSigningIn = false
+                                if (result.isFailure) {
+                                    val errorMessage = result.exceptionOrNull()?.message ?: errorUnknown
+                                    snackbarHostState.showSnackbar(errorTemplate.format(errorMessage))
+                                }
+                            }
+                        }
+                    }
                 )
             }
 

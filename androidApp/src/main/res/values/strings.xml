@@ -77,6 +77,10 @@
     <string name="settings_session_expires_in_day">Expires in 1 day</string>
     <string name="settings_session_expires_soon">Expires soon</string>
     <string name="settings_signed_in_as">Signed in as %1$s</string>
+    <string name="settings_signing_in">Signing in…</string>
+    <string name="settings_signing_in_desc">Please wait while we sign you in</string>
+    <string name="settings_sign_in_error_template">Sign-in failed: %1$s</string>
+    <string name="settings_sign_in_error_unknown">Unknown error</string>
 
     <!-- Phase D: Account deletion -->
     <string name="settings_delete_account">Delete Account</string>
