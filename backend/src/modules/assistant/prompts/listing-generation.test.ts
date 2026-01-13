@@ -660,6 +660,42 @@ Warnings: Check the condition`;
       expect(result.suggestedNextPhoto).toBeNull();
     });
 
+    it('filters out empty/null values in suggestedDraftUpdates', () => {
+      const content = JSON.stringify({
+        title: 'Top-level Title',
+        description: 'Top-level Description',
+        suggestedDraftUpdates: [
+          { field: 'title', value: null, confidence: 'HIGH' },
+          { field: 'description', value: '', confidence: 'MED' },
+        ],
+      });
+
+      const result = parseListingResponse(content);
+
+      // Should filter out empty/null values, allowing fallback to top-level fields
+      expect(result.suggestedDraftUpdates).toHaveLength(0);
+      expect(result.title).toBe('Top-level Title');
+      expect(result.description).toBe('Top-level Description');
+    });
+
+    it('keeps non-empty values in suggestedDraftUpdates', () => {
+      const content = JSON.stringify({
+        title: 'Top-level Title',
+        description: 'Top-level Description',
+        suggestedDraftUpdates: [
+          { field: 'title', value: 'Updated Title', confidence: 'HIGH' },
+          { field: 'description', value: 'Updated Description', confidence: 'MED' },
+        ],
+      });
+
+      const result = parseListingResponse(content);
+
+      // Should keep non-empty values
+      expect(result.suggestedDraftUpdates).toHaveLength(2);
+      expect(result.suggestedDraftUpdates?.[0].value).toBe('Updated Title');
+      expect(result.suggestedDraftUpdates?.[1].value).toBe('Updated Description');
+    });
+
     it('filters non-string warnings', () => {
       const content = JSON.stringify({
         title: 'Test',
