@@ -555,6 +555,9 @@ fun ObjectaNavGraph(
             )
         }
     val ftueRepository = androidx.compose.runtime.remember { com.scanium.app.ftue.FtueRepository(context) }
+    val authHttpClient = androidx.compose.runtime.remember { okhttp3.OkHttpClient() }
+    val authApi = androidx.compose.runtime.remember { com.scanium.app.auth.GoogleAuthApi(authHttpClient) }
+    val authRepository = androidx.compose.runtime.remember { com.scanium.app.auth.AuthRepository(context, apiKeyStore, authApi) }
     val settingsViewModel: SettingsViewModel =
         viewModel(
             factory =
@@ -570,6 +573,7 @@ fun ObjectaNavGraph(
                                 configProvider = configProvider,
                                 featureFlagRepository = featureFlagRepository,
                                 ftueRepository = ftueRepository,
+                                authRepository = authRepository,
                                 crashPort = application.crashPort,
                                 telemetry = application.telemetry,
                                 diagnosticsPort = application.diagnosticsPort,

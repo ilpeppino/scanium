@@ -17,13 +17,18 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Optional fields for future expansion
-  email       String? @unique
+  // Google OAuth fields
+  googleSub   String?   @unique // Google's unique user ID (sub claim)
+  email       String?   @unique
   displayName String?
+  pictureUrl  String?              // Profile picture URL from Google
+  lastLoginAt DateTime?            // Track last successful login
 
   // Relations
   ebayConnections EbayConnection[]
   listings        Listing[]
+  sessions        Session[]        // User sessions for authentication
+  items           Item[]           // User's scanned items (Phase E)
 
   @@map("users")
 }
@@ -82,4 +87,104 @@ model Listing {
   @@index([marketplace])
   @@index([status])
   @@map("listings")
+}
+
+// Session model - user authentication sessions
+model Session {
+  id         String   @id @default(uuid())
+  userId     String
+  tokenHash  String   @unique // SHA-256 hash of the access token
+  expiresAt  DateTime // Access token expiry
+
+  // Phase C: Refresh token support
+  refreshTokenHash      String?   @unique // SHA-256 hash of the refresh token
+  refreshTokenExpiresAt DateTime? // Refresh token expiry (longer-lived)
+
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// Item model - user's scanned inventory (Phase E)
+model Item {
+  id        String   @id @default(uuid())
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete for sync tombstones
+
+  // Core item metadata
+  title            String?
+  description      String?
+  category         String?
+  confidence       Float?
+  priceEstimateLow Float?
+  priceEstimateHigh Float?
+  userPriceCents   BigInt?
+  condition        String?
+
+  // Attributes and enrichment data (JSON for flexibility)
+  attributesJson         Json? // User-edited attributes
+  detectedAttributesJson Json? // Original ML-detected attributes
+  visionAttributesJson   Json? // OCR, colors, logos, labels
+  enrichmentStatusJson   Json? // Layer A/B/C enrichment status
+
+  // Quality metrics
+  completenessScore      Int      @default(0)
+  missingAttributesJson  Json?
+  capturedShotTypesJson  Json?
+  isReadyForListing      Boolean  @default(false)
+  lastEnrichedAt         DateTime?
+
+  // Export Assistant fields
+  exportTitle          String?
+  exportDescription    String?
+  exportBulletsJson    Json?
+  exportGeneratedAt    DateTime?
+  exportFromCache      Boolean @default(false)
+  exportModel          String?
+  exportConfidenceTier String?
+
+  // Classification
+  classificationStatus       String @default("PENDING")
+  domainCategoryId           String?
+  classificationErrorMessage String?
+  classificationRequestId    String?
+
+  // Photo metadata (local paths/URIs stored on Android, not synced)
+  // We store metadata about photos but not the actual image data
+  photosMetadataJson Json? // Array of { id, type, capturedAt, hash, width, height, mimeType }
+
+  // Multi-object scanning
+  attributesSummaryText String?
+  summaryTextUserEdited Boolean @default(false)
+  sourcePhotoId         String?
+
+  // Listing associations
+  listingStatus String  @default("NOT_LISTED")
+  listingId     String?
+  listingUrl    String?
+
+  // OCR/barcode data
+  recognizedText String?
+  barcodeValue   String?
+  labelText      String?
+
+  // Sync metadata
+  syncVersion     Int       @default(1) // Optimistic locking version
+  clientUpdatedAt DateTime? // Client-reported timestamp for conflict resolution
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, updatedAt]) // For incremental sync queries
+  @@index([userId, deletedAt]) // For tombstone cleanup
+  @@map("items")
 }

@@ -1,12 +1,14 @@
 package com.scanium.app.di
 
 import android.content.Context
-import com.scanium.app.items.persistence.NoopScannedItemSyncer
+import com.scanium.app.auth.AuthRepository
+import com.scanium.app.items.network.ItemsApi
 import com.scanium.app.items.persistence.ScannedItemDao
 import com.scanium.app.items.persistence.ScannedItemDatabase
 import com.scanium.app.items.persistence.ScannedItemRepository
 import com.scanium.app.items.persistence.ScannedItemStore
 import com.scanium.app.items.persistence.ScannedItemSyncer
+import com.scanium.app.items.sync.ItemSyncManager
 import com.scanium.app.selling.persistence.ListingDraftDao
 import com.scanium.app.selling.persistence.ListingDraftRepository
 import dagger.Module
@@ -43,10 +45,25 @@ object DatabaseModule {
         return database.listingDraftDao()
     }
 
+    /**
+     * Phase E: ItemSyncManager for multi-device sync.
+     * Replaces NoopScannedItemSyncer with real sync implementation.
+     */
     @Provides
     @Singleton
-    fun provideScannedItemSyncer(): ScannedItemSyncer {
-        return NoopScannedItemSyncer
+    fun provideItemSyncManager(
+        @ApplicationContext context: Context,
+        dao: ScannedItemDao,
+        itemsApi: ItemsApi,
+        authRepository: AuthRepository,
+    ): ItemSyncManager {
+        return ItemSyncManager(context, dao, itemsApi, authRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideScannedItemSyncer(syncManager: ItemSyncManager): ScannedItemSyncer {
+        return syncManager
     }
 
     @Provides

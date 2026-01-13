@@ -67,7 +67,9 @@ interface AssistantRepository {
 enum class AssistantBackendErrorType {
     PROVIDER_UNAVAILABLE,
     PROVIDER_NOT_CONFIGURED,
-    UNAUTHORIZED,
+    UNAUTHORIZED, // Generic unauthorized (kept for backward compatibility)
+    AUTH_REQUIRED, // Phase B: Auth required but not provided
+    AUTH_INVALID, // Phase B: Auth provided but invalid/expired
     RATE_LIMITED,
     NETWORK_TIMEOUT,
     NETWORK_UNREACHABLE,
@@ -372,6 +374,11 @@ private class CloudAssistantRepository(
             return AssistantBackendException(assistantError.toFailure())
         }
 
+        // Phase B: Try to parse error response for specific error codes
+        val errorResponse = responseBody?.let {
+            runCatching { json.decodeFromString<ErrorResponseDto>(it) }.getOrNull()
+        }
+
         val failure =
             when (code) {
                 400 ->
@@ -381,13 +388,33 @@ private class CloudAssistantRepository(
                         retryable = false,
                         message = "Assistant request invalid",
                     )
-                401 ->
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.UNAUTHORIZED,
-                        category = AssistantBackendErrorCategory.POLICY,
-                        retryable = false,
-                        message = "Not authorized to use assistant",
-                    )
+                401 -> {
+                    // Phase B: Distinguish between AUTH_REQUIRED and AUTH_INVALID
+                    val errorCode = errorResponse?.error?.code?.uppercase()
+                    when (errorCode) {
+                        "AUTH_REQUIRED" ->
+                            AssistantBackendFailure(
+                                type = AssistantBackendErrorType.AUTH_REQUIRED,
+                                category = AssistantBackendErrorCategory.POLICY,
+                                retryable = false,
+                                message = errorResponse.error.message ?: "Sign in required",
+                            )
+                        "AUTH_INVALID" ->
+                            AssistantBackendFailure(
+                                type = AssistantBackendErrorType.AUTH_INVALID,
+                                category = AssistantBackendErrorCategory.POLICY,
+                                retryable = false,
+                                message = errorResponse.error.message ?: "Session expired",
+                            )
+                        else ->
+                            AssistantBackendFailure(
+                                type = AssistantBackendErrorType.UNAUTHORIZED,
+                                category = AssistantBackendErrorCategory.POLICY,
+                                retryable = false,
+                                message = "Not authorized to use assistant",
+                            )
+                    }
+                }
                 403 ->
                     AssistantBackendFailure(
                         type = AssistantBackendErrorType.UNAUTHORIZED,
@@ -395,13 +422,25 @@ private class CloudAssistantRepository(
                         retryable = false,
                         message = "Access to assistant denied",
                     )
-                429 ->
+                429 -> {
+                    // Phase B: Extract resetAt from error response
+                    val resetAt = errorResponse?.error?.resetAt
+                    val retryAfterSeconds = resetAt?.let {
+                        val resetTime = runCatching {
+                            java.time.Instant.parse(it).toEpochMilli()
+                        }.getOrNull()
+                        if (resetTime != null) {
+                            ((resetTime - System.currentTimeMillis()) / 1000).toInt().coerceAtLeast(0)
+                        } else null
+                    }
                     AssistantBackendFailure(
                         type = AssistantBackendErrorType.RATE_LIMITED,
                         category = AssistantBackendErrorCategory.POLICY,
                         retryable = true,
-                        message = "Assistant rate limit exceeded",
+                        retryAfterSeconds = retryAfterSeconds,
+                        message = errorResponse?.error?.message ?: "Assistant rate limit exceeded",
                     )
+                }
                 503 ->
                     AssistantBackendFailure(
                         type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
@@ -509,6 +548,19 @@ private data class AssistantErrorResponse(
     val assistantError: AssistantErrorDto? = null,
 )
 
+// Phase B: Error response structure for auth and rate limit errors
+@Serializable
+private data class ErrorResponseDto(
+    val error: ErrorDetailsDto,
+)
+
+@Serializable
+private data class ErrorDetailsDto(
+    val code: String,
+    val message: String,
+    val resetAt: String? = null, // ISO 8601 timestamp for rate limits
+)
+
 @Serializable
 private data class AssistantErrorDto(
     val type: String,
@@ -530,6 +582,8 @@ private data class AssistantErrorDto(
     private fun parseType(raw: String): AssistantBackendErrorType {
         return when (raw.lowercase()) {
             "unauthorized" -> AssistantBackendErrorType.UNAUTHORIZED
+            "auth_required" -> AssistantBackendErrorType.AUTH_REQUIRED
+            "auth_invalid" -> AssistantBackendErrorType.AUTH_INVALID
             "provider_not_configured" -> AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED
             "rate_limited" -> AssistantBackendErrorType.RATE_LIMITED
             "network_timeout" -> AssistantBackendErrorType.NETWORK_TIMEOUT

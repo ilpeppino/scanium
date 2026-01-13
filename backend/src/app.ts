@@ -10,6 +10,9 @@ import { securityPlugin } from './infra/http/plugins/security.js';
 import { correlationPlugin } from './infra/http/plugins/correlation.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { ebayAuthRoutes } from './modules/auth/ebay/routes.js';
+import { googleAuthRoutes } from './modules/auth/google/routes.js';
+import { SessionCleanupJob } from './modules/auth/google/cleanup-job.js';
+import { accountRoutes } from './modules/account/routes.js';
 import { classifierRoutes } from './modules/classifier/routes.js';
 import { assistantRoutes } from './modules/assistant/routes.js';
 import { visionInsightsRoutes } from './modules/vision/routes.js';
@@ -20,7 +23,9 @@ import { enrichRoutes } from './modules/enrich/routes.js';
 import { pricingRoutes } from './modules/pricing/routes.js';
 import { mobileTelemetryRoutes } from './modules/mobile-telemetry/routes.js';
 import { marketplacesRoutes } from './modules/marketplaces/routes.js';
+import { itemsRoutes } from './modules/items/routes.js';
 import { apiGuardPlugin } from './infra/security/api-guard.js';
+import { authMiddleware } from './infra/http/plugins/auth-middleware.js';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import { recordHttpRequest } from './infra/observability/metrics.js';
@@ -147,6 +152,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   // Correlation IDs
   await app.register(correlationPlugin);
 
+  // Auth middleware (optional, attaches userId when present)
+  await app.register(authMiddleware);
+
   // Register security plugin (HTTPS enforcement, security headers)
   await app.register(securityPlugin, { config });
 
@@ -176,6 +184,12 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
 
   // Register eBay auth routes
   await app.register(ebayAuthRoutes, { prefix: '/auth/ebay', config });
+
+  // Register Google auth routes
+  await app.register(googleAuthRoutes, { prefix: '/v1/auth', config });
+
+  // Register account management routes (Phase D: account deletion)
+  await app.register(accountRoutes, { prefix: '/v1/account', config });
 
   // Cloud classification proxy
   await app.register(classifierRoutes, { prefix: '/v1', config });
@@ -207,6 +221,9 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
   // Marketplaces Catalog
   await app.register(marketplacesRoutes, { prefix: '/v1', config });
 
+  // Items sync API (Phase E: Multi-device sync)
+  await app.register(itemsRoutes, { prefix: '/v1/items', config });
+
   // Root endpoint
   app.get('/', async (_request, reply) => {
     return reply.status(200).send({
@@ -237,6 +254,17 @@ export async function buildApp(config: Config): Promise<FastifyInstance> {
       },
     });
   });
+
+  // Phase C: Start session cleanup job
+  if (config.auth) {
+    const cleanupJob = new SessionCleanupJob();
+    await cleanupJob.start();
+
+    // Stop cleanup job on app close
+    app.addHook('onClose', async () => {
+      cleanupJob.stop();
+    });
+  }
 
   return app;
 }

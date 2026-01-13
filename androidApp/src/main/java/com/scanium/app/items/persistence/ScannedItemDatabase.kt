@@ -11,7 +11,7 @@ import com.scanium.app.selling.persistence.ListingDraftEntity
 
 @Database(
     entities = [ScannedItemEntity::class, ScannedItemHistoryEntity::class, ListingDraftEntity::class],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 abstract class ScannedItemDatabase : RoomDatabase() {
@@ -44,6 +44,7 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     MIGRATION_6_7,
                     MIGRATION_7_8,
                     MIGRATION_8_9,
+                    MIGRATION_9_10,
                 )
                 // Allow destructive migration for future schema changes without a migration.
                 .fallbackToDestructiveMigration()
@@ -252,6 +253,45 @@ abstract class ScannedItemDatabase : RoomDatabase() {
                     // isReadyForListing: Whether the item meets the completeness threshold
                     db.execSQL("ALTER TABLE scanned_items ADD COLUMN isReadyForListing INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN isReadyForListing INTEGER NOT NULL DEFAULT 0")
+                }
+            }
+
+        private val MIGRATION_9_10 =
+            object : Migration(9, 10) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    // Add columns for multi-device sync (Phase E)
+
+                    // serverId: Backend Item.id (UUID from server)
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN serverId TEXT")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN serverId TEXT")
+
+                    // needsSync: 0 = synced, 1 = needs push
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN needsSync INTEGER NOT NULL DEFAULT 1")
+
+                    // lastSyncedAt: Timestamp of last successful sync
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN lastSyncedAt INTEGER")
+
+                    // syncVersion: Optimistic locking version (matches backend)
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN syncVersion INTEGER NOT NULL DEFAULT 1")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN syncVersion INTEGER NOT NULL DEFAULT 1")
+
+                    // clientUpdatedAt: Client-side update timestamp for conflict resolution
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN clientUpdatedAt INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN clientUpdatedAt INTEGER NOT NULL DEFAULT 0")
+
+                    // deletedAt: Soft delete timestamp (tombstone)
+                    db.execSQL("ALTER TABLE scanned_items ADD COLUMN deletedAt INTEGER")
+                    db.execSQL("ALTER TABLE scanned_item_history ADD COLUMN deletedAt INTEGER")
+
+                    // Set clientUpdatedAt to timestamp for existing items
+                    db.execSQL("UPDATE scanned_items SET clientUpdatedAt = timestamp WHERE clientUpdatedAt = 0")
+
+                    // Mark all existing items as needing sync (they have no serverId yet)
+                    db.execSQL("UPDATE scanned_items SET needsSync = 1 WHERE serverId IS NULL")
+
+                    // Create indexes for sync queries
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_scanned_items_serverId ON scanned_items(serverId)")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS index_scanned_items_needsSync ON scanned_items(needsSync)")
                 }
             }
     }

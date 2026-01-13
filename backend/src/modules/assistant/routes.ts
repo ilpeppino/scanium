@@ -25,6 +25,8 @@ import {
 } from './safety.js';
 import { DailyQuotaStore } from './quota-store.js';
 import { assistantReadinessRegistry } from './readiness-registry.js';
+import { requireAuth } from '../../infra/http/plugins/auth-middleware.js';
+import { RateLimitError } from '../../shared/errors/index.js';
 import {
   ItemImageMetadata,
   AssistantChatRequestWithVision,
@@ -331,6 +333,21 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     redis: redisClient,
   });
 
+  // Phase B: Per-user rate limiter (for authenticated requests)
+  const userRateLimiter = new SlidingWindowRateLimiter({
+    windowMs,
+    max: config.assistant.userRateLimitPerMinute,
+    baseBackoffMs,
+    maxBackoffMs,
+    prefix: 'rl:assist:user',
+    redis: redisClient,
+  });
+
+  // Phase B: Per-user daily quota store (for authenticated requests)
+  const userQuotaStore = new DailyQuotaStore({
+    dailyLimit: config.assistant.userDailyQuota,
+  });
+
   // Validation limits from config
   const validationLimits = {
     maxInputChars: config.assistant.maxInputChars,
@@ -342,6 +359,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     assistantReadinessRegistry.unregister();
     quotaStore.stop();
     pricingQuotaStore.stop();
+    userQuotaStore.stop(); // Phase B
     visionCache.stop();
     responseCache.stop();
     stagedRequestManager.stop();
@@ -364,6 +382,9 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         correlationId,
       });
     }
+
+    // Phase B: Require authentication
+    const userId = requireAuth(request);
 
     const readiness = service.getReadiness();
 
@@ -425,6 +446,37 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         assistantError: buildAssistantError('unauthorized', 'auth', false, 'UNAUTHORIZED', undefined, 'Missing or invalid API key'),
         safety: buildSafetyResponse(true, null, requestId),
       });
+    }
+
+    // Phase B: Require user authentication
+    const userId = requireAuth(request);
+
+    // Phase B: Per-user rate limiting
+    const userLimit = await userRateLimiter.consume(userId);
+    if (!userLimit.allowed) {
+      request.log.warn({ userId: userId.slice(0, 8), correlationId }, 'User rate limit exceeded');
+      recordRateLimitHit('user', '/assist/chat');
+      const resetAt = new Date(Date.now() + userLimit.retryAfterSeconds * 1000).toISOString();
+      throw new RateLimitError(
+        'Rate limit reached. Please try again later.',
+        resetAt
+      );
+    }
+
+    // Phase B: Per-user daily quota
+    const userQuotaResult = userQuotaStore.consume(userId);
+    if (!userQuotaResult.allowed) {
+      const resetIn = Math.ceil((userQuotaResult.resetAt - Date.now()) / 1000);
+      const resetAt = new Date(userQuotaResult.resetAt).toISOString();
+      request.log.warn(
+        { userId: userId.slice(0, 8), remaining: 0, correlationId },
+        'User daily quota exceeded'
+      );
+      recordQuotaExhausted('user_daily');
+      throw new RateLimitError(
+        'Daily message limit reached. Try again tomorrow.',
+        resetAt
+      );
     }
 
     // IP rate limiting

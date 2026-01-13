@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.auth.AuthRepository
 import com.scanium.app.data.EntitlementManager
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.SettingsRepository
@@ -60,6 +61,7 @@ class SettingsViewModel
         private val crashPort: CrashPort,
         private val telemetry: Telemetry?,
         private val diagnosticsPort: DiagnosticsPort,
+        private val authRepository: AuthRepository,
     ) : ViewModel() {
         val themeMode: StateFlow<ThemeMode> =
             settingsRepository.themeModeFlow
@@ -628,6 +630,68 @@ class SettingsViewModel
                 "Captured exception with diagnostics bundle ($breadcrumbCount events). Check Sentry for attachment.",
             )
         }
+
+        // =========================================================================
+        // Authentication
+        // =========================================================================
+
+        /**
+         * Initiates Google Sign-In flow via Credential Manager.
+         * Exchanges Google ID token with backend and stores session token.
+         */
+        fun signInWithGoogle() {
+            viewModelScope.launch {
+                val result = authRepository.signInWithGoogle()
+                if (result.isFailure) {
+                    // Optional: Show error toast/snackbar
+                    android.util.Log.e("SettingsViewModel", "Sign in failed", result.exceptionOrNull())
+                }
+            }
+        }
+
+        /**
+         * Phase C: Signs out the current user by calling backend logout and clearing local state.
+         */
+        fun signOut() {
+            viewModelScope.launch {
+                val result = authRepository.signOut()
+                if (result.isFailure) {
+                    android.util.Log.e("SettingsViewModel", "Sign out failed", result.exceptionOrNull())
+                }
+            }
+        }
+
+        /**
+         * Phase C: Refresh the session using the refresh token.
+         */
+        fun refreshSession() {
+            viewModelScope.launch {
+                val result = authRepository.refreshSession()
+                if (result.isFailure) {
+                    android.util.Log.e("SettingsViewModel", "Session refresh failed", result.exceptionOrNull())
+                } else {
+                    android.util.Log.i("SettingsViewModel", "Session refreshed successfully")
+                }
+            }
+        }
+
+        /**
+         * Phase D: Delete the user's account (permanently deletes all data).
+         * Returns Result indicating success or failure.
+         */
+        suspend fun deleteAccount(): Result<Unit> {
+            return authRepository.deleteAccount()
+        }
+
+        /**
+         * Returns the currently signed-in user's info, or null if not signed in.
+         */
+        fun getUserInfo() = authRepository.getUserInfo()
+
+        /**
+         * Phase C: Get access token expiry timestamp (milliseconds since epoch)
+         */
+        fun getAccessTokenExpiresAt() = authRepository.getAccessTokenExpiresAt()
     }
 
 /**

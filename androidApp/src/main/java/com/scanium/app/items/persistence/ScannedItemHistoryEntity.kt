@@ -69,6 +69,11 @@ data class ScannedItemHistoryEntity(
     val lastEnrichedAt: Long?,
     val capturedShotTypesJson: String?,
     val isReadyForListing: Int,
+    // Sync fields (Phase E: v10)
+    val serverId: String? = null,
+    val syncVersion: Int = 1,
+    val clientUpdatedAt: Long = 0L,
+    val deletedAt: Long? = null,
 )
 
 fun ScannedItemEntity.toHistoryEntity(
@@ -132,5 +137,10 @@ fun ScannedItemEntity.toHistoryEntity(
         lastEnrichedAt = lastEnrichedAt,
         capturedShotTypesJson = capturedShotTypesJson,
         isReadyForListing = isReadyForListing,
+        // Sync fields
+        serverId = serverId,
+        syncVersion = syncVersion,
+        clientUpdatedAt = clientUpdatedAt,
+        deletedAt = deletedAt,
     )
 }

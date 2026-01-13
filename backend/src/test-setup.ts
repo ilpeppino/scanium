@@ -107,3 +107,20 @@ if (!process.env.SECURITY_API_KEY_EXPIRATION_DAYS) {
 if (!process.env.SECURITY_LOG_API_KEY_USAGE) {
   process.env.SECURITY_LOG_API_KEY_USAGE = 'false';
 }
+
+// Phase C: Auth configuration
+if (!process.env.GOOGLE_OAUTH_CLIENT_ID) {
+  process.env.GOOGLE_OAUTH_CLIENT_ID = 'test-google-client-id.apps.googleusercontent.com';
+}
+
+if (!process.env.AUTH_SESSION_SECRET) {
+  process.env.AUTH_SESSION_SECRET = 'x'.repeat(32);
+}
+
+if (!process.env.AUTH_SESSION_EXPIRY_SECONDS) {
+  process.env.AUTH_SESSION_EXPIRY_SECONDS = '3600'; // 1 hour (minimum required)
+}
+
+if (!process.env.AUTH_REFRESH_TOKEN_EXPIRY_SECONDS) {
+  process.env.AUTH_REFRESH_TOKEN_EXPIRY_SECONDS = '7200'; // 2 hours (minimum required)
+}

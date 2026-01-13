@@ -33,7 +33,12 @@ export async function errorHandlerPlugin(
 
   // Handle AppError (custom application errors)
   if (error instanceof AppError) {
-    return reply.status(error.httpStatus).send(error.toJSON());
+    const errorResponse = error.toJSON();
+    // Ensure correlationId is included in all error responses
+    if (errorResponse.error && !errorResponse.error.correlationId) {
+      errorResponse.error.correlationId = request.correlationId;
+    }
+    return reply.status(error.httpStatus).send(errorResponse);
   }
 
   // Handle Zod validation errors
