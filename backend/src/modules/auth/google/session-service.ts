@@ -121,6 +121,7 @@ export async function refreshSession(
       id: true,
       userId: true,
       refreshTokenExpiresAt: true,
+      refreshTokenHash: true,
     },
   });
 

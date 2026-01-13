@@ -103,8 +103,8 @@ export const googleAuthRoutes: FastifyPluginAsync<{ config: Config }> = async (
     // Create session (Phase C: with refresh token)
     const sessionInfo = await createSession(
       user.id,
-      config.auth.sessionExpirySeconds,
-      config.auth.refreshTokenExpirySeconds
+      config.auth!.sessionExpirySeconds,
+      config.auth!.refreshTokenExpirySeconds
     );
 
     // Phase C: Record login success metric and structured log
@@ -147,8 +147,8 @@ export const googleAuthRoutes: FastifyPluginAsync<{ config: Config }> = async (
 
     const tokens = await refreshSession(
       refreshToken,
-      config.auth.sessionExpirySeconds,
-      config.auth.refreshTokenExpirySeconds
+      config.auth!.sessionExpirySeconds,
+      config.auth!.refreshTokenExpirySeconds
     );
 
     if (!tokens) {

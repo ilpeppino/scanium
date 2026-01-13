@@ -47,7 +47,7 @@ export class AppError extends Error {
   }
 
   toJSON() {
-    const payload: { code: ErrorCode; message: string; details?: unknown } = {
+    const payload: { code: ErrorCode; message: string; details?: unknown; correlationId?: string } = {
       code: this.code,
       message: this.message,
     };
