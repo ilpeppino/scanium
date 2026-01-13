@@ -388,7 +388,7 @@
           "links": [
             {
               "title": "View Traces",
-              "url": "/explore?orgId=1&left=%7B%22datasource%22:%22TEMPO%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22queryType%22:%22traceql%22,%22query%22:%22%7Bstatus.code%20%3D%20error%20%26%26%20resource.service.name%20%3D%20%5C%22${__data.fields.Service}%5C%22%7D%22%7D%5D%7D",
+              "url": "/explore?orgId=1&left=%7B%22datasource%22%3A%22TEMPO%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22queryType%22%3A%22traceql%22%2C%22query%22%3A%22%7Bstatus%20%3D%20error%20%26%26%20resource.service.name%20%3D~%20%5C%22%24%7B__data.fields.Service%7D%5C%22%7D%22%7D%5D%7D",
               "targetBlank": true
             }
           ]
@@ -541,7 +541,7 @@
         {
           "refId": "A",
           "queryType": "traceqlSearch",
-          "query": "{status.code = error && resource.service.name =~ \".*\"}",
+          "query": "{status = error && resource.service.name =~ \".*\"}",
           "limit": 20
         }
       ],

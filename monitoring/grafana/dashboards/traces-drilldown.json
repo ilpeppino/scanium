@@ -399,7 +399,7 @@
         {
           "refId": "A",
           "queryType": "traceqlSearch",
-          "query": "{status.code = error}",
+          "query": "{status = error}",
           "limit": 20
         }
       ],
