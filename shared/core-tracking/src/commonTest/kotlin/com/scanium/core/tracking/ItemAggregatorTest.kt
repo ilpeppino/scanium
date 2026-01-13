@@ -3,6 +3,7 @@ package com.scanium.core.tracking
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.test.TestFixtures
 import com.scanium.test.assertItemMatches
+import com.scanium.test.testCenteredRect
 import com.scanium.test.testScannedItem
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -193,6 +194,92 @@ class ItemAggregatorTest {
     }
 
     @Test
+    fun similarityEqualToThresholdStillMerges() {
+        val config =
+            AggregationConfig(
+                similarityThreshold = 0.25f,
+                maxCenterDistanceRatio = 1f,
+                maxSizeDifferenceRatio = 0.75f,
+                categoryMatchRequired = true,
+                labelMatchRequired = false,
+                weights =
+                    SimilarityWeights(
+                        categoryWeight = 0f,
+                        labelWeight = 0f,
+                        sizeWeight = 1f,
+                        distanceWeight = 0f,
+                    ),
+            )
+        val aggregator = ItemAggregator(config, mergePolicy = strictMergePolicy())
+
+        val detection1 =
+            createDetection(
+                id = "det_1",
+                category = ItemCategory.FASHION,
+                labelText = "Lamp",
+                confidence = 0.8f,
+                boundingBox = testCenteredRect(size = 0.2f), // area 0.04
+            )
+        val detection2 =
+            createDetection(
+                id = "det_2",
+                category = ItemCategory.FASHION,
+                labelText = "Lamp",
+                confidence = 0.85f,
+                boundingBox = testCenteredRect(size = 0.1f), // area 0.01 -> sizeScore 0.25
+            )
+
+        val item1 = aggregator.processDetection(detection1)
+        val item2 = aggregator.processDetection(detection2)
+
+        assertEquals(item1.aggregatedId, item2.aggregatedId)
+        assertEquals(1, aggregator.getAggregatedItems().size)
+    }
+
+    @Test
+    fun similarityJustBelowThresholdDoesNotMerge() {
+        val config =
+            AggregationConfig(
+                similarityThreshold = 0.25f,
+                maxCenterDistanceRatio = 1f,
+                maxSizeDifferenceRatio = 0.9f,
+                categoryMatchRequired = true,
+                labelMatchRequired = false,
+                weights =
+                    SimilarityWeights(
+                        categoryWeight = 0f,
+                        labelWeight = 0f,
+                        sizeWeight = 1f,
+                        distanceWeight = 0f,
+                    ),
+            )
+        val aggregator = ItemAggregator(config, mergePolicy = strictMergePolicy())
+
+        val detection1 =
+            createDetection(
+                id = "det_1",
+                category = ItemCategory.FASHION,
+                labelText = "Lamp",
+                confidence = 0.8f,
+                boundingBox = testCenteredRect(size = 0.2f), // area 0.04
+            )
+        val detection2 =
+            createDetection(
+                id = "det_2",
+                category = ItemCategory.FASHION,
+                labelText = "Lamp",
+                confidence = 0.85f,
+                boundingBox = testCenteredRect(size = 0.08f), // area 0.0064 -> sizeScore 0.16
+            )
+
+        val item1 = aggregator.processDetection(detection1)
+        val item2 = aggregator.processDetection(detection2)
+
+        assertNotEquals(item1.aggregatedId, item2.aggregatedId)
+        assertEquals(2, aggregator.getAggregatedItems().size)
+    }
+
+    @Test
     fun confidenceUpdatesAcrossMerges() {
         val detection1 = createDetection("det_1", ItemCategory.FASHION, "Shirt", 0.7f, TestFixtures.BoundingBoxes.center)
         val detection2 =
@@ -304,4 +391,15 @@ class ItemAggregatorTest {
         confidence = confidence,
         boundingBox = boundingBox,
     )
+
+    private fun strictMergePolicy(): SpatialTemporalMergePolicy {
+        return SpatialTemporalMergePolicy(
+            SpatialTemporalMergePolicy.MergeConfig(
+                minIoU = 0.99f,
+                timeWindowMs = 1000L,
+                requireCategoryMatch = true,
+                useIoU = true,
+            ),
+        )
+    }
 }
