@@ -31,8 +31,6 @@ import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.ThemeMode
-import com.scanium.app.model.AppLanguage
-import com.scanium.app.model.FollowOrCustom
 import com.scanium.app.model.user.UserEdition
 import java.text.DateFormat
 import java.util.Date
@@ -56,8 +54,6 @@ fun SettingsGeneralScreen(
     // Unified settings state
     val primaryRegionCountry by viewModel.primaryRegionCountry.collectAsState()
     val primaryLanguage by viewModel.primaryLanguage.collectAsState()
-    val appLanguageSetting by viewModel.appLanguageSetting.collectAsState()
-    val effectiveAppLanguage by viewModel.effectiveAppLanguage.collectAsState()
 
     // Load countries for primary region picker
     val countries = remember { marketplaceRepository.loadCountries() }
@@ -134,8 +130,8 @@ fun SettingsGeneralScreen(
         )
     }
 
-    // Primary language options
-    val primaryLanguageOptions = listOf(
+    // Language options
+    val languageOptions = listOf(
         SettingOption(value = "en", label = stringResource(R.string.settings_language_en)),
         SettingOption(value = "nl", label = stringResource(R.string.settings_language_nl)),
         SettingOption(value = "de", label = stringResource(R.string.settings_language_de)),
@@ -144,58 +140,6 @@ fun SettingsGeneralScreen(
         SettingOption(value = "it", label = stringResource(R.string.settings_language_it)),
         SettingOption(value = "pt-BR", label = stringResource(R.string.settings_language_pt_br)),
     )
-
-    // App language options (with "Follow primary" option)
-    val appLanguageOptions = buildList {
-        // "Follow primary" option
-        add(
-            SettingOption(
-                value = "follow",
-                label = stringResource(R.string.settings_language_follow_primary, getLanguageDisplayName(primaryLanguage)),
-                isRecommended = true,
-            )
-        )
-        // Individual language options
-        addAll(primaryLanguageOptions)
-    }
-
-    // Legacy language options (for backward compatibility if needed)
-    val languageOptions =
-        listOf(
-            SettingOption(
-                value = AppLanguage.SYSTEM,
-                label = stringResource(R.string.settings_language_system_default),
-                isRecommended = true,
-            ),
-            SettingOption(
-                value = AppLanguage.EN,
-                label = stringResource(R.string.settings_language_en),
-            ),
-            SettingOption(
-                value = AppLanguage.ES,
-                label = stringResource(R.string.settings_language_es),
-            ),
-            SettingOption(
-                value = AppLanguage.IT,
-                label = stringResource(R.string.settings_language_it),
-            ),
-            SettingOption(
-                value = AppLanguage.FR,
-                label = stringResource(R.string.settings_language_fr),
-            ),
-            SettingOption(
-                value = AppLanguage.NL,
-                label = stringResource(R.string.settings_language_nl),
-            ),
-            SettingOption(
-                value = AppLanguage.DE,
-                label = stringResource(R.string.settings_language_de),
-            ),
-            SettingOption(
-                value = AppLanguage.PT_BR,
-                label = stringResource(R.string.settings_language_pt_br),
-            ),
-        )
 
     Scaffold(
         topBar = {
@@ -235,10 +179,20 @@ fun SettingsGeneralScreen(
                 trailingContent = trailingEditionAction,
             )
 
-            // Primary Region & Language Section
+            // Language & Region Section
             SettingsSectionHeader(title = stringResource(R.string.settings_section_language))
 
-            // Primary Region (Country)
+            // 1) Language - The single source of truth for app UI, AI assistant, and TTS
+            ValuePickerSettingRow(
+                title = stringResource(R.string.settings_primary_language_label),
+                subtitle = getLanguageDisplayName(primaryLanguage),
+                icon = Icons.Filled.Language,
+                currentValue = primaryLanguage,
+                options = languageOptions,
+                onValueSelected = viewModel::setPrimaryLanguage,
+            )
+
+            // 2) Marketplace country - Drives marketplace selection only
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_primary_country_label),
                 subtitle = countries.find { it.code == primaryRegionCountry }?.let {
@@ -250,19 +204,9 @@ fun SettingsGeneralScreen(
                 onValueSelected = viewModel::setPrimaryRegionCountry,
             )
 
-            // Primary Language
-            ValuePickerSettingRow(
-                title = stringResource(R.string.settings_primary_language_label),
-                subtitle = getLanguageDisplayName(primaryLanguage),
-                icon = Icons.Filled.Language,
-                currentValue = primaryLanguage,
-                options = primaryLanguageOptions,
-                onValueSelected = viewModel::setPrimaryLanguage,
-            )
-
             SettingsSectionHeader(title = stringResource(R.string.settings_section_appearance))
 
-            // 1) Theme picker with bottom sheet
+            // Theme picker with bottom sheet
             ValuePickerSettingRow(
                 title = stringResource(R.string.settings_theme_label),
                 subtitle = stringResource(R.string.settings_theme_subtitle),
@@ -272,31 +216,9 @@ fun SettingsGeneralScreen(
                 onValueSelected = viewModel::setThemeMode,
             )
 
-            // 2) App Language picker (Unified Settings)
-            ValuePickerSettingRow(
-                title = stringResource(R.string.settings_language_system_title),
-                subtitle = when (appLanguageSetting) {
-                    is FollowOrCustom.FollowPrimary -> stringResource(R.string.settings_language_follow_primary, getLanguageDisplayName(effectiveAppLanguage))
-                    is FollowOrCustom.Custom -> "${stringResource(R.string.settings_language_custom)}: ${getLanguageDisplayName((appLanguageSetting as FollowOrCustom.Custom).value)}"
-                },
-                icon = Icons.Filled.Language,
-                currentValue = when (appLanguageSetting) {
-                    is FollowOrCustom.FollowPrimary -> "follow"
-                    is FollowOrCustom.Custom -> (appLanguageSetting as FollowOrCustom.Custom).value
-                },
-                options = appLanguageOptions,
-                onValueSelected = { selectedValue ->
-                    if (selectedValue == "follow") {
-                        viewModel.setAppLanguageSetting(FollowOrCustom.followPrimary())
-                    } else {
-                        viewModel.setAppLanguageSetting(FollowOrCustom.custom(selectedValue))
-                    }
-                },
-            )
-
             SettingsSectionHeader(title = stringResource(R.string.settings_section_preferences))
 
-            // 3) Sounds toggle
+            // Sounds toggle
             SettingSwitchRow(
                 title = stringResource(R.string.settings_sounds_title),
                 subtitle = stringResource(R.string.settings_sounds_subtitle),
@@ -305,7 +227,7 @@ fun SettingsGeneralScreen(
                 onCheckedChange = viewModel::setSoundsEnabled,
             )
 
-            // 4) First-time guide replay
+            // First-time guide replay
             SettingActionRow(
                 title = stringResource(R.string.settings_replay_guide_title),
                 subtitle = stringResource(R.string.settings_replay_guide_subtitle),

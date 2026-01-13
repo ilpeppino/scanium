@@ -1087,9 +1087,15 @@ class SettingsRepository(
             preferences[PRIMARY_REGION_COUNTRY_KEY] ?: detectCountryCodeFromLocale()
         }
 
+    /**
+     * Set primary region country manually (user selection in Marketplace country picker).
+     * This sets a custom marketplace override to preserve the user's manual choice.
+     */
     suspend fun setPrimaryRegionCountry(countryCode: String) {
         dataStore.edit { preferences ->
             preferences[PRIMARY_REGION_COUNTRY_KEY] = countryCode.uppercase()
+            // Mark marketplace country as manually set (custom override)
+            preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY] = "custom:${countryCode.uppercase()}"
         }
     }
 
@@ -1098,9 +1104,22 @@ class SettingsRepository(
             preferences[PRIMARY_LANGUAGE_KEY] ?: "en"
         }
 
+    /**
+     * Set primary language.
+     * This is the single source of truth for app UI language, AI assistant language, and TTS language.
+     * When language changes, marketplace country is automatically set based on language-to-country mapping,
+     * clearing any manual override (per requirement: "Language change always re-applies the mapping/default").
+     */
     suspend fun setPrimaryLanguage(languageTag: String) {
         dataStore.edit { preferences ->
             preferences[PRIMARY_LANGUAGE_KEY] = languageTag
+
+            // Auto-set marketplace country based on language mapping
+            // This always overrides any manual marketplace selection
+            val mappedCountry = mapLanguageToMarketplaceCountry(languageTag)
+            preferences[PRIMARY_REGION_COUNTRY_KEY] = mappedCountry
+            // Clear marketplace override to indicate it's following language mapping
+            preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY] = "follow"
         }
     }
 
@@ -1192,13 +1211,12 @@ class SettingsRepository(
     // -------------------------------------------------------------------------
 
     /**
-     * Get the effective app language, resolving "Follow primary" to the primary language.
+     * Get the effective app language.
+     * Per requirement: Language is the single source of truth for app UI, AI, and TTS.
+     * App language override has been removed - this now directly returns primaryLanguageFlow.
      * Returns a language tag (e.g., "en", "nl", "pt-BR").
      */
-    val effectiveAppLanguageFlow: Flow<String> =
-        combine(primaryLanguageFlow, appLanguageSettingFlow) { primary, setting ->
-            setting.resolve(primary)
-        }
+    val effectiveAppLanguageFlow: Flow<String> = primaryLanguageFlow
 
     /**
      * Get the effective AI output language.
