@@ -1167,6 +1167,9 @@ private fun BoxScope.CameraOverlay(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
+    // Support sheet state
+    var showSupportSheet by remember { mutableStateOf(false) }
+
     // Top bar with two-slot layout: hamburger (left), logo (right)
     Row(
         modifier =
@@ -1209,7 +1212,7 @@ private fun BoxScope.CameraOverlay(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Right slot: Scanium logo (fixed width)
+        // Right slot: Scanium logo (fixed width, clickable)
         Box(
             modifier = Modifier.width(48.dp),
             contentAlignment = Alignment.CenterEnd,
@@ -1218,6 +1221,7 @@ private fun BoxScope.CameraOverlay(
                 modifier =
                     Modifier
                         .size(48.dp)
+                        .clickable { showSupportSheet = true }
                         .background(
                             Color.Black.copy(alpha = 0.5f),
                             shape = MaterialTheme.shapes.small,
@@ -1268,6 +1272,48 @@ private fun BoxScope.CameraOverlay(
             onFlipCamera = onFlipCamera,
             isFlipEnabled = isFlipEnabled,
         )
+    }
+
+    // Support Scanium bottom sheet
+    if (showSupportSheet) {
+        androidx.compose.material3.ModalBottomSheet(
+            onDismissRequest = { showSupportSheet = false },
+        ) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+            ) {
+                // Title
+                Text(
+                    text = stringResource(R.string.camera_support_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Body text
+                Text(
+                    text = stringResource(R.string.camera_support_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Donation buttons (reuse from Settings)
+                com.scanium.app.ui.common.DonationContent(
+                    onDonationClicked = { amount ->
+                        // Optional: emit analytics event
+                        // TelemetryService.trackEvent("camera_donation_clicked", mapOf("amount" to amount))
+                    },
+                )
+            }
+        }
     }
 }
 
