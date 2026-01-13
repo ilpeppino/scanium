@@ -1,0 +1,54 @@
+{
+  "items": [
+    {
+      "itemId": "item-123",
+      "title": "Vintage Lamp",
+      "description": "Brass lamp with shade",
+      "category": "Lighting",
+      "confidence": 0.92,
+      "attributes": [
+        {
+          "key": "brand",
+          "value": "Acme",
+          "confidence": 0.77,
+          "source": "USER"
+        },
+        {
+          "key": "color",
+          "value": "Brass",
+          "confidence": 0.66,
+          "source": "DETECTED"
+        }
+      ],
+      "priceEstimate": 120.5,
+      "photosCount": 2,
+      "exportProfileId": "GENERIC"
+    }
+  ],
+  "history": [
+    {
+      "role": "USER",
+      "content": "What is this?",
+      "timestamp": 1704067200000,
+      "itemContextIds": [
+        "item-123"
+      ]
+    }
+  ],
+  "message": "Generate a listing",
+  "exportProfile": {
+    "id": "GENERIC",
+    "displayName": "Generic"
+  },
+  "assistantPrefs": {
+    "language": "en",
+    "tone": "MARKETPLACE",
+    "region": "NL",
+    "units": "METRIC",
+    "verbosity": "CONCISE"
+  },
+  "includePricing": true,
+  "pricingPrefs": {
+    "countryCode": "NL"
+  }
+}
