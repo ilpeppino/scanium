@@ -13,6 +13,10 @@
     <string name="settings_donation_coffee_many">Muito café</string>
     <string name="settings_donation_footer">Doe com segurança pelo PayPal</string>
 
+    <!-- Camera Support Sheet -->
+    <string name="camera_support_title">Obrigado por apoiar o Scanium</string>
+    <string name="camera_support_body">Sua doação ajuda a melhorar o Scanium e a cobrir os custos de operação.</string>
+
     <string name="settings_category_general_title">Geral</string>
     <string name="settings_category_general_desc">Tema, idioma e preferências básicas</string>
     <string name="settings_category_camera_title">Câmera e Escaneamento</string>
