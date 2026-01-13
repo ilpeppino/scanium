@@ -1046,7 +1046,16 @@ fun CameraScreen(
                 onLanguageSelected = { selectedLanguage ->
                     showLanguageSelectionDialog = false
                     scope.launch {
+                        // Set app language (legacy setting)
                         settingsRepository.setAppLanguage(selectedLanguage)
+
+                        // Set primary language (unified setting)
+                        settingsRepository.setPrimaryLanguage(selectedLanguage.code)
+
+                        // Map language to marketplace country and set it
+                        val marketplaceCountry = settingsRepository.mapLanguageToMarketplaceCountry(selectedLanguage.code)
+                        settingsRepository.setPrimaryRegionCountry(marketplaceCountry)
+
                         // Update app locale
                         val localeList =
                             when (selectedLanguage) {

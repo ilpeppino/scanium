@@ -44,7 +44,7 @@
     <!-- Unified Settings: Primary Region & Language -->
     <string name="settings_primary_region_language_title">Region &amp; language</string>
     <string name="settings_primary_region_language_subtitle">Default for app, AI, marketplace, and voice</string>
-    <string name="settings_primary_country_label">Region</string>
+    <string name="settings_primary_country_label">Marketplace Country</string>
     <string name="settings_primary_language_label">Language</string>
 
     <string name="settings_language_system_title">App language</string>
