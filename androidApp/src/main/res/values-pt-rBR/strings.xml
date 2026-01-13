@@ -114,7 +114,6 @@
     <string name="settings_tone_professional">Profissional</string>
     <string name="settings_assistant_country_title">País</string>
     <string name="settings_assistant_country_subtitle">Afeta moeda e sugestões de marketplace</string>
-    <string name="settings_region_us">Estados Unidos</string>
     <string name="settings_assistant_units_title">Unidades</string>
     <string name="settings_assistant_units_subtitle">Sistema de medidas para cálculos</string>
     <string name="settings_units_metric">Métrico (cm, kg)</string>
