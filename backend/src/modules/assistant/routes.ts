@@ -1320,22 +1320,14 @@ function buildAssistantError(
 
 function buildAssistantErrorIfNeeded(
   responseError: AssistantErrorPayload | undefined,
-  visionEnabled: boolean,
-  items: Array<{ itemImages?: ItemImageMetadata[] }>,
-  visionErrors: number,
-  visualFactsSize: number
+  _visionEnabled: boolean,
+  _items: Array<{ itemImages?: ItemImageMetadata[] }>,
+  _visionErrors: number,
+  _visualFactsSize: number
 ): AssistantErrorPayload | undefined {
   if (responseError) return responseError;
-  const hasImages = items.some((item) => (item.itemImages?.length ?? 0) > 0);
-  if (visionEnabled && hasImages && visionErrors > 0 && visualFactsSize === 0) {
-    return buildAssistantError(
-      'vision_unavailable',
-      'temporary',
-      true,
-      'VISION_UNAVAILABLE',
-      undefined,
-      'Vision extraction unavailable'
-    );
-  }
+  // REMOVED: Vision unavailable is no longer treated as a fatal error
+  // The assistant can generate useful content without vision extraction
+  // Android will handle the lack of vision features gracefully
   return undefined;
 }
