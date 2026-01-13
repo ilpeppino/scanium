@@ -186,9 +186,12 @@ fun AssistantScreen(
     // Voice state from controller
     val voiceState by voiceController.voiceState.collectAsState()
     val partialTranscript by voiceController.partialTranscript.collectAsState()
-    val latestAssistantTimestamp =
-        state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
-            ?.message?.timestamp
+    val latestAssistantTimestamp by remember(state.entries) {
+        derivedStateOf {
+            state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
+                ?.message?.timestamp
+        }
+    }
     val lastVoiceError by voiceController.lastError.collectAsState()
     val speechAvailable = voiceController.isSpeechAvailable
 
