@@ -1,12 +1,10 @@
 package com.scanium.app.selling.assistant
 
 import android.content.Context
-import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.listing.ExportProfileDefinition
-import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.model.AssistantAction
 import com.scanium.app.model.AssistantActionType
 import com.scanium.app.model.AssistantMessage
@@ -14,8 +12,6 @@ import com.scanium.app.model.AssistantPrefs
 import com.scanium.app.model.AssistantResponse
 import com.scanium.app.model.ExportProfileSnapshot
 import com.scanium.app.model.ItemContextSnapshot
-import com.scanium.app.network.DeviceIdProvider
-import com.scanium.app.network.security.RequestSigner
 import com.scanium.app.selling.assistant.network.AssistantHttpConfig
 import com.scanium.app.selling.assistant.network.AssistantOkHttpClientFactory
 import kotlinx.coroutines.Dispatchers
@@ -24,13 +20,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
-import java.net.SocketTimeoutException
 
 /**
  * Image data to attach to an assistant request.
@@ -108,12 +98,6 @@ class AssistantBackendException(
     cause: Throwable? = null,
 ) : Exception(failure.message, cause)
 
-private class AssistantRepositoryLogger {
-    fun log(message: String) {
-        Log.d("AssistantRepo", message)
-    }
-}
-
 /**
  * Factory for creating AssistantRepository instances with unified HTTP configuration.
  *
@@ -139,13 +123,13 @@ class AssistantRepositoryFactory(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
-private val ASSISTANT_JSON = Json {
+internal val ASSISTANT_JSON = Json {
     ignoreUnknownKeys = true
     encodeDefaults = true
     explicitNulls = false  // Don't encode null values for optional fields
 }
 
-private fun buildAssistantRequestPayload(
+internal fun buildAssistantRequestPayload(
     items: List<ItemContextSnapshot>,
     history: List<AssistantMessage>,
     userMessage: String,
@@ -203,7 +187,7 @@ private class CloudAssistantRepository(
     private val baseUrl: String,
     private val apiKey: String?,
 ) : AssistantRepository {
-    private val logger = AssistantRepositoryLogger()
+    private val api = AssistantApi(context, client, apiKey)
 
     override suspend fun send(
         items: List<ItemContextSnapshot>,
@@ -239,285 +223,17 @@ private class CloudAssistantRepository(
             )
 
             val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
-            // DIAG: Log endpoint and request summary
-            Log.d("ScaniumNet", "AssistantRepo: endpoint=$endpoint")
-            val payloadJson = ASSISTANT_JSON.encodeToString(AssistantChatRequest.serializer(), requestPayload)
-            // Log request shape for debugging (not full content)
-            Log.d("ScaniumAssist", "Request: items=${requestPayload.items.size} " +
-                "history=${requestPayload.history.size} " +
-                "message.length=${requestPayload.message.length} " +
-                "hasExportProfile=${requestPayload.exportProfile != null} " +
-                "hasPrefs=${requestPayload.assistantPrefs != null}")
-            // DEBUG: Log full JSON payload for validation debugging
-            Log.d("ScaniumAssist", "Request JSON payload (full): $payloadJson")
-
-            // Use multipart when images are attached, otherwise use JSON
-            val request =
-                if (imageAttachments.isNotEmpty()) {
-                    buildMultipartRequest(endpoint, payloadJson, imageAttachments, correlationId)
-                } else {
-                    buildJsonRequest(endpoint, payloadJson, correlationId)
-                }
-
-            try {
-                client.newCall(request).execute().use { response ->
-                    val responseBody = response.body?.string()
-                    if (response.isSuccessful && responseBody != null) {
-                        val parsed = ASSISTANT_JSON.decodeFromString(AssistantChatResponse.serializer(), responseBody)
-                        parsed.assistantError?.let { throw AssistantBackendException(it.toFailure()) }
-                        return@withContext parsed.toModel()
-                    }
-                    // Enhanced error logging for debugging validation failures
-                    if (response.code == 400) {
-                        Log.e("ScaniumAssist", "Validation error (HTTP 400): correlationId=$correlationId")
-                        Log.e("ScaniumAssist", "Response body: ${responseBody?.take(500)}")
-                    }
-                    logger.log("Assistant backend error: ${response.code} ${ScaniumLog.sanitizeResponseBody(responseBody)}")
-                    throw mapHttpFailure(response.code, responseBody)
-                }
-            } catch (error: AssistantBackendException) {
-                throw error
-            } catch (error: SocketTimeoutException) {
-                throw AssistantBackendException(
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.NETWORK_TIMEOUT,
-                        category = AssistantBackendErrorCategory.TEMPORARY,
-                        retryable = true,
-                        message = "Assistant request timed out",
-                    ),
-                    error,
-                )
-            } catch (error: java.net.UnknownHostException) {
-                throw AssistantBackendException(
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.NETWORK_UNREACHABLE,
-                        category = AssistantBackendErrorCategory.TEMPORARY,
-                        retryable = true,
-                        message = "Unable to reach assistant server",
-                    ),
-                    error,
-                )
-            } catch (error: java.net.ConnectException) {
-                throw AssistantBackendException(
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.NETWORK_UNREACHABLE,
-                        category = AssistantBackendErrorCategory.TEMPORARY,
-                        retryable = true,
-                        message = "Could not connect to assistant server",
-                    ),
-                    error,
-                )
-            } catch (error: IOException) {
-                throw AssistantBackendException(
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.NETWORK_UNREACHABLE,
-                        category = AssistantBackendErrorCategory.TEMPORARY,
-                        retryable = true,
-                        message = "Network error contacting assistant",
-                    ),
-                    error,
-                )
-            }
-        }
-
-    private fun buildJsonRequest(
-        endpoint: String,
-        payloadJson: String,
-        correlationId: String,
-    ): Request {
-        return Request.Builder()
-            .url(endpoint)
-            .post(payloadJson.toRequestBody("application/json".toMediaType()))
-            .apply { addCommonHeaders(this, payloadJson, correlationId) }
-            .build()
-    }
-
-    private fun buildMultipartRequest(
-        endpoint: String,
-        payloadJson: String,
-        imageAttachments: List<ItemImageAttachment>,
-        correlationId: String,
-    ): Request {
-        val multipartBuilder =
-            MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("payload", payloadJson)
-
-        // Track per-item image counts and total bytes
-        val itemImageCounts = mutableMapOf<String, Int>()
-        var totalImageBytes = 0L
-
-        // Add images with field naming scheme: itemImages[itemId]
-        imageAttachments.forEachIndexed { index, attachment ->
-            val fieldName = "itemImages[${attachment.itemId}]"
-            val mediaType = attachment.mimeType.toMediaType()
-            val filename = "image_${index}_${attachment.filename}"
-            multipartBuilder.addFormDataPart(
-                fieldName,
-                filename,
-                attachment.imageBytes.toRequestBody(mediaType),
+            return@withContext api.send(
+                endpoint = endpoint,
+                requestPayload = requestPayload,
+                imageAttachments = imageAttachments,
+                correlationId = correlationId,
             )
-            itemImageCounts[attachment.itemId] = (itemImageCounts[attachment.itemId] ?: 0) + 1
-            totalImageBytes += attachment.imageBytes.size
         }
-
-        val multipartBody = multipartBuilder.build()
-
-        // Detailed logging (no image content, just metadata)
-        Log.i(
-            "ScaniumAssist",
-            "Multipart request: correlationId=$correlationId " +
-                "imageCount=${imageAttachments.size} totalBytes=$totalImageBytes " +
-                "itemImageCounts=$itemImageCounts",
-        )
-        logger.log("Sending multipart request with ${imageAttachments.size} images")
-
-        return Request.Builder()
-            .url(endpoint)
-            .post(multipartBody)
-            .apply { addCommonHeaders(this, payloadJson, correlationId) }
-            .build()
-    }
-
-    private fun addCommonHeaders(
-        builder: Request.Builder,
-        payloadJson: String,
-        correlationId: String,
-    ) {
-        // DIAG: Log API key status
-        if (apiKey != null) {
-            Log.d("ScaniumAuth", "AssistantRepo: apiKey present len=${apiKey!!.length} prefix=${apiKey!!.take(6)}...")
-            Log.d("ScaniumAuth", "AssistantRepo: Adding X-API-Key header")
-            builder.header("X-API-Key", apiKey!!)
-            // Add HMAC signature for replay protection (SEC-004)
-            RequestSigner.addSignatureHeaders(
-                builder = builder,
-                apiKey = apiKey!!,
-                requestBody = payloadJson,
-            )
-        } else {
-            Log.w("ScaniumAuth", "AssistantRepo: apiKey is NULL - X-API-Key header will NOT be added!")
-        }
-        builder.header("X-Scanium-Correlation-Id", correlationId)
-        builder.header("X-Client", "Scanium-Android")
-        builder.header("X-App-Version", BuildConfig.VERSION_NAME)
-
-        // Add device ID header for rate limiting
-        // Backend expects raw device ID (not hashed) in this header
-        val deviceId = DeviceIdProvider.getRawDeviceId(context)
-        if (deviceId.isNotBlank()) {
-            builder.header("X-Scanium-Device-Id", deviceId)
-        }
-    }
-
-    private fun mapHttpFailure(
-        code: Int,
-        responseBody: String?,
-    ): AssistantBackendException {
-        val assistantError =
-            responseBody?.let {
-                runCatching { json.decodeFromString(AssistantErrorResponse.serializer(), it) }.getOrNull()
-            }?.assistantError
-
-        if (assistantError != null) {
-            return AssistantBackendException(assistantError.toFailure())
-        }
-
-        // Phase B: Try to parse error response for specific error codes
-        val errorResponse = responseBody?.let {
-            runCatching { json.decodeFromString<ErrorResponseDto>(it) }.getOrNull()
-        }
-
-        val failure =
-            when (code) {
-                400 ->
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.VALIDATION_ERROR,
-                        category = AssistantBackendErrorCategory.POLICY,
-                        retryable = false,
-                        message = "Assistant request invalid",
-                    )
-                401 -> {
-                    // Phase B: Distinguish between AUTH_REQUIRED and AUTH_INVALID
-                    val errorCode = errorResponse?.error?.code?.uppercase()
-                    when (errorCode) {
-                        "AUTH_REQUIRED" ->
-                            AssistantBackendFailure(
-                                type = AssistantBackendErrorType.AUTH_REQUIRED,
-                                category = AssistantBackendErrorCategory.POLICY,
-                                retryable = false,
-                                message = errorResponse.error.message ?: "Sign in required",
-                            )
-                        "AUTH_INVALID" ->
-                            AssistantBackendFailure(
-                                type = AssistantBackendErrorType.AUTH_INVALID,
-                                category = AssistantBackendErrorCategory.POLICY,
-                                retryable = false,
-                                message = errorResponse.error.message ?: "Session expired",
-                            )
-                        else ->
-                            AssistantBackendFailure(
-                                type = AssistantBackendErrorType.UNAUTHORIZED,
-                                category = AssistantBackendErrorCategory.POLICY,
-                                retryable = false,
-                                message = "Not authorized to use assistant",
-                            )
-                    }
-                }
-                403 ->
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.UNAUTHORIZED,
-                        category = AssistantBackendErrorCategory.POLICY,
-                        retryable = false,
-                        message = "Access to assistant denied",
-                    )
-                429 -> {
-                    // Phase B: Extract resetAt from error response
-                    val resetAt = errorResponse?.error?.resetAt
-                    val retryAfterSeconds = resetAt?.let {
-                        val resetTime = runCatching {
-                            java.time.Instant.parse(it).toEpochMilli()
-                        }.getOrNull()
-                        if (resetTime != null) {
-                            ((resetTime - System.currentTimeMillis()) / 1000).toInt().coerceAtLeast(0)
-                        } else null
-                    }
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.RATE_LIMITED,
-                        category = AssistantBackendErrorCategory.POLICY,
-                        retryable = true,
-                        retryAfterSeconds = retryAfterSeconds,
-                        message = errorResponse?.error?.message ?: "Assistant rate limit exceeded",
-                    )
-                }
-                503 ->
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
-                        category = AssistantBackendErrorCategory.TEMPORARY,
-                        retryable = true,
-                        message = "Assistant provider unavailable",
-                    )
-                504 ->
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.NETWORK_TIMEOUT,
-                        category = AssistantBackendErrorCategory.TEMPORARY,
-                        retryable = true,
-                        message = "Assistant gateway timeout",
-                    )
-                else ->
-                    AssistantBackendFailure(
-                        type = AssistantBackendErrorType.PROVIDER_UNAVAILABLE,
-                        category = AssistantBackendErrorCategory.TEMPORARY,
-                        retryable = true,
-                        message = "Assistant backend error",
-                    )
-            }
-        return AssistantBackendException(failure)
-    }
 }
 
 @Serializable
-private data class AssistantChatRequest(
+internal data class AssistantChatRequest(
     val items: List<ItemContextSnapshotDto>,
     val history: List<AssistantMessageDto> = emptyList(),
     val message: String,
@@ -528,7 +244,7 @@ private data class AssistantChatRequest(
 )
 
 @Serializable
-private data class AssistantPrefsDto(
+internal data class AssistantPrefsDto(
     val language: String? = null,
     val tone: String? = null,
     val region: String? = null,
@@ -549,12 +265,12 @@ private data class AssistantPrefsDto(
 }
 
 @Serializable
-private data class PricingPrefsDto(
+internal data class PricingPrefsDto(
     val countryCode: String,
 )
 
 @Serializable
-private data class AssistantChatResponse(
+internal data class AssistantChatResponse(
     @SerialName("reply")
     val content: String,
     val actions: List<AssistantActionDto> = emptyList(),
@@ -593,66 +309,7 @@ private data class AssistantChatResponse(
 }
 
 @Serializable
-private data class AssistantErrorResponse(
-    val assistantError: AssistantErrorDto? = null,
-)
-
-// Phase B: Error response structure for auth and rate limit errors
-@Serializable
-private data class ErrorResponseDto(
-    val error: ErrorDetailsDto,
-)
-
-@Serializable
-private data class ErrorDetailsDto(
-    val code: String,
-    val message: String,
-    val resetAt: String? = null, // ISO 8601 timestamp for rate limits
-)
-
-@Serializable
-private data class AssistantErrorDto(
-    val type: String,
-    val category: String,
-    val retryable: Boolean,
-    val retryAfterSeconds: Int? = null,
-    val message: String? = null,
-) {
-    fun toFailure(): AssistantBackendFailure {
-        return AssistantBackendFailure(
-            type = parseType(type),
-            category = parseCategory(category),
-            retryable = retryable,
-            retryAfterSeconds = retryAfterSeconds,
-            message = message,
-        )
-    }
-
-    private fun parseType(raw: String): AssistantBackendErrorType {
-        return when (raw.lowercase()) {
-            "unauthorized" -> AssistantBackendErrorType.UNAUTHORIZED
-            "auth_required" -> AssistantBackendErrorType.AUTH_REQUIRED
-            "auth_invalid" -> AssistantBackendErrorType.AUTH_INVALID
-            "provider_not_configured" -> AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED
-            "rate_limited" -> AssistantBackendErrorType.RATE_LIMITED
-            "network_timeout" -> AssistantBackendErrorType.NETWORK_TIMEOUT
-            "network_unreachable" -> AssistantBackendErrorType.NETWORK_UNREACHABLE
-            "vision_unavailable" -> AssistantBackendErrorType.VISION_UNAVAILABLE
-            "validation_error" -> AssistantBackendErrorType.VALIDATION_ERROR
-            else -> AssistantBackendErrorType.PROVIDER_UNAVAILABLE
-        }
-    }
-
-    private fun parseCategory(raw: String): AssistantBackendErrorCategory {
-        return when (raw.lowercase()) {
-            "policy" -> AssistantBackendErrorCategory.POLICY
-            else -> AssistantBackendErrorCategory.TEMPORARY
-        }
-    }
-}
-
-@Serializable
-private data class AssistantMessageDto(
+internal data class AssistantMessageDto(
     val role: String,
     val content: String,
     val timestamp: Long,
@@ -671,7 +328,7 @@ private data class AssistantMessageDto(
 }
 
 @Serializable
-private data class AssistantActionDto(
+internal data class AssistantActionDto(
     val type: String,
     val payload: Map<String, String> = emptyMap(),
     val label: String? = null,
@@ -691,7 +348,7 @@ private data class AssistantActionDto(
 }
 
 @Serializable
-private data class EvidenceBulletDto(
+internal data class EvidenceBulletDto(
     val type: String,
     val text: String,
 ) {
@@ -699,7 +356,7 @@ private data class EvidenceBulletDto(
 }
 
 @Serializable
-private data class SuggestedAttributeDto(
+internal data class SuggestedAttributeDto(
     val key: String,
     val value: String,
     val confidence: String,
@@ -720,7 +377,7 @@ private data class SuggestedAttributeDto(
 }
 
 @Serializable
-private data class SuggestedDraftUpdateDto(
+internal data class SuggestedDraftUpdateDto(
     val field: String,
     val value: String,
     val confidence: String,
@@ -741,7 +398,7 @@ private data class SuggestedDraftUpdateDto(
 }
 
 @Serializable
-private data class ItemContextSnapshotDto(
+internal data class ItemContextSnapshotDto(
     val itemId: String,
     val title: String? = null,
     val description: String? = null,
@@ -770,7 +427,7 @@ private data class ItemContextSnapshotDto(
 }
 
 @Serializable
-private data class ItemAttributeSnapshotDto(
+internal data class ItemAttributeSnapshotDto(
     val key: String,
     val value: String,
     val confidence: Float? = null,
@@ -790,7 +447,7 @@ private data class ItemAttributeSnapshotDto(
 }
 
 @Serializable
-private data class ExportProfileSnapshotDto(
+internal data class ExportProfileSnapshotDto(
     val id: String,
     val displayName: String,
 ) {
