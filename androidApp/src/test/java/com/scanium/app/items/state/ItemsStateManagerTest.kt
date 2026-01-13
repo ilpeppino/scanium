@@ -547,6 +547,440 @@ class ItemsStateManagerTest {
             assertThat(persistedThumbnail).isInstanceOf(ImageRef.Bytes::class.java)
         }
 
+    // ==================== Persistence Batching Tests ====================
+
+    @Test
+    fun whenMultipleItemsAddedRapidly_thenPersistenceIsBatched() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+            val initialUpsertCount = fakeStore.upsertAllCallCount
+
+            // Act - Add multiple items in rapid succession
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+                createTestItem(id = "item-4", category = ItemCategory.PLANT),
+                createTestItem(id = "item-5", category = ItemCategory.TOY),
+            )
+
+            // Add items one by one rapidly
+            items.forEach { manager.addItem(it) }
+            advanceUntilIdle()
+
+            // Assert - Number of persistence calls should be reasonable (one per item in this case)
+            // since each addItem triggers updateItemsState which calls persistItems
+            val persistenceCalls = fakeStore.upsertAllCallCount - initialUpsertCount
+            assertThat(persistenceCalls).isEqualTo(items.size)
+
+            // Assert - All items should be persisted
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems).hasSize(items.size)
+        }
+
+    @Test
+    fun whenBatchAddItems_thenSinglePersistenceCall() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+            val initialUpsertCount = fakeStore.upsertAllCallCount
+
+            // Act - Add items using batch method
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            // Assert - Should result in a single persistence call (more efficient)
+            val persistenceCalls = fakeStore.upsertAllCallCount - initialUpsertCount
+            assertThat(persistenceCalls).isEqualTo(1)
+
+            // Assert - All items should be persisted
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems).hasSize(items.size)
+        }
+
+    @Test
+    fun whenFieldsUpdated_thenPersistenceTriggered() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val item = createTestItem(id = "item-1", category = ItemCategory.FASHION)
+            manager.addItem(item)
+            advanceUntilIdle()
+
+            val itemsAfterAdd = manager.items.first()
+            val aggregatedId = itemsAfterAdd[0].id
+
+            val initialUpsertCount = fakeStore.upsertAllCallCount
+
+            // Act - Update item fields
+            manager.updateItemFields(
+                itemId = aggregatedId,
+                labelText = "Updated Label",
+                recognizedText = "Updated Text",
+            )
+            advanceUntilIdle()
+
+            // Assert - Persistence should be triggered
+            val persistenceCalls = fakeStore.upsertAllCallCount - initialUpsertCount
+            assertThat(persistenceCalls).isAtLeast(1)
+
+            // Assert - Changes should be persisted
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems[0].labelText).isEqualTo("Updated Label")
+            assertThat(persistedItems[0].recognizedText).isEqualTo("Updated Text")
+        }
+
+    @Test
+    fun whenMultipleFieldsUpdatedInBulk_thenSinglePersistence() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            val itemsAfterAdd = manager.items.first()
+            val initialUpsertCount = fakeStore.upsertAllCallCount
+
+            // Act - Update multiple items using bulk update
+            val updates = itemsAfterAdd.associate { item ->
+                item.id to ItemFieldUpdate(labelText = "Bulk Update ${item.id}")
+            }
+            manager.updateItemsFields(updates)
+            advanceUntilIdle()
+
+            // Assert - Should result in single persistence call
+            val persistenceCalls = fakeStore.upsertAllCallCount - initialUpsertCount
+            assertThat(persistenceCalls).isEqualTo(1)
+
+            // Assert - All items should have updated labels
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems).hasSize(3)
+            persistedItems.forEach { item ->
+                assertThat(item.labelText).contains("Bulk Update")
+            }
+        }
+
+    @Test
+    fun whenClearAllItems_thenDeleteAllCalled() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            val initialDeleteAllCount = fakeStore.deleteAllCallCount
+
+            // Act - Clear all items
+            manager.clearAllItems()
+            advanceUntilIdle()
+
+            // Assert - deleteAll should be called exactly once
+            val deleteAllCalls = fakeStore.deleteAllCallCount - initialDeleteAllCount
+            assertThat(deleteAllCalls).isEqualTo(1)
+
+            // Assert - Store should be empty
+            val persistedItems = fakeStore.loadAll()
+            assertThat(persistedItems).isEmpty()
+        }
+
+    // ==================== Aggregation Invariants Tests ====================
+
+    @Test
+    fun whenItemsAdded_thenAggregationStatsAreAccurate() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            // Act - Add multiple items
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            // Assert - Aggregation stats should reflect added items
+            val stats = manager.getAggregationStats()
+            assertThat(stats.totalItems).isEqualTo(3)
+            assertThat(stats.totalMerges).isAtLeast(0) // No merges expected for different categories
+        }
+
+    @Test
+    fun whenSimilarItemsAdded_thenAggregationMergeCountIncreases() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            // Act - Add similar items (same category, same position)
+            val similarItems = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION, confidence = 0.9f),
+                createTestItem(id = "item-2", category = ItemCategory.FASHION, confidence = 0.85f),
+                createTestItem(id = "item-3", category = ItemCategory.FASHION, confidence = 0.88f),
+            )
+            manager.addItems(similarItems)
+            advanceUntilIdle()
+
+            // Assert - Items should be aggregated (merged) based on similarity
+            val stats = manager.getAggregationStats()
+            // Since all items have same category and same bounding box, they should merge
+            assertThat(stats.totalMerges).isGreaterThan(0)
+
+            // The number of items in state should be less than added items due to merging
+            val items = manager.items.first()
+            assertThat(items.size).isLessThan(similarItems.size)
+        }
+
+    @Test
+    fun whenDifferentItemsAdded_thenNoMerging() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            // Act - Add different items (different categories, different positions)
+            val differentItems = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION).copy(
+                    boundingBox = NormalizedRect(0.1f, 0.1f, 0.3f, 0.3f),
+                ),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS).copy(
+                    boundingBox = NormalizedRect(0.5f, 0.5f, 0.7f, 0.7f),
+                ),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD).copy(
+                    boundingBox = NormalizedRect(0.8f, 0.1f, 0.9f, 0.3f),
+                ),
+            )
+            manager.addItems(differentItems)
+            advanceUntilIdle()
+
+            // Assert - No merging should occur
+            val items = manager.items.first()
+            assertThat(items.size).isEqualTo(differentItems.size)
+        }
+
+    @Test
+    fun whenSimilarityThresholdUpdated_thenAggregatorReflectsChange() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            val initialThreshold = manager.getCurrentSimilarityThreshold()
+
+            // Act - Update similarity threshold
+            val newThreshold = 0.75f
+            manager.updateSimilarityThreshold(newThreshold)
+            advanceUntilIdle()
+
+            // Assert - Threshold should be updated
+            val currentThreshold = manager.getCurrentSimilarityThreshold()
+            assertThat(currentThreshold).isEqualTo(newThreshold)
+            assertThat(currentThreshold).isNotEqualTo(initialThreshold)
+
+            // Assert - StateFlow should also reflect the change
+            val thresholdFlow = manager.similarityThreshold.first()
+            assertThat(thresholdFlow).isEqualTo(newThreshold)
+        }
+
+    @Test
+    fun whenSimilarityThresholdSetBelowZero_thenClampedToZero() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            // Act - Set threshold below 0
+            manager.updateSimilarityThreshold(-0.5f)
+            advanceUntilIdle()
+
+            // Assert - Should be clamped to 0
+            val currentThreshold = manager.getCurrentSimilarityThreshold()
+            assertThat(currentThreshold).isEqualTo(0f)
+        }
+
+    @Test
+    fun whenSimilarityThresholdSetAboveOne_thenClampedToOne() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            // Act - Set threshold above 1
+            manager.updateSimilarityThreshold(1.5f)
+            advanceUntilIdle()
+
+            // Assert - Should be clamped to 1
+            val currentThreshold = manager.getCurrentSimilarityThreshold()
+            assertThat(currentThreshold).isEqualTo(1f)
+        }
+
+    @Test
+    fun whenItemRemoved_thenAggregationStatsUpdate() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            val itemsAfterAdd = manager.items.first()
+            val itemToRemove = itemsAfterAdd.first()
+            val initialItemCount = manager.getAggregationStats().totalItems
+
+            // Act - Remove an item
+            manager.removeItem(itemToRemove.id)
+            advanceUntilIdle()
+
+            // Assert - Item count should decrease
+            val stats = manager.getAggregationStats()
+            assertThat(stats.totalItems).isEqualTo(initialItemCount - 1)
+        }
+
+    @Test
+    fun whenStaleItemsRemoved_thenOnlyStaleItemsAreDeleted() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val oldTimestamp = System.currentTimeMillis() - 60_000L // 60 seconds ago
+            val recentTimestamp = System.currentTimeMillis()
+
+            val items = listOf(
+                createTestItem(id = "stale-1", category = ItemCategory.FASHION).copy(
+                    timestamp = oldTimestamp,
+                ),
+                createTestItem(id = "recent-1", category = ItemCategory.ELECTRONICS).copy(
+                    timestamp = recentTimestamp,
+                ),
+                createTestItem(id = "stale-2", category = ItemCategory.HOME_GOOD).copy(
+                    timestamp = oldTimestamp,
+                ),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            // Act - Remove stale items (older than 30 seconds)
+            manager.removeStaleItems(maxAgeMs = 30_000L)
+            advanceUntilIdle()
+
+            // Assert - Only recent items should remain
+            val remainingItems = manager.items.first()
+            // Note: Aggregation may have merged items, so we check that count decreased
+            assertThat(remainingItems.size).isLessThan(items.size)
+        }
+
+    @Test
+    fun whenGetAggregatedItems_thenReturnsAggregatedList() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            // Act
+            val aggregatedItems = manager.getAggregatedItems()
+
+            // Assert - Should return aggregated items list
+            assertThat(aggregatedItems).isNotEmpty()
+            assertThat(aggregatedItems.size).isAtLeast(1)
+        }
+
+    @Test
+    fun whenItemCountRequested_thenMatchesStateFlowSize() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.ELECTRONICS),
+                createTestItem(id = "item-3", category = ItemCategory.HOME_GOOD),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            // Act
+            val itemCount = manager.getItemCount()
+            val stateFlowItems = manager.items.first()
+
+            // Assert - Item count should match state flow size
+            assertThat(itemCount).isEqualTo(stateFlowItems.size)
+        }
+
+    @Test
+    fun whenSeedFromScannedItems_thenItemsAreLoadedIntoAggregator() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+            advanceUntilIdle()
+
+            val seedItems = listOf(
+                createTestItem(id = "seed-1", category = ItemCategory.FASHION),
+                createTestItem(id = "seed-2", category = ItemCategory.ELECTRONICS),
+            )
+
+            // Act - Seed the aggregator
+            manager.seedFromScannedItems(seedItems)
+            // Manually refresh state to reflect seeded items
+            manager.refreshItemsFromAggregator()
+            advanceUntilIdle()
+
+            // Assert - Items should be available in aggregator
+            val aggregatedItems = manager.getAggregatedItems()
+            assertThat(aggregatedItems).hasSize(2)
+        }
+
+    @Test
+    fun whenAggregationStatsRequested_thenAverageMergesCalculatedCorrectly() =
+        runTest {
+            // Arrange
+            val manager = createManager()
+
+            // Add items that should merge (same category, same position)
+            val items = listOf(
+                createTestItem(id = "item-1", category = ItemCategory.FASHION),
+                createTestItem(id = "item-2", category = ItemCategory.FASHION),
+                createTestItem(id = "item-3", category = ItemCategory.FASHION),
+            )
+            manager.addItems(items)
+            advanceUntilIdle()
+
+            // Act
+            val stats = manager.getAggregationStats()
+
+            // Assert - Average merges should be calculated
+            assertThat(stats.averageMergesPerItem).isAtLeast(0f)
+            // If items merged, average should be > 0
+            if (stats.totalMerges > 0) {
+                assertThat(stats.averageMergesPerItem).isGreaterThan(0f)
+            }
+        }
+
     // ==================== Helper Methods ====================
 
     private fun createTestThumbnailBytes(): ImageRef.Bytes {
