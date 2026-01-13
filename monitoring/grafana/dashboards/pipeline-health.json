@@ -332,7 +332,7 @@
         {
           "refId": "A",
           "queryType": "traceql",
-          "query": "{resource.service.name=\"scanium-mobile\"}",
+          "query": "{resource.service.name =~ \"scanium-mobile\"}",
           "limit": 100
         }
       ],

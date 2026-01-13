@@ -107,7 +107,7 @@
           "refId": "A",
           "queryType": "nativeSearch",
           "limit": 20,
-          "expr": "{ span.http.method = \"POST\" }" 
+          "expr": "{ span.http.method =~ \"POST\" }"
         }
       ],
       "description": "Just a link to explore traces",
