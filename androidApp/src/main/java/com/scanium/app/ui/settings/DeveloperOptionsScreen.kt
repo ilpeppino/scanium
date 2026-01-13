@@ -79,6 +79,14 @@ fun DeveloperOptionsScreen(
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val showNotificationPermission by remember {
+        derivedStateOf {
+            FeatureFlags.isDevBuild && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        }
+    }
+    val showDeveloperModeToggle by remember {
+        derivedStateOf { !FeatureFlags.isDevBuild }
+    }
 
     // Health Monitor state
     val healthMonitorState by viewModel.healthMonitorState.collectAsState()
@@ -119,7 +127,7 @@ fun DeveloperOptionsScreen(
             }
 
             // Notification Permission Section (DEV-only, Android 13+)
-            if (FeatureFlags.isDevBuild && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (showNotificationPermission) {
                 NotificationPermissionSection()
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
@@ -184,7 +192,7 @@ fun DeveloperOptionsScreen(
 
             // In DEV builds, Developer Mode is always ON and cannot be toggled
             // Only show the toggle in non-DEV builds (shouldn't normally be reachable)
-            if (!FeatureFlags.isDevBuild) {
+            if (showDeveloperModeToggle) {
                 SettingSwitchRow(
                     title = "Developer Mode",
                     subtitle = "Unlock all features for testing",
@@ -194,32 +202,7 @@ fun DeveloperOptionsScreen(
                 )
             } else {
                 // DEV flavor: Show static indicator that dev mode is always on
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Icon(
-                        Icons.Default.BugReport,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                    Column {
-                        Text(
-                            text = "Developer Mode",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                        )
-                        Text(
-                            text = "Always enabled in DEV builds",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
+                DevModeAlwaysOnRow()
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -354,6 +337,36 @@ fun DeveloperOptionsScreen(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun DevModeAlwaysOnRow() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            Icons.Default.BugReport,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Column {
+            Text(
+                text = "Developer Mode",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = "Always enabled in DEV builds",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }
