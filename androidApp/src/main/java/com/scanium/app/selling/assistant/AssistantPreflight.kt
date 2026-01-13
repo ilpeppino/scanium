@@ -1,14 +1,12 @@
 package com.scanium.app.selling.assistant
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.network.DeviceIdProvider
@@ -28,15 +26,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.IOException
-import java.net.SocketTimeoutException
 
 /**
  * Status of the assistant backend availability from preflight check.
@@ -92,71 +85,6 @@ data class PreflightResult(
             PreflightStatus.CLIENT_ERROR, // Client error should allow chat attempt
         )
 }
-
-/**
- * Minimal request payload for preflight check.
- * Uses the actual chat endpoint to verify auth and connectivity.
- *
- * **IMPORTANT**: Backend validates the request schema (Zod). The minimal valid payload is:
- * `{"message": "ping", "items": [], "history": []}`
- *
- * Schema requirements:
- * - message: string with min length 1 (cannot be empty string)
- * - items: array of objects with itemId (can be empty array [])
- * - history: array of message objects (can be empty array [])
- *
- * Using typed empty lists ensures proper serialization.
- */
-@Serializable
-private data class PreflightChatRequest(
-    val message: String = "ping",
-    val items: List<PreflightItemDto> = emptyList(),
-    val history: List<PreflightHistoryDto> = emptyList(),
-)
-
-/**
- * Item DTO for preflight - matches backend schema.
- * Not used in preflight (empty array), but defines correct type.
- */
-@Serializable
-private data class PreflightItemDto(
-    val itemId: String,
-)
-
-/**
- * History message DTO for preflight - matches backend schema.
- * Not used in preflight (empty array), but defines correct type.
- */
-@Serializable
-private data class PreflightHistoryDto(
-    val role: String,
-    val content: String,
-    val timestamp: Long,
-)
-
-/**
- * Response format from /v1/assist/chat endpoint.
- * We only check if the request succeeded; content is ignored.
- *
- * Note: Backend sends "reply" not "content" as the field name.
- */
-@Serializable
-private data class PreflightChatResponse(
-    @SerialName("reply")
-    val content: String = "",
-    val assistantError: PreflightAssistantErrorDto? = null,
-)
-
-/**
- * Error DTO that may be present in chat response.
- */
-@Serializable
-private data class PreflightAssistantErrorDto(
-    val type: String = "",
-    val category: String = "",
-    val retryable: Boolean = false,
-    val message: String? = null,
-)
 
 private val Context.preflightDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "assistant_preflight",
@@ -235,6 +163,7 @@ class AssistantPreflightManagerImpl(
         ignoreUnknownKeys = true
         encodeDefaults = true // Required: ensures items=[] and history=[] are sent
     }
+    private val preflightPolicy = PreflightPolicy(json)
 
     private val _currentResult = MutableStateFlow(
         PreflightResult(
@@ -441,199 +370,50 @@ class AssistantPreflightManagerImpl(
         val host = parsedUrl?.host ?: "unknown"
         val path = parsedUrl?.path ?: "/v1/assist/chat"
 
-        // Build minimal valid chat payload
-        val preflightPayload = PreflightChatRequest()
-        val payloadJson = json.encodeToString(PreflightChatRequest.serializer(), preflightPayload)
-
-        val requestBuilder = Request.Builder()
-            .url(endpoint)
-            .post(payloadJson.toRequestBody("application/json".toMediaType()))
-            .header("X-API-Key", key)
-            .header("X-Client", "Scanium-Android")
-            .header("X-App-Version", BuildConfig.VERSION_NAME)
-            .header("X-Scanium-Preflight", "true")
-
-        // Add device ID header for rate limiting
-        // Backend expects raw device ID (not hashed) in this header
-        val deviceId = DeviceIdProvider.getRawDeviceId(context)
-        if (deviceId.isNotBlank()) {
-            requestBuilder.header("X-Scanium-Device-Id", deviceId)
-        }
-
-        // Add HMAC signature for replay protection
-        RequestSigner.addSignatureHeaders(
-            builder = requestBuilder,
-            apiKey = key,
-            requestBody = payloadJson,
-        )
-
-        val request = requestBuilder.build()
-
         return try {
+            val request = preflightPolicy.buildRequest(
+                context = context,
+                endpoint = endpoint,
+                apiKey = key,
+            )
+
             client.newCall(request).execute().use { response ->
                 val latency = System.currentTimeMillis() - startTime
                 val body = response.body?.string()
 
-                // Structured log line for preflight diagnostics
-                Log.i(
+                ScaniumLog.i(
                     TAG,
                     "Preflight: host=$host path=$path status=${response.code} latencyMs=$latency",
                 )
 
-                val result = when {
-                    response.isSuccessful -> {
-                        // Chat endpoint returned 200 - assistant is available
-                        // Check for embedded error in response
-                        val chatResponse = body?.let {
-                            runCatching { json.decodeFromString<PreflightChatResponse>(it) }.getOrNull()
-                        }
+                val result =
+                    if (response.isSuccessful) {
+                        preflightPolicy.parseSuccessResponse(body, latency)
+                    } else {
+                        preflightPolicy.mapHttpFailure(response.code, latency)
+                    }
 
-                        if (chatResponse?.assistantError != null) {
-                            // Backend returned 200 but with embedded error
-                            val errorType = chatResponse.assistantError.type.lowercase()
-                            when {
-                                errorType.contains("provider_unavailable") ||
-                                    errorType.contains("provider_unreachable") -> {
-                                    PreflightResult(
-                                        status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                                        latencyMs = latency,
-                                        reasonCode = errorType,
-                                    )
-                                }
-                                else -> {
-                                    // Other embedded errors - treat as available but log
-                                    ScaniumLog.w(TAG, "Preflight: 200 with embedded error type=$errorType")
-                                    PreflightResult(
-                                        status = PreflightStatus.AVAILABLE,
-                                        latencyMs = latency,
-                                    )
-                                }
-                            }
-                        } else {
-                            // Clean 200 response - assistant is available
-                            PreflightResult(
-                                status = PreflightStatus.AVAILABLE,
-                                latencyMs = latency,
-                            )
-                        }
+                val retryAfter = response.header("Retry-After")?.toIntOrNull()
+                val resultWithRetry =
+                    if (retryAfter != null && result.status == PreflightStatus.RATE_LIMITED) {
+                        result.copy(retryAfterSeconds = retryAfter)
+                    } else {
+                        result
                     }
-                    response.code == 401 -> {
-                        // API key invalid or missing - mark as UNAUTHORIZED for diagnostics
-                        // The ViewModel will still allow chat attempt (input stays enabled)
-                        // but will show a banner prompting to check API key settings
-                        PreflightResult(
-                            status = PreflightStatus.UNAUTHORIZED,
-                            latencyMs = latency,
-                            reasonCode = "unauthorized_api_key",
-                        )
-                    }
-                    response.code == 403 -> {
-                        // Forbidden - different from 401, might be IP restriction or other
-                        // Mark as UNAUTHORIZED but with different reason for diagnostics
-                        PreflightResult(
-                            status = PreflightStatus.UNAUTHORIZED,
-                            latencyMs = latency,
-                            reasonCode = "forbidden_access",
-                        )
-                    }
-                    response.code == 404 -> {
-                        // 404 means endpoint not found - likely wrong base URL or tunnel route
-                        PreflightResult(
-                            status = PreflightStatus.ENDPOINT_NOT_FOUND,
-                            latencyMs = latency,
-                            reasonCode = "endpoint_not_found",
-                        )
-                    }
-                    response.code == 429 -> {
-                        val retryAfter = response.header("Retry-After")?.toIntOrNull()
-                        PreflightResult(
-                            status = PreflightStatus.RATE_LIMITED,
-                            latencyMs = latency,
-                            reasonCode = "http_429",
-                            retryAfterSeconds = retryAfter,
-                        )
-                    }
-                    response.code == 400 -> {
-                        // HTTP 400 = client request was malformed.
-                        // This does NOT mean assistant is unavailable - the actual chat
-                        // request (with real items) may succeed. Input should stay enabled.
-                        ScaniumLog.w(TAG, "Preflight: CLIENT_ERROR (HTTP 400) - " +
-                            "preflight request schema mismatch, allowing chat attempt")
-                        PreflightResult(
-                            status = PreflightStatus.CLIENT_ERROR,
-                            latencyMs = latency,
-                            reasonCode = "preflight_schema_error",
-                        )
-                    }
-                    response.code in 500..599 -> {
-                        PreflightResult(
-                            status = PreflightStatus.TEMPORARILY_UNAVAILABLE,
-                            latencyMs = latency,
-                            reasonCode = "http_${response.code}",
-                        )
-                    }
-                    else -> {
-                        // Unknown error - log but allow chat attempt
-                        ScaniumLog.w(TAG, "Preflight: unknown HTTP ${response.code}, allowing chat attempt")
-                        PreflightResult(
-                            status = PreflightStatus.UNKNOWN,
-                            latencyMs = latency,
-                            reasonCode = "http_${response.code}",
-                        )
-                    }
-                }
 
-                _currentResult.value = result
-                persistResult(result)
-                ScaniumLog.i(TAG, "Preflight: ${result.status} latency=${result.latencyMs}ms reason=${result.reasonCode}")
-                result
+                _currentResult.value = resultWithRetry
+                persistResult(resultWithRetry)
+                ScaniumLog.i(
+                    TAG,
+                    "Preflight: ${resultWithRetry.status} latency=${resultWithRetry.latencyMs}ms reason=${resultWithRetry.reasonCode}",
+                )
+                resultWithRetry
             }
-        } catch (e: SocketTimeoutException) {
+        } catch (e: Exception) {
             val latency = System.currentTimeMillis() - startTime
-            // Timeout - mark as UNKNOWN to allow chat attempt
-            // The actual chat request has longer timeout and might succeed
-            val result = PreflightResult(
-                status = PreflightStatus.UNKNOWN,
-                latencyMs = latency,
-                reasonCode = "timeout",
-            )
+            val result = preflightPolicy.mapException(e, latency)
             _currentResult.value = result
             persistResult(result)
-            ScaniumLog.w(TAG, "Preflight: UNKNOWN (timeout - will allow chat attempt)", e)
-            result
-        } catch (e: java.net.UnknownHostException) {
-            val latency = System.currentTimeMillis() - startTime
-            val result = PreflightResult(
-                status = PreflightStatus.OFFLINE,
-                latencyMs = latency,
-                reasonCode = "dns_failure",
-            )
-            _currentResult.value = result
-            persistResult(result)
-            ScaniumLog.w(TAG, "Preflight: OFFLINE (DNS failure)", e)
-            result
-        } catch (e: java.net.ConnectException) {
-            val latency = System.currentTimeMillis() - startTime
-            val result = PreflightResult(
-                status = PreflightStatus.OFFLINE,
-                latencyMs = latency,
-                reasonCode = "connection_refused",
-            )
-            _currentResult.value = result
-            persistResult(result)
-            ScaniumLog.w(TAG, "Preflight: OFFLINE (connection refused)", e)
-            result
-        } catch (e: IOException) {
-            val latency = System.currentTimeMillis() - startTime
-            // IO error - mark as UNKNOWN to allow chat attempt
-            val result = PreflightResult(
-                status = PreflightStatus.UNKNOWN,
-                latencyMs = latency,
-                reasonCode = "io_error",
-            )
-            _currentResult.value = result
-            persistResult(result)
-            ScaniumLog.w(TAG, "Preflight: UNKNOWN (IO error - will allow chat attempt)", e)
             result
         }
     }
