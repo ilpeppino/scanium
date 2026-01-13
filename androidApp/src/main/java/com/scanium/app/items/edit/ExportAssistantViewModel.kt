@@ -218,6 +218,8 @@ class ExportAssistantViewModel
      * - Fetches the user's assistant language preference
      * - Localizes attribute values in the context before sending
      * - Passes language preference to backend for localized output
+     *
+     * SECURITY: Defense-in-depth guard against AI generation when assistant is disabled.
      */
     fun generateExport() {
         val currentItem = _item.value ?: run {
@@ -225,6 +227,26 @@ class ExportAssistantViewModel
             return
         }
 
+        // Defense-in-depth: Check if AI assistant is enabled
+        // This guard ensures no accidental generation from other call sites
+        viewModelScope.launch {
+            val aiAssistantEnabled = settingsRepository.allowAssistantFlow.first()
+            if (!aiAssistantEnabled) {
+                Log.w(TAG, "Export generation blocked: AI assistant is disabled")
+                _state.value = ExportAssistantState.Error(
+                    message = "AI assistant is disabled. Enable it in Settings to continue.",
+                    isRetryable = false
+                )
+                return@launch
+            }
+            performGeneration(currentItem)
+        }
+    }
+
+    /**
+     * Perform the actual generation logic (extracted for clarity).
+     */
+    private suspend fun performGeneration(currentItem: ScannedItem) {
         val correlationId = CorrelationIds.newAssistRequestId()
 
         // Phase 2: Start with DraftingListing state
@@ -239,185 +261,183 @@ class ExportAssistantViewModel
             }
         }
 
-        viewModelScope.launch {
-            try {
-                // Get user's assistant preferences including language
-                val assistantPrefs = settingsRepository.assistantPrefsFlow.first()
-                val languageTag = assistantPrefs.language ?: "en"
+        try {
+            // Get user's assistant preferences including language
+            val assistantPrefs = settingsRepository.assistantPrefsFlow.first()
+            val languageTag = assistantPrefs.language ?: "en"
 
-                Log.i(TAG, "Generating export for item ${currentItem.id} correlationId=$correlationId languageTag=$languageTag")
+            Log.i(TAG, "Generating export for item ${currentItem.id} correlationId=$correlationId languageTag=$languageTag")
 
-                // Build item context snapshot with localized attribute values
-                val snapshot = buildItemContextSnapshot(currentItem, languageTag)
+            // Build item context snapshot with localized attribute values
+            val snapshot = buildItemContextSnapshot(currentItem, languageTag)
 
-                // Build image attachment if available
-                val imageAttachments = buildImageAttachments(currentItem)
+            // Build image attachment if available
+            val imageAttachments = buildImageAttachments(currentItem)
 
-                // Get export profile
-                val defaultProfileId = exportProfileRepository.getDefaultProfileId()
-                val profile = exportProfileRepository.getProfile(defaultProfileId)
-                    ?: com.scanium.shared.core.models.listing.ExportProfiles.generic()
+            // Get export profile
+            val defaultProfileId = exportProfileRepository.getDefaultProfileId()
+            val profile = exportProfileRepository.getProfile(defaultProfileId)
+                ?: com.scanium.shared.core.models.listing.ExportProfiles.generic()
 
-                // Convert region to country code for pricing
-                val pricingCountryCode = assistantPrefs.region?.name
+            // Convert region to country code for pricing
+            val pricingCountryCode = assistantPrefs.region?.name
 
-                // Send request with language and pricing preferences
-                val response = assistantRepository.send(
-                    items = listOf(snapshot),
-                    history = emptyList(),
-                    userMessage = EXPORT_PROMPT,
-                    exportProfile = profile,
-                    correlationId = correlationId,
-                    imageAttachments = imageAttachments,
-                    assistantPrefs = assistantPrefs,
-                    includePricing = true,
-                    pricingCountryCode = pricingCountryCode,
-                )
+            // Send request with language and pricing preferences
+            val response = assistantRepository.send(
+                items = listOf(snapshot),
+                history = emptyList(),
+                userMessage = EXPORT_PROMPT,
+                exportProfile = profile,
+                correlationId = correlationId,
+                imageAttachments = imageAttachments,
+                assistantPrefs = assistantPrefs,
+                includePricing = true,
+                pricingCountryCode = pricingCountryCode,
+            )
 
-                val pricing = response.marketPrice ?: response.pricingInsights
+            val pricing = response.marketPrice ?: response.pricingInsights
 
-                // DEV-only logging (safe - no raw response body in release builds)
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, """
-                        Export response debug:
-                        - correlationId=$correlationId
-                        - includePricing=true, countryCode=$pricingCountryCode
-                        - suggestedDraftUpdates count=${response.suggestedDraftUpdates.size}
-                        - title length=${response.suggestedDraftUpdates.find { it.field == "title" }?.value?.length ?: 0}
-                        - description length=${response.suggestedDraftUpdates.find { it.field == "description" }?.value?.length ?: 0}
-                        - bullets count=${response.suggestedDraftUpdates.count { it.field.startsWith("bullet") }}
-                        - response.text length=${response.text.length}
-                        - pricingInsights: ${pricing?.let { "status=${it.status}, range=${it.range != null}" } ?: "null"}
-                    """.trimIndent())
-                    Log.d(TAG, "Raw response.text: '${response.text}'")
-                    pricing?.let { pricingInsights ->
-                        Log.d(TAG, "Pricing insights: status=${pricingInsights.status}, country=${pricingInsights.countryCode}")
-                        pricingInsights.range?.let { range ->
-                            Log.d(
-                                TAG,
-                                "Pricing range: ${range.low}-${range.high} ${range.currency}, ${pricingInsights.results.size} results, confidence=${pricingInsights.confidence}"
-                            )
-                        }
+            // DEV-only logging (safe - no raw response body in release builds)
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, """
+                    Export response debug:
+                    - correlationId=$correlationId
+                    - includePricing=true, countryCode=$pricingCountryCode
+                    - suggestedDraftUpdates count=${response.suggestedDraftUpdates.size}
+                    - title length=${response.suggestedDraftUpdates.find { it.field == "title" }?.value?.length ?: 0}
+                    - description length=${response.suggestedDraftUpdates.find { it.field == "description" }?.value?.length ?: 0}
+                    - bullets count=${response.suggestedDraftUpdates.count { it.field.startsWith("bullet") }}
+                    - response.text length=${response.text.length}
+                    - pricingInsights: ${pricing?.let { "status=${it.status}, range=${it.range != null}" } ?: "null"}
+                """.trimIndent())
+                Log.d(TAG, "Raw response.text: '${response.text}'")
+                pricing?.let { pricingInsights ->
+                    Log.d(TAG, "Pricing insights: status=${pricingInsights.status}, country=${pricingInsights.countryCode}")
+                    pricingInsights.range?.let { range ->
+                        Log.d(
+                            TAG,
+                            "Pricing range: ${range.low}-${range.high} ${range.currency}, ${pricingInsights.results.size} results, confidence=${pricingInsights.confidence}"
+                        )
                     }
                 }
+            }
 
-                Log.i(TAG, "Export response received: suggestedDraftUpdates=${response.suggestedDraftUpdates.size}")
+            Log.i(TAG, "Export response received: suggestedDraftUpdates=${response.suggestedDraftUpdates.size}")
 
-                // Parse response from structured suggestedDraftUpdates
-                val title = response.suggestedDraftUpdates
-                    .find { it.field == "title" }?.value
-                val description = response.suggestedDraftUpdates
-                    .find { it.field == "description" }?.value
-                val bullets = response.suggestedDraftUpdates
-                    .filter { it.field.startsWith("bullet") }
-                    .sortedBy { it.field }
-                    .map { it.value }
+            // Parse response from structured suggestedDraftUpdates
+            val title = response.suggestedDraftUpdates
+                .find { it.field == "title" }?.value
+            val description = response.suggestedDraftUpdates
+                .find { it.field == "description" }?.value
+            val bullets = response.suggestedDraftUpdates
+                .filter { it.field.startsWith("bullet") }
+                .sortedBy { it.field }
+                .map { it.value }
 
-                // CRITICAL: If description is null/empty (even with structured data),
-                // DO NOT apply empty content. Treat as error to prevent data loss.
-                // Only use text fallback if description field is completely missing AND
-                // no other structured data exists (to prevent JSON leakage).
-                val hasStructuredData = response.suggestedDraftUpdates.isNotEmpty()
+            // CRITICAL: If description is null/empty (even with structured data),
+            // DO NOT apply empty content. Treat as error to prevent data loss.
+            // Only use text fallback if description field is completely missing AND
+            // no other structured data exists (to prevent JSON leakage).
+            val hasStructuredData = response.suggestedDraftUpdates.isNotEmpty()
 
-                val finalTitle = if (hasStructuredData && title != null) {
-                    title
-                } else if (hasStructuredData) {
-                    // Structured data exists but title is missing - try fallback
-                    parseTitle(response.text)
-                } else {
-                    title ?: parseTitle(response.text)
-                }
+            val finalTitle = if (hasStructuredData && title != null) {
+                title
+            } else if (hasStructuredData) {
+                // Structured data exists but title is missing - try fallback
+                parseTitle(response.text)
+            } else {
+                title ?: parseTitle(response.text)
+            }
 
-                val finalDescription = if (hasStructuredData && description != null) {
-                    description
-                } else if (hasStructuredData) {
-                    // Structured data exists but description is missing - try fallback
-                    parseDescription(response.text)
-                } else {
-                    description ?: parseDescription(response.text)
-                }
+            val finalDescription = if (hasStructuredData && description != null) {
+                description
+            } else if (hasStructuredData) {
+                // Structured data exists but description is missing - try fallback
+                parseDescription(response.text)
+            } else {
+                description ?: parseDescription(response.text)
+            }
 
-                val finalBullets = if (hasStructuredData && bullets.isNotEmpty()) {
-                    bullets
-                } else if (hasStructuredData) {
-                    // Structured data exists but bullets are missing - try fallback
-                    parseBullets(response.text)
-                } else {
-                    bullets.ifEmpty { parseBullets(response.text) }
-                }
+            val finalBullets = if (hasStructuredData && bullets.isNotEmpty()) {
+                bullets
+            } else if (hasStructuredData) {
+                // Structured data exists but bullets are missing - try fallback
+                parseBullets(response.text)
+            } else {
+                bullets.ifEmpty { parseBullets(response.text) }
+            }
 
-                // DEBUG: Log parsed values
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "Parsed values - finalTitle: ${finalTitle?.take(50)}, finalDescription: ${finalDescription?.take(100)}, finalBullets: ${finalBullets.size}")
-                }
+            // DEBUG: Log parsed values
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "Parsed values - finalTitle: ${finalTitle?.take(50)}, finalDescription: ${finalDescription?.take(100)}, finalBullets: ${finalBullets.size}")
+            }
 
-                // Defensive check: Detect JSON leakage in description
-                if (finalDescription != null && containsJsonPattern(finalDescription)) {
-                    Log.e(TAG, "CRITICAL: JSON detected in description field - rejecting response")
-                    progressTransitionJob?.cancel()
-                    _state.value = ExportAssistantState.Error(
-                        message = "Invalid response format. Please try again.",
-                        isRetryable = true,
-                    )
-                    return@launch
-                }
-
-                // CRITICAL: Do not apply empty description - treat as generation failure
-                // This prevents data loss when backend returns success but no usable content
-                if (finalDescription.isNullOrBlank()) {
-                    Log.e(TAG, "CRITICAL: Generated description is empty - rejecting response to prevent data loss")
-                    Log.e(TAG, "Debug: hasStructuredData=$hasStructuredData, structuredUpdatesCount=${response.suggestedDraftUpdates.size}, responseTextLength=${response.text.length}")
-                    progressTransitionJob?.cancel()
-                    _state.value = ExportAssistantState.Error(
-                        message = "Failed to generate description. Please try again.",
-                        isRetryable = true,
-                    )
-                    return@launch
-                }
-
-                // Update item with export fields
-                itemsViewModel.updateExportFields(
-                    itemId = itemId,
-                    exportTitle = finalTitle,
-                    exportDescription = finalDescription,
-                    exportBullets = finalBullets,
-                    exportFromCache = false, // Backend cache info not exposed
-                    exportModel = null, // Model info not exposed
-                    exportConfidenceTier = response.confidenceTier?.name,
-                )
-
-                // Refresh item
-                _item.value = itemsViewModel.getItem(itemId)
-
-                // Phase 2: Cancel progress transition job when response arrives
-                progressTransitionJob?.cancel()
-
-                _state.value = ExportAssistantState.Success(
-                    title = finalTitle,
-                    description = finalDescription,
-                    bullets = finalBullets,
-                    confidenceTier = response.confidenceTier,
-                    fromCache = false,
-                    model = null,
-                    pricingInsights = pricing,
-                )
-
-                Log.i(TAG, "Export generated successfully: title=${finalTitle?.take(30)}..., pricing=${pricing?.status}")
-            } catch (e: AssistantBackendException) {
-                Log.e(TAG, "Export generation failed: ${e.failure.message}", e)
+            // Defensive check: Detect JSON leakage in description
+            if (finalDescription != null && containsJsonPattern(finalDescription)) {
+                Log.e(TAG, "CRITICAL: JSON detected in description field - rejecting response")
                 progressTransitionJob?.cancel()
                 _state.value = ExportAssistantState.Error(
-                    message = e.failure.message ?: "Failed to generate export",
-                    isRetryable = e.failure.retryable,
-                )
-            } catch (e: Exception) {
-                Log.e(TAG, "Export generation failed", e)
-                progressTransitionJob?.cancel()
-                _state.value = ExportAssistantState.Error(
-                    message = e.message ?: "An unexpected error occurred",
+                    message = "Invalid response format. Please try again.",
                     isRetryable = true,
                 )
+                return
             }
+
+            // CRITICAL: Do not apply empty description - treat as generation failure
+            // This prevents data loss when backend returns success but no usable content
+            if (finalDescription.isNullOrBlank()) {
+                Log.e(TAG, "CRITICAL: Generated description is empty - rejecting response to prevent data loss")
+                Log.e(TAG, "Debug: hasStructuredData=$hasStructuredData, structuredUpdatesCount=${response.suggestedDraftUpdates.size}, responseTextLength=${response.text.length}")
+                progressTransitionJob?.cancel()
+                _state.value = ExportAssistantState.Error(
+                    message = "Failed to generate description. Please try again.",
+                    isRetryable = true,
+                )
+                return
+            }
+
+            // Update item with export fields
+            itemsViewModel.updateExportFields(
+                itemId = itemId,
+                exportTitle = finalTitle,
+                exportDescription = finalDescription,
+                exportBullets = finalBullets,
+                exportFromCache = false, // Backend cache info not exposed
+                exportModel = null, // Model info not exposed
+                exportConfidenceTier = response.confidenceTier?.name,
+            )
+
+            // Refresh item
+            _item.value = itemsViewModel.getItem(itemId)
+
+            // Phase 2: Cancel progress transition job when response arrives
+            progressTransitionJob?.cancel()
+
+            _state.value = ExportAssistantState.Success(
+                title = finalTitle,
+                description = finalDescription,
+                bullets = finalBullets,
+                confidenceTier = response.confidenceTier,
+                fromCache = false,
+                model = null,
+                pricingInsights = pricing,
+            )
+
+            Log.i(TAG, "Export generated successfully: title=${finalTitle?.take(30)}..., pricing=${pricing?.status}")
+        } catch (e: AssistantBackendException) {
+            Log.e(TAG, "Export generation failed: ${e.failure.message}", e)
+            progressTransitionJob?.cancel()
+            _state.value = ExportAssistantState.Error(
+                message = e.failure.message ?: "Failed to generate export",
+                isRetryable = e.failure.retryable,
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Export generation failed", e)
+            progressTransitionJob?.cancel()
+            _state.value = ExportAssistantState.Error(
+                message = e.message ?: "An unexpected error occurred",
+                isRetryable = true,
+            )
         }
     }
 

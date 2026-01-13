@@ -316,6 +316,9 @@ fun ScaniumNavGraph(
                     itemsViewModel = itemsViewModel,
                     exportAssistantViewModelFactory = exportAssistantViewModelFactory,
                     tourViewModel = tourViewModel,
+                    onNavigateToSettings = {
+                        navController.navigate(Routes.SETTINGS_ASSISTANT)
+                    },
                 )
             } else {
                 // No item to edit, go back

@@ -387,6 +387,9 @@
     <string name="assistant_voice_unavailable_message">You can keep typing questions while we disable the mic button.</string>
     <string name="assistant_context_item_fallback">Item</string>
     <string name="assistant_ai_assistant">AI Assistant</string>
+    <string name="assistant_disabled_title">AI assistant is disabled</string>
+    <string name="assistant_disabled_message">Enable it in Settings to generate marketplace-ready descriptions.</string>
+    <string name="assistant_disabled_open_settings">Open settings</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Item deleted</string>

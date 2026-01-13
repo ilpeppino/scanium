@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -115,12 +116,17 @@ fun EditItemScreenV3(
     itemsViewModel: ItemsViewModel,
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory? = null,
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
+    onNavigateToSettings: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val allItems by itemsViewModel.items.collectAsState()
     val item by remember(allItems, itemId) {
         derivedStateOf { allItems.find { it.id == itemId } }
     }
+
+    // Observe AI assistant enabled setting
+    val settingsRepository = remember { SettingsRepository(context) }
+    val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = false)
 
     // FTUE Tour State
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -132,6 +138,9 @@ fun EditItemScreenV3(
     val exportAssistantViewModel = remember(exportAssistantViewModelFactory, itemId) {
         exportAssistantViewModelFactory?.create(itemId, itemsViewModel)
     }
+
+    // AI Disabled Inlay state
+    var showAiDisabledInlay by remember { mutableStateOf(false) }
 
     // Photo Gallery Dialog state
     var showPhotoGallery by remember { mutableStateOf(false) }
@@ -263,31 +272,44 @@ fun EditItemScreenV3(
                     // AI Generate button
                     OutlinedButton(
                         onClick = {
-                            // Save fields to attributes BEFORE calling AI
-                            saveFieldsToAttributes(
-                                context = context,
-                                itemsViewModel = itemsViewModel,
-                                itemId = itemId,
-                                brandField = brandField,
-                                productTypeField = productTypeField,
-                                modelField = modelField,
-                                colorField = colorField,
-                                sizeField = sizeField,
-                                materialField = materialField,
-                                conditionField = conditionField,
-                                notesField = notesField,
-                            )
-
-                            if (exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
-                                showExportAssistantSheet = true
+                            if (!aiAssistantEnabled) {
+                                // Show disabled inlay instead of triggering assistant
+                                showAiDisabledInlay = true
                             } else {
-                                onAiGenerate(itemId)
+                                // Save fields to attributes BEFORE calling AI
+                                saveFieldsToAttributes(
+                                    context = context,
+                                    itemsViewModel = itemsViewModel,
+                                    itemId = itemId,
+                                    brandField = brandField,
+                                    productTypeField = productTypeField,
+                                    modelField = modelField,
+                                    colorField = colorField,
+                                    sizeField = sizeField,
+                                    materialField = materialField,
+                                    conditionField = conditionField,
+                                    notesField = notesField,
+                                )
+
+                                if (exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
+                                    showExportAssistantSheet = true
+                                } else {
+                                    onAiGenerate(itemId)
+                                }
                             }
                         },
+                        enabled = true, // Always clickable to show inlay when disabled
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (aiAssistantEnabled) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            },
+                        ),
                         modifier = if (tourViewModel != null) {
-                            Modifier.weight(1f).tourTarget("edit_ai_button", tourViewModel)
+                            Modifier.weight(1f).tourTarget("edit_ai_button", tourViewModel).testTag("editItem_aiButton")
                         } else {
-                            Modifier.weight(1f)
+                            Modifier.weight(1f).testTag("editItem_aiButton")
                         }
                     ) {
                         Icon(
@@ -743,6 +765,38 @@ fun EditItemScreenV3(
                     }
                 }
                 notesField = builder.toString().trim()
+            },
+        )
+    }
+
+    // AI Disabled Inlay Dialog
+    if (showAiDisabledInlay) {
+        AlertDialog(
+            onDismissRequest = { showAiDisabledInlay = false },
+            title = { Text(stringResource(R.string.assistant_disabled_title)) },
+            text = {
+                Text(
+                    stringResource(R.string.assistant_disabled_message),
+                    modifier = Modifier.testTag("aiDisabled_inlay")
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showAiDisabledInlay = false
+                        onNavigateToSettings()
+                    },
+                    modifier = Modifier.testTag("aiDisabled_openSettings")
+                ) {
+                    Text(stringResource(R.string.assistant_disabled_open_settings))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showAiDisabledInlay = false }
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
             },
         )
     }
