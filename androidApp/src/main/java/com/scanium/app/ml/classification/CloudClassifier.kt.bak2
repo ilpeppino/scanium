@@ -217,6 +217,12 @@ class CloudClassifier(
             apiKey = apiKeyStore?.getApiKey(),
             domainPackId = domainPackId,
         )
+    private fun currentConfig(): CloudClassifierConfig =
+        CloudClassifierConfig(
+            baseUrl = BuildConfig.SCANIUM_API_BASE_URL,
+            apiKey = apiKeyStore?.getApiKey(),
+            domainPackId = domainPackId,
+        )
 
     private fun failureResult(
         message: String,
@@ -237,6 +243,11 @@ class CloudClassifier(
             status = ClassificationStatus.FAILED,
             errorMessage = errorMessage,
         )
+    }
+
+    private fun calculateBackoffDelay(attempt: Int): Long {
+        val exponentialDelay = baseDelayMs * (1 shl (attempt - 1))
+        return min(exponentialDelay, maxDelayMs)
     }
 
     /**
@@ -365,6 +376,36 @@ class CloudClassifier(
     }
 
     /**
+     * Check if HTTP status code indicates a retryable error.
+     *
+     * Retryable errors:
+     * - 408 Request Timeout
+     * - 429 Too Many Requests
+     * - 5xx Server errors
+     *
+     * Non-retryable errors:
+     * - 400 Bad Request
+     * - 401 Unauthorized
+     * - 403 Forbidden
+     * - 404 Not Found
+     */
+    private fun isRetryableError(statusCode: Int): Boolean {
+        return statusCode == 408 || statusCode == 429 || statusCode >= 500
+    }
+
+    /**
+     * Convert bitmap to JPEG bytes.
+     *
+     * This strips EXIF metadata for privacy (JPEG compression creates a new image
+     * without preserving original metadata).
+     */
+    private fun Bitmap.toJpegBytes(): ByteArray {
+        val stream = ByteArrayOutputStream()
+        compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, stream)
+        return stream.toByteArray()
+    }
+
+    /**
      * Debug helper: saves crop to cache if enabled.
      * Only works in DEBUG builds and when saveCloudCropsEnabled is true.
      */
@@ -391,3 +432,93 @@ class CloudClassifier(
         }
     }
 }
+
+/**
+ * API response model for cloud classification.
+ */
+@Serializable
+private data class CloudClassificationResponse(
+    val domainCategoryId: String? = null,
+    val confidence: Float? = null,
+    val label: String? = null,
+    val attributes: Map<String, String>? = null,
+    val enrichedAttributes: EnrichedAttributesResponse? = null,
+    val visionAttributes: VisionAttributesResponse? = null,
+    val requestId: String? = null,
+)
+
+/**
+ * Enriched attributes from VisionExtractor.
+ */
+@Serializable
+private data class EnrichedAttributesResponse(
+    val brand: EnrichedAttributeResponse? = null,
+    val model: EnrichedAttributeResponse? = null,
+    val color: EnrichedAttributeResponse? = null,
+    val secondaryColor: EnrichedAttributeResponse? = null,
+    val material: EnrichedAttributeResponse? = null,
+    val suggestedNextPhoto: String? = null,
+)
+
+/**
+ * Single enriched attribute with confidence and evidence.
+ */
+@Serializable
+private data class EnrichedAttributeResponse(
+    val value: String,
+    val confidence: String, // "HIGH", "MED", "LOW"
+    val confidenceScore: Float,
+    val evidenceRefs: List<AttributeEvidenceResponse> = emptyList(),
+)
+
+/**
+ * Evidence reference for an extracted attribute.
+ */
+@Serializable
+private data class AttributeEvidenceResponse(
+    val type: String, // "logo", "ocr", "color", "label"
+    val value: String,
+    val score: Float? = null,
+)
+
+/**
+ * Vision attributes from Google Vision API processing.
+ * Contains raw extracted data: colors, OCR text, logos, labels, and candidate values.
+ */
+@Serializable
+private data class VisionAttributesResponse(
+    val colors: List<VisionColorResponse> = emptyList(),
+    val ocrText: String? = null,
+    val logos: List<VisionLogoResponse> = emptyList(),
+    val labels: List<VisionLabelResponse> = emptyList(),
+    val brandCandidates: List<String> = emptyList(),
+    val modelCandidates: List<String> = emptyList(),
+)
+
+/**
+ * Color extracted from Vision API.
+ */
+@Serializable
+private data class VisionColorResponse(
+    val name: String,
+    val hex: String,
+    val score: Float,
+)
+
+/**
+ * Logo detected by Vision API.
+ */
+@Serializable
+private data class VisionLogoResponse(
+    val name: String,
+    val score: Float,
+)
+
+/**
+ * Label detected by Vision API.
+ */
+@Serializable
+private data class VisionLabelResponse(
+    val name: String,
+    val score: Float,
+)
