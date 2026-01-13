@@ -1,0 +1,71 @@
+{
+  "reply": "Suggested title: Vintage Brass Lamp",
+  "actions": [
+    {
+      "type": "COPY_TEXT",
+      "payload": {
+        "text": "Vintage Brass Lamp"
+      },
+      "label": "Copy title",
+      "requiresConfirmation": false
+    }
+  ],
+  "citationsMetadata": {
+    "model": "claude-3",
+    "tokensUsed": "1234"
+  },
+  "fromCache": false,
+  "confidenceTier": "HIGH",
+  "evidence": [
+    {
+      "type": "visual",
+      "text": "Brass finish and classic shade"
+    }
+  ],
+  "suggestedAttributes": [
+    {
+      "key": "brand",
+      "value": "Acme",
+      "confidence": "HIGH",
+      "source": "USER"
+    }
+  ],
+  "suggestedDraftUpdates": [
+    {
+      "field": "title",
+      "value": "Vintage Brass Lamp",
+      "confidence": "HIGH",
+      "requiresConfirmation": false
+    }
+  ],
+  "suggestedNextPhoto": "Show manufacturer mark",
+  "marketPrice": {
+    "status": "OK",
+    "countryCode": "NL",
+    "marketplacesUsed": [
+      {
+        "id": "marktplaats",
+        "name": "Marktplaats",
+        "baseUrl": "https://www.marktplaats.nl"
+      }
+    ],
+    "querySummary": "vintage brass lamp",
+    "results": [
+      {
+        "title": "Vintage Brass Lamp",
+        "price": {
+          "amount": 125.0,
+          "currency": "EUR"
+        },
+        "url": "https://www.marktplaats.nl/item/123",
+        "sourceMarketplaceId": "marktplaats"
+      }
+    ],
+    "range": {
+      "low": 100.0,
+      "high": 150.0,
+      "currency": "EUR"
+    },
+    "confidence": "HIGH"
+  }
+}

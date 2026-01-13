@@ -2,6 +2,7 @@ package com.scanium.app.selling.assistant
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.listing.ExportProfileDefinition
@@ -138,18 +139,70 @@ class AssistantRepositoryFactory(
 }
 
 @OptIn(ExperimentalSerializationApi::class)
+private val ASSISTANT_JSON = Json {
+    ignoreUnknownKeys = true
+    encodeDefaults = true
+    explicitNulls = false  // Don't encode null values for optional fields
+}
+
+private fun buildAssistantRequestPayload(
+    items: List<ItemContextSnapshot>,
+    history: List<AssistantMessage>,
+    userMessage: String,
+    exportProfile: ExportProfileDefinition,
+    assistantPrefs: AssistantPrefs?,
+    includePricing: Boolean,
+    pricingCountryCode: String?,
+): AssistantChatRequest {
+    return AssistantChatRequest(
+        items = items.map { ItemContextSnapshotDto.fromModel(it) },
+        history = history.map { AssistantMessageDto.fromModel(it) },
+        message = userMessage,
+        exportProfile = ExportProfileSnapshotDto.fromModel(
+            ExportProfileSnapshot(exportProfile.id, exportProfile.displayName),
+        ),
+        assistantPrefs = assistantPrefs?.let { AssistantPrefsDto.fromModel(it) },
+        includePricing = includePricing,
+        pricingPrefs = pricingCountryCode?.let { PricingPrefsDto(countryCode = it) },
+    )
+}
+
+@VisibleForTesting
+internal object AssistantContractCodec {
+    fun encodeRequest(
+        items: List<ItemContextSnapshot>,
+        history: List<AssistantMessage>,
+        userMessage: String,
+        exportProfile: ExportProfileDefinition,
+        assistantPrefs: AssistantPrefs?,
+        includePricing: Boolean,
+        pricingCountryCode: String?,
+    ): String {
+        val payload = buildAssistantRequestPayload(
+            items = items,
+            history = history,
+            userMessage = userMessage,
+            exportProfile = exportProfile,
+            assistantPrefs = assistantPrefs,
+            includePricing = includePricing,
+            pricingCountryCode = pricingCountryCode,
+        )
+        return ASSISTANT_JSON.encodeToString(AssistantChatRequest.serializer(), payload)
+    }
+
+    fun decodeResponse(responseBody: String): AssistantResponse {
+        val parsed = ASSISTANT_JSON.decodeFromString(AssistantChatResponse.serializer(), responseBody)
+        return parsed.toModel()
+    }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
 private class CloudAssistantRepository(
     private val context: Context,
     private val client: OkHttpClient,
     private val baseUrl: String,
     private val apiKey: String?,
 ) : AssistantRepository {
-    private val json =
-        Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-            explicitNulls = false  // Don't encode null values for optional fields
-        }
     private val logger = AssistantRepositoryLogger()
 
     override suspend fun send(
@@ -175,24 +228,20 @@ private class CloudAssistantRepository(
                 )
             }
 
-            val requestPayload =
-                AssistantChatRequest(
-                    items = items.map { ItemContextSnapshotDto.fromModel(it) },
-                    history = history.map { AssistantMessageDto.fromModel(it) },
-                    message = userMessage,
-                    exportProfile =
-                        ExportProfileSnapshotDto.fromModel(
-                            ExportProfileSnapshot(exportProfile.id, exportProfile.displayName),
-                        ),
-                    assistantPrefs = assistantPrefs?.let { AssistantPrefsDto.fromModel(it) },
-                    includePricing = includePricing,
-                    pricingPrefs = pricingCountryCode?.let { PricingPrefsDto(countryCode = it) },
-                )
+            val requestPayload = buildAssistantRequestPayload(
+                items = items,
+                history = history,
+                userMessage = userMessage,
+                exportProfile = exportProfile,
+                assistantPrefs = assistantPrefs,
+                includePricing = includePricing,
+                pricingCountryCode = pricingCountryCode,
+            )
 
             val endpoint = "${baseUrl.trimEnd('/')}/v1/assist/chat"
             // DIAG: Log endpoint and request summary
             Log.d("ScaniumNet", "AssistantRepo: endpoint=$endpoint")
-            val payloadJson = json.encodeToString(AssistantChatRequest.serializer(), requestPayload)
+            val payloadJson = ASSISTANT_JSON.encodeToString(AssistantChatRequest.serializer(), requestPayload)
             // Log request shape for debugging (not full content)
             Log.d("ScaniumAssist", "Request: items=${requestPayload.items.size} " +
                 "history=${requestPayload.history.size} " +
@@ -214,7 +263,7 @@ private class CloudAssistantRepository(
                 client.newCall(request).execute().use { response ->
                     val responseBody = response.body?.string()
                     if (response.isSuccessful && responseBody != null) {
-                        val parsed = json.decodeFromString(AssistantChatResponse.serializer(), responseBody)
+                        val parsed = ASSISTANT_JSON.decodeFromString(AssistantChatResponse.serializer(), responseBody)
                         parsed.assistantError?.let { throw AssistantBackendException(it.toFailure()) }
                         return@withContext parsed.toModel()
                     }
