@@ -384,7 +384,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     }
 
     // Phase B: Require authentication
-    const userId = requireAuth(request);
+    const _userId = requireAuth(request);
 
     const readiness = service.getReadiness();
 
@@ -466,7 +466,7 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
     // Phase B: Per-user daily quota
     const userQuotaResult = userQuotaStore.consume(userId);
     if (!userQuotaResult.allowed) {
-      const resetIn = Math.ceil((userQuotaResult.resetAt - Date.now()) / 1000);
+      const _resetIn = Math.ceil((userQuotaResult.resetAt - Date.now()) / 1000);
       const resetAt = new Date(userQuotaResult.resetAt).toISOString();
       request.log.warn(
         { userId: userId.slice(0, 8), remaining: 0, correlationId },

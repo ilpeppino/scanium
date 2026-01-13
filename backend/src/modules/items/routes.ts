@@ -24,7 +24,7 @@ import {
 
 export const itemsRoutes: FastifyPluginAsync<{ config: Config }> = async (
   fastify,
-  opts
+  _opts
 ) => {
   /**
    * GET /v1/items?since=<timestamp>&limit=<n>&includeDeleted=<bool>
