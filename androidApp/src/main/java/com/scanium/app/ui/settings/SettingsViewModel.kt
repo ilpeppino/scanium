@@ -406,7 +406,7 @@ class SettingsViewModel
         // Unified Settings (Primary Region & Language)
         // =========================================================================
 
-        // Primary Settings
+        // Primary Settings (Language & Marketplace Country)
         val primaryRegionCountry: StateFlow<String> =
             settingsRepository.primaryRegionCountryFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "NL")
@@ -416,9 +416,6 @@ class SettingsViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
 
         // Override Settings
-        val appLanguageSetting: StateFlow<FollowOrCustom<String>> =
-            settingsRepository.appLanguageSettingFlow
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FollowOrCustom.followPrimary())
 
         val aiLanguageSetting: StateFlow<FollowOrCustom<AiLanguageChoice>> =
             settingsRepository.aiLanguageSettingFlow
@@ -437,10 +434,7 @@ class SettingsViewModel
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
         // Effective Values (resolved from primary + overrides)
-        val effectiveAppLanguage: StateFlow<String> =
-            settingsRepository.effectiveAppLanguageFlow
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
-
+        // Note: effectiveAppLanguage removed - Language is now the direct source of truth
         val effectiveAiOutputLanguage: StateFlow<String> =
             settingsRepository.effectiveAiOutputLanguageFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
@@ -458,27 +452,21 @@ class SettingsViewModel
             viewModelScope.launch { settingsRepository.setPrimaryRegionCountry(countryCode) }
         }
 
+        /**
+         * Set the primary language.
+         * This is the single source of truth for app UI, AI assistant, and TTS.
+         * Also auto-sets marketplace country based on language mapping.
+         */
         fun setPrimaryLanguage(languageTag: String) {
             viewModelScope.launch {
                 settingsRepository.setPrimaryLanguage(languageTag)
-                // Also apply to app language if it follows primary
-                if (appLanguageSetting.value is FollowOrCustom.FollowPrimary) {
-                    val localeList = LocaleListCompat.forLanguageTags(languageTag)
-                    AppCompatDelegate.setApplicationLocales(localeList)
-                }
-            }
-        }
-
-        // Setters for Override Settings
-        fun setAppLanguageSetting(setting: FollowOrCustom<String>) {
-            viewModelScope.launch {
-                settingsRepository.setAppLanguageSetting(setting)
-                // Apply to AppCompatDelegate
-                val languageTag = setting.resolve(primaryLanguage.value)
+                // Apply language to app UI via AppCompatDelegate
                 val localeList = LocaleListCompat.forLanguageTags(languageTag)
                 AppCompatDelegate.setApplicationLocales(localeList)
             }
         }
+
+        // Setters for Override Settings
 
         fun setAiLanguageSetting(setting: FollowOrCustom<AiLanguageChoice>) {
             viewModelScope.launch { settingsRepository.setAiLanguageSetting(setting) }
@@ -496,19 +484,23 @@ class SettingsViewModel
             viewModelScope.launch { settingsRepository.setLastDetectedSpokenLanguage(languageTag) }
         }
 
-        // Helper to set both primary region and language at once
+        /**
+         * Helper to set both language and marketplace country at once (e.g., during onboarding).
+         * Note: Setting language automatically sets marketplace country via mapping,
+         * so this is mainly used when user explicitly selects both.
+         */
         fun setPrimaryRegionAndLanguage(
             countryCode: String,
             languageTag: String,
         ) {
             viewModelScope.launch {
-                settingsRepository.setPrimaryRegionCountry(countryCode)
+                // Set language first (auto-sets marketplace via mapping)
                 settingsRepository.setPrimaryLanguage(languageTag)
-                // Apply to app language if it follows primary
-                if (appLanguageSetting.value is FollowOrCustom.FollowPrimary) {
-                    val localeList = LocaleListCompat.forLanguageTags(languageTag)
-                    AppCompatDelegate.setApplicationLocales(localeList)
-                }
+                // Then set marketplace country (which marks it as manually selected)
+                settingsRepository.setPrimaryRegionCountry(countryCode)
+                // Apply language to app UI
+                val localeList = LocaleListCompat.forLanguageTags(languageTag)
+                AppCompatDelegate.setApplicationLocales(localeList)
             }
         }
 
