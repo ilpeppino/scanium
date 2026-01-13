@@ -109,7 +109,7 @@ class ItemsViewModel
         ) {
             this.workerDispatcher = workerDispatcher
             this.mainDispatcher = mainDispatcher
-            stateManager.overrideDispatchers(workerDispatcher, mainDispatcher)
+            // Dispatchers are now passed to facade constructor above
         }
 
         companion object {
@@ -117,250 +117,100 @@ class ItemsViewModel
             private const val QR_URL_TTL_MS = 2000L
         }
 
-        // ==================== Managers ====================
+        // ==================== Facade ====================
 
         /**
-         * Manages item state, aggregation, and persistence.
+         * Facade that encapsulates manager coordination.
+         * Delegates to ItemsStateManager, OverlayTrackManager, ItemClassificationCoordinator, and ListingStatusManager.
          */
-        private val stateManager =
-            ItemsStateManager(
+        private val facade =
+            ItemsUiFacade(
                 scope = viewModelScope,
-                itemsStore = itemsStore,
-                initialWorkerDispatcher = workerDispatcher,
-                initialMainDispatcher = mainDispatcher,
-                aggregationConfig = AggregationPresets.REALTIME,
-            )
-
-        /**
-         * Manages overlay track state for camera detection overlays.
-         */
-        private val overlayManager =
-            OverlayTrackManager(
-                stateManager = stateManager,
-            )
-
-        /**
-         * Coordinates classification operations.
-         */
-        private val classificationCoordinator =
-            ItemClassificationCoordinator(
-                scope = viewModelScope,
-                stateManager = stateManager,
                 classificationMode = classificationMode,
                 cloudClassificationEnabled = cloudClassificationEnabled,
                 onDeviceClassifier = onDeviceClassifier,
                 cloudClassifier = cloudClassifier,
+                itemsStore = itemsStore,
                 stableItemCropper = stableItemCropper,
-                priceEstimatorProvider = null,
-// TODO: Add PriceEstimatorProvider to DI when needed
+                visionInsightsPrefiller = visionInsightsPrefiller,
+                cropBasedEnricher = cropBasedEnricher,
+                settingsRepository = settingsRepository,
                 telemetry = telemetry,
                 workerDispatcher = workerDispatcher,
                 mainDispatcher = mainDispatcher,
             )
 
-        /**
-         * Manages listing status for eBay integration.
-         */
-        private val listingManager =
-            ListingStatusManager(
-                scope = viewModelScope,
-                itemsStore = itemsStore,
-                workerDispatcher = workerDispatcher,
-            )
-
-        // ==================== Public State (Delegated) ====================
+        // ==================== Public State (Delegated to Facade) ====================
 
         /** Current list of scanned items */
-        val items: StateFlow<List<ScannedItem>> = stateManager.items
+        val items: StateFlow<List<ScannedItem>> = facade.items
 
         /** Current overlay tracks for camera detection visualization */
-        val overlayTracks: StateFlow<List<OverlayTrack>> = overlayManager.overlayTracks
+        val overlayTracks: StateFlow<List<OverlayTrack>> = facade.overlayTracks
 
-        /** Latest detected QR URL (if any) */
+        /** Events emitted when new items are added (for animations) */
+        val itemAddedEvents: SharedFlow<ScannedItem> = facade.itemAddedEvents
+
+        /** Alerts for cloud classification errors */
+        val cloudClassificationAlerts: SharedFlow<CloudClassificationAlert> = facade.cloudClassificationAlerts
+
+        /** Alerts for persistence errors */
+        val persistenceAlerts: SharedFlow<PersistenceAlert> = facade.persistenceAlerts
+
+        /** UI events (e.g., navigation triggers) */
+        val uiEvents: SharedFlow<ItemsUiEvent> = facade.uiEvents
+
+        /** Current similarity threshold for aggregation */
+        val similarityThreshold: StateFlow<Float> = facade.similarityThreshold
+
+        /** Latest in-memory export payload for selected items */
+        val exportPayload: StateFlow<ExportPayload?> = facade.exportPayload
+
+        /** Latest detected QR URL (if any) - ViewModel-specific with TTL */
         private val _latestQrUrl = MutableStateFlow<String?>(null)
         val latestQrUrl: StateFlow<String?> = _latestQrUrl
 
-        /** Timestamp of the last detected QR URL */
+        /** Timestamp of the last detected QR URL - ViewModel-specific */
         private val _lastQrSeenTimestampMs = MutableStateFlow(0L)
         val lastQrSeenTimestampMs: StateFlow<Long> = _lastQrSeenTimestampMs
 
-        /** Events emitted when new items are added (for animations) */
-        val itemAddedEvents: SharedFlow<ScannedItem> = stateManager.itemAddedEvents
-
-        /** Alerts for cloud classification errors */
-        val cloudClassificationAlerts: SharedFlow<CloudClassificationAlert> = classificationCoordinator.cloudClassificationAlerts
-
-        /** Alerts for persistence errors */
-        private val _persistenceAlerts = MutableSharedFlow<PersistenceAlert>(extraBufferCapacity = 1)
-        val persistenceAlerts: SharedFlow<PersistenceAlert> = _persistenceAlerts.asSharedFlow()
-
-        /** UI events (e.g., navigation triggers) */
-        private val _uiEvents = MutableSharedFlow<ItemsUiEvent>(extraBufferCapacity = 1)
-        val uiEvents: SharedFlow<ItemsUiEvent> = _uiEvents.asSharedFlow()
-
-        /** Current similarity threshold for aggregation */
-        val similarityThreshold: StateFlow<Float> = stateManager.similarityThreshold
-
-        /** Latest in-memory export payload for selected items */
-        private val _exportPayload = MutableStateFlow<ExportPayload?>(null)
-        val exportPayload: StateFlow<ExportPayload?> = _exportPayload
+        /** Current ROI filter result for diagnostics */
+        val lastRoiFilterResult = facade.lastRoiFilterResult
 
         init {
-            classificationCoordinator.startNewSession()
-
-            // Connect managers
-            stateManager.setOnStateChangedListener {
-                classificationCoordinator.triggerEnhancedClassification()
-                classificationCoordinator.syncPriceEstimations(stateManager.getScannedItems())
-                overlayManager.refreshOverlayTracks()
-            }
-
-            listingManager.setItemsReference(stateManager.items)
-
-            viewModelScope.launch {
-                itemsStore.errors.collect { error ->
-                    _persistenceAlerts.emit(
-                        PersistenceAlert(
-                            message = "Unable to save scanned items. Please try again.",
-                            operation = error.operation,
-                            throwable = error.throwable,
-                        ),
-                    )
-                }
-            }
-
-            Log.i(TAG, "ItemsViewModel initialized with managers")
+            Log.i(TAG, "ItemsViewModel initialized with facade")
         }
 
-        // ==================== Item CRUD Operations (Delegated to StateManager) ====================
-
-        /**
-         * Emits a navigation event to open the item list if the setting is enabled and items were found.
-         * This is called after items are successfully added to the list.
-         *
-         * @param itemCount Number of items added
-         */
-        private fun emitNavigateToItemListIfEnabled(itemCount: Int) {
-            if (itemCount > 0) {
-                viewModelScope.launch {
-                    val shouldAutoOpen = settingsRepository.openItemListAfterScanFlow.first()
-                    if (shouldAutoOpen) {
-                        Log.i(TAG, "Auto-opening item list after scan (items added: $itemCount)")
-                        _uiEvents.emit(ItemsUiEvent.NavigateToItemList)
-                    }
-                }
-            }
-        }
+        // ==================== Item CRUD Operations (Delegated to Facade) ====================
 
         /**
          * Adds a single detected item to the list.
          * If auto-open setting is enabled, emits a navigation event to the items list.
-         * @see ItemsStateManager.addItem
          */
         fun addItem(item: ScannedItem) {
-            stateManager.addItem(item)
-            emitNavigateToItemListIfEnabled(1)
+            facade.addItem(item)
         }
 
         /**
          * Adds multiple detected items at once.
          * If auto-open setting is enabled, emits a navigation event to the items list.
-         * @see ItemsStateManager.addItems
          */
         fun addItems(newItems: List<ScannedItem>) {
-            stateManager.addItems(newItems)
-            emitNavigateToItemListIfEnabled(newItems.size)
+            facade.addItems(newItems)
         }
 
         /**
          * Adds items and immediately triggers vision insights extraction for items with high-res images.
-         *
-         * This method:
-         * 1. Adds the items to the state manager SYNCHRONOUSLY (processes through aggregator)
-         * 2. Gets the resulting aggregatedId for each item
-         * 3. Triggers async vision extraction for each item with a fullImageUri
-         * 4. Updates items with OCR text, brand, colors when extraction completes
-         *
-         * @param context Android context for loading images
-         * @param newItems Items to add
          */
         fun addItemsWithVisionPrefill(context: Context, newItems: List<ScannedItem>) {
-            Log.i(TAG, "╔════════════════════════════════════════════════════════════════")
-            Log.i(TAG, "║ SCAN_ENRICH: addItemsWithVisionPrefill() CALLED")
-            Log.i(TAG, "║ newItems.size=${newItems.size}")
-            newItems.forEachIndexed { index, item ->
-                Log.i(TAG, "║ [$index] id=${item.id.take(12)}... label=${item.labelText} category=${item.category}")
-                Log.i(TAG, "║ [$index] fullImageUri=${item.fullImageUri}")
-            }
-            Log.i(TAG, "╚════════════════════════════════════════════════════════════════")
-
-            // Build a map of original IDs to fullImageUri BEFORE adding to state manager
-            val imageUriByOriginalId = newItems
-                .filter { it.fullImageUri != null }
-                .associate { it.id to it.fullImageUri!! }
-
-            Log.i(TAG, "SCAN_ENRICH: Items with fullImageUri: ${imageUriByOriginalId.size}/${newItems.size}")
-
-            // Add items to state manager SYNCHRONOUSLY - this ensures items are in the
-            // aggregator when we trigger vision extraction
-            val aggregatedItems = stateManager.addItemsSync(newItems)
-
-            Log.i(TAG, "SCAN_ENRICH: Aggregated ${aggregatedItems.size} items")
-
-            // Trigger vision extraction for items with high-res images
-            // Match aggregated items back to original items by checking sourceDetectionIds
-            // IMPORTANT: Use item's thumbnail (cropped to bounding box) for per-item extraction
-            // This ensures each item gets its own brand/label instead of sharing full-frame results
-            Log.i(TAG, "SCAN_ENRICH: ✓ Triggering vision prefill for ${aggregatedItems.size} items")
-
-            for (aggregated in aggregatedItems) {
-                // Prefer thumbnail for per-item extraction (cropped to item's bounding box)
-                // Fall back to full image URI if no thumbnail available
-                val thumbnail = aggregated.thumbnail
-                val uri = aggregated.fullImageUri
-                    ?: aggregated.sourceDetectionIds.firstNotNullOfOrNull { imageUriByOriginalId[it] }
-
-                if (thumbnail != null || uri != null) {
-                    Log.i(TAG, "SCAN_ENRICH: Calling extractAndApply for aggregatedId=${aggregated.aggregatedId} (hasThumbnail=${thumbnail != null})")
-                    visionInsightsPrefiller.extractAndApply(
-                        context = context,
-                        scope = viewModelScope,
-                        stateManager = stateManager,
-                        itemId = aggregated.aggregatedId,
-                        imageUri = uri,
-                        thumbnail = thumbnail,
-                    )
-                } else {
-                    Log.w(TAG, "SCAN_ENRICH: ⚠ Item ${aggregated.aggregatedId} has no thumbnail or URI - vision prefill SKIPPED!")
-                }
-            }
-
-            // Emit navigation event if auto-open is enabled
-            emitNavigateToItemListIfEnabled(aggregatedItems.size)
+            facade.addItemsWithVisionPrefill(context, newItems)
         }
 
         /**
          * Triggers vision insights extraction for a specific item.
-         *
-         * Call this when you have a new high-res image for an existing item.
-         *
-         * @param context Android context for loading images
-         * @param itemId The item to extract insights for
-         * @param imageUri URI to the high-resolution image
          */
         fun extractVisionInsights(context: Context, itemId: String, imageUri: Uri?) {
-            if (imageUri == null) {
-                Log.w(TAG, "Cannot extract vision insights - no image URI for item $itemId")
-                return
-            }
-            Log.i(TAG, "Extracting vision insights for item $itemId")
-            visionInsightsPrefiller.extractAndApply(
-                context = context,
-                scope = viewModelScope,
-                stateManager = stateManager,
-                itemId = itemId,
-                imageUri = imageUri,
-            )
+            facade.extractVisionInsights(context, itemId, imageUri)
         }
 
         /**
@@ -419,57 +269,39 @@ class ItemsViewModel
 
         /**
          * Removes a specific item by ID.
-         * @see ItemsStateManager.removeItem
          */
         fun removeItem(itemId: String) {
-            classificationCoordinator.cancelPriceEstimation(itemId)
-            stateManager.removeItem(itemId)
+            facade.removeItem(itemId)
         }
 
         /**
          * Restores a previously removed item.
-         * @see ItemsStateManager.restoreItem
          */
         fun restoreItem(item: ScannedItem) {
-            stateManager.restoreItem(item)
+            facade.restoreItem(item)
         }
 
         /**
          * Clears all detected items.
-         * @see ItemsStateManager.clearAllItems
          */
         fun clearAllItems() {
-            classificationCoordinator.cancelAllPriceEstimations()
-            classificationCoordinator.reset()
-            overlayManager.clear()
-            stateManager.clearAllItems()
+            facade.clearAllItems()
         }
 
         /**
          * Returns the current count of detected items.
-         * @see ItemsStateManager.getItemCount
          */
-        fun getItemCount(): Int = stateManager.getItemCount()
+        fun getItemCount(): Int = facade.getItemCount()
 
         /**
          * Gets a specific item by ID.
-         * @see ItemsStateManager.getItem
          */
-        fun getItem(itemId: String): ScannedItem? = stateManager.getItem(itemId)
+        fun getItem(itemId: String): ScannedItem? = facade.getItem(itemId)
 
-        // ==================== Overlay Operations (Delegated to OverlayManager) ====================
+        // ==================== Overlay Operations (Delegated to Facade) ====================
 
         /**
          * Updates overlay with new detections from the camera.
-         *
-         * PHASE 2: ROI enforcement - detections are filtered by ROI BEFORE rendering.
-         * Only detections with center inside ROI are shown as bounding boxes.
-         *
-         * @param detections List of detection results from the ML pipeline
-         * @param scanRoi Current scan ROI (detections outside are filtered out)
-         * @param lockedTrackingId Tracking ID of locked candidate (if any) for visual distinction
-         * @param isGoodState True if guidance state is GOOD (conditions met, waiting for lock)
-         * @see OverlayTrackManager.updateOverlayDetections
          */
         fun updateOverlayDetections(
             detections: List<DetectionResult>,
@@ -477,66 +309,47 @@ class ItemsViewModel
             lockedTrackingId: String? = null,
             isGoodState: Boolean = false,
         ) {
-            overlayManager.updateOverlayDetections(detections, scanRoi, lockedTrackingId, isGoodState)
+            facade.updateOverlayDetections(detections, scanRoi, lockedTrackingId, isGoodState)
         }
 
         /**
          * Check if detections exist but none are inside ROI.
-         * Used for showing "Center the object" hint in UI.
          */
-        fun hasDetectionsOutsideRoiOnly(): Boolean {
-            return overlayManager.hasDetectionsOutsideRoiOnly()
-        }
-
-        /** Current ROI filter result for diagnostics */
-        val lastRoiFilterResult = overlayManager.lastRoiFilterResult
+        fun hasDetectionsOutsideRoiOnly(): Boolean = facade.hasDetectionsOutsideRoiOnly()
 
         /**
          * Update QR URL overlay state based on detection router events.
+         * ViewModel handles BarcodeDetected events with TTL logic.
          */
         fun onDetectionEvent(event: DetectionEvent) {
             when (event) {
                 is DetectionEvent.BarcodeDetected -> updateQrUrl(event)
-                else -> Unit
+                else -> Unit // Other events can be handled here if needed
             }
         }
 
-        // ==================== Export Operations ====================
+        // ==================== Export Operations (Delegated to Facade) ====================
 
         /**
          * Create an in-memory export payload for selected items.
          */
         fun createExportPayload(selectedIds: List<String>): ExportPayload? {
-            if (selectedIds.isEmpty()) {
-                _exportPayload.value = null
-                return null
-            }
-
-            val selectedSet = selectedIds.toSet()
-            val selectedItems =
-                stateManager.getScannedItems()
-                    .filter { it.id in selectedSet }
-
-            val payload = selectedItems.takeIf { it.isNotEmpty() }?.toExportPayload()
-            _exportPayload.value = payload
-            return payload
+            return facade.createExportPayload(selectedIds)
         }
 
-        // ==================== Classification Operations (Delegated to ClassificationCoordinator) ====================
+        // ==================== Classification Operations (Delegated to Facade) ====================
 
         /**
          * Retry classification for a failed item.
-         * @see ItemClassificationCoordinator.retryClassification
          */
         fun retryClassification(itemId: String) {
-            classificationCoordinator.retryClassification(itemId)
+            facade.retryClassification(itemId)
         }
 
-        // ==================== Listing Operations (Delegated to ListingManager) ====================
+        // ==================== Listing Operations (Delegated to Facade) ====================
 
         /**
          * Updates the listing status of a scanned item.
-         * @see ListingStatusManager.updateListingStatus
          */
         fun updateListingStatus(
             itemId: String,
@@ -544,23 +357,20 @@ class ItemsViewModel
             listingId: String? = null,
             listingUrl: String? = null,
         ) {
-            stateManager.updateListingStatus(itemId, status, listingId, listingUrl)
-            listingManager.updateListingStatus(itemId, status, listingId, listingUrl)
+            facade.updateListingStatus(itemId, status, listingId, listingUrl)
         }
 
         /**
          * Gets the listing status for a specific item.
-         * @see ListingStatusManager.getListingStatus
          */
         fun getListingStatus(itemId: String): ItemListingStatus? {
-            return listingManager.getListingStatus(itemId)
+            return facade.getListingStatus(itemId)
         }
 
-        // ==================== Item Edit Operations (Delegated to StateManager) ====================
+        // ==================== Item Edit Operations (Delegated to Facade) ====================
 
         /**
          * Updates user-editable fields of a scanned item.
-         * @see ItemsStateManager.updateItemFields
          */
         fun updateItemFields(
             itemId: String,
@@ -568,61 +378,40 @@ class ItemsViewModel
             recognizedText: String? = null,
             barcodeValue: String? = null,
         ) {
-            stateManager.updateItemFields(itemId, labelText, recognizedText, barcodeValue)
+            facade.updateItemFields(itemId, labelText, recognizedText, barcodeValue)
         }
 
         /**
          * Updates multiple items at once with their new field values.
-         * @see ItemsStateManager.updateItemsFields
          */
         fun updateItemsFields(updates: Map<String, com.scanium.app.items.state.ItemFieldUpdate>) {
-            stateManager.updateItemsFields(updates)
+            facade.updateItemsFields(updates)
         }
 
         /**
          * Updates a single attribute for an item.
-         * Used when user edits/confirms an extracted attribute.
-         *
-         * @param itemId The ID of the item to update
-         * @param attributeKey The key of the attribute (e.g., "brand", "color")
-         * @param attribute The new attribute value
-         * @see ItemsStateManager.updateItemAttribute
          */
         fun updateItemAttribute(
             itemId: String,
             attributeKey: String,
             attribute: com.scanium.shared.core.models.items.ItemAttribute,
         ) {
-            stateManager.updateItemAttribute(itemId, attributeKey, attribute)
+            facade.updateItemAttribute(itemId, attributeKey, attribute)
         }
 
         /**
          * Updates the summary text for an item.
-         * Used by EditItemScreenV2 when user edits the attribute summary.
-         *
-         * @param itemId The ID of the item to update
-         * @param summaryText The new summary text
-         * @param userEdited Whether the user has manually edited the text
-         * @see ItemsStateManager.updateSummaryText
          */
         fun updateSummaryText(
             itemId: String,
             summaryText: String,
             userEdited: Boolean,
         ) {
-            stateManager.updateSummaryText(itemId, summaryText, userEdited)
+            facade.updateSummaryText(itemId, summaryText, userEdited)
         }
 
         /**
          * Update export assistant fields for an item.
-         *
-         * @param itemId The ID of the item to update
-         * @param exportTitle AI-generated marketplace-ready title
-         * @param exportDescription AI-generated marketplace-ready description
-         * @param exportBullets AI-generated bullet highlights
-         * @param exportFromCache Whether the export was served from cache
-         * @param exportModel LLM model used to generate the export
-         * @param exportConfidenceTier Confidence tier of the AI-generated export
          */
         fun updateExportFields(
             itemId: String,
@@ -633,7 +422,7 @@ class ItemsViewModel
             exportModel: String?,
             exportConfidenceTier: String?,
         ) {
-            stateManager.updateExportFields(
+            facade.updateExportFields(
                 itemId = itemId,
                 exportTitle = exportTitle,
                 exportDescription = exportDescription,
@@ -691,18 +480,12 @@ class ItemsViewModel
                     )
 
                     // Add to item
-                    stateManager.addPhotoToItem(itemId, photo)
+                    facade.addPhotoToItem(itemId, photo)
 
                     Log.i(TAG, "Added photo to item $itemId, triggering re-enrichment")
 
                     // Trigger re-enrichment with the new photo
-                    visionInsightsPrefiller.extractAndApply(
-                        context = context,
-                        scope = viewModelScope,
-                        stateManager = stateManager,
-                        itemId = itemId,
-                        imageUri = photoUri,
-                    )
+                    facade.extractVisionInsights(context, itemId, photoUri)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to add photo to item $itemId", e)
                 }
@@ -739,7 +522,7 @@ class ItemsViewModel
                     Log.i(TAG, "Deleting ${photoIds.size} photo(s) from item $itemId")
 
                     // Get the item
-                    val item = stateManager.getItem(itemId)
+                    val item = facade.getItem(itemId)
                     if (item == null) {
                         Log.e(TAG, "Cannot delete photos - item not found: $itemId")
                         withContext(mainDispatcher) { onComplete() }
@@ -772,23 +555,18 @@ class ItemsViewModel
                     Log.i(TAG, "Deleted $deletedCount file(s) from disk")
 
                     // Remove photos from item in state
-                    stateManager.removePhotosFromItem(itemId, photoIds)
+                    facade.deletePhotosFromItem(itemId, photoIds)
 
                     Log.i(TAG, "Photos removed from item state, triggering re-enrichment")
 
                     // Trigger re-enrichment with remaining photos
                     // Use the primary thumbnail for re-classification
-                    val updatedItem = stateManager.getItem(itemId)
+                    val updatedItem = facade.getItem(itemId)
                     if (updatedItem != null) {
                         val thumbnailRef = updatedItem.thumbnailRef ?: updatedItem.thumbnail
-                        visionInsightsPrefiller.extractAndApply(
-                            context = context,
-                            scope = viewModelScope,
-                            stateManager = stateManager,
-                            itemId = itemId,
-                            imageUri = null,
-                            thumbnail = thumbnailRef,
-                        )
+                        if (thumbnailRef != null) {
+                            facade.extractVisionInsights(context, itemId, null)
+                        }
                     }
 
                     withContext(mainDispatcher) {
@@ -803,69 +581,62 @@ class ItemsViewModel
             }
         }
 
-        // ==================== Threshold Operations (Delegated to StateManager) ====================
+        // ==================== Threshold Operations (Delegated to Facade) ====================
 
         /**
          * Update the similarity threshold for real-time tuning.
-         * @see ItemsStateManager.updateSimilarityThreshold
          */
         fun updateSimilarityThreshold(threshold: Float) {
-            stateManager.updateSimilarityThreshold(threshold)
+            facade.updateSimilarityThreshold(threshold)
         }
 
         /**
          * Get the current effective similarity threshold.
-         * @see ItemsStateManager.getCurrentSimilarityThreshold
          */
         fun getCurrentSimilarityThreshold(): Float {
-            return stateManager.getCurrentSimilarityThreshold()
+            return facade.getCurrentSimilarityThreshold()
         }
 
-        // ==================== Aggregation Statistics (Delegated to StateManager) ====================
+        // ==================== Aggregation Statistics (Delegated to Facade) ====================
 
         /**
          * Get aggregation statistics for monitoring/debugging.
-         * @see ItemsStateManager.getAggregationStats
          */
-        fun getAggregationStats(): AggregationStats = stateManager.getAggregationStats()
+        fun getAggregationStats(): AggregationStats = facade.getAggregationStats()
 
         /**
          * Remove stale items that haven't been seen recently.
-         * @see ItemsStateManager.removeStaleItems
          */
         fun removeStaleItems(maxAgeMs: Long = 30_000L) {
-            stateManager.removeStaleItems(maxAgeMs)
+            facade.removeStaleItems(maxAgeMs)
         }
 
-        // ==================== Telemetry (Delegated to StateManager) ====================
+        // ==================== Telemetry (Delegated to Facade) ====================
 
         /**
          * Enable async telemetry collection.
-         * @see ItemsStateManager.enableTelemetry
          */
         fun enableTelemetry() {
-            stateManager.enableTelemetry()
+            facade.enableTelemetry()
         }
 
         /**
          * Disable async telemetry collection.
-         * @see ItemsStateManager.disableTelemetry
          */
         fun disableTelemetry() {
-            stateManager.disableTelemetry()
+            facade.disableTelemetry()
         }
 
         /**
          * Check if async telemetry is currently enabled.
-         * @see ItemsStateManager.isTelemetryEnabled
          */
-        fun isTelemetryEnabled(): Boolean = stateManager.isTelemetryEnabled()
+        fun isTelemetryEnabled(): Boolean = facade.isTelemetryEnabled()
 
         // ==================== Lifecycle ====================
 
         override fun onCleared() {
             super.onCleared()
-            stateManager.disableTelemetry()
+            facade.disableTelemetry()
             Log.i(TAG, "ItemsViewModel cleared")
         }
 
