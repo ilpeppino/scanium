@@ -1,17 +1,25 @@
 package com.scanium.app.ui.settings
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -19,19 +27,25 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.ThemeMode
 import com.scanium.app.model.user.UserEdition
+import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -141,6 +155,11 @@ fun SettingsGeneralScreen(
         SettingOption(value = "pt-BR", label = stringResource(R.string.settings_language_pt_br)),
     )
 
+    // Phase D: Account deletion dialog state
+    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -152,6 +171,7 @@ fun SettingsGeneralScreen(
                 },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         Column(
             modifier =
@@ -178,6 +198,89 @@ fun SettingsGeneralScreen(
                 leadingContent = { Icon(Icons.Filled.VerifiedUser, contentDescription = stringResource(R.string.cd_edition_status)) },
                 trailingContent = trailingEditionAction,
             )
+
+            // Phase C: Enhanced Auth section with session expiry and refresh
+            val userInfo = remember { viewModel.getUserInfo() }
+            val isSignedIn = userInfo != null
+
+            if (isSignedIn && userInfo != null) {
+                // Calculate session expiry display
+                val expiresAt = remember { viewModel.getAccessTokenExpiresAt() }
+                val expiryText = expiresAt?.let { timestamp ->
+                    val now = System.currentTimeMillis()
+                    val daysRemaining = ((timestamp - now) / (1000 * 60 * 60 * 24)).toInt()
+                    when {
+                        daysRemaining > 1 -> stringResource(R.string.settings_session_expires_in_days, daysRemaining)
+                        daysRemaining == 1 -> stringResource(R.string.settings_session_expires_in_day)
+                        else -> stringResource(R.string.settings_session_expires_soon)
+                    }
+                }
+
+                ListItem(
+                    headlineContent = {
+                        Text(userInfo.displayName ?: userInfo.email ?: "Signed In")
+                    },
+                    supportingContent = {
+                        Column {
+                            if (userInfo.email != null) {
+                                Text(userInfo.email)
+                            }
+                            expiryText?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    },
+                    leadingContent = {
+                        Icon(Icons.Filled.AccountCircle, contentDescription = null)
+                    },
+                )
+
+                // Sign out and refresh session buttons
+                ListItem(
+                    headlineContent = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { viewModel.signOut() }) {
+                                Text(stringResource(R.string.settings_sign_out))
+                            }
+                            TextButton(onClick = { viewModel.refreshSession() }) {
+                                Text(stringResource(R.string.settings_refresh_session))
+                            }
+                        }
+                    }
+                )
+
+                // Phase D: Delete account button
+                ListItem(
+                    headlineContent = {
+                        TextButton(
+                            onClick = { showDeleteConfirmDialog = true },
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(
+                                Icons.Filled.DeleteForever,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(stringResource(R.string.settings_delete_account))
+                        }
+                    }
+                )
+            } else {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_sign_in_google)) },
+                    supportingContent = { Text(stringResource(R.string.settings_sign_in_google_desc)) },
+                    leadingContent = {
+                        Icon(Icons.Filled.Login, contentDescription = null)
+                    },
+                    modifier = Modifier.clickable { viewModel.signInWithGoogle() }
+                )
+            }
 
             // Language & Region Section
             SettingsSectionHeader(title = stringResource(R.string.settings_section_language))
@@ -233,6 +336,58 @@ fun SettingsGeneralScreen(
                 subtitle = stringResource(R.string.settings_replay_guide_subtitle),
                 icon = Icons.Filled.Info,
                 onClick = viewModel::resetFtueTour,
+            )
+        }
+
+        // Phase D: Account deletion confirmation dialog
+        if (showDeleteConfirmDialog) {
+            val successMessage = stringResource(R.string.settings_delete_account_success)
+            val errorMessageTemplate = stringResource(R.string.settings_delete_account_error)
+
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmDialog = false },
+                icon = {
+                    Icon(
+                        Icons.Filled.DeleteForever,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                },
+                title = {
+                    Text(stringResource(R.string.settings_delete_account_title))
+                },
+                text = {
+                    Text(stringResource(R.string.settings_delete_account_message))
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showDeleteConfirmDialog = false
+                            coroutineScope.launch {
+                                val result = viewModel.deleteAccount()
+                                if (result.isSuccess) {
+                                    snackbarHostState.showSnackbar(successMessage)
+                                    // User will be automatically signed out and UI will update
+                                } else {
+                                    val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
+                                    snackbarHostState.showSnackbar(
+                                        errorMessageTemplate.format(errorMessage)
+                                    )
+                                }
+                            }
+                        },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text(stringResource(R.string.settings_delete_account_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmDialog = false }) {
+                        Text(stringResource(R.string.settings_delete_account_cancel))
+                    }
+                }
             )
         }
     }

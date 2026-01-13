@@ -9,6 +9,11 @@ export enum ErrorCode {
   UNAUTHORIZED = 'UNAUTHORIZED',
   FORBIDDEN = 'FORBIDDEN',
 
+  // Auth specific (Phase B)
+  AUTH_REQUIRED = 'AUTH_REQUIRED',
+  AUTH_INVALID = 'AUTH_INVALID',
+  RATE_LIMITED = 'RATE_LIMITED',
+
   // OAuth specific
   OAUTH_STATE_MISMATCH = 'OAUTH_STATE_MISMATCH',
   OAUTH_TOKEN_EXCHANGE_FAILED = 'OAUTH_TOKEN_EXCHANGE_FAILED',
@@ -16,6 +21,9 @@ export enum ErrorCode {
 
   // Database
   DATABASE_ERROR = 'DATABASE_ERROR',
+
+  // Sync specific (Phase E)
+  CONFLICT = 'CONFLICT',
 
   // eBay specific
   EBAY_API_ERROR = 'EBAY_API_ERROR',
@@ -83,6 +91,62 @@ export class UnauthorizedError extends AppError {
 }
 
 /**
+ * Forbidden error (403)
+ */
+export class ForbiddenError extends AppError {
+  constructor(message: string = 'Forbidden') {
+    super(ErrorCode.FORBIDDEN, message, 403);
+    this.name = 'ForbiddenError';
+  }
+}
+
+/**
+ * Auth required error (401) - Phase B
+ * Used when authentication is required but not provided
+ */
+export class AuthRequiredError extends AppError {
+  constructor(message: string = 'Sign in is required to use this feature.') {
+    super(ErrorCode.AUTH_REQUIRED, message, 401);
+    this.name = 'AuthRequiredError';
+  }
+}
+
+/**
+ * Auth invalid error (401) - Phase B
+ * Used when authentication is provided but invalid/expired
+ */
+export class AuthInvalidError extends AppError {
+  constructor(message: string = 'Your session is invalid or expired. Please sign in again.') {
+    super(ErrorCode.AUTH_INVALID, message, 401);
+    this.name = 'AuthInvalidError';
+  }
+}
+
+/**
+ * Rate limit error (429) - Phase B
+ * Used when rate limit is exceeded
+ */
+export class RateLimitError extends AppError {
+  constructor(
+    message: string = 'Rate limit reached. Please try again later.',
+    public readonly resetAt?: string
+  ) {
+    super(ErrorCode.RATE_LIMITED, message, 429, { resetAt });
+    this.name = 'RateLimitError';
+  }
+
+  override toJSON() {
+    return {
+      error: {
+        code: this.code,
+        message: this.message,
+        resetAt: this.resetAt,
+      },
+    };
+  }
+}
+
+/**
  * OAuth state mismatch error (400)
  */
 export class OAuthStateMismatchError extends AppError {
@@ -118,5 +182,16 @@ export class DatabaseError extends AppError {
   constructor(message: string, details?: unknown) {
     super(ErrorCode.DATABASE_ERROR, message, 500, details);
     this.name = 'DatabaseError';
+  }
+}
+
+/**
+ * Conflict error (409) - Phase E
+ * Used for optimistic locking conflicts during sync
+ */
+export class ConflictError extends AppError {
+  constructor(message: string = 'Resource conflict detected', details?: unknown) {
+    super(ErrorCode.CONFLICT, message, 409, details);
+    this.name = 'ConflictError';
   }
 }

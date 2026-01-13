@@ -82,6 +82,13 @@ data class ScannedItemEntity(
     val lastEnrichedAt: Long?,
     val capturedShotTypesJson: String?,
     val isReadyForListing: Int,
+    // Sync fields (Phase E: v10)
+    val serverId: String? = null,
+    val needsSync: Int = 1,
+    val lastSyncedAt: Long? = null,
+    val syncVersion: Int = 1,
+    val clientUpdatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null,
 )
 
 fun ScannedItem.toEntity(): ScannedItemEntity {

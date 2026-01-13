@@ -1401,6 +1401,8 @@ class AssistantViewModel
             // Map backend failures to availability
             if (failure != null) {
                 val (reason, canRetry, retryAfter) = when (failure.type) {
+                    AssistantBackendErrorType.AUTH_REQUIRED,
+                    AssistantBackendErrorType.AUTH_INVALID,
                     AssistantBackendErrorType.UNAUTHORIZED ->
                         Triple(UnavailableReason.UNAUTHORIZED, false, null)
                     AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->
@@ -1544,6 +1546,10 @@ class AssistantViewModel
             val base = "Switched to Local Helper"
 
             return when (failure.type) {
+                AssistantBackendErrorType.AUTH_REQUIRED ->
+                    "$base: Sign in required. Tap Settings to sign in."
+                AssistantBackendErrorType.AUTH_INVALID ->
+                    "$base: Session expired. Sign in again in Settings."
                 AssistantBackendErrorType.UNAUTHORIZED ->
                     "$base: $statusLabel. Check your account."
                 AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED ->

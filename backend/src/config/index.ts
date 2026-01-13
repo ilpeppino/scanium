@@ -153,11 +153,15 @@ export const configSchema = z.object({
       rateLimitPerMinute: z.coerce.number().int().min(1).default(60),
       ipRateLimitPerMinute: z.coerce.number().int().min(1).default(60),
       deviceRateLimitPerMinute: z.coerce.number().int().min(1).default(30),
+      /** Phase B: Per-user rate limit (authenticated requests only) */
+      userRateLimitPerMinute: z.coerce.number().int().min(1).default(20),
       rateLimitWindowSeconds: z.coerce.number().int().min(1).default(60),
       rateLimitBackoffSeconds: z.coerce.number().int().min(1).default(30),
       rateLimitBackoffMaxSeconds: z.coerce.number().int().min(1).default(900),
       rateLimitRedisUrl: z.string().optional(),
       dailyQuota: z.coerce.number().int().min(1).default(200),
+      /** Phase B: Per-user daily quota (authenticated requests only) */
+      userDailyQuota: z.coerce.number().int().min(1).default(100),
       maxInputChars: z.coerce.number().int().min(100).max(10000).default(2000),
       maxOutputTokens: z.coerce.number().int().min(50).max(2000).default(500),
       maxContextItems: z.coerce.number().int().min(1).max(50).default(10),
@@ -271,6 +275,25 @@ export const configSchema = z.object({
     scopes: z.string().min(1),
     tokenEncryptionKey: z.string().min(32),
   }),
+
+  // Google OAuth authentication
+  auth: z
+    .object({
+      googleClientId: z.string().min(1),
+      sessionSecret: z.string().min(32),
+      sessionExpirySeconds: z.coerce
+        .number()
+        .int()
+        .min(3600)
+        .default(2592000), // 30 days (access token)
+      // Phase C: Refresh token support
+      refreshTokenExpirySeconds: z.coerce
+        .number()
+        .int()
+        .min(7200)
+        .default(7776000), // 90 days (refresh token)
+    })
+    .optional(),
 
   // Security
   sessionSigningSecret: z
@@ -419,6 +442,12 @@ export function loadConfig(): Config {
       redirectPath: process.env.EBAY_REDIRECT_PATH,
       scopes: process.env.EBAY_SCOPES,
       tokenEncryptionKey: process.env.EBAY_TOKEN_ENCRYPTION_KEY,
+    },
+    auth: {
+      googleClientId: process.env.GOOGLE_OAUTH_CLIENT_ID,
+      sessionSecret: process.env.AUTH_SESSION_SECRET,
+      sessionExpirySeconds: process.env.AUTH_SESSION_EXPIRY_SECONDS,
+      refreshTokenExpirySeconds: process.env.AUTH_REFRESH_TOKEN_EXPIRY_SECONDS,
     },
     sessionSigningSecret: process.env.SESSION_SIGNING_SECRET,
     security: {

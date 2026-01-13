@@ -68,6 +68,25 @@
     <string name="settings_upgrade_cta">Upgrade</string>
     <string name="settings_manage_subscription">Manage</string>
 
+    <!-- Authentication -->
+    <string name="settings_sign_in_google">Continue with Google</string>
+    <string name="settings_sign_in_google_desc">Sign in to sync your data and enable personalized features</string>
+    <string name="settings_sign_out">Sign Out</string>
+    <string name="settings_refresh_session">Refresh Session</string>
+    <string name="settings_session_expires_in_days">Expires in %d days</string>
+    <string name="settings_session_expires_in_day">Expires in 1 day</string>
+    <string name="settings_session_expires_soon">Expires soon</string>
+    <string name="settings_signed_in_as">Signed in as %1$s</string>
+
+    <!-- Phase D: Account deletion -->
+    <string name="settings_delete_account">Delete Account</string>
+    <string name="settings_delete_account_title">Delete Your Account?</string>
+    <string name="settings_delete_account_message">This will permanently delete your account and all associated data including:\n\n• Account profile\n• All sessions\n• eBay marketplace connections\n• All listings and drafts\n• Scan history\n\nThis action cannot be undone.</string>
+    <string name="settings_delete_account_confirm">Delete Account</string>
+    <string name="settings_delete_account_cancel">Cancel</string>
+    <string name="settings_delete_account_success">Your account has been deleted successfully.</string>
+    <string name="settings_delete_account_error">Failed to delete account: %1$s</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Camera &amp; Scanning</string>
     <string name="settings_section_storage">Storage</string>

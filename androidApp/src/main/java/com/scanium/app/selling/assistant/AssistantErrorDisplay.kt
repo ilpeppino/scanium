@@ -22,6 +22,26 @@ object AssistantErrorDisplay {
         if (failure == null) return null
 
         return when (failure.type) {
+            AssistantBackendErrorType.AUTH_REQUIRED ->
+                ErrorInfo(
+                    title = "Sign In Required",
+                    explanation =
+                        "You need to sign in to use the online assistant. " +
+                            "The assistant requires authentication for personalized responses.",
+                    actionHint = "Tap to sign in with Google.",
+                    showRetry = false,
+                )
+
+            AssistantBackendErrorType.AUTH_INVALID ->
+                ErrorInfo(
+                    title = "Session Expired",
+                    explanation =
+                        "Your session has expired or is no longer valid. " +
+                            "Please sign in again to continue using the assistant.",
+                    actionHint = "Sign in again to continue.",
+                    showRetry = false,
+                )
+
             AssistantBackendErrorType.UNAUTHORIZED ->
                 ErrorInfo(
                     title = "Authorization Required",
@@ -109,6 +129,8 @@ object AssistantErrorDisplay {
         if (failure == null) return "Online"
 
         return when (failure.type) {
+            AssistantBackendErrorType.AUTH_REQUIRED -> "Sign In Required"
+            AssistantBackendErrorType.AUTH_INVALID -> "Session Expired"
             AssistantBackendErrorType.UNAUTHORIZED -> "Not Authorized"
             AssistantBackendErrorType.PROVIDER_NOT_CONFIGURED -> "Not Configured"
             AssistantBackendErrorType.RATE_LIMITED -> "Rate Limited"

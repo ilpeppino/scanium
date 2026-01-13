@@ -240,6 +240,49 @@ export const pricingCacheHitsCounter = new Counter({
 });
 
 // =============================================================================
+// Authentication Metrics (Phase C)
+// =============================================================================
+
+/**
+ * Counter for authentication login attempts.
+ */
+export const authLoginCounter = new Counter({
+  name: 'scanium_auth_login_total',
+  help: 'Total number of authentication login attempts',
+  labelNames: ['status'] as const, // 'success' or 'failure'
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for token refresh attempts.
+ */
+export const authRefreshCounter = new Counter({
+  name: 'scanium_auth_refresh_total',
+  help: 'Total number of token refresh attempts',
+  labelNames: ['status'] as const, // 'success' or 'failure'
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for logout operations.
+ */
+export const authLogoutCounter = new Counter({
+  name: 'scanium_auth_logout_total',
+  help: 'Total number of logout operations',
+  registers: [metricsRegistry],
+});
+
+/**
+ * Counter for invalid auth attempts (expired/invalid tokens).
+ */
+export const authInvalidCounter = new Counter({
+  name: 'scanium_auth_invalid_total',
+  help: 'Total number of invalid auth attempts',
+  labelNames: ['reason'] as const, // 'expired', 'invalid', 'not_found'
+  registers: [metricsRegistry],
+});
+
+// =============================================================================
 // Rate Limiting Metrics
 // =============================================================================
 
@@ -689,4 +732,36 @@ export function recordExternalApiCall(
 ): void {
   externalApiDurationHistogram.observe({ service, operation }, durationMs);
   externalApiCallsCounter.inc({ service, operation, status });
+}
+
+// =============================================================================
+// Authentication Helper Functions (Phase C)
+// =============================================================================
+
+/**
+ * Record authentication login attempt.
+ */
+export function recordAuthLogin(status: 'success' | 'failure'): void {
+  authLoginCounter.inc({ status });
+}
+
+/**
+ * Record token refresh attempt.
+ */
+export function recordAuthRefresh(status: 'success' | 'failure'): void {
+  authRefreshCounter.inc({ status });
+}
+
+/**
+ * Record logout operation.
+ */
+export function recordAuthLogout(): void {
+  authLogoutCounter.inc();
+}
+
+/**
+ * Record invalid auth attempt.
+ */
+export function recordAuthInvalid(reason: 'expired' | 'invalid' | 'not_found'): void {
+  authInvalidCounter.inc({ reason });
 }
