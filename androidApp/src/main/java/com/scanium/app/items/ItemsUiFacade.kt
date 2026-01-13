@@ -269,6 +269,38 @@ class ItemsUiFacade(
     }
 
     /**
+     * Add items from multi-object capture and trigger crop-based enrichment.
+     */
+    fun addItemsFromMultiObjectCapture(
+        context: Context,
+        items: List<ScannedItem>,
+        fullImageBitmap: android.graphics.Bitmap,
+    ) {
+        Log.i(TAG, "Processing ${items.size} items from multi-object capture")
+
+        // Add items synchronously to get aggregated IDs
+        val aggregatedItems = stateManager.addItemsSync(items)
+
+        Log.i(TAG, "Aggregated ${aggregatedItems.size} items")
+
+        // Trigger crop-based enrichment for each item
+        for (aggregated in aggregatedItems) {
+            val boundingBox = aggregated.boundingBox
+            cropBasedEnricher.enrichFromCrop(
+                context = context,
+                scope = scope,
+                fullImage = fullImageBitmap,
+                boundingBox = boundingBox,
+                itemId = aggregated.aggregatedId,
+                stateManager = stateManager,
+            )
+        }
+
+        // Emit navigation event if enabled
+        emitNavigateToItemListIfEnabled(aggregatedItems.size)
+    }
+
+    /**
      * Remove an item from the list.
      */
     fun removeItem(itemId: String) {
@@ -464,7 +496,7 @@ class ItemsUiFacade(
         itemId: String,
         photoIds: Set<String>,
     ) {
-        stateManager.deletePhotosFromItem(itemId, photoIds)
+        stateManager.removePhotosFromItem(itemId, photoIds)
     }
 
     // ==================== Aggregation Operations ====================
