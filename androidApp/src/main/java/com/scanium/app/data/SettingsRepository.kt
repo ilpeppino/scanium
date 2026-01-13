@@ -402,8 +402,8 @@ class SettingsRepository(
      */
     val assistantCountryCodeFlow: Flow<String> =
         dataStore.data.map { preferences ->
-            val raw = preferences[ASSISTANT_REGION_KEY]
-            raw ?: detectCountryCodeFromLocale()
+            val raw = preferences[ASSISTANT_REGION_KEY] ?: detectCountryCodeFromLocale()
+            normalizeCountryCode(raw)
         }
 
     /**
@@ -427,9 +427,23 @@ class SettingsRepository(
         val countryCode = java.util.Locale.getDefault().country.uppercase()
         // Return the device country code if it looks valid (2 letters)
         return if (countryCode.length == 2) {
-            countryCode
+            normalizeCountryCode(countryCode)
         } else {
             "GB" // Fallback to UK
+        }
+    }
+
+    /**
+     * Normalize country codes to match ISO 3166-1 alpha-2 standard used by marketplaces.json.
+     * Handles common variations (e.g., UK → GB).
+     *
+     * @param countryCode Country code to normalize
+     * @return Normalized ISO 3166-1 alpha-2 country code
+     */
+    private fun normalizeCountryCode(countryCode: String): String {
+        return when (countryCode.uppercase()) {
+            "UK" -> "GB"  // United Kingdom: UK is common but ISO standard is GB
+            else -> countryCode.uppercase()
         }
     }
 
@@ -1020,9 +1034,9 @@ class SettingsRepository(
      * Preserves existing user choices while initializing the new structure.
      */
     private fun migrateToUnifiedSettings(preferences: androidx.datastore.preferences.core.MutablePreferences) {
-        // 1) Initialize primaryRegionCountry from existing marketplace country, else system, else "NL"
+        // 1) Initialize primaryRegionCountry from existing marketplace country, else system, else "GB"
         val existingMarketplaceCountry = preferences[ASSISTANT_REGION_KEY]
-        val primaryCountry = existingMarketplaceCountry ?: detectCountryCodeFromLocale()
+        val primaryCountry = normalizeCountryCode(existingMarketplaceCountry ?: detectCountryCodeFromLocale())
         preferences[PRIMARY_REGION_COUNTRY_KEY] = primaryCountry
 
         // 2) Initialize primaryLanguage from existing app language, else system, else "en"
@@ -1084,7 +1098,8 @@ class SettingsRepository(
 
     val primaryRegionCountryFlow: Flow<String> =
         dataStore.data.safeMap(detectCountryCodeFromLocale()) { preferences ->
-            preferences[PRIMARY_REGION_COUNTRY_KEY] ?: detectCountryCodeFromLocale()
+            val raw = preferences[PRIMARY_REGION_COUNTRY_KEY] ?: detectCountryCodeFromLocale()
+            normalizeCountryCode(raw)
         }
 
     /**
@@ -1092,10 +1107,11 @@ class SettingsRepository(
      * This sets a custom marketplace override to preserve the user's manual choice.
      */
     suspend fun setPrimaryRegionCountry(countryCode: String) {
+        val normalized = normalizeCountryCode(countryCode)
         dataStore.edit { preferences ->
-            preferences[PRIMARY_REGION_COUNTRY_KEY] = countryCode.uppercase()
+            preferences[PRIMARY_REGION_COUNTRY_KEY] = normalized
             // Mark marketplace country as manually set (custom override)
-            preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY] = "custom:${countryCode.uppercase()}"
+            preferences[MARKETPLACE_COUNTRY_OVERRIDE_KEY] = "custom:$normalized"
         }
     }
 
