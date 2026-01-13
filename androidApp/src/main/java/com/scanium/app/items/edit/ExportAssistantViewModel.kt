@@ -517,6 +517,7 @@ class ExportAssistantViewModel
 
     /**
      * Build image attachment for the assistant request.
+     * Loads image from disk if not available in cache.
      */
     private fun buildImageAttachments(item: ScannedItem): List<ItemImageAttachment> {
         val thumbnail = item.thumbnail ?: item.thumbnailRef ?: return emptyList()
@@ -543,7 +544,30 @@ class ExportAssistantViewModel
                         )
                     )
                 } else {
-                    emptyList()
+                    // Cache miss: Load photo from disk if available
+                    val photoFile = item.primaryPhoto?.let { photo ->
+                        java.io.File(context.filesDir, "item_photos/${item.id}/${photo.id}.jpg")
+                    }
+                    if (photoFile != null && photoFile.exists()) {
+                        try {
+                            val bytes = photoFile.readBytes()
+                            val mimeType = item.primaryPhoto?.mimeType ?: "image/jpeg"
+                            listOf(
+                                ItemImageAttachment(
+                                    itemId = item.id,
+                                    imageBytes = bytes,
+                                    mimeType = mimeType,
+                                    filename = "thumbnail.jpg",
+                                )
+                            )
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to load photo from disk for Export Assistant: ${e.message}", e)
+                            emptyList()
+                        }
+                    } else {
+                        Log.w(TAG, "No photo available for Export Assistant (cache miss + no file): itemId=${item.id}")
+                        emptyList()
+                    }
                 }
             }
         }
