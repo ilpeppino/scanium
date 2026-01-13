@@ -392,12 +392,14 @@ export function parseListingResponse(content: string): ParsedListingResponse {
       title: typeof parsed.title === 'string' ? parsed.title : undefined,
       description: typeof parsed.description === 'string' ? parsed.description : undefined,
       suggestedDraftUpdates: Array.isArray(parsed.suggestedDraftUpdates)
-        ? parsed.suggestedDraftUpdates.map((update: Record<string, unknown>) => ({
-            field: update.field === 'title' || update.field === 'description' ? update.field : 'title',
-            value: String(update.value ?? ''),
-            confidence: validateConfidence(update.confidence),
-            requiresConfirmation: Boolean(update.requiresConfirmation),
-          }))
+        ? parsed.suggestedDraftUpdates
+            .map((update: Record<string, unknown>) => ({
+              field: update.field === 'title' || update.field === 'description' ? update.field : 'title',
+              value: String(update.value ?? ''),
+              confidence: validateConfidence(update.confidence),
+              requiresConfirmation: Boolean(update.requiresConfirmation),
+            }))
+            .filter((update: { value: string }) => update.value.trim().length > 0) // Filter out empty/null values
         : undefined,
       warnings: Array.isArray(parsed.warnings)
         ? parsed.warnings.filter((w: unknown) => typeof w === 'string')
