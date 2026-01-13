@@ -420,7 +420,7 @@ class SettingsRepository(
         }
 
     /**
-     * Detect country code from device locale with fallback to NL.
+     * Detect country code from device locale with fallback to GB (UK).
      * Returns ISO 2-letter country code (e.g., "NL", "DE", "PL").
      */
     private fun detectCountryCodeFromLocale(): String {
@@ -429,8 +429,55 @@ class SettingsRepository(
         return if (countryCode.length == 2) {
             countryCode
         } else {
-            "NL" // Fallback to Netherlands
+            "GB" // Fallback to UK
         }
+    }
+
+    /**
+     * Map an app language tag to a marketplace country code.
+     *
+     * Rules:
+     * - If language maps to a country in marketplaces.json → use that country
+     * - If language does NOT map to any country in marketplaces → default to GB (UK)
+     *
+     * @param languageTag Language tag (e.g., "en", "nl", "pt-BR", "system")
+     * @return ISO 2-letter country code for marketplace (e.g., "NL", "GB")
+     */
+    fun mapLanguageToMarketplaceCountry(languageTag: String): String {
+        return when (languageTag.lowercase()) {
+            "nl" -> "NL"  // Dutch → Netherlands
+            "de" -> "DE"  // German → Germany
+            "fr" -> "FR"  // French → France
+            "it" -> "IT"  // Italian → Italy
+            "es" -> "ES"  // Spanish → Spain
+            "pt" -> "PT"  // Portuguese → Portugal
+            "en" -> "GB"  // English → United Kingdom
+            "pt-br" -> "GB"  // Brazilian Portuguese → UK (Brazil not in marketplace list)
+            "system" -> {
+                // For system language, try to get device locale country
+                val deviceCountry = detectCountryCodeFromLocale()
+                // Verify it's in the marketplace list, else default to GB
+                if (isValidMarketplaceCountry(deviceCountry)) deviceCountry else "GB"
+            }
+            else -> "GB"  // Fallback to UK for any other language
+        }
+    }
+
+    /**
+     * Check if a country code is valid in the marketplaces.json file.
+     *
+     * @param countryCode ISO 2-letter country code
+     * @return true if the country exists in marketplaces.json
+     */
+    private fun isValidMarketplaceCountry(countryCode: String): Boolean {
+        // List of countries from marketplaces.json (as of 2026-01-13)
+        val validCountries = setOf(
+            "AL", "AD", "AT", "BE", "BG", "CH", "CY", "CZ", "DE", "DK",
+            "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IT",
+            "LI", "LT", "LU", "LV", "MC", "MT", "NL", "NO", "PL", "PT",
+            "RO", "SE", "SI", "SK", "SM", "VA"
+        )
+        return countryCode.uppercase() in validCountries
     }
 
     /**
