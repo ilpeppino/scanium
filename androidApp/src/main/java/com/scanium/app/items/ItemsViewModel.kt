@@ -148,28 +148,28 @@ class ItemsViewModel
         // ==================== Public State (Delegated to Facade) ====================
 
         /** Current list of scanned items */
-        val items: StateFlow<List<ScannedItem>> = facade.items
+        val items: StateFlow<List<ScannedItem>> get() = facade.items
 
         /** Current overlay tracks for camera detection visualization */
-        val overlayTracks: StateFlow<List<OverlayTrack>> = facade.overlayTracks
+        val overlayTracks: StateFlow<List<OverlayTrack>> get() = facade.overlayTracks
 
         /** Events emitted when new items are added (for animations) */
-        val itemAddedEvents: SharedFlow<ScannedItem> = facade.itemAddedEvents
+        val itemAddedEvents: SharedFlow<ScannedItem> get() = facade.itemAddedEvents
 
         /** Alerts for cloud classification errors */
-        val cloudClassificationAlerts: SharedFlow<CloudClassificationAlert> = facade.cloudClassificationAlerts
+        val cloudClassificationAlerts: SharedFlow<CloudClassificationAlert> get() = facade.cloudClassificationAlerts
 
         /** Alerts for persistence errors */
-        val persistenceAlerts: SharedFlow<PersistenceAlert> = facade.persistenceAlerts
+        val persistenceAlerts: SharedFlow<PersistenceAlert> get() = facade.persistenceAlerts
 
         /** UI events (e.g., navigation triggers) */
-        val uiEvents: SharedFlow<ItemsUiEvent> = facade.uiEvents
+        val uiEvents: SharedFlow<ItemsUiEvent> get() = facade.uiEvents
 
         /** Current similarity threshold for aggregation */
-        val similarityThreshold: StateFlow<Float> = facade.similarityThreshold
+        val similarityThreshold: StateFlow<Float> get() = facade.similarityThreshold
 
         /** Latest in-memory export payload for selected items */
-        val exportPayload: StateFlow<ExportPayload?> = facade.exportPayload
+        val exportPayload: StateFlow<ExportPayload?> get() = facade.exportPayload
 
         /** Latest detected QR URL (if any) - ViewModel-specific with TTL */
         private val _latestQrUrl = MutableStateFlow<String?>(null)
@@ -180,11 +180,7 @@ class ItemsViewModel
         val lastQrSeenTimestampMs: StateFlow<Long> = _lastQrSeenTimestampMs
 
         /** Current ROI filter result for diagnostics */
-        val lastRoiFilterResult = facade.lastRoiFilterResult
-
-        init {
-            Log.i(TAG, "ItemsViewModel initialized with facade")
-        }
+        val lastRoiFilterResult get() = facade.lastRoiFilterResult
 
         // ==================== Item CRUD Operations (Delegated to Facade) ====================
 
