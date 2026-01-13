@@ -173,6 +173,9 @@ fun CameraScreen(
 
     // Camera permission state
     val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    val hasCameraPermission by remember {
+        derivedStateOf { cameraPermissionState.status.isGranted }
+    }
 
     // Initialize CameraX manager
     val cameraManager =
@@ -380,7 +383,7 @@ fun CameraScreen(
 
     // Show permission education dialog or request permission on first launch
     LaunchedEffect(permissionEducationShown) {
-        if (!cameraPermissionState.status.isGranted) {
+        if (!hasCameraPermission) {
             if (!permissionEducationShown) {
                 // First launch: show education dialog before requesting permission
                 showPermissionEducationDialog = true
@@ -392,8 +395,8 @@ fun CameraScreen(
     }
 
     // Show language selection after camera permission is granted (but before tour)
-    LaunchedEffect(cameraPermissionState.status.isGranted, languageSelectionShown) {
-        if (cameraPermissionState.status.isGranted && !languageSelectionShown) {
+    LaunchedEffect(hasCameraPermission, languageSelectionShown) {
+        if (hasCameraPermission && !languageSelectionShown) {
             // Camera permission granted, show language selection dialog
             delay(300) // Brief delay for smooth transition
             showLanguageSelectionDialog = true
@@ -401,15 +404,15 @@ fun CameraScreen(
     }
 
     // Start tour after permission is granted AND language is selected (if tour is active)
-    LaunchedEffect(cameraPermissionState.status.isGranted, isTourActive, languageSelectionShown) {
-        if (cameraPermissionState.status.isGranted && isTourActive && languageSelectionShown) {
+    LaunchedEffect(hasCameraPermission, isTourActive, languageSelectionShown) {
+        if (hasCameraPermission && isTourActive && languageSelectionShown) {
             delay(300) // Let camera initialize
             tourViewModel?.startTour()
         }
     }
 
     LaunchedEffect(cameraPermissionState) {
-        snapshotFlow { cameraPermissionState.status.isGranted }
+        snapshotFlow { hasCameraPermission }
             .distinctUntilChanged()
             .collect { isGranted ->
                 cameraViewModel.onPermissionStateChanged(
@@ -429,8 +432,8 @@ fun CameraScreen(
     }
 
     // Check if ML Kit model is downloaded (first launch requirement)
-    LaunchedEffect(cameraPermissionState.status.isGranted) {
-        if (cameraPermissionState.status.isGranted) {
+    LaunchedEffect(hasCameraPermission) {
+        if (hasCameraPermission) {
             modelDownloadState = ModelDownloadState.Checking
             try {
                 Log.d("CameraScreen", "Checking ML Kit model availability...")
@@ -501,7 +504,7 @@ fun CameraScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
-            cameraPermissionState.status.isGranted && cameraState == CameraState.ERROR -> {
+            hasCameraPermission && cameraState == CameraState.ERROR -> {
                 CameraErrorContent(
                     error = cameraErrorState,
                     onRetry = {
@@ -514,7 +517,7 @@ fun CameraScreen(
                     onViewItems = onNavigateToItems,
                 )
             }
-            cameraPermissionState.status.isGranted -> {
+            hasCameraPermission -> {
                 // Camera preview
                 CameraPreview(
                     cameraManager = cameraManager,
@@ -981,7 +984,7 @@ fun CameraScreen(
                 )
 
                 // FTUE Tour Overlays
-                if (isTourActive && cameraPermissionState.status.isGranted) {
+                if (isTourActive && hasCameraPermission) {
                     when (currentTourStep?.key) {
                         com.scanium.app.ftue.TourStepKey.WELCOME -> {
                             com.scanium.app.ftue.WelcomeOverlay(
