@@ -455,10 +455,9 @@ class CameraXManager(
             val displayRotation = previewView.display.rotation
             targetRotation = displayRotation
 
-            // Setup preview
-            // CRITICAL FIX: Match Preview configuration to ImageAnalysis:
-            // 1. Same aspect ratio (4:3) ensures same sensor crop
-            // 2. Same target rotation ensures same coordinate system
+            // WYSIWYG FIX: Both Preview and ImageAnalysis MUST use the SAME aspect ratio
+            // to ensure what user sees matches what ML Kit analyzes.
+            // Using 4:3 aspect ratio for both (common camera sensor ratio).
             preview =
                 Preview.Builder()
                     .setTargetAspectRatio(AspectRatio.RATIO_4_3)
@@ -468,19 +467,18 @@ class CameraXManager(
                         it.setSurfaceProvider(previewView.surfaceProvider)
                     }
 
+            // CRITICAL: ImageAnalysis MUST use same 4:3 aspect ratio as Preview
+            // Previous 1280x720 (16:9) caused WYSIWYG mismatch - objects outside
+            // visible preview were detected, breaking user trust.
             imageAnalysis =
                 ImageAnalysis.Builder()
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setTargetRotation(displayRotation)
-                    .setResolutionSelector(
-                        buildResolutionSelector(
-                            android.util.Size(1280, 720),
-                        ),
-                    ) // Higher resolution for better detection
+                    .setTargetAspectRatio(AspectRatio.RATIO_4_3)
                     .build()
 
-            Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
+            Log.d(TAG, "ImageAnalysis configured with 4:3 aspect ratio (matching Preview)")
 
             // Setup high-resolution image capture for saving high-quality item images
             imageCapture = buildImageCapture(captureResolution, displayRotation)
