@@ -265,6 +265,13 @@ class ItemAggregator(
         detection: ScannedItem,
         item: AggregatedItem,
     ): Float {
+        // Hard filter: don't merge items from different captures (>2 seconds apart)
+        // This prevents items from separate photos from being incorrectly aggregated
+        val timestampDiffMs = kotlin.math.abs(detection.timestampMs - item.lastSeenTimestamp)
+        if (timestampDiffMs > 2000) {
+            return 0f
+        }
+
         // Hard filter: category must match if required
         if (config.categoryMatchRequired && detection.category != item.category) {
             return 0f
