@@ -2,6 +2,7 @@ package com.scanium.app.camera
 
 import android.os.SystemClock
 import android.os.Trace
+import android.util.Log
 import android.util.Size
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -143,6 +144,31 @@ fun DetectionOverlay(
                 scaleType = PreviewScaleType.FILL_CENTER,
             )
 
+        // DEBUG: Log transform details in portrait mode (rate-limited)
+        if (showGeometryDebug && rotationDegrees == 90 && detections.isNotEmpty()) {
+            val canvasMismatch =
+                kotlin.math.abs(canvasWidth - previewSize.width.toFloat()) > 1f ||
+                    kotlin.math.abs(canvasHeight - previewSize.height.toFloat()) > 1f
+            if (canvasMismatch) {
+                Log.w(
+                    "OverlayDebug",
+                    "[MISMATCH] canvas=${canvasWidth.toInt()}x${canvasHeight.toInt()} != " +
+                        "previewSize=${previewSize.width}x${previewSize.height}",
+                )
+            }
+            Log.d(
+                "OverlayDebug",
+                "[PORTRAIT] imageSize=${imageSize.width}x${imageSize.height}, " +
+                    "canvas=${canvasWidth.toInt()}x${canvasHeight.toInt()}, rotation=$rotationDegrees",
+            )
+            Log.d(
+                "OverlayDebug",
+                "[TRANSFORM] effective=${transform.effectiveImageWidth}x${transform.effectiveImageHeight}, " +
+                    "scale=${"%.3f".format(transform.scale)}, " +
+                    "offsetX=${"%.1f".format(transform.offsetX)}, offsetY=${"%.1f".format(transform.offsetY)}",
+            )
+        }
+
         // Bounding box appearance constants
         val minBoxStrokeWidth = 2.dp.toPx()
         val maxBoxStrokeWidth = 4.dp.toPx()
@@ -231,6 +257,19 @@ fun DetectionOverlay(
 
             // Debug logging (rate-limited to once per second)
             logBboxMappingDebug(detection.bboxNorm, transform, transformedBox)
+
+            // DEBUG: Enhanced logging for first detection in portrait
+            if (showGeometryDebug && rotationDegrees == 90 && detections.indexOf(detection) == 0) {
+                val bboxAspect = detection.bboxNorm.height / detection.bboxNorm.width
+                val screenAspect = transformedBox.height() / transformedBox.width()
+                Log.d(
+                    "OverlayDebug",
+                    "[BBOX_0] norm=(${detection.bboxNorm.left},${detection.bboxNorm.top})-(${detection.bboxNorm.right},${detection.bboxNorm.bottom}) " +
+                        "aspect=${"%.2f".format(bboxAspect)}, " +
+                        "screen=(${transformedBox.left.toInt()},${transformedBox.top.toInt()})-(${transformedBox.right.toInt()},${transformedBox.bottom.toInt()}) " +
+                        "aspect=${"%.2f".format(screenAspect)}",
+                )
+            }
 
             val topLeft = Offset(transformedBox.left, transformedBox.top)
             val boxSize = ComposeSize(transformedBox.width(), transformedBox.height())

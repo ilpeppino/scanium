@@ -254,4 +254,91 @@ class PortraitTransformRegressionTest {
         assertThat(actualCenterX).isWithin(50f).of(expectedCenterX)
         assertThat(actualCenterY).isWithin(50f).of(expectedCenterY)
     }
+
+    @Test
+    fun `portrait 90deg - top-left bbox does NOT appear at bottom-left (regression guard)`() {
+        // ARRANGE: Specific test for the "bottom-left offset" regression
+        val sensorWidth = 1280
+        val sensorHeight = 720
+        val rotationDegrees = 90
+        val previewWidth = 1080f
+        val previewHeight = 2400f
+
+        // ACT
+        val transform = calculateTransformWithRotation(
+            imageWidth = sensorWidth,
+            imageHeight = sensorHeight,
+            previewWidth = previewWidth,
+            previewHeight = previewHeight,
+            rotationDegrees = rotationDegrees,
+            scaleType = PreviewScaleType.FILL_CENTER
+        )
+
+        // Box clearly in top-left quadrant of upright portrait space
+        val topLeftBox = NormalizedRect(
+            left = 0.15f,
+            top = 0.1f,
+            right = 0.35f,
+            bottom = 0.25f
+        )
+
+        val previewBox = mapBboxToPreview(topLeftBox, transform)
+
+        // Calculate quadrant thresholds
+        val quadrantMidX = previewWidth / 2f
+        val quadrantMidY = previewHeight / 2f
+
+        println("=== REGRESSION GUARD: Top-left bbox offset test ===")
+        println("Input bbox (norm): left=${topLeftBox.left}, top=${topLeftBox.top}")
+        println("Transform: scale=${transform.scale}, offset=(${transform.offsetX}, ${transform.offsetY})")
+        println("Preview box: left=${previewBox.left}, top=${previewBox.top}, right=${previewBox.right}, bottom=${previewBox.bottom}")
+        println("Preview center: ($quadrantMidX, $quadrantMidY)")
+        println("Box center: (${(previewBox.left + previewBox.right)/2}, ${(previewBox.top + previewBox.bottom)/2})")
+
+        // CRITICAL ASSERTIONS:
+        // 1. Box should NOT be in bottom half (center Y should be less than midY)
+        val boxCenterY = (previewBox.top + previewBox.bottom) / 2f
+        assertThat(boxCenterY).isLessThan(quadrantMidY)
+
+        // 2. Box top should be in upper portion of screen
+        assertThat(previewBox.top).isLessThan(quadrantMidY)
+
+        // 3. Box should be in upper half of preview (sanity check)
+        assertThat(previewBox.bottom).isLessThan(quadrantMidY * 1.5f)
+    }
+
+    @Test
+    fun `portrait 90deg - realistic device dimensions produce correct mapping`() {
+        // Test with common real-world device dimensions
+        // Example: Pixel 6 Pro - 1440x3120 display, 1920x1080 camera
+        val sensorWidth = 1920
+        val sensorHeight = 1080
+        val rotationDegrees = 90
+        val previewWidth = 1440f
+        val previewHeight = 3120f
+
+        val transform = calculateTransformWithRotation(
+            imageWidth = sensorWidth,
+            imageHeight = sensorHeight,
+            previewWidth = previewWidth,
+            previewHeight = previewHeight,
+            rotationDegrees = rotationDegrees,
+            scaleType = PreviewScaleType.FILL_CENTER
+        )
+
+        // Effective dimensions after rotation: 1080x1920
+        assertThat(transform.effectiveImageWidth).isEqualTo(1080)
+        assertThat(transform.effectiveImageHeight).isEqualTo(1920)
+
+        // Test centered object
+        val centeredBox = NormalizedRect(left = 0.4f, top = 0.4f, right = 0.6f, bottom = 0.6f)
+        val screenBox = mapBboxToPreview(centeredBox, transform)
+
+        val boxCenterX = (screenBox.left + screenBox.right) / 2f
+        val boxCenterY = (screenBox.top + screenBox.bottom) / 2f
+
+        // Box should be reasonably centered (within 10% of preview)
+        assertThat(boxCenterX).isWithin(previewWidth * 0.1f).of(previewWidth / 2f)
+        assertThat(boxCenterY).isWithin(previewHeight * 0.1f).of(previewHeight / 2f)
+    }
 }
