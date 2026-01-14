@@ -51,4 +51,21 @@ interface MetricPort {
         value: Double,
         attributes: Map<String, String> = emptyMap(),
     )
+
+    /**
+     * Records a histogram metric for measuring distributions.
+     *
+     * Histograms are ideal for latency measurements where you need
+     * percentile calculations (p50, p95, p99). The value is recorded
+     * into predefined buckets for aggregation.
+     *
+     * @param name Metric name (e.g., "ml_inference_latency_ms")
+     * @param value Observed value (e.g., latency in milliseconds)
+     * @param attributes Sanitized attributes for this metric
+     */
+    fun histogram(
+        name: String,
+        value: Double,
+        attributes: Map<String, String> = emptyMap(),
+    )
 }

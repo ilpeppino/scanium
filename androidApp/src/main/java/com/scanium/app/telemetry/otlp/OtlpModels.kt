@@ -117,6 +117,7 @@ data class Metric(
     val unit: String = "",
     val sum: Sum? = null,
     val gauge: Gauge? = null,
+    val histogram: Histogram? = null,
 )
 
 @Serializable
@@ -130,6 +131,22 @@ data class Sum(
 @Serializable
 data class Gauge(
     val dataPoints: List<NumberDataPoint>,
+)
+
+@Serializable
+data class Histogram(
+    val dataPoints: List<HistogramDataPoint>,
+    val aggregationTemporality: Int = 2, // CUMULATIVE
+)
+
+@Serializable
+data class HistogramDataPoint(
+    val timeUnixNano: String,
+    val count: Long,
+    val sum: Double,
+    val bucketCounts: List<Long>,
+    val explicitBounds: List<Double>,
+    val attributes: List<KeyValue> = emptyList(),
 )
 
 @Serializable

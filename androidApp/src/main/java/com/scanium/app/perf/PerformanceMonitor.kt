@@ -116,6 +116,24 @@ object PerformanceMonitor {
     }
 
     /**
+     * Records a histogram metric for measuring distributions.
+     *
+     * Histograms are ideal for latency measurements where you need
+     * percentile calculations (p50, p95, p99).
+     *
+     * @param name Metric name
+     * @param value Observed value
+     * @param attributes Additional attributes for context
+     */
+    fun recordHistogram(
+        name: String,
+        value: Double,
+        attributes: Map<String, String> = emptyMap(),
+    ) {
+        telemetry?.histogram(name, value, attributes)
+    }
+
+    /**
      * Increments a counter metric.
      *
      * @param name Metric name
@@ -164,7 +182,10 @@ object PerformanceMonitor {
     }
 
     /**
-     * Measures ML inference duration and records metrics.
+     * Measures ML inference duration and records metrics as a histogram.
+     *
+     * Uses histogram metric type for proper percentile calculations (p50, p95, p99)
+     * in Grafana dashboards.
      *
      * @param detectorType Type of detector (e.g., "object_detection", "barcode", "text")
      * @param block The ML inference code to measure
@@ -174,12 +195,22 @@ object PerformanceMonitor {
         detectorType: String,
         block: () -> T,
     ): T {
-        return measure(
-            metricName = Metrics.ML_INFERENCE_LATENCY_MS,
-            spanName = Spans.ML_INFERENCE,
-            attributes = mapOf("detector_type" to detectorType),
-            block = block,
-        )
+        val startTime = SystemClock.elapsedRealtime()
+        Trace.beginSection(Spans.ML_INFERENCE)
+        val span = beginSpan(Spans.ML_INFERENCE, mapOf("detector_type" to detectorType))
+
+        return try {
+            block()
+        } catch (e: Exception) {
+            span?.recordError(e.message ?: "Unknown error")
+            throw e
+        } finally {
+            span?.end()
+            Trace.endSection()
+            val duration = SystemClock.elapsedRealtime() - startTime
+            // Record as histogram for percentile calculations (p50, p95, p99)
+            recordHistogram(Metrics.ML_INFERENCE_LATENCY_MS, duration.toDouble(), mapOf("detector_type" to detectorType))
+        }
     }
 
     /**
