@@ -1,0 +1,464 @@
+package com.scanium.app.camera
+
+import android.graphics.Bitmap
+import android.os.SystemClock
+import android.util.Log
+import androidx.camera.core.ImageProxy
+import com.google.mlkit.vision.common.InputImage
+import com.scanium.app.BuildConfig
+import com.scanium.app.camera.detection.DetectionEvent
+import com.scanium.app.camera.detection.DetectionRouter
+import com.scanium.app.camera.detection.DocumentCandidate
+import com.scanium.app.camera.detection.DocumentCandidateDetector
+import com.scanium.app.camera.detection.DocumentCandidateState
+import com.scanium.app.items.ScannedItem
+import com.scanium.app.ml.BarcodeDetectorClient
+import com.scanium.app.ml.DetectionResult
+import com.scanium.app.ml.DocumentTextRecognitionClient
+import com.scanium.app.ml.ObjectDetectorClient
+import com.scanium.app.perf.PerformanceMonitor
+import com.scanium.app.tracking.ObjectTracker
+import com.scanium.core.models.scanning.GuidanceState
+import com.scanium.core.models.scanning.ScanGuidanceState
+import com.scanium.core.tracking.CandidateInfo
+import com.scanium.core.tracking.ScanGuidanceManager
+import com.scanium.telemetry.facade.Telemetry
+
+internal class CameraFrameAnalyzer(
+    private val telemetry: Telemetry?,
+    private val objectDetector: ObjectDetectorClient,
+    private val barcodeDetector: BarcodeDetectorClient,
+    private val textRecognizer: DocumentTextRecognitionClient,
+    private val detectionRouter: DetectionRouter,
+    private val objectTracker: ObjectTracker,
+    private val scanGuidanceManager: ScanGuidanceManager,
+    private val documentCandidateDetector: DocumentCandidateDetector,
+    private val imageConverter: CameraImageConverter,
+    private val scanDiagnostics: CameraScanDiagnostics,
+    private val getDocumentCandidateState: () -> DocumentCandidateState?,
+    private val updateDocumentCandidateState: (DocumentCandidateState?) -> Unit,
+    private val updateScanGuidanceState: (ScanGuidanceState) -> Unit,
+) {
+    companion object {
+        private const val TAG = "CameraXManager"
+        private const val DEFAULT_MOTION_SCORE = 0.2
+        private const val LUMA_SAMPLE_STEP = 8
+        private const val DOCUMENT_CANDIDATE_TTL_MS = 800L
+        private const val DOCUMENT_CANDIDATE_MIN_CONFIDENCE = 0.45f
+    }
+
+    private var lastMotionScore = DEFAULT_MOTION_SCORE
+    private val lumaSampleBuffers = arrayOfNulls<ByteArray>(2)
+    private var currentLumaBufferIndex = 0
+    private var lumaBufferSize = 0
+    private var hasValidPreviousLumaSample = false
+
+    private var lastCropRectLogTime = 0L
+    private val cropRectLogIntervalMs = 5000L
+
+    fun resetMotionTracking() {
+        lastMotionScore = DEFAULT_MOTION_SCORE
+    }
+
+    fun getLastMotionScore(): Double = lastMotionScore
+
+    fun analysisIntervalMsForMotion(motionScore: Double): Long =
+        when {
+            motionScore <= 0.1 -> 600L
+            motionScore <= 0.5 -> 500L
+            else -> 400L
+        }
+
+    fun computeMotionScore(imageProxy: ImageProxy): Double {
+        val plane = imageProxy.planes.firstOrNull() ?: return lastMotionScore
+        val width = imageProxy.width
+        val height = imageProxy.height
+        if (width == 0 || height == 0) return lastMotionScore
+
+        val sampleWidth = (width + LUMA_SAMPLE_STEP - 1) / LUMA_SAMPLE_STEP
+        val sampleHeight = (height + LUMA_SAMPLE_STEP - 1) / LUMA_SAMPLE_STEP
+        val sampleSize = sampleWidth * sampleHeight
+
+        if (lumaBufferSize != sampleSize) {
+            lumaSampleBuffers[0] = ByteArray(sampleSize)
+            lumaSampleBuffers[1] = ByteArray(sampleSize)
+            lumaBufferSize = sampleSize
+            currentLumaBufferIndex = 0
+            hasValidPreviousLumaSample = false
+            Log.d(TAG, "Allocated luma sample buffers: $sampleSize bytes each")
+        }
+
+        val currentSample = lumaSampleBuffers[currentLumaBufferIndex]!!
+        val previousSample = lumaSampleBuffers[1 - currentLumaBufferIndex]!!
+
+        val buffer = plane.buffer
+        val rowStride = plane.rowStride
+        val pixelStride = plane.pixelStride
+        var sampleIndex = 0
+        var y = 0
+        while (y < height) {
+            var x = 0
+            while (x < width) {
+                val bufferIndex = y * rowStride + x * pixelStride
+                currentSample[sampleIndex] = buffer.get(bufferIndex)
+                sampleIndex++
+                x += LUMA_SAMPLE_STEP
+            }
+            y += LUMA_SAMPLE_STEP
+        }
+
+        val motionScore =
+            if (hasValidPreviousLumaSample) {
+                var diffSum = 0L
+                for (i in 0 until sampleIndex) {
+                    diffSum +=
+                        kotlin.math.abs(
+                            (currentSample[i].toInt() and 0xFF) - (previousSample[i].toInt() and 0xFF),
+                        )
+                }
+                diffSum.toDouble() / (sampleIndex * 255.0)
+            } else {
+                lastMotionScore
+            }
+
+        currentLumaBufferIndex = 1 - currentLumaBufferIndex
+        hasValidPreviousLumaSample = true
+        lastMotionScore = motionScore
+        return motionScore
+    }
+
+    fun updateDocumentCandidateState(candidate: DocumentCandidate?, timestampMs: Long) {
+        val current = getDocumentCandidateState()
+        if (candidate != null && candidate.confidence >= DOCUMENT_CANDIDATE_MIN_CONFIDENCE) {
+            updateDocumentCandidateState(
+                DocumentCandidateState(
+                    candidate = candidate,
+                    lastSeenMs = timestampMs,
+                    averageProcessingMs = documentCandidateDetector.averageProcessingMs(),
+                ),
+            )
+            return
+        }
+
+        if (current != null && timestampMs - current.lastSeenMs > DOCUMENT_CANDIDATE_TTL_MS) {
+            updateDocumentCandidateState(null)
+        }
+    }
+
+    suspend fun processImageProxy(
+        imageProxy: ImageProxy,
+        scanMode: ScanMode,
+        isScanning: Boolean,
+        edgeInsetRatio: Float,
+        useStreamMode: Boolean = false,
+        onDetectionEvent: (DetectionEvent) -> Unit = {},
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        var cachedBitmap: Bitmap? = null
+        val frameStartTime = SystemClock.elapsedRealtime()
+        val span =
+            telemetry?.beginSpan(
+                PerformanceMonitor.Spans.FRAME_ANALYSIS,
+                mapOf(
+                    "scan_mode" to scanMode.name,
+                    "stream_mode" to useStreamMode.toString(),
+                ),
+            )
+        return try {
+            Log.i(TAG, ">>> processImageProxy: START - scanMode=$scanMode, useStreamMode=$useStreamMode, isScanning=$isScanning")
+
+            val mediaImage =
+                imageProxy.image ?: run {
+                    Log.e(TAG, "processImageProxy: mediaImage is null")
+                    return Pair(emptyList(), emptyList())
+                }
+            val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+
+            val now = System.currentTimeMillis()
+            if (now - lastCropRectLogTime >= cropRectLogIntervalMs) {
+                Log.i(TAG, "[VIEWPORT] image=${imageProxy.width}x${imageProxy.height}, rotation=$rotationDegrees")
+                lastCropRectLogTime = now
+            }
+
+            val inputImage = InputImage.fromMediaImage(mediaImage, rotationDegrees)
+
+            val lazyBitmapProvider: () -> Bitmap? = {
+                if (cachedBitmap == null) {
+                    cachedBitmap =
+                        runCatching {
+                            val bitmap = imageConverter.toBitmap(imageProxy)
+                            Log.i(TAG, ">>> processImageProxy: [LAZY] Created bitmap ${bitmap.width}x${bitmap.height}, rotation=$rotationDegrees")
+                            bitmap
+                        }.getOrElse { e ->
+                            Log.w(TAG, "processImageProxy: Failed to create bitmap", e)
+                            null
+                        }
+                }
+                cachedBitmap
+            }
+
+            val imageBoundsForFiltering = android.graphics.Rect(0, 0, imageProxy.width, imageProxy.height)
+
+            when (scanMode) {
+                ScanMode.OBJECT_DETECTION ->
+                    processObjectDetectionMode(
+                        inputImage = inputImage,
+                        lazyBitmapProvider = lazyBitmapProvider,
+                        imageBoundsForFiltering = imageBoundsForFiltering,
+                        onDetectionEvent = onDetectionEvent,
+                        edgeInsetRatio = edgeInsetRatio,
+                        isScanning = isScanning,
+                    )
+
+                ScanMode.BARCODE -> processBarcodeMode(inputImage, lazyBitmapProvider, onDetectionEvent)
+                ScanMode.DOCUMENT_TEXT -> processDocumentTextMode(inputImage, lazyBitmapProvider, onDetectionEvent)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, ">>> processImageProxy: ERROR", e)
+            span?.recordError(e.message ?: "Unknown error")
+            Pair(emptyList(), emptyList())
+        } finally {
+            val frameDuration = SystemClock.elapsedRealtime() - frameStartTime
+            PerformanceMonitor.recordTimer(
+                PerformanceMonitor.Metrics.FRAME_ANALYSIS_LATENCY_MS,
+                frameDuration,
+                mapOf("scan_mode" to scanMode.name),
+            )
+            span?.end()
+
+            cachedBitmap?.let { bitmap ->
+                if (!bitmap.isRecycled) {
+                    bitmap.recycle()
+                }
+                cachedBitmap = null
+            }
+            imageProxy.close()
+        }
+    }
+
+    private suspend fun processObjectDetectionMode(
+        inputImage: InputImage,
+        lazyBitmapProvider: () -> Bitmap?,
+        imageBoundsForFiltering: android.graphics.Rect,
+        onDetectionEvent: (DetectionEvent) -> Unit,
+        edgeInsetRatio: Float,
+        isScanning: Boolean,
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        return if (isScanning) {
+            Log.i(TAG, ">>> processImageProxy: Taking TRACKING PATH (isScanning=$isScanning)")
+            val (items, detections) =
+                processObjectDetectionWithTracking(
+                    inputImage = inputImage,
+                    lazyBitmapProvider = lazyBitmapProvider,
+                    cropRect = imageBoundsForFiltering,
+                    edgeInsetRatio = edgeInsetRatio,
+                )
+            Log.i(
+                TAG,
+                ">>> processImageProxy: Tracking path returned ${items.size} items and ${detections.size} detection results",
+            )
+            val event = detectionRouter.processObjectResults(items, detections)
+            onDetectionEvent(event)
+            Pair(items, detections)
+        } else {
+            Log.i(TAG, ">>> processImageProxy: Taking SINGLE-SHOT PATH (isScanning=$isScanning)")
+            val response =
+                objectDetector.detectObjects(
+                    image = inputImage,
+                    sourceBitmap = lazyBitmapProvider,
+                    useStreamMode = false,
+                    cropRect = imageBoundsForFiltering,
+                    edgeInsetRatio = edgeInsetRatio,
+                )
+            Log.i(TAG, ">>> processImageProxy: Single-shot path returned ${response.scannedItems.size} items")
+            val event =
+                detectionRouter.processObjectResults(
+                    response.scannedItems,
+                    response.detectionResults,
+                )
+            onDetectionEvent(event)
+            Pair(response.scannedItems, response.detectionResults)
+        }
+    }
+
+    private suspend fun processBarcodeMode(
+        inputImage: InputImage,
+        lazyBitmapProvider: () -> Bitmap?,
+        onDetectionEvent: (DetectionEvent) -> Unit,
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        val canRun = detectionRouter.tryInvokeBarcodeDetection()
+        return if (!canRun) {
+            Log.d(TAG, "[BARCODE] Throttled - skipping frame")
+            Pair(emptyList(), emptyList())
+        } else {
+            val rawItems =
+                barcodeDetector.scanBarcodes(
+                    image = inputImage,
+                    sourceBitmap = lazyBitmapProvider,
+                )
+
+            if (rawItems.isEmpty()) {
+                Pair(emptyList(), emptyList())
+            } else {
+                val (event, uniqueItems) = detectionRouter.processBarcodeResults(rawItems)
+                onDetectionEvent(event)
+                Log.i(TAG, "[BARCODE] Detected ${rawItems.size} barcodes, ${uniqueItems.size} unique after dedupe")
+                Pair(uniqueItems, emptyList())
+            }
+        }
+    }
+
+    private suspend fun processDocumentTextMode(
+        inputImage: InputImage,
+        lazyBitmapProvider: () -> Bitmap?,
+        onDetectionEvent: (DetectionEvent) -> Unit,
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        val items =
+            textRecognizer.recognizeText(
+                image = inputImage,
+                sourceBitmap = lazyBitmapProvider,
+            )
+        val event = detectionRouter.processDocumentResults(items)
+        onDetectionEvent(event)
+        return Pair(items, emptyList())
+    }
+
+    private suspend fun processObjectDetectionWithTracking(
+        inputImage: InputImage,
+        lazyBitmapProvider: () -> Bitmap?,
+        cropRect: android.graphics.Rect,
+        edgeInsetRatio: Float,
+        analyzerLatencyMs: Long = 0,
+    ): Pair<List<ScannedItem>, List<DetectionResult>> {
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: CALLED")
+
+        val trackingResponse =
+            objectDetector.detectObjectsWithTracking(
+                image = inputImage,
+                sourceBitmap = lazyBitmapProvider,
+                useStreamMode = false,
+                cropRect = cropRect,
+                edgeInsetRatio = edgeInsetRatio,
+            )
+
+        Log.i(
+            TAG,
+            ">>> processObjectDetectionWithTracking: Got ${trackingResponse.detectionInfos.size} DetectionInfo objects and ${trackingResponse.detectionResults.size} DetectionResult objects from a SINGLE detection pass",
+        )
+
+        val frameSharpness =
+            lazyBitmapProvider()?.let { bitmap ->
+                SharpnessCalculator.calculateSharpness(bitmap)
+            } ?: 0f
+
+        val frameId = com.scanium.app.camera.detection.LiveScanDiagnostics.nextFrameId()
+        scanDiagnostics.logSharpness(
+            frameId = frameId,
+            sharpnessScore = frameSharpness,
+            isBlurry = frameSharpness < SharpnessCalculator.DEFAULT_MIN_SHARPNESS,
+            threshold = SharpnessCalculator.DEFAULT_MIN_SHARPNESS,
+        )
+
+        val currentRoi = scanGuidanceManager.getCurrentRoi()
+
+        val bestCandidateInfo =
+            trackingResponse.detectionInfos.maxByOrNull { it.confidence }?.let { detection ->
+                val boxCenterX = (detection.boundingBox.left + detection.boundingBox.right) / 2f
+                val boxCenterY = (detection.boundingBox.top + detection.boundingBox.bottom) / 2f
+                CandidateInfo(
+                    trackingId = detection.trackingId,
+                    boxCenterX = boxCenterX,
+                    boxCenterY = boxCenterY,
+                    boxArea = detection.normalizedBoxArea,
+                    confidence = detection.confidence,
+                )
+            }
+
+        val guidanceState =
+            scanGuidanceManager.processFrame(
+                candidate = bestCandidateInfo,
+                motionScore = lastMotionScore.toFloat(),
+                sharpnessScore = frameSharpness,
+                currentTimeMs = System.currentTimeMillis(),
+            )
+        updateScanGuidanceState(guidanceState)
+
+        val trackingStartTime = SystemClock.elapsedRealtime()
+        val confirmedCandidates =
+            objectTracker.processFrameWithRoi(
+                detections = trackingResponse.detectionInfos,
+                scanRoi = currentRoi,
+                inferenceLatencyMs = analyzerLatencyMs,
+                frameSharpness = frameSharpness,
+            )
+        PerformanceMonitor.recordTimer(
+            PerformanceMonitor.Metrics.TRACKING_LATENCY_MS,
+            SystemClock.elapsedRealtime() - trackingStartTime,
+            mapOf("detection_count" to trackingResponse.detectionInfos.size.toString()),
+        )
+
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: ObjectTracker returned ${confirmedCandidates.size} newly confirmed candidates")
+
+        val stats = objectTracker.getStats()
+        Log.i(
+            TAG,
+            ">>> Tracker stats: active=${stats.activeCandidates}, confirmed=${stats.confirmedCandidates}, frame=${stats.currentFrame}",
+        )
+
+        val canAddItems = guidanceState.canAddItem
+        val isLocked = guidanceState.state == GuidanceState.LOCKED
+
+        val itemsToAdd =
+            if (canAddItems && isLocked) {
+                val allConfirmedCandidates = objectTracker.getConfirmedCandidates()
+                Log.i(
+                    TAG,
+                    ">>> LOCKED state: checking ${allConfirmedCandidates.size} total confirmed candidates (${confirmedCandidates.size} newly confirmed)",
+                )
+
+                allConfirmedCandidates.mapNotNull { candidate ->
+                    val bbox = candidate.boundingBoxNorm ?: return@mapNotNull null
+                    val centerX = (bbox.left + bbox.right) / 2f
+                    val centerY = (bbox.top + bbox.bottom) / 2f
+
+                    val isInsideRoi = currentRoi.containsBoxCenter(centerX, centerY)
+                    if (!isInsideRoi) {
+                        Log.e(
+                            TAG,
+                            "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (center=$centerX,$centerY, roi=$currentRoi)",
+                        )
+                        if (BuildConfig.DEBUG) {
+                            throw IllegalStateException("Confirmed candidate outside ROI - this should never happen")
+                        }
+                        null
+                    } else {
+                        val item = objectDetector.candidateToScannedItem(candidate)
+                        if (item != null) {
+                            objectTracker.markCandidateConsumed(candidate.internalId)
+                            Log.i(TAG, ">>> Added item from candidate ${candidate.internalId}, marked as consumed")
+                        }
+                        item
+                    }
+                }
+            } else {
+                val totalConfirmed = objectTracker.getStats().confirmedCandidates
+                if (totalConfirmed > 0) {
+                    Log.d(
+                        TAG,
+                        ">>> Waiting for LOCKED state: $totalConfirmed confirmed candidates pending (canAddItem=$canAddItems, isLocked=$isLocked)",
+                    )
+                }
+                emptyList()
+            }
+
+        Log.i(TAG, ">>> processObjectDetectionWithTracking: Converted to ${itemsToAdd.size} ScannedItems (gated by LOCKED=$isLocked)")
+        itemsToAdd.forEachIndexed { index, item ->
+            Log.i(TAG, "    ScannedItem $index: id=${item.id}, category=${item.category}, priceRange=${item.priceRange}")
+        }
+
+        Log.i(
+            TAG,
+            ">>> processObjectDetectionWithTracking: RETURNING ${itemsToAdd.size} items and ${trackingResponse.detectionResults.size} detection results",
+        )
+        return Pair(itemsToAdd, trackingResponse.detectionResults)
+    }
+}
