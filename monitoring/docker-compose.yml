@@ -28,7 +28,7 @@ services:
       - observability
       - backend_scanium-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:12345/-/ready"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/12345'"]
       interval: 15s
       timeout: 5s
       retries: 3
