@@ -58,7 +58,7 @@ otelcol.processor.batch "mobile" {
   output {
     logs    = [otelcol.processor.attributes.mobile.input]
     metrics = [otelcol.exporter.prometheus.mobile.input]
-    traces  = [otelcol.exporter.otlp.tempo.input]
+    traces  = [otelcol.connector.spanmetrics.default.input]
   }
 }
 
@@ -100,7 +100,7 @@ otelcol.processor.batch "backend" {
   output {
     logs    = [otelcol.processor.attributes.backend_logs.input]
     metrics = [otelcol.exporter.prometheus.backend.input]
-    traces  = [otelcol.exporter.otlp.tempo.input]
+    traces  = [otelcol.connector.spanmetrics.default.input]
   }
 }
 
@@ -222,6 +222,58 @@ otelcol.exporter.otlp "tempo" {
       insecure             = true
       insecure_skip_verify = true
     }
+  }
+}
+
+// ============================================================================
+// Span Metrics Connector (GH-408)
+// ============================================================================
+// Generates metrics from trace spans for the Traces Drilldown dashboard.
+// Produces traces_spanmetrics_calls_total and traces_spanmetrics_latency_* metrics.
+
+otelcol.connector.spanmetrics "default" {
+  // Histogram buckets for latency distribution (in milliseconds)
+  histogram {
+    explicit {
+      buckets = ["10ms", "25ms", "50ms", "100ms", "250ms", "500ms", "1s", "2.5s", "5s", "10s"]
+    }
+  }
+
+  // Dimensions to include as metric labels (low cardinality only)
+  dimension {
+    name = "service.name"
+  }
+  dimension {
+    name = "span.name"
+  }
+  dimension {
+    name = "span.kind"
+  }
+  dimension {
+    name = "status.code"
+  }
+
+  // Output: metrics to Mimir, traces continue to Tempo
+  output {
+    metrics = [otelcol.exporter.prometheus.spanmetrics.input]
+    traces  = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+// Prometheus exporter for span metrics
+otelcol.exporter.prometheus "spanmetrics" {
+  forward_to = [prometheus.remote_write.spanmetrics.receiver]
+}
+
+// Remote write for span metrics to Mimir
+prometheus.remote_write "spanmetrics" {
+  endpoint {
+    url = "http://mimir:9009/api/v1/push"
+  }
+
+  external_labels = {
+    source = "spanmetrics",
+    env    = "dev",
   }
 }
 
