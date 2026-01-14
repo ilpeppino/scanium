@@ -59,6 +59,7 @@ services:
     image: grafana/tempo:2.7.0
     container_name: scanium-tempo
     restart: unless-stopped
+    user: "0:0"  ***REMOVED*** Run as root to fix permission denied errors during compaction (GH-409)
     ports:
       - "127.0.0.1:3200:3200"  ***REMOVED*** HTTP/metrics (localhost only - debugging)
       - "4317"                 ***REMOVED*** OTLP gRPC (internal only - no host binding)
