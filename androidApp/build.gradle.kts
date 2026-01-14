@@ -112,8 +112,12 @@ android {
             )
 
         // OTLP (OpenTelemetry Protocol) configuration
-        val otlpEndpoint = localPropertyOrEnv("scanium.otlp.endpoint", "SCANIUM_OTLP_ENDPOINT", "")
-        val otlpEnabled = localPropertyOrEnv("scanium.otlp.enabled", "SCANIUM_OTLP_ENABLED", "false")
+        // Default endpoint is the Cloudflare tunnel for Alloy OTLP receiver
+        // For local development with direct NAS access, override in local.properties:
+        //   scanium.otlp.endpoint=http://192.168.x.x:4318
+        // See: monitoring/CLOUDFLARE_TUNNEL_SETUP.md for tunnel configuration
+        val otlpEndpoint = localPropertyOrEnv("scanium.otlp.endpoint", "SCANIUM_OTLP_ENDPOINT", "https://otlp.gtemp1.com")
+        val otlpEnabled = localPropertyOrEnv("scanium.otlp.enabled", "SCANIUM_OTLP_ENABLED", "true")
 
         // SEC-003: TLS Certificate pinning for MITM protection
         // Set the SHA-256 certificate pin hash in local.properties or environment:
