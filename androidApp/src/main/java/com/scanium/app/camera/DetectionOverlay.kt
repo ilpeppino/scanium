@@ -440,12 +440,16 @@ fun DetectionOverlay(
                 val boxHeight = lines.size * lineHeight + padding * 2
                 val boxWidth = 420f
 
+                // Position: middle-left of screen
+                val boxLeft = padding
+                val boxTop = (canvasHeight - boxHeight) / 2f
+
                 // Draw background
                 drawRect(
-                    padding,
-                    padding,
-                    padding + boxWidth,
-                    padding + boxHeight,
+                    boxLeft,
+                    boxTop,
+                    boxLeft + boxWidth,
+                    boxTop + boxHeight,
                     debugBgPaint,
                 )
 
@@ -453,8 +457,8 @@ fun DetectionOverlay(
                 lines.forEachIndexed { index, line ->
                     drawText(
                         line,
-                        padding * 2,
-                        padding + lineHeight * (index + 1),
+                        boxLeft + padding,
+                        boxTop + padding + lineHeight * (index + 1),
                         debugPaint,
                     )
                 }
