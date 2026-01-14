@@ -113,7 +113,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [1h])) or vector(0)",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=~\"error|fatal\" [1h])) or vector(0)",
           "instant": true
         }
       ],
@@ -145,7 +145,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"warn\" [1h])) or vector(0)",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=\"warn\" [1h])) or vector(0)",
           "instant": true
         }
       ],
@@ -177,7 +177,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "(sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [1h])) / sum(count_over_time({source=~\"$source\", env=~\"$env\"} [1h])) * 100) or vector(0)",
+          "expr": "(sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=~\"error|fatal\" [1h])) / sum(count_over_time({source=~\"$source\", env=~\"$env\"} [1h])) * 100) or vector(0)",
           "instant": true
         }
       ],
@@ -210,22 +210,22 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"debug\" [5m]))",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=\"debug\" [5m]))",
           "legendFormat": "debug"
         },
         {
           "refId": "B",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"info\" [5m]))",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=\"info\" [5m]))",
           "legendFormat": "info"
         },
         {
           "refId": "C",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"warn\" [5m]))",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=\"warn\" [5m]))",
           "legendFormat": "warn"
         },
         {
           "refId": "D",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [5m]))",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=~\"error|fatal\" [5m]))",
           "legendFormat": "error/fatal"
         }
       ],
@@ -261,7 +261,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (level) (count_over_time({source=~\"$source\", env=~\"$env\"} | json [1h]))",
+          "expr": "sum by (level) (count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt [1h]))",
           "instant": true,
           "legendFormat": "{{level}}"
         }
@@ -300,12 +300,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [5m]))",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=~\"error|fatal\" [5m]))",
           "legendFormat": "Errors"
         },
         {
           "refId": "B",
-          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=\"warn\" [5m]))",
+          "expr": "sum(count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=\"warn\" [5m]))",
           "legendFormat": "Warnings"
         }
       ],
@@ -338,7 +338,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, sum by (event_name) (count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" [1h])))",
+          "expr": "topk(10, sum by (event_name) (count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=~\"error|fatal\" [1h])))",
           "legendFormat": "{{event_name}}"
         }
       ],
@@ -393,7 +393,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(20, sum by (error_message, source) (count_over_time({source=~\"$source\", env=~\"$env\"} | json | level=~\"error|fatal\" | error_message!=\"\" [1h])))",
+          "expr": "topk(20, sum by (error_message, source) (count_over_time({source=~\"$source\", env=~\"$env\"} | logfmt | level=~\"error|fatal\" | error_message!=\"\" [1h])))",
           "instant": true,
           "legendFormat": "{{error_message}}"
         }
@@ -460,7 +460,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "{source=~\"$source\", env=~\"$env\"} | json | level=~\"$level\" |~ \"$search\""
+          "expr": "{source=~\"$source\", env=~\"$env\"} | logfmt | level=~\"$level\" |~ \"$search\""
         }
       ],
       "options": {
