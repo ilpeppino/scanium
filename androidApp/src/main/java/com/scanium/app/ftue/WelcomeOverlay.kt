@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Camera
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
@@ -93,7 +93,7 @@ fun WelcomeOverlay(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 FeatureBullet(
-                    icon = Icons.Default.List,
+                    icon = Icons.AutoMirrored.Filled.List,
                     contentDescription = stringResource(R.string.cd_feature_view_items),
                     text = stringResource(R.string.ftue_feature_view_items),
                 )

@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Save
@@ -120,7 +120,7 @@ fun DraftReviewScreen(
                         viewModel.saveDraft()
                         onBack()
                     }) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -551,7 +551,7 @@ private fun CompletenessCard(draft: ListingDraft) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Completeness", style = MaterialTheme.typography.titleMedium)
             LinearProgressIndicator(
-                progress = completeness.score / 100f,
+                progress = { completeness.score / 100f },
                 modifier = Modifier.fillMaxWidth(),
             )
             Text("${completeness.score}% complete")

@@ -3,10 +3,12 @@ package com.scanium.app.items.export
 import com.scanium.core.export.ExportItem
 import com.scanium.core.export.ExportPayload
 import com.scanium.shared.core.models.model.ImageRef
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 
+@OptIn(ExperimentalSerializationApi::class)
 class CsvExportSerializer(
     private val json: Json =
         Json {

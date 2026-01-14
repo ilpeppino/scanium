@@ -199,7 +199,7 @@ fun AssistantDiagnosticsSection(
 
                 // Text-to-Speech Availability
                 AssistantDiagnosticRow(
-                    icon = Icons.Default.VolumeUp,
+                    icon = Icons.AutoMirrored.Filled.VolumeUp,
                     label = "Text-to-Speech",
                     status = if (state.isTextToSpeechAvailable) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
                     detail =
@@ -296,7 +296,7 @@ private fun AssistantOverallStatusBadge(
                 Triple(
                     Color(0xFF9E9E9E),
                     "Unknown Status",
-                    Icons.Default.Help,
+                    Icons.AutoMirrored.Filled.Help,
                 )
         }
 
