@@ -1071,6 +1071,15 @@ class CameraXManager(
                         onRotation(rotationDegrees)
                     }
 
+                    // DEBUG: Log frame dimensions in portrait mode
+                    if (BuildConfig.DEBUG && rotationDegrees == 90) {
+                        Log.d(
+                            "CameraFrameDims",
+                            "[PORTRAIT] ImageProxy: ${imageProxy.width}x${imageProxy.height}, " +
+                                "rotation=$rotationDegrees, InputImage: ${inputImage.width}x${inputImage.height}",
+                        )
+                    }
+
                     // Run detection (preview only - no item creation)
                     val imageBoundsForFiltering = android.graphics.Rect(0, 0, imageProxy.width, imageProxy.height)
                     val response =
