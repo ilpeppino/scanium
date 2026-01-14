@@ -254,8 +254,8 @@ export async function updateItem(
  * Sets deletedAt timestamp and increments syncVersion
  */
 export async function deleteItem(userId: string, itemId: string): Promise<Item> {
-  // Check ownership first
-  const _item = await getItemById(userId, itemId);
+  // Check ownership first (throws if not found/not owned)
+  await getItemById(userId, itemId);
 
   const deletedItem = await prisma.item.update({
     where: { id: itemId },
