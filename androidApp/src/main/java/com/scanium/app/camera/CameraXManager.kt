@@ -11,9 +11,10 @@ import android.util.Log
 import android.util.Size
 import androidx.camera.core.*
 import androidx.camera.core.CameraUnavailableException
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -58,7 +59,6 @@ import kotlin.coroutines.resumeWithException
  * - Set up ImageAnalysis for object detection
  * - Handle single-shot capture and continuous scanning
  */
-@OptIn(ExperimentalGetImage::class)
 class CameraXManager(
     private val context: Context,
     private val lifecycleOwner: LifecycleOwner,
@@ -463,7 +463,11 @@ class CameraXManager(
                     .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .setTargetRotation(displayRotation)
-                    .setTargetResolution(android.util.Size(1280, 720)) // Higher resolution for better detection
+                    .setResolutionSelector(
+                        buildResolutionSelector(
+                            android.util.Size(1280, 720),
+                        ),
+                    ) // Higher resolution for better detection
                     .build()
 
             Log.d(TAG, "ImageAnalysis configured with target resolution 1280x720")
@@ -1302,9 +1306,20 @@ class CameraXManager(
                 CaptureResolution.HIGH -> android.util.Size(3840, 2160) // 4K
             }
 
-        builder.setTargetResolution(targetSize)
+        builder.setResolutionSelector(buildResolutionSelector(targetSize))
 
         return builder.build()
+    }
+
+    private fun buildResolutionSelector(targetSize: android.util.Size): ResolutionSelector {
+        val strategy =
+            ResolutionStrategy(
+                targetSize,
+                ResolutionStrategy.FALLBACK_RULE_CLOSEST_HIGHER_THEN_LOWER,
+            )
+        return ResolutionSelector.Builder()
+            .setResolutionStrategy(strategy)
+            .build()
     }
 
     /**
@@ -1675,7 +1690,7 @@ private suspend fun awaitCameraProvider(context: Context): ProcessCameraProvider
         val future = ProcessCameraProvider.getInstance(context)
         future.addListener({
             try {
-                continuation.resume(future.get(), null)
+                continuation.resume(future.get())
             } catch (e: Exception) {
                 continuation.cancel(e)
             }
