@@ -18,7 +18,7 @@
         "label": "Service",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "MIMIR" },
-        "query": "label_values(traces_spanmetrics_latency_bucket, service)",
+        "query": "label_values(traces_spanmetrics_latency_bucket, service_name)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -44,7 +44,7 @@
         "label": "Span Name",
         "type": "query",
         "datasource": { "type": "prometheus", "uid": "MIMIR" },
-        "query": "label_values(traces_spanmetrics_latency_bucket{service=~\"$service\"}, span_name)",
+        "query": "label_values(traces_spanmetrics_latency_bucket{service_name=~\"$service\"}, span_name)",
         "refresh": 2,
         "includeAll": true,
         "multi": true,
@@ -76,7 +76,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(traces_spanmetrics_calls_total{service=~\"$service\", span_kind=\"SPAN_KIND_SERVER\"}[5m])) or vector(0)",
+          "expr": "sum(increase(traces_spanmetrics_calls_total{service_name=~\"$service\", span_kind=\"SPAN_KIND_SERVER\"}[5m])) or vector(0)",
           "legendFormat": "traces"
         }
       ],
@@ -106,7 +106,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m])) or vector(0)",
+          "expr": "sum(increase(traces_spanmetrics_calls_total{service_name=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m])) or vector(0)",
           "legendFormat": "errors"
         }
       ],
@@ -138,7 +138,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[5m])) / sum(rate(traces_spanmetrics_latency_count{service=~\"$service\"}[5m])) or vector(0)",
+          "expr": "sum(rate(traces_spanmetrics_latency_sum{service_name=~\"$service\"}[5m])) / sum(rate(traces_spanmetrics_latency_count{service_name=~\"$service\"}[5m])) or vector(0)",
           "legendFormat": "avg"
         }
       ],
@@ -171,7 +171,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\"}[5m])))",
           "legendFormat": "p99"
         }
       ],
@@ -204,17 +204,17 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m])))",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\", span_name=~\"$span_name\"}[5m])))",
           "legendFormat": "p50"
         },
         {
           "refId": "B",
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\", span_name=~\"$span_name\"}[5m])))",
           "legendFormat": "p95"
         },
         {
           "refId": "C",
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[5m])))",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\", span_name=~\"$span_name\"}[5m])))",
           "legendFormat": "p99"
         }
       ],
@@ -251,7 +251,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[15m]))))",
+          "expr": "topk(10, histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\"}[15m]))))",
           "legendFormat": "{{span_name}}"
         }
       ],
@@ -276,7 +276,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(10, sum by (span_name) (increase(traces_spanmetrics_calls_total{service=~\"$service\"}[1h])))",
+          "expr": "topk(10, sum by (span_name) (increase(traces_spanmetrics_calls_total{service_name=~\"$service\"}[1h])))",
           "legendFormat": "{{span_name}}"
         }
       ],
@@ -301,8 +301,8 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(5, histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[5m]))))",
-          "legendFormat": "{{service}}"
+          "expr": "topk(5, histogram_quantile(0.95, sum by (le, service_name) (rate(traces_spanmetrics_latency_bucket{service_name=~\"$service\"}[5m]))))",
+          "legendFormat": "{{service_name}}"
         }
       ],
       "fieldConfig": {
@@ -331,7 +331,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "topk(5, sum by (span_name) (rate(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum by (span_name) (rate(traces_spanmetrics_calls_total{service=~\"$service\"}[5m])) * 100)",
+          "expr": "topk(5, sum by (span_name) (rate(traces_spanmetrics_calls_total{service_name=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[5m])) / sum by (span_name) (rate(traces_spanmetrics_calls_total{service_name=~\"$service\"}[5m])) * 100)",
           "legendFormat": "{{span_name}}"
         }
       ],
@@ -457,7 +457,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(increase(traces_spanmetrics_latency_bucket{service=~\"$service\", span_name=~\"$span_name\"}[$__rate_interval])) by (le)",
+          "expr": "sum(increase(traces_spanmetrics_latency_bucket{service_name=~\"$service\", span_name=~\"$span_name\"}[$__rate_interval])) by (le)",
           "format": "heatmap",
           "legendFormat": "{{le}}"
         }
