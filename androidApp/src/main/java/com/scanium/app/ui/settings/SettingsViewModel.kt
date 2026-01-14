@@ -33,10 +33,13 @@ import com.scanium.telemetry.TelemetrySeverity
 import com.scanium.telemetry.facade.Telemetry
 import com.scanium.telemetry.ports.CrashPort
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.scanium.app.BuildConfig
+import com.scanium.app.config.FeatureFlags
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -449,6 +452,127 @@ class SettingsViewModel
             settingsRepository.effectiveTtsLanguageFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "en")
 
+        // =========================================================================
+        // Combined Settings Sections State
+        // =========================================================================
+
+        /**
+         * Combined UI state for all settings sections.
+         * Built from individual flows using [buildSettingsSectionsState].
+         * Preserves existing individual flows for backward compatibility.
+         */
+        val sectionsState: StateFlow<SettingsSectionsState> = combine(
+            // Group 1: General section inputs
+            combine(
+                themeMode,
+                primaryLanguage,
+                primaryRegionCountry,
+                currentEdition,
+                entitlementState,
+            ) { theme, lang, region, edition, entitlement ->
+                GeneralInputs(theme, lang, region, edition, entitlement)
+            },
+            // Group 2: Assistant section inputs (part 1)
+            combine(
+                allowAssistant,
+                allowAssistantImages,
+                assistantLanguage,
+                assistantTone,
+                assistantCountryCode,
+            ) { allow, images, lang, tone, country ->
+                AssistantInputs1(allow, images, lang, tone, country)
+            },
+            // Group 3: Assistant section inputs (part 2)
+            combine(
+                assistantUnits,
+                assistantVerbosity,
+                voiceModeEnabled,
+                speakAnswersEnabled,
+                autoSendTranscript,
+            ) { units, verbosity, voice, speak, autoSend ->
+                AssistantInputs2(units, verbosity, voice, speak, autoSend)
+            },
+            // Group 4: Assistant section inputs (part 3) + Camera/Storage/Privacy
+            combine(
+                voiceLanguage,
+                assistantHapticsEnabled,
+                assistantPrerequisiteState,
+                showDetectionBoxes,
+                autoSaveEnabled,
+            ) { voiceLang, haptics, prereq, boxes, autoSave ->
+                MixedInputs1(voiceLang, haptics, prereq, boxes, autoSave)
+            },
+            // Group 5: Storage/Privacy/Developer
+            combine(
+                saveDirectoryUri,
+                exportFormat,
+                allowCloud,
+                shareDiagnostics,
+                isPrivacySafeModeActive,
+            ) { saveDir, format, cloud, diagnostics, privacySafe ->
+                MixedInputs2(saveDir, format, cloud, diagnostics, privacySafe)
+            },
+        ) { general, assistant1, assistant2, mixed1, mixed2 ->
+            // Additional inputs needed: sounds, developer mode, unified settings
+            val soundsVal = soundsEnabled.value
+            val devMode = isDeveloperMode.value
+            val aiLangSetting = aiLanguageSetting.value
+            val marketplaceSetting = marketplaceCountrySetting.value
+            val ttsSetting = ttsLanguageSetting.value
+            val effectiveAi = effectiveAiOutputLanguage.value
+            val effectiveMarket = effectiveMarketplaceCountry.value
+            val effectiveTts = effectiveTtsLanguage.value
+
+            val inputs = SettingsInputs(
+                // General
+                themeMode = general.themeMode,
+                primaryLanguage = general.primaryLanguage,
+                primaryRegionCountry = general.primaryRegionCountry,
+                currentEdition = general.currentEdition,
+                entitlementState = general.entitlementState,
+                soundsEnabled = soundsVal,
+                // Assistant
+                allowAssistant = assistant1.allowAssistant,
+                allowAssistantImages = assistant1.allowAssistantImages,
+                assistantLanguage = assistant1.assistantLanguage,
+                assistantTone = assistant1.assistantTone,
+                assistantCountryCode = assistant1.assistantCountryCode,
+                assistantUnits = assistant2.assistantUnits,
+                assistantVerbosity = assistant2.assistantVerbosity,
+                voiceModeEnabled = assistant2.voiceModeEnabled,
+                speakAnswersEnabled = assistant2.speakAnswersEnabled,
+                autoSendTranscript = assistant2.autoSendTranscript,
+                voiceLanguage = mixed1.voiceLanguage,
+                assistantHapticsEnabled = mixed1.assistantHapticsEnabled,
+                assistantPrerequisiteState = mixed1.assistantPrerequisiteState,
+                aiLanguageSetting = aiLangSetting,
+                marketplaceCountrySetting = marketplaceSetting,
+                ttsLanguageSetting = ttsSetting,
+                effectiveAiOutputLanguage = effectiveAi,
+                effectiveMarketplaceCountry = effectiveMarket,
+                effectiveTtsLanguage = effectiveTts,
+                // Camera
+                showDetectionBoxes = mixed1.showDetectionBoxes,
+                // Storage
+                autoSaveEnabled = mixed1.autoSaveEnabled,
+                saveDirectoryUri = mixed2.saveDirectoryUri,
+                exportFormat = mixed2.exportFormat,
+                // Privacy
+                allowCloud = mixed2.allowCloud,
+                shareDiagnostics = mixed2.shareDiagnostics,
+                privacySafeModeActive = mixed2.privacySafeModeActive,
+                // Developer / Build flags
+                isDeveloperModeEnabled = devMode,
+                allowDeveloperMode = FeatureFlags.allowDeveloperMode,
+                isDebugBuild = BuildConfig.DEBUG,
+            )
+            buildSettingsSectionsState(inputs)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            buildSettingsSectionsState(defaultSettingsInputs()),
+        )
+
         // Setters for Primary Settings
         fun setPrimaryRegionCountry(countryCode: String) {
             viewModelScope.launch { settingsRepository.setPrimaryRegionCountry(countryCode) }
@@ -703,3 +827,95 @@ sealed class ConnectionTestState {
 
     data class Failed(val message: String) : ConnectionTestState()
 }
+
+// =========================================================================
+// Helper data classes for flow combining (internal use only)
+// =========================================================================
+
+internal data class GeneralInputs(
+    val themeMode: ThemeMode,
+    val primaryLanguage: String,
+    val primaryRegionCountry: String,
+    val currentEdition: UserEdition,
+    val entitlementState: EntitlementState,
+)
+
+internal data class AssistantInputs1(
+    val allowAssistant: Boolean,
+    val allowAssistantImages: Boolean,
+    val assistantLanguage: String,
+    val assistantTone: AssistantTone,
+    val assistantCountryCode: String,
+)
+
+internal data class AssistantInputs2(
+    val assistantUnits: AssistantUnits,
+    val assistantVerbosity: AssistantVerbosity,
+    val voiceModeEnabled: Boolean,
+    val speakAnswersEnabled: Boolean,
+    val autoSendTranscript: Boolean,
+)
+
+internal data class MixedInputs1(
+    val voiceLanguage: String,
+    val assistantHapticsEnabled: Boolean,
+    val assistantPrerequisiteState: AssistantPrerequisiteState,
+    val showDetectionBoxes: Boolean,
+    val autoSaveEnabled: Boolean,
+)
+
+internal data class MixedInputs2(
+    val saveDirectoryUri: String?,
+    val exportFormat: ExportFormat,
+    val allowCloud: Boolean,
+    val shareDiagnostics: Boolean,
+    val privacySafeModeActive: Boolean,
+)
+
+/**
+ * Creates default [SettingsInputs] for initial state.
+ * Uses the same defaults as the individual StateFlow properties.
+ */
+internal fun defaultSettingsInputs(): SettingsInputs = SettingsInputs(
+    // General
+    themeMode = ThemeMode.SYSTEM,
+    primaryLanguage = "en",
+    primaryRegionCountry = "NL",
+    currentEdition = UserEdition.FREE,
+    entitlementState = EntitlementState.DEFAULT,
+    soundsEnabled = true,
+    // Assistant
+    allowAssistant = false,
+    allowAssistantImages = false,
+    assistantLanguage = "EN",
+    assistantTone = AssistantTone.NEUTRAL,
+    assistantCountryCode = "NL",
+    assistantUnits = AssistantUnits.METRIC,
+    assistantVerbosity = AssistantVerbosity.NORMAL,
+    voiceModeEnabled = false,
+    speakAnswersEnabled = false,
+    autoSendTranscript = false,
+    voiceLanguage = "",
+    assistantHapticsEnabled = false,
+    assistantPrerequisiteState = AssistantPrerequisiteState.LOADING,
+    aiLanguageSetting = FollowOrCustom.followPrimary(),
+    marketplaceCountrySetting = FollowOrCustom.followPrimary(),
+    ttsLanguageSetting = TtsLanguageChoice.FollowAiLanguage,
+    effectiveAiOutputLanguage = "en",
+    effectiveMarketplaceCountry = "NL",
+    effectiveTtsLanguage = "en",
+    // Camera
+    showDetectionBoxes = true,
+    // Storage
+    autoSaveEnabled = false,
+    saveDirectoryUri = null,
+    exportFormat = ExportFormat.ZIP,
+    // Privacy
+    allowCloud = true,
+    shareDiagnostics = false,
+    privacySafeModeActive = false,
+    // Developer / Build flags
+    isDeveloperModeEnabled = false,
+    allowDeveloperMode = FeatureFlags.allowDeveloperMode,
+    isDebugBuild = BuildConfig.DEBUG,
+)
