@@ -1,8 +1,13 @@
-***REMOVED*** Cloudflare Tunnel Setup for Grafana
+***REMOVED*** Cloudflare Tunnel Setup for Scanium Services
 
 **Tunnel ID**: `REDACTED_CLOUDFLARE_TUNNEL_ID`
-**Current Hostname**: `scanium.gtemp1.com` → `http://scanium-backend:8080`
-**New Hostname**: `grafana.gtemp1.com` → `http://scanium-grafana:3000`
+
+***REMOVED******REMOVED*** Configured Hostnames
+| Hostname | Service | Container | Port |
+|----------|---------|-----------|------|
+| `scanium.gtemp1.com` | Backend API | `scanium-backend` | 8080 |
+| `grafana.gtemp1.com` | Grafana | `scanium-grafana` | 3000 |
+| `otlp.gtemp1.com` | Alloy OTLP | `scanium-alloy` | 4318 |
 
 ---
 
@@ -91,6 +96,62 @@ After saving the configuration (it takes ~30 seconds to propagate):
 
 ---
 
+***REMOVED******REMOVED*** OTLP Tunnel Setup (Mobile Telemetry)
+
+The OTLP tunnel enables mobile apps to send telemetry data to the Grafana Alloy receiver over HTTPS.
+
+***REMOVED******REMOVED******REMOVED*** Step 1: Add OTLP Hostname
+
+1. **Go to Cloudflare Zero Trust Dashboard**:
+   - Navigate to **Networks** → **Tunnels**
+   - Find tunnel ID: `REDACTED_CLOUDFLARE_TUNNEL_ID`
+   - Click **Configure**
+
+2. **Add Public Hostname**:
+   ```
+   Subdomain: otlp
+   Domain: gtemp1.com
+   Path: (leave empty)
+   ```
+
+3. **Configure the service**:
+   ```
+   Type: HTTP
+   URL: scanium-alloy:4318
+   ```
+
+4. **Additional settings**:
+   - **TLS** → Verify TLS: OFF (Alloy uses HTTP internally)
+
+5. **Save the hostname**
+
+***REMOVED******REMOVED******REMOVED*** Step 2: Verify OTLP Tunnel
+
+After configuration propagates (~30 seconds):
+
+```bash
+***REMOVED*** Test OTLP endpoint health
+curl -s https://otlp.gtemp1.com/v1/logs -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"resourceLogs":[]}' -w "%{http_code}\n" -o /dev/null
+```
+
+Expected: `200` (empty logs accepted)
+
+***REMOVED******REMOVED******REMOVED*** Mobile App Configuration
+
+The Android app defaults to `https://otlp.gtemp1.com` for OTLP telemetry.
+
+For local development with direct NAS access, override in `local.properties`:
+```properties
+scanium.otlp.endpoint=http://192.168.x.x:4318
+scanium.otlp.enabled=true
+```
+
+See: `androidApp/build.gradle.kts` for configuration options.
+
+---
+
 ***REMOVED******REMOVED*** Current Network Configuration
 
 ***REMOVED******REMOVED******REMOVED*** Grafana Container Networks:
@@ -112,6 +173,7 @@ After saving the configuration (it takes ~30 seconds to propagate):
 |----------|---------|-----------|------|
 | `scanium.gtemp1.com` | Backend API | `scanium-backend` | 8080 |
 | `grafana.gtemp1.com` | Grafana | `scanium-grafana` | 3000 |
+| `otlp.gtemp1.com` | Alloy OTLP | `scanium-alloy` | 4318 |
 
 ---
 
@@ -225,6 +287,7 @@ ssh nas "cd /volume1/docker/scanium/repo/monitoring && /usr/local/bin/docker-com
 **Access URLs**:
 - Backend API: https://scanium.gtemp1.com
 - Grafana: https://grafana.gtemp1.com
+- OTLP Telemetry: https://otlp.gtemp1.com
 
 **Container logs**:
 ```bash
@@ -246,4 +309,4 @@ ssh nas "cd /volume1/docker/scanium/repo/backend && /usr/local/bin/docker-compos
 
 ---
 
-**Last Updated**: 2026-01-11T11:15:00Z
+**Last Updated**: 2026-01-14T12:00:00Z
