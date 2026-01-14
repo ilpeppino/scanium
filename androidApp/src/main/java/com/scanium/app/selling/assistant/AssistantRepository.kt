@@ -416,7 +416,7 @@ private class CloudAssistantRepository(
     ): AssistantBackendException {
         val assistantError =
             responseBody?.let {
-                runCatching { json.decodeFromString(AssistantErrorResponse.serializer(), it) }.getOrNull()
+                runCatching { ASSISTANT_JSON.decodeFromString(AssistantErrorResponse.serializer(), it) }.getOrNull()
             }?.assistantError
 
         if (assistantError != null) {
@@ -425,7 +425,7 @@ private class CloudAssistantRepository(
 
         // Phase B: Try to parse error response for specific error codes
         val errorResponse = responseBody?.let {
-            runCatching { json.decodeFromString<ErrorResponseDto>(it) }.getOrNull()
+            runCatching { ASSISTANT_JSON.decodeFromString<ErrorResponseDto>(it) }.getOrNull()
         }
 
         val failure =

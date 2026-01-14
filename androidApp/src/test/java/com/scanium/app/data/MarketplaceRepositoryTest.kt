@@ -1,5 +1,7 @@
 package com.scanium.app.data
 
+import io.mockk.every
+import io.mockk.mockk
 import android.content.Context
 import android.content.res.AssetManager
 import org.junit.Assert.assertEquals
@@ -8,11 +10,11 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import java.io.ByteArrayInputStream
 
+@RunWith(RobolectricTestRunner::class)
 class MarketplaceRepositoryTest {
     private lateinit var context: Context
     private lateinit var assetManager: AssetManager
@@ -48,10 +50,10 @@ class MarketplaceRepositoryTest {
 
     @Before
     fun setup() {
-        assetManager = mock()
+        assetManager = mockk()
         context =
-            mock {
-                on { assets } doReturn assetManager
+            mockk {
+                every { assets } returns assetManager
             }
         repository = MarketplaceRepository(context)
     }
@@ -60,7 +62,7 @@ class MarketplaceRepositoryTest {
     fun `loadCountries returns non-empty list`() {
         // Given
         val inputStream = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json")).thenReturn(inputStream)
+        every { assetManager.open("config/marketplaces.json") } returns inputStream
 
         // When
         val countries = repository.loadCountries()
@@ -73,7 +75,7 @@ class MarketplaceRepositoryTest {
     fun `loadCountries parses all countries correctly`() {
         // Given
         val inputStream = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json")).thenReturn(inputStream)
+        every { assetManager.open("config/marketplaces.json") } returns inputStream
 
         // When
         val countries = repository.loadCountries()
@@ -86,7 +88,7 @@ class MarketplaceRepositoryTest {
     fun `loadCountries returns countries with unique codes`() {
         // Given
         val inputStream = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json")).thenReturn(inputStream)
+        every { assetManager.open("config/marketplaces.json") } returns inputStream
 
         // When
         val countries = repository.loadCountries()
@@ -100,7 +102,7 @@ class MarketplaceRepositoryTest {
     fun `loadCountries returns sorted countries`() {
         // Given
         val inputStream = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json")).thenReturn(inputStream)
+        every { assetManager.open("config/marketplaces.json") } returns inputStream
 
         // When
         val countries = repository.loadCountries()
@@ -118,7 +120,7 @@ class MarketplaceRepositoryTest {
     fun `getCountryByCode returns correct country`() {
         // Given
         val inputStream = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json")).thenReturn(inputStream)
+        every { assetManager.open("config/marketplaces.json") } returns inputStream
 
         // When
         val country = repository.getCountryByCode("NL")
@@ -133,7 +135,7 @@ class MarketplaceRepositoryTest {
     fun `getCountryByCode is case insensitive`() {
         // Given
         val inputStream = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json")).thenReturn(inputStream)
+        every { assetManager.open("config/marketplaces.json") } returns inputStream
 
         // When
         val countryLower = repository.getCountryByCode("nl")
@@ -150,9 +152,7 @@ class MarketplaceRepositoryTest {
         // Given
         val inputStream1 = ByteArrayInputStream(sampleJson.toByteArray())
         val inputStream2 = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json"))
-            .thenReturn(inputStream1)
-            .thenReturn(inputStream2)
+        every { assetManager.open("config/marketplaces.json") } returnsMany listOf(inputStream1, inputStream2)
 
         // When
         val countries1 = repository.loadCountries()
@@ -167,9 +167,7 @@ class MarketplaceRepositoryTest {
         // Given
         val inputStream1 = ByteArrayInputStream(sampleJson.toByteArray())
         val inputStream2 = ByteArrayInputStream(sampleJson.toByteArray())
-        whenever(assetManager.open("config/marketplaces.json"))
-            .thenReturn(inputStream1)
-            .thenReturn(inputStream2)
+        every { assetManager.open("config/marketplaces.json") } returnsMany listOf(inputStream1, inputStream2)
 
         // When
         val countries1 = repository.loadCountries()
