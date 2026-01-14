@@ -34,8 +34,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -1078,7 +1080,7 @@ private fun RetryBanner(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun AssistantModeIndicator(
+internal fun AssistantModeIndicator(
     mode: AssistantMode,
     failure: AssistantBackendFailure? = null,
     isChecking: Boolean = false,
