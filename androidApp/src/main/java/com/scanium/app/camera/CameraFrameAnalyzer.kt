@@ -426,16 +426,14 @@ internal class CameraFrameAnalyzer(
                             TAG,
                             "!!! ASSERTION FAILED: Confirmed candidate ${candidate.internalId} is OUTSIDE ROI (center=$centerX,$centerY, roi=$currentRoi)",
                         )
-                        if (BuildConfig.DEBUG) {
+                        if (BuildConfig.DEBUG && Log.isLoggable(TAG, Log.ASSERT)) {
                             throw IllegalStateException("Confirmed candidate outside ROI - this should never happen")
                         }
                         null
                     } else {
                         val item = objectDetector.candidateToScannedItem(candidate)
-                        if (item != null) {
-                            objectTracker.markCandidateConsumed(candidate.internalId)
-                            Log.i(TAG, ">>> Added item from candidate ${candidate.internalId}, marked as consumed")
-                        }
+                        objectTracker.markCandidateConsumed(candidate.internalId)
+                        Log.i(TAG, ">>> Added item from candidate ${candidate.internalId}, marked as consumed")
                         item
                     }
                 }
