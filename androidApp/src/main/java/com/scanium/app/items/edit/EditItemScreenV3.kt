@@ -1,22 +1,12 @@
 package com.scanium.app.items.edit
 
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -25,34 +15,16 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -67,33 +39,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.tourTarget
-import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemAttributeLocalizer
-import com.scanium.app.items.ItemLocalizer
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.items.ScannedItem
-import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.ItemCondition
-import com.scanium.shared.core.models.model.ImageRef
 
 /**
  * Redesigned Edit Item screen with structured labeled fields (Phase 3 UX redesign).
@@ -133,75 +91,27 @@ fun EditItemScreenV3(
     val isTourActive by tourViewModel?.isTourActive?.collectAsState() ?: remember { mutableStateOf(false) }
     val targetBounds by tourViewModel?.targetBounds?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
 
-    // Export Assistant state
-    var showExportAssistantSheet by remember { mutableStateOf(false) }
-    val exportAssistantViewModel = remember(exportAssistantViewModelFactory, itemId) {
-        exportAssistantViewModelFactory?.create(itemId, itemsViewModel)
-    }
-
-    // AI Disabled Inlay state
-    var showAiDisabledInlay by remember { mutableStateOf(false) }
-
-    // Photo Gallery Dialog state
-    var showPhotoGallery by remember { mutableStateOf(false) }
-    var galleryStartIndex by remember { mutableStateOf(0) }
-
-    // Photo Selection state for multi-select deletion
-    var isSelectionMode by remember { mutableStateOf(false) }
-    var selectedPhotoIds by remember { mutableStateOf(setOf<String>()) }
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
-    var isDeletingPhotos by remember { mutableStateOf(false) }
-
-    // Field state (local draft, synchronized with item.attributes)
-    // LOCALIZATION: Display values are localized for UI; save canonicalizes back to English
-    var brandField by remember(item) { mutableStateOf(item?.attributes?.get("brand")?.value ?: "") }
-    var productTypeField by remember(item) { mutableStateOf(item?.attributes?.get("itemType")?.value ?: "") }
-    var modelField by remember(item) { mutableStateOf(item?.attributes?.get("model")?.value ?: "") }
-    // Color: localize canonical value for display
-    var colorField by remember(item) {
-        val rawColor = item?.attributes?.get("color")?.value ?: ""
-        mutableStateOf(if (rawColor.isNotEmpty()) ItemAttributeLocalizer.localizeColor(context, rawColor) else "")
-    }
-    var sizeField by remember(item) { mutableStateOf(item?.attributes?.get("size")?.value ?: "") }
-    // Material: localize canonical value for display
-    var materialField by remember(item) {
-        val rawMaterial = item?.attributes?.get("material")?.value ?: ""
-        mutableStateOf(if (rawMaterial.isNotEmpty()) ItemAttributeLocalizer.localizeMaterial(context, rawMaterial) else "")
-    }
-    // Condition: parse from attributes or item.condition
-    var conditionField by remember(item) {
-        val rawCondition = item?.attributes?.get("condition")?.value ?: item?.condition?.name ?: ""
-        val parsedCondition = if (rawCondition.isNotEmpty()) {
-            runCatching { ItemCondition.valueOf(rawCondition.uppercase()) }.getOrNull()
-        } else {
-            null
-        }
-        mutableStateOf(parsedCondition)
-    }
-    var notesField by remember(item) { mutableStateOf(item?.attributesSummaryText ?: "") }
-
-    // Price field (Phase 2 - Pricing)
-    var priceField by remember(item) {
-        mutableStateOf(item?.userPriceCents?.let { cents -> "%.2f".format(cents / 100.0) } ?: "")
-    }
-
-    // Pricing insights from AI assistant (Phase 2 - transient, not persisted)
-    var pricingInsights by remember { mutableStateOf<com.scanium.shared.core.models.assistant.PricingInsights?>(null) }
+    val editState = rememberItemEditState(
+        item = item,
+        itemId = itemId,
+        itemsViewModel = itemsViewModel,
+        exportAssistantViewModelFactory = exportAssistantViewModelFactory,
+    )
 
     // Observe Export Assistant state and extract pricing insights (Phase 2)
-    if (exportAssistantViewModel != null) {
-        val exportState by exportAssistantViewModel.state.collectAsState()
+    if (editState.exportAssistantViewModel != null) {
+        val exportState by editState.exportAssistantViewModel.state.collectAsState()
         LaunchedEffect(exportState) {
             if (exportState is ExportAssistantState.Success) {
                 val successState = exportState as ExportAssistantState.Success
                 // Update pricing insights
-                pricingInsights = successState.pricingInsights
+                editState.pricingInsights = successState.pricingInsights
 
                 // Auto-populate price with median (USER DECISION)
-                val range = pricingInsights?.range
-                if (pricingInsights?.status?.uppercase() == "OK" && range != null) {
+                val range = editState.pricingInsights?.range
+                if (editState.pricingInsights?.status?.uppercase() == "OK" && range != null) {
                     val median = (range.low + range.high) / 2.0
-                    priceField = "%.2f".format(median)
+                    editState.priceField = "%.2f".format(median)
                 }
             }
         }
@@ -274,25 +184,25 @@ fun EditItemScreenV3(
                         onClick = {
                             if (!aiAssistantEnabled) {
                                 // Show disabled inlay instead of triggering assistant
-                                showAiDisabledInlay = true
+                                editState.showAiDisabledInlay = true
                             } else {
                                 // Save fields to attributes BEFORE calling AI
                                 saveFieldsToAttributes(
                                     context = context,
                                     itemsViewModel = itemsViewModel,
                                     itemId = itemId,
-                                    brandField = brandField,
-                                    productTypeField = productTypeField,
-                                    modelField = modelField,
-                                    colorField = colorField,
-                                    sizeField = sizeField,
-                                    materialField = materialField,
-                                    conditionField = conditionField,
-                                    notesField = notesField,
+                                    brandField = editState.brandField,
+                                    productTypeField = editState.productTypeField,
+                                    modelField = editState.modelField,
+                                    colorField = editState.colorField,
+                                    sizeField = editState.sizeField,
+                                    materialField = editState.materialField,
+                                    conditionField = editState.conditionField,
+                                    notesField = editState.notesField,
                                 )
 
-                                if (exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
-                                    showExportAssistantSheet = true
+                                if (editState.exportAssistantViewModel != null && FeatureFlags.allowAiAssistant) {
+                                    editState.showExportAssistantSheet = true
                                 } else {
                                     onAiGenerate(itemId)
                                 }
@@ -328,14 +238,14 @@ fun EditItemScreenV3(
                                 context = context,
                                 itemsViewModel = itemsViewModel,
                                 itemId = itemId,
-                                brandField = brandField,
-                                productTypeField = productTypeField,
-                                modelField = modelField,
-                                colorField = colorField,
-                                sizeField = sizeField,
-                                materialField = materialField,
-                                conditionField = conditionField,
-                                notesField = notesField,
+                                brandField = editState.brandField,
+                                productTypeField = editState.productTypeField,
+                                modelField = editState.modelField,
+                                colorField = editState.colorField,
+                                sizeField = editState.sizeField,
+                                materialField = editState.materialField,
+                                conditionField = editState.conditionField,
+                                notesField = editState.notesField,
                             )
                             // Advance tour if on SAVE_CHANGES step
                             if (currentTourStep?.key == com.scanium.app.ftue.TourStepKey.SAVE_CHANGES) {
@@ -355,318 +265,22 @@ fun EditItemScreenV3(
             }
         },
     ) { padding ->
-        Column(
+        ItemEditSections(
+            currentItem = currentItem,
+            state = editState,
+            focusManager = focusManager,
+            onAddPhotos = onAddPhotos,
+            tourViewModel = tourViewModel,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .windowInsetsPadding(WindowInsets.ime)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
-        ) {
-            Spacer(Modifier.height(16.dp))
-
-            // Photo Gallery Section
-            Text(
-                text = stringResource(R.string.edit_item_photos),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-
-            // Contextual Action Bar for Selection Mode
-            if (isSelectionMode) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(8.dp),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.edit_item_photos_selected, selectedPhotoIds.size),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            // Delete button
-                            IconButton(
-                                onClick = {
-                                    if (selectedPhotoIds.isNotEmpty()) {
-                                        showDeleteConfirmation = true
-                                    }
-                                },
-                                enabled = selectedPhotoIds.isNotEmpty() && !isDeletingPhotos,
-                            ) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.common_delete),
-                                    tint = if (selectedPhotoIds.isNotEmpty()) {
-                                        MaterialTheme.colorScheme.error
-                                    } else {
-                                        MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f)
-                                    }
-                                )
-                            }
-                            // Cancel/Close button
-                            IconButton(
-                                onClick = {
-                                    isSelectionMode = false
-                                    selectedPhotoIds = setOf()
-                                },
-                                enabled = !isDeletingPhotos,
-                            ) {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = stringResource(R.string.common_cancel),
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(bottom = 16.dp),
-            ) {
-                // Primary thumbnail - not deletable for now
-                item {
-                    val thumbnailBitmap = (currentItem.thumbnailRef ?: currentItem.thumbnail).toImageBitmap()
-                    PhotoThumbnailV3(
-                        bitmap = thumbnailBitmap,
-                        label = stringResource(R.string.edit_item_photo_primary),
-                        isPrimary = true,
-                        onClick = {
-                            if (!isSelectionMode) {
-                                galleryStartIndex = 0
-                                showPhotoGallery = true
-                            }
-                        },
-                        // Primary photo doesn't participate in selection
-                        isSelectionMode = false,
-                        isSelected = false,
-                    )
-                }
-
-                // Additional photos
-                itemsIndexed(currentItem.additionalPhotos) { index, photo ->
-                    val photoBitmap = remember(photo.uri) {
-                        photo.uri?.let { uri ->
-                            try {
-                                BitmapFactory.decodeFile(uri)
-                            } catch (e: Exception) {
-                                null
-                            }
-                        }
-                    }
-                    val isSelected = selectedPhotoIds.contains(photo.id)
-                    PhotoThumbnailV3(
-                        bitmap = photoBitmap?.asImageBitmap(),
-                        label = null,
-                        isPrimary = false,
-                        onClick = {
-                            if (isSelectionMode) {
-                                // Toggle selection
-                                selectedPhotoIds = if (isSelected) {
-                                    selectedPhotoIds - photo.id
-                                } else {
-                                    selectedPhotoIds + photo.id
-                                }
-                            } else {
-                                // Open gallery
-                                galleryStartIndex = index + 1
-                                showPhotoGallery = true
-                            }
-                        },
-                        onLongClick = {
-                            if (!isSelectionMode) {
-                                // Enter selection mode and select this photo
-                                isSelectionMode = true
-                                selectedPhotoIds = setOf(photo.id)
-                            }
-                        },
-                        isSelected = isSelected,
-                        isSelectionMode = isSelectionMode,
-                    )
-                }
-
-                // Add photo button
-                item {
-                    AddPhotoButtonV3(
-                        onClick = { onAddPhotos(itemId) },
-                        modifier = if (tourViewModel != null) {
-                            Modifier.tourTarget("edit_add_photo", tourViewModel)
-                        } else {
-                            Modifier
-                        }
-                    )
-                }
-            }
-
-            // Structured Fields
-            Text(
-                text = stringResource(R.string.item_detail_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 12.dp),
-            )
-
-            // Brand
-            LabeledTextField(
-                label = stringResource(R.string.edit_item_field_brand),
-                value = brandField,
-                onValueChange = { brandField = it },
-                onClear = { brandField = "" },
-                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "brand"),
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                modifier = if (tourViewModel != null) {
-                    Modifier.tourTarget("edit_brand_field", tourViewModel)
-                } else {
-                    Modifier
-                }
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Product/Type
-            LabeledTextField(
-                label = stringResource(R.string.edit_item_field_product_type),
-                value = productTypeField,
-                onValueChange = { productTypeField = it },
-                onClear = { productTypeField = "" },
-                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "itemType"),
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Model
-            LabeledTextField(
-                label = stringResource(R.string.edit_item_field_model),
-                value = modelField,
-                onValueChange = { modelField = it },
-                onClear = { modelField = "" },
-                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "model"),
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Color
-            LabeledTextField(
-                label = stringResource(R.string.edit_item_field_color),
-                value = colorField,
-                onValueChange = { colorField = it },
-                onClear = { colorField = "" },
-                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "color"),
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Size
-            LabeledTextField(
-                label = stringResource(R.string.edit_item_field_size),
-                value = sizeField,
-                onValueChange = { sizeField = it },
-                onClear = { sizeField = "" },
-                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "size"),
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Material
-            LabeledTextField(
-                label = stringResource(R.string.edit_item_field_material),
-                value = materialField,
-                onValueChange = { materialField = it },
-                onClear = { materialField = "" },
-                visualTransformation = AttributeDisplayFormatter.visualTransformation(context, "material"),
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Condition
-            LabeledConditionDropdown(
-                label = stringResource(R.string.edit_item_field_condition),
-                selectedCondition = conditionField,
-                onConditionSelected = { conditionField = it },
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // Price (Phase 2 - Pricing)
-            LabeledTextField(
-                label = stringResource(R.string.edit_item_field_price),
-                value = priceField,
-                onValueChange = { priceField = it },
-                onClear = { priceField = "" },
-                imeAction = ImeAction.Next,
-                onNext = { focusManager.moveFocus(FocusDirection.Down) },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Decimal,
-                    imeAction = ImeAction.Next
-                ),
-            )
-
-            // AI Pricing Insights (Phase 2 - shown when available)
-            if (pricingInsights?.status?.uppercase() == "OK") {
-                Spacer(Modifier.height(8.dp))
-                PriceInsightsCompactCard(
-                    insights = pricingInsights!!,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // Notes (multiline)
-            Text(
-                text = stringResource(R.string.edit_item_field_notes),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 4.dp),
-            )
-            OutlinedTextField(
-                value = notesField,
-                onValueChange = { notesField = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                placeholder = { Text(stringResource(R.string.edit_item_notes_placeholder)) },
-                trailingIcon = {
-                    if (notesField.isNotEmpty()) {
-                        IconButton(onClick = { notesField = "" }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
-                        }
-                    }
-                },
-                maxLines = 6,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
-            )
-
-            Spacer(Modifier.height(24.dp))
-        }
+        )
     }
 
     // Photo Gallery Dialog
-    if (showPhotoGallery) {
+    if (editState.showPhotoGallery) {
         // Build list of gallery photo refs
         val galleryPhotos = remember(currentItem) {
             buildList {
@@ -686,50 +300,50 @@ fun EditItemScreenV3(
         if (galleryPhotos.isNotEmpty()) {
             PhotoGalleryDialog(
                 photos = galleryPhotos,
-                initialIndex = galleryStartIndex,
-                onDismiss = { showPhotoGallery = false },
+                initialIndex = editState.galleryStartIndex,
+                onDismiss = { editState.showPhotoGallery = false },
             )
         }
     }
 
     // Delete Confirmation Dialog
-    if (showDeleteConfirmation) {
+    if (editState.showDeleteConfirmation) {
         AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = false },
+            onDismissRequest = { editState.showDeleteConfirmation = false },
             title = { Text(stringResource(R.string.edit_item_delete_photos_title)) },
             text = {
                 Text(
                     stringResource(
                         R.string.edit_item_delete_photos_message,
-                        selectedPhotoIds.size
+                        editState.selectedPhotoIds.size
                     )
                 )
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        isDeletingPhotos = true
-                        showDeleteConfirmation = false
+                        editState.isDeletingPhotos = true
+                        editState.showDeleteConfirmation = false
                         itemsViewModel.deletePhotosFromItem(
                             context = context,
                             itemId = itemId,
-                            photoIds = selectedPhotoIds,
+                            photoIds = editState.selectedPhotoIds,
                             onComplete = {
-                                isDeletingPhotos = false
-                                isSelectionMode = false
-                                selectedPhotoIds = setOf()
+                                editState.isDeletingPhotos = false
+                                editState.isSelectionMode = false
+                                editState.selectedPhotoIds = setOf()
                             }
                         )
                     },
-                    enabled = !isDeletingPhotos,
+                    enabled = !editState.isDeletingPhotos,
                 ) {
                     Text(stringResource(R.string.common_delete))
                 }
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showDeleteConfirmation = false },
-                    enabled = !isDeletingPhotos,
+                    onClick = { editState.showDeleteConfirmation = false },
+                    enabled = !editState.isDeletingPhotos,
                 ) {
                     Text(stringResource(R.string.common_cancel))
                 }
@@ -738,14 +352,14 @@ fun EditItemScreenV3(
     }
 
     // Export Assistant Bottom Sheet
-    if (showExportAssistantSheet && exportAssistantViewModel != null) {
+    if (editState.showExportAssistantSheet && editState.exportAssistantViewModel != null) {
         val settingsRepository = remember { SettingsRepository(context) }
         val ttsManager = remember { com.scanium.app.assistant.tts.TtsManager(context, settingsRepository) }
         ExportAssistantSheet(
-            viewModel = exportAssistantViewModel,
+            viewModel = editState.exportAssistantViewModel,
             settingsRepository = settingsRepository,
             ttsManager = ttsManager,
-            onDismiss = { showExportAssistantSheet = false },
+            onDismiss = { editState.showExportAssistantSheet = false },
             onApply = { title, description, bullets ->
                 // Update notes field with export content
                 val builder = StringBuilder()
@@ -764,15 +378,15 @@ fun EditItemScreenV3(
                         builder.appendLine("• $bullet")
                     }
                 }
-                notesField = builder.toString().trim()
+                editState.notesField = builder.toString().trim()
             },
         )
     }
 
     // AI Disabled Inlay Dialog
-    if (showAiDisabledInlay) {
+    if (editState.showAiDisabledInlay) {
         AlertDialog(
-            onDismissRequest = { showAiDisabledInlay = false },
+            onDismissRequest = { editState.showAiDisabledInlay = false },
             title = { Text(stringResource(R.string.assistant_disabled_title)) },
             text = {
                 Text(
@@ -783,7 +397,7 @@ fun EditItemScreenV3(
             confirmButton = {
                 Button(
                     onClick = {
-                        showAiDisabledInlay = false
+                        editState.showAiDisabledInlay = false
                         onNavigateToSettings()
                     },
                     modifier = Modifier.testTag("aiDisabled_openSettings")
@@ -793,7 +407,7 @@ fun EditItemScreenV3(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showAiDisabledInlay = false }
+                    onClick = { editState.showAiDisabledInlay = false }
                 ) {
                     Text(stringResource(R.string.common_cancel))
                 }
@@ -819,258 +433,6 @@ fun EditItemScreenV3(
     }
 }
 
-/**
- * Labeled text field with inline clear button.
- */
-@Composable
-private fun LabeledTextField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    onClear: () -> Unit,
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-    imeAction: ImeAction = ImeAction.Next,
-    onNext: () -> Unit = {},
-    keyboardOptions: KeyboardOptions? = null,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = visualTransformation,
-            trailingIcon = {
-                if (value.isNotEmpty()) {
-                    IconButton(onClick = onClear) {
-                        Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
-                    }
-                }
-            },
-            singleLine = true,
-            keyboardOptions = keyboardOptions ?: KeyboardOptions(imeAction = imeAction),
-            keyboardActions = KeyboardActions(
-                onNext = { onNext() },
-            ),
-        )
-    }
-}
-
-/**
- * Labeled dropdown selector for item condition.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun LabeledConditionDropdown(
-    label: String,
-    selectedCondition: ItemCondition?,
-    onConditionSelected: (ItemCondition?) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-        ) {
-            OutlinedTextField(
-                value = selectedCondition?.let { ItemLocalizer.getConditionName(it) } ?: "",
-                onValueChange = {},
-                readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                trailingIcon = {
-                    if (selectedCondition != null) {
-                        IconButton(onClick = { onConditionSelected(null) }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear", modifier = Modifier.size(20.dp))
-                        }
-                    } else {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    }
-                },
-                placeholder = { Text(stringResource(R.string.common_select)) },
-                singleLine = true,
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                // All condition options
-                ItemCondition.entries.forEach { condition ->
-                    DropdownMenuItem(
-                        text = { Text(ItemLocalizer.getConditionName(condition)) },
-                        onClick = {
-                            onConditionSelected(condition)
-                            expanded = false
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun PhotoThumbnailV3(
-    bitmap: androidx.compose.ui.graphics.ImageBitmap?,
-    label: String?,
-    isPrimary: Boolean,
-    onClick: (() -> Unit)? = null,
-    onLongClick: (() -> Unit)? = null,
-    isSelected: Boolean = false,
-    isSelectionMode: Boolean = false,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box {
-            Card(
-                modifier = Modifier
-                    .size(100.dp)
-                    .then(
-                        if (onClick != null || onLongClick != null) {
-                            Modifier.combinedClickable(
-                                onClick = { onClick?.invoke() },
-                                onLongClick = { onLongClick?.invoke() }
-                            )
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .then(
-                        if (isPrimary) {
-                            Modifier.border(
-                                2.dp,
-                                MaterialTheme.colorScheme.primary,
-                                RoundedCornerShape(12.dp),
-                            )
-                        } else if (isSelected) {
-                            Modifier.border(
-                                3.dp,
-                                MaterialTheme.colorScheme.tertiary,
-                                RoundedCornerShape(12.dp),
-                            )
-                        } else {
-                            Modifier
-                        },
-                    ),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-            ) {
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap,
-                        contentDescription = label,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            stringResource(R.string.items_no_image),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-            // Selection indicator overlay
-            if (isSelected && isSelectionMode) {
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(
-                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f),
-                            RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = "Selected",
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .size(24.dp)
-                            .background(
-                                MaterialTheme.colorScheme.tertiary,
-                                RoundedCornerShape(12.dp)
-                            )
-                            .padding(4.dp),
-                        tint = MaterialTheme.colorScheme.onTertiary
-                    )
-                }
-            }
-        }
-        if (label != null) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun AddPhotoButtonV3(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val addPhotoText = stringResource(R.string.edit_item_add_photo)
-    val addText = stringResource(R.string.common_add)
-    Card(
-        modifier = modifier
-            .size(100.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        ),
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = addPhotoText,
-                    modifier = Modifier.size(32.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    addText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-        }
-    }
-}
 
 /**
  * Save field values to item attributes with USER source.
@@ -1161,110 +523,4 @@ private fun saveFieldsToAttributes(
         summaryText = notesField,
         userEdited = notesField.isNotBlank(),
     )
-}
-
-/**
- * Compact pricing insights card for Edit Item screen (Phase 2).
- * Shows AI-generated market price range with collapsible comparable listings.
- */
-@Composable
-private fun PriceInsightsCompactCard(
-    insights: com.scanium.shared.core.models.assistant.PricingInsights,
-    modifier: Modifier = Modifier,
-) {
-    val range = insights.range ?: return
-    val marketplacesById = remember(insights.marketplacesUsed) {
-        insights.marketplacesUsed.associateBy { it.id }
-    }
-
-    var showComparables by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-        ),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Header with price range
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "AI Market Price",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                    Text(
-                        text = "${range.currency} ${range.low.toInt()}-${range.high.toInt()}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Text(
-                    text = "Based on ${insights.results.size} listings",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Show comparables button
-            if (insights.results.isNotEmpty()) {
-                OutlinedButton(
-                    onClick = { showComparables = !showComparables },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        if (showComparables) {
-                            "Hide matches (${insights.results.size})"
-                        } else {
-                            "Show matches (${insights.results.size})"
-                        }
-                    )
-                }
-
-                // Comparables list (collapsible)
-                if (showComparables) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        insights.results.forEach { comparable ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = comparable.title,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Text(
-                                        text = marketplacesById[comparable.sourceMarketplaceId]?.name
-                                            ?: comparable.sourceMarketplaceId,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Text(
-                                    text = "${comparable.price.currency} ${comparable.price.amount.toInt()}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
