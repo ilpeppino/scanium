@@ -257,12 +257,14 @@ class ObjectDetectorClient {
             val scannedItems = mutableListOf<ScannedItem>()
             val detectionResults = mutableListOf<DetectionResult>()
 
-            // COORDINATE FIX: ML Kit returns bboxes in InputImage coordinate space (upright).
-            // Use InputImage dimensions for normalization - these are the dimensions ML Kit
-            // "sees" after rotation metadata is applied.
+            // COORDINATE FIX: ML Kit returns bboxes in the ROTATED coordinate space.
+            // InputImage.width/height are the ORIGINAL buffer dimensions (before rotation).
+            // For 90°/270° rotation, we must SWAP dimensions to match the rotated space.
             // For thumbnail cropping, we convert upright bbox to sensor space separately.
-            val uprightWidth = image.width
-            val uprightHeight = image.height
+            val isRotated = image.rotationDegrees == 90 || image.rotationDegrees == 270
+            val uprightWidth = if (isRotated) image.height else image.width
+            val uprightHeight = if (isRotated) image.width else image.height
+            Log.d(TAG, "Normalization dims: rotated=$isRotated, upright=${uprightWidth}x$uprightHeight (raw=${image.width}x${image.height})")
 
             detectedObjects.forEach { obj ->
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
@@ -474,10 +476,12 @@ class ObjectDetectorClient {
             val detectionInfos = mutableListOf<DetectionInfo>()
             val detectionResults = mutableListOf<DetectionResult>()
 
-            // COORDINATE FIX: ML Kit returns bboxes in InputImage coordinate space (upright).
-            // Use InputImage dimensions for normalization.
-            val uprightWidth = image.width
-            val uprightHeight = image.height
+            // COORDINATE FIX: ML Kit returns bboxes in the ROTATED coordinate space.
+            // InputImage.width/height are the ORIGINAL buffer dimensions (before rotation).
+            // For 90°/270° rotation, we must SWAP dimensions to match the rotated space.
+            val isRotated = image.rotationDegrees == 90 || image.rotationDegrees == 270
+            val uprightWidth = if (isRotated) image.height else image.width
+            val uprightHeight = if (isRotated) image.width else image.height
 
             detectedObjects.forEach { obj ->
                 // PHASE 3: Filter detections using cropRect (no image cropping - pure geometry)
