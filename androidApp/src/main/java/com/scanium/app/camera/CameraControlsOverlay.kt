@@ -7,7 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -276,7 +276,7 @@ internal fun BoxScope.CameraOverlayPortrait(
                                 ),
                     ) {
                         Icon(
-                            imageVector = Icons.Default.List,
+                            imageVector = Icons.AutoMirrored.Filled.List,
                             contentDescription = stringResource(R.string.cd_view_items),
                             tint = Color.White,
                         )
@@ -464,7 +464,7 @@ internal fun BoxScope.CameraOverlayLandscape(
                         ),
             ) {
                 Icon(
-                    imageVector = Icons.Default.List,
+                    imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = stringResource(R.string.cd_view_items),
                     tint = Color.White,
                 )

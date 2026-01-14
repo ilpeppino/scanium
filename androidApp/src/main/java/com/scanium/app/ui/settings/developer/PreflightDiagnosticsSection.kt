@@ -205,7 +205,7 @@ private fun PreflightStatusBadge(status: PreflightStatus) {
         PreflightStatus.UNKNOWN -> Triple(
             Color(0xFF9E9E9E),
             "Unknown",
-            Icons.Default.Help,
+            Icons.AutoMirrored.Filled.Help,
         )
         PreflightStatus.CLIENT_ERROR -> Triple(
             Color(0xFFFF9800),

@@ -365,7 +365,7 @@ private fun CapabilityRow(capability: CapabilityStatus) {
                 Icon(
                     when (capability.name) {
                         "Speech Recognition" -> Icons.Default.Mic
-                        "Text-to-Speech" -> Icons.Default.VolumeUp
+                        "Text-to-Speech" -> Icons.AutoMirrored.Filled.VolumeUp
                         "Camera Lenses" -> Icons.Default.CameraAlt
                         else -> Icons.Default.Settings
                     },
