@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -26,28 +25,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -63,8 +50,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -88,7 +73,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -116,7 +100,6 @@ import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
 import com.scanium.app.selling.assistant.components.VisionConflictDialog
 import com.scanium.app.selling.assistant.components.VisionInsightsSection
-import com.scanium.app.selling.assistant.local.LocalSuggestionsCard
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.model.SuggestedAttribute
 import com.scanium.app.selling.util.ListingClipboardHelper
@@ -161,12 +144,9 @@ fun AssistantScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val soundManager = LocalSoundManager.current
-    var inputText by remember { mutableStateOf("") }
+    val screenState = rememberAssistantScreenState()
     // Vision conflict dialog state: Pair of (suggested attribute, existing value)
-    var pendingConflictAttribute by remember { mutableStateOf<Pair<SuggestedAttribute, String>?>(null) }
     val voiceController = remember { AssistantVoiceController(context) }
-    var lastSpokenTimestamp by remember { mutableStateOf<Long?>(null) }
-    var lastSoundedAssistantTimestamp by remember { mutableStateOf<Long?>(null) }
     val hapticFeedback = LocalHapticFeedback.current
 
     // Voice mode settings
@@ -256,24 +236,24 @@ fun AssistantScreen(
         if (!speakAnswersEnabled) return@LaunchedEffect
         val lastAssistant = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
         val timestamp = lastAssistant?.message?.timestamp
-        if (timestamp != null && timestamp != lastSpokenTimestamp) {
+        if (timestamp != null && timestamp != screenState.lastSpokenTimestamp) {
             voiceController.speak(lastAssistant.message.content)
-            lastSpokenTimestamp = timestamp
+            screenState.lastSpokenTimestamp = timestamp
         }
     }
 
-    LaunchedEffect(state.entries, inputText, voiceState) {
+    LaunchedEffect(state.entries, screenState.inputText, voiceState) {
         val lastAssistant = state.entries.lastOrNull { it.message.role == AssistantRole.ASSISTANT }
         val timestamp = lastAssistant?.message?.timestamp
         val shouldPlay =
             timestamp != null &&
-                timestamp != lastSoundedAssistantTimestamp &&
-                inputText.isBlank() &&
+                timestamp != screenState.lastSoundedAssistantTimestamp &&
+                screenState.inputText.isBlank() &&
                 voiceState != VoiceState.LISTENING &&
                 voiceState != VoiceState.TRANSCRIBING
         if (shouldPlay) {
             soundManager.play(AppSound.RECEIVED)
-            lastSoundedAssistantTimestamp = timestamp
+            screenState.lastSoundedAssistantTimestamp = timestamp
         }
     }
 
@@ -281,11 +261,11 @@ fun AssistantScreen(
     val handleVoiceResult: (VoiceResult) -> Unit = { result ->
         when (result) {
             is VoiceResult.Success -> {
-                inputText = result.transcript
+                screenState.inputText = result.transcript
                 if (autoSendTranscript && result.transcript.isNotBlank()) {
                     soundManager.play(AppSound.SEND)
                     viewModel.sendMessage(result.transcript)
-                    inputText = ""
+                    screenState.inputText = ""
                 }
             }
             is VoiceResult.Error -> {
@@ -309,21 +289,21 @@ fun AssistantScreen(
         }
 
     // Vision Conflict Dialog
-    pendingConflictAttribute?.let { (attr, existingValue) ->
+    screenState.pendingConflictAttribute?.let { (attr, existingValue) ->
         VisionConflictDialog(
             attribute = attr,
             existingValue = existingValue,
             alternativeKey = viewModel.getAlternativeKey(attr.key),
             onReplace = {
                 viewModel.applyVisionAttribute(attr)
-                pendingConflictAttribute = null
+                screenState.pendingConflictAttribute = null
             },
             onAddAlternative = {
                 val altKey = viewModel.getAlternativeKey(attr.key)
                 viewModel.applyVisionAttribute(attr, alternativeKey = altKey)
-                pendingConflictAttribute = null
+                screenState.pendingConflictAttribute = null
             },
-            onDismiss = { pendingConflictAttribute = null },
+            onDismiss = { screenState.pendingConflictAttribute = null },
         )
     }
 
@@ -374,170 +354,100 @@ fun AssistantScreen(
                     .padding(padding),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                if (state.snapshots.isNotEmpty()) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .horizontalScroll(rememberScrollState())
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        state.snapshots.forEach { snapshot ->
-                            AssistChip(
-                                onClick = {},
-                                label = {
-                                    Text(
-                                        text = snapshot.title ?: snapshot.category ?: "Item",
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+            AssistantChatList(
+                state = state,
+                latestAssistantTimestamp = latestAssistantTimestamp,
+                onAction = { action ->
+                    handleAssistantAction(
+                        action = action,
+                        state = state,
+                        viewModel = viewModel,
+                        hapticFeedback = hapticFeedback,
+                        hapticsEnabled = assistantHapticsEnabled,
+                        onOpenPostingAssist = onOpenPostingAssist,
+                        onShare = { itemId ->
+                            scope.launch {
+                                val draft =
+                                    draftStore.getByItemId(itemId)
+                                        ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
+                                            ?.let { ListingDraftBuilder.build(it) }
+                                if (draft == null) {
+                                    snackbarHostState.showSnackbar("No draft to share")
+                                    return@launch
+                                }
+                                val profile =
+                                    state.profile.takeIf { it.id == draft.profile }
+                                        ?: ExportProfiles.generic()
+
+                                // Localize condition
+                                val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
+                                    ItemAttributeLocalizer.localizeCondition(context, it)
+                                }
+                                val exportDraft = if (localizedCondition != null) {
+                                    val newFields = draft.fields.toMutableMap()
+                                    newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
+                                        ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
+                                    draft.copy(fields = newFields)
+                                } else draft
+
+                                val export = ListingDraftFormatter.format(exportDraft, profile)
+                                val currentItem = itemsViewModel.items.value.firstOrNull { it.id == draft.itemId }
+                                val shareImages =
+                                    draft.photos.map { it.image }.ifEmpty {
+                                        listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
+                                    }
+                                val imageUris =
+                                    ListingShareHelper.writeShareImages(
+                                        context = context,
+                                        itemId = draft.itemId,
+                                        images = shareImages,
                                     )
-                                },
-                            )
-                        }
-                    }
-                }
-
-                AssistantModeIndicator(
-                    mode = state.assistantMode,
-                    failure = state.lastBackendFailure,
-                    isChecking = state.availability is AssistantAvailability.Checking,
-                )
-
-                LazyColumn(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 12.dp)
-                            .semantics { traversalIndex = 0f },
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    itemsIndexed(state.entries) { _, entry ->
-                        val isLatestAssistant =
-                            entry.message.role == AssistantRole.ASSISTANT &&
-                                entry.message.timestamp == latestAssistantTimestamp
-                        MessageBubble(
-                            entry = entry,
-                            modifier =
-                                if (isLatestAssistant) {
-                                    Modifier.semantics { traversalIndex = 1f }
-                                } else {
-                                    Modifier
-                                },
-                            actionTraversalIndex = if (isLatestAssistant) 2f else null,
-                            onAction = { action ->
-                                handleAssistantAction(
-                                    action = action,
-                                    state = state,
-                                    viewModel = viewModel,
-                                    hapticFeedback = hapticFeedback,
-                                    hapticsEnabled = assistantHapticsEnabled,
-                                    onOpenPostingAssist = onOpenPostingAssist,
-                                    onShare = { itemId ->
-                                        scope.launch {
-                                            val draft =
-                                                draftStore.getByItemId(itemId)
-                                                    ?: itemsViewModel.items.value.firstOrNull { it.id == itemId }
-                                                        ?.let { ListingDraftBuilder.build(it) }
-                                            if (draft == null) {
-                                                snackbarHostState.showSnackbar("No draft to share")
-                                                return@launch
-                                            }
-                                            val profile =
-                                                state.profile.takeIf { it.id == draft.profile }
-                                                    ?: ExportProfiles.generic()
-
-                                            // Localize condition
-                                            val localizedCondition = draft.fields[DraftFieldKey.CONDITION]?.value?.let {
-                                                ItemAttributeLocalizer.localizeCondition(context, it)
-                                            }
-                                            val exportDraft = if (localizedCondition != null) {
-                                                val newFields = draft.fields.toMutableMap()
-                                                newFields[DraftFieldKey.CONDITION] = newFields[DraftFieldKey.CONDITION]?.copy(value = localizedCondition)
-                                                    ?: DraftField(value = localizedCondition, confidence = 1.0f, source = DraftProvenance.USER_EDITED)
-                                                draft.copy(fields = newFields)
-                                            } else draft
-
-                                            val export = ListingDraftFormatter.format(exportDraft, profile)
-                                            val currentItem = itemsViewModel.items.value.firstOrNull { it.id == draft.itemId }
-                                            val shareImages =
-                                                draft.photos.map { it.image }.ifEmpty {
-                                                    listOfNotNull(currentItem?.thumbnailRef ?: currentItem?.thumbnail)
-                                                }
-                                            val imageUris =
-                                                ListingShareHelper.writeShareImages(
-                                                    context = context,
-                                                    itemId = draft.itemId,
-                                                    images = shareImages,
-                                                )
-                                            val intent =
-                                                ListingShareHelper.buildShareIntent(
-                                                    contentResolver = context.contentResolver,
-                                                    text = export.shareText,
-                                                    imageUris = imageUris,
-                                                )
-                                            val chooser = Intent.createChooser(intent, "Share listing")
-                                            context.startActivity(chooser)
-                                        }
-                                    },
-                                    onOpenUrl = { url ->
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                        context.startActivity(intent)
-                                    },
-                                    onCopyText = { label, text ->
-                                        ListingClipboardHelper.copy(context, label, text)
-                                        scope.launch { snackbarHostState.showSnackbar("$label copied") }
-                                    },
-                                )
-                            },
-                            // Vision Insights integration
-                            onApplyVisionAttribute = { attr ->
-                                viewModel.applyVisionAttribute(attr)
-                            },
-                            onVisionAttributeConflict = { attr, existingValue ->
-                                pendingConflictAttribute = attr to existingValue
-                            },
-                            getExistingAttribute = { key ->
-                                viewModel.getExistingAttribute(key)
-                            },
-                            visionInsightsEnabled = true,
-                        )
-                    }
-                    item {
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-
-                    // Show local suggestions when assistant is unavailable
-                    val availability = state.availability
-                    val localSuggestions = state.localSuggestions
-                    if (availability is AssistantAvailability.Unavailable &&
-                        availability.reason != UnavailableReason.LOADING &&
-                        localSuggestions != null
-                    ) {
-                        item {
-                            LocalSuggestionsCard(
-                                suggestions = localSuggestions,
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                onCopyText = { label, text ->
-                                    ListingClipboardHelper.copy(context, label, text)
-                                    scope.launch { snackbarHostState.showSnackbar("$label copied") }
-                                },
-                                onApplyDescription = { description ->
-                                    viewModel.applyLocalSuggestedDescription(description)
-                                },
-                                onApplyTitle = { title ->
-                                    viewModel.applyLocalSuggestedTitle(title)
-                                },
-                                onQuestionSelected = { question ->
-                                    // When assistant is available again, send the question
-                                    // For now, just copy it to input
-                                    inputText = question
-                                },
-                            )
-                        }
-                    }
-                }
-            }
+                                val intent =
+                                    ListingShareHelper.buildShareIntent(
+                                        contentResolver = context.contentResolver,
+                                        text = export.shareText,
+                                        imageUris = imageUris,
+                                    )
+                                val chooser = Intent.createChooser(intent, "Share listing")
+                                context.startActivity(chooser)
+                            }
+                        },
+                        onOpenUrl = { url ->
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            context.startActivity(intent)
+                        },
+                        onCopyText = { label, text ->
+                            ListingClipboardHelper.copy(context, label, text)
+                            scope.launch { snackbarHostState.showSnackbar("$label copied") }
+                        },
+                    )
+                },
+                onApplyVisionAttribute = { attr ->
+                    viewModel.applyVisionAttribute(attr)
+                },
+                onVisionAttributeConflict = { attr, existingValue ->
+                    screenState.pendingConflictAttribute = attr to existingValue
+                },
+                getExistingAttribute = { key ->
+                    viewModel.getExistingAttribute(key)
+                },
+                onCopyText = { label, text ->
+                    ListingClipboardHelper.copy(context, label, text)
+                    scope.launch { snackbarHostState.showSnackbar("$label copied") }
+                },
+                onApplyDescription = { description ->
+                    viewModel.applyLocalSuggestedDescription(description)
+                },
+                onApplyTitle = { title ->
+                    viewModel.applyLocalSuggestedTitle(title)
+                },
+                onQuestionSelected = { question ->
+                    // When assistant is available again, send the question
+                    // For now, just copy it to input
+                    screenState.inputText = question
+                },
+                modifier = Modifier.weight(1f),
+            )
 
             // Show availability banner when assistant is unavailable (not just after a failed message)
             val availabilityBanner = state.availability
@@ -610,7 +520,7 @@ fun AssistantScreen(
                 enabled = state.isInputEnabled,
                 onActionSelected = { actionText ->
                     if (state.isInputEnabled) {
-                        inputText = actionText
+                        screenState.inputText = actionText
                         soundManager.play(AppSound.SEND)
                         viewModel.sendMessage(actionText)
                     }
@@ -620,171 +530,57 @@ fun AssistantScreen(
             // ChatGPT-like input field with embedded icons
             // Disabled when assistant is unavailable (offline, error, loading)
             val inputEnabled = state.isInputEnabled
-            TextField(
-                value = inputText,
-                onValueChange = { if (inputEnabled) inputText = it },
-                enabled = inputEnabled,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .semantics { traversalIndex = 3f }
-                        .navigationBarsPadding()
-                        .imePadding(),
-                placeholder = {
-                    Text(
-                        text = state.inputPlaceholder,
-                        color = if (!inputEnabled) {
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            val sendCurrentInput = {
+                val text = screenState.inputText
+                screenState.inputText = ""
+                if (assistantHapticsEnabled) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                }
+                soundManager.play(AppSound.SEND)
+                viewModel.sendMessage(text)
+            }
+            val onVoiceToggle = {
+                val isListening = voiceState == VoiceState.LISTENING
+                val isTranscribing = voiceState == VoiceState.TRANSCRIBING
+                val isActive = isListening || isTranscribing
+                when {
+                    !speechAvailable -> Unit
+                    isActive -> voiceController.stopListening()
+                    else -> {
+                        val hasPermission =
+                            ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO,
+                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                        if (hasPermission) {
+                            voiceController.startListening(handleVoiceResult)
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                },
-                shape = RoundedCornerShape(24.dp),
-                colors =
-                    TextFieldDefaults.colors(
-                        focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                        unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                        disabledIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                    ),
-                trailingIcon = {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // Voice icon button - only show if voice mode is enabled
-                        if (voiceModeEnabled) {
-                            val isListening = voiceState == VoiceState.LISTENING
-                            val isTranscribing = voiceState == VoiceState.TRANSCRIBING
-                            val isActive = isListening || isTranscribing
-
-                            // Animate mic button color when active
-                            val micColor by animateColorAsState(
-                                targetValue =
-                                    when {
-                                        isListening -> MaterialTheme.colorScheme.error
-                                        isTranscribing -> MaterialTheme.colorScheme.tertiary
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    },
-                                animationSpec = tween(300),
-                                label = "micColor",
-                            )
-
-                            IconButton(
-                                onClick = {
-                                    when {
-                                        !speechAvailable -> Unit
-                                        isActive -> voiceController.stopListening()
-                                        else -> {
-                                            val hasPermission =
-                                                ContextCompat.checkSelfPermission(
-                                                    context,
-                                                    Manifest.permission.RECORD_AUDIO,
-                                                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                                            if (hasPermission) {
-                                                voiceController.startListening(handleVoiceResult)
-                                            } else {
-                                                micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                            }
-                                        }
-                                    }
-                                },
-                                enabled = speechAvailable,
-                                modifier =
-                                    Modifier
-                                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                        .semantics {
-                                            contentDescription =
-                                                if (isActive) {
-                                                    "Stop voice input"
-                                                } else {
-                                                    "Start voice input"
-                                                }
-                                        },
-                            ) {
-                                val icon =
-                                    when {
-                                        !speechAvailable -> Icons.Default.MicOff
-                                        isActive -> Icons.Default.Stop
-                                        else -> Icons.Default.Mic
-                                    }
-                                val description =
-                                    when {
-                                        !speechAvailable -> "Voice input unavailable"
-                                        isActive -> "Stop listening"
-                                        else -> "Voice input"
-                                    }
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = description,
-                                    tint = micColor,
-                                )
-                            }
-                        }
-
-                        // Send icon button - disabled when assistant unavailable
-                        val canSend = inputText.isNotBlank() && inputEnabled
-                        IconButton(
-                            onClick = {
-                                if (canSend) {
-                                    val text = inputText
-                                    inputText = ""
-                                    if (assistantHapticsEnabled) {
-                                        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    }
-                                    soundManager.play(AppSound.SEND)
-                                    viewModel.sendMessage(text)
-                                }
-                            },
-                            enabled = canSend,
-                            modifier =
-                                Modifier
-                                    .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                    .semantics {
-                                        contentDescription = if (inputEnabled) "Send message" else "Send unavailable"
-                                    },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Send,
-                                contentDescription = "Send",
-                                tint =
-                                    if (canSend) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                    },
-                            )
+                            micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     }
+                }
+            }
+            AssistantInputBar(
+                inputText = screenState.inputText,
+                inputPlaceholder = state.inputPlaceholder,
+                inputEnabled = inputEnabled,
+                voiceModeEnabled = voiceModeEnabled,
+                voiceState = voiceState,
+                speechAvailable = speechAvailable,
+                onInputChange = { screenState.inputText = it },
+                onVoiceToggle = onVoiceToggle,
+                onSend = {
+                    if (screenState.inputText.isNotBlank() && inputEnabled) {
+                        sendCurrentInput()
+                    }
                 },
-                minLines = 1,
-                maxLines = 6,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                keyboardActions =
-                    KeyboardActions(
-                        onSend = {
-                            // Only allow send if input is enabled (assistant available)
-                            if (inputText.isNotBlank() && inputEnabled) {
-                                val text = inputText
-                                inputText = ""
-                                if (assistantHapticsEnabled) {
-                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                }
-                                soundManager.play(AppSound.SEND)
-                                viewModel.sendMessage(text)
-                            }
-                        },
-                    ),
             )
         }
     }
 }
 
 @Composable
-private fun MessageBubble(
+internal fun MessageBubble(
     entry: AssistantChatEntry,
     modifier: Modifier = Modifier,
     actionTraversalIndex: Float? = null,
