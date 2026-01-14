@@ -14,7 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.*
@@ -448,7 +448,7 @@ internal fun ItemRow(
                                     .semantics { this.contentDescription = viewListingLabel },
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.OpenInNew,
+                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                                     contentDescription = stringResource(R.string.cd_view_external),
                                     modifier = Modifier.size(14.dp),
                                 )

@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -384,7 +384,7 @@ private fun ExportSuccessContent(
                     modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.VolumeUp,
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = if (isSpeaking) {
                             stringResource(R.string.common_stop_speaking)
                         } else {
