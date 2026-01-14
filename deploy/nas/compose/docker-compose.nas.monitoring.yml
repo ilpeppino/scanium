@@ -38,6 +38,7 @@ services:
     image: grafana/tempo:2.6.1
     container_name: scanium-tempo
     restart: unless-stopped
+    user: "0:0"  # Run as root to fix permission denied errors during compaction (GH-409)
     command: ["-config.file=/etc/tempo/tempo.yaml"]
     volumes:
       - /volume1/docker/scanium/monitoring/tempo:/var/tempo
