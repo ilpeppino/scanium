@@ -451,21 +451,22 @@ class CameraXManager(
                 )
             }
 
+            // Setup image analysis for object detection
+            val displayRotation = previewView.display.rotation
+            targetRotation = displayRotation
+
             // Setup preview
-            // CRITICAL FIX: Set target aspect ratio to match ImageAnalysis (4:3)
-            // This ensures Preview and ImageAnalysis show the same crop of the sensor,
-            // which is required for correct bbox overlay alignment.
+            // CRITICAL FIX: Match Preview configuration to ImageAnalysis:
+            // 1. Same aspect ratio (4:3) ensures same sensor crop
+            // 2. Same target rotation ensures same coordinate system
             preview =
                 Preview.Builder()
                     .setTargetAspectRatio(AspectRatio.RATIO_4_3)
+                    .setTargetRotation(displayRotation)
                     .build()
                     .also {
                         it.setSurfaceProvider(previewView.surfaceProvider)
                     }
-
-            // Setup image analysis for object detection
-            val displayRotation = previewView.display.rotation
-            targetRotation = displayRotation
 
             imageAnalysis =
                 ImageAnalysis.Builder()
@@ -541,18 +542,21 @@ class CameraXManager(
                 // CRITICAL: Query actual Preview stream resolution for correct overlay mapping
                 // Preview and ImageAnalysis may have different resolutions!
                 val previewResolution = preview?.resolutionInfo?.resolution
+                val analysisResolution = imageAnalysis?.resolutionInfo?.resolution
+
+                Log.i(TAG, "[CONFIG] Raw resolutions - Preview: $previewResolution, ImageAnalysis: $analysisResolution")
+
                 if (previewResolution != null) {
                     previewStreamWidth = previewResolution.width
                     previewStreamHeight = previewResolution.height
-                    Log.i(TAG, "[CONFIG] Preview stream resolution: ${previewStreamWidth}x${previewStreamHeight}")
-                } else {
+                    Log.i(TAG, "[CONFIG] Using Preview stream resolution: ${previewStreamWidth}x${previewStreamHeight}")
+                } else if (analysisResolution != null) {
                     // Fallback to ImageAnalysis resolution if Preview resolution unavailable
-                    val analysisResolution = imageAnalysis?.resolutionInfo?.resolution
-                    if (analysisResolution != null) {
-                        previewStreamWidth = analysisResolution.width
-                        previewStreamHeight = analysisResolution.height
-                        Log.w(TAG, "[CONFIG] Preview resolution unavailable, using ImageAnalysis: ${previewStreamWidth}x${previewStreamHeight}")
-                    }
+                    previewStreamWidth = analysisResolution.width
+                    previewStreamHeight = analysisResolution.height
+                    Log.w(TAG, "[CONFIG] Preview resolution NULL, using ImageAnalysis: ${previewStreamWidth}x${previewStreamHeight}")
+                } else {
+                    Log.e(TAG, "[CONFIG] Both Preview and ImageAnalysis resolutions are NULL!")
                 }
 
                 // PHASE 5: Configuration log
@@ -1098,7 +1102,8 @@ class CameraXManager(
                     // CRITICAL FIX: Use Preview stream resolution, NOT ImageAnalysis resolution!
                     // The overlay must match what PreviewView is displaying, which uses the Preview stream.
                     // ImageAnalysis may have a different resolution/aspect ratio than Preview.
-                    val frameSize = if (previewStreamWidth > 0 && previewStreamHeight > 0) {
+                    val usePreviewDims = previewStreamWidth > 0 && previewStreamHeight > 0
+                    val frameSize = if (usePreviewDims) {
                         Size(previewStreamWidth, previewStreamHeight)
                     } else {
                         // Fallback to ImageAnalysis if Preview resolution not yet available
@@ -1109,13 +1114,13 @@ class CameraXManager(
                         onRotation(rotationDegrees)
                     }
 
-                    // DEBUG: Log frame dimensions in portrait mode
+                    // DEBUG: Log frame dimensions in portrait mode (rate-limited)
                     if (BuildConfig.DEBUG && rotationDegrees == 90) {
                         Log.d(
                             "CameraFrameDims",
-                            "[PORTRAIT] PreviewStream: ${previewStreamWidth}x${previewStreamHeight}, " +
-                                "ImageProxy: ${imageProxy.width}x${imageProxy.height}, " +
-                                "rotation=$rotationDegrees",
+                            "[PORTRAIT] Reporting frameSize=${frameSize.width}x${frameSize.height} " +
+                                "(usePreview=$usePreviewDims, PreviewStream=${previewStreamWidth}x${previewStreamHeight}, " +
+                                "ImageProxy=${imageProxy.width}x${imageProxy.height}), rotation=$rotationDegrees",
                         )
                     }
 
