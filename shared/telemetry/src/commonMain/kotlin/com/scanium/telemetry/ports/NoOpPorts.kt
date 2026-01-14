@@ -48,6 +48,14 @@ object NoOpMetricPort : MetricPort {
     ) {
         // No-op: discard metric
     }
+
+    override fun histogram(
+        name: String,
+        value: Double,
+        attributes: Map<String, String>,
+    ) {
+        // No-op: discard metric
+    }
 }
 
 /**

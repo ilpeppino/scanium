@@ -227,6 +227,27 @@ class Telemetry(
     }
 
     /**
+     * Records a histogram metric for measuring distributions.
+     *
+     * Histograms are ideal for latency measurements where you need
+     * percentile calculations (p50, p95, p99). The value is recorded
+     * into predefined buckets for aggregation.
+     *
+     * @param name Metric name (e.g., "ml_inference_latency_ms")
+     * @param value Observed value (e.g., latency in milliseconds)
+     * @param userAttributes User-provided attributes (will be merged with defaults and sanitized)
+     */
+    fun histogram(
+        name: String,
+        value: Double,
+        userAttributes: Map<String, String> = emptyMap(),
+    ) {
+        if (!config.enabled) return
+        val mergedAttributes = mergeAndSanitize(userAttributes)
+        metricPort.histogram(name, value, mergedAttributes)
+    }
+
+    /**
      * Begins a new tracing span.
      *
      * @param name Span name (e.g., "scan.process_frame")
