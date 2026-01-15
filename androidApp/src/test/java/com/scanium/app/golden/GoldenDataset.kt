@@ -60,7 +60,7 @@ object GoldenDatasetLoader {
 
     private fun resolveDatasetRoot(): File? {
         val explicit = System.getenv(ENV_DATASET_PATH)?.takeIf { it.isNotBlank() }
-        val baseDir = File(System.getProperty("user.dir"))
+        val baseDir = File(System.getProperty("user.dir") ?: ".")
 
         if (explicit != null) {
             val explicitFile = File(explicit).let { if (it.isAbsolute) it else File(baseDir, explicit) }
@@ -156,7 +156,7 @@ object GoldenDatasetLoader {
         val legacyValidation = obj.stringValue("validation_type")
         val legacyAttributes = obj["attributes"] as? JsonArray
         if (legacyValidation != null && legacyAttributes != null) {
-            val tokens = legacyAttributes.mapNotNull { it.jsonPrimitive.contentOrNull }
+            val tokens = legacyAttributes.mapNotNull { it.jsonPrimitive.stringOrNull() }
             val rule =
                 when (legacyValidation) {
                     "containsAny" -> ExpectedRule(containsAny = tokens)
@@ -183,11 +183,16 @@ object GoldenDatasetLoader {
     }
 
     private fun JsonObject.stringValue(key: String): String? =
-        (this[key] as? JsonPrimitive)?.contentOrNull
+        (this[key] as? JsonPrimitive)?.stringOrNull()
 
     private fun JsonObject.floatValue(key: String): Float? =
         (this[key] as? JsonPrimitive)?.floatOrNull
 
     private fun JsonObject.stringList(key: String): List<String> =
-        (this[key] as? JsonArray)?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty()
+        (this[key] as? JsonArray)?.mapNotNull { it.jsonPrimitive.stringOrNull() }.orEmpty()
+
+    private fun JsonPrimitive.stringOrNull(): String? {
+        if (isString) return content
+        return content
+    }
 }
