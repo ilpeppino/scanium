@@ -262,11 +262,9 @@ class ExportAssistantViewModel
         }
 
         try {
-            // ISSUE-3 FIX: Use unified language setting, keep other prefs from assistantPrefsFlow
-            // User sets primary language in General settings, which should drive AI output language
-            val basePrefs = settingsRepository.assistantPrefsFlow.first()
-            val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first()
-            val assistantPrefs = basePrefs.copy(language = languageTag)
+            // Get assistant preferences (language now comes from unified settings via SettingsRepository)
+            val assistantPrefs = settingsRepository.assistantPrefsFlow.first()
+            val languageTag = assistantPrefs.language ?: "en"
 
             Log.i(TAG, "Generating export for item ${currentItem.id} correlationId=$correlationId languageTag=$languageTag")
 

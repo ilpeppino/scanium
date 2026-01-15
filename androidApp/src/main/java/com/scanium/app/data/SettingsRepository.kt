@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class SettingsRepository(
@@ -149,7 +150,14 @@ class SettingsRepository(
         assistantSettings.setAssistantVerbosity(verbosity)
     }
 
-    val assistantPrefsFlow: Flow<AssistantPrefs> = assistantSettings.assistantPrefsFlow
+    // ISSUE-3 FIX: Combine base assistant prefs with unified language setting
+    // Users set language in General settings (primaryLanguageFlow), which should drive AI output
+    val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
+        assistantSettings.assistantPrefsFlow,
+        unifiedSettings.effectiveAiOutputLanguageFlow,
+    ) { basePrefs, unifiedLanguage ->
+        basePrefs.copy(language = unifiedLanguage)
+    }
 
     val voiceModeEnabledFlow: Flow<Boolean> = voiceSettings.voiceModeEnabledFlow
 

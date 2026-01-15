@@ -76,31 +76,36 @@ Same fix as ISSUE 1 - changing initial value to `true` ensures first click opens
 - AI generates description in English instead of Italian
 
 ### Root Cause
-**Files:**
-- `androidApp/src/main/java/com/scanium/app/items/edit/ExportAssistantViewModel.kt:266-267`
-- `androidApp/src/main/java/com/scanium/app/selling/assistant/AssistantViewModel.kt:603`
+**File:** `androidApp/src/main/java/com/scanium/app/data/AssistantSettings.kt:51-54`
 
-The ViewModels were using the old assistant-specific language setting:
+The `assistantPrefsFlow` combined settings including `assistantLanguageFlow`, which read from a separate DataStore key (`ASSISTANT_LANGUAGE_KEY`) with default "EN":
 
 ```kotlin
-val assistantPrefs = settingsRepository.assistantPrefsFlow.first()
-val languageTag = assistantPrefs.language ?: "en"
+val assistantLanguageFlow: Flow<String> =
+    dataStore.data.map { preferences ->
+        preferences[SettingsKeys.Assistant.ASSISTANT_LANGUAGE_KEY] ?: "EN"
+    }
 ```
 
-But users set language in General settings, which updates `effectiveAiOutputLanguageFlow` (unified settings). The assistant was reading from a different, unset setting.
+But users set language in General settings, which updates `primaryLanguageFlow` → `effectiveAiOutputLanguageFlow` (unified settings). The assistant was reading from a different, unset setting.
 
 ### Fix
-Changed to use unified settings:
+**File:** `androidApp/src/main/java/com/scanium/app/data/SettingsRepository.kt:153-160`
+
+Fixed at the source by overriding `assistantPrefsFlow` in `SettingsRepository` to combine base prefs with the unified language setting:
 
 ```kotlin
-// ISSUE-3 FIX: Use unified settings for language and country
-val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first()
-val pricingCountryCode = settingsRepository.effectiveMarketplaceCountryFlow.first()
-
-// Get other assistant preferences (tone, verbosity, units) and override language
-val basePrefs = settingsRepository.assistantPrefsFlow.first()
-val assistantPrefs = basePrefs.copy(language = languageTag)
+// ISSUE-3 FIX: Combine base assistant prefs with unified language setting
+// Users set language in General settings (primaryLanguageFlow), which should drive AI output
+val assistantPrefsFlow: Flow<AssistantPrefs> = combine(
+    assistantSettings.assistantPrefsFlow,
+    unifiedSettings.effectiveAiOutputLanguageFlow,
+) { basePrefs, unifiedLanguage ->
+    basePrefs.copy(language = unifiedLanguage)
+}
 ```
+
+This approach fixes the language at the settings layer, so all consumers of `assistantPrefsFlow` automatically get the correct language without needing changes.
 
 ### Manual Verification
 1. Go to Settings > General
@@ -116,22 +121,21 @@ val assistantPrefs = basePrefs.copy(language = languageTag)
 
 | File | Changes |
 |------|---------|
-| `EditItemScreenV3.kt:87-90` | Changed `collectAsState(initial = false)` to `initial = true` |
-| `ExportAssistantViewModel.kt:265-272` | Use `effectiveAiOutputLanguageFlow` and `effectiveMarketplaceCountryFlow` |
-| `AssistantViewModel.kt:602-605` | Use `effectiveAiOutputLanguageFlow` |
+| `ItemEditState.kt:74` | Removed `item` from `remember` key to prevent ViewModel recreation |
+| `SettingsRepository.kt:153-160` | Override `assistantPrefsFlow` to combine with unified language setting |
 
 ---
 
 ## Commits
 
 1. **fix(ai): trigger assistant on first click (#ISSUE-1 #ISSUE-2)**
-   - Changes initial value of `allowAssistantFlow.collectAsState()` from `false` to `true`
-   - Fixes both double-click and navigation issues (shared root cause)
+   - Removes `item` from `remember` key in `rememberItemEditState()`
+   - Prevents ViewModel recreation when item loads, fixing timing issues
 
 2. **fix(ai): propagate unified language setting to assistant (#ISSUE-3)**
-   - Uses `effectiveAiOutputLanguageFlow` for AI output language
-   - Uses `effectiveMarketplaceCountryFlow` for pricing country
-   - Overrides language in `assistantPrefs` before sending requests
+   - Overrides `assistantPrefsFlow` in `SettingsRepository` to combine with unified language
+   - Uses `effectiveAiOutputLanguageFlow` as the language source
+   - All assistant consumers automatically get the correct language
 
 ---
 
@@ -146,14 +150,11 @@ val assistantPrefs = basePrefs.copy(language = languageTag)
 
 | Fix | Risk Level | Notes |
 |-----|------------|-------|
-| ISSUE 1/2 | Low | Simple initial value change; defense-in-depth in ViewModel handles edge cases |
-| ISSUE 3 | Low | Uses existing unified settings infrastructure; no new code paths |
+| ISSUE 1/2 | Low | Removes `item` from remember key; ViewModel fetches data internally, so no behavioral change |
+| ISSUE 3 | Low | Combines existing flows in SettingsRepository; no new code paths, just proper wiring |
 
 ---
 
-## Git Log
+## Notes
 
-```
-7ad61a0 fix(ai): propagate unified language setting to assistant (#ISSUE-3)
-7aaeda0 fix(ai): trigger assistant on first click (#ISSUE-1 #ISSUE-2)
-```
+The key insight for ISSUE 3 was that overriding language at request time using `.copy()` caused "Invalid response format" errors from the backend. The correct fix was to override `assistantPrefsFlow` at the settings layer, so the language flows through naturally without modifying the `AssistantPrefs` object at request time.
