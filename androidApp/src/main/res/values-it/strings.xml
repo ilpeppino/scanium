@@ -65,6 +65,14 @@
     <string name="settings_upgrade_cta">Aggiorna</string>
     <string name="settings_manage_subscription">Gestisci</string>
 
+    <!-- Google Sign-In -->
+    <string name="settings_sign_in_google">Continua con Google</string>
+    <string name="settings_sign_in_google_desc">Accedi per sincronizzare i tuoi dati e abilitare funzionalità personalizzate</string>
+    <string name="settings_signing_in">Accesso in corso…</string>
+    <string name="settings_signing_in_desc">Attendere prego…</string>
+    <string name="settings_sign_in_error_template">Accesso non riuscito: %1$s</string>
+    <string name="settings_sign_in_error_unknown">Errore sconosciuto</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Fotocamera e Scansione</string>
     <string name="settings_section_storage">Archiviazione</string>
@@ -354,6 +362,12 @@
     <string name="assistant_voice_unavailable_message">Puoi continuare a digitare mentre disattiviamo il pulsante del microfono.</string>
     <string name="assistant_context_item_fallback">Oggetto</string>
     <string name="assistant_ai_assistant">Assistente AI</string>
+
+    <!-- Assistant Auth Dialog -->
+    <string name="assistant_auth_required_title">Accesso richiesto</string>
+    <string name="assistant_auth_required_message">L\'assistente AI richiede l\'accesso. Vai alle Impostazioni per accedere con il tuo account Google.</string>
+    <string name="assistant_auth_go_to_settings">Vai alle impostazioni</string>
+    <string name="assistant_auth_cancel">Annulla</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Elemento eliminato</string>

@@ -55,6 +55,14 @@
     <string name="settings_upgrade_cta">Atualizar</string>
     <string name="settings_manage_subscription">Gerenciar</string>
 
+    <!-- Google Sign-In -->
+    <string name="settings_sign_in_google">Continuar com Google</string>
+    <string name="settings_sign_in_google_desc">Faça login para sincronizar seus dados e ativar recursos personalizados</string>
+    <string name="settings_signing_in">Entrando…</string>
+    <string name="settings_signing_in_desc">Aguarde…</string>
+    <string name="settings_sign_in_error_template">Falha ao entrar: %1$s</string>
+    <string name="settings_sign_in_error_unknown">Erro desconhecido</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Câmera e Escaneamento</string>
     <string name="settings_section_storage">Armazenamento</string>
@@ -331,6 +339,12 @@
     <string name="assistant_voice_unavailable_message">Você pode continuar digitando enquanto desativamos o botão do microfone.</string>
     <string name="assistant_context_item_fallback">Item</string>
     <string name="assistant_ai_assistant">Assistente de IA</string>
+
+    <!-- Assistant Auth Dialog -->
+    <string name="assistant_auth_required_title">Login necessário</string>
+    <string name="assistant_auth_required_message">O assistente de IA requer login. Vá para Configurações para fazer login com sua conta Google.</string>
+    <string name="assistant_auth_go_to_settings">Ir para configurações</string>
+    <string name="assistant_auth_cancel">Cancelar</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Item excluído</string>

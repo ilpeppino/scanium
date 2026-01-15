@@ -54,6 +54,14 @@
     <string name="settings_upgrade_cta">Upgraden</string>
     <string name="settings_manage_subscription">Beheren</string>
 
+    <!-- Google Sign-In -->
+    <string name="settings_sign_in_google">Doorgaan met Google</string>
+    <string name="settings_sign_in_google_desc">Meld je aan om je gegevens te synchroniseren en gepersonaliseerde functies in te schakelen</string>
+    <string name="settings_signing_in">Aanmelden…</string>
+    <string name="settings_signing_in_desc">Even geduld…</string>
+    <string name="settings_sign_in_error_template">Aanmelden mislukt: %1$s</string>
+    <string name="settings_sign_in_error_unknown">Onbekende fout</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Camera &amp; Scannen</string>
     <string name="settings_section_storage">Opslag</string>
@@ -330,6 +338,12 @@
     <string name="assistant_voice_unavailable_message">Je kunt blijven typen terwijl we de microfoonknop uitschakelen.</string>
     <string name="assistant_context_item_fallback">Item</string>
     <string name="assistant_ai_assistant">AI-assistent</string>
+
+    <!-- Assistant Auth Dialog -->
+    <string name="assistant_auth_required_title">Aanmelden vereist</string>
+    <string name="assistant_auth_required_message">De AI-assistent vereist aanmelding. Ga naar Instellingen om je aan te melden met je Google-account.</string>
+    <string name="assistant_auth_go_to_settings">Naar instellingen</string>
+    <string name="assistant_auth_cancel">Annuleren</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Item verwijderd</string>
