@@ -262,17 +262,11 @@ class ExportAssistantViewModel
         }
 
         try {
-            // ISSUE-3 FIX: Use unified settings for language and country
-            // User sets primary language in General settings, which should drive AI output language
-            // Uppercase to match expected format (backend expects "EN", "IT", etc.)
-            val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first().uppercase()
-            val pricingCountryCode = settingsRepository.effectiveMarketplaceCountryFlow.first()
+            // Get user's assistant preferences including language
+            val assistantPrefs = settingsRepository.assistantPrefsFlow.first()
+            val languageTag = assistantPrefs.language ?: "en"
 
-            // Get other assistant preferences (tone, verbosity, units) and override language
-            val basePrefs = settingsRepository.assistantPrefsFlow.first()
-            val assistantPrefs = basePrefs.copy(language = languageTag)
-
-            Log.i(TAG, "Generating export for item ${currentItem.id} correlationId=$correlationId languageTag=$languageTag pricingCountry=$pricingCountryCode")
+            Log.i(TAG, "Generating export for item ${currentItem.id} correlationId=$correlationId languageTag=$languageTag")
 
             // Build item context snapshot with localized attribute values
             val snapshot = buildItemContextSnapshot(currentItem, languageTag)
@@ -284,6 +278,9 @@ class ExportAssistantViewModel
             val defaultProfileId = exportProfileRepository.getDefaultProfileId()
             val profile = exportProfileRepository.getProfile(defaultProfileId)
                 ?: com.scanium.shared.core.models.listing.ExportProfiles.generic()
+
+            // Convert region to country code for pricing
+            val pricingCountryCode = assistantPrefs.region?.name
 
             // Send request with language and pricing preferences
             val response = assistantRepository.send(

@@ -599,11 +599,8 @@ class AssistantViewModel
                         ScaniumLog.d(TAG, "Progress: EXTRACTING_VISION correlationId=$correlationId images=${attachmentResult.attachments.size}")
                     }
 
-                    // ISSUE-3 FIX: Get language from unified settings and override in prefs
-                    // Uppercase to match expected format (backend expects "EN", "IT", etc.)
-                    val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first().uppercase()
-                    val basePrefs = settingsRepository.assistantPrefsFlow.first()
-                    val prefs = basePrefs.copy(language = languageTag)
+                    // Get current assistant preferences
+                    val prefs = settingsRepository.assistantPrefsFlow.first()
 
                     // Send request with image attachments (if toggle enabled and photos exist)
                     val response =
