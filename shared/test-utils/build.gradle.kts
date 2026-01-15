@@ -10,66 +10,31 @@ kotlin {
     jvm()
 
     // iOS targets
-    val iosX64Target =
-        iosX64 {
-            binaries.framework {
-                baseName = "ScaniumTestUtils"
-                isStatic = true
-            }
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
+        it.binaries.framework {
+            baseName = "ScaniumTestUtils"
+            isStatic = true
         }
-    val iosArm64Target =
-        iosArm64 {
-            binaries.framework {
-                baseName = "ScaniumTestUtils"
-                isStatic = true
-            }
-        }
-    val iosSimulatorArm64Target =
-        iosSimulatorArm64 {
-            binaries.framework {
-                baseName = "ScaniumTestUtils"
-                isStatic = true
-            }
-        }
+    }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                // Dependencies on core modules for testing
-                implementation(project(":shared:core-models"))
-                implementation(project(":shared:core-tracking"))
+        commonMain.dependencies {
+            // Dependencies on core modules for testing
+            implementation(project(":shared:core-models"))
+            implementation(project(":shared:core-tracking"))
 
-                // Kotlin test utilities
-                implementation(kotlin("test"))
-            }
+            // Kotlin test utilities
+            implementation(kotlin("test"))
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-            }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
 
-        val androidMain by getting
         val androidUnitTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
             }
         }
-
-        val iosMain by creating {
-            dependsOn(commonMain)
-        }
-        val iosTest by creating {
-            dependsOn(commonTest)
-        }
-
-        iosX64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-        iosArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-        iosSimulatorArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-
-        iosX64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
-        iosArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
-        iosSimulatorArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
     }
 }
 

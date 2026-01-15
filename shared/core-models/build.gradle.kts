@@ -12,66 +12,31 @@ kotlin {
     jvm()
 
     // iOS targets
-    val iosX64Target =
-        iosX64 {
-            binaries.framework {
-                baseName = "ScaniumCoreModels"
-                isStatic = true
-            }
+    listOf(iosX64(), iosArm64(), iosSimulatorArm64()).forEach {
+        it.binaries.framework {
+            baseName = "ScaniumCoreModels"
+            isStatic = true
         }
-    val iosArm64Target =
-        iosArm64 {
-            binaries.framework {
-                baseName = "ScaniumCoreModels"
-                isStatic = true
-            }
-        }
-    val iosSimulatorArm64Target =
-        iosSimulatorArm64 {
-            binaries.framework {
-                baseName = "ScaniumCoreModels"
-                isStatic = true
-            }
-        }
+    }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                // Dependency on shared:telemetry for instrumentation
-                implementation(project(":shared:telemetry"))
-            }
+        commonMain.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+            // Dependency on shared:telemetry for instrumentation
+            implementation(project(":shared:telemetry"))
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-            }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
         }
 
-        val androidMain by getting
         val androidUnitTest by getting {
             dependencies {
                 implementation(kotlin("test-junit"))
             }
         }
-
-        val iosMain by creating {
-            dependsOn(commonMain)
-        }
-        val iosTest by creating {
-            dependsOn(commonTest)
-        }
-
-        iosX64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-        iosArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-        iosSimulatorArm64Target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
-
-        iosX64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
-        iosArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
-        iosSimulatorArm64Target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
     }
 }
 
