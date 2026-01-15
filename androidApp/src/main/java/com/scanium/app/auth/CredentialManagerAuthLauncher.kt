@@ -59,7 +59,6 @@ class CredentialManagerAuthLauncher : AuthLauncher {
     companion object {
         private const val TAG = "CredentialManagerAuthLauncher"
         // This must match GOOGLE_OAUTH_CLIENT_ID in backend .env
-        // TODO: Replace with actual Android OAuth Client ID from Google Cloud Console
-        private const val GOOGLE_SERVER_CLIENT_ID = "YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com"
+        private const val GOOGLE_SERVER_CLIENT_ID = "480326569434-9cje4dkffu16ol5126q7pt6oihshtn5k.apps.googleusercontent.com"
     }
 }
