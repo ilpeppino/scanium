@@ -5,6 +5,9 @@ import android.content.Context
 import android.util.Log
 import com.scanium.app.config.SecureApiKeyStore
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
 class AuthRepository(
@@ -16,6 +19,14 @@ class AuthRepository(
     companion object {
         private const val TAG = "AuthRepository"
     }
+
+    /**
+     * Reactive flow of the current user info.
+     * Emits null when signed out, UserInfo when signed in.
+     * Initialized from stored state and updated on sign-in/sign-out.
+     */
+    private val _userInfoFlow = MutableStateFlow(apiKeyStore.getUserInfo())
+    val userInfoFlow: StateFlow<SecureApiKeyStore.UserInfo?> = _userInfoFlow.asStateFlow()
 
     /**
      * Initiates Google Sign-In flow via AuthLauncher (Credential Manager).
@@ -54,14 +65,14 @@ class AuthRepository(
                     }
                 }
 
-                apiKeyStore.setUserInfo(
-                    SecureApiKeyStore.UserInfo(
-                        id = authResponse.user.id,
-                        email = authResponse.user.email,
-                        displayName = authResponse.user.displayName,
-                        pictureUrl = authResponse.user.pictureUrl,
-                    ),
+                val userInfo = SecureApiKeyStore.UserInfo(
+                    id = authResponse.user.id,
+                    email = authResponse.user.email,
+                    displayName = authResponse.user.displayName,
+                    pictureUrl = authResponse.user.pictureUrl,
                 )
+                apiKeyStore.setUserInfo(userInfo)
+                _userInfoFlow.value = userInfo
 
                 Log.i(TAG, "Auth flow completed - user signed in successfully")
                 Result.success(Unit)
@@ -93,6 +104,7 @@ class AuthRepository(
                 apiKeyStore.setAccessTokenExpiresAt(null)
                 apiKeyStore.setRefreshTokenExpiresAt(null)
                 apiKeyStore.setUserInfo(null)
+                _userInfoFlow.value = null
 
                 Result.success(Unit)
             } catch (e: Exception) {
@@ -141,6 +153,7 @@ class AuthRepository(
                 apiKeyStore.setAccessTokenExpiresAt(null)
                 apiKeyStore.setRefreshTokenExpiresAt(null)
                 apiKeyStore.setUserInfo(null)
+                _userInfoFlow.value = null
                 Result.failure(e)
             }
         }
@@ -182,6 +195,7 @@ class AuthRepository(
                 apiKeyStore.setAccessTokenExpiresAt(null)
                 apiKeyStore.setRefreshTokenExpiresAt(null)
                 apiKeyStore.setUserInfo(null)
+                _userInfoFlow.value = null
 
                 Result.success(Unit)
             } catch (e: Exception) {

@@ -7,6 +7,9 @@ import com.scanium.app.config.SecureApiKeyStore
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -48,6 +51,9 @@ class AuthRepositorySignInTest {
         mockAuthLauncher = mockk()
         mockAuthApi = mockk()
         mockApiKeyStore = mockk(relaxed = true)
+
+        // Default: not signed in (userInfo is null)
+        every { mockApiKeyStore.getUserInfo() } returns null
 
         // Create test activity
         mockActivity = Robolectric.buildActivity(Activity::class.java).create().get()
@@ -173,5 +179,122 @@ class AuthRepositorySignInTest {
         verify(exactly = 0) {
             mockApiKeyStore.setAuthToken(any())
         }
+    }
+
+    // =========================================================================
+    // Regression tests for userInfoFlow reactivity (AUTH-UX-001)
+    // =========================================================================
+
+    /**
+     * CRITICAL REGRESSION TEST: userInfoFlow emits immediately after sign-in.
+     *
+     * This test guards against the stale label bug where Settings → General
+     * showed "Continue with Google" after sign-in because state was read once
+     * via `remember { viewModel.getUserInfo() }` instead of collected reactively.
+     *
+     * Fix: AuthRepository.userInfoFlow is a StateFlow that emits on sign-in/sign-out.
+     */
+    @Test
+    fun `userInfoFlow emits user info immediately after successful sign-in`() = runTest {
+        // Arrange
+        val fakeToken = "fake_google_id_token"
+        val expectedUserInfo = SecureApiKeyStore.UserInfo(
+            id = "user123",
+            email = "test@example.com",
+            displayName = "Test User",
+            pictureUrl = null
+        )
+        val fakeAuthResponse = GoogleAuthResponse(
+            accessToken = "fake_access_token",
+            tokenType = "Bearer",
+            expiresIn = 3600,
+            user = UserResponse(
+                id = expectedUserInfo.id,
+                email = expectedUserInfo.email,
+                displayName = expectedUserInfo.displayName,
+                pictureUrl = expectedUserInfo.pictureUrl
+            )
+        )
+
+        coEvery { mockAuthLauncher.startGoogleSignIn(any()) } returns Result.success(fakeToken)
+        coEvery { mockAuthApi.exchangeToken(fakeToken) } returns Result.success(fakeAuthResponse)
+
+        // Verify initial state is null (not signed in)
+        assertNull(
+            "userInfoFlow should initially be null when not signed in",
+            authRepository.userInfoFlow.value
+        )
+
+        // Act: Sign in
+        val result = authRepository.signInWithGoogle(mockActivity)
+
+        // Assert: Sign-in succeeded
+        assertTrue("Sign-in should succeed", result.isSuccess)
+
+        // CRITICAL ASSERTION: userInfoFlow should emit immediately (not require navigation)
+        val emittedUserInfo = authRepository.userInfoFlow.value
+        assertNotNull(
+            "userInfoFlow must emit user info immediately after sign-in (fixes stale label bug)",
+            emittedUserInfo
+        )
+        assertEquals(
+            "userInfoFlow should emit correct user ID",
+            expectedUserInfo.id,
+            emittedUserInfo?.id
+        )
+        assertEquals(
+            "userInfoFlow should emit correct email",
+            expectedUserInfo.email,
+            emittedUserInfo?.email
+        )
+        assertEquals(
+            "userInfoFlow should emit correct display name",
+            expectedUserInfo.displayName,
+            emittedUserInfo?.displayName
+        )
+    }
+
+    /**
+     * REGRESSION TEST: userInfoFlow emits null immediately after sign-out.
+     */
+    @Test
+    fun `userInfoFlow emits null immediately after sign-out`() = runTest {
+        // Arrange: Set up mock to return user info initially
+        val existingUser = SecureApiKeyStore.UserInfo(
+            id = "user123",
+            email = "test@example.com",
+            displayName = "Test User",
+            pictureUrl = null
+        )
+        every { mockApiKeyStore.getUserInfo() } returns existingUser
+        every { mockApiKeyStore.getAuthToken() } returns "existing_token"
+        coEvery { mockAuthApi.logout(any()) } returns Result.success(Unit)
+
+        // Create a new repository to pick up the initial user
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val repositoryWithUser = AuthRepository(
+            context = context,
+            apiKeyStore = mockApiKeyStore,
+            authApi = mockAuthApi,
+            authLauncher = mockAuthLauncher
+        )
+
+        // Verify initial state has user
+        assertNotNull(
+            "userInfoFlow should have user info initially",
+            repositoryWithUser.userInfoFlow.value
+        )
+
+        // Act: Sign out
+        val result = repositoryWithUser.signOut()
+
+        // Assert
+        assertTrue("Sign-out should succeed", result.isSuccess)
+
+        // CRITICAL: userInfoFlow should emit null immediately
+        assertNull(
+            "userInfoFlow must emit null immediately after sign-out",
+            repositoryWithUser.userInfoFlow.value
+        )
     }
 }
