@@ -191,5 +191,14 @@ internal class AssistantApi(
         if (deviceId.isNotBlank()) {
             builder.header("X-Scanium-Device-Id", deviceId)
         }
+
+        // Phase B: Add session token for authenticated requests
+        val authToken = com.scanium.app.config.SecureApiKeyStore(context).getAuthToken()
+        if (authToken != null) {
+            Log.d("ScaniumAuth", "AssistantApi: Adding Authorization header")
+            builder.header("Authorization", "Bearer $authToken")
+        } else {
+            Log.w("ScaniumAuth", "AssistantApi: No auth token - Authorization header will NOT be added")
+        }
     }
 }

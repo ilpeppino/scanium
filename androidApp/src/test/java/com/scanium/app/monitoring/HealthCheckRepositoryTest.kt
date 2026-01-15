@@ -68,7 +68,7 @@ class HealthCheckRepositoryTest {
     fun `health 200 passes`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
@@ -79,7 +79,7 @@ class HealthCheckRepositoryTest {
     fun `health 500 fails`() = runTest {
         setDispatcher(healthCode = 500, configCode = 200, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.FAIL)
@@ -95,7 +95,7 @@ class HealthCheckRepositoryTest {
     fun `config 200 with API key passes`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), "test-api-key", true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = "test-api-key", notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
@@ -105,7 +105,7 @@ class HealthCheckRepositoryTest {
     fun `config 401 with API key fails`() = runTest {
         setDispatcher(healthCode = 200, configCode = 401, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), "test-api-key", true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = "test-api-key", notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.FAIL)
@@ -120,7 +120,7 @@ class HealthCheckRepositoryTest {
     fun `config 401 without API key passes - endpoint is reachable`() = runTest {
         setDispatcher(healthCode = 200, configCode = 401, warmupCode = 401)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
@@ -131,7 +131,7 @@ class HealthCheckRepositoryTest {
     fun `config 200 without API key passes`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
@@ -145,7 +145,7 @@ class HealthCheckRepositoryTest {
     fun `warmup 401 without API key passes`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 401)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
@@ -155,7 +155,7 @@ class HealthCheckRepositoryTest {
     fun `warmup 403 without API key passes`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 403)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.OK)
@@ -165,7 +165,7 @@ class HealthCheckRepositoryTest {
     fun `warmup 500 fails`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 500)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.status).isEqualTo(MonitorHealthStatus.FAIL)
@@ -180,7 +180,7 @@ class HealthCheckRepositoryTest {
     fun `warmup uses POST`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), "test-key", true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = "test-key", notifyOnRecovery = true)
         repository.performHealthCheck(config)
 
         val requests = (0 until mockWebServer.requestCount).map { mockWebServer.takeRequest() }
@@ -196,7 +196,7 @@ class HealthCheckRepositoryTest {
     fun `failure signature format is correct`() = runTest {
         setDispatcher(healthCode = 500, configCode = 401, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), "test-key", true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = "test-key", notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         // Signature should be sorted and formatted correctly
@@ -208,7 +208,7 @@ class HealthCheckRepositoryTest {
     fun `OK result has empty failure signature`() = runTest {
         setDispatcher(healthCode = 200, configCode = 200, warmupCode = 200)
 
-        val config = HealthMonitorConfig(baseUrl(), null, true)
+        val config = HealthMonitorConfig(baseUrl = baseUrl(), apiKey = null, notifyOnRecovery = true)
         val result = repository.performHealthCheck(config)
 
         assertThat(result.failureSignature).isEmpty()
