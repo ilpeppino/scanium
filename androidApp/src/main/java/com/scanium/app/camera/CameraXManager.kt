@@ -68,6 +68,9 @@ class CameraXManager(
         private const val TAG = "CameraXManager"
         private const val CAM_FRAME_TAG = "CAM_FRAME"
 
+        // TEMP_CAM_BUG_DEBUG: Instrumentation for camera resume corruption investigation
+        private const val TEMP_CAM_BUG_DEBUG = true
+
         // PHASE 3: Edge gating margin
         // Detections whose center falls within this margin from the cropRect edge are dropped
         // This prevents partial/cut-off objects at screen edges from being promoted
@@ -263,6 +266,11 @@ class CameraXManager(
     fun startCameraSession(): Int {
         sessionController.logEvent("START_SESSION", "recreating scope")
 
+        // TEMP_CAM_BUG_DEBUG: Log session start
+        if (TEMP_CAM_BUG_DEBUG) {
+            Log.i(TAG, "TEMP_CAM_BUG_DEBUG CAMERA_LIFECYCLE: event=START_SESSION, timestamp=${System.currentTimeMillis()}, sessionId=${sessionController.getCurrentSessionId()}")
+        }
+
         // Cancel watchdog from previous session
         watchdogJob?.cancel()
         watchdogJob = null
@@ -294,6 +302,11 @@ class CameraXManager(
      */
     fun stopCameraSession() {
         sessionController.logEvent("STOP_SESSION", "isScanning=$isScanning, isPreviewDetectionActive=$isPreviewDetectionActive")
+
+        // TEMP_CAM_BUG_DEBUG: Log session stop
+        if (TEMP_CAM_BUG_DEBUG) {
+            Log.i(TAG, "TEMP_CAM_BUG_DEBUG CAMERA_LIFECYCLE: event=STOP_SESSION, timestamp=${System.currentTimeMillis()}, sessionId=${sessionController.getCurrentSessionId()}")
+        }
 
         // Cancel watchdog
         watchdogJob?.cancel()
@@ -1388,12 +1401,15 @@ class CameraXManager(
                 }
 
             try {
-                // Create output file
-                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(System.currentTimeMillis())
+                // Create output file with collision-proof naming
+                // Use epochMillis + UUID to ensure absolute uniqueness even for rapid sequential captures
+                val currentTimeMs = System.currentTimeMillis()
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(currentTimeMs)
+                val uniqueSuffix = "${currentTimeMs}_${java.util.UUID.randomUUID().toString().take(8)}"
                 val photoFile =
                     File(
                         context.cacheDir,
-                        "SCANIUM_$timestamp.jpg",
+                        "SCANIUM_${timestamp}_${uniqueSuffix}.jpg",
                     )
 
                 val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
@@ -1418,6 +1434,17 @@ class CameraXManager(
 
                 val savedUri = result.savedUri ?: Uri.fromFile(photoFile)
                 Log.i(TAG, "High-res image captured: $savedUri (size: ${photoFile.length()} bytes)")
+
+                // TEMP_CAM_BUG_DEBUG: Log file save for resume corruption investigation
+                if (TEMP_CAM_BUG_DEBUG) {
+                    val contentHash = try {
+                        val buf = ByteArray(16)
+                        photoFile.inputStream().use { it.read(buf) }
+                        buf.contentHashCode()
+                    } catch (e: Exception) { 0 }
+                    Log.i(TAG, "TEMP_CAM_BUG_DEBUG CAPTURE_SAVED: path=${photoFile.absolutePath}, filename=${photoFile.name}, size=${photoFile.length()}, hash=$contentHash, mtime=${photoFile.lastModified()}, sessionId=${sessionController.getCurrentSessionId()}")
+                }
+
                 savedUri
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to capture high-res image", e)
