@@ -193,8 +193,8 @@ fun mapBboxToPreview(
     bboxNorm: NormalizedRect,
     transform: BboxMappingTransform,
 ): RectF {
-    // NO ROTATION: bbox is already in upright coordinate space
-    // ML Kit returns bboxes that match InputImage dimensions (post-rotation)
+    // ML Kit returns bboxes in InputImage coordinate space (upright, post-rotation)
+    // No rotation transformation needed here - bbox is already in upright space
 
     // Step 1: Convert normalized coords to pixel coordinates in effective (upright) space
     val pixelLeft = bboxNorm.left * transform.effectiveImageWidth

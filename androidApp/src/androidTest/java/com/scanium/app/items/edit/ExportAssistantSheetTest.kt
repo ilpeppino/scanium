@@ -162,3 +162,139 @@ class ExportAssistantContentCardTest {
             .assertExists()
     }
 }
+
+/**
+ * Regression guard tests for ExportAssistantContent state rendering.
+ *
+ * Verifies that the extracted ExportAssistantContent composable correctly
+ * renders all states without breaking existing behavior.
+ */
+@RunWith(AndroidJUnit4::class)
+class ExportAssistantContentStateTest {
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    @Test
+    fun whenLoadingState_thenShowsDraftingIndicator() {
+        // Arrange
+        composeTestRule.setContent {
+            ExportAssistantContent(
+                state = ExportAssistantState.Loading,
+                speakAnswersEnabled = false,
+                isSpeaking = false,
+                onSpeakOrStop = {},
+                onGenerate = {},
+                onRetry = {},
+                onApplyResult = { _, _, _ -> },
+                onDismiss = {},
+            )
+        }
+
+        // Assert - Loading state shows drafting text
+        composeTestRule.onNodeWithText("Drafting", substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun whenErrorState_thenShowsErrorMessageAndRetryButton() {
+        // Arrange
+        val errorMessage = "Something went wrong"
+
+        composeTestRule.setContent {
+            ExportAssistantContent(
+                state = ExportAssistantState.Error(
+                    message = errorMessage,
+                    isRetryable = true,
+                ),
+                speakAnswersEnabled = false,
+                isSpeaking = false,
+                onSpeakOrStop = {},
+                onGenerate = {},
+                onRetry = {},
+                onApplyResult = { _, _, _ -> },
+                onDismiss = {},
+            )
+        }
+
+        // Assert - Error message is shown
+        composeTestRule.onNodeWithText(errorMessage)
+            .assertExists()
+
+        // Assert - Retry button exists for retryable errors
+        composeTestRule.onNodeWithText("Retry", substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun whenSuccessState_thenShowsGeneratedContent() {
+        // Arrange
+        val testTitle = "Vintage Collectible Item"
+        val testDescription = "A rare and beautiful collectible in excellent condition."
+        val testBullets = listOf(
+            "Excellent condition",
+            "Original packaging",
+            "Rare variant",
+        )
+
+        composeTestRule.setContent {
+            ExportAssistantContent(
+                state = ExportAssistantState.Success(
+                    title = testTitle,
+                    description = testDescription,
+                    bullets = testBullets,
+                    confidenceTier = ConfidenceTier.HIGH,
+                    pricingInsights = null,
+                ),
+                speakAnswersEnabled = false,
+                isSpeaking = false,
+                onSpeakOrStop = {},
+                onGenerate = {},
+                onRetry = {},
+                onApplyResult = { _, _, _ -> },
+                onDismiss = {},
+            )
+        }
+
+        // Assert - Title content is displayed
+        composeTestRule.onNodeWithText(testTitle)
+            .assertExists()
+
+        // Assert - Description content is displayed
+        composeTestRule.onNodeWithText(testDescription)
+            .assertExists()
+
+        // Assert - Bullets are displayed
+        testBullets.forEach { bullet ->
+            composeTestRule.onNodeWithText(bullet, substring = true)
+                .assertExists()
+        }
+
+        // Assert - Action buttons exist
+        composeTestRule.onNodeWithText("Regenerate", substring = true)
+            .assertExists()
+
+        composeTestRule.onNodeWithText("Apply", substring = true)
+            .assertExists()
+    }
+
+    @Test
+    fun whenIdleState_thenShowsGenerateButton() {
+        // Arrange
+        composeTestRule.setContent {
+            ExportAssistantContent(
+                state = ExportAssistantState.Idle,
+                speakAnswersEnabled = false,
+                isSpeaking = false,
+                onSpeakOrStop = {},
+                onGenerate = {},
+                onRetry = {},
+                onApplyResult = { _, _, _ -> },
+                onDismiss = {},
+            )
+        }
+
+        // Assert - Generate button is shown
+        composeTestRule.onNodeWithText("Generate", substring = true)
+            .assertExists()
+    }
+}

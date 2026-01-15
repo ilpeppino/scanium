@@ -17,7 +17,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -303,7 +303,7 @@ fun SettingsGeneralScreen(
                         )
                     },
                     leadingContent = {
-                        Icon(Icons.Filled.Login, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
                     },
                     modifier = Modifier.clickable(enabled = !isSigningIn && activity != null) {
                         activity?.let { act ->

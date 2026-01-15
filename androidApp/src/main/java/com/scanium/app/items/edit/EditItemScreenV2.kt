@@ -96,6 +96,10 @@ import com.scanium.app.config.FeatureFlags
  * - ONE BIG editable text box for attribute summary
  * - Actions: Save, AI Generate, Add Photos
  */
+@Deprecated(
+    "Use EditItemScreenV3. This screen is legacy and will be removed.",
+    ReplaceWith("EditItemScreenV3(itemId, onBack, onAddPhotos, onAiGenerate, itemsViewModel, exportAssistantViewModelFactory)"),
+)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun EditItemScreenV2(

@@ -6,43 +6,31 @@ import android.util.Log
 import com.scanium.app.BuildConfig
 import com.scanium.app.config.SecureApiKeyStore
 import com.scanium.app.domain.DomainPackProvider
-import com.scanium.app.logging.CorrelationIds
 import com.scanium.app.logging.ScaniumLog
 import com.scanium.app.ml.ItemCategory
-import com.scanium.app.network.security.RequestSigner
-import com.scanium.app.telemetry.TraceContext
 import com.scanium.shared.core.models.config.CloudClassifierConfig
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.VisionAttributes as SharedVisionAttributes
 import com.scanium.shared.core.models.items.VisionColor as SharedVisionColor
 import com.scanium.shared.core.models.items.VisionLabel as SharedVisionLabel
 import com.scanium.shared.core.models.items.VisionLogo as SharedVisionLogo
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import okhttp3.CertificatePinner
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
-import java.net.SocketTimeoutException
 import java.net.URI
-import java.net.UnknownHostException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
-import kotlin.math.min
 
 /**
  * Cloud-based classifier that uploads cropped item images to a backend API.
+ *
+ * Refactored architecture:
+ * - CloudClassifierApi: Handles HTTP requests, retries, and response parsing
+ * - ClassificationTelemetry: Manages spans, metrics, and error tracking
+ * - CloudClassifier: Coordinates API calls, telemetry, and result conversion
  *
  * ## Privacy
  * - Only uploads cropped item thumbnails (not full frames)
@@ -54,16 +42,7 @@ import kotlin.math.min
  * - Request: multipart/form-data
  *   - `image`: JPEG file (cropped item)
  *   - `domainPackId`: string (default: "home_resale")
- * - Response: JSON
- *   ```json
- *   {
- *     "domainCategoryId": "furniture_sofa",
- *     "confidence": 0.87,
- *     "label": "Sofa",
- *     "attributes": {"color": "brown", "condition": "good"},
- *     "requestId": "req_abc123"
- *   }
- *   ```
+ * - Response: JSON (see CloudClassificationResponse in CloudClassifierApi)
  *
  * ## Error Handling
  * - Retryable: 408, 429, 5xx, network I/O errors
@@ -79,18 +58,21 @@ import kotlin.math.min
  *
  * @property context Android context (nullable) for debug crop saving
  * @property domainPackId Domain pack to use for classification (default: "home_resale")
+ * @property maxAttempts Maximum number of retry attempts
+ * @property baseDelayMs Base delay for exponential backoff
+ * @property maxDelayMs Maximum delay for exponential backoff
+ * @property telemetry Telemetry facade for recording metrics and spans
  */
 class CloudClassifier(
     private val context: Context? = null,
     private val domainPackId: String = "home_resale",
-    private val maxAttempts: Int = 3,
-    private val baseDelayMs: Long = 1_000L,
-    private val maxDelayMs: Long = 8_000L,
+    maxAttempts: Int = 3,
+    baseDelayMs: Long = 1_000L,
+    maxDelayMs: Long = 8_000L,
     private val telemetry: com.scanium.telemetry.facade.Telemetry? = null,
 ) : ItemClassifier {
     companion object {
         private const val TAG = "CloudClassifier"
-        private const val JPEG_QUALITY = 85
         private val TIMESTAMP_FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US)
     }
 
@@ -129,15 +111,25 @@ class CloudClassifier(
 
     private val apiKeyStore = context?.applicationContext?.let { SecureApiKeyStore(it) }
 
-    private val json =
-        Json {
-            ignoreUnknownKeys = true
-            isLenient = true
-        }
+    // API layer for HTTP requests and retries
+    private val api =
+        CloudClassifierApi(
+            client = client,
+            apiKeyStore = apiKeyStore,
+            domainPackId = domainPackId,
+            maxAttempts = maxAttempts,
+            baseDelayMs = baseDelayMs,
+            maxDelayMs = maxDelayMs,
+        )
+
+    // Telemetry helper for span and metric management
+    private val telemetryHelper = ClassificationTelemetry(telemetry, domainPackId)
 
     override suspend fun classifySingle(input: ClassificationInput): ClassificationResult? =
         withContext(Dispatchers.IO) {
             val config = currentConfig()
+
+            // Check configuration
             if (!config.isConfigured) {
                 ScaniumLog.w(TAG, "Cloud classifier not configured (SCANIUM_API_BASE_URL is empty)")
                 return@withContext failureResult(
@@ -146,272 +138,76 @@ class CloudClassifier(
                 )
             }
 
-            val bitmap = input.bitmap
-            val endpoint = "${config.baseUrl.trimEnd('/')}/v1/classify?enrichAttributes=true"
-            val correlationId = CorrelationIds.currentClassificationSessionId()
-            ScaniumLog.d(TAG, "Classifying endpoint=$endpoint domainPack=$domainPackId correlationId=$correlationId")
+            maybeSaveDebugCrop(input)
 
-            // Create child span for this API call
-            val parentSpan = TraceContext.getActiveSpan()
-            val classifySpan =
-                if (parentSpan != null) {
-                    telemetry?.beginChildSpan(
-                        "api.classify",
-                        parentSpan,
-                        mapOf(
-                            "domain_pack_id" to domainPackId,
-                            "endpoint" to "/v1/classify",
-                        ),
-                    )
-                } else {
-                    telemetry?.beginSpan(
-                        "api.classify",
-                        mapOf(
-                            "domain_pack_id" to domainPackId,
-                            "endpoint" to "/v1/classify",
-                        ),
-                    )
-                }
-
-            // Set as active for HTTP header injection
-            classifySpan?.let { TraceContext.setActiveSpan(it) }
+            // Begin telemetry span
+            val classifySpan = telemetryHelper.beginClassificationSpan()
             val startTime = System.currentTimeMillis()
 
             try {
-
-            maybeSaveDebugCrop(input)
-
-            val imageBytes = bitmap.toJpegBytes()
-            val requestBody =
-                MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)
-                    .addFormDataPart(
-                        name = "image",
-                        filename = "item.jpg",
-                        body = imageBytes.toRequestBody("image/jpeg".toMediaType()),
-                    )
-                    .addFormDataPart("domainPackId", domainPackId)
-                    .build()
-
-            // DIAG: Log endpoint and API key status
-            val apiKey = config.apiKey
-            Log.d("ScaniumNet", "CloudClassifier: endpoint=$endpoint")
-            if (apiKey != null) {
-                Log.d("ScaniumAuth", "CloudClassifier: apiKey present len=${apiKey.length} prefix=${apiKey.take(6)}...")
-            } else {
-                Log.w("ScaniumAuth", "CloudClassifier: apiKey is NULL - X-API-Key header will NOT be added!")
-            }
-
-            var attempt = 1
-            var lastError: String? = null
-            while (attempt <= maxAttempts) {
-                val request =
-                    Request.Builder()
-                        .url(endpoint)
-                        .post(requestBody)
-                        .apply {
-                            if (apiKey != null) {
-                                Log.d("ScaniumAuth", "CloudClassifier: Adding X-API-Key header")
-                                header("X-API-Key", apiKey)
-                                // Add HMAC signature for replay protection (SEC-004)
-                                RequestSigner.addSignatureHeaders(
-                                    builder = this,
-                                    apiKey = apiKey,
-                                    params = mapOf("domainPackId" to domainPackId),
-                                    binaryContentSize = imageBytes.size.toLong(),
-                                )
-                            } else {
-                                Log.w("ScaniumAuth", "CloudClassifier: SKIPPING X-API-Key header (null)")
-                            }
-                            header("X-Scanium-Correlation-Id", correlationId)
-                            header("X-Client", "Scanium-Android")
-                            header("X-App-Version", BuildConfig.VERSION_NAME)
+                // Execute API request with retries
+                val apiResult =
+                    api.classify(
+                        bitmap = input.bitmap,
+                        config = config,
+                    ) { attempt, error ->
+                        // Callback for each attempt
+                        if (error != null) {
+                            val errorType =
+                                when (error) {
+                                    is ApiError.Timeout -> "timeout"
+                                    is ApiError.Offline -> "offline"
+                                    is ApiError.Network -> "network"
+                                    is ApiError.ServerError -> "server_error"
+                                    is ApiError.ClientError -> "client_error"
+                                    is ApiError.ParseError -> "parse_error"
+                                    is ApiError.Unexpected -> error.cause?.javaClass?.simpleName ?: "unexpected"
+                                }
+                            telemetryHelper.recordAttemptError(errorType, attempt)
+                            classifySpan?.recordError(error.message, mapOf("attempt" to attempt.toString()))
                         }
-                        .build()
-
-                try {
-                    var retry = false
-                    var offlineError = false
-                    var errorMessage: String? = null
-                    var responseCode = 0
-
-                    client.newCall(request).execute().use { response ->
-                        responseCode = response.code
-                        val responseBody = response.body?.string()
-                        Log.d(TAG, "Response: code=$responseCode")
-
-                        if (responseCode == 200 && responseBody != null) {
-                            val apiResponse = json.decodeFromString<CloudClassificationResponse>(responseBody)
-                            val result = parseSuccessResponse(apiResponse)
-                            val latencyMs = System.currentTimeMillis() - startTime
-
-                            // Record success metrics
-                            telemetry?.timer(
-                                "mobile.api.duration_ms",
-                                latencyMs,
-                                mapOf(
-                                    "endpoint" to "/v1/classify",
-                                    "status_code" to "200",
-                                ),
-                            )
-                            telemetry?.counter(
-                                "mobile.api.request_count",
-                                1,
-                                mapOf(
-                                    "endpoint" to "/v1/classify",
-                                    "status" to "success",
-                                ),
-                            )
-
-                            // End span with success attributes
-                            classifySpan?.end(
-                                mapOf(
-                                    "status_code" to "200",
-                                    "latency_ms" to latencyMs.toString(),
-                                    "request_id" to (apiResponse.requestId ?: "unknown"),
-                                    "attempts" to attempt.toString(),
-                                ),
-                            )
-                            TraceContext.clearActiveSpan()
-
-                            ScaniumLog.i(
-                                TAG,
-                                "Classification success correlationId=$correlationId requestId=${apiResponse.requestId}",
-                            )
-                            return@withContext result
-                        }
-
-                        errorMessage =
-                            if (responseBody.isNullOrBlank()) {
-                                "Classification failed (HTTP $responseCode)"
-                            } else {
-                                "Classification failed (HTTP $responseCode): $responseBody"
-                            }
-
-                        if (isRetryableError(responseCode) && attempt < maxAttempts) {
-                            ScaniumLog.w(TAG, "Retryable error HTTP $responseCode attempt=$attempt correlationId=$correlationId")
-                            retry = true
-                            return@use
-                        }
-
-                        offlineError = responseCode == 503 || responseCode == 504
                     }
 
-                    if (retry) {
-                        lastError = errorMessage
-                        delay(calculateBackoffDelay(attempt))
-                        attempt++
-                        continue
-                    }
-
-                    if (errorMessage != null) {
+                // Process API result
+                when (apiResult) {
+                    is ApiResult.Success -> {
+                        val response = apiResult.response
+                        val result = parseSuccessResponse(response)
                         val latencyMs = System.currentTimeMillis() - startTime
 
-                        // Record error metrics
-                        telemetry?.timer(
-                            "mobile.api.duration_ms",
-                            latencyMs,
-                            mapOf(
-                                "endpoint" to "/v1/classify",
-                                "status_code" to responseCode.toString(),
-                            ),
-                        )
-                        telemetry?.counter(
-                            "mobile.api.error_count",
-                            1,
-                            mapOf(
-                                "endpoint" to "/v1/classify",
-                                "status_code" to responseCode.toString(),
-                            ),
-                        )
+                        // Record success metrics
+                        telemetryHelper.recordSuccess(latencyMs, response.requestId, 1)
+                        classifySpan?.endSuccess(latencyMs, response.requestId, 1)
 
-                        classifySpan?.recordError(
-                            errorMessage,
-                            mapOf(
-                                "status_code" to responseCode.toString(),
-                                "attempts" to attempt.toString(),
-                            ),
-                        )
-                        classifySpan?.end(mapOf("status" to "error"))
-                        TraceContext.clearActiveSpan()
-
-                        return@withContext failureResult(errorMessage, offlineError)
+                        ScaniumLog.i(TAG, "Classification success requestId=${response.requestId}")
+                        return@withContext result
                     }
-                } catch (e: SocketTimeoutException) {
-                    lastError = "Request timeout"
-                    telemetry?.counter(
-                        "mobile.api.error_count",
-                        1,
-                        mapOf(
-                            "endpoint" to "/v1/classify",
-                            "error_type" to "timeout",
-                        ),
-                    )
-                    classifySpan?.recordError(lastError, mapOf("attempt" to attempt.toString()))
-                    Log.w(TAG, "Timeout classifying image (attempt $attempt)", e)
-                } catch (e: UnknownHostException) {
-                    lastError = "Offline - check your connection"
-                    telemetry?.counter(
-                        "mobile.api.error_count",
-                        1,
-                        mapOf(
-                            "endpoint" to "/v1/classify",
-                            "error_type" to "offline",
-                        ),
-                    )
-                    classifySpan?.recordError(lastError, mapOf("attempt" to attempt.toString()))
-                    Log.w(TAG, "Network unavailable (attempt $attempt)", e)
-                } catch (e: IOException) {
-                    lastError = "Network error: ${e.message}"
-                    telemetry?.counter(
-                        "mobile.api.error_count",
-                        1,
-                        mapOf(
-                            "endpoint" to "/v1/classify",
-                            "error_type" to "network",
-                        ),
-                    )
-                    classifySpan?.recordError(lastError, mapOf("attempt" to attempt.toString()))
-                    Log.w(TAG, "I/O error classifying image (attempt $attempt)", e)
-                } catch (e: Exception) {
-                    lastError = "Unexpected error: ${e.message}"
-                    telemetry?.counter(
-                        "mobile.api.error_count",
-                        1,
-                        mapOf(
-                            "endpoint" to "/v1/classify",
-                            "error_type" to (e::class.simpleName ?: "unknown"),
-                        ),
-                    )
-                    classifySpan?.recordError(lastError ?: "Unexpected error")
-                    classifySpan?.end(mapOf("status" to "exception"))
-                    TraceContext.clearActiveSpan()
-                    Log.e(TAG, "Unexpected error classifying image", e)
-                    return@withContext failureResult(lastError ?: "Unexpected error")
+                    is ApiResult.Error -> {
+                        val error = apiResult.error
+                        val latencyMs = System.currentTimeMillis() - startTime
+                        val errorType =
+                            when (error) {
+                                is ApiError.Timeout -> "timeout"
+                                is ApiError.Offline -> "offline"
+                                is ApiError.Network -> "network"
+                                else -> "api_error"
+                            }
+
+                        telemetryHelper.recordError(latencyMs, error.statusCode, errorType)
+                        classifySpan?.endError(error.message, error.statusCode)
+
+                        return@withContext failureResult(error.message, error.isOffline)
+                    }
+                    is ApiResult.ConfigError -> {
+                        return@withContext failureResult(apiResult.message, offline = true)
+                    }
                 }
-
-                if (attempt >= maxAttempts) {
-                    break
-                }
-
-                Log.d(TAG, "Retrying after failure (attempt $attempt)")
-                delay(calculateBackoffDelay(attempt))
-                attempt++
-            }
-
-            // All retries exhausted
-            classifySpan?.end(
-                mapOf(
-                    "status" to "failed_all_retries",
-                    "attempts" to attempt.toString(),
-                ),
-            )
-            TraceContext.clearActiveSpan()
-
-            return@withContext failureResult(lastError ?: "Unable to classify", offline = lastError?.contains("Offline", true) == true)
+            } catch (e: Exception) {
+                Log.e(TAG, "Unexpected error in classification coordinator", e)
+                classifySpan?.endException()
+                return@withContext failureResult("Unexpected error: ${e.message}")
             } finally {
-                // Ensure TraceContext is always cleared
-                TraceContext.clearActiveSpan()
+                classifySpan?.ensureCleanup()
             }
         }
 
@@ -441,11 +237,6 @@ class CloudClassifier(
             status = ClassificationStatus.FAILED,
             errorMessage = errorMessage,
         )
-    }
-
-    private fun calculateBackoffDelay(attempt: Int): Long {
-        val exponentialDelay = baseDelayMs * (1 shl (attempt - 1))
-        return min(exponentialDelay, maxDelayMs)
     }
 
     /**
@@ -574,36 +365,6 @@ class CloudClassifier(
     }
 
     /**
-     * Check if HTTP status code indicates a retryable error.
-     *
-     * Retryable errors:
-     * - 408 Request Timeout
-     * - 429 Too Many Requests
-     * - 5xx Server errors
-     *
-     * Non-retryable errors:
-     * - 400 Bad Request
-     * - 401 Unauthorized
-     * - 403 Forbidden
-     * - 404 Not Found
-     */
-    private fun isRetryableError(statusCode: Int): Boolean {
-        return statusCode == 408 || statusCode == 429 || statusCode >= 500
-    }
-
-    /**
-     * Convert bitmap to JPEG bytes.
-     *
-     * This strips EXIF metadata for privacy (JPEG compression creates a new image
-     * without preserving original metadata).
-     */
-    private fun Bitmap.toJpegBytes(): ByteArray {
-        val stream = ByteArrayOutputStream()
-        compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, stream)
-        return stream.toByteArray()
-    }
-
-    /**
      * Debug helper: saves crop to cache if enabled.
      * Only works in DEBUG builds and when saveCloudCropsEnabled is true.
      */
@@ -630,93 +391,3 @@ class CloudClassifier(
         }
     }
 }
-
-/**
- * API response model for cloud classification.
- */
-@Serializable
-private data class CloudClassificationResponse(
-    val domainCategoryId: String? = null,
-    val confidence: Float? = null,
-    val label: String? = null,
-    val attributes: Map<String, String>? = null,
-    val enrichedAttributes: EnrichedAttributesResponse? = null,
-    val visionAttributes: VisionAttributesResponse? = null,
-    val requestId: String? = null,
-)
-
-/**
- * Enriched attributes from VisionExtractor.
- */
-@Serializable
-private data class EnrichedAttributesResponse(
-    val brand: EnrichedAttributeResponse? = null,
-    val model: EnrichedAttributeResponse? = null,
-    val color: EnrichedAttributeResponse? = null,
-    val secondaryColor: EnrichedAttributeResponse? = null,
-    val material: EnrichedAttributeResponse? = null,
-    val suggestedNextPhoto: String? = null,
-)
-
-/**
- * Single enriched attribute with confidence and evidence.
- */
-@Serializable
-private data class EnrichedAttributeResponse(
-    val value: String,
-    val confidence: String, // "HIGH", "MED", "LOW"
-    val confidenceScore: Float,
-    val evidenceRefs: List<AttributeEvidenceResponse> = emptyList(),
-)
-
-/**
- * Evidence reference for an extracted attribute.
- */
-@Serializable
-private data class AttributeEvidenceResponse(
-    val type: String, // "logo", "ocr", "color", "label"
-    val value: String,
-    val score: Float? = null,
-)
-
-/**
- * Vision attributes from Google Vision API processing.
- * Contains raw extracted data: colors, OCR text, logos, labels, and candidate values.
- */
-@Serializable
-private data class VisionAttributesResponse(
-    val colors: List<VisionColorResponse> = emptyList(),
-    val ocrText: String? = null,
-    val logos: List<VisionLogoResponse> = emptyList(),
-    val labels: List<VisionLabelResponse> = emptyList(),
-    val brandCandidates: List<String> = emptyList(),
-    val modelCandidates: List<String> = emptyList(),
-)
-
-/**
- * Color extracted from Vision API.
- */
-@Serializable
-private data class VisionColorResponse(
-    val name: String,
-    val hex: String,
-    val score: Float,
-)
-
-/**
- * Logo detected by Vision API.
- */
-@Serializable
-private data class VisionLogoResponse(
-    val name: String,
-    val score: Float,
-)
-
-/**
- * Label detected by Vision API.
- */
-@Serializable
-private data class VisionLabelResponse(
-    val name: String,
-    val score: Float,
-)

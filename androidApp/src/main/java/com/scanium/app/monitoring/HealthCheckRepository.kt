@@ -77,7 +77,7 @@ class HealthCheckRepository {
         // Check all endpoints in parallel
         val results = ENDPOINTS.map { spec ->
             async {
-                checkEndpoint(config.baseUrl, spec, config.apiKey)
+                checkEndpoint(config.baseUrl, spec, config.apiKey, config.authToken)
             }
         }.awaitAll()
 
@@ -107,10 +107,12 @@ class HealthCheckRepository {
         baseUrl: String,
         spec: EndpointSpec,
         apiKey: String?,
+        authToken: String?,
     ): EndpointCheckResult {
         val url = baseUrl.trimEnd('/') + spec.path
         val hasKey = !apiKey.isNullOrBlank()
-        val allowedCodes = if (hasKey) spec.allowedCodes else spec.unauthAllowedCodes
+        val hasAuthToken = !authToken.isNullOrBlank()
+        val allowedCodes = if (hasKey || hasAuthToken) spec.allowedCodes else spec.unauthAllowedCodes
 
         val requestBuilder = Request.Builder()
             .url(url)
@@ -123,6 +125,11 @@ class HealthCheckRepository {
         // Add API key header if provided (but don't log it!)
         if (hasKey && spec.requiresAuth) {
             requestBuilder.addHeader("X-API-Key", apiKey!!)
+        }
+
+        // Add auth token header if provided (for signed-in users)
+        if (hasAuthToken && spec.requiresAuth) {
+            requestBuilder.addHeader("Authorization", "Bearer $authToken")
         }
 
         return try {

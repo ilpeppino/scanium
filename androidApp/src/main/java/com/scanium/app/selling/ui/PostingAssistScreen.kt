@@ -19,10 +19,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Launch
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -138,7 +138,7 @@ fun PostingAssistScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -150,7 +150,7 @@ fun PostingAssistScreen(
                         Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = "Ask assistant")
                     }
                     IconButton(onClick = { targetDialogVisible = true }) {
-                        Icon(imageVector = Icons.Default.Launch, contentDescription = "Open target")
+                        Icon(imageVector = Icons.AutoMirrored.Filled.Launch, contentDescription = "Open target")
                     }
                     IconButton(onClick = { moreExpanded = true }) {
                         Icon(imageVector = Icons.Default.MoreVert, contentDescription = "More")
@@ -431,7 +431,7 @@ private fun ProgressHeader(
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Completeness", style = MaterialTheme.typography.titleMedium)
-            LinearProgressIndicator(progress = plan.completenessScore / 100f, modifier = Modifier.fillMaxWidth())
+            LinearProgressIndicator(progress = { plan.completenessScore / 100f }, modifier = Modifier.fillMaxWidth())
             Text("${plan.completenessScore}% complete")
             if (missing.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

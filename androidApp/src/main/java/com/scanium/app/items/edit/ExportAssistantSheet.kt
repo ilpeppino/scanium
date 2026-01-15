@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -119,102 +119,136 @@ fun ExportAssistantSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            // Header
-            ExportAssistantHeader()
+        ExportAssistantContent(
+            state = state,
+            speakAnswersEnabled = speakAnswersEnabled,
+            isSpeaking = ttsManager.isSpeaking.value,
+            onSpeakOrStop = { text ->
+                if (ttsManager.isSpeaking.value) {
+                    ttsManager.stop()
+                } else {
+                    ttsManager.speak(text)
+                }
+            },
+            onGenerate = { viewModel.generateExport() },
+            onRetry = { viewModel.retry() },
+            onApplyResult = { title, description, bullets ->
+                onApply(title, description, bullets)
+                scope.launch {
+                    sheetState.hide()
+                    onDismiss()
+                }
+            },
+            onDismiss = onDismiss,
+        )
+    }
+}
 
-            HorizontalDivider()
+/**
+ * Pure UI content for the Export Assistant sheet.
+ * Receives data and callbacks, no direct ViewModel usage.
+ *
+ * Made internal for testability.
+ */
+@Composable
+internal fun ExportAssistantContent(
+    state: ExportAssistantState,
+    speakAnswersEnabled: Boolean,
+    isSpeaking: Boolean,
+    onSpeakOrStop: (text: String) -> Unit,
+    onGenerate: () -> Unit,
+    onRetry: () -> Unit,
+    onApplyResult: (title: String?, description: String?, bullets: List<String>) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
 
-            // Content based on state
-            AnimatedContent(
-                targetState = state,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "export_state",
-            ) { currentState ->
-                when (currentState) {
-                    is ExportAssistantState.Idle -> {
-                        // Show generate button
-                        ExportIdleContent(
-                            onGenerate = { viewModel.generateExport() },
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        // Header
+        ExportAssistantHeader()
+
+        HorizontalDivider()
+
+        // Content based on state
+        AnimatedContent(
+            targetState = state,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "export_state",
+        ) { currentState ->
+            when (currentState) {
+                is ExportAssistantState.Idle -> {
+                    // Show generate button
+                    ExportIdleContent(
+                        onGenerate = onGenerate,
+                    )
+                }
+
+                is ExportAssistantState.Loading,
+                is ExportAssistantState.Generating -> {
+                    ExportLoadingContent()
+                }
+
+                is ExportAssistantState.Success -> {
+                    val titleLabel = stringResource(R.string.export_assistant_title_label)
+                    val descriptionLabel = stringResource(R.string.export_assistant_description_label)
+                    val bulletsLabel = stringResource(R.string.export_assistant_bullets_label)
+                    val bulletSymbol = stringResource(R.string.common_bullet)
+
+                    // Build speakable text for TTS
+                    val speakableText = remember(currentState) {
+                        buildSpeakableText(
+                            title = currentState.title,
+                            description = currentState.description,
+                            bullets = currentState.bullets,
                         )
                     }
 
-                    is ExportAssistantState.Loading,
-                    is ExportAssistantState.Generating -> {
-                        ExportLoadingContent()
-                    }
-
-                    is ExportAssistantState.Success -> {
-                        val titleLabel = stringResource(R.string.export_assistant_title_label)
-                        val descriptionLabel = stringResource(R.string.export_assistant_description_label)
-                        val bulletsLabel = stringResource(R.string.export_assistant_bullets_label)
-                        val bulletSymbol = stringResource(R.string.common_bullet)
-
-                        // Build speakable text for TTS
-                        val speakableText = remember(currentState) {
-                            buildSpeakableText(
-                                title = currentState.title,
-                                description = currentState.description,
-                                bullets = currentState.bullets,
+                    ExportSuccessContent(
+                        state = currentState,
+                        speakAnswersEnabled = speakAnswersEnabled,
+                        speakableText = speakableText,
+                        isSpeaking = isSpeaking,
+                        onToggleSpeech = { onSpeakOrStop(speakableText) },
+                        onCopyAll = { copyAllToClipboard(context, currentState) },
+                        onCopyTitle = {
+                            currentState.title?.let {
+                                copyToClipboard(context, titleLabel, it)
+                            }
+                        },
+                        onCopyDescription = {
+                            currentState.description?.let {
+                                copyToClipboard(context, descriptionLabel, it)
+                            }
+                        },
+                        onCopyBullets = {
+                            copyToClipboard(
+                                context,
+                                bulletsLabel,
+                                currentState.bullets.joinToString("\n") { "$bulletSymbol $it" },
                             )
-                        }
+                        },
+                        onRegenerate = onGenerate,
+                        onApply = {
+                            onApplyResult(currentState.title, currentState.description, currentState.bullets)
+                        },
+                    )
+                }
 
-                        ExportSuccessContent(
-                            state = currentState,
-                            speakAnswersEnabled = speakAnswersEnabled,
-                            speakableText = speakableText,
-                            isSpeaking = ttsManager.isSpeaking.value,
-                            onToggleSpeech = {
-                                if (ttsManager.isSpeaking.value) {
-                                    ttsManager.stop()
-                                } else {
-                                    ttsManager.speak(speakableText)
-                                }
-                            },
-                            onCopyAll = { copyAllToClipboard(context, currentState) },
-                            onCopyTitle = {
-                                currentState.title?.let {
-                                    copyToClipboard(context, titleLabel, it)
-                                }
-                            },
-                            onCopyDescription = {
-                                currentState.description?.let {
-                                    copyToClipboard(context, descriptionLabel, it)
-                                }
-                            },
-                            onCopyBullets = {
-                                copyToClipboard(
-                                    context,
-                                    bulletsLabel,
-                                    currentState.bullets.joinToString("\n") { "$bulletSymbol $it" },
-                                )
-                            },
-                            onRegenerate = { viewModel.generateExport() },
-                            onApply = {
-                                onApply(currentState.title, currentState.description, currentState.bullets)
-                                scope.launch {
-                                    sheetState.hide()
-                                    onDismiss()
-                                }
-                            },
-                        )
-                    }
-
-                    is ExportAssistantState.Error -> {
-                        ExportErrorContent(
-                            message = currentState.message,
-                            isRetryable = currentState.isRetryable,
-                            onRetry = { viewModel.retry() },
-                            onDismiss = onDismiss,
-                        )
-                    }
+                is ExportAssistantState.Error -> {
+                    ExportErrorContent(
+                        message = currentState.message,
+                        isRetryable = currentState.isRetryable,
+                        onRetry = onRetry,
+                        onDismiss = onDismiss,
+                    )
                 }
             }
         }
@@ -350,7 +384,7 @@ private fun ExportSuccessContent(
                     modifier = Modifier.size(40.dp),
                 ) {
                     Icon(
-                        imageVector = Icons.Default.VolumeUp,
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = if (isSpeaking) {
                             stringResource(R.string.common_stop_speaking)
                         } else {

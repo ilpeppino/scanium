@@ -42,7 +42,7 @@ fun DebugSettingsDialog(onDismiss: () -> Unit) {
                     )
                 }
 
-                Divider()
+                HorizontalDivider()
 
                 // Failure mode selection
                 Text("Failure Mode", style = MaterialTheme.typography.titleSmall)
@@ -73,7 +73,7 @@ fun DebugSettingsDialog(onDismiss: () -> Unit) {
 
                 // Failure rate slider (only shown if failure mode is not NONE)
                 if (selectedFailureMode != MockFailureMode.NONE) {
-                    Divider()
+                    HorizontalDivider()
                     Text("Failure Rate: ${(failureRate * 100).toInt()}%", style = MaterialTheme.typography.titleSmall)
                     Slider(
                         value = failureRate,
