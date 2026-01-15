@@ -599,8 +599,10 @@ class AssistantViewModel
                         ScaniumLog.d(TAG, "Progress: EXTRACTING_VISION correlationId=$correlationId images=${attachmentResult.attachments.size}")
                     }
 
-                    // Get current assistant preferences
-                    val prefs = settingsRepository.assistantPrefsFlow.first()
+                    // ISSUE-3 FIX: Use unified language setting, keep other prefs from assistantPrefsFlow
+                    val basePrefs = settingsRepository.assistantPrefsFlow.first()
+                    val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first().uppercase()
+                    val prefs = basePrefs.copy(language = languageTag)
 
                     // Send request with image attachments (if toggle enabled and photos exist)
                     val response =
