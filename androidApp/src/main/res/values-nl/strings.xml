@@ -96,6 +96,14 @@
     <string name="settings_accuracy_high">Hoog</string>
     <string name="settings_accuracy_high_desc">Strenge overeenkomst; bewaart items met hoge zekerheid</string>
 
+    <!-- Storage & Export -->
+    <string name="settings_storage_title">Opslag en export</string>
+    <string name="settings_category_storage_title">Opslag en export</string>
+    <string name="settings_category_storage_desc">Opslaglocaties, exportindelingen en cachebeheer</string>
+    <string name="settings_section_storage_options">Opslagopties</string>
+    <string name="settings_section_export">Export</string>
+    <string name="settings_section_cache">Cache en gegevens</string>
+
     <!-- Assistant -->
     <string name="settings_assistant_title">AI-assistent</string>
     <string name="settings_section_assistant_access">Assistent-toegang</string>
