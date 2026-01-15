@@ -13,6 +13,11 @@ export const authMiddleware: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('onRequest', async (request) => {
     const authHeader = request.headers.authorization;
 
+    // Debug logging
+    const hasAuth = !!authHeader;
+    const isBearerAuth = authHeader?.startsWith('Bearer ') ?? false;
+    fastify.log.info({ hasAuth, isBearerAuth, url: request.url }, 'Auth middleware check');
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return; // No auth header, continue without userId
     }
@@ -21,7 +26,10 @@ export const authMiddleware: FastifyPluginAsync = async (fastify) => {
     request.hadAuthAttempt = true;
 
     const token = authHeader.substring(7);
+    fastify.log.info({ tokenLength: token.length, tokenPrefix: token.substring(0, 8) }, 'Auth token received');
+
     const userId = await verifySession(token);
+    fastify.log.info({ userId: userId ?? 'null', verified: !!userId }, 'Session verification result');
 
     if (userId) {
       request.userId = userId;
