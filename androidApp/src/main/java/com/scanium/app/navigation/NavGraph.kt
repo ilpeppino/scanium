@@ -476,6 +476,9 @@ fun ScaniumNavGraph(
                 },
                 itemsViewModel = itemsViewModel,
                 draftStore = draftStore,
+                onNavigateToSettingsGeneral = {
+                    navController.navigate(Routes.SETTINGS_GENERAL)
+                },
             )
         }
 
