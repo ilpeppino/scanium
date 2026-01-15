@@ -191,6 +191,8 @@ android {
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+            // AI Assistant requires Google sign-in in production
+            buildConfigField("boolean", "DEV_BYPASS_GOOGLE_SIGNIN_FOR_ASSISTANT", "false")
         }
         create("dev") {
             dimension = "distribution"
@@ -207,6 +209,10 @@ android {
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+            // DEV ONLY: Bypass Google sign-in for AI Assistant
+            // When true and user is not signed in, uses mock assistant responses
+            // This allows testing assistant UI without Google authentication
+            buildConfigField("boolean", "DEV_BYPASS_GOOGLE_SIGNIN_FOR_ASSISTANT", "true")
         }
         create("beta") {
             dimension = "distribution"
@@ -223,6 +229,8 @@ android {
             buildConfigField("boolean", "FEATURE_AI_ASSISTANT", "true")
             buildConfigField("String", "MAX_IMAGE_RESOLUTION", "\"HIGH\"")
             buildConfigField("boolean", "FEATURE_ITEM_DIAGNOSTICS", "true")
+            // AI Assistant requires Google sign-in in beta
+            buildConfigField("boolean", "DEV_BYPASS_GOOGLE_SIGNIN_FOR_ASSISTANT", "false")
         }
     }
 
