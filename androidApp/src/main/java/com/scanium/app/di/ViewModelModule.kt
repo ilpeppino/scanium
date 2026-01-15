@@ -1,18 +1,14 @@
 package com.scanium.app.di
 
 import android.content.Context
-import com.scanium.app.auth.AuthRepository
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.data.PostingTargetPreferences
 import com.scanium.app.diagnostics.DiagnosticsRepository
 import com.scanium.app.listing.ExportProfileRepository
-import com.scanium.app.selling.assistant.AssistantAuthGating
 import com.scanium.app.selling.assistant.AssistantPreflightManager
 import com.scanium.app.selling.assistant.AssistantPreflightManagerImpl
 import com.scanium.app.selling.assistant.AssistantRepository
 import com.scanium.app.selling.assistant.AssistantRepositoryFactory
-import com.scanium.app.selling.assistant.DevBypassAssistantRepository
-import com.scanium.app.selling.assistant.DevMockAssistantRepository
 import com.scanium.app.selling.assistant.LocalAssistantHelper
 import com.scanium.app.selling.assistant.local.LocalSuggestionEngine
 import com.scanium.app.selling.data.EbayApi
@@ -69,35 +65,15 @@ object ViewModelModule {
     }
 
     /**
-     * Provides the appropriate AssistantRepository based on build flavor.
-     *
-     * - DEV builds with DEV_BYPASS_GOOGLE_SIGNIN_FOR_ASSISTANT=true:
-     *   Returns DevBypassAssistantRepository that uses mock when not signed in.
-     * - BETA/PROD builds:
-     *   Returns the real CloudAssistantRepository (requires Google sign-in).
-     *
-     * This ensures dev builds can test assistant UI without sign-in while
-     * beta/prod maintain their authentication requirement.
+     * Provides the AssistantRepository for AI-powered listing assistance.
+     * All flavors require Google sign-in to use the AI assistant.
      */
     @Provides
     @Singleton
     fun provideAssistantRepository(
         @ApplicationContext context: Context,
-        authRepository: AuthRepository,
     ): AssistantRepository {
-        val realRepository = AssistantRepositoryFactory(context).create()
-
-        return if (AssistantAuthGating.isDevBypassEnabled()) {
-            // DEV build: wrap with bypass logic
-            DevBypassAssistantRepository(
-                realRepository = realRepository,
-                mockRepository = DevMockAssistantRepository(),
-                authRepository = authRepository,
-            )
-        } else {
-            // BETA/PROD: use real repository directly (always requires sign-in)
-            realRepository
-        }
+        return AssistantRepositoryFactory(context).create()
     }
 
     @Provides

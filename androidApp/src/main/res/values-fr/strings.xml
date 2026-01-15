@@ -54,6 +54,14 @@
     <string name="settings_upgrade_cta">Mettre à niveau</string>
     <string name="settings_manage_subscription">Gérer</string>
 
+    <!-- Google Sign-In -->
+    <string name="settings_sign_in_google">Continuer avec Google</string>
+    <string name="settings_sign_in_google_desc">Connectez-vous pour synchroniser vos données et activer les fonctionnalités personnalisées</string>
+    <string name="settings_signing_in">Connexion en cours…</string>
+    <string name="settings_signing_in_desc">Veuillez patienter…</string>
+    <string name="settings_sign_in_error_template">Échec de la connexion : %1$s</string>
+    <string name="settings_sign_in_error_unknown">Erreur inconnue</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Caméra et numérisation</string>
     <string name="settings_section_storage">Stockage</string>
@@ -330,6 +338,12 @@
     <string name="assistant_voice_unavailable_message">Vous pouvez continuer à taper pendant que nous désactivons le micro.</string>
     <string name="assistant_context_item_fallback">Objet</string>
     <string name="assistant_ai_assistant">Assistant IA</string>
+
+    <!-- Assistant Auth Dialog -->
+    <string name="assistant_auth_required_title">Connexion requise</string>
+    <string name="assistant_auth_required_message">L\'assistant IA nécessite une connexion. Accédez aux Paramètres pour vous connecter avec votre compte Google.</string>
+    <string name="assistant_auth_go_to_settings">Aller aux paramètres</string>
+    <string name="assistant_auth_cancel">Annuler</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Objet supprimé</string>

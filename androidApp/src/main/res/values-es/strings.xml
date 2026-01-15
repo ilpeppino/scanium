@@ -50,6 +50,14 @@
     <string name="settings_upgrade_cta">Mejorar</string>
     <string name="settings_manage_subscription">Gestionar</string>
 
+    <!-- Google Sign-In -->
+    <string name="settings_sign_in_google">Continuar con Google</string>
+    <string name="settings_sign_in_google_desc">Inicia sesión para sincronizar tus datos y habilitar funciones personalizadas</string>
+    <string name="settings_signing_in">Iniciando sesión…</string>
+    <string name="settings_signing_in_desc">Por favor espera…</string>
+    <string name="settings_sign_in_error_template">Error al iniciar sesión: %1$s</string>
+    <string name="settings_sign_in_error_unknown">Error desconocido</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Cámara y Escaneo</string>
     <string name="settings_section_storage">Almacenamiento</string>
@@ -326,6 +334,12 @@
     <string name="assistant_voice_unavailable_message">Puedes seguir escribiendo mientras desactivamos el botón del micrófono.</string>
     <string name="assistant_context_item_fallback">Elemento</string>
     <string name="assistant_ai_assistant">Asistente IA</string>
+
+    <!-- Assistant Auth Dialog -->
+    <string name="assistant_auth_required_title">Inicio de sesión requerido</string>
+    <string name="assistant_auth_required_message">El asistente IA requiere inicio de sesión. Ve a Configuración para iniciar sesión con tu cuenta de Google.</string>
+    <string name="assistant_auth_go_to_settings">Ir a configuración</string>
+    <string name="assistant_auth_cancel">Cancelar</string>
 
     <!-- Items -->
     <string name="items_snackbar_item_deleted">Elemento eliminado</string>

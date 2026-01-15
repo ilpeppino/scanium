@@ -55,6 +55,19 @@
     <string name="settings_upgrade_cta">Upgrade</string>
     <string name="settings_manage_subscription">Verwalten</string>
 
+    <!-- Google Sign-In -->
+    <string name="settings_sign_in_google">Mit Google fortfahren</string>
+    <string name="settings_sign_in_google_desc">Melde dich an, um deine Daten zu synchronisieren und personalisierte Funktionen zu aktivieren</string>
+    <string name="settings_signing_in">Anmeldung läuft…</string>
+    <string name="settings_sign_in_error_template">Anmeldung fehlgeschlagen: %1$s</string>
+    <string name="settings_sign_in_error_unknown">Unbekannter Fehler</string>
+
+    <!-- Assistant Auth Dialog -->
+    <string name="assistant_auth_required_title">Anmeldung erforderlich</string>
+    <string name="assistant_auth_required_message">Der KI-Assistent erfordert eine Anmeldung. Gehe zu den Einstellungen, um dich mit deinem Google-Konto anzumelden.</string>
+    <string name="assistant_auth_go_to_settings">Zu Einstellungen</string>
+    <string name="assistant_auth_cancel">Abbrechen</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Kamera &amp; Scannen</string>
     <string name="settings_section_storage">Speicher</string>
