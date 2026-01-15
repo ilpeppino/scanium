@@ -601,7 +601,7 @@ class AssistantViewModel
 
                     // ISSUE-3 FIX: Use unified language setting, keep other prefs from assistantPrefsFlow
                     val basePrefs = settingsRepository.assistantPrefsFlow.first()
-                    val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first().uppercase()
+                    val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first()
                     val prefs = basePrefs.copy(language = languageTag)
 
                     // Send request with image attachments (if toggle enabled and photos exist)
