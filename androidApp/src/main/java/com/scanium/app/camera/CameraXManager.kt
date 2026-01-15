@@ -69,7 +69,9 @@ class CameraXManager(
         private const val CAM_FRAME_TAG = "CAM_FRAME"
 
         // TEMP_CAM_BUG_DEBUG: Instrumentation for camera resume corruption investigation
-        private const val TEMP_CAM_BUG_DEBUG = true
+        // Set to true to enable verbose logging of file saves and session lifecycle
+        // (kept false for release builds; enable locally if needed for debugging camera issues)
+        private const val TEMP_CAM_BUG_DEBUG = false
 
         // PHASE 3: Edge gating margin
         // Detections whose center falls within this margin from the cropRect edge are dropped
