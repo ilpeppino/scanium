@@ -67,7 +67,11 @@ fun rememberItemEditState(
     exportAssistantViewModelFactory: ExportAssistantViewModel.Factory?,
 ): ItemEditState {
     val context = LocalContext.current
-    return remember(item, itemId, itemsViewModel, exportAssistantViewModelFactory, context) {
+    // ISSUE-1/2 FIX: Do NOT include `item` in remember key.
+    // Including `item` causes the entire state (including ViewModel) to be recreated
+    // when item loads, leading to timing issues with generation on first click.
+    // The ViewModel fetches item data internally via itemsViewModel.getItem().
+    return remember(itemId, itemsViewModel, exportAssistantViewModelFactory, context) {
         ItemEditState(
             context = context,
             itemId = itemId,
