@@ -1541,7 +1541,8 @@ class AssistantViewModel
 
             // For auth errors, show dialog with navigation option; for others, show snackbar
             if (failure.type == AssistantBackendErrorType.AUTH_REQUIRED ||
-                failure.type == AssistantBackendErrorType.AUTH_INVALID
+                failure.type == AssistantBackendErrorType.AUTH_INVALID ||
+                failure.type == AssistantBackendErrorType.UNAUTHORIZED
             ) {
                 _events.emit(AssistantUiEvent.ShowAuthRequiredDialog)
             } else {
