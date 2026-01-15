@@ -16,6 +16,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.diagnostics.AssistantDiagnosticsState
@@ -346,12 +347,15 @@ class DeveloperOptionsViewModel
          */
         fun copyDiagnosticsToClipboard() {
             val summary = diagnosticsRepository.generateDiagnosticsSummary()
+            val context = getApplication<Application>()
             val clipboardManager =
-                getApplication<Application>()
-                    .getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Scanium Diagnostics", summary)
+                context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText(
+                context.getString(R.string.settings_dev_clipboard_label),
+                summary,
+            )
             clipboardManager.setPrimaryClip(clip)
-            _copyResult.value = "Diagnostics copied to clipboard"
+            _copyResult.value = context.getString(R.string.settings_dev_clipboard_copied)
 
             // Clear message after delay
             viewModelScope.launch {
@@ -602,10 +606,10 @@ class DeveloperOptionsViewModel
                 val channel =
                     NotificationChannel(
                         channelId,
-                        "Scanium Dev Monitoring",
+                        context.getString(R.string.settings_dev_monitoring_channel_name),
                         NotificationManager.IMPORTANCE_HIGH,
                     ).apply {
-                        description = "Notifications for background monitoring errors in DEV builds"
+                        description = context.getString(R.string.settings_dev_monitoring_channel_description)
                     }
                 notificationManager.createNotificationChannel(channel)
             }
@@ -624,8 +628,8 @@ class DeveloperOptionsViewModel
             val notification =
                 NotificationCompat.Builder(context, channelId)
                     .setSmallIcon(android.R.drawable.stat_notify_error)
-                    .setContentTitle("Scanium Dev: Monitoring errors")
-                    .setContentText("Subsystems failing. Expand for details.")
+                    .setContentTitle(context.getString(R.string.settings_dev_monitoring_notification_title))
+                    .setContentText(context.getString(R.string.settings_dev_monitoring_notification_text))
                     .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)

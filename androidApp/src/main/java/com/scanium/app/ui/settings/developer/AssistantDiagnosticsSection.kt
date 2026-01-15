@@ -58,7 +58,7 @@ fun AssistantDiagnosticsSection(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "Assistant / AI Diagnostics",
+                    text = stringResource(R.string.settings_dev_assistant_diagnostics_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
@@ -75,7 +75,10 @@ fun AssistantDiagnosticsSection(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Icon(Icons.Default.Refresh, contentDescription = "Recheck")
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.settings_dev_assistant_recheck_cd),
+                    )
                 }
             }
         }
@@ -111,7 +114,7 @@ fun AssistantDiagnosticsSection(
                 // Backend Reachability
                 AssistantDiagnosticRow(
                     icon = Icons.Default.Cloud,
-                    label = "Backend Reachability",
+                    label = stringResource(R.string.settings_dev_assistant_backend_reachability_label),
                     status =
                         when (state.backendReachable) {
                             BackendReachabilityStatus.REACHABLE -> DiagnosticStatus.OK
@@ -126,9 +129,15 @@ fun AssistantDiagnosticsSection(
                         },
                     detail =
                         when (val result = state.connectionTestResult) {
-                            is ConnectionTestResult.Success -> "Connected (${result.httpStatus})"
+                            is ConnectionTestResult.Success ->
+                                stringResource(R.string.settings_dev_assistant_backend_connected, result.httpStatus)
                             is ConnectionTestResult.Failure -> result.message
-                            null -> if (state.isChecking) "Checking..." else "Not checked"
+                            null ->
+                                if (state.isChecking) {
+                                    stringResource(R.string.settings_dev_assistant_checking)
+                                } else {
+                                    stringResource(R.string.settings_dev_assistant_not_checked)
+                                }
                         },
                 )
 
@@ -137,7 +146,7 @@ fun AssistantDiagnosticsSection(
                 // Assistant Readiness (Prerequisites)
                 AssistantDiagnosticRow(
                     icon = Icons.Default.CheckCircle,
-                    label = "Assistant Readiness",
+                    label = stringResource(R.string.settings_dev_assistant_readiness_label),
                     status =
                         when {
                             state.prerequisiteState.allSatisfied -> DiagnosticStatus.OK
@@ -146,9 +155,15 @@ fun AssistantDiagnosticsSection(
                         },
                     detail =
                         if (state.prerequisiteState.allSatisfied) {
-                            "All ${state.prerequisiteState.prerequisites.size} prerequisites met"
+                            stringResource(
+                                R.string.settings_dev_assistant_prerequisites_met,
+                                state.prerequisiteState.prerequisites.size,
+                            )
                         } else {
-                            "${state.prerequisiteState.unsatisfiedCount} prerequisites not met"
+                            stringResource(
+                                R.string.settings_dev_assistant_prerequisites_not_met,
+                                state.prerequisiteState.unsatisfiedCount,
+                            )
                         },
                 )
 
@@ -165,13 +180,13 @@ fun AssistantDiagnosticsSection(
                 // Network State
                 AssistantDiagnosticRow(
                     icon = if (state.isNetworkConnected) Icons.Default.Wifi else Icons.Default.WifiOff,
-                    label = "Network State",
+                    label = stringResource(R.string.settings_dev_assistant_network_state_label),
                     status = if (state.isNetworkConnected) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
                     detail =
                         if (state.isNetworkConnected) {
-                            "Connected (${state.networkType})"
+                            stringResource(R.string.settings_dev_assistant_network_connected, state.networkType)
                         } else {
-                            "Not connected"
+                            stringResource(R.string.settings_dev_assistant_network_not_connected)
                         },
                 )
 
@@ -180,9 +195,14 @@ fun AssistantDiagnosticsSection(
                 // Microphone Permission
                 AssistantDiagnosticRow(
                     icon = Icons.Default.Mic,
-                    label = "Microphone Permission",
+                    label = stringResource(R.string.settings_dev_assistant_microphone_permission_label),
                     status = if (state.hasMicrophonePermission) DiagnosticStatus.OK else DiagnosticStatus.WARNING,
-                    detail = if (state.hasMicrophonePermission) "Granted" else "Not granted",
+                    detail =
+                        if (state.hasMicrophonePermission) {
+                            stringResource(R.string.settings_dev_assistant_permission_granted)
+                        } else {
+                            stringResource(R.string.settings_dev_assistant_permission_not_granted)
+                        },
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -190,9 +210,14 @@ fun AssistantDiagnosticsSection(
                 // Speech Recognition Availability
                 AssistantDiagnosticRow(
                     icon = Icons.Default.RecordVoiceOver,
-                    label = "Speech Recognition",
+                    label = stringResource(R.string.settings_dev_assistant_speech_recognition_label),
                     status = if (state.isSpeechRecognitionAvailable) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
-                    detail = if (state.isSpeechRecognitionAvailable) "Available" else "Not available on this device",
+                    detail =
+                        if (state.isSpeechRecognitionAvailable) {
+                            stringResource(R.string.settings_dev_assistant_speech_recognition_available)
+                        } else {
+                            stringResource(R.string.settings_dev_assistant_speech_recognition_unavailable)
+                        },
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -200,13 +225,17 @@ fun AssistantDiagnosticsSection(
                 // Text-to-Speech Availability
                 AssistantDiagnosticRow(
                     icon = Icons.Filled.VolumeUp,
-                    label = "Text-to-Speech",
+                    label = stringResource(R.string.settings_dev_assistant_tts_label),
                     status = if (state.isTextToSpeechAvailable) DiagnosticStatus.OK else DiagnosticStatus.ERROR,
                     detail =
                         if (state.isTextToSpeechAvailable) {
-                            if (state.isTtsReady) "Available and ready" else "Available"
+                            if (state.isTtsReady) {
+                                stringResource(R.string.settings_dev_assistant_tts_available_ready)
+                            } else {
+                                stringResource(R.string.settings_dev_assistant_tts_available)
+                            }
                         } else {
-                            "Not available"
+                            stringResource(R.string.settings_dev_assistant_tts_not_available)
                         },
                 )
 
@@ -214,7 +243,10 @@ fun AssistantDiagnosticsSection(
                 if (state.lastChecked > 0) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     Text(
-                        text = "Last checked: ${formatTimestamp(state.lastChecked)}",
+                        text = stringResource(
+                            R.string.settings_dev_assistant_last_checked,
+                            formatTimestamp(state.lastChecked),
+                        ),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth(),
@@ -241,61 +273,61 @@ private fun AssistantOverallStatusBadge(
             AssistantReadiness.READY ->
                 Triple(
                     Color(0xFF4CAF50),
-                    "Assistant Ready",
+                    stringResource(R.string.settings_dev_assistant_status_ready),
                     Icons.Default.CheckCircle,
                 )
             AssistantReadiness.CHECKING ->
                 Triple(
                     Color(0xFF2196F3),
-                    "Checking...",
+                    stringResource(R.string.settings_dev_assistant_status_checking),
                     Icons.Default.Sync,
                 )
             AssistantReadiness.NO_NETWORK ->
                 Triple(
                     Color(0xFFF44336),
-                    "No Network Connection",
+                    stringResource(R.string.settings_dev_assistant_status_no_network),
                     Icons.Default.WifiOff,
                 )
             AssistantReadiness.BACKEND_UNREACHABLE ->
                 Triple(
                     Color(0xFFF44336),
-                    "Backend Unreachable",
+                    stringResource(R.string.settings_dev_assistant_status_backend_unreachable),
                     Icons.Default.CloudOff,
                 )
             AssistantReadiness.BACKEND_UNAUTHORIZED ->
                 Triple(
                     Color(0xFFFF9800),
-                    "Backend Reachable — Invalid API Key",
+                    stringResource(R.string.settings_dev_assistant_status_backend_unauthorized),
                     Icons.Default.Lock,
                 )
             AssistantReadiness.BACKEND_SERVER_ERROR ->
                 Triple(
                     Color(0xFFFF9800),
-                    "Backend Reachable — Server Error",
+                    stringResource(R.string.settings_dev_assistant_status_backend_server_error),
                     Icons.Default.Error,
                 )
             AssistantReadiness.BACKEND_NOT_FOUND ->
                 Triple(
                     Color(0xFFFF9800),
-                    "Backend Reachable — Endpoint Not Found",
+                    stringResource(R.string.settings_dev_assistant_status_backend_not_found),
                     Icons.Default.SearchOff,
                 )
             AssistantReadiness.BACKEND_NOT_CONFIGURED ->
                 Triple(
                     Color(0xFF9E9E9E),
-                    "Backend Not Configured",
+                    stringResource(R.string.settings_dev_assistant_status_backend_not_configured),
                     Icons.Default.Settings,
                 )
             AssistantReadiness.PREREQUISITES_NOT_MET ->
                 Triple(
                     Color(0xFFFF9800),
-                    "Prerequisites Not Met",
+                    stringResource(R.string.settings_dev_assistant_status_prerequisites_not_met),
                     Icons.Default.Warning,
                 )
             AssistantReadiness.UNKNOWN ->
                 Triple(
                     Color(0xFF9E9E9E),
-                    "Unknown Status",
+                    stringResource(R.string.settings_dev_assistant_status_unknown),
                     Icons.Filled.Help,
                 )
         }

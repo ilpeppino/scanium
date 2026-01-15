@@ -9,9 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.scanium.app.R
 import com.scanium.app.selling.assistant.PreflightResult
 import com.scanium.app.selling.assistant.PreflightStatus
 import java.text.SimpleDateFormat
@@ -48,7 +50,7 @@ fun PreflightDiagnosticsSection(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "Preflight Health Check",
+                    text = stringResource(R.string.settings_dev_preflight_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
@@ -59,7 +61,10 @@ fun PreflightDiagnosticsSection(
                 FilledTonalIconButton(
                     onClick = onClearCache,
                 ) {
-                    Icon(Icons.Default.DeleteSweep, contentDescription = "Clear cache")
+                    Icon(
+                        Icons.Default.DeleteSweep,
+                        contentDescription = stringResource(R.string.settings_dev_preflight_clear_cache_cd),
+                    )
                 }
 
                 // Refresh button
@@ -73,7 +78,10 @@ fun PreflightDiagnosticsSection(
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh preflight")
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = stringResource(R.string.settings_dev_preflight_refresh_cd),
+                        )
                     }
                 }
             }
@@ -96,7 +104,7 @@ fun PreflightDiagnosticsSection(
             Column(modifier = Modifier.padding(12.dp)) {
                 // Status
                 PreflightDetailRow(
-                    label = "Status",
+                    label = stringResource(R.string.settings_dev_preflight_label_status),
                     value = state.status.name,
                     valueColor = getPreflightStatusColor(state.status),
                 )
@@ -105,24 +113,34 @@ fun PreflightDiagnosticsSection(
 
                 // Latency
                 PreflightDetailRow(
-                    label = "Latency",
-                    value = if (state.latencyMs > 0) "${state.latencyMs}ms" else "N/A",
+                    label = stringResource(R.string.settings_dev_preflight_label_latency),
+                    value =
+                        if (state.latencyMs > 0) {
+                            stringResource(R.string.settings_dev_preflight_latency_value, state.latencyMs)
+                        } else {
+                            stringResource(R.string.settings_dev_preflight_value_na)
+                        },
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // Checked at
                 PreflightDetailRow(
-                    label = "Last Checked",
-                    value = if (state.checkedAt > 0) formatTimestamp(state.checkedAt) else "Never",
+                    label = stringResource(R.string.settings_dev_preflight_label_last_checked),
+                    value =
+                        if (state.checkedAt > 0) {
+                            formatTimestamp(state.checkedAt)
+                        } else {
+                            stringResource(R.string.settings_dev_preflight_value_never)
+                        },
                 )
 
                 // Cache age
                 if (state.checkedAt > 0) {
                     val cacheAge = (System.currentTimeMillis() - state.checkedAt) / 1000
                     PreflightDetailRow(
-                        label = "Cache Age",
-                        value = "${cacheAge}s ago",
+                        label = stringResource(R.string.settings_dev_preflight_label_cache_age),
+                        value = stringResource(R.string.settings_dev_preflight_cache_age_value, cacheAge),
                     )
                 }
 
@@ -130,7 +148,7 @@ fun PreflightDiagnosticsSection(
                 state.reasonCode?.let { reason ->
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     PreflightDetailRow(
-                        label = "Reason",
+                        label = stringResource(R.string.settings_dev_preflight_label_reason),
                         value = reason,
                         valueColor = MaterialTheme.colorScheme.error,
                     )
@@ -139,8 +157,8 @@ fun PreflightDiagnosticsSection(
                 // Retry after (if rate limited)
                 state.retryAfterSeconds?.let { retryAfter ->
                     PreflightDetailRow(
-                        label = "Retry After",
-                        value = "${retryAfter}s",
+                        label = stringResource(R.string.settings_dev_preflight_label_retry_after),
+                        value = stringResource(R.string.settings_dev_preflight_retry_after_value, retryAfter),
                         valueColor = MaterialTheme.colorScheme.tertiary,
                     )
                 }
@@ -149,7 +167,7 @@ fun PreflightDiagnosticsSection(
                 state.correlationId?.let { correlationId ->
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     PreflightDetailRow(
-                        label = "Correlation ID",
+                        label = stringResource(R.string.settings_dev_preflight_label_correlation_id),
                         value = correlationId,
                         isMono = true,
                     )
@@ -164,52 +182,52 @@ private fun PreflightStatusBadge(status: PreflightStatus) {
     val (color, text, icon) = when (status) {
         PreflightStatus.AVAILABLE -> Triple(
             Color(0xFF4CAF50),
-            "Available",
+            stringResource(R.string.settings_dev_preflight_status_available),
             Icons.Default.CheckCircle,
         )
         PreflightStatus.CHECKING -> Triple(
             Color(0xFF2196F3),
-            "Checking...",
+            stringResource(R.string.settings_dev_preflight_status_checking),
             Icons.Default.Sync,
         )
         PreflightStatus.TEMPORARILY_UNAVAILABLE -> Triple(
             Color(0xFFFF9800),
-            "Temporarily Unavailable",
+            stringResource(R.string.settings_dev_preflight_status_temporarily_unavailable),
             Icons.Default.Warning,
         )
         PreflightStatus.OFFLINE -> Triple(
             Color(0xFFF44336),
-            "Offline",
+            stringResource(R.string.settings_dev_preflight_status_offline),
             Icons.Default.CloudOff,
         )
         PreflightStatus.RATE_LIMITED -> Triple(
             Color(0xFFFF9800),
-            "Rate Limited",
+            stringResource(R.string.settings_dev_preflight_status_rate_limited),
             Icons.Default.Timer,
         )
         PreflightStatus.UNAUTHORIZED -> Triple(
             Color(0xFFF44336),
-            "Unauthorized",
+            stringResource(R.string.settings_dev_preflight_status_unauthorized),
             Icons.Default.Lock,
         )
         PreflightStatus.NOT_CONFIGURED -> Triple(
             Color(0xFF9E9E9E),
-            "Not Configured",
+            stringResource(R.string.settings_dev_preflight_status_not_configured),
             Icons.Default.Settings,
         )
         PreflightStatus.ENDPOINT_NOT_FOUND -> Triple(
             Color(0xFFF44336),
-            "Endpoint Not Found (check base URL / tunnel route)",
+            stringResource(R.string.settings_dev_preflight_status_endpoint_not_found),
             Icons.Default.LinkOff,
         )
         PreflightStatus.UNKNOWN -> Triple(
             Color(0xFF9E9E9E),
-            "Unknown",
+            stringResource(R.string.settings_dev_preflight_status_unknown),
             Icons.Filled.Help,
         )
         PreflightStatus.CLIENT_ERROR -> Triple(
             Color(0xFFFF9800),
-            "Client Error (preflight schema mismatch)",
+            stringResource(R.string.settings_dev_preflight_status_client_error),
             Icons.Default.Info,
         )
     }

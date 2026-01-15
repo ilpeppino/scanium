@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
@@ -92,10 +93,13 @@ fun DeveloperOptionsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Developer Options") },
+                title = { Text(stringResource(R.string.settings_developer_options_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_back),
+                        )
                     }
                 },
             )
@@ -167,11 +171,16 @@ fun DeveloperOptionsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            SettingsSectionHeader("Diagnostics & Security")
+            SettingsSectionHeader(stringResource(R.string.settings_developer_options_section_diagnostics_security))
 
             SettingSwitchRow(
-                title = "Allow screenshots",
-                subtitle = if (allowScreenshots) "Screenshots allowed" else "Screenshots blocked (FLAG_SECURE)",
+                title = stringResource(R.string.settings_developer_options_allow_screenshots_title),
+                subtitle =
+                    if (allowScreenshots) {
+                        stringResource(R.string.settings_developer_options_allow_screenshots_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_allow_screenshots_off)
+                    },
                 icon = Icons.Default.ScreenLockPortrait,
                 checked = allowScreenshots,
                 onCheckedChange = { viewModel.setAllowScreenshots(it) },
@@ -180,14 +189,14 @@ fun DeveloperOptionsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Developer Settings Section
-            SettingsSectionHeader("Developer Settings")
+            SettingsSectionHeader(stringResource(R.string.settings_developer_options_section_developer_settings))
 
             // In DEV builds, Developer Mode is always ON and cannot be toggled
             // Only show the toggle in non-DEV builds (shouldn't normally be reachable)
             if (showDeveloperModeToggle) {
                 SettingSwitchRow(
-                    title = "Developer Mode",
-                    subtitle = "Unlock all features for testing",
+                    title = stringResource(R.string.settings_developer_options_developer_mode_title),
+                    subtitle = stringResource(R.string.settings_developer_options_developer_mode_subtitle),
                     icon = Icons.Default.BugReport,
                     checked = isDeveloperMode,
                     onCheckedChange = { viewModel.setDeveloperMode(it) },
@@ -200,59 +209,94 @@ fun DeveloperOptionsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Detection Settings Section (Performance & Low-Power Mode)
-            SettingsSectionHeader("Detection & Performance")
+            SettingsSectionHeader(stringResource(R.string.settings_developer_options_section_detection_performance))
 
             SettingSwitchRow(
-                title = "Barcode/QR Detection",
-                subtitle = if (barcodeDetectionEnabled) "Scanning for barcodes and QR codes" else "Barcode detection disabled",
+                title = stringResource(R.string.settings_developer_options_barcode_detection_title),
+                subtitle =
+                    if (barcodeDetectionEnabled) {
+                        stringResource(R.string.settings_developer_options_barcode_detection_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_barcode_detection_off)
+                    },
                 icon = Icons.Default.CropFree,
                 checked = barcodeDetectionEnabled,
                 onCheckedChange = { viewModel.setBarcodeDetectionEnabled(it) },
             )
 
             SettingSwitchRow(
-                title = "Document Detection",
-                subtitle = if (documentDetectionEnabled) "Detecting document candidates" else "Document detection disabled",
+                title = stringResource(R.string.settings_developer_options_document_detection_title),
+                subtitle =
+                    if (documentDetectionEnabled) {
+                        stringResource(R.string.settings_developer_options_document_detection_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_document_detection_off)
+                    },
                 icon = Icons.Filled.Article,
                 checked = documentDetectionEnabled,
                 onCheckedChange = { viewModel.setDocumentDetectionEnabled(it) },
             )
 
             SettingSwitchRow(
-                title = "Adaptive Throttling",
-                subtitle = if (adaptiveThrottlingEnabled) "Low-power mode: auto-adjusts scan rate" else "Fixed scan rate (may drain battery)",
+                title = stringResource(R.string.settings_developer_options_adaptive_throttling_title),
+                subtitle =
+                    if (adaptiveThrottlingEnabled) {
+                        stringResource(R.string.settings_developer_options_adaptive_throttling_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_adaptive_throttling_off)
+                    },
                 icon = Icons.Default.Speed,
                 checked = adaptiveThrottlingEnabled,
                 onCheckedChange = { viewModel.setAdaptiveThrottlingEnabled(it) },
             )
 
             SettingSwitchRow(
-                title = "Live Scan Diagnostics",
-                subtitle = if (liveScanDiagnosticsEnabled) "Detailed LiveScan logs enabled (Logcat tag: LiveScan)" else "Diagnostic logging disabled",
+                title = stringResource(R.string.settings_developer_options_live_scan_diagnostics_title),
+                subtitle =
+                    if (liveScanDiagnosticsEnabled) {
+                        stringResource(R.string.settings_developer_options_live_scan_diagnostics_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_live_scan_diagnostics_off)
+                    },
                 icon = Icons.Default.Analytics,
                 checked = liveScanDiagnosticsEnabled,
                 onCheckedChange = { viewModel.setScanningDiagnosticsEnabled(it) },
             )
 
             SettingSwitchRow(
-                title = "Geometry Debug Overlay",
-                subtitle = if (bboxMappingDebugEnabled) "Shows bbox mapping info: rotation, scale, dimensions (Logcat tag: GeomMap)" else "Geometry debug disabled",
+                title = stringResource(R.string.settings_developer_options_geometry_debug_title),
+                subtitle =
+                    if (bboxMappingDebugEnabled) {
+                        stringResource(R.string.settings_developer_options_geometry_debug_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_geometry_debug_off)
+                    },
                 icon = Icons.Default.GridOn,
                 checked = bboxMappingDebugEnabled,
                 onCheckedChange = { viewModel.setBboxMappingDebugEnabled(it) },
             )
 
             SettingSwitchRow(
-                title = "Bbox↔Snapshot Correlation",
-                subtitle = if (correlationDebugEnabled) "Validates bbox AR matches crop AR (Logcat tag: CORR)" else "Correlation validation disabled",
+                title = stringResource(R.string.settings_developer_options_correlation_debug_title),
+                subtitle =
+                    if (correlationDebugEnabled) {
+                        stringResource(R.string.settings_developer_options_correlation_debug_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_correlation_debug_off)
+                    },
                 icon = Icons.Default.Compare,
                 checked = correlationDebugEnabled,
                 onCheckedChange = { viewModel.setCorrelationDebugEnabled(it) },
             )
 
             SettingSwitchRow(
-                title = "Camera Pipeline Debug",
-                subtitle = if (cameraPipelineDebugEnabled) "Shows lifecycle/session overlay (Logcat tag: CAM_LIFE)" else "Pipeline debug disabled",
+                title = stringResource(R.string.settings_developer_options_camera_pipeline_debug_title),
+                subtitle =
+                    if (cameraPipelineDebugEnabled) {
+                        stringResource(R.string.settings_developer_options_camera_pipeline_debug_on)
+                    } else {
+                        stringResource(R.string.settings_developer_options_camera_pipeline_debug_off)
+                    },
                 icon = Icons.Default.Videocam,
                 checked = cameraPipelineDebugEnabled,
                 onCheckedChange = { viewModel.setCameraPipelineDebugEnabled(it) },
@@ -264,18 +308,18 @@ fun DeveloperOptionsScreen(
                 onStepChange = { viewModel.setOverlayAccuracyStep(it) },
             )
 
-            SettingsSectionHeader("Classifier Diagnostics")
+            SettingsSectionHeader(stringResource(R.string.settings_developer_options_section_classifier_diagnostics))
             SettingSwitchRow(
-                title = "Save cloud crops",
-                subtitle = "Writes outgoing classifier crops to cache (cleared on uninstall)",
+                title = stringResource(R.string.settings_developer_options_save_cloud_crops_title),
+                subtitle = stringResource(R.string.settings_developer_options_save_cloud_crops_subtitle),
                 icon = Icons.Default.Cloud,
                 checked = saveCloudCrops,
                 onCheckedChange = classificationViewModel::updateSaveCloudCrops,
             )
 
             SettingSwitchRow(
-                title = "Verbose classifier logging",
-                subtitle = "Adds extra classifier details to Logcat (debug builds only)",
+                title = stringResource(R.string.settings_developer_options_verbose_classifier_logging_title),
+                subtitle = stringResource(R.string.settings_developer_options_verbose_classifier_logging_subtitle),
                 icon = Icons.Default.Tune,
                 checked = verboseLogging,
                 onCheckedChange = classificationViewModel::updateVerboseLogging,
@@ -284,18 +328,18 @@ fun DeveloperOptionsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // Testing Section
-            SettingsSectionHeader("Testing & Debug")
+            SettingsSectionHeader(stringResource(R.string.settings_developer_options_section_testing_debug))
 
             SettingActionRow(
-                title = "Test Crash Reporting",
-                subtitle = "Send test event to Sentry (handled exception)",
+                title = stringResource(R.string.settings_developer_options_test_crash_reporting_title),
+                subtitle = stringResource(R.string.settings_developer_options_test_crash_reporting_subtitle),
                 icon = Icons.Default.BugReport,
                 onClick = { viewModel.triggerCrashTest(throwCrash = false) },
             )
 
             SettingActionRow(
-                title = "Test Diagnostics Bundle",
-                subtitle = "Capture exception with diagnostics.json attachment",
+                title = stringResource(R.string.settings_developer_options_test_diagnostics_bundle_title),
+                subtitle = stringResource(R.string.settings_developer_options_test_diagnostics_bundle_subtitle),
                 icon = Icons.Default.BugReport,
                 onClick = { viewModel.triggerDiagnosticsTest() },
             )
@@ -303,27 +347,27 @@ fun DeveloperOptionsScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
             // First-Time Experience Section
-            SettingsSectionHeader("First-Time Experience")
+            SettingsSectionHeader(stringResource(R.string.settings_developer_options_section_first_time_experience))
 
             SettingSwitchRow(
-                title = "Force First-Time Tour",
-                subtitle = "Always show tour on app launch (debug only)",
+                title = stringResource(R.string.settings_developer_options_force_first_time_tour_title),
+                subtitle = stringResource(R.string.settings_developer_options_force_first_time_tour_subtitle),
                 icon = Icons.Default.Info,
                 checked = forceFtueTour,
                 onCheckedChange = { viewModel.setForceFtueTour(it) },
             )
 
             SettingSwitchRow(
-                title = "Show FTUE debug bounds",
-                subtitle = "Draw spotlight outlines and center line",
+                title = stringResource(R.string.settings_developer_options_show_ftue_debug_bounds_title),
+                subtitle = stringResource(R.string.settings_developer_options_show_ftue_debug_bounds_subtitle),
                 icon = Icons.Default.CenterFocusStrong,
                 checked = showFtueDebugBounds,
                 onCheckedChange = { viewModel.setShowFtueDebugBounds(it) },
             )
 
             SettingActionRow(
-                title = "Reset Tour Progress",
-                subtitle = "Clear tour completion flag",
+                title = stringResource(R.string.settings_developer_options_reset_tour_progress_title),
+                subtitle = stringResource(R.string.settings_developer_options_reset_tour_progress_subtitle),
                 icon = Icons.Default.Refresh,
                 onClick = { viewModel.resetFtueTour() },
             )
@@ -350,12 +394,12 @@ private fun DevModeAlwaysOnRow() {
         )
         Column {
             Text(
-                text = "Developer Mode",
+                text = stringResource(R.string.settings_developer_options_developer_mode_title),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
             )
             Text(
-                text = "Always enabled in DEV builds",
+                text = stringResource(R.string.settings_developer_options_developer_mode_always_on_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -387,13 +431,13 @@ private fun OverlayAccuracySliderRow(
         ) {
             Icon(
                 Icons.Default.FilterList,
-                contentDescription = "Overlay accuracy filter",
+                contentDescription = stringResource(R.string.settings_developer_options_overlay_accuracy_filter_cd),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp),
             )
             Column {
                 Text(
-                    text = "Aggregation Accuracy (Overlay Filter)",
+                    text = stringResource(R.string.settings_developer_options_overlay_accuracy_title),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                 )
@@ -450,7 +494,7 @@ private fun OverlayAccuracySliderRow(
 
         // Helper text
         Text(
-            text = "Filters which bboxes are drawn on camera overlay. Does not affect detection or aggregation.",
+            text = stringResource(R.string.settings_developer_options_overlay_accuracy_help),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -480,16 +524,14 @@ private fun DiagnosticsDescriptionCard() {
             )
             Column {
                 Text(
-                    text = "Diagnostics & Checks",
+                    text = stringResource(R.string.settings_developer_options_diagnostics_checks_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Diagnostics & checks help verify connectivity to your backend services " +
-                        "(health, config, preflight, assistant) and alert you when something breaks. " +
-                        "Use them while testing to quickly spot disruptions.",
+                    text = stringResource(R.string.settings_developer_options_diagnostics_checks_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -554,25 +596,26 @@ private fun NotificationPermissionSection() {
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Notification Permission",
+                        text = stringResource(R.string.settings_developer_options_notification_permission_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = when {
-                            hasPermission && areNotificationsEnabled ->
-                                "✓ Granted - Background monitor can send notifications"
-                            !hasPermission && shouldShowRationale ->
-                                "Permission needed for background health monitor notifications"
-                            !hasPermission ->
-                                "Permission needed for background health monitor notifications"
-                            !areNotificationsEnabled ->
-                                "Notifications disabled at system level"
-                            else ->
-                                "Status unknown"
-                        },
+                        text =
+                            when {
+                                hasPermission && areNotificationsEnabled ->
+                                    stringResource(R.string.settings_developer_options_notification_permission_granted)
+                                !hasPermission && shouldShowRationale ->
+                                    stringResource(R.string.settings_developer_options_notification_permission_needed)
+                                !hasPermission ->
+                                    stringResource(R.string.settings_developer_options_notification_permission_needed)
+                                !areNotificationsEnabled ->
+                                    stringResource(R.string.settings_developer_options_notification_permission_disabled)
+                                else ->
+                                    stringResource(R.string.settings_developer_options_notification_permission_unknown)
+                            },
                         style = MaterialTheme.typography.bodySmall,
                         color = when {
                             hasPermission && areNotificationsEnabled -> MaterialTheme.colorScheme.primary
@@ -601,7 +644,7 @@ private fun NotificationPermissionSection() {
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Grant Permission")
+                            Text(stringResource(R.string.settings_developer_options_notification_permission_grant_button))
                         }
                     }
 
@@ -628,7 +671,7 @@ private fun NotificationPermissionSection() {
                                 modifier = Modifier.size(18.dp),
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Open Settings")
+                            Text(stringResource(R.string.settings_developer_options_notification_permission_open_settings))
                         }
                     }
                 }

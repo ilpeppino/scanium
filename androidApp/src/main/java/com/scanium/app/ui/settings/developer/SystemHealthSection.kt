@@ -42,7 +42,7 @@ fun SystemHealthSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "System Health",
+                text = stringResource(R.string.settings_dev_system_health_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
@@ -60,13 +60,19 @@ fun SystemHealthSection(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                    Icon(
+                        Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.settings_dev_system_health_refresh_cd),
+                    )
                 }
             }
 
             // Copy button
             FilledTonalIconButton(onClick = onCopyDiagnostics) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "Copy diagnostics")
+                Icon(
+                    Icons.Default.ContentCopy,
+                    contentDescription = stringResource(R.string.settings_dev_system_health_copy_diagnostics_cd),
+                )
             }
 
             // Auto-refresh toggle
@@ -75,7 +81,7 @@ fun SystemHealthSection(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
-                    text = "Auto",
+                    text = stringResource(R.string.settings_dev_system_health_auto_label),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -101,7 +107,7 @@ fun SystemHealthSection(
                 // Backend Health
                 HealthCheckRow(
                     icon = Icons.Default.Cloud,
-                    name = "Backend",
+                    name = stringResource(R.string.settings_dev_system_health_backend_label),
                     status = state.diagnosticsState.backendHealth.status,
                     detail = state.diagnosticsState.backendHealth.detail,
                     latencyMs = state.diagnosticsState.backendHealth.latencyMs,
@@ -117,7 +123,7 @@ fun SystemHealthSection(
 
                 // Permissions
                 Text(
-                    text = "Permissions",
+                    text = stringResource(R.string.settings_dev_system_health_permissions_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp),
@@ -130,7 +136,7 @@ fun SystemHealthSection(
 
                 // Capabilities
                 Text(
-                    text = "Capabilities",
+                    text = stringResource(R.string.settings_dev_system_health_capabilities_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp),
@@ -254,11 +260,11 @@ private fun NetworkStatusRow(networkStatus: NetworkStatus) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = "Network",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
+                Text(
+                    text = stringResource(R.string.settings_dev_system_health_network_label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                )
                     StatusIndicator(
                         status = if (networkStatus.isConnected) HealthStatus.HEALTHY else HealthStatus.DOWN,
                     )
@@ -267,7 +273,9 @@ private fun NetworkStatusRow(networkStatus: NetworkStatus) {
                     text =
                         buildString {
                             append(networkStatus.transport.name)
-                            if (networkStatus.isMetered) append(" (Metered)")
+                            if (networkStatus.isMetered) {
+                                append(stringResource(R.string.settings_dev_system_health_metered_suffix))
+                            }
                         },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -276,7 +284,12 @@ private fun NetworkStatusRow(networkStatus: NetworkStatus) {
         }
 
         Text(
-            text = if (networkStatus.isConnected) "Connected" else "Not connected",
+            text =
+                if (networkStatus.isConnected) {
+                    stringResource(R.string.settings_dev_system_health_connected)
+                } else {
+                    stringResource(R.string.settings_dev_system_health_not_connected)
+                },
             style = MaterialTheme.typography.labelMedium,
         )
     }
@@ -331,7 +344,12 @@ private fun PermissionRow(permission: PermissionStatus) {
                         ),
             )
             Text(
-                text = if (permission.isGranted) "Granted" else "Not granted",
+                text =
+                    if (permission.isGranted) {
+                        stringResource(R.string.settings_dev_system_health_permission_granted)
+                    } else {
+                        stringResource(R.string.settings_dev_system_health_permission_not_granted)
+                    },
                 style = MaterialTheme.typography.labelSmall,
                 color =
                     if (permission.isGranted) {
@@ -412,22 +430,30 @@ private fun AppConfigSection(
 ) {
     Column {
         Text(
-            text = "App Configuration",
+            text = stringResource(R.string.settings_dev_system_health_app_config_title),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp),
         )
 
-        ConfigRow("Version", "${config.versionName} (${config.versionCode})")
-        ConfigRow("Build", config.buildType)
-        ConfigRow("Device", config.deviceModel)
-        ConfigRow("Android", "${config.androidVersion} (SDK ${config.sdkInt})")
+        ConfigRow(
+            stringResource(R.string.settings_dev_system_health_config_version_label),
+            "${config.versionName} (${config.versionCode})",
+        )
+        ConfigRow(stringResource(R.string.settings_dev_system_health_config_build_label), config.buildType)
+        ConfigRow(stringResource(R.string.settings_dev_system_health_config_device_label), config.deviceModel)
+        ConfigRow(
+            stringResource(R.string.settings_dev_system_health_config_android_label),
+            "${config.androidVersion} (SDK ${config.sdkInt})",
+        )
 
         // Base URL with override indicator
-        val baseUrlLabel = when {
-            config.isBaseUrlOverridden -> "Base URL (OVERRIDE)"
-            else -> "Base URL"
-        }
+        val baseUrlLabel =
+            if (config.isBaseUrlOverridden) {
+                stringResource(R.string.settings_dev_system_health_config_base_url_override_label)
+            } else {
+                stringResource(R.string.settings_dev_system_health_config_base_url_label)
+            }
         ConfigRow(
             label = baseUrlLabel,
             value = config.baseUrl,
@@ -437,7 +463,7 @@ private fun AppConfigSection(
         // Show BuildConfig URL if overridden
         if (config.isBaseUrlOverridden) {
             ConfigRow(
-                label = "BuildConfig URL",
+                label = stringResource(R.string.settings_dev_system_health_config_buildconfig_url_label),
                 value = config.buildConfigBaseUrl,
                 isSecondary = true,
             )
@@ -448,7 +474,7 @@ private fun AppConfigSection(
                     onClick = onResetBaseUrl,
                     modifier = Modifier.padding(top = 4.dp),
                 ) {
-                    Text("Reset to BuildConfig default")
+                    Text(stringResource(R.string.settings_dev_system_health_config_reset_buildconfig))
                 }
             }
         }
@@ -506,10 +532,10 @@ private fun StatusIndicator(status: HealthStatus) {
 
     val text =
         when (status) {
-            HealthStatus.HEALTHY -> "Healthy"
-            HealthStatus.DEGRADED -> "Degraded"
-            HealthStatus.DOWN -> "Down"
-            HealthStatus.UNKNOWN -> "Unknown"
+            HealthStatus.HEALTHY -> stringResource(R.string.settings_dev_system_health_status_healthy)
+            HealthStatus.DEGRADED -> stringResource(R.string.settings_dev_system_health_status_degraded)
+            HealthStatus.DOWN -> stringResource(R.string.settings_dev_system_health_status_down)
+            HealthStatus.UNKNOWN -> stringResource(R.string.settings_dev_system_health_status_unknown)
         }
 
     Row(
