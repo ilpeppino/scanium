@@ -1,0 +1,3 @@
+[submodule "external/golden-tests/scanium-golden-tests"]
+	path = external/golden-tests/scanium-golden-tests
+	url = https://github.com/ilpeppino/scanium-golden-tests.git

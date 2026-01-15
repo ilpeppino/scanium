@@ -262,7 +262,7 @@ class ExportAssistantViewModel
         }
 
         try {
-            // Get user's assistant preferences including language
+            // Get assistant preferences (language now comes from unified settings via SettingsRepository)
             val assistantPrefs = settingsRepository.assistantPrefsFlow.first()
             val languageTag = assistantPrefs.language ?: "en"
 

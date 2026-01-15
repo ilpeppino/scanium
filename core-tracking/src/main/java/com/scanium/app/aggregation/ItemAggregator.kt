@@ -10,8 +10,6 @@ import com.scanium.shared.core.models.model.NormalizedRect
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange
 import java.util.UUID
-import kotlin.math.abs
-import kotlin.math.sqrt
 
 /**
  * Real-time item aggregation engine for scanning mode.
@@ -30,6 +28,11 @@ import kotlin.math.sqrt
  * - Provide tunable thresholds for different use cases
  * - Comprehensive logging for debugging and tuning
  *
+ * Architecture:
+ * - Delegates similarity scoring to SimilarityScorer (pure calculation logic)
+ * - Delegates aggregation decisions to AggregationPolicy (merge vs. create logic)
+ * - Focuses on coordination and state management
+ *
  * @property config Configuration for aggregation behavior
  * @property logger Platform-specific logger implementation
  */
@@ -44,8 +47,11 @@ class ItemAggregator(
     // Active aggregated items, keyed by aggregatedId
     private val aggregatedItems = mutableMapOf<String, AggregatedItem>()
 
-    // Dynamic threshold override (if set, this overrides config.similarityThreshold)
-    private var dynamicThreshold: Float? = null
+    // Similarity scorer for calculating detection-item similarity
+    private val similarityScorer = SimilarityScorer(config)
+
+    // Aggregation policy for merge/create decisions
+    private val aggregationPolicy = AggregationPolicy(config, similarityScorer)
 
     /**
      * Update the similarity threshold dynamically.
@@ -57,12 +63,12 @@ class ItemAggregator(
      */
     fun updateSimilarityThreshold(threshold: Float?) {
         val oldThreshold = getCurrentSimilarityThreshold()
-        dynamicThreshold = threshold?.coerceIn(0f, 1f)
+        aggregationPolicy.updateSimilarityThreshold(threshold)
         val newThreshold = getCurrentSimilarityThreshold()
 
         logger.w(TAG, "╔═══════════════════════════════════════════════════════════════")
         logger.w(TAG, "║ AGGREGATOR THRESHOLD UPDATED: $oldThreshold → $newThreshold")
-        logger.w(TAG, "║ Dynamic override: $dynamicThreshold | Config default: ${config.similarityThreshold}")
+        logger.w(TAG, "║ Dynamic override: $threshold | Config default: ${config.similarityThreshold}")
         logger.w(TAG, "╚═══════════════════════════════════════════════════════════════")
     }
 
@@ -70,7 +76,7 @@ class ItemAggregator(
      * Get the current effective similarity threshold.
      */
     fun getCurrentSimilarityThreshold(): Float {
-        return dynamicThreshold ?: config.similarityThreshold
+        return aggregationPolicy.getCurrentSimilarityThreshold()
     }
 
     /**
@@ -85,35 +91,41 @@ class ItemAggregator(
      * @return The AggregatedItem (either merged or newly created)
      */
     fun processDetection(detection: ScannedItem): AggregatedItem {
-        val currentThreshold = getCurrentSimilarityThreshold()
         logger.i(TAG, ">>> processDetection: id=${detection.id}, category=${detection.category}, confidence=${detection.confidence}")
-        logger.i(TAG, "    Using THRESHOLD=$currentThreshold (dynamic=${dynamicThreshold != null})")
 
-        // Find best matching aggregated item
-        val (bestMatch, bestSimilarity) = findBestMatch(detection)
+        // Use aggregation policy to decide on merge vs. create
+        val aggregationDecision = aggregationPolicy.decideAggregation(detection, aggregatedItems.values)
+        val matchResult = aggregationDecision.matchResult
+        val currentThreshold = aggregationDecision.threshold
 
-        if (bestMatch != null && bestSimilarity >= currentThreshold) {
-            // Merge into existing item
-            logger.w(TAG, "    ✓ MERGE: detection ${detection.id} → aggregated ${bestMatch.aggregatedId}")
-            logger.w(TAG, "    Similarity $bestSimilarity >= threshold $currentThreshold")
-            logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
+        logger.i(TAG, "    Using THRESHOLD=$currentThreshold")
 
-            bestMatch.merge(detection)
-            return bestMatch
-        } else {
-            // Create new aggregated item
-            val newItem = createAggregatedItem(detection)
-            aggregatedItems[newItem.aggregatedId] = newItem
+        when (aggregationDecision.decision) {
+            MergeDecision.MERGE -> {
+                val bestMatch = matchResult.bestMatch!!
+                // Merge into existing item
+                logger.w(TAG, "    ✓ MERGE: detection ${detection.id} → aggregated ${bestMatch.aggregatedId}")
+                logger.w(TAG, "    Similarity ${matchResult.similarity} >= threshold $currentThreshold")
+                logSimilarityBreakdown(detection, bestMatch, matchResult.similarity)
 
-            if (bestMatch != null) {
-                logger.w(TAG, "    ✗ CREATE NEW: similarity $bestSimilarity < threshold $currentThreshold")
-                logSimilarityBreakdown(detection, bestMatch, bestSimilarity)
-            } else {
-                logger.i(TAG, "    ✗ CREATE NEW: no existing items to compare")
+                bestMatch.merge(detection)
+                return bestMatch
             }
+            MergeDecision.CREATE_NEW -> {
+                // Create new aggregated item
+                val newItem = createAggregatedItem(detection)
+                aggregatedItems[newItem.aggregatedId] = newItem
 
-            logger.i(TAG, "    Created aggregated item ${newItem.aggregatedId}")
-            return newItem
+                if (matchResult.bestMatch != null) {
+                    logger.w(TAG, "    ✗ CREATE NEW: similarity ${matchResult.similarity} < threshold $currentThreshold")
+                    logSimilarityBreakdown(detection, matchResult.bestMatch, matchResult.similarity)
+                } else {
+                    logger.i(TAG, "    ✗ CREATE NEW: no existing items to compare")
+                }
+
+                logger.i(TAG, "    Created aggregated item ${newItem.aggregatedId}")
+                return newItem
+            }
         }
     }
 
@@ -162,193 +174,6 @@ class ItemAggregator(
                 )
             aggregatedItems[item.id] = aggregatedItem
         }
-    }
-
-    /**
-     * Find the best matching aggregated item for a detection.
-     *
-     * @return Pair of (best matching item or null, similarity score)
-     */
-    private fun findBestMatch(detection: ScannedItem): Pair<AggregatedItem?, Float> {
-        if (aggregatedItems.isEmpty()) {
-            return Pair(null, 0f)
-        }
-
-        var bestMatch: AggregatedItem? = null
-        var bestSimilarity = 0f
-
-        for (item in aggregatedItems.values) {
-            val similarity = calculateSimilarity(detection, item)
-
-            if (similarity > bestSimilarity) {
-                bestSimilarity = similarity
-                bestMatch = item
-            }
-        }
-
-        return Pair(bestMatch, bestSimilarity)
-    }
-
-    /**
-     * Calculate weighted similarity score between a detection and an aggregated item.
-     *
-     * Uses multiple factors with configurable weights:
-     * - Category match (required if config.categoryMatchRequired)
-     * - Label text similarity (normalized Levenshtein distance)
-     * - Bounding box size ratio
-     * - Center distance (normalized by frame diagonal)
-     * - Optional: thumbnail-based similarity (future enhancement)
-     *
-     * @return Similarity score in range [0.0, 1.0]
-     */
-    private fun calculateSimilarity(
-        detection: ScannedItem,
-        item: AggregatedItem,
-    ): Float {
-        // Hard filter: Category must match if required
-        if (config.categoryMatchRequired && detection.category != item.category) {
-            return 0f
-        }
-
-        // Scores for each factor (0-1 range)
-        var categoryScore = if (detection.category == item.category) 1f else 0f
-        var labelScore = 0f
-        var sizeScore = 0f
-        var distanceScore = 0f
-
-        // 1. Label similarity
-        val detectionLabel = detection.labelText ?: ""
-        val itemLabel = item.labelText
-
-        if (config.labelMatchRequired && (detectionLabel.isEmpty() || itemLabel.isEmpty())) {
-            // If labels are required but missing, this is not a match
-            return 0f
-        }
-
-        if (detectionLabel.isNotEmpty() && itemLabel.isNotEmpty()) {
-            labelScore = calculateLabelSimilarity(detectionLabel, itemLabel)
-        }
-
-        // 2. Size similarity
-        val detectionBox = detection.boundingBox
-        val itemBox = item.boundingBox
-
-        if (detectionBox != null) {
-            val detectionArea = detectionBox.area
-            val itemArea = itemBox.area
-
-            if (detectionArea > 0.0001f && itemArea > 0.0001f) {
-                val sizeRatio = minOf(detectionArea, itemArea) / maxOf(detectionArea, itemArea)
-
-                // Check hard limit
-                val sizeDiff = abs(1f - sizeRatio)
-                if (sizeDiff > config.maxSizeDifferenceRatio) {
-                    logger.d(TAG, "    Size difference too large: $sizeDiff > ${config.maxSizeDifferenceRatio}")
-                    return 0f // Size too different - definitely not the same object
-                }
-
-                sizeScore = sizeRatio
-            }
-        }
-
-        // 3. Center distance
-        if (detectionBox != null) {
-            val detectionCenterX = (detectionBox.left + detectionBox.right) / 2f
-            val detectionCenterY = (detectionBox.top + detectionBox.bottom) / 2f
-            val itemCenter = item.getCenterPoint()
-
-            val dx = detectionCenterX - itemCenter.first
-            val dy = detectionCenterY - itemCenter.second
-            val distance = sqrt(dx * dx + dy * dy)
-
-            // Normalize by frame diagonal (assume normalized coords 0-1)
-            val frameDiagonal = sqrt(2f)
-            val normalizedDistance = distance / frameDiagonal
-
-            // Check hard limit
-            if (normalizedDistance > config.maxCenterDistanceRatio) {
-                logger.d(TAG, "    Center distance too large: $normalizedDistance > ${config.maxCenterDistanceRatio}")
-                return 0f // Too far apart - not the same object
-            }
-
-            // Convert distance to similarity (0 distance = 1.0 similarity)
-            distanceScore = 1f - (normalizedDistance / config.maxCenterDistanceRatio).coerceIn(0f, 1f)
-        }
-
-        // Weighted combination
-        val weights = config.weights
-        val totalWeight =
-            weights.categoryWeight + weights.labelWeight +
-                weights.sizeWeight + weights.distanceWeight
-
-        if (totalWeight == 0f) {
-            logger.w(TAG, "Total weight is zero - returning 0 similarity")
-            return 0f
-        }
-
-        val weightedScore =
-            (
-                categoryScore * weights.categoryWeight +
-                    labelScore * weights.labelWeight +
-                    sizeScore * weights.sizeWeight +
-                    distanceScore * weights.distanceWeight
-            ) / totalWeight
-
-        return weightedScore.coerceIn(0f, 1f)
-    }
-
-    /**
-     * Calculate label similarity using normalized Levenshtein distance.
-     */
-    private fun calculateLabelSimilarity(
-        label1: String,
-        label2: String,
-    ): Float {
-        if (label1.isEmpty() || label2.isEmpty()) return 0f
-        if (label1 == label2) return 1f
-
-        val s1 = label1.lowercase().trim()
-        val s2 = label2.lowercase().trim()
-        if (s1 == s2) return 1f
-
-        val distance = levenshteinDistance(s1, s2)
-        val maxLen = maxOf(s1.length, s2.length)
-
-        return if (maxLen > 0) {
-            1f - (distance.toFloat() / maxLen)
-        } else {
-            0f
-        }
-    }
-
-    /**
-     * Calculate Levenshtein distance between two strings.
-     */
-    private fun levenshteinDistance(
-        s1: String,
-        s2: String,
-    ): Int {
-        val len1 = s1.length
-        val len2 = s2.length
-
-        val dp = Array(len1 + 1) { IntArray(len2 + 1) }
-
-        for (i in 0..len1) dp[i][0] = i
-        for (j in 0..len2) dp[0][j] = j
-
-        for (i in 1..len1) {
-            for (j in 1..len2) {
-                val cost = if (s1[i - 1] == s2[j - 1]) 0 else 1
-                dp[i][j] =
-                    minOf(
-                        dp[i - 1][j] + 1,
-                        dp[i][j - 1] + 1,
-                        dp[i - 1][j - 1] + cost,
-                    )
-            }
-        }
-
-        return dp[len1][len2]
     }
 
     /**
@@ -585,51 +410,22 @@ class ItemAggregator(
 
     /**
      * Log detailed similarity breakdown for debugging.
+     * Uses the SimilarityScorer to get detailed component scores.
      */
     private fun logSimilarityBreakdown(
         detection: ScannedItem,
         item: AggregatedItem,
         finalScore: Float,
     ) {
-        val categoryMatch = detection.category == item.category
+        val breakdown = similarityScorer.getSimilarityBreakdown(detection, item)
         val detectionLabel = detection.labelText ?: ""
         val itemLabel = item.labelText
-        val labelSim =
-            if (detectionLabel.isNotEmpty() && itemLabel.isNotEmpty()) {
-                calculateLabelSimilarity(detectionLabel, itemLabel)
-            } else {
-                0f
-            }
-
-        val detectionBox = detection.boundingBox
-        var sizeSim = 0f
-        var distanceSim = 0f
-
-        if (detectionBox != null) {
-            val detectionArea = detectionBox.area
-            val itemArea = item.getBoxArea()
-            if (detectionArea > 0.0001f && itemArea > 0.0001f) {
-                sizeSim = minOf(detectionArea, itemArea) / maxOf(detectionArea, itemArea)
-            }
-
-            val detectionCenterX = (detectionBox.left + detectionBox.right) / 2f
-            val detectionCenterY = (detectionBox.top + detectionBox.bottom) / 2f
-            val itemCenterX = (item.boundingBox.left + item.boundingBox.right) / 2f
-            val itemCenterY = (item.boundingBox.top + item.boundingBox.bottom) / 2f
-
-            val dx = detectionCenterX - itemCenterX
-            val dy = detectionCenterY - itemCenterY
-            val distance = sqrt(dx * dx + dy * dy)
-            val frameDiagonal = sqrt(2f)
-            val normalizedDistance = distance / frameDiagonal
-            distanceSim = 1f - (normalizedDistance / config.maxCenterDistanceRatio).coerceIn(0f, 1f)
-        }
 
         logger.d(TAG, "    Similarity breakdown:")
-        logger.d(TAG, "      - Category match: $categoryMatch (${detection.category} vs ${item.category})")
-        logger.d(TAG, "      - Label similarity: $labelSim ('$detectionLabel' vs '$itemLabel')")
-        logger.d(TAG, "      - Size similarity: $sizeSim")
-        logger.d(TAG, "      - Distance similarity: $distanceSim")
+        logger.d(TAG, "      - Category match: ${breakdown.categoryMatch} (${detection.category} vs ${item.category})")
+        logger.d(TAG, "      - Label similarity: ${breakdown.labelSimilarity} ('$detectionLabel' vs '$itemLabel')")
+        logger.d(TAG, "      - Size similarity: ${breakdown.sizeSimilarity}")
+        logger.d(TAG, "      - Distance similarity: ${breakdown.distanceSimilarity}")
         logger.d(TAG, "      - Final weighted score: $finalScore")
     }
 

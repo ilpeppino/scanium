@@ -59,10 +59,12 @@ data class HealthCheckResult(
  *
  * @property baseUrl The backend base URL to check
  * @property apiKey Optional API key for authenticated endpoints
+ * @property authToken Optional auth token for authenticated endpoints (from sign-in)
  * @property notifyOnRecovery Whether to send notifications on recovery
  */
 data class HealthMonitorConfig(
     val baseUrl: String,
     val apiKey: String?,
+    val authToken: String? = null,
     val notifyOnRecovery: Boolean = true,
 )
