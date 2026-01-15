@@ -1,4 +1,5 @@
 import { FastifyPluginAsync, FastifyRequest } from 'fastify';
+import fp from 'fastify-plugin';
 import { verifySession } from '../../../modules/auth/google/session-service.js';
 import { AuthRequiredError, AuthInvalidError } from '../../../shared/errors/index.js';
 
@@ -9,7 +10,7 @@ declare module 'fastify' {
   }
 }
 
-export const authMiddleware: FastifyPluginAsync = async (fastify) => {
+const authMiddlewarePlugin: FastifyPluginAsync = async (fastify) => {
   console.log('[AUTH] Auth middleware plugin registered');
   fastify.addHook('onRequest', async (request) => {
     const authHeader = request.headers.authorization;
@@ -38,6 +39,11 @@ export const authMiddleware: FastifyPluginAsync = async (fastify) => {
     // If userId is null but hadAuthAttempt is true, token was invalid/expired
   });
 };
+
+// Use fastify-plugin to skip encapsulation and make hooks available globally
+export const authMiddleware = fp(authMiddlewarePlugin, {
+  name: 'auth-middleware',
+});
 
 /**
  * Phase B: Require authentication for protected endpoints
