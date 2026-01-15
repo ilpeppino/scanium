@@ -600,7 +600,8 @@ class AssistantViewModel
                     }
 
                     // ISSUE-3 FIX: Get language from unified settings and override in prefs
-                    val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first()
+                    // Uppercase to match expected format (backend expects "EN", "IT", etc.)
+                    val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first().uppercase()
                     val basePrefs = settingsRepository.assistantPrefsFlow.first()
                     val prefs = basePrefs.copy(language = languageTag)
 
