@@ -213,7 +213,7 @@ fun DeveloperOptionsScreen(
             SettingSwitchRow(
                 title = "Document Detection",
                 subtitle = if (documentDetectionEnabled) "Detecting document candidates" else "Document detection disabled",
-                icon = Icons.AutoMirrored.Filled.Article,
+                icon = Icons.Filled.Article,
                 checked = documentDetectionEnabled,
                 onCheckedChange = { viewModel.setDocumentDetectionEnabled(it) },
             )

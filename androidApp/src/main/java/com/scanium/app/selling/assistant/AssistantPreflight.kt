@@ -441,6 +441,15 @@ class AssistantPreflightManagerImpl(
             requestBuilder.header("X-Scanium-Device-Id", deviceId)
         }
 
+        // Add session token for authenticated requests
+        val authToken = SecureApiKeyStore(context).getAuthToken()
+        if (authToken != null) {
+            ScaniumLog.d(TAG, "Warmup: Adding Authorization header (token len=${authToken.length})")
+            requestBuilder.header("Authorization", "Bearer $authToken")
+        } else {
+            ScaniumLog.w(TAG, "Warmup: No auth token - user not signed in")
+        }
+
         RequestSigner.addSignatureHeaders(
             builder = requestBuilder,
             apiKey = key,
@@ -451,8 +460,11 @@ class AssistantPreflightManagerImpl(
 
         try {
             warmupClient.newCall(request).execute().use { response ->
-                // We don't care about the response content, just that it completed
-                ScaniumLog.d(TAG, "Warmup request completed: ${response.code}")
+                if (response.isSuccessful) {
+                    ScaniumLog.i(TAG, "Warmup: SUCCESS (${response.code})")
+                } else {
+                    ScaniumLog.w(TAG, "Warmup: FAILED (${response.code}) - ${response.body?.string()?.take(200)}")
+                }
             }
         } catch (e: Exception) {
             // Warm-up failures are not critical

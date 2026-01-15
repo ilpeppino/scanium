@@ -38,6 +38,15 @@ internal class PreflightPolicy(private val json: Json) {
             requestBuilder.header("X-Scanium-Device-Id", deviceId)
         }
 
+        // Add session token for authenticated requests
+        val authToken = com.scanium.app.config.SecureApiKeyStore(context).getAuthToken()
+        if (authToken != null) {
+            Log.d(TAG, "Preflight: Adding Authorization header (token len=${authToken.length})")
+            requestBuilder.header("Authorization", "Bearer $authToken")
+        } else {
+            Log.w(TAG, "Preflight: No auth token - user not signed in")
+        }
+
         RequestSigner.addSignatureHeaders(
             builder = requestBuilder,
             apiKey = apiKey,

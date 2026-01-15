@@ -43,6 +43,7 @@ class TelemetryTest {
         val counters = mutableListOf<Triple<String, Long, Map<String, String>>>()
         val timers = mutableListOf<Triple<String, Long, Map<String, String>>>()
         val gauges = mutableListOf<Triple<String, Double, Map<String, String>>>()
+        val histograms = mutableListOf<Triple<String, Double, Map<String, String>>>()
 
         override fun counter(
             name: String,
@@ -66,6 +67,14 @@ class TelemetryTest {
             attributes: Map<String, String>,
         ) {
             gauges.add(Triple(name, value, attributes))
+        }
+
+        override fun histogram(
+            name: String,
+            value: Double,
+            attributes: Map<String, String>,
+        ) {
+            histograms.add(Triple(name, value, attributes))
         }
     }
 

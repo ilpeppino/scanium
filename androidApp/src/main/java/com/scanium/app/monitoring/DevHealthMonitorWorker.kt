@@ -75,11 +75,14 @@ class DevHealthMonitorWorker(
 
     private suspend fun performHealthCheck(config: DevHealthMonitorStateStore.MonitorConfig) {
         val previousState = stateStore.getState()
-        val apiKey = SecureApiKeyStore(applicationContext).getApiKey()
+        val secureStore = SecureApiKeyStore(applicationContext)
+        val apiKey = secureStore.getApiKey()
+        val authToken = secureStore.getAuthToken()
 
         val healthConfig = HealthMonitorConfig(
             baseUrl = stateStore.getEffectiveBaseUrl(config),
             apiKey = apiKey,
+            authToken = authToken,
             notifyOnRecovery = config.notifyOnRecovery,
         )
 
