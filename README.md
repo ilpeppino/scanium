@@ -433,31 +433,23 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 
 ***REMOVED******REMOVED*** Documentation
 
-See [docs/INDEX.md](docs/INDEX.md) for the canonical documentation set and entry point.
+See **[docs/INDEX.md](docs/INDEX.md)** for the complete documentation index and entry point.
 
-***REMOVED******REMOVED******REMOVED*** Core Documentation
-- [ARCHITECTURE](./docs/ARCHITECTURE.md) - Full system architecture (Android + backend + observability)
-- [DEV_GUIDE](./docs/DEV_GUIDE.md) - Development workflow and setup
-- [CODEX_CONTEXT](./docs/CODEX_CONTEXT.md) - Agent quickmap for AI assistants
-- [PRODUCT](./docs/PRODUCT.md) - Current app behavior, screens, and user flows
-- [SECURITY](./docs/SECURITY.md) - Privacy and security posture
-
-***REMOVED******REMOVED******REMOVED*** Process & Operations
-- [CI_CD](./docs/CI_CD.md) - GitHub Actions, artifacts, security scans
-- [RELEASE_CHECKLIST](./docs/RELEASE_CHECKLIST.md) - Build, sign, and distribute process
-- [MANUAL_GOLDEN_RUNBOOK](./docs/MANUAL_GOLDEN_RUNBOOK.md) - QA regression test runbook
-
-***REMOVED******REMOVED******REMOVED*** Decision Log & Reports
-- [DECISIONS](./docs/DECISIONS.md) - ADR-lite list of notable choices
-- [REVIEW_REPORT](./docs/REVIEW_REPORT.md) - Comprehensive architectural review
-- [CLEANUP_REPORT](./docs/CLEANUP_REPORT.md) - Documentation cleanup and archive locations
+***REMOVED******REMOVED******REMOVED*** Quick Links
+| Topic | Location |
+|-------|----------|
+| Architecture | [Camera Pipeline](./docs/architecture-camera-pipeline.md), [Item Aggregation](./docs/architecture-item-aggregation.md) |
+| Releases | [Release Checklist](./howto/app/releases/RELEASE_CHECKLIST.md), [Release & Rollback](./howto/app/releases/RELEASE_AND_ROLLBACK.md) |
+| Security | [Security Guidelines](./howto/infra/security/SECURITY.md), [NAS Security](./howto/infra/security/NAS_DEPLOYMENT_SECURITY_CHECKLIST.md) |
+| Monitoring | [Grafana Access](./monitoring/GRAFANA_ACCESS_GUIDE.md), [Stack Changelog](./monitoring/CHANGELOG.md) |
+| KMP Migration | [Migration Map](./howto/MIGRATION_MAP.md) |
 
 ***REMOVED******REMOVED******REMOVED*** Repository Guidelines
-- [AGENTS.md](./AGENTS.md) - Guidelines for AI agents working on the project
-- [GEMINI.md](./GEMINI.md) - Scanium context for Gemini AI
+- [AGENTS.md](./howto/project/reference/AGENTS.md) - Guidelines for AI agents working on the project
+- [GEMINI.md](./howto/project/reference/GEMINI.md) - Scanium context for Gemini AI
 
 ***REMOVED******REMOVED******REMOVED*** Archive
-Historical documentation and implemented features are archived under `docs/_archive/2025-12/`.
+Historical documentation from December 2025 is archived in `howto/archive/2025-12/`.
 
 ***REMOVED******REMOVED*** License
 
