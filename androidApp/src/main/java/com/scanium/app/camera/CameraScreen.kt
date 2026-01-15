@@ -72,7 +72,6 @@ import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.ftue.FtueRepository
-import com.scanium.app.ftue.PermissionEducationDialog
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.media.StorageHelper
@@ -157,12 +156,9 @@ fun CameraScreen(
         }
     }
 
-    // Permission education state (shown before first permission request)
-    val permissionEducationShown by ftueRepository.permissionEducationShownFlow.collectAsState(initial = true)
-    var showPermissionEducationDialog by remember { mutableStateOf(false) }
-
     // Language selection state (shown after camera permission is granted)
-    val languageSelectionShown by ftueRepository.languageSelectionShownFlow.collectAsState(initial = false)
+    // Use initial = true to prevent dialog flash for returning users before DataStore loads
+    val languageSelectionShown by ftueRepository.languageSelectionShownFlow.collectAsState(initial = true)
     var showLanguageSelectionDialog by remember { mutableStateOf(false) }
     val currentAppLanguage by settingsRepository.appLanguageFlow.collectAsState(initial = com.scanium.app.model.AppLanguage.SYSTEM)
 
@@ -381,16 +377,14 @@ fun CameraScreen(
         cameraManager.setScanningDiagnosticsEnabled(scanningDiagnosticsEnabled)
     }
 
-    // Show permission education dialog or request permission on first launch
-    LaunchedEffect(permissionEducationShown) {
-        if (!hasCameraPermission) {
-            if (!permissionEducationShown) {
-                // First launch: show education dialog before requesting permission
-                showPermissionEducationDialog = true
-            } else {
-                // Education already shown: request permission directly
-                cameraPermissionState.launchPermissionRequest()
-            }
+    // Request camera permission directly on first launch (permission-first flow)
+    // Only show education dialog if user denied once (shouldShowRationale = true)
+    var permissionRequestedThisSession by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!cameraPermissionState.status.isGranted && !permissionRequestedThisSession) {
+            permissionRequestedThisSession = true
+            // Request permission immediately on first launch
+            cameraPermissionState.launchPermissionRequest()
         }
     }
 
@@ -1030,19 +1024,6 @@ fun CameraScreen(
             }
         }
 
-        // Permission education dialog (shown before first permission request)
-        if (showPermissionEducationDialog) {
-            PermissionEducationDialog(
-                onContinue = {
-                    showPermissionEducationDialog = false
-                    scope.launch {
-                        ftueRepository.setPermissionEducationShown(true)
-                    }
-                    cameraPermissionState.launchPermissionRequest()
-                },
-            )
-        }
-
         // Language selection dialog (shown after camera permission is granted)
         if (showLanguageSelectionDialog) {
             com.scanium.app.ftue.LanguageSelectionDialog(
@@ -1050,6 +1031,11 @@ fun CameraScreen(
                 onLanguageSelected = { selectedLanguage ->
                     showLanguageSelectionDialog = false
                     scope.launch {
+                        // CRITICAL: Save language selection flag FIRST, before locale change
+                        // setApplicationLocales() triggers Activity recreation, which cancels this coroutine
+                        // If we save after, the flag won't persist and dialog will show again
+                        ftueRepository.setLanguageSelectionShown(true)
+
                         // Set app language (legacy setting)
                         settingsRepository.setAppLanguage(selectedLanguage)
 
@@ -1060,14 +1046,13 @@ fun CameraScreen(
                         val marketplaceCountry = settingsRepository.mapLanguageToMarketplaceCountry(selectedLanguage.code)
                         settingsRepository.setPrimaryRegionCountry(marketplaceCountry)
 
-                        // Update app locale
+                        // Update app locale (this triggers Activity recreation)
                         val localeList =
                             when (selectedLanguage) {
                                 com.scanium.app.model.AppLanguage.SYSTEM -> androidx.core.os.LocaleListCompat.getEmptyLocaleList()
                                 else -> androidx.core.os.LocaleListCompat.forLanguageTags(selectedLanguage.code)
                             }
                         androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(localeList)
-                        ftueRepository.setLanguageSelectionShown(true)
                     }
                 },
             )
