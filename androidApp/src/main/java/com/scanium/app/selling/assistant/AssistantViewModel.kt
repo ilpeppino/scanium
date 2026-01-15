@@ -423,6 +423,8 @@ data class AssistantUiState(
 
 sealed class AssistantUiEvent {
     data class ShowSnackbar(val message: String) : AssistantUiEvent()
+    /** Show sign-in required dialog with option to navigate to Settings → General */
+    object ShowAuthRequiredDialog : AssistantUiEvent()
 }
 
 /**
@@ -1537,8 +1539,15 @@ class AssistantViewModel
             val debugReason = AssistantErrorDisplay.getDebugReason(failure)
             ScaniumLog.i(TAG, "Assistant fallback mode=${_uiState.value.assistantMode} availability=${availabilityDebugString(newAvailability)} $debugReason correlationId=$correlationId")
 
-            val snackbarMessage = buildFallbackSnackbarMessage(failure)
-            _events.emit(AssistantUiEvent.ShowSnackbar(snackbarMessage))
+            // For auth errors, show dialog with navigation option; for others, show snackbar
+            if (failure.type == AssistantBackendErrorType.AUTH_REQUIRED ||
+                failure.type == AssistantBackendErrorType.AUTH_INVALID
+            ) {
+                _events.emit(AssistantUiEvent.ShowAuthRequiredDialog)
+            } else {
+                val snackbarMessage = buildFallbackSnackbarMessage(failure)
+                _events.emit(AssistantUiEvent.ShowSnackbar(snackbarMessage))
+            }
         }
 
         private fun buildFallbackSnackbarMessage(failure: AssistantBackendFailure): String {

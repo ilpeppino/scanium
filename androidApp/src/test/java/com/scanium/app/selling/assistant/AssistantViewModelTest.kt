@@ -26,8 +26,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -105,7 +107,7 @@ class AssistantViewModelTest {
                 )
 
             // Initial state should be IDLE
-            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.IDLE)
+            assertThat(viewModel.uiState.value.progress).isEqualTo(AssistantRequestProgress.Idle)
             assertThat(viewModel.uiState.value.isLoading).isFalse()
 
             // Send message - with UnconfinedTestDispatcher, coroutine starts immediately
@@ -114,10 +116,11 @@ class AssistantViewModelTest {
 
             // Should be loading now (at LLM_PROCESSING stage since coroutine ran immediately)
             assertThat(viewModel.uiState.value.isLoading).isTrue()
-            // Stage should be in a processing state (either VISION or LLM)
-            assertThat(viewModel.uiState.value.loadingStage).isIn(
-                listOf(LoadingStage.VISION_PROCESSING, LoadingStage.LLM_PROCESSING),
-            )
+            val progress = viewModel.uiState.value.progress
+            assertThat(
+                progress is AssistantRequestProgress.Sending ||
+                    progress is AssistantRequestProgress.Thinking,
+            ).isTrue()
         }
 
     @Test
@@ -148,7 +151,7 @@ class AssistantViewModelTest {
 
             // After completion, stage should be DONE
             assertThat(viewModel.uiState.value.isLoading).isFalse()
-            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
         }
 
     @Test
@@ -179,7 +182,7 @@ class AssistantViewModelTest {
 
             // After failure, should fall back to local helper and mark limited mode
             assertThat(viewModel.uiState.value.isLoading).isFalse()
-            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.ErrorTemporary::class.java)
             assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
             assertThat(viewModel.uiState.value.lastBackendFailure).isNotNull()
         }
@@ -211,14 +214,14 @@ class AssistantViewModelTest {
             viewModel.sendMessage("Test message")
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.ErrorTemporary::class.java)
             assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.LIMITED)
 
             // Retry should succeed online
             viewModel.retryLastMessage()
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
             assertThat(viewModel.uiState.value.assistantMode).isEqualTo(AssistantMode.ONLINE)
         }
 
@@ -269,7 +272,7 @@ class AssistantViewModelTest {
             advanceUntilIdle()
 
             // After successful send, state should be DONE
-            assertThat(viewModel.uiState.value.loadingStage).isEqualTo(LoadingStage.DONE)
+            assertThat(viewModel.uiState.value.progress).isInstanceOf(AssistantRequestProgress.Done::class.java)
 
             // Suggested questions should be limited to 3 if present
             val suggestions = viewModel.uiState.value.suggestedQuestions
@@ -1204,5 +1207,82 @@ class AssistantViewModelTest {
                 ),
             )
         }
+    }
+
+    private class AuthRequiredAssistantRepository : AssistantRepository {
+        override suspend fun send(
+            items: List<com.scanium.app.model.ItemContextSnapshot>,
+            history: List<com.scanium.app.model.AssistantMessage>,
+            userMessage: String,
+            exportProfile: ExportProfileDefinition,
+            correlationId: String,
+            imageAttachments: List<ItemImageAttachment>,
+            assistantPrefs: AssistantPrefs?,
+            includePricing: Boolean,
+            pricingCountryCode: String?,
+        ): com.scanium.app.model.AssistantResponse {
+            throw AssistantBackendException(
+                AssistantBackendFailure(
+                    type = AssistantBackendErrorType.AUTH_REQUIRED,
+                    category = AssistantBackendErrorCategory.POLICY,
+                    retryable = false,
+                    message = "Sign in required",
+                ),
+            )
+        }
+    }
+
+    // =========================================================================
+    // Regression test for AUTH_REQUIRED dialog (AUTH-UX-002)
+    // =========================================================================
+
+    /**
+     * CRITICAL REGRESSION TEST: AUTH_REQUIRED emits ShowAuthRequiredDialog event.
+     *
+     * This test guards against the bug where auth errors only showed a snackbar
+     * with non-actionable text. The fix shows a dialog with "Go to Settings" button.
+     */
+    @Test
+    fun `sendMessage with AUTH_REQUIRED emits ShowAuthRequiredDialog event`() = runTest {
+        val store = FakeDraftStore()
+        val profileRepository = FakeExportProfileRepository()
+        val profilePreferences = ExportProfilePreferences(ApplicationProvider.getApplicationContext())
+        val repository = AuthRequiredAssistantRepository()
+
+        val viewModel = AssistantViewModel(
+            itemIds = listOf("item-1"),
+            itemsViewModel = itemsViewModel, context = ApplicationProvider.getApplicationContext(),
+            draftStore = store,
+            exportProfileRepository = profileRepository,
+            exportProfilePreferences = profilePreferences,
+            assistantRepository = repository,
+            settingsRepository = settingsRepository,
+            localAssistantHelper = localAssistantHelper,
+            localSuggestionEngine = localSuggestionEngine,
+            connectivityStatusProvider = connectivityStatusProvider,
+            preflightManager = preflightManager,
+        )
+
+        // Collect events in background - start before sendMessage
+        val receivedEvents = mutableListOf<AssistantUiEvent>()
+        val job = launch(testDispatcher) {
+            viewModel.events.collect { event ->
+                receivedEvents.add(event)
+            }
+        }
+
+        // Let init complete
+        advanceUntilIdle()
+
+        // Send message that will trigger AUTH_REQUIRED
+        viewModel.sendMessage("Test message")
+        advanceUntilIdle()
+
+        // Cancel event collection
+        job.cancel()
+
+        // CRITICAL: Must receive ShowAuthRequiredDialog event (not just snackbar)
+        val hasAuthDialogEvent = receivedEvents.any { it is AssistantUiEvent.ShowAuthRequiredDialog }
+        assertThat(hasAuthDialogEvent).isTrue()
     }
 }

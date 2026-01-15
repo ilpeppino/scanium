@@ -201,12 +201,14 @@ fun SettingsGeneralScreen(
             )
 
             // Phase C: Enhanced Auth section with session expiry and refresh
-            val userInfo = remember { viewModel.getUserInfo() }
-            val isSignedIn = userInfo != null
+            // Collect userInfo reactively so UI updates immediately after sign-in/sign-out
+            val userInfoState by viewModel.userInfoFlow.collectAsState()
+            // Local val enables smart casting for null checks
+            val currentUserInfo = userInfoState
 
-            if (isSignedIn && userInfo != null) {
-                // Calculate session expiry display
-                val expiresAt = remember { viewModel.getAccessTokenExpiresAt() }
+            if (currentUserInfo != null) {
+                // Calculate session expiry display (recompute when user changes)
+                val expiresAt = remember(currentUserInfo) { viewModel.getAccessTokenExpiresAt() }
                 val expiryText = expiresAt?.let { timestamp ->
                     val now = System.currentTimeMillis()
                     val daysRemaining = ((timestamp - now) / (1000 * 60 * 60 * 24)).toInt()
@@ -219,12 +221,12 @@ fun SettingsGeneralScreen(
 
                 ListItem(
                     headlineContent = {
-                        Text(userInfo.displayName ?: userInfo.email ?: "Signed In")
+                        Text(currentUserInfo.displayName ?: currentUserInfo.email ?: "Signed In")
                     },
                     supportingContent = {
                         Column {
-                            if (userInfo.email != null) {
-                                Text(userInfo.email)
+                            currentUserInfo.email?.let { email ->
+                                Text(email)
                             }
                             expiryText?.let {
                                 Text(

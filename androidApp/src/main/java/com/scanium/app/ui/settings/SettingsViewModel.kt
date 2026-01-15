@@ -636,6 +636,13 @@ class SettingsViewModel
         // =========================================================================
 
         /**
+         * Reactive flow of current user info. Updates immediately on sign-in/sign-out.
+         */
+        val userInfoFlow: StateFlow<com.scanium.app.config.SecureApiKeyStore.UserInfo?> =
+            authRepository.userInfoFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), authRepository.getUserInfo())
+
+        /**
          * Initiates Google Sign-In flow via Credential Manager.
          * Exchanges Google ID token with backend and stores session token.
          *
