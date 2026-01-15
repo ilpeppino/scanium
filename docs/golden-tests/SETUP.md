@@ -40,3 +40,41 @@ This repo does not include a Makefile, but these are the intended shortcuts:
 make golden-init      # -> git submodule update --init --recursive external/golden-tests/scanium-golden-tests
 make golden-validate  # -> ./scripts/golden-tests/validate-dataset.sh
 ```
+
+## Run golden regression tests (classification + attributes)
+These tests run against the cloud classifier and load images directly from the dataset repo.
+
+Required environment variables:
+```bash
+export SCANIUM_BASE_URL=https://your-backend.com
+export SCANIUM_API_KEY=your-api-key
+```
+
+Optional dataset path override (otherwise defaults to the submodule):
+```bash
+export SCANIUM_GOLDEN_TESTS_PATH=external/golden-tests/scanium-golden-tests/tests/golden_images/by_subtype
+```
+
+Run core mode (first 3 images per subtype):
+```bash
+./gradlew :androidApp:testDevDebugUnitTest --tests com.scanium.app.golden.GoldenDatasetRegressionTest
+```
+
+Run full sweep:
+```bash
+SCANIUM_GOLDEN_TESTS_FULL=1 ./gradlew :androidApp:testDevDebugUnitTest --tests com.scanium.app.golden.GoldenDatasetRegressionTest
+```
+
+Notes:
+- If the dataset repo is not present, tests are skipped with a clear message.
+- Failures print a per-image report: subtype, image, pass/fail, predicted subtype, score, and missing attributes.
+
+## CI (optional)
+GitHub Actions workflow `golden-classification-tests` runs on:
+- workflow_dispatch
+- nightly schedule
+- PRs labeled `run-golden-tests`
+
+The workflow expects repository secrets:
+- `SCANIUM_BASE_URL`
+- `SCANIUM_API_KEY`
