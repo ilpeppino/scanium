@@ -264,7 +264,8 @@ class ExportAssistantViewModel
         try {
             // ISSUE-3 FIX: Use unified settings for language and country
             // User sets primary language in General settings, which should drive AI output language
-            val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first()
+            // Uppercase to match expected format (backend expects "EN", "IT", etc.)
+            val languageTag = settingsRepository.effectiveAiOutputLanguageFlow.first().uppercase()
             val pricingCountryCode = settingsRepository.effectiveMarketplaceCountryFlow.first()
 
             // Get other assistant preferences (tone, verbosity, units) and override language
