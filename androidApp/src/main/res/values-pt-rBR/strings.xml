@@ -97,6 +97,14 @@
     <string name="settings_accuracy_high">Alta</string>
     <string name="settings_accuracy_high_desc">Correspondência mais rígida; mantém itens de alta confiança</string>
 
+    <!-- Storage & Export -->
+    <string name="settings_storage_title">Armazenamento e exportação</string>
+    <string name="settings_category_storage_title">Armazenamento e exportação</string>
+    <string name="settings_category_storage_desc">Locais de salvamento, formatos de exportação e gerenciamento de cache</string>
+    <string name="settings_section_storage_options">Opções de armazenamento</string>
+    <string name="settings_section_export">Exportação</string>
+    <string name="settings_section_cache">Cache e dados</string>
+
     <!-- Assistant -->
     <string name="settings_assistant_title">Assistente de IA</string>
     <string name="settings_section_assistant_access">Acesso ao assistente</string>

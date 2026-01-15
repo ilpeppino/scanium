@@ -102,6 +102,14 @@
     <string name="settings_accuracy_high">Hoch</string>
     <string name="settings_accuracy_high_desc">Strengere Übereinstimmung; behält nur sichere Items</string>
 
+    <!-- Storage & Export -->
+    <string name="settings_storage_title">Speicher &amp; Export</string>
+    <string name="settings_category_storage_title">Speicher &amp; Export</string>
+    <string name="settings_category_storage_desc">Speicherorte, Exportformate und Cache-Verwaltung</string>
+    <string name="settings_section_storage_options">Speicheroptionen</string>
+    <string name="settings_section_export">Export</string>
+    <string name="settings_section_cache">Cache &amp; Daten</string>
+
     <!-- Assistant -->
     <string name="settings_assistant_title">KI-Assistent</string>
     <string name="settings_section_assistant_access">Assistenten-Zugriff</string>

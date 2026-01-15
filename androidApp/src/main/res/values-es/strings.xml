@@ -92,6 +92,14 @@
     <string name="settings_accuracy_high">Alta</string>
     <string name="settings_accuracy_high_desc">Coincidencia estricta; mantiene elementos de alta confianza</string>
 
+    <!-- Storage & Export -->
+    <string name="settings_storage_title">Almacenamiento y exportación</string>
+    <string name="settings_category_storage_title">Almacenamiento y exportación</string>
+    <string name="settings_category_storage_desc">Ubicaciones de guardado, formatos de exportación y gestión de caché</string>
+    <string name="settings_section_storage_options">Opciones de almacenamiento</string>
+    <string name="settings_section_export">Exportación</string>
+    <string name="settings_section_cache">Caché y datos</string>
+
     <!-- Assistant -->
     <string name="settings_assistant_title">Asistente IA</string>
     <string name="settings_section_assistant_access">Acceso al asistente</string>

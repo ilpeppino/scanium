@@ -96,6 +96,14 @@
     <string name="settings_accuracy_high">Haute</string>
     <string name="settings_accuracy_high_desc">Correspondance stricte ; garde les éléments très fiables</string>
 
+    <!-- Storage & Export -->
+    <string name="settings_storage_title">Stockage et export</string>
+    <string name="settings_category_storage_title">Stockage et export</string>
+    <string name="settings_category_storage_desc">Emplacements de sauvegarde, formats d'export et gestion du cache</string>
+    <string name="settings_section_storage_options">Options de stockage</string>
+    <string name="settings_section_export">Export</string>
+    <string name="settings_section_cache">Cache et données</string>
+
     <!-- Assistant -->
     <string name="settings_assistant_title">Assistant IA</string>
     <string name="settings_section_assistant_access">Accès assistant</string>
