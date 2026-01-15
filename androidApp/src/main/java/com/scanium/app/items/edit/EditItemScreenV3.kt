@@ -84,7 +84,10 @@ fun EditItemScreenV3(
 
     // Observe AI assistant enabled setting
     val settingsRepository = remember { SettingsRepository(context) }
-    val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = false)
+    // ISSUE-1 FIX: Use initial=true to avoid double-click bug where first click
+    // shows "AI disabled" before flow emits actual value. Defense-in-depth check
+    // in ExportAssistantViewModel.generateExport() handles truly disabled case.
+    val aiAssistantEnabled by settingsRepository.allowAssistantFlow.collectAsState(initial = true)
 
     // FTUE Tour State
     val currentTourStep by tourViewModel?.currentStep?.collectAsState() ?: remember { mutableStateOf(null) }
