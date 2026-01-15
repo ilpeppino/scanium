@@ -14,10 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
+import com.scanium.app.R
 import com.scanium.app.monitoring.DevHealthMonitorScheduler
 import com.scanium.app.monitoring.DevHealthMonitorStateStore
 import com.scanium.app.monitoring.MonitorHealthStatus
@@ -62,7 +64,7 @@ fun HealthMonitorSection(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Text(
-                    text = "Background Health Monitor",
+                    text = stringResource(R.string.settings_dev_health_monitor_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
@@ -96,12 +98,12 @@ fun HealthMonitorSection(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Enable monitoring",
+                            text = stringResource(R.string.settings_dev_health_monitor_enable_title),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
-                            text = "Check backend every 15 minutes",
+                            text = stringResource(R.string.settings_dev_health_monitor_enable_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -122,12 +124,12 @@ fun HealthMonitorSection(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Notify on recovery",
+                            text = stringResource(R.string.settings_dev_health_monitor_notify_recovery_title),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                         )
                         Text(
-                            text = "Send notification when backend recovers",
+                            text = stringResource(R.string.settings_dev_health_monitor_notify_recovery_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -142,12 +144,16 @@ fun HealthMonitorSection(
 
                 // Base URL input
                 Text(
-                    text = "Base URL Override",
+                    text = stringResource(R.string.settings_dev_health_monitor_base_url_override_title),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                 )
                 Text(
-                    text = "Leave empty to use default: ${state.effectiveBaseUrl}",
+                    text =
+                        stringResource(
+                            R.string.settings_dev_health_monitor_base_url_override_subtitle,
+                            state.effectiveBaseUrl,
+                        ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -156,7 +162,7 @@ fun HealthMonitorSection(
                     value = baseUrlInput,
                     onValueChange = { baseUrlInput = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("https://your-backend.example.com") },
+                    placeholder = { Text(stringResource(R.string.settings_dev_health_monitor_base_url_placeholder)) },
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
                 )
@@ -166,7 +172,7 @@ fun HealthMonitorSection(
                             onBaseUrlChange(baseUrlInput.takeIf { it.isNotBlank() })
                         },
                     ) {
-                        Text("Save URL")
+                        Text(stringResource(R.string.settings_dev_health_monitor_save_url))
                     }
                 }
 
@@ -174,7 +180,7 @@ fun HealthMonitorSection(
 
                 // Last check result
                 Text(
-                    text = "Last Check",
+                    text = stringResource(R.string.settings_dev_health_monitor_last_check_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -196,18 +202,26 @@ fun HealthMonitorSection(
                                 .background(statusColor),
                         )
                         Text(
-                            text = when (state.monitorState.lastStatus) {
-                                MonitorHealthStatus.OK -> "OK"
-                                MonitorHealthStatus.FAIL -> "FAIL"
-                                null -> "Unknown"
-                            },
+                            text =
+                                when (state.monitorState.lastStatus) {
+                                    MonitorHealthStatus.OK ->
+                                        stringResource(R.string.settings_dev_health_monitor_status_ok)
+                                    MonitorHealthStatus.FAIL ->
+                                        stringResource(R.string.settings_dev_health_monitor_status_fail)
+                                    null ->
+                                        stringResource(R.string.settings_dev_health_monitor_status_unknown)
+                                },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = statusColor,
                         )
                         state.monitorState.lastCheckedAt?.let { ts ->
                             Text(
-                                text = "at ${formatTimestamp(ts)}",
+                                text =
+                                    stringResource(
+                                        R.string.settings_dev_health_monitor_last_check_at,
+                                        formatTimestamp(ts),
+                                    ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -223,7 +237,7 @@ fun HealthMonitorSection(
                     }
                 } else {
                     Text(
-                        text = "Never run",
+                        text = stringResource(R.string.settings_dev_health_monitor_last_check_never),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -238,7 +252,7 @@ fun HealthMonitorSection(
                     val notificationsEnabled = notificationManager.areNotificationsEnabled()
 
                     Text(
-                        text = "Notification Status",
+                        text = stringResource(R.string.settings_dev_health_monitor_notification_status_title),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp),
@@ -254,7 +268,12 @@ fun HealthMonitorSection(
                             modifier = Modifier.size(16.dp),
                         )
                         Text(
-                            text = if (notificationsEnabled) "Enabled" else "Disabled - check permission above",
+                            text =
+                                if (notificationsEnabled) {
+                                    stringResource(R.string.settings_dev_health_monitor_notifications_enabled)
+                                } else {
+                                    stringResource(R.string.settings_dev_health_monitor_notifications_disabled)
+                                },
                             style = MaterialTheme.typography.bodySmall,
                             color = if (notificationsEnabled) Color(0xFF4CAF50) else Color(0xFFF44336),
                         )
@@ -274,7 +293,7 @@ fun HealthMonitorSection(
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Run Now")
+                    Text(stringResource(R.string.settings_dev_health_monitor_run_now))
                 }
             }
         }
@@ -293,27 +312,27 @@ private fun HealthMonitorStatusBadge(
     val (color, text, icon) = when {
         !isEnabled -> Triple(
             Color(0xFF9E9E9E),
-            "Disabled",
+            stringResource(R.string.settings_dev_health_monitor_status_disabled),
             Icons.Default.PauseCircle,
         )
         workState == DevHealthMonitorScheduler.WorkState.Running -> Triple(
             Color(0xFF2196F3),
-            "Running...",
+            stringResource(R.string.settings_dev_health_monitor_status_running),
             Icons.Default.Sync,
         )
         lastStatus == MonitorHealthStatus.OK -> Triple(
             Color(0xFF4CAF50),
-            "Enabled - Last check OK",
+            stringResource(R.string.settings_dev_health_monitor_status_last_ok),
             Icons.Default.CheckCircle,
         )
         lastStatus == MonitorHealthStatus.FAIL -> Triple(
             Color(0xFFF44336),
-            "Enabled - Last check FAILED",
+            stringResource(R.string.settings_dev_health_monitor_status_last_fail),
             Icons.Default.Error,
         )
         else -> Triple(
             Color(0xFF2196F3),
-            "Enabled - Waiting for first check",
+            stringResource(R.string.settings_dev_health_monitor_status_waiting),
             Icons.Default.Schedule,
         )
     }
