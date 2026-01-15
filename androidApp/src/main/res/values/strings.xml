@@ -91,6 +91,12 @@
     <string name="settings_delete_account_success">Your account has been deleted successfully.</string>
     <string name="settings_delete_account_error">Failed to delete account: %1$s</string>
 
+    <!-- Assistant Auth Dialog -->
+    <string name="assistant_auth_required_title">Sign In Required</string>
+    <string name="assistant_auth_required_message">The AI assistant requires you to be signed in. Go to Settings to sign in with your Google account.</string>
+    <string name="assistant_auth_go_to_settings">Go to Settings</string>
+    <string name="assistant_auth_cancel">Cancel</string>
+
     <!-- Camera & Scanning -->
     <string name="settings_camera_title">Camera &amp; Scanning</string>
     <string name="settings_section_storage">Storage</string>

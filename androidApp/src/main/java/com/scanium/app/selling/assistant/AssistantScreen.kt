@@ -41,6 +41,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
@@ -137,6 +138,7 @@ fun AssistantScreen(
     onOpenPostingAssist: (List<String>, Int) -> Unit,
     itemsViewModel: ItemsViewModel,
     draftStore: ListingDraftStore,
+    onNavigateToSettingsGeneral: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val settingsRepository = remember { com.scanium.app.data.SettingsRepository(context) }
@@ -163,6 +165,8 @@ fun AssistantScreen(
     var inputText by remember { mutableStateOf("") }
     // Vision conflict dialog state: Pair of (suggested attribute, existing value)
     var pendingConflictAttribute by remember { mutableStateOf<Pair<SuggestedAttribute, String>?>(null) }
+    // Auth required dialog state
+    var showAuthRequiredDialog by remember { mutableStateOf(false) }
     val voiceController = remember { AssistantVoiceController(context) }
     var lastSpokenTimestamp by remember { mutableStateOf<Long?>(null) }
     var lastSoundedAssistantTimestamp by remember { mutableStateOf<Long?>(null) }
@@ -241,8 +245,13 @@ fun AssistantScreen(
 
     LaunchedEffect(viewModel.events) {
         viewModel.events.collect { event ->
-            if (event is AssistantUiEvent.ShowSnackbar) {
-                snackbarHostState.showSnackbar(event.message)
+            when (event) {
+                is AssistantUiEvent.ShowSnackbar -> {
+                    snackbarHostState.showSnackbar(event.message)
+                }
+                is AssistantUiEvent.ShowAuthRequiredDialog -> {
+                    showAuthRequiredDialog = true
+                }
             }
         }
     }
@@ -320,6 +329,40 @@ fun AssistantScreen(
                 pendingConflictAttribute = null
             },
             onDismiss = { pendingConflictAttribute = null },
+        )
+    }
+
+    // Auth Required Dialog - shown when user needs to sign in to use AI assistant
+    if (showAuthRequiredDialog) {
+        AlertDialog(
+            onDismissRequest = { showAuthRequiredDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.AccountCircle,
+                    contentDescription = null,
+                )
+            },
+            title = {
+                Text(stringResource(R.string.assistant_auth_required_title))
+            },
+            text = {
+                Text(stringResource(R.string.assistant_auth_required_message))
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showAuthRequiredDialog = false
+                        onNavigateToSettingsGeneral()
+                    }
+                ) {
+                    Text(stringResource(R.string.assistant_auth_go_to_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAuthRequiredDialog = false }) {
+                    Text(stringResource(R.string.assistant_auth_cancel))
+                }
+            }
         )
     }
 
