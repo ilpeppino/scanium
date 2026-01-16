@@ -227,14 +227,33 @@ internal fun ItemRow(
     // Use formatted display title, fall back to displayLabel if not available
     val displayTitle = displayItem?.title ?: item.displayLabel
 
-    // Build price line from formatted output
-    val priceText = displayItem?.priceLine ?: (item.formattedUserPrice ?: item.formattedPriceRange)
+    // Build price line from structured pricing (localized) or fall back to legacy strings
+    val priceText = when {
+        displayItem?.pricing != null -> {
+            stringResource(R.string.pricing_range_value, displayItem.pricing.min, displayItem.pricing.max)
+        }
+        displayItem?.priceLine != null -> displayItem.priceLine  // Legacy fallback
+        else -> item.formattedUserPrice ?: item.formattedPriceRange
+    }
+
+    // Get pricing context for localized rendering
+    val pricingContextString = displayItem?.pricing?.contextKey?.let { contextKey ->
+        when (contextKey) {
+            "pricing_context_current_market" -> stringResource(R.string.pricing_context_current_market)
+            else -> null  // Unknown context key, skip rendering
+        }
+    } ?: displayItem?.priceContext  // Legacy fallback
 
     val contentDescription =
         buildString {
             append(displayTitle)
             append(". ")
             append(priceText)
+            // Include pricing context if available (localized)
+            pricingContextString?.let {
+                append(". ")
+                append(it)
+            }
             // Diagnostic info only in dev builds
             if (FeatureFlags.showItemDiagnostics) {
                 append(". ")
@@ -379,8 +398,8 @@ internal fun ItemRow(
                                 ConditionBadge(condition = condition)
                             }
                         }
-                        // Show price context ("Based on...") if available
-                        displayItem?.priceContext?.let { context ->
+                        // Show price context ("Based on...") if available (localized via stringResource)
+                        pricingContextString?.let { context ->
                             Text(
                                 text = context,
                                 style = MaterialTheme.typography.bodySmall,
