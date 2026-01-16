@@ -66,6 +66,7 @@ import {
 } from './staged-request.js';
 import { PricingService } from '../pricing/service.js';
 import { pricingPrefsSchema } from '../pricing/schema.js';
+import { shapeCustomerSafeText } from './shaping/customerSafeShaper.js';
 
 type RouteOpts = { config: Config };
 
@@ -114,6 +115,7 @@ const requestSchema = z.object({
     })
     .optional(),
   assistantPrefs: assistantPrefsSchema,
+  mode: z.enum(['FIRST_SCAN', 'ITEM_LIST', 'ITEM_CARD', 'ASSISTANT', 'EDIT_SUGGESTIONS']).optional(),
   includePricing: z.boolean().optional(),
   pricingPrefs: pricingPrefsSchema.optional(),
 });
@@ -695,8 +697,12 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       if (config.assistant.allowEmptyItems) {
         // Return helpful response for empty items when flag is ON
         request.log.info({ correlationId }, 'Empty items allowed by feature flag');
+        const emptyItemsMessage = shapeCustomerSafeText(
+          'Assistant is enabled. Add an item to get listing advice.',
+          parsed.data.mode
+        );
         return reply.status(200).send({
-          reply: 'Assistant is enabled. Add an item to get listing advice.',
+          reply: emptyItemsMessage,
           actions: [],
           citationsMetadata: {},
           fromCache: false,
@@ -744,8 +750,9 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
 
       // Return safe refusal - don't reveal what triggered it
       const refusal = refusalResponse();
+      const shapedRefusal = shapeCustomerSafeText(refusal.content, validated.request.mode);
       return reply.status(200).send({
-        reply: refusal.content,
+        reply: shapedRefusal,
         actions: refusal.actions,
         citationsMetadata: {},
         fromCache: false,
@@ -1059,8 +1066,28 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         }
       }
 
+      // Apply customer-safe shaping (Phase 4)
+      const mode = sanitizedRequest.mode;
+      const shapedContent = shapeCustomerSafeText(response.content, mode);
+      const shapedSuggestedNextPhoto = response.suggestedNextPhoto
+        ? shapeCustomerSafeText(response.suggestedNextPhoto, mode)
+        : undefined;
+
+      // Shape suggested attributes
+      const shapedSuggestedAttributes = response.suggestedAttributes?.map((attr) => ({
+        ...attr,
+        value: shapeCustomerSafeText(attr.value, mode),
+        source: attr.source ? shapeCustomerSafeText(attr.source, mode) : undefined,
+      }));
+
+      // Shape suggested draft updates
+      const shapedSuggestedDraftUpdates = response.suggestedDraftUpdates?.map((update) => ({
+        ...update,
+        value: shapeCustomerSafeText(update.value, mode),
+      }));
+
       return reply.status(200).send({
-        reply: response.content,
+        reply: shapedContent,
         actions: response.actions,
         citationsMetadata: response.citationsMetadata ?? {},
         fromCache, // Boolean indicating if response was served from cache
@@ -1073,9 +1100,9 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         ),
         confidenceTier: response.confidenceTier,
         evidence: response.evidence,
-        suggestedAttributes: response.suggestedAttributes,
-        suggestedDraftUpdates: response.suggestedDraftUpdates,
-        suggestedNextPhoto: response.suggestedNextPhoto,
+        suggestedAttributes: shapedSuggestedAttributes,
+        suggestedDraftUpdates: shapedSuggestedDraftUpdates,
+        suggestedNextPhoto: shapedSuggestedNextPhoto,
         marketPrice, // Phase 4: Optional market price insights
         safety: buildSafetyResponse(false, null, requestId),
         correlationId,
@@ -1105,8 +1132,12 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
         : buildAssistantError('provider_unavailable', 'temporary', true, 'PROVIDER_UNAVAILABLE', undefined, 'Assistant provider unavailable');
 
       // Return graceful fallback instead of 503
+      const fallbackMessage = shapeCustomerSafeText(
+        'I\'m having trouble processing your request right now. I can still help with general listing guidance. Try asking about improving your title, description, or what details to add.',
+        sanitizedRequest?.mode
+      );
       return reply.status(200).send({
-        reply: 'I\'m having trouble processing your request right now. I can still help with general listing guidance. Try asking about improving your title, description, or what details to add.',
+        reply: fallbackMessage,
         actions: [],
         confidenceTier: 'LOW',
         evidence: [],
