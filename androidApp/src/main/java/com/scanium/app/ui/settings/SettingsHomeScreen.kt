@@ -33,9 +33,11 @@ import com.scanium.app.BuildConfig
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 
+import androidx.annotation.StringRes
+
 data class SettingsCategory(
-    val title: String,
-    val description: String,
+    @StringRes val title: Int,
+    @StringRes val description: Int,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val onClick: () -> Unit,
     val visible: Boolean = true,
@@ -62,44 +64,44 @@ fun SettingsHomeScreen(
     val categories =
         listOf(
             SettingsCategory(
-                title = stringResource(R.string.settings_category_general_title),
-                description = stringResource(R.string.settings_category_general_desc),
+                title = R.string.settings_category_general_title,
+                description = R.string.settings_category_general_desc,
                 icon = Icons.Filled.Settings,
                 onClick = onGeneralClick,
             ),
             SettingsCategory(
-                title = stringResource(R.string.settings_category_camera_title),
-                description = stringResource(R.string.settings_category_camera_desc),
+                title = R.string.settings_category_camera_title,
+                description = R.string.settings_category_camera_desc,
                 icon = Icons.Filled.CameraAlt,
                 onClick = onCameraClick,
             ),
             SettingsCategory(
-                title = stringResource(R.string.settings_category_assistant_title),
-                description = stringResource(R.string.settings_category_assistant_desc),
+                title = R.string.settings_category_assistant_title,
+                description = R.string.settings_category_assistant_desc,
                 icon = Icons.Rounded.AutoAwesome,
                 onClick = onAssistantClick,
             ),
             SettingsCategory(
-                title = stringResource(R.string.settings_category_feedback_title),
-                description = stringResource(R.string.settings_category_feedback_desc),
+                title = R.string.settings_category_feedback_title,
+                description = R.string.settings_category_feedback_desc,
                 icon = Icons.AutoMirrored.Filled.VolumeUp,
                 onClick = onFeedbackClick,
             ),
             SettingsCategory(
-                title = stringResource(R.string.settings_category_storage_title),
-                description = stringResource(R.string.settings_category_storage_desc),
+                title = R.string.settings_category_storage_title,
+                description = R.string.settings_category_storage_desc,
                 icon = Icons.Filled.Storage,
                 onClick = onStorageClick,
             ),
             SettingsCategory(
-                title = stringResource(R.string.settings_category_privacy_title),
-                description = stringResource(R.string.settings_category_privacy_desc),
+                title = R.string.settings_category_privacy_title,
+                description = R.string.settings_category_privacy_desc,
                 icon = Icons.Filled.PrivacyTip,
                 onClick = onPrivacyClick,
             ),
             SettingsCategory(
-                title = stringResource(R.string.settings_category_developer_title),
-                description = stringResource(R.string.settings_category_developer_desc),
+                title = R.string.settings_category_developer_title,
+                description = R.string.settings_category_developer_desc,
                 icon = Icons.Filled.BugReport,
                 onClick = onDeveloperClick,
                 visible = showDeveloper,
@@ -151,8 +153,8 @@ fun SettingsHomeScreen(
 
             items(categories) { category ->
                 SettingNavigationRow(
-                    title = category.title,
-                    subtitle = category.description,
+                    title = stringResource(category.title),
+                    subtitle = stringResource(category.description),
                     icon = category.icon,
                     onClick = category.onClick,
                 )

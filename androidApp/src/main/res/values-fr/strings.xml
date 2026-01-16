@@ -99,7 +99,7 @@
     <!-- Storage & Export -->
     <string name="settings_storage_title">Stockage et export</string>
     <string name="settings_category_storage_title">Stockage et export</string>
-    <string name="settings_category_storage_desc">Emplacements de sauvegarde, formats d'export et gestion du cache</string>
+    <string name="settings_category_storage_desc">Emplacements de sauvegarde, formats d\'export et gestion du cache</string>
     <string name="settings_section_storage_options">Options de stockage</string>
     <string name="settings_section_export">Export</string>
     <string name="settings_section_cache">Cache et données</string>
