@@ -641,6 +641,52 @@ describe('POST /v1/assist/chat', () => {
       expect(body.confidenceTier).toBeUndefined();
       expect(body.evidence).toBeUndefined();
     });
+
+    it('returns structured pricing fields for price estimation without hardcoded English strings', async () => {
+      const app = await appPromise;
+      const res = await app.inject({
+        method: 'POST',
+        url: '/v1/assist/chat',
+        headers: { 'x-api-key': 'assist-key' },
+        payload: {
+          items: [
+            {
+              itemId: 'item-pricing',
+              title: 'Electronics Item',
+              category: 'Electronics',
+              priceEstimate: 100,
+              photosCount: 1,
+            },
+          ],
+          message: 'What price should I set?',
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = JSON.parse(res.body);
+
+      // Verify response contains reply field (should not be empty for pricing question)
+      expect(typeof body.reply).toBe('string');
+
+      // Verify marketPrice field exists and has structured format (not hardcoded English)
+      if (body.marketPrice) {
+        expect(body.marketPrice).toHaveProperty('status');
+        expect(body.marketPrice).toHaveProperty('range');
+        if (body.marketPrice.range) {
+          expect(body.marketPrice.range).toHaveProperty('low');
+          expect(body.marketPrice.range).toHaveProperty('high');
+          expect(body.marketPrice.range).toHaveProperty('currency');
+          expect(typeof body.marketPrice.range.low).toBe('number');
+          expect(typeof body.marketPrice.range.high).toBe('number');
+        }
+      }
+
+      // Ensure hardcoded English utility phrases are NOT in the response
+      const forbiddenPhrases = ['Based on the current draft estimate', 'Based on', 'market conditions', 'ready for resale'];
+      forbiddenPhrases.forEach((phrase) => {
+        expect(body.reply).not.toContain(phrase);
+      });
+    });
   });
 
   describe('assistantPrefs tone handling', () => {

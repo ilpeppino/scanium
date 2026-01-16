@@ -308,22 +308,20 @@ export class EbayCompsTool {
 
 /**
  * Format eBay comps summary for assistant response.
+ * Returns only the comparable items without hardcoded English utility phrases.
  */
 export function formatCompsSummary(comps: EbayCompsSummary): string {
   const currencySymbol = comps.currency === 'EUR' ? '€' : comps.currency === 'USD' ? '$' : comps.currency === 'GBP' ? '£' : comps.currency;
 
-  let response = `Based on ${comps.sampleSize} recent eBay sales:\n`;
-  response += `- **Price range**: ${currencySymbol}${comps.minPrice.toFixed(0)} - ${currencySymbol}${comps.maxPrice.toFixed(0)}\n`;
-  response += `- **Median price**: ${currencySymbol}${comps.medianPrice.toFixed(0)}\n\n`;
+  let response = '';
 
   if (comps.topComps.length > 0) {
-    response += `Recent comparable sales:\n`;
     for (const comp of comps.topComps) {
       response += `- "${comp.title.slice(0, 50)}..." - ${currencySymbol}${comp.price.toFixed(0)} (${comp.condition ?? 'Used'})\n`;
     }
   }
 
-  return response;
+  return response.trim();
 }
 
 /**
