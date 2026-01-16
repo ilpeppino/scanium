@@ -401,6 +401,8 @@
     <string name="items_status_failed">Échoué</string>
     <string name="items_status_enriching">Enrichissement...</string>
     <string name="items_status_enriched">Enrichi</string>
+    <string name="items_list_header_ready_for_resale">%1$d articles prêts à la revente</string>
+    <string name="items_list_cta">Examiner les articles ou générer des annonces</string>
     <string name="items_confidence_label">Confiance : %1$s</string>
     <string name="items_detected_attributes_title">Attributs détectés</string>
     <string name="items_no_attributes">Aucun attribut détecté. Les attributs seront extraits lors de la classification cloud.</string>

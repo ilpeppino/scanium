@@ -43,6 +43,9 @@ import java.util.*
  *
  * Pure UI composition - no state mutation, no ViewModel access.
  * All callbacks are passed in from the parent.
+ *
+ * Uses CustomerSafeCopyFormatter via ItemListViewMapper to display
+ * customer-safe, localized item information.
  */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -56,6 +59,11 @@ internal fun ItemsListContent(
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
     modifier: Modifier = Modifier,
 ) {
+    // Map items to formatted display models using CustomerSafeCopyFormatter
+    val displayItems = remember(items) {
+        ItemListViewMapper.mapToListDisplayBatch(items, dropIfWeak = false)
+    }
+
     Box(modifier = modifier.fillMaxSize()) {
         when {
             items.isEmpty() -> {
@@ -63,7 +71,7 @@ internal fun ItemsListContent(
                 EmptyItemsContent()
             }
             else -> {
-                // Items list
+                // Items list with header and CTA
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding =
@@ -75,10 +83,22 @@ internal fun ItemsListContent(
                         ),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
+                    // Header: item count
+                    item {
+                        Text(
+                            text = stringResource(R.string.items_list_header_ready_for_resale, items.size),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                        )
+                    }
+
+                    // Item list
                     items(
                         items = items,
                         key = { it.id },
                     ) { item ->
+                        val displayItem = displayItems.find { it.itemId == item.id }
                         val dismissState =
                             rememberSwipeToDismissBoxState(
                                 confirmValueChange = { value ->
@@ -145,6 +165,7 @@ internal fun ItemsListContent(
                         ) {
                             ItemRow(
                                 item = item,
+                                displayItem = displayItem,
                                 isSelected = state.selectedIds.contains(item.id),
                                 selectionMode = state.selectionMode,
                                 onClick = { onItemClick(item) },
@@ -152,6 +173,16 @@ internal fun ItemsListContent(
                                 onRetryClassification = { onRetryClassification(item) },
                             )
                         }
+                    }
+
+                    // Footer: CTA
+                    item {
+                        Text(
+                            text = stringResource(R.string.items_list_cta),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                        )
                     }
                 }
             }
@@ -170,6 +201,7 @@ internal fun ItemsListContent(
 @Composable
 internal fun ItemRow(
     item: ScannedItem,
+    displayItem: ItemListViewMapper.ItemListDisplay?,
     isSelected: Boolean,
     selectionMode: Boolean,
     onClick: () -> Unit,
@@ -191,11 +223,18 @@ internal fun ItemRow(
     val selectedLabel = stringResource(R.string.items_accessibility_selected)
     val toggleSelectionLabel = stringResource(R.string.items_accessibility_tap_toggle_selection)
     val tapEditLabel = stringResource(R.string.items_accessibility_tap_edit_long_press)
+
+    // Use formatted display title, fall back to displayLabel if not available
+    val displayTitle = displayItem?.title ?: item.displayLabel
+
+    // Build price line from formatted output
+    val priceText = displayItem?.priceLine ?: (item.formattedUserPrice ?: item.formattedPriceRange)
+
     val contentDescription =
         buildString {
-            append(item.displayLabel)
+            append(displayTitle)
             append(". ")
-            append(item.formattedPriceRange)
+            append(priceText)
             // Diagnostic info only in dev builds
             if (FeatureFlags.showItemDiagnostics) {
                 append(". ")
@@ -305,7 +344,7 @@ internal fun ItemRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = item.displayLabel,
+                        text = displayTitle,
                         style = MaterialTheme.typography.titleMedium,
                     )
                     // Diagnostic badges only shown in dev builds
@@ -317,25 +356,36 @@ internal fun ItemRow(
                     EnrichmentStatusBadge(status = item.enrichmentStatus)
                 }
 
-                // Price display: user price if set, otherwise estimated range
-                val priceText = item.formattedUserPrice ?: item.formattedPriceRange
+                // Price display: formatted resale value from CustomerSafeCopyFormatter
                 if (priceText.isNotBlank()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
-                        Text(
-                            text = priceText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = if (item.userPriceCents != null) {
-                                MaterialTheme.colorScheme.tertiary
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            },
-                        )
-                        // Show condition badge if set
-                        item.condition?.let { condition ->
-                            ConditionBadge(condition = condition)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = priceText,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (item.userPriceCents != null) {
+                                    MaterialTheme.colorScheme.tertiary
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                            )
+                            // Show condition badge if set
+                            item.condition?.let { condition ->
+                                ConditionBadge(condition = condition)
+                            }
+                        }
+                        // Show price context ("Based on...") if available
+                        displayItem?.priceContext?.let { context ->
+                            Text(
+                                text = context,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 } else {

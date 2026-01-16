@@ -401,6 +401,8 @@
     <string name="items_status_failed">Mislukt</string>
     <string name="items_status_enriching">Verrijken...</string>
     <string name="items_status_enriched">Verrijkt</string>
+    <string name="items_list_header_ready_for_resale">%1$d items klaar voor doorverkoop</string>
+    <string name="items_list_cta">Bekijk items of genereer advertenties</string>
     <string name="items_confidence_label">Vertrouwen: %1$s</string>
     <string name="items_detected_attributes_title">Gedetecteerde attributen</string>
     <string name="items_no_attributes">Nog geen attributen gedetecteerd. Attributen worden tijdens cloudclassificatie geëxtraheerd.</string>

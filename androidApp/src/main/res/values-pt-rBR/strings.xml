@@ -402,6 +402,8 @@
     <string name="items_status_failed">Falhou</string>
     <string name="items_status_enriching">Enriquecendo...</string>
     <string name="items_status_enriched">Enriquecido</string>
+    <string name="items_list_header_ready_for_resale">%1$d itens prontos para revenda</string>
+    <string name="items_list_cta">Revisar itens ou gerar anúncios</string>
     <string name="items_confidence_label">Confiança: %1$s</string>
     <string name="items_detected_attributes_title">Atributos detectados</string>
     <string name="items_no_attributes">Nenhum atributo detectado ainda. Atributos serão extraídos durante a classificação em nuvem.</string>

@@ -425,6 +425,8 @@
     <string name="items_status_failed">Fallito</string>
     <string name="items_status_enriching">Arricchimento...</string>
     <string name="items_status_enriched">Arricchito</string>
+    <string name="items_list_header_ready_for_resale">%1$d articoli pronti per la rivendita</string>
+    <string name="items_list_cta">Rivedi articoli o genera annunci</string>
     <string name="items_confidence_label">Confidenza: %1$s</string>
     <string name="items_detected_attributes_title">Attributi rilevati</string>
     <string name="items_no_attributes">Nessun attributo rilevato. Gli attributi saranno estratti durante la classificazione cloud.</string>
