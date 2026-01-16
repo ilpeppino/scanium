@@ -556,7 +556,7 @@ private fun CategoryDropdown(
             value = selectedCategory.displayName,
             onValueChange = {},
             readOnly = true,
-            label = { Text("Category") },
+            label = { Text(stringResource(R.string.form_label_category)) },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
