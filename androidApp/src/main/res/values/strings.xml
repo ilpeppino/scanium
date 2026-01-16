@@ -469,6 +469,8 @@
     <string name="items_status_failed">Failed</string>
     <string name="items_status_enriching">Enriching...</string>
     <string name="items_status_enriched">Enriched</string>
+    <string name="items_list_header_ready_for_resale">%1$d items ready for resale</string>
+    <string name="items_list_cta">Review items or generate listings</string>
     <string name="items_confidence_label">Confidence: %1$s</string>
     <string name="items_detected_attributes_title">Detected Attributes</string>
     <string name="items_no_attributes">No attributes detected yet. Attributes will be extracted during cloud classification.</string>
