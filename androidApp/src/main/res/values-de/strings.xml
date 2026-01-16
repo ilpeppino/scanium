@@ -108,7 +108,11 @@
     <string name="settings_category_storage_desc">Speicherorte, Exportformate und Cache-Verwaltung</string>
     <string name="settings_section_storage_options">Speicheroptionen</string>
     <string name="settings_section_export">Export</string>
+    <string name="settings_export_format_title">Default export format</string>
+    <string name="settings_export_format_subtitle">Format used when exporting items</string>
     <string name="settings_section_cache">Cache &amp; Daten</string>
+    <string name="settings_clear_cache_title">Clear cached data</string>
+    <string name="settings_clear_cache_subtitle">Remove temporary files and thumbnails</string>
 
     <!-- Assistant -->
     <string name="settings_assistant_title">KI-Assistent</string>
