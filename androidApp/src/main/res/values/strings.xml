@@ -1067,6 +1067,10 @@
     <string name="pricing_hide_matches">Hide matches (%1$d)</string>
     <string name="pricing_show_matches">Show matches (%1$d)</string>
 
+    <!-- Pricing Display (localized rendering of structured PricingDisplay) -->
+    <string name="pricing_range_value">€%1$d–€%2$d</string>
+    <string name="pricing_context_current_market">Based on current market conditions</string>
+
     <!-- Copy Labels and Categories -->
     <string name="copy_label_title">Title</string>
     <string name="copy_label_description">Description</string>

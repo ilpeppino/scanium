@@ -51,20 +51,39 @@ data class PricingRange(
 )
 
 /**
+ * Structured pricing display data (language-agnostic).
+ * Intended for localized rendering via stringResource() with formatters.
+ *
+ * @param min Minimum price (int, for "%d" format)
+ * @param max Maximum price (int, for "%d" format)
+ * @param currency Currency code (EUR, USD, etc.)
+ * @param contextKey Resource key for pricing context (e.g., "pricing_context_current_market")
+ */
+data class PricingDisplay(
+    val min: Int,
+    val max: Int,
+    val currency: String = "EUR",
+    val contextKey: String? = null,
+)
+
+/**
  * Customer-safe display output.
  *
  * All strings are sanitized to remove banned tokens, confidence indicators, and vague labels.
+ * Pricing is structured for language-agnostic rendering; UI layer handles localization.
  *
  * @param title Product-type level title (never vague like "Item" or "Unknown")
- * @param priceLine Optional formatted price line (e.g., "Typical resale value: €20–€40")
- * @param priceContext Optional context for pricing (e.g., "Based on current market conditions")
+ * @param pricing Optional structured pricing display (language-agnostic; UI renders via stringResource)
  * @param highlights Optional list of key attributes (ASSISTANT mode only, empty otherwise)
  * @param tags Optional list of categorization tags (ASSISTANT mode only, empty otherwise)
+ * @deprecated Use pricing field instead of legacy priceLine/priceContext
  */
 data class CustomerSafeCopy(
     val title: String,
-    val priceLine: String? = null,
-    val priceContext: String? = null,
+    val pricing: PricingDisplay? = null,
     val highlights: List<String> = emptyList(),
     val tags: List<String> = emptyList(),
+    // Legacy fields for backward compatibility during transition
+    val priceLine: String? = null,
+    val priceContext: String? = null,
 )
