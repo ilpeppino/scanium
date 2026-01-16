@@ -62,6 +62,8 @@ data class AssistantChatEntry(
     val isFailed: Boolean = false,
     /** Error message if failed */
     val errorMessage: String? = null,
+    /** Structured listing display model (parsed from response text) */
+    val displayModel: AssistantDisplayModel? = null,
 )
 
 /**
@@ -655,6 +657,10 @@ class AssistantViewModel
                     val completedTime = System.currentTimeMillis()
                     timing = timing.copy(completedAt = completedTime)
 
+                    // Parse structured display model from response text
+                    val displayModel = AssistantDisplayModelMapper.parse(response.text)
+                        ?.let { AssistantDisplayModelMapper.sanitize(it) }
+
                     val newEntry = AssistantChatEntry(
                         message = assistantMessage,
                         actions = response.actions,
@@ -662,6 +668,7 @@ class AssistantViewModel
                         evidence = response.evidence,
                         suggestedNextPhoto = response.suggestedNextPhoto,
                         suggestedAttributes = response.suggestedAttributes,
+                        displayModel = displayModel,
                     )
 
                     _uiState.update { current ->
@@ -1252,6 +1259,7 @@ class AssistantViewModel
                                 evidence = response.evidence,
                                 suggestedNextPhoto = response.suggestedNextPhoto,
                                 suggestedAttributes = response.suggestedAttributes,
+                                displayModel = null,
                             ),
                     isLoading = false,
                     loadingStage = LoadingStage.DONE,
