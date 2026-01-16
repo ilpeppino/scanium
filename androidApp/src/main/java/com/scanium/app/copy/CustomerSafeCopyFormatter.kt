@@ -38,16 +38,15 @@ object CustomerSafeCopyFormatter {
                 // Return default copy with a generic but safe title
                 CustomerSafeCopy(
                     title = "Item",
-                    priceLine = null,
-                    priceContext = null,
+                    pricing = null,
                     highlights = emptyList(),
                     tags = emptyList(),
                 )
             }
         }
 
-        // Format pricing if available
-        val (priceLine, priceContext) = formatPricing(input.pricingRange, input.pricingContextHint)
+        // Format pricing into structured display (language-agnostic)
+        val pricing = formatPricingStructured(input.pricingRange, input.pricingContextHint)
 
         // Generate highlights and tags based on mode
         val (highlights, tags) = when (mode) {
@@ -57,8 +56,7 @@ object CustomerSafeCopyFormatter {
 
         return CustomerSafeCopy(
             title = sanitizedTitle,
-            priceLine = priceLine,
-            priceContext = priceContext,
+            pricing = pricing,
             highlights = highlights,
             tags = tags,
         )
@@ -97,11 +95,42 @@ object CustomerSafeCopyFormatter {
     }
 
     /**
-     * Format price information into pricing lines.
+     * Format price information into structured display (language-agnostic).
+     * UI layer handles localized rendering via stringResource().
+     *
+     * @param range Optional pricing range
+     * @param contextHint Optional pricing context
+     * @return Structured PricingDisplay, or null if no valid range
+     */
+    private fun formatPricingStructured(
+        range: PricingRange?,
+        contextHint: String?,
+    ): PricingDisplay? {
+        if (range == null) {
+            return null
+        }
+
+        if (!CustomerSafeCopyPolicy.isValidPriceRange(range)) {
+            return null
+        }
+
+        val contextKey = CustomerSafeCopyPolicy.getPricingContextKey(contextHint)
+
+        return PricingDisplay(
+            min = range.min,
+            max = range.max,
+            currency = range.currency,
+            contextKey = contextKey,
+        )
+    }
+
+    /**
+     * Format price information into pricing lines (legacy).
      *
      * @param range Optional pricing range
      * @param contextHint Optional pricing context
      * @return Pair of (priceLine, priceContext), both may be null
+     * @deprecated Use formatPricingStructured() for localization-safe output
      */
     private fun formatPricing(
         range: PricingRange?,

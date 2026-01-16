@@ -123,12 +123,30 @@ object CustomerSafeCopyPolicy {
      *
      * @param contextHint Optional hint about market conditions
      * @return Formatted context string like "Based on current market conditions"
+     * @deprecated Use getPricingContextKey() instead for localized rendering
      */
     fun formatPricingContext(contextHint: String? = null): String {
         return if (contextHint?.isNotBlank() == true && !containsBannedToken(contextHint)) {
             "Based on $contextHint"
         } else {
             "Based on current market conditions"
+        }
+    }
+
+    /**
+     * Map pricing context hint to resource key for localized rendering.
+     * Enables UI layer to use stringResource() for all locales.
+     *
+     * @param contextHint Optional hint about market conditions
+     * @return Resource key (e.g., "pricing_context_current_market")
+     */
+    fun getPricingContextKey(contextHint: String? = null): String? {
+        return if (contextHint?.isNotBlank() == true && !containsBannedToken(contextHint)) {
+            // For custom hints, we'd need dynamic stringResource which isn't directly supported
+            // For now, use default market conditions key
+            "pricing_context_current_market"
+        } else {
+            "pricing_context_current_market"
         }
     }
 }

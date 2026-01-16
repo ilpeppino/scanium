@@ -4,6 +4,7 @@ import com.scanium.app.copy.CopyDisplayMode
 import com.scanium.app.copy.CustomerSafeCopyFormatter
 import com.scanium.app.copy.ItemInput
 import com.scanium.app.copy.PricingRange
+import com.scanium.app.copy.PricingDisplay
 
 /**
  * Maps ScannedItem to display-ready UI copy using CustomerSafeCopyFormatter.
@@ -16,10 +17,13 @@ object ItemListViewMapper {
      * Display model for a single item in the list.
      *
      * Contains all UI-ready strings after sanitization via CustomerSafeCopyFormatter.
+     * Pricing is structured for localized rendering; UI layer uses stringResource().
      */
     data class ItemListDisplay(
         val itemId: String,
         val title: String,
+        val pricing: PricingDisplay?,
+        // Legacy fields for backward compatibility
         val priceLine: String?,
         val priceContext: String?,
     )
@@ -43,11 +47,22 @@ object ItemListViewMapper {
                 dropIfWeak = dropIfWeak,
             ) ?: return null
 
+        // Generate legacy price strings from structured pricing for backward compatibility
+        val (legacyPriceLine, legacyPriceContext) = if (customerSafeCopy.pricing != null) {
+            val pricing = customerSafeCopy.pricing
+            val priceLine = "Typical resale value: €${pricing.min}–€${pricing.max}"
+            val priceContext = "Based on current market conditions"
+            Pair(priceLine, priceContext)
+        } else {
+            Pair(null, null)
+        }
+
         return ItemListDisplay(
             itemId = item.id,
             title = customerSafeCopy.title,
-            priceLine = customerSafeCopy.priceLine,
-            priceContext = customerSafeCopy.priceContext,
+            pricing = customerSafeCopy.pricing,
+            priceLine = legacyPriceLine,
+            priceContext = legacyPriceContext,
         )
     }
 
