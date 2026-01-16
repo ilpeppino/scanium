@@ -960,8 +960,9 @@ export const assistantRoutes: FastifyPluginAsync<RouteOpts> = async (fastify, op
       );
 
       // Compute market price insights if feature enabled (Phase 4)
-      let marketPrice;
-      if (config.pricing.enabled && primaryItem) {
+      // Use provider's pricing if available; otherwise compute via pricing service
+      let marketPrice = response.marketPrice;
+      if (!marketPrice && config.pricing.enabled && primaryItem) {
         // Extract country from assistantPrefs.region with fallback
         let countryCode = sanitizedRequest.assistantPrefs?.region ?? config.assistant.defaultRegion;
 

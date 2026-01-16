@@ -35,13 +35,18 @@ function buildTitleSuggestion(title?: string | null, category?: string | null): 
   return base.length > 0 ? base : 'Item';
 }
 
-function buildPriceGuidance(priceEstimate?: number | null): string {
+function buildPriceGuidance(priceEstimate?: number | null): { content: string; priceRange?: { low: number; high: number; currency: string } } {
   if (!priceEstimate || priceEstimate <= 0) {
-    return 'I do not have enough data for a reliable price range yet. If you can share condition, brand, and recent comparable prices, I can refine an estimate.';
+    return {
+      content: 'I do not have enough data for a reliable price range yet. If you can share condition, brand, and recent comparable prices, I can refine an estimate.',
+    };
   }
   const low = Math.max(1, Math.round(priceEstimate * 0.85));
   const high = Math.max(low + 1, Math.round(priceEstimate * 1.15));
-  return `Based on the current draft estimate, a reasonable range is EUR ${low}-${high}.`;
+  return {
+    content: '',
+    priceRange: { low, high, currency: 'EUR' },
+  };
 }
 
 function buildChecklist(): string {
@@ -112,9 +117,21 @@ export class MockAssistantProvider implements AssistantProvider {
     }
 
     if (message.includes('price') || message.includes('estimate')) {
-      return {
-        content: buildPriceGuidance(primaryItem.priceEstimate),
+      const guidance = buildPriceGuidance(primaryItem.priceEstimate);
+      const response: AssistantResponse = {
+        content: guidance.content,
       };
+      if (guidance.priceRange) {
+        response.marketPrice = {
+          status: 'OK',
+          countryCode: 'NL',
+          marketplacesUsed: [],
+          range: guidance.priceRange,
+          confidence: 'MED',
+          errorCode: undefined,
+        };
+      }
+      return response;
     }
 
     if (message.includes('posting assist')) {
@@ -477,7 +494,7 @@ function buildGroundedResponseContent(
     confidences.some((c) => c === 'LOW') ? 'LOW' : 'MED';
 
   return {
-    content: `Based on image analysis:\n${parts.map((p) => `• ${p}`).join('\n')}`,
+    content: parts.map((p) => `• ${p}`).join('\n'),
     confidence: overallConfidence,
   };
 }
