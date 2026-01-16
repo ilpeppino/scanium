@@ -103,6 +103,7 @@ import com.scanium.app.model.ConfidenceTier
 import com.scanium.app.model.EvidenceBullet
 import com.scanium.app.selling.assistant.components.VisionConflictDialog
 import com.scanium.app.selling.assistant.components.VisionInsightsSection
+import com.scanium.app.selling.assistant.components.StructuredListingSection
 import com.scanium.app.selling.persistence.ListingDraftStore
 import com.scanium.app.model.SuggestedAttribute
 import com.scanium.app.selling.util.ListingClipboardHelper
@@ -706,6 +707,15 @@ internal fun MessageBubble(
                     onAttributeConflict = onVisionAttributeConflict,
                     getExistingAttribute = getExistingAttribute,
                     enabled = true,
+                )
+            }
+
+            // Structured listing section (for assistant messages with structured display model)
+            entry.displayModel?.let { displayModel ->
+                Spacer(modifier = Modifier.height(8.dp))
+                StructuredListingSection(
+                    displayModel = displayModel,
+                    onCopyText = null
                 )
             }
 
