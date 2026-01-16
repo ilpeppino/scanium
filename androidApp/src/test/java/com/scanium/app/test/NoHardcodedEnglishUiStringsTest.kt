@@ -1,9 +1,8 @@
 package com.scanium.app.test
 
 import org.junit.Test
+import org.junit.Assert.fail
 import java.io.File
-import kotlin.test.fail
-import org.junit.Assert.fail as assertFail
 
 /**
  * Regression test to ensure no hardcoded English user-visible strings are introduced in UI code.
