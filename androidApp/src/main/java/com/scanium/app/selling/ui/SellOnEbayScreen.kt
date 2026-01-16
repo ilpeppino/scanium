@@ -97,7 +97,7 @@ fun SellOnEbayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Export to eBay (Mock)") },
+                title = { Text(stringResource(R.string.ebay_export_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -115,7 +115,7 @@ fun SellOnEbayScreen(
                             .padding(12.dp)
                             .fillMaxWidth(),
                 ) {
-                    Text("Export to eBay (Mock)")
+                    Text(stringResource(R.string.ebay_export_title))
                 }
             }
         },
@@ -171,13 +171,13 @@ private fun ListingDraftCard(
                     OutlinedTextField(
                         value = draftState.draft.title,
                         onValueChange = onTitleChanged,
-                        label = { Text("Title") },
+                        label = { Text(stringResource(R.string.form_label_title)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = String.format("%.2f", draftState.draft.price),
                         onValueChange = onPriceChanged,
-                        label = { Text("Price (${draftState.draft.currency})") },
+                        label = { Text(stringResource(R.string.ebay_export_price_label, draftState.draft.currency)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -207,7 +207,7 @@ private fun ConditionPicker(
             value = condition.name,
             onValueChange = {},
             readOnly = true,
-            label = { Text("Condition") },
+            label = { Text(stringResource(R.string.form_label_condition)) },
             modifier =
                 Modifier
                     .menuAnchor()
