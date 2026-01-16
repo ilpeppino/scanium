@@ -75,6 +75,17 @@ export type AssistantUnits = 'METRIC' | 'IMPERIAL';
 export type AssistantVerbosity = 'CONCISE' | 'NORMAL' | 'DETAILED';
 
 /**
+ * Assistant mode - determines the type of response formatting.
+ * Phase 4 feature for customer-safe response shaping.
+ */
+export type AssistantMode =
+  | 'FIRST_SCAN'      // Initial scan of an item
+  | 'ITEM_LIST'       // List view of items
+  | 'ITEM_CARD'       // Single item card view
+  | 'ASSISTANT'       // General assistant chat (sectioned listing output)
+  | 'EDIT_SUGGESTIONS'; // Suggestions for editing an item
+
+/**
  * User's assistant personalization preferences.
  * Sent with each request, not stored server-side.
  */
@@ -299,6 +310,8 @@ export type AssistantChatRequest = {
   exportProfile?: ExportProfileSnapshot;
   /** User's personalization preferences */
   assistantPrefs?: AssistantPrefs;
+  /** Assistant mode for response formatting (Phase 4) */
+  mode?: AssistantMode;
   /** W3C Trace Context for distributed tracing */
   traceContext?: {
     traceId: string;      // 32 hex chars - identifies the entire trace
