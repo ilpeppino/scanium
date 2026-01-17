@@ -347,6 +347,8 @@ main() {
   printf "%sAction:%s %s\n" "$C_DIM" "$C_RESET" "${last_action:-none}"
   hr
 
+  echo "__REPO_PATH__=$repo_path"
+
   ***REMOVED*** EXIT as requested (main goal)
   exit 0
 }
