@@ -7,7 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.outlined.Checklist
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
@@ -29,6 +30,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import com.scanium.app.R
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ScannedItem
@@ -71,9 +73,8 @@ internal fun BoxScope.CameraOverlay(
                 .semantics { traversalIndex = 0f },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Left slot: Hamburger menu (fixed width)
-        Box(
-            modifier = Modifier.width(48.dp),
+        // Left slot: Hamburger menu
+        TopCornerButtonContainer(
             contentAlignment = Alignment.CenterStart,
         ) {
             IconButton(
@@ -81,10 +82,6 @@ internal fun BoxScope.CameraOverlay(
                 modifier =
                     Modifier
                         .size(48.dp)
-                        .background(
-                            Color.Black.copy(alpha = 0.5f),
-                            shape = MaterialTheme.shapes.small,
-                        )
                         .then(
                             if (tourViewModel != null) {
                                 Modifier.tourTarget("camera_settings", tourViewModel)
@@ -103,29 +100,17 @@ internal fun BoxScope.CameraOverlay(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        // Right slot: Scanium logo (fixed width, clickable)
-        Box(
-            modifier = Modifier.width(48.dp),
+        // Right slot: Scanium logo
+        TopCornerButtonContainer(
             contentAlignment = Alignment.CenterEnd,
+            onClick = { showSupportSheet = true },
         ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .clickable { showSupportSheet = true }
-                        .background(
-                            Color.Black.copy(alpha = 0.5f),
-                            shape = MaterialTheme.shapes.small,
-                        ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.scanium_logo),
-                    contentDescription = stringResource(R.string.cd_scanium_logo),
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit,
-                )
-            }
+            Image(
+                painter = painterResource(id = R.drawable.scanium_logo),
+                contentDescription = stringResource(R.string.cd_scanium_logo),
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+            )
         }
     }
 
@@ -229,6 +214,20 @@ internal fun BoxScope.CameraOverlayPortrait(
     onFlipCamera: () -> Unit,
     isFlipEnabled: Boolean,
 ) {
+    // Badge animation state for portrait layout
+    var previousItemsCount by remember { mutableIntStateOf(itemsCount) }
+    var badgeScale by remember { mutableFloatStateOf(1f) }
+
+    LaunchedEffect(itemsCount) {
+        if (itemsCount > previousItemsCount) {
+            // Trigger animation: scale from 1.0 to 1.18 back to 1.0
+            badgeScale = 1.18f
+            delay(100)
+            badgeScale = 1f
+        }
+        previousItemsCount = itemsCount
+    }
+
     Column(
         modifier =
             Modifier
@@ -252,7 +251,12 @@ internal fun BoxScope.CameraOverlayPortrait(
                 BadgedBox(
                     badge = {
                         if (itemsCount > 0) {
-                            Badge {
+                            Badge(
+                                modifier = Modifier.graphicsLayer(
+                                    scaleX = badgeScale,
+                                    scaleY = badgeScale,
+                                ),
+                            ) {
                                 Text(itemsCount.toString())
                             }
                         }
@@ -276,8 +280,8 @@ internal fun BoxScope.CameraOverlayPortrait(
                                 ),
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.List,
-                            contentDescription = stringResource(R.string.cd_view_items),
+                            imageVector = Icons.Outlined.Checklist,
+                            contentDescription = stringResource(R.string.cd_view_scanned_items),
                             tint = Color.White,
                         )
                     }
@@ -385,6 +389,20 @@ internal fun BoxScope.CameraOverlayLandscape(
     onFlipCamera: () -> Unit,
     isFlipEnabled: Boolean,
 ) {
+    // Badge animation state for landscape layout
+    var previousItemsCount by remember { mutableIntStateOf(itemsCount) }
+    var badgeScale by remember { mutableFloatStateOf(1f) }
+
+    LaunchedEffect(itemsCount) {
+        if (itemsCount > previousItemsCount) {
+            // Trigger animation: scale from 1.0 to 1.18 back to 1.0
+            badgeScale = 1.18f
+            delay(100)
+            badgeScale = 1f
+        }
+        previousItemsCount = itemsCount
+    }
+
     // Shutter button: centered vertically on right edge
     Box(
         modifier =
@@ -440,7 +458,12 @@ internal fun BoxScope.CameraOverlayLandscape(
         BadgedBox(
             badge = {
                 if (itemsCount > 0) {
-                    Badge {
+                    Badge(
+                        modifier = Modifier.graphicsLayer(
+                            scaleX = badgeScale,
+                            scaleY = badgeScale,
+                        ),
+                    ) {
                         Text(itemsCount.toString())
                     }
                 }
@@ -464,8 +487,8 @@ internal fun BoxScope.CameraOverlayLandscape(
                         ),
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.List,
-                    contentDescription = stringResource(R.string.cd_view_items),
+                    imageVector = Icons.Outlined.Checklist,
+                    contentDescription = stringResource(R.string.cd_view_scanned_items),
                     tint = Color.White,
                 )
             }
@@ -525,5 +548,42 @@ internal fun getResolutionLabel(resolution: CaptureResolution): String {
         CaptureResolution.LOW -> stringResource(R.string.camera_resolution_low)
         CaptureResolution.NORMAL -> stringResource(R.string.camera_resolution_normal)
         CaptureResolution.HIGH -> stringResource(R.string.camera_resolution_high)
+    }
+}
+
+/**
+ * Shared container for top corner buttons (hamburger menu and logo).
+ * Provides consistent styling: size, background, shape, and padding.
+ */
+@Composable
+internal fun TopCornerButtonContainer(
+    contentAlignment: Alignment,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier = modifier.width(48.dp),
+        contentAlignment = contentAlignment,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .background(
+                        Color.Black.copy(alpha = 0.5f),
+                        shape = MaterialTheme.shapes.small,
+                    )
+                    .let { baseModifier ->
+                        if (onClick != null) {
+                            baseModifier.clickable(onClick = onClick)
+                        } else {
+                            baseModifier
+                        }
+                    },
+            contentAlignment = Alignment.Center,
+        ) {
+            content()
+        }
     }
 }

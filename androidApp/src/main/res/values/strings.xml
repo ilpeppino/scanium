@@ -471,6 +471,9 @@
     <string name="items_status_enriched">Enriched</string>
     <string name="items_list_header_ready_for_resale">%1$d items ready for resale</string>
     <string name="items_list_cta">Review items or generate listings</string>
+    <string name="items_list_gesture_hint">Tap to edit · Long-press to select · Swipe to delete</string>
+    <string name="post_scan_guidance">Review your scanned items. Tap one to edit or long-press to manage multiple.</string>
+    <string name="got_it">Got it</string>
     <string name="items_confidence_label">Confidence: %1$s</string>
     <string name="items_detected_attributes_title">Detected Attributes</string>
     <string name="items_no_attributes">No attributes detected yet. Attributes will be extracted during cloud classification.</string>
@@ -592,6 +595,7 @@
 
     <!-- Camera -->
     <string name="cd_view_items">View items</string>
+    <string name="cd_view_scanned_items">View scanned items</string>
     <string name="cd_flip_camera">Flip camera</string>
     <string name="cd_camera_permission_required">Camera permission required</string>
     <string name="cd_configuration_warning">Configuration warning</string>
