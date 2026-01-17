@@ -138,6 +138,85 @@
       "enabled": true
     },
     {
+      "id": "electronics_headphones",
+      "displayName": "Headphones",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of headphones",
+        "a photo of wireless headphones",
+        "a photo of over-ear headphones",
+        "a photo of earbuds"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "electronics_router",
+      "displayName": "Router",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a router",
+        "a photo of a WiFi router",
+        "a photo of a wireless router"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "electronics_printer",
+      "displayName": "Printer",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a printer",
+        "a photo of an inkjet printer",
+        "a photo of a laser printer"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "electronics_camera",
+      "displayName": "Camera",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a camera",
+        "a photo of a digital camera",
+        "a photo of a DSLR camera"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "electronics_smartwatch",
+      "displayName": "Smartwatch",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a smartwatch",
+        "a photo of a wearable watch",
+        "a photo of a fitness watch"
+      ],
+      "priority": 11,
+      "enabled": true
+    },
+    {
+      "id": "electronics_game_console",
+      "displayName": "Game Console",
+      "parentId": "electronics",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a game console",
+        "a photo of a gaming console",
+        "a photo of a video game console"
+      ],
+      "priority": 11,
+      "enabled": true
+    },
+    {
       "id": "clothing_shoes",
       "displayName": "Shoes",
       "parentId": "clothing",
@@ -242,6 +321,19 @@
       "enabled": true
     },
     {
+      "id": "appliance_coffee_machine",
+      "displayName": "Coffee Machine",
+      "parentId": "appliance",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a coffee machine",
+        "a photo of a coffee maker",
+        "a photo of an espresso machine"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
       "id": "toys_action_figure",
       "displayName": "Action Figure",
       "parentId": "toys",
@@ -316,10 +408,17 @@
         "electronics_phone",
         "electronics_tablet",
         "electronics_speaker",
+        "electronics_headphones",
+        "electronics_router",
+        "electronics_printer",
+        "electronics_camera",
+        "electronics_smartwatch",
+        "electronics_game_console",
         "clothing_shoes",
         "clothing_jacket",
         "appliance_microwave",
-        "appliance_vacuum"
+        "appliance_vacuum",
+        "appliance_coffee_machine"
       ],
       "required": false
     },
