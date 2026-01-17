@@ -49,6 +49,66 @@
       "Siemens",
       "Thomas"
     ],
+    "auto_bluetooth_receiver": [
+      "Anker",
+      "JBL",
+      "Sony"
+    ],
+    "auto_car_charger": [
+      "Anker",
+      "Belkin",
+      "mophie"
+    ],
+    "auto_car_vacuum": [
+      "Bissell",
+      "Black+Decker",
+      "Dyson"
+    ],
+    "auto_dash_cam": [
+      "Thinkware",
+      "VANTRUE",
+      "Viofo"
+    ],
+    "av_amplifier": [
+      "Denon",
+      "Marantz",
+      "Pioneer",
+      "Yamaha"
+    ],
+    "av_home_theater": [
+      "Bose",
+      "Sonos",
+      "Yamaha"
+    ],
+    "av_projector": [
+      "BenQ",
+      "Epson",
+      "Optoma",
+      "Sony"
+    ],
+    "av_receiver": [
+      "Denon",
+      "Onkyo",
+      "Pioneer",
+      "Yamaha"
+    ],
+    "av_soundbar": [
+      "JBL",
+      "Samsung",
+      "Sony",
+      "Yamaha"
+    ],
+    "av_streaming_device": [
+      "Amazon",
+      "Apple",
+      "Google",
+      "Roku"
+    ],
+    "av_turntable": [
+      "Audio-Technica",
+      "Rega",
+      "Technics"
+    ],
     "bicycle": [
       "Bianchi",
       "BMC",
@@ -368,6 +428,21 @@
       "Vestel",
       "Vizio"
     ],
+    "fitness_exercise_bike": [
+      "Bowflex",
+      "NordicTrack",
+      "Peloton"
+    ],
+    "fitness_rowing_machine": [
+      "Concept2",
+      "Hydrow",
+      "WaterRower"
+    ],
+    "fitness_treadmill": [
+      "Bowflex",
+      "NordicTrack",
+      "Peloton"
+    ],
     "furniture_bookshelf": [
       "Bestå",
       "Billy",
@@ -451,6 +526,47 @@
       "Vitra",
       "Wilkhahn"
     ],
+    "gaming_desktop": [
+      "Alienware",
+      "ASUS",
+      "Corsair",
+      "MSI"
+    ],
+    "gaming_headset": [
+      "Corsair",
+      "HyperX",
+      "SteelSeries",
+      "Turtle Beach"
+    ],
+    "gaming_keyboard": [
+      "Corsair",
+      "Logitech",
+      "Razer",
+      "SteelSeries"
+    ],
+    "gaming_laptop": [
+      "Alienware",
+      "ASUS",
+      "MSI",
+      "Razer"
+    ],
+    "gaming_monitor": [
+      "ASUS",
+      "BenQ",
+      "Corsair",
+      "MSI"
+    ],
+    "gaming_mouse": [
+      "Corsair",
+      "Logitech",
+      "Razer",
+      "SteelSeries"
+    ],
+    "garden_lawn_mower": [
+      "Husqvarna",
+      "MTD",
+      "Toro"
+    ],
     "kitchenware_blender": [
       "Bosch",
       "Braun",
@@ -510,6 +626,77 @@
       "WMF",
       "Woll",
       "Zwilling"
+    ],
+    "music_drum_set": [
+      "Pearl",
+      "Tama",
+      "Yamaha"
+    ],
+    "music_guitar": [
+      "Fender",
+      "Gibson",
+      "Ibanez"
+    ],
+    "music_keyboard": [
+      "Casio",
+      "Roland",
+      "Yamaha"
+    ],
+    "office_chair": [
+      "Herman Miller",
+      "Steelcase",
+      "Vitra"
+    ],
+    "office_desk": [
+      "Autonomous",
+      "Secretlab",
+      "Uplift"
+    ],
+    "small_app_air_fryer": [
+      "Cosori",
+      "Instant Pot",
+      "Ninja"
+    ],
+    "small_app_coffee_grinder": [
+      "Baratza",
+      "Burr",
+      "Capresso"
+    ],
+    "small_app_food_processor": [
+      "Breville",
+      "Cuisinart",
+      "KitchenAid"
+    ],
+    "smart_security_camera": [
+      "Logitech",
+      "Nest",
+      "Ring",
+      "Wyze"
+    ],
+    "smart_speaker": [
+      "Amazon",
+      "Apple",
+      "Google"
+    ],
+    "smart_thermostat": [
+      "Ecobee",
+      "Honeywell",
+      "Nest"
+    ],
+    "sports_backpack": [
+      "Deuter",
+      "Osprey",
+      "The North Face"
+    ],
+    "sports_tent": [
+      "Big Agnes",
+      "Coleman",
+      "REI"
+    ],
+    "tools_drill": [
+      "Bosch",
+      "DeWalt",
+      "Makita"
     ]
   },
   "description": "Brand catalog for Scanium domain pack subtypes",
