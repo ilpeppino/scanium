@@ -394,6 +394,1090 @@
       ],
       "priority": 10,
       "enabled": true
+    },
+    {
+      "id": "tools_drill",
+      "displayName": "Drill",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a drill",
+        "a photo of an electric drill",
+        "a photo of a cordless drill"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "tools_circular_saw",
+      "displayName": "Circular Saw",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a circular saw",
+        "a photo of a power saw"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "tools_jigsaw",
+      "displayName": "Jigsaw",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a jigsaw",
+        "a photo of a jig saw"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "tools_sander",
+      "displayName": "Sander",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a sander",
+        "a photo of an orbital sander"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "tools_impact_driver",
+      "displayName": "Impact Driver",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of an impact driver",
+        "a photo of a power driver"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "tools_angle_grinder",
+      "displayName": "Angle Grinder",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of an angle grinder",
+        "a photo of a grinder"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "tools_rotary_tool",
+      "displayName": "Rotary Tool",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a rotary tool",
+        "a photo of a Dremel"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "tools_table_saw",
+      "displayName": "Table Saw",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a table saw",
+        "a photo of a workshop saw"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "tools_nail_gun",
+      "displayName": "Nail Gun",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a nail gun",
+        "a photo of a power nailer"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "tools_power_washer",
+      "displayName": "Power Washer",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a power washer",
+        "a photo of a pressure washer"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "tools_measuring_tape",
+      "displayName": "Measuring Tape",
+      "parentId": "tools",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a measuring tape",
+        "a photo of a tape measure"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "sports_skateboard",
+      "displayName": "Skateboard",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a skateboard"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "sports_snowboard",
+      "displayName": "Snowboard",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a snowboard"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "sports_skis",
+      "displayName": "Skis",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of skis",
+        "a photo of ski equipment"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "sports_climbing_gear",
+      "displayName": "Climbing Gear",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of climbing gear",
+        "a photo of climbing equipment"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "sports_tent",
+      "displayName": "Tent",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a tent",
+        "a photo of a camping tent"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "sports_sleeping_bag",
+      "displayName": "Sleeping Bag",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a sleeping bag"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "sports_backpack",
+      "displayName": "Hiking Backpack",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a hiking backpack",
+        "a photo of a backpack"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "sports_hiking_boots",
+      "displayName": "Hiking Boots",
+      "parentId": "sports",
+      "itemCategoryName": "FASHION",
+      "prompts": [
+        "a photo of hiking boots",
+        "a photo of outdoor boots"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "sports_surfboard",
+      "displayName": "Surfboard",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a surfboard"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "sports_kayak",
+      "displayName": "Kayak",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a kayak"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "sports_paddleboard",
+      "displayName": "Paddleboard",
+      "parentId": "sports",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a paddleboard",
+        "a photo of a SUP"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "garden_lawn_mower",
+      "displayName": "Lawn Mower",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a lawn mower",
+        "a photo of a grass mower"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "garden_hedge_trimmer",
+      "displayName": "Hedge Trimmer",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a hedge trimmer",
+        "a photo of a trimmer"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "garden_leaf_blower",
+      "displayName": "Leaf Blower",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a leaf blower",
+        "a photo of a blower"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "garden_shed",
+      "displayName": "Garden Shed",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a garden shed",
+        "a photo of a shed"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "garden_hose",
+      "displayName": "Garden Hose",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a garden hose"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "garden_weed_trimmer",
+      "displayName": "Weed Trimmer",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a weed trimmer",
+        "a photo of a weed whacker"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "garden_chainsaw",
+      "displayName": "Chainsaw",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a chainsaw"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "garden_bench",
+      "displayName": "Garden Bench",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a garden bench",
+        "a photo of an outdoor bench"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "garden_composter",
+      "displayName": "Composter",
+      "parentId": "garden",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a composter"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "gaming_laptop",
+      "displayName": "Gaming Laptop",
+      "parentId": "gaming",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a gaming laptop"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "gaming_desktop",
+      "displayName": "Gaming Desktop",
+      "parentId": "gaming",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a gaming desktop",
+        "a photo of a gaming PC"
+      ],
+      "priority": 12,
+      "enabled": true
+    },
+    {
+      "id": "gaming_monitor",
+      "displayName": "Gaming Monitor",
+      "parentId": "gaming",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a gaming monitor"
+      ],
+      "priority": 11,
+      "enabled": true
+    },
+    {
+      "id": "gaming_chair",
+      "displayName": "Gaming Chair",
+      "parentId": "gaming",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a gaming chair"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "gaming_keyboard",
+      "displayName": "Mechanical Keyboard",
+      "parentId": "gaming",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a mechanical keyboard"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "gaming_mouse",
+      "displayName": "Gaming Mouse",
+      "parentId": "gaming",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a gaming mouse"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "gaming_headset",
+      "displayName": "Gaming Headset",
+      "parentId": "gaming",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a gaming headset"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "gaming_desk",
+      "displayName": "Gaming Desk",
+      "parentId": "gaming",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a gaming desk"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "smart_speaker",
+      "displayName": "Smart Speaker",
+      "parentId": "smart",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a smart speaker"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "smart_thermostat",
+      "displayName": "Smart Thermostat",
+      "parentId": "smart",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a smart thermostat"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "smart_lock",
+      "displayName": "Smart Lock",
+      "parentId": "smart",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a smart lock"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "smart_security_camera",
+      "displayName": "Security Camera",
+      "parentId": "smart",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a security camera"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "smart_motion_sensor",
+      "displayName": "Motion Sensor",
+      "parentId": "smart",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a motion sensor"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "smart_light",
+      "displayName": "Smart Light Bulb",
+      "parentId": "smart",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a smart light bulb"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "smart_plug",
+      "displayName": "Smart Plug",
+      "parentId": "smart",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a smart plug"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "fitness_treadmill",
+      "displayName": "Treadmill",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a treadmill"
+      ],
+      "priority": 11,
+      "enabled": true
+    },
+    {
+      "id": "fitness_exercise_bike",
+      "displayName": "Exercise Bike",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of an exercise bike"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "fitness_dumbbells",
+      "displayName": "Dumbbell Set",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of dumbbells",
+        "a photo of a dumbbell set"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "fitness_yoga_mat",
+      "displayName": "Yoga Mat",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a yoga mat"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "fitness_weight_bench",
+      "displayName": "Weight Bench",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a weight bench"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "fitness_rowing_machine",
+      "displayName": "Rowing Machine",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a rowing machine"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "fitness_kettlebell",
+      "displayName": "Kettlebell",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a kettlebell"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "fitness_foam_roller",
+      "displayName": "Foam Roller",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a foam roller"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "fitness_pull_up_bar",
+      "displayName": "Pull Up Bar",
+      "parentId": "fitness",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a pull up bar"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "av_projector",
+      "displayName": "Projector",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a projector"
+      ],
+      "priority": 11,
+      "enabled": true
+    },
+    {
+      "id": "av_soundbar",
+      "displayName": "Soundbar",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a soundbar"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "av_amplifier",
+      "displayName": "Amplifier",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of an amplifier"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "av_turntable",
+      "displayName": "Turntable",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a turntable",
+        "a photo of a record player"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "av_home_theater",
+      "displayName": "Home Theater System",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a home theater system"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "av_receiver",
+      "displayName": "AV Receiver",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of an AV receiver"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "av_streaming_device",
+      "displayName": "Streaming Device",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a streaming device"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "av_subwoofer",
+      "displayName": "Subwoofer",
+      "parentId": "av",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a subwoofer"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "office_desk",
+      "displayName": "Desk",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a desk"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "office_chair",
+      "displayName": "Office Chair",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of an office chair"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "office_filing_cabinet",
+      "displayName": "Filing Cabinet",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a filing cabinet"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "office_desk_lamp",
+      "displayName": "Desk Lamp",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a desk lamp"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "office_whiteboard",
+      "displayName": "Whiteboard",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a whiteboard"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "office_organizer",
+      "displayName": "Desk Organizer",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a desk organizer"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "office_monitor_stand",
+      "displayName": "Monitor Stand",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a monitor stand"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "office_keyboard_tray",
+      "displayName": "Keyboard Tray",
+      "parentId": "office",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a keyboard tray"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "small_app_toaster",
+      "displayName": "Toaster",
+      "parentId": "small_app",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a toaster"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "small_app_coffee_grinder",
+      "displayName": "Coffee Grinder",
+      "parentId": "small_app",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a coffee grinder"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "small_app_rice_cooker",
+      "displayName": "Rice Cooker",
+      "parentId": "small_app",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a rice cooker"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "small_app_air_fryer",
+      "displayName": "Air Fryer",
+      "parentId": "small_app",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of an air fryer"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "small_app_sous_vide",
+      "displayName": "Sous Vide Machine",
+      "parentId": "small_app",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a sous vide machine"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "small_app_slow_cooker",
+      "displayName": "Slow Cooker",
+      "parentId": "small_app",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a slow cooker"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "small_app_food_processor",
+      "displayName": "Food Processor",
+      "parentId": "small_app",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a food processor"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "auto_car_vacuum",
+      "displayName": "Car Vacuum",
+      "parentId": "auto",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a car vacuum"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "auto_dash_cam",
+      "displayName": "Dash Cam",
+      "parentId": "auto",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a dash cam"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "auto_phone_holder",
+      "displayName": "Phone Holder",
+      "parentId": "auto",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a phone holder"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "auto_bluetooth_receiver",
+      "displayName": "Bluetooth Receiver",
+      "parentId": "auto",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a bluetooth receiver"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "auto_car_charger",
+      "displayName": "Car Charger",
+      "parentId": "auto",
+      "itemCategoryName": "ELECTRONICS",
+      "prompts": [
+        "a photo of a car charger"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "auto_seat_cover",
+      "displayName": "Seat Cover",
+      "parentId": "auto",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a seat cover"
+      ],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "music_guitar",
+      "displayName": "Guitar",
+      "parentId": "music",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a guitar"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "music_keyboard",
+      "displayName": "Keyboard",
+      "parentId": "music",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a keyboard",
+        "a photo of a music keyboard"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "music_drum_set",
+      "displayName": "Drum Set",
+      "parentId": "music",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a drum set"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "music_ukulele",
+      "displayName": "Ukulele",
+      "parentId": "music",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a ukulele"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "music_bass",
+      "displayName": "Bass Guitar",
+      "parentId": "music",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a bass guitar"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "music_violin",
+      "displayName": "Violin",
+      "parentId": "music",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a violin"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "music_flute",
+      "displayName": "Flute",
+      "parentId": "music",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a flute"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "bedding_mattress",
+      "displayName": "Mattress",
+      "parentId": "bedding",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a mattress"
+      ],
+      "priority": 10,
+      "enabled": true
+    },
+    {
+      "id": "bedding_pillow",
+      "displayName": "Pillow",
+      "parentId": "bedding",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a pillow"
+      ],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "bedding_bed_frame",
+      "displayName": "Bed Frame",
+      "parentId": "bedding",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a bed frame"
+      ],
+      "priority": 9,
+      "enabled": true
+    },
+    {
+      "id": "photo_tripod",
+      "displayName": "Tripod",
+      "parentId": "photo",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a tripod"
+      ],
+      "priority": 8,
+      "enabled": true
+    },
+    {
+      "id": "photo_camera_bag",
+      "displayName": "Camera Bag",
+      "parentId": "photo",
+      "itemCategoryName": "HOME_GOOD",
+      "prompts": [
+        "a photo of a camera bag"
+      ],
+      "priority": 7,
+      "enabled": true
     }
   ],
   "attributes": [
@@ -402,23 +1486,58 @@
       "type": "STRING",
       "extractionMethod": "OCR",
       "appliesToCategoryIds": [
-        "electronics_laptop",
-        "electronics_monitor",
-        "electronics_tv",
-        "electronics_phone",
-        "electronics_tablet",
-        "electronics_speaker",
-        "electronics_headphones",
-        "electronics_router",
-        "electronics_printer",
-        "electronics_camera",
-        "electronics_smartwatch",
-        "electronics_game_console",
-        "clothing_shoes",
-        "clothing_jacket",
+        "appliance_coffee_machine",
         "appliance_microwave",
         "appliance_vacuum",
-        "appliance_coffee_machine"
+        "auto_bluetooth_receiver",
+        "auto_car_charger",
+        "auto_car_vacuum",
+        "auto_dash_cam",
+        "av_amplifier",
+        "av_home_theater",
+        "av_projector",
+        "av_receiver",
+        "av_soundbar",
+        "av_streaming_device",
+        "av_turntable",
+        "clothing_jacket",
+        "clothing_shoes",
+        "electronics_camera",
+        "electronics_game_console",
+        "electronics_headphones",
+        "electronics_laptop",
+        "electronics_monitor",
+        "electronics_phone",
+        "electronics_printer",
+        "electronics_router",
+        "electronics_smartwatch",
+        "electronics_speaker",
+        "electronics_tablet",
+        "electronics_tv",
+        "fitness_exercise_bike",
+        "fitness_rowing_machine",
+        "fitness_treadmill",
+        "gaming_desktop",
+        "gaming_headset",
+        "gaming_keyboard",
+        "gaming_laptop",
+        "gaming_monitor",
+        "gaming_mouse",
+        "garden_lawn_mower",
+        "music_drum_set",
+        "music_guitar",
+        "music_keyboard",
+        "office_chair",
+        "office_desk",
+        "small_app_air_fryer",
+        "small_app_coffee_grinder",
+        "small_app_food_processor",
+        "smart_security_camera",
+        "smart_speaker",
+        "smart_thermostat",
+        "sports_backpack",
+        "sports_tent",
+        "tools_drill"
       ],
       "required": false
     },
