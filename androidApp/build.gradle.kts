@@ -48,11 +48,34 @@ private fun findLocalPropertiesFile() =
         }
     }
 
+/**
+ * Data class to track resolved value and its source for logging.
+ */
+data class ResolvedProperty(val value: String, val source: String)
+
+private fun localPropertyOrEnvWithSource(
+    key: String,
+    envKey: String,
+    defaultValue: String = "",
+): ResolvedProperty {
+    // Resolution order:
+    // 1. Gradle project properties (-P flag) - highest priority
+    project.findProperty(key)?.toString()?.let { return ResolvedProperty(it, "project") }
+    // 2. Environment variables
+    System.getenv(envKey)?.let { return ResolvedProperty(it, "env") }
+    // 3. local.properties / gradle.properties
+    localProperties.getProperty(key)?.let { return ResolvedProperty(it, "local") }
+    // 4. Default fallback
+    return ResolvedProperty(defaultValue, "default")
+}
+
 private fun localPropertyOrEnv(
     key: String,
     envKey: String,
     defaultValue: String = "",
-): String = localProperties.getProperty(key) ?: System.getenv(envKey) ?: defaultValue
+): String {
+    return localPropertyOrEnvWithSource(key, envKey, defaultValue).value
+}
 
 val saveClassifierCropsDebug = localPropertyOrEnv("scanium.classifier.save_crops.debug", envKey = "", defaultValue = "false").toBoolean()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -72,11 +95,20 @@ android {
         minSdk = 24
         targetSdk = 35
 
-        val versionCodeEnv = localPropertyOrEnv("scanium.version.code", "SCANIUM_VERSION_CODE", "1").toInt()
-        val versionNameEnv = localPropertyOrEnv("scanium.version.name", "SCANIUM_VERSION_NAME", "1.0")
+        val versionCodeResolved = localPropertyOrEnvWithSource("scanium.version.code", "SCANIUM_VERSION_CODE", "1")
+        val versionNameResolved = localPropertyOrEnvWithSource("scanium.version.name", "SCANIUM_VERSION_NAME", "1.0")
+
+        val versionCodeEnv = versionCodeResolved.value.toInt()
+        val versionNameEnv = versionNameResolved.value
 
         versionCode = versionCodeEnv
         versionName = versionNameEnv
+
+        // Store for release build logging
+        project.ext.set("_versionCodeSource", versionCodeResolved.source)
+        project.ext.set("_versionNameSource", versionNameResolved.source)
+        project.ext.set("_versionCodeValue", versionCodeEnv)
+        project.ext.set("_versionNameValue", versionNameEnv)
 
         // Cloud classification API configuration
         // Base URL read from local.properties (dev) or environment variables (CI/production)
@@ -296,6 +328,71 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+// ============================================================================
+// Version Resolution Logging and Verification
+// ============================================================================
+
+/**
+ * Task to log version resolution sources for release bundles.
+ * Runs during bundleRelease variants to show which source (project/-P, env, local, default)
+ * was used for versionCode and versionName.
+ */
+tasks.register("logVersionResolution") {
+    group = "verification"
+    description = "Logs version resolution sources (for release builds)"
+
+    doLast {
+        val versionCodeSource = project.ext.get("_versionCodeSource") as? String ?: "unknown"
+        val versionNameSource = project.ext.get("_versionNameSource") as? String ?: "unknown"
+        val versionCode = project.ext.get("_versionCodeValue") as? Int ?: 1
+        val versionName = project.ext.get("_versionNameValue") as? String ?: "1.0"
+
+        println("")
+        println("┌────────────────────────────────────────────────────────────┐")
+        println("│  Scanium Version Resolution                               │")
+        println("├────────────────────────────────────────────────────────────┤")
+        println("│  versionCode=$versionCode (source: $versionCodeSource)".padEnd(62) + "│")
+        println("│  versionName=$versionName (source: $versionNameSource)".padEnd(62) + "│")
+        println("└────────────────────────────────────────────────────────────┘")
+        println("")
+    }
+}
+
+/**
+ * Task to verify versionCode matches the -P value when provided.
+ * Fails the build if a -P property was passed but not reflected in the resolved versionCode.
+ */
+tasks.register("verifyVersionCodeProperty") {
+    group = "verification"
+    description = "Verifies versionCode matches -P property value"
+
+    doLast {
+        val passedVersionCode = project.findProperty("scanium.version.code")?.toString()?.toIntOrNull()
+        val resolvedVersionCode = project.ext.get("_versionCodeValue") as? Int ?: 1
+
+        if (passedVersionCode != null && passedVersionCode != resolvedVersionCode) {
+            throw GradleException(
+                """
+                |
+                |ERROR: versionCode mismatch!
+                |  Passed via -P: $passedVersionCode
+                |  Resolved value: $resolvedVersionCode
+                |
+                |The versionCode property was not properly resolved from -P flag.
+                |Check that localPropertyOrEnv() checks project.findProperty() first.
+                |
+                """.trimMargin()
+            )
+        }
+    }
+}
+
+// Hook version logging into release bundle tasks
+tasks.matching { it.name.contains("bundle") && it.name.contains("Release") }.configureEach {
+    finalizedBy("logVersionResolution")
+    finalizedBy("verifyVersionCodeProperty")
 }
 
 // SEC-002: Configure SBOM (Software Bill of Materials) generation
