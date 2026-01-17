@@ -54,10 +54,12 @@ if [ ${***REMOVED***VIOLATIONS[@]} -gt 0 ]; then
     echo "❌ ERROR: Localization files were modified (not allowed):" >&2
     printf '  - %s\n' "${VIOLATIONS[@]}" >&2
     echo "" >&2
-    echo "Only the following files are allowed to be modified for brand expansion:" >&2
+    echo "Only the following files are allowed to be modified:" >&2
     echo "  - core-domainpack/src/main/res/raw/brands_catalog_bundle_v1.json" >&2
     echo "  - scripts/domainpack/**" >&2
+    echo "  - scripts/ebay/**" >&2
     echo "  - scripts/checks/**" >&2
+    echo "  - scripts/output/ebay/**" >&2
     exit 1
 fi
 
