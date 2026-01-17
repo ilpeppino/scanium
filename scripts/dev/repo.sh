@@ -2,9 +2,9 @@
 # Repo Switcher (portable: macOS Bash 3.2+, Linux, Termux)
 # - Scans /Users/family/dev for git repos whose folder name starts with "scanium"
 # - Interactive TUI (arrow keys) if fzf is available; otherwise select menu
-# - Lets you pick remote branch (main always first if present)
-# - Handles dirty working tree (commit/stash/discard/abort)
-# - Stays in a loop until you quit
+# - main branch always first (if present)
+# - If worktree is dirty: show uncommitted files, then ask commit/stash/discard/abort
+# - Once a branch is selected (and handled), the script EXITS (main goal)
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -28,26 +28,17 @@ else
 fi
 
 hr() { printf "%s\n" "────────────────────────────────────────────────────────"; }
-title() {
-  printf "%s%s%s\n" "$C_BOLD" "$1" "$C_RESET"
-}
+title() { printf "%s%s%s\n" "$C_BOLD" "$1" "$C_RESET"; }
 info() { printf "%s[INFO]%s %s\n" "$C_CYAN" "$C_RESET" "$*"; }
 ok()   { printf "%s[OK]%s   %s\n" "$C_GREEN" "$C_RESET" "$*"; }
 warn() { printf "%s[WARN]%s %s\n" "$C_YELLOW" "$C_RESET" "$*"; }
 err()  { printf "%s[ERR]%s  %s\n" "$C_RED" "$C_RESET" "$*" >&2; }
 
-pause_hint() {
-  printf "%s%s%s\n" "$C_DIM" "$1" "$C_RESET"
-}
-
-clear_screen() {
-  # shellcheck disable=SC2034
-  printf "\033c" || true
-}
+clear_screen() { printf "\033c" || true; }
 
 need_cmd() {
   local cmd="$1"
-  command -v "$cmd" >/dev/null 2>&1 || { err "Missing required command: $cmd"; return 1; }
+  command -v "$cmd" >/dev/null 2>&1 || { err "Missing required command: $cmd"; exit 1; }
 }
 
 # ---------- Selection helpers ----------
@@ -58,12 +49,9 @@ choose_from_list() {
   local prompt="$1"; shift
   local options=("$@")
 
-  if [[ ${#options[@]} -eq 0 ]]; then
-    return 1
-  fi
+  [[ ${#options[@]} -gt 0 ]] || return 1
 
   if has_fzf; then
-    # Arrow-key selection via fzf
     local selection=""
     selection=$(
       printf '%s\n' "${options[@]}" | fzf \
@@ -79,7 +67,6 @@ choose_from_list() {
     return 0
   fi
 
-  # Fallback: bash select
   echo "$prompt" >&2
   local opt
   select opt in "${options[@]}"; do
@@ -89,12 +76,6 @@ choose_from_list() {
     fi
     echo "Invalid selection." >&2
   done
-}
-
-choose_action() {
-  local prompt="$1"; shift
-  local actions=("$@")
-  choose_from_list "$prompt" "${actions[@]}"
 }
 
 confirm_danger() {
@@ -128,7 +109,6 @@ pick_remote() {
     return 1
   fi
 
-  # Prefer origin if present
   local remote="${remotes[0]}"
   local r
   for r in "${remotes[@]}"; do
@@ -143,17 +123,13 @@ pick_remote() {
 list_remote_branches_main_first() {
   local remote="$1"
 
-  # Grab remote branch names
   local raw=()
   while IFS= read -r b; do
     [[ -n "$b" ]] && raw+=("$b")
   done < <(git ls-remote --heads "$remote" | awk '{print $2}' | sed 's#refs/heads/##' || true)
 
-  if [[ ${#raw[@]} -eq 0 ]]; then
-    return 1
-  fi
+  [[ ${#raw[@]} -gt 0 ]] || return 1
 
-  # Ensure main first if present, keep the rest sorted (stable)
   local has_main=false
   local rest=()
   local b
@@ -165,18 +141,13 @@ list_remote_branches_main_first() {
     fi
   done
 
-  # Sort rest (portable)
   if [[ ${#rest[@]} -gt 0 ]]; then
     IFS=$'\n' rest=($(printf "%s\n" "${rest[@]}" | sort))
     unset IFS
   fi
 
-  if $has_main; then
-    printf "%s\n" "main"
-  fi
-  if [[ ${#rest[@]} -gt 0 ]]; then
-    printf "%s\n" "${rest[@]}"
-  fi
+  $has_main && printf "%s\n" "main"
+  [[ ${#rest[@]} -gt 0 ]] && printf "%s\n" "${rest[@]}"
 }
 
 ensure_branch_checked_out() {
@@ -189,215 +160,195 @@ ensure_branch_checked_out() {
     git checkout -b "$branch" --track "${remote}/${branch}" >/dev/null
   fi
 
-  # Ensure upstream
   if ! git rev-parse --abbrev-ref --symbolic-full-name "@{u}" >/dev/null 2>&1; then
     git branch --set-upstream-to "${remote}/${branch}" "${branch}" >/dev/null 2>&1 || true
   fi
 }
 
-pull_ff_only() {
-  git pull --ff-only
-}
+pull_ff_only() { git pull --ff-only; }
 
-working_tree_clean() {
-  [[ -z "$(git status --porcelain)" ]]
+working_tree_clean() { [[ -z "$(git status --porcelain)" ]]; }
+
+print_dirty_files() {
+  # Show a clean list of uncommitted paths (staged + unstaged + untracked)
+  # Using porcelain v1 to stay compatible.
+  local lines=()
+  while IFS= read -r l; do
+    [[ -n "$l" ]] && lines+=("$l")
+  done < <(git status --porcelain)
+
+  if [[ ${#lines[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  echo
+  title "Uncommitted files"
+  hr
+  local l
+  for l in "${lines[@]}"; do
+    # porcelain format: XY <path> OR ?? <path>
+    # strip first 3 chars (XY + space) -> path-ish
+    local path="${l:3}"
+    local code="${l:0:2}"
+    printf "%s- [%s]%s %s\n" "$C_DIM" "$code" "$C_RESET" "$path"
+  done
+  hr
+  echo
 }
 
 # ---------- Repo scanning ----------
 scan_repos() {
   local repos=()
-
-  # Find directories starting with scanium* under BASE_DIR
-  # and keep only those that are top-level git repos.
   local line top
   while IFS= read -r line; do
     [[ -n "$line" ]] || continue
-    # Skip nested .git paths (defensive)
-    if [[ "$line" == *"/.git/"* ]]; then
-      continue
-    fi
+    [[ "$line" == *"/.git/"* ]] && continue
     top="$(get_top_level "$line")"
     if [[ -n "$top" && "$top" == "$line" ]]; then
       repos+=("$line")
     fi
   done < <(find "$BASE_DIR" -type d -name 'scanium*' -mindepth 1 2>/dev/null | sort)
 
-  if [[ ${#repos[@]} -eq 0 ]]; then
-    return 1
-  fi
-
+  [[ ${#repos[@]} -gt 0 ]] || return 1
   printf "%s\n" "${repos[@]}"
 }
 
-# ---------- Main Loop ----------
-main_loop() {
+# ---------- Main ----------
+main() {
   need_cmd git
 
-  while true; do
-    clear_screen
-    title "Repo Switcher"
-    printf "%sScanning for git repos under:%s %s\n" "$C_DIM" "$C_RESET" "$BASE_DIR"
-    hr
-    pause_hint "Tip: install 'fzf' for arrow-key selection. Press Ctrl+C anytime to exit."
-    echo
+  clear_screen
+  title "Repo Switcher"
+  printf "%sScanning for git repos under:%s %s\n" "$C_DIM" "$C_RESET" "$BASE_DIR"
+  hr
+  if ! has_fzf; then
+    warn "Tip: install 'fzf' for arrow-key selection."
+  fi
+  echo
 
-    local repos=()
-    while IFS= read -r rp; do
-      repos+=("$rp")
-    done < <(scan_repos || true)
+  local repos=()
+  while IFS= read -r rp; do
+    repos+=("$rp")
+  done < <(scan_repos || true)
 
-    if [[ ${#repos[@]} -eq 0 ]]; then
-      err "No directories named 'scanium*' found under: $BASE_DIR"
-      echo
-      pause_hint "Fix: Ensure repos are under $BASE_DIR and are valid git repos."
-      read -r -p "Press Enter to rescan, or Ctrl+C to quit..." _
-      continue
-    fi
+  if [[ ${#repos[@]} -eq 0 ]]; then
+    err "No directories named 'scanium*' found under: $BASE_DIR"
+    exit 1
+  fi
 
-    local repo_path
-    repo_path=$(choose_from_list "Select repo (or ESC to cancel)" "${repos[@]}") || {
-      warn "No repo selected."
-      read -r -p "Press Enter to continue..." _
-      continue
-    }
+  local repo_path
+  repo_path=$(choose_from_list "Select repo" "${repos[@]}") || {
+    err "No repo selected"
+    exit 1
+  }
 
-    if ! is_git_repo "$repo_path"; then
-      err "Not a git repo: $repo_path"
-      read -r -p "Press Enter to continue..." _
-      continue
-    fi
+  if ! is_git_repo "$repo_path"; then
+    err "Not a git repo: $repo_path"
+    exit 1
+  fi
 
-    cd "$repo_path"
+  cd "$repo_path"
 
-    local remote
-    remote="$(pick_remote "$repo_path")" || {
-      read -r -p "Press Enter to continue..." _
-      continue
-    }
+  local remote
+  remote="$(pick_remote "$repo_path")" || exit 1
 
-    info "Repo: $repo_path"
-    info "Remote: $remote"
-    echo
+  local branches=()
+  while IFS= read -r b; do
+    [[ -n "$b" ]] && branches+=("$b")
+  done < <(list_remote_branches_main_first "$remote" || true)
 
-    # List branches (main first)
-    local branches=()
-    while IFS= read -r b; do
-      [[ -n "$b" ]] && branches+=("$b")
-    done < <(list_remote_branches_main_first "$remote" || true)
+  if [[ ${#branches[@]} -eq 0 ]]; then
+    err "Remote '$remote' has no branches or is unreachable."
+    exit 1
+  fi
 
-    if [[ ${#branches[@]} -eq 0 ]]; then
-      err "Remote '$remote' has no branches or is unreachable."
-      read -r -p "Press Enter to continue..." _
-      continue
-    fi
+  local branch
+  branch=$(choose_from_list "Select branch (${remote})" "${branches[@]}") || {
+    err "No branch selected"
+    exit 1
+  }
 
-    local branch
-    branch=$(choose_from_list "Select branch (${remote})" "${branches[@]}") || {
-      warn "No branch selected."
-      read -r -p "Press Enter to continue..." _
-      continue
-    }
+  info "Repo:   $repo_path"
+  info "Remote: $remote"
+  info "Branch: $branch"
+  echo
 
-    info "Checking out: $branch"
-    ensure_branch_checked_out "$remote" "$branch"
-    ok "On branch: $(git rev-parse --abbrev-ref HEAD)"
-    echo
+  ensure_branch_checked_out "$remote" "$branch"
+  ok "Checked out: $(git rev-parse --abbrev-ref HEAD)"
+  echo
 
-    local last_action=""
-    if working_tree_clean; then
-      info "Working tree clean. Pulling (ff-only)..."
-      if pull_ff_only; then
-        last_action="pulled (clean tree)"
-        ok "Pull complete."
-      else
-        last_action="pull failed"
-        warn "Pull failed. Resolve manually."
-      fi
+  local last_action=""
+  if working_tree_clean; then
+    info "Working tree clean. Pulling (ff-only)..."
+    if pull_ff_only; then
+      last_action="pulled (clean tree)"
+      ok "Pull complete."
     else
-      warn "Working tree is dirty."
-      echo
-      local actions=(
-        "Commit changes"
-        "Stash changes"
-        "Discard changes and align with remote (DANGEROUS)"
-        "Abort (do nothing)"
-      )
-
-      local action
-      action=$(choose_action "Choose action" "${actions[@]}") || {
-        warn "No action selected."
-        read -r -p "Press Enter to continue..." _
-        continue
-      }
-
-      case "$action" in
-        "Commit changes")
-          local msg=""
-          while [[ -z "$msg" ]]; do
-            read -r -p "Commit message: " msg
-          done
-          git add -A
-          git commit -m "$msg"
-          pull_ff_only || true
-          last_action="committed changes and pulled"
-          ok "Committed + pulled."
-          ;;
-        "Stash changes")
-          git stash push -u -m "repo-switcher $(date +%Y-%m-%d)"
-          pull_ff_only || true
-          last_action="stashed changes and pulled"
-          ok "Stashed + pulled."
-          ;;
-        "Discard changes and align with remote (DANGEROUS)")
-          if confirm_danger "This will PERMANENTLY delete local changes (reset --hard + clean -fd)." "discard"; then
-            git reset --hard
-            git clean -fd
-            pull_ff_only || true
-            last_action="discarded changes and pulled"
-            ok "Discarded + pulled."
-          else
-            warn "Discard cancelled."
-            last_action="discard cancelled"
-          fi
-          ;;
-        "Abort (do nothing)")
-          warn "Aborted."
-          last_action="aborted"
-          ;;
-      esac
+      last_action="pull failed"
+      warn "Pull failed. Resolve manually."
     fi
+  else
+    warn "Working tree is dirty."
+    print_dirty_files
 
-    echo
-    hr
-    printf "%sRepo:%s   %s\n" "$C_DIM" "$C_RESET" "$repo_path"
-    printf "%sBranch:%s %s\n" "$C_DIM" "$C_RESET" "$(git rev-parse --abbrev-ref HEAD)"
-    printf "%sAction:%s %s\n" "$C_DIM" "$C_RESET" "${last_action:-none}"
-    hr
-    echo
-
-    local post_actions=(
-      "Stay here (do nothing)"
-      "Switch repo/branch again"
-      "Quit"
+    local actions=(
+      "Commit changes"
+      "Stash changes"
+      "Discard changes and align with remote (DANGEROUS)"
+      "Abort (do nothing)"
     )
+    local action
+    action=$(choose_from_list "Choose action" "${actions[@]}") || {
+      err "No action selected"
+      exit 1
+    }
 
-    local post
-    post=$(choose_action "Next" "${post_actions[@]}") || post="Stay here (do nothing)"
-
-    case "$post" in
-      "Stay here (do nothing)")
-        # Return to shell in the selected repo/branch but keep interface looping
-        read -r -p "Press Enter to return to Repo Switcher menu..." _
+    case "$action" in
+      "Commit changes")
+        local msg=""
+        while [[ -z "$msg" ]]; do
+          read -r -p "Commit message: " msg
+        done
+        git add -A
+        git commit -m "$msg"
+        pull_ff_only || true
+        last_action="committed changes and pulled"
+        ok "Committed + pulled."
         ;;
-      "Switch repo/branch again")
-        # Just loop
+      "Stash changes")
+        git stash push -u -m "repo-switcher $(date +%Y-%m-%d)"
+        pull_ff_only || true
+        last_action="stashed changes and pulled"
+        ok "Stashed + pulled."
         ;;
-      "Quit")
-        clear_screen
-        exit 0
+      "Discard changes and align with remote (DANGEROUS)")
+        if confirm_danger "This will PERMANENTLY delete local changes (reset --hard + clean -fd)." "discard"; then
+          git reset --hard
+          git clean -fd
+          pull_ff_only || true
+          last_action="discarded changes and pulled"
+          ok "Discarded + pulled."
+        else
+          warn "Discard cancelled."
+          last_action="discard cancelled"
+        fi
+        ;;
+      "Abort (do nothing)")
+        warn "Aborted."
+        last_action="aborted"
         ;;
     esac
-  done
+  fi
+
+  echo
+  hr
+  printf "%sRepo:%s   %s\n" "$C_DIM" "$C_RESET" "$repo_path"
+  printf "%sBranch:%s %s\n" "$C_DIM" "$C_RESET" "$(git rev-parse --abbrev-ref HEAD)"
+  printf "%sAction:%s %s\n" "$C_DIM" "$C_RESET" "${last_action:-none}"
+  hr
+
+  # EXIT as requested (main goal)
+  exit 0
 }
 
-main_loop
+main
