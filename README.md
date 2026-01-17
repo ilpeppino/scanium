@@ -4,7 +4,7 @@ An Android application that uses on-device machine learning to detect objects th
 
 ***REMOVED******REMOVED*** Documentation
 
-See [docs/INDEX.md](docs/INDEX.md) for the canonical doc set and entry point.
+See [howto/](howto/) for the canonical documentation entry point. The `howto/` directory consolidates all operational documentation, runbooks, architecture guides, and deployment procedures.
 
 ***REMOVED******REMOVED*** Testing
 
@@ -21,7 +21,7 @@ See [docs/INDEX.md](docs/INDEX.md) for the canonical doc set and entry point.
 - Pre-push validation: `./gradlew prePushJvmCheck`
 - Install pre-push hook: `./scripts/dev/install-hooks.sh`
 
-See `docs/DEV_GUIDE.md` for details.
+See `howto/project/reference/DEV_GUIDE.md` for details.
 
 ***REMOVED******REMOVED*** Overview
 
@@ -171,7 +171,7 @@ monitoring/
 └── mimir/mimir.yaml        ***REMOVED*** Metrics storage config
 ```
 
-For detailed architecture documentation, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md).
+For detailed architecture documentation, see [howto/project/reference/ARCHITECTURE.md](./howto/project/reference/ARCHITECTURE.md).
 
 ***REMOVED******REMOVED******REMOVED*** Key Architectural Decisions
 
@@ -259,7 +259,7 @@ scripts/monitoring/print-urls.sh
 2. Configure required environment variables
 3. Run database migrations: `cd backend && npm run prisma:migrate`
 
-See [docs/DEV_GUIDE.md](./docs/DEV_GUIDE.md) and [monitoring/README.md](./monitoring/README.md) for detailed setup instructions.
+See [howto/project/reference/DEV_GUIDE.md](./howto/project/reference/DEV_GUIDE.md) and [howto/monitoring/README.md](./howto/monitoring/README.md) for detailed setup instructions.
 
 ***REMOVED******REMOVED*** Building
 
@@ -433,15 +433,15 @@ JUnit 4, Robolectric (SDK 28), Truth assertions, MockK, Coroutines Test, Compose
 
 ***REMOVED******REMOVED*** Documentation
 
-See **[docs/INDEX.md](docs/INDEX.md)** for the complete documentation index and entry point.
+See **[howto/](howto/)** for the complete documentation entry point and directory guide.
 
 ***REMOVED******REMOVED******REMOVED*** Quick Links
 | Topic | Location |
 |-------|----------|
-| Architecture | [Camera Pipeline](./docs/architecture-camera-pipeline.md), [Item Aggregation](./docs/architecture-item-aggregation.md) |
+| Architecture | [Camera Pipeline](./howto/app/reference/architecture-camera-pipeline.md), [Item Aggregation](./howto/app/reference/architecture-item-aggregation.md) |
 | Releases | [Release Checklist](./howto/app/releases/RELEASE_CHECKLIST.md), [Release & Rollback](./howto/app/releases/RELEASE_AND_ROLLBACK.md) |
 | Security | [Security Guidelines](./howto/infra/security/SECURITY.md), [NAS Security](./howto/infra/security/NAS_DEPLOYMENT_SECURITY_CHECKLIST.md) |
-| Monitoring | [Grafana Access](./monitoring/GRAFANA_ACCESS_GUIDE.md), [Stack Changelog](./monitoring/CHANGELOG.md) |
+| Monitoring | [Grafana Access](./howto/monitoring/reference/GRAFANA_ACCESS_GUIDE.md), [Stack Changelog](./howto/monitoring/CHANGELOG.md) |
 | KMP Migration | [Migration Map](./howto/MIGRATION_MAP.md) |
 
 ***REMOVED******REMOVED******REMOVED*** Repository Guidelines
