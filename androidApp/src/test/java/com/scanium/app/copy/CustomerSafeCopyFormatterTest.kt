@@ -222,7 +222,11 @@ class CustomerSafeCopyFormatterTest {
         )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.priceLine).isEqualTo("Typical resale value: €50–€150")
+        // Verify structured pricing (UI layer renders localized strings)
+        assertThat(output.pricing).isNotNull()
+        assertThat(output.pricing!!.min).isEqualTo(50)
+        assertThat(output.pricing!!.max).isEqualTo(150)
+        assertThat(output.pricing!!.currency).isEqualTo("EUR")
     }
 
     @Test
@@ -235,8 +239,9 @@ class CustomerSafeCopyFormatterTest {
         )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.priceContext).startsWith("Based on")
-        assertThat(output.priceContext).contains("excellent condition")
+        // Verify structured pricing has context key (UI layer renders localized "Based on..." string)
+        assertThat(output.pricing).isNotNull()
+        assertThat(output.pricing!!.contextKey).isNotNull()
     }
 
     @Test
@@ -248,7 +253,9 @@ class CustomerSafeCopyFormatterTest {
         )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.priceContext).isEqualTo("Based on current market conditions")
+        // Verify structured pricing has default context key (UI renders "Based on current market conditions")
+        assertThat(output.pricing).isNotNull()
+        assertThat(output.pricing!!.contextKey).isEqualTo("pricing_context_current_market")
     }
 
     @Test
@@ -285,8 +292,11 @@ class CustomerSafeCopyFormatterTest {
         )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.priceLine).contains("€")
-        assertThat(output.priceLine).contains("–")
+        // Verify structured pricing has EUR currency (UI renders € symbol and en-dash)
+        assertThat(output.pricing).isNotNull()
+        assertThat(output.pricing!!.currency).isEqualTo("EUR")
+        assertThat(output.pricing!!.min).isEqualTo(30)
+        assertThat(output.pricing!!.max).isEqualTo(80)
     }
 
     // ====== Drop If Weak Tests ======
@@ -514,7 +524,10 @@ class CustomerSafeCopyFormatterTest {
         )
         val output = CustomerSafeCopyFormatter.format(input)!!
 
-        assertThat(output.priceContext).doesNotContain("cannot determine")
+        // Verify structured pricing exists (banned tokens in hint cause fallback to default context key)
+        assertThat(output.pricing).isNotNull()
+        // Context key should be the safe default, not contain banned content
+        assertThat(output.pricing!!.contextKey).isEqualTo("pricing_context_current_market")
     }
 
     @Test
@@ -536,8 +549,12 @@ class CustomerSafeCopyFormatterTest {
 
         // Verify all fields
         assertThat(output.title).isEqualTo("leather hiking boots")
-        assertThat(output.priceLine).isEqualTo("Typical resale value: €60–€150")
-        assertThat(output.priceContext).contains("excellent condition")
+        // Verify structured pricing (UI renders "Typical resale value: €60–€150")
+        assertThat(output.pricing).isNotNull()
+        assertThat(output.pricing!!.min).isEqualTo(60)
+        assertThat(output.pricing!!.max).isEqualTo(150)
+        assertThat(output.pricing!!.currency).isEqualTo("EUR")
+        assertThat(output.pricing!!.contextKey).isNotNull()
         assertThat(output.highlights).isNotEmpty()
         assertThat(output.tags).contains("Salomon")
         assertThat(output.tags).contains("Footwear")
@@ -545,6 +562,5 @@ class CustomerSafeCopyFormatterTest {
         // Verify no banned tokens or confidence indicators
         assertThat(output.title).doesNotContain("unknown")
         assertThat(output.title).doesNotContain("%")
-        assertThat(output.priceLine).doesNotContain("confidence")
     }
 }
