@@ -386,6 +386,12 @@
     <string name="ftue_tour_completion_title">You\'re Ready!</string>
     <string name="ftue_tour_completion_desc">You\'re all set to scan, catalog, and sell your items. Happy scanning!</string>
 
+    <!-- Camera Screen FTUE Micro-animations -->
+    <string name="ftue_camera_roi">Center an object here to scan it.</string>
+    <string name="ftue_camera_bbox">Boxes appear around detected objects.</string>
+    <string name="ftue_camera_distance_hint">Move a bit farther if detection is unstable.</string>
+    <string name="ftue_camera_shutter">Tap to capture your first item.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium is a camera-first application that uses machine learning to detect and identify objects in real-time, helping you value and list items for resale.</string>
     <string name="about_copyright">© 2025 Scanium Team</string>
