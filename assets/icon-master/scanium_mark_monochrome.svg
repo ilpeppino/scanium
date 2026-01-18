@@ -1,0 +1,42 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .mono-mark { fill: ***REMOVED***000000; }
+      .mono-ring { fill: none; stroke: ***REMOVED***000000; }
+    </style>
+  </defs>
+
+  <!-- Upper Lens - Simplified monochrome -->
+  <g id="upper-lens">
+    <!-- Outer ring -->
+    <circle cx="400" cy="320" r="190" class="mono-ring" stroke-width="20" />
+
+    <!-- Inner rings -->
+    <circle cx="400" cy="320" r="160" class="mono-ring" stroke-width="12" />
+    <circle cx="400" cy="320" r="130" class="mono-ring" stroke-width="8" />
+
+    <!-- Center lens -->
+    <circle cx="400" cy="320" r="110" class="mono-mark" />
+  </g>
+
+  <!-- Blue Curved S - Monochrome -->
+  <g id="blue-s">
+    <path d="M 520 250 Q 580 200 640 220 Q 700 240 700 310 Q 700 380 650 400 Q 600 420 550 380"
+          class="mono-ring" stroke-width="80" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 500 650 Q 560 720 620 700 Q 680 680 680 610 Q 680 540 630 520 Q 580 500 530 540"
+          class="mono-ring" stroke-width="80" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Lower Lens - Simplified monochrome -->
+  <g id="lower-lens">
+    <!-- Outer ring -->
+    <circle cx="400" cy="680" r="190" class="mono-ring" stroke-width="20" />
+
+    <!-- Inner rings -->
+    <circle cx="400" cy="680" r="160" class="mono-ring" stroke-width="12" />
+    <circle cx="400" cy="680" r="130" class="mono-ring" stroke-width="8" />
+
+    <!-- Center lens -->
+    <circle cx="400" cy="680" r="110" class="mono-mark" />
+  </g>
+</svg>
