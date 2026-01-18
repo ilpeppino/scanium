@@ -16,6 +16,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.scanium.app.BuildConfig
 import com.scanium.app.R
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
@@ -161,6 +162,14 @@ class DeveloperOptionsViewModel
         val overlayAccuracyStep: StateFlow<Int> =
             settingsRepository.devOverlayAccuracyStepFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+        /**
+         * Whether to show build watermark overlay on camera screen.
+         * DEV-only feature for verifying deployed APK matches working tree.
+         */
+        val showBuildWatermark: StateFlow<Boolean> =
+            settingsRepository.devShowBuildWatermarkFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
         // ==================== Health Monitor (DEV-only) ====================
 
@@ -507,6 +516,63 @@ class DeveloperOptionsViewModel
             viewModelScope.launch {
                 ftueRepository.setCameraUiFtueCompleted(false)
                 ftueRepository.setCameraUiFtueForceShow(false)
+            }
+        }
+
+        /**
+         * Enable or disable build watermark overlay on camera screen.
+         */
+        fun setShowBuildWatermark(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsRepository.setDevShowBuildWatermark(enabled)
+            }
+        }
+
+        /**
+         * Reset all FTUE flags to replay first-time experiences.
+         */
+        fun resetAllFtueAndOnboarding() {
+            viewModelScope.launch {
+                ftueRepository.resetAll()
+            }
+        }
+
+        /**
+         * Clear onboarding data (soft reset - FTUE flags only).
+         */
+        fun clearOnboardingDataSoft() {
+            viewModelScope.launch {
+                ftueRepository.resetAll()
+            }
+        }
+
+        /**
+         * Copy build information to clipboard for debugging.
+         */
+        fun copyBuildInfoToClipboard() {
+            val fingerprint = buildString {
+                appendLine("Scanium Build Info")
+                appendLine("===================")
+                appendLine("Version Name: ${BuildConfig.VERSION_NAME}")
+                appendLine("Version Code: ${BuildConfig.VERSION_CODE}")
+                appendLine("Flavor: ${BuildConfig.FLAVOR}")
+                appendLine("Build Type: ${BuildConfig.BUILD_TYPE}")
+                appendLine("Git SHA: ${BuildConfig.GIT_SHA}")
+                appendLine("Build Time: ${BuildConfig.BUILD_TIME_UTC}")
+                appendLine()
+                appendLine("Fingerprint: ${BuildConfig.FLAVOR} ${BuildConfig.GIT_SHA} ${BuildConfig.BUILD_TIME_UTC}")
+            }
+
+            val context = getApplication<Application>()
+            val clipboardManager =
+                context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Build Info", fingerprint)
+            clipboardManager.setPrimaryClip(clip)
+            _copyResult.value = "Build info copied to clipboard"
+
+            viewModelScope.launch {
+                delay(2000)
+                _copyResult.value = null
             }
         }
 

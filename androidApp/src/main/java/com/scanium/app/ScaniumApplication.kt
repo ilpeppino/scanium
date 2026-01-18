@@ -67,6 +67,17 @@ class ScaniumApplication : Application() {
             android.util.Log.w("ScaniumApplication", "Starting in SAFE MODE due to crash loop")
         }
 
+        // Log build fingerprint for deployment verification
+        android.util.Log.i(
+            "APP_BUILD",
+            "versionName=${BuildConfig.VERSION_NAME} " +
+                "versionCode=${BuildConfig.VERSION_CODE} " +
+                "flavor=${BuildConfig.FLAVOR} " +
+                "buildType=${BuildConfig.BUILD_TYPE} " +
+                "git=${BuildConfig.GIT_SHA} " +
+                "time=${BuildConfig.BUILD_TIME_UTC}",
+        )
+
         val settingsRepository = SettingsRepository(this)
         val classificationPreferences = com.scanium.app.data.ClassificationPreferences(this)
 

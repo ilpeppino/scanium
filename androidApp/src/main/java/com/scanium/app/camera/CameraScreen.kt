@@ -243,6 +243,7 @@ fun CameraScreen(
     val cameraUiFtueStep by cameraUiFtueViewModel.currentStep.collectAsState()
     val cameraUiFtueAnchors by cameraUiFtueRegistry.anchors.collectAsState()
     val showCameraUiFtueBounds by settingsRepository.devShowCameraUiFtueBoundsFlow.collectAsState(initial = false)
+    val showBuildWatermark by settingsRepository.devShowBuildWatermarkFlow.collectAsState(initial = false)
     val cameraFtueCurrentStep by cameraFtueViewModel.currentStep.collectAsState()
     val cameraFtueIsActive by cameraFtueViewModel.isActive.collectAsState()
     val cameraFtueShowRoiHint by cameraFtueViewModel.showRoiHint.collectAsState()
@@ -889,6 +890,16 @@ fun CameraScreen(
                                 .padding(top = 16.dp, end = 16.dp)
                                 .background(Color.Red.copy(alpha = 0.7f), shape = MaterialTheme.shapes.extraSmall)
                                 .padding(horizontal = 4.dp, vertical = 2.dp),
+                    )
+                }
+
+                // Build Watermark (DEV-only, user-configurable)
+                if (BuildConfig.FLAVOR == "dev" && showBuildWatermark) {
+                    CameraWatermark(
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = 16.dp, start = 16.dp),
                     )
                 }
 

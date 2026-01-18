@@ -85,6 +85,17 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// Build fingerprinting: git SHA and build time
+// Compute git SHA with fallback to "nogit" for CI environments without git
+val gitSha = providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+}.standardOutput.asText.get().trim().takeIf { it.isNotBlank() } ?: "nogit"
+
+// Compute build time in ISO-8601 UTC format using date command
+val buildTimeUtc = providers.exec {
+    commandLine("date", "-u", "+%Y-%m-%dT%H:%M:%SZ")
+}.standardOutput.asText.get().trim().takeIf { it.isNotBlank() } ?: "unknown"
+
 
 android {
     namespace = "com.scanium.app"
@@ -169,6 +180,10 @@ android {
 
         // Legacy field for backward compatibility (deprecated)
         buildConfigField("String", "CLOUD_CLASSIFIER_API_KEY", "\"$apiKey\"")
+
+        // Build fingerprinting fields for deployment verification
+        buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
+        buildConfigField("String", "BUILD_TIME_UTC", "\"$buildTimeUtc\"")
 
         // ARCH-001: Use Hilt test runner for instrumented tests
         testInstrumentationRunner = "com.scanium.app.HiltTestRunner"

@@ -25,6 +25,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
+import com.scanium.app.BuildConfig
 import com.scanium.app.R
 import com.scanium.app.camera.ConfidenceTiers
 import com.scanium.app.config.FeatureFlags
@@ -64,6 +65,7 @@ fun DeveloperOptionsScreen(
     val correlationDebugEnabled by viewModel.correlationDebugEnabled.collectAsState()
     val cameraPipelineDebugEnabled by viewModel.cameraPipelineDebugEnabled.collectAsState()
     val overlayAccuracyStep by viewModel.overlayAccuracyStep.collectAsState()
+    val showBuildWatermark by viewModel.showBuildWatermark.collectAsState()
     val scrollState = rememberScrollState()
     val saveCloudCrops by classificationViewModel.saveCloudCrops.collectAsState()
     val verboseLogging by classificationViewModel.verboseLogging.collectAsState()
@@ -184,6 +186,56 @@ fun DeveloperOptionsScreen(
                 icon = Icons.Default.ScreenLockPortrait,
                 checked = allowScreenshots,
                 onCheckedChange = { viewModel.setAllowScreenshots(it) },
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Build Information Section (DEV-only)
+            SettingsSectionHeader("Build Information")
+
+            SettingReadOnlyRow(
+                title = "Version",
+                subtitle = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                icon = Icons.Default.Info,
+            )
+
+            SettingReadOnlyRow(
+                title = "Flavor",
+                subtitle = BuildConfig.FLAVOR,
+                icon = Icons.Default.Label,
+            )
+
+            SettingReadOnlyRow(
+                title = "Build Type",
+                subtitle = BuildConfig.BUILD_TYPE,
+                icon = Icons.Default.Build,
+            )
+
+            SettingReadOnlyRow(
+                title = "Git SHA",
+                subtitle = BuildConfig.GIT_SHA,
+                icon = Icons.Default.Code,
+            )
+
+            SettingReadOnlyRow(
+                title = "Build Time",
+                subtitle = BuildConfig.BUILD_TIME_UTC,
+                icon = Icons.Default.Schedule,
+            )
+
+            SettingActionRow(
+                title = "Copy Build Info",
+                subtitle = "Copy version and fingerprint to clipboard",
+                icon = Icons.Default.ContentCopy,
+                onClick = { viewModel.copyBuildInfoToClipboard() },
+            )
+
+            SettingSwitchRow(
+                title = "Show Camera Watermark",
+                subtitle = if (showBuildWatermark) "Watermark visible on camera screen" else "Watermark hidden",
+                icon = Icons.Default.WaterDrop,
+                checked = showBuildWatermark,
+                onCheckedChange = { viewModel.setShowBuildWatermark(it) },
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -400,6 +452,22 @@ fun DeveloperOptionsScreen(
                 subtitle = "Clear Camera UI tutorial completion",
                 icon = Icons.Default.Refresh,
                 onClick = { viewModel.resetCameraUiFtue() },
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            SettingActionRow(
+                title = "Reset All FTUE Flags",
+                subtitle = "Clear all first-time experience tutorials",
+                icon = Icons.Default.RestartAlt,
+                onClick = { viewModel.resetAllFtueAndOnboarding() },
+            )
+
+            SettingActionRow(
+                title = "Clear Onboarding Data (Soft)",
+                subtitle = "Reset FTUE and onboarding preferences",
+                icon = Icons.Default.DeleteSweep,
+                onClick = { viewModel.clearOnboardingDataSoft() },
             )
 
             // FTUE Debug Info (DEV-only)

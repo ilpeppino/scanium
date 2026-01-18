@@ -174,4 +174,15 @@ internal class DeveloperSettings(
             preferences[SettingsKeys.Developer.DEV_SHOW_CAMERA_UI_FTUE_BOUNDS_KEY] = enabled
         }
     }
+
+    val devShowBuildWatermarkFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[SettingsKeys.Developer.DEV_SHOW_BUILD_WATERMARK_KEY] ?: false
+        }
+
+    suspend fun setDevShowBuildWatermark(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SettingsKeys.Developer.DEV_SHOW_BUILD_WATERMARK_KEY] = enabled
+        }
+    }
 }

@@ -289,6 +289,12 @@ class SettingsRepository(
         developerSettings.setDevShowCameraUiFtueBounds(enabled)
     }
 
+    val devShowBuildWatermarkFlow: Flow<Boolean> = developerSettings.devShowBuildWatermarkFlow
+
+    suspend fun setDevShowBuildWatermark(enabled: Boolean) {
+        developerSettings.setDevShowBuildWatermark(enabled)
+    }
+
     val openItemListAfterScanFlow: Flow<Boolean> = scanningSettings.openItemListAfterScanFlow
 
     suspend fun setOpenItemListAfterScan(enabled: Boolean) {
