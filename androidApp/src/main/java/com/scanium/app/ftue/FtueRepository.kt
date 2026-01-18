@@ -33,6 +33,17 @@ class FtueRepository(private val context: Context) {
         private val LIST_LONG_PRESS_HINT_SEEN_KEY = booleanPreferencesKey("list_long_press_hint_seen")
         private val LIST_SHARE_GOAL_HINT_SEEN_KEY = booleanPreferencesKey("list_share_goal_hint_seen")
         private val LIST_FTUE_COMPLETED_KEY = booleanPreferencesKey("list_ftue_completed")
+
+        // Edit Item FTUE flags (screen-scoped, per-step)
+        private val EDIT_IMPROVE_DETAILS_HINT_SEEN_KEY = booleanPreferencesKey("edit_improve_details_hint_seen")
+        private val EDIT_CONDITION_PRICE_HINT_SEEN_KEY = booleanPreferencesKey("edit_condition_price_hint_seen")
+        private val EDIT_USE_AI_HINT_SEEN_KEY = booleanPreferencesKey("edit_use_ai_hint_seen")
+        private val EDIT_FTUE_COMPLETED_KEY = booleanPreferencesKey("edit_ftue_completed")
+
+        // Settings FTUE flags (screen-scoped, per-step)
+        private val SETTINGS_LANGUAGE_HINT_SEEN_KEY = booleanPreferencesKey("settings_language_hint_seen")
+        private val SETTINGS_REPLAY_HINT_SEEN_KEY = booleanPreferencesKey("settings_replay_hint_seen")
+        private val SETTINGS_FTUE_COMPLETED_KEY = booleanPreferencesKey("settings_ftue_completed")
     }
 
     /**
@@ -339,6 +350,15 @@ class FtueRepository(private val context: Context) {
             preferences[LIST_LONG_PRESS_HINT_SEEN_KEY] = false
             preferences[LIST_SHARE_GOAL_HINT_SEEN_KEY] = false
             preferences[LIST_FTUE_COMPLETED_KEY] = false
+            // Edit Item FTUE
+            preferences[EDIT_IMPROVE_DETAILS_HINT_SEEN_KEY] = false
+            preferences[EDIT_CONDITION_PRICE_HINT_SEEN_KEY] = false
+            preferences[EDIT_USE_AI_HINT_SEEN_KEY] = false
+            preferences[EDIT_FTUE_COMPLETED_KEY] = false
+            // Settings FTUE
+            preferences[SETTINGS_LANGUAGE_HINT_SEEN_KEY] = false
+            preferences[SETTINGS_REPLAY_HINT_SEEN_KEY] = false
+            preferences[SETTINGS_FTUE_COMPLETED_KEY] = false
         }
     }
 }
