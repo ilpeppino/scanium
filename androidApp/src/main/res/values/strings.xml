@@ -392,6 +392,12 @@
     <string name="ftue_camera_distance_hint">Move a bit farther if detection is unstable.</string>
     <string name="ftue_camera_shutter">Tap to capture your first item.</string>
 
+    <!-- Items List Screen FTUE Gestures -->
+    <string name="ftue_list_tap_edit">Tap an item to edit details before selling.</string>
+    <string name="ftue_list_swipe_delete">Swipe right to remove items.</string>
+    <string name="ftue_list_long_press_select">Long-press to select multiple items.</string>
+    <string name="ftue_list_share_sell">Select items, then share or export to sell.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium is a camera-first application that uses machine learning to detect and identify objects in real-time, helping you value and list items for resale.</string>
     <string name="about_copyright">© 2025 Scanium Team</string>
