@@ -91,13 +91,11 @@ class CameraUiFtueViewModel(
      * @param cameraPermissionGranted True if camera permission granted
      * @param previewVisible True if camera preview is visible (size > 0)
      * @param allAnchorsRegistered True if all 4 button anchors are registered
-     * @param existingCameraFtueCompleted True if existing Camera FTUE completed
      */
     fun initialize(
         cameraPermissionGranted: Boolean,
         previewVisible: Boolean,
         allAnchorsRegistered: Boolean,
-        existingCameraFtueCompleted: Boolean,
     ) {
         viewModelScope.launch {
             val shouldRunValue = shouldRun.value
@@ -106,14 +104,13 @@ class CameraUiFtueViewModel(
                 TAG,
                 "initialize: permission=$cameraPermissionGranted, " +
                     "preview=$previewVisible, anchors=$allAnchorsRegistered, " +
-                    "existingFtueComplete=$existingCameraFtueCompleted, shouldRun=$shouldRunValue",
+                    "shouldRun=$shouldRunValue",
             )
 
             val allConditionsMet =
                 cameraPermissionGranted &&
                     previewVisible &&
                     allAnchorsRegistered &&
-                    existingCameraFtueCompleted &&
                     shouldRunValue
 
             if (!allConditionsMet) {
@@ -127,12 +124,21 @@ class CameraUiFtueViewModel(
                 return@launch
             }
 
-            // Start sequence
-            _isActive.value = true
-            _currentStep.value = CameraUiFtueStep.SHUTTER
-
-            Log.d(TAG, "FTUE starting: stepIndex=0, stepId=SHUTTER")
+            // Start FTUE from first step (single source of truth)
+            startCameraFtue(CameraUiFtueStep.SHUTTER)
         }
+    }
+
+    /**
+     * SINGLE SOURCE OF TRUTH: Start Camera FTUE from a specific step.
+     * Used by both real FTUE initialization and Force Step diagnostic.
+     *
+     * @param startStep The step to begin from
+     */
+    private fun startCameraFtue(startStep: CameraUiFtueStep) {
+        _isActive.value = true
+        _currentStep.value = startStep
+        Log.d(TAG, "FTUE starting: stepIndex=${getStepIndex(startStep)}, stepId=${startStep.name}")
     }
 
     /**
@@ -226,12 +232,22 @@ class CameraUiFtueViewModel(
      * DEV-ONLY: Force a specific step for testing.
      * Does NOT mark as completed or persist state.
      * Used by diagnostics panel to isolate and test individual steps.
+     *
+     * IMPORTANT: Uses the same execution path as real FTUE (startCameraFtue).
+     * This ensures Force Step and real FTUE behave identically.
      */
     fun forceStep(step: CameraUiFtueStep) {
         viewModelScope.launch {
             Log.d(TAG, "DEV: Force step to $step")
-            _currentStep.value = step
-            _isActive.value = step != CameraUiFtueStep.IDLE && step != CameraUiFtueStep.COMPLETED
+
+            // Handle special cases (IDLE, COMPLETED)
+            if (step == CameraUiFtueStep.IDLE || step == CameraUiFtueStep.COMPLETED) {
+                _currentStep.value = step
+                _isActive.value = false
+            } else {
+                // Use same code path as real FTUE (single source of truth)
+                startCameraFtue(step)
+            }
         }
     }
 }

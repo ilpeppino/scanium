@@ -307,7 +307,9 @@ fun CameraScreen(
     }
 
     // Camera UI FTUE initialization (Phase 5: Trigger)
-    LaunchedEffect(hasCameraPermission, previewSize, cameraFtueCompleted, cameraUiFtueAnchors) {
+    // Triggers when: permission granted, preview ready, anchors registered
+    // NO LONGER requires old Camera FTUE to complete (divergence removed)
+    LaunchedEffect(hasCameraPermission, previewSize, cameraUiFtueAnchors) {
         val allAnchorsRegistered = cameraUiFtueRegistry.hasAllAnchors(
             com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS
         )
@@ -319,8 +321,7 @@ fun CameraScreen(
                 "permission=$hasCameraPermission, " +
                 "preview=${previewSize.width}x${previewSize.height}, " +
                 "allAnchors=$allAnchorsRegistered " +
-                "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size}), " +
-                "oldFtueComplete=$cameraFtueCompleted"
+                "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size})"
             )
 
             // Log which anchors are missing
@@ -336,7 +337,6 @@ fun CameraScreen(
             cameraPermissionGranted = hasCameraPermission,
             previewVisible = previewVisible,
             allAnchorsRegistered = allAnchorsRegistered,
-            existingCameraFtueCompleted = cameraFtueCompleted,
         )
     }
 

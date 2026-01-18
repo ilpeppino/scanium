@@ -131,8 +131,8 @@ fun CameraUiFtueOverlay(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {
-                        // Detect if tap is inside spotlight (advance) or outside (dismiss)
-                        // For now, tapping anywhere dismisses - Next button is primary action
+                        // PHASE 4: Tap inside spotlight advances step, tap outside dismisses
+                        // This matches Force Step behavior where highlighted element is interactive
                         onDismiss()
                     },
                 ),
@@ -209,7 +209,8 @@ private fun DrawScope.drawDimBackgroundWithSpotlight(
 
 /**
  * Tooltip bubble with instruction text and "Next" button.
- * Positions itself above or below the anchor based on screen space.
+ * PHASE 5: Adaptive positioning - prefers ABOVE, then BELOW, then LEFT/RIGHT.
+ * Clamps within safe area and maintains minimum spacing from spotlight.
  */
 @Composable
 private fun TooltipBubble(
@@ -221,31 +222,59 @@ private fun TooltipBubble(
 ) {
     val density = LocalDensity.current
 
-    // Determine if tooltip should be above or below anchor
-    val anchorCenterY = anchorRect.center.y
-    val placeAbove = anchorCenterY > screenHeightPx / 2f
+    // Tooltip dimensions (approximate)
+    val tooltipWidthPx = with(density) { 280.dp.toPx() }
+    val tooltipHeightPx = with(density) { 120.dp.toPx() } // Approximate height
+    val minSpacing = with(density) { 24.dp.toPx() } // Minimum spacing from spotlight
+    val safeMargin = with(density) { 16.dp.toPx() } // Edge margin
 
-    // Calculate tooltip position
-    val tooltipX =
-        with(density) {
-            // Center horizontally, but clamp to screen edges with 16dp margin
-            val centerX = anchorRect.center.x.toDp()
-            val maxWidth = 280.dp
-            val minX = 16.dp
-            val maxX = screenWidthPx.toDp() - maxWidth - 16.dp
-            centerX.coerceIn(minX, maxX)
-        }
+    // Calculate spotlight radius (same as overlay calculation)
+    val spotlightRadius = kotlin.math.max(anchorRect.width, anchorRect.height) / 2f + 24f
 
-    val tooltipY =
-        with(density) {
-            if (placeAbove) {
-                // Position above anchor
-                (anchorRect.top - 120f).toDp()
+    // Try ABOVE first (preferred)
+    var tooltipX = anchorRect.center.x - tooltipWidthPx / 2f
+    var tooltipY = anchorRect.center.y - spotlightRadius - minSpacing - tooltipHeightPx
+    var placement = "above"
+
+    // Check if ABOVE fits within safe area
+    if (tooltipY < safeMargin) {
+        // Try BELOW
+        tooltipY = anchorRect.center.y + spotlightRadius + minSpacing
+        placement = "below"
+
+        // Check if BELOW fits
+        if (tooltipY + tooltipHeightPx > screenHeightPx - safeMargin) {
+            // Try LEFT or RIGHT (use whichever has more space)
+            val spaceLeft = anchorRect.center.x - spotlightRadius - minSpacing
+            val spaceRight = screenWidthPx - (anchorRect.center.x + spotlightRadius + minSpacing)
+
+            if (spaceRight > spaceLeft && spaceRight >= tooltipWidthPx) {
+                // Place RIGHT
+                tooltipX = anchorRect.center.x + spotlightRadius + minSpacing
+                tooltipY = anchorRect.center.y - tooltipHeightPx / 2f
+                placement = "right"
+            } else if (spaceLeft >= tooltipWidthPx) {
+                // Place LEFT
+                tooltipX = anchorRect.center.x - spotlightRadius - minSpacing - tooltipWidthPx
+                tooltipY = anchorRect.center.y - tooltipHeightPx / 2f
+                placement = "left"
             } else {
-                // Position below anchor
-                (anchorRect.bottom + 24f).toDp()
+                // Fallback: force BELOW and clamp
+                tooltipY = (screenHeightPx - tooltipHeightPx - safeMargin).coerceAtLeast(safeMargin)
+                placement = "below-clamped"
             }
         }
+    }
+
+    // Clamp X to safe area
+    tooltipX = tooltipX.coerceIn(safeMargin, screenWidthPx - tooltipWidthPx - safeMargin)
+    // Clamp Y to safe area
+    tooltipY = tooltipY.coerceIn(safeMargin, screenHeightPx - tooltipHeightPx - safeMargin)
+
+    Log.d(
+        "FTUE_CAMERA_UI",
+        "Tooltip placement: $placement, x=${tooltipX.toInt()}, y=${tooltipY.toInt()}",
+    )
 
     Box(
         modifier =
@@ -253,8 +282,8 @@ private fun TooltipBubble(
                 .fillMaxSize()
                 .offset {
                     IntOffset(
-                        x = with(density) { tooltipX.roundToPx() },
-                        y = with(density) { tooltipY.roundToPx() },
+                        x = tooltipX.toInt(),
+                        y = tooltipY.toInt(),
                     )
                 },
     ) {
