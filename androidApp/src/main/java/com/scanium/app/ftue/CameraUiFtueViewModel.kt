@@ -76,13 +76,14 @@ class CameraUiFtueViewModel(
     val isActive: StateFlow<Boolean> = _isActive.asStateFlow()
 
     // Derived state: FTUE should run if (forceShow OR not completed)
+    // NOTE: Using Eagerly to ensure value is ready when initialize() reads it
     val shouldRun: StateFlow<Boolean> =
         combine(
             ftueRepository.cameraUiFtueForceShowFlow,
             ftueRepository.cameraUiFtueCompletedFlow,
         ) { forceShow, completed ->
             forceShow || !completed
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /**
      * Initialize the Camera UI FTUE sequence.
