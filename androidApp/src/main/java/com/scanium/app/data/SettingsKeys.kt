@@ -39,6 +39,7 @@ internal object SettingsKeys {
         val DEVELOPER_MODE_KEY = booleanPreferencesKey("developer_mode")
         val DEV_ALLOW_SCREENSHOTS_KEY = booleanPreferencesKey("dev_allow_screenshots")
         val DEV_SHOW_FTUE_BOUNDS_KEY = booleanPreferencesKey("dev_show_ftue_bounds")
+        val DEV_SHOW_CAMERA_UI_FTUE_BOUNDS_KEY = booleanPreferencesKey("dev_show_camera_ui_ftue_bounds")
         val DEV_BARCODE_DETECTION_ENABLED_KEY = booleanPreferencesKey("dev_barcode_detection_enabled")
         val DEV_DOCUMENT_DETECTION_ENABLED_KEY = booleanPreferencesKey("dev_document_detection_enabled")
         val DEV_ADAPTIVE_THROTTLING_ENABLED_KEY = booleanPreferencesKey("dev_adaptive_throttling_enabled")

@@ -163,4 +163,15 @@ internal class DeveloperSettings(
             preferences[SettingsKeys.Developer.DEV_OVERLAY_ACCURACY_STEP_KEY] = stepIndex
         }
     }
+
+    val devShowCameraUiFtueBoundsFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[SettingsKeys.Developer.DEV_SHOW_CAMERA_UI_FTUE_BOUNDS_KEY] ?: false
+        }
+
+    suspend fun setDevShowCameraUiFtueBounds(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SettingsKeys.Developer.DEV_SHOW_CAMERA_UI_FTUE_BOUNDS_KEY] = enabled
+        }
+    }
 }

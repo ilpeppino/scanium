@@ -44,6 +44,10 @@ class FtueRepository(private val context: Context) {
         private val SETTINGS_LANGUAGE_HINT_SEEN_KEY = booleanPreferencesKey("settings_language_hint_seen")
         private val SETTINGS_REPLAY_HINT_SEEN_KEY = booleanPreferencesKey("settings_replay_hint_seen")
         private val SETTINGS_FTUE_COMPLETED_KEY = booleanPreferencesKey("settings_ftue_completed")
+
+        // Camera UI FTUE flags (button navigation tutorial)
+        private val CAMERA_UI_FTUE_COMPLETED_KEY = booleanPreferencesKey("camera_ui_ftue_completed")
+        private val CAMERA_UI_FTUE_FORCE_SHOW_KEY = booleanPreferencesKey("camera_ui_ftue_force_show")
     }
 
     /**
@@ -198,6 +202,26 @@ class FtueRepository(private val context: Context) {
     val settingsFtueCompletedFlow: Flow<Boolean> =
         context.ftueDataStore.data.map { preferences ->
             preferences[SETTINGS_FTUE_COMPLETED_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the Camera UI FTUE sequence has been completed.
+     * This teaches button navigation (shutter, flip, items, settings).
+     * Defaults to false (not completed).
+     */
+    val cameraUiFtueCompletedFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[CAMERA_UI_FTUE_COMPLETED_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether Camera UI FTUE is force-shown for debugging.
+     * When true, tutorial will always show regardless of completion status.
+     * Defaults to false.
+     */
+    val cameraUiFtueForceShowFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[CAMERA_UI_FTUE_FORCE_SHOW_KEY] ?: false
         }
 
     /**
@@ -411,6 +435,26 @@ class FtueRepository(private val context: Context) {
     }
 
     /**
+     * Sets the Camera UI FTUE completion status.
+     * @param completed True if the Camera UI FTUE sequence has been completed, false otherwise
+     */
+    suspend fun setCameraUiFtueCompleted(completed: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[CAMERA_UI_FTUE_COMPLETED_KEY] = completed
+        }
+    }
+
+    /**
+     * Sets the Camera UI FTUE force-show debug flag.
+     * @param forceShow True to force tutorial to always show, false for normal behavior
+     */
+    suspend fun setCameraUiFtueForceShow(forceShow: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[CAMERA_UI_FTUE_FORCE_SHOW_KEY] = forceShow
+        }
+    }
+
+    /**
      * Resets the tour completion status, allowing the tour to be shown again.
      */
     suspend fun reset() {
@@ -432,6 +476,9 @@ class FtueRepository(private val context: Context) {
             preferences[CAMERA_BBOX_HINT_SEEN_KEY] = false
             preferences[CAMERA_SHUTTER_HINT_SEEN_KEY] = false
             preferences[CAMERA_FTUE_COMPLETED_KEY] = false
+            // Camera UI FTUE
+            preferences[CAMERA_UI_FTUE_COMPLETED_KEY] = false
+            preferences[CAMERA_UI_FTUE_FORCE_SHOW_KEY] = false
             // Items List FTUE
             preferences[LIST_TAP_EDIT_HINT_SEEN_KEY] = false
             preferences[LIST_SWIPE_DELETE_HINT_SEEN_KEY] = false

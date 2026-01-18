@@ -392,6 +392,12 @@
     <string name="ftue_camera_distance_hint">Move a bit farther if detection is unstable.</string>
     <string name="ftue_camera_shutter">Tap to capture your first item.</string>
 
+    <!-- Camera UI FTUE (button navigation tutorial) -->
+    <string name="ftue_camera_ui_shutter">Tap here to capture an item.</string>
+    <string name="ftue_camera_ui_flip">Switch between front and rear camera.</string>
+    <string name="ftue_camera_ui_items">View and manage scanned items.</string>
+    <string name="ftue_camera_ui_settings">Adjust how Scanium works.</string>
+
     <!-- Items List Screen FTUE Gestures -->
     <string name="ftue_list_tap_edit">Tap an item to edit details before selling.</string>
     <string name="ftue_list_swipe_delete">Swipe right to remove items.</string>

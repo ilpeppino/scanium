@@ -283,6 +283,12 @@ class SettingsRepository(
         developerSettings.setDevOverlayAccuracyStep(stepIndex)
     }
 
+    val devShowCameraUiFtueBoundsFlow: Flow<Boolean> = developerSettings.devShowCameraUiFtueBoundsFlow
+
+    suspend fun setDevShowCameraUiFtueBounds(enabled: Boolean) {
+        developerSettings.setDevShowCameraUiFtueBounds(enabled)
+    }
+
     val openItemListAfterScanFlow: Flow<Boolean> = scanningSettings.openItemListAfterScanFlow
 
     suspend fun setOpenItemListAfterScan(enabled: Boolean) {

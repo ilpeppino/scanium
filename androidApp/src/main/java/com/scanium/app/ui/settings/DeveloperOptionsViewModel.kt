@@ -95,12 +95,20 @@ class DeveloperOptionsViewModel
             ftueRepository.forceEnabledFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+        val forceCameraUiFtueTour: StateFlow<Boolean> =
+            ftueRepository.cameraUiFtueForceShowFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
         val allowScreenshots: StateFlow<Boolean> =
             settingsRepository.devAllowScreenshotsFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
         val showFtueDebugBounds: StateFlow<Boolean> =
             settingsRepository.devShowFtueBoundsFlow
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+        val showCameraUiFtueBounds: StateFlow<Boolean> =
+            settingsRepository.devShowCameraUiFtueBoundsFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
         // FTUE Debug State (DEV-only)
@@ -395,6 +403,12 @@ class DeveloperOptionsViewModel
             }
         }
 
+        fun setForceCameraUiFtueTour(enabled: Boolean) {
+            viewModelScope.launch {
+                ftueRepository.setCameraUiFtueForceShow(enabled)
+            }
+        }
+
         fun setAllowScreenshots(allowed: Boolean) {
             viewModelScope.launch {
                 settingsRepository.setDevAllowScreenshots(allowed)
@@ -417,6 +431,12 @@ class DeveloperOptionsViewModel
         fun setShowFtueDebugBounds(enabled: Boolean) {
             viewModelScope.launch {
                 settingsRepository.setDevShowFtueBounds(enabled)
+            }
+        }
+
+        fun setShowCameraUiFtueBounds(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsRepository.setDevShowCameraUiFtueBounds(enabled)
             }
         }
 
@@ -480,6 +500,13 @@ class DeveloperOptionsViewModel
         fun resetFtueTour() {
             viewModelScope.launch {
                 ftueRepository.reset()
+            }
+        }
+
+        fun resetCameraUiFtue() {
+            viewModelScope.launch {
+                ftueRepository.setCameraUiFtueCompleted(false)
+                ftueRepository.setCameraUiFtueForceShow(false)
             }
         }
 

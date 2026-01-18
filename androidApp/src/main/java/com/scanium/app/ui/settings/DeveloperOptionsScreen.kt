@@ -372,6 +372,36 @@ fun DeveloperOptionsScreen(
                 onClick = { viewModel.resetFtueTour() },
             )
 
+            // Camera UI FTUE controls
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            SettingsSectionHeader("Camera UI FTUE")
+
+            val forceCameraUiFtueTour by viewModel.forceCameraUiFtueTour.collectAsState()
+            SettingSwitchRow(
+                title = "Force Camera UI FTUE",
+                subtitle = "Always show button navigation tutorial",
+                icon = Icons.Default.Info,
+                checked = forceCameraUiFtueTour,
+                onCheckedChange = { viewModel.setForceCameraUiFtueTour(it) },
+            )
+
+            val showCameraUiFtueBounds by viewModel.showCameraUiFtueBounds.collectAsState()
+            SettingSwitchRow(
+                title = "Show Camera UI FTUE Bounds",
+                subtitle = "Draw magenta borders around button anchors",
+                icon = Icons.Default.CenterFocusStrong,
+                checked = showCameraUiFtueBounds,
+                onCheckedChange = { viewModel.setShowCameraUiFtueBounds(it) },
+            )
+
+            SettingActionRow(
+                title = "Reset Camera UI FTUE",
+                subtitle = "Clear Camera UI tutorial completion",
+                icon = Icons.Default.Refresh,
+                onClick = { viewModel.resetCameraUiFtue() },
+            )
+
             // FTUE Debug Info (DEV-only)
             if (FeatureFlags.isDevBuild) {
                 val ftueDebugState by viewModel.ftueDebugState.collectAsState()

@@ -32,6 +32,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import com.scanium.app.R
+import com.scanium.app.ftue.CameraUiFtueAnchorRegistry
+import com.scanium.app.ftue.CameraUiFtueViewModel
+import com.scanium.app.ftue.ftueAnchor
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ui.common.DonationContent
@@ -50,6 +53,7 @@ internal fun BoxScope.CameraOverlay(
     onNavigateToItems: () -> Unit,
     onOpenSettings: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -85,6 +89,16 @@ internal fun BoxScope.CameraOverlay(
                         .then(
                             if (tourViewModel != null) {
                                 Modifier.tourTarget("camera_settings", tourViewModel)
+                            } else {
+                                Modifier
+                            },
+                        )
+                        .then(
+                            if (cameraUiFtueRegistry != null) {
+                                Modifier.ftueAnchor(
+                                    id = CameraUiFtueViewModel.ANCHOR_SETTINGS,
+                                    registry = cameraUiFtueRegistry,
+                                )
                             } else {
                                 Modifier
                             },
@@ -124,6 +138,7 @@ internal fun BoxScope.CameraOverlay(
             captureResolution = captureResolution,
             onNavigateToItems = onNavigateToItems,
             tourViewModel = tourViewModel,
+            cameraUiFtueRegistry = cameraUiFtueRegistry,
             showShutterHint = showShutterHint,
             onShutterTap = onShutterTap,
             onShutterLongPress = onShutterLongPress,
@@ -141,6 +156,7 @@ internal fun BoxScope.CameraOverlay(
             captureResolution = captureResolution,
             onNavigateToItems = onNavigateToItems,
             tourViewModel = tourViewModel,
+            cameraUiFtueRegistry = cameraUiFtueRegistry,
             showShutterHint = showShutterHint,
             onShutterTap = onShutterTap,
             onShutterLongPress = onShutterLongPress,
@@ -207,6 +223,7 @@ internal fun BoxScope.CameraOverlayPortrait(
     captureResolution: CaptureResolution,
     onNavigateToItems: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -277,6 +294,16 @@ internal fun BoxScope.CameraOverlayPortrait(
                                     } else {
                                         Modifier
                                     },
+                                )
+                                .then(
+                                    if (cameraUiFtueRegistry != null) {
+                                        Modifier.ftueAnchor(
+                                            id = CameraUiFtueViewModel.ANCHOR_ITEMS,
+                                            registry = cameraUiFtueRegistry,
+                                        )
+                                    } else {
+                                        Modifier
+                                    },
                                 ),
                     ) {
                         Icon(
@@ -322,6 +349,16 @@ internal fun BoxScope.CameraOverlayPortrait(
                                 } else {
                                     Modifier
                                 },
+                            )
+                            .then(
+                                if (cameraUiFtueRegistry != null) {
+                                    Modifier.ftueAnchor(
+                                        id = CameraUiFtueViewModel.ANCHOR_SHUTTER,
+                                        registry = cameraUiFtueRegistry,
+                                    )
+                                } else {
+                                    Modifier
+                                },
                             ),
                 )
             }
@@ -339,6 +376,16 @@ internal fun BoxScope.CameraOverlayPortrait(
                             .background(
                                 Color.Black.copy(alpha = 0.5f),
                                 shape = MaterialTheme.shapes.small,
+                            )
+                            .then(
+                                if (cameraUiFtueRegistry != null) {
+                                    Modifier.ftueAnchor(
+                                        id = CameraUiFtueViewModel.ANCHOR_FLIP,
+                                        registry = cameraUiFtueRegistry,
+                                    )
+                                } else {
+                                    Modifier
+                                },
                             ),
                 ) {
                     Icon(
@@ -382,6 +429,7 @@ internal fun BoxScope.CameraOverlayLandscape(
     captureResolution: CaptureResolution,
     onNavigateToItems: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -423,11 +471,24 @@ internal fun BoxScope.CameraOverlayLandscape(
                 onStopScanning = onStopScanning,
                 showHint = showShutterHint,
                 modifier =
-                    if (tourViewModel != null) {
-                        Modifier.tourTarget("camera_shutter", tourViewModel)
-                    } else {
-                        Modifier
-                    },
+                    Modifier
+                        .then(
+                            if (tourViewModel != null) {
+                                Modifier.tourTarget("camera_shutter", tourViewModel)
+                            } else {
+                                Modifier
+                            },
+                        )
+                        .then(
+                            if (cameraUiFtueRegistry != null) {
+                                Modifier.ftueAnchor(
+                                    id = CameraUiFtueViewModel.ANCHOR_SHUTTER,
+                                    registry = cameraUiFtueRegistry,
+                                )
+                            } else {
+                                Modifier
+                            },
+                        ),
             )
 
             // Resolution indicator below shutter
@@ -484,6 +545,16 @@ internal fun BoxScope.CameraOverlayLandscape(
                             } else {
                                 Modifier
                             },
+                        )
+                        .then(
+                            if (cameraUiFtueRegistry != null) {
+                                Modifier.ftueAnchor(
+                                    id = CameraUiFtueViewModel.ANCHOR_ITEMS,
+                                    registry = cameraUiFtueRegistry,
+                                )
+                            } else {
+                                Modifier
+                            },
                         ),
             ) {
                 Icon(
@@ -528,6 +599,16 @@ internal fun BoxScope.CameraOverlayLandscape(
                     .background(
                         Color.Black.copy(alpha = 0.5f),
                         shape = MaterialTheme.shapes.small,
+                    )
+                    .then(
+                        if (cameraUiFtueRegistry != null) {
+                            Modifier.ftueAnchor(
+                                id = CameraUiFtueViewModel.ANCHOR_FLIP,
+                                registry = cameraUiFtueRegistry,
+                            )
+                        } else {
+                            Modifier
+                        },
                     ),
         ) {
             Icon(
