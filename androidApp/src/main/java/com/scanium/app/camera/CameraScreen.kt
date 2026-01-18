@@ -291,6 +291,19 @@ fun CameraScreen(
                 ).show()
             }
         }
+
+        // Camera UI FTUE debug toast (DEV-only)
+        LaunchedEffect(cameraUiFtueStep) {
+            if (cameraUiFtueStep != com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.IDLE &&
+                cameraUiFtueStep != com.scanium.app.ftue.CameraUiFtueViewModel.CameraUiFtueStep.COMPLETED
+            ) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Camera UI FTUE: ${cameraUiFtueStep.name}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     // Camera UI FTUE initialization (Phase 5: Trigger)
@@ -299,6 +312,25 @@ fun CameraScreen(
             com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS
         )
         val previewVisible = previewSize.width > 0 && previewSize.height > 0
+
+        // DEV-ONLY: Enhanced logging to track initialization conditions
+        if (BuildConfig.FLAVOR == "dev") {
+            Log.d("FTUE_CAMERA_UI", "Init check: " +
+                "permission=$hasCameraPermission, " +
+                "preview=${previewSize.width}x${previewSize.height}, " +
+                "allAnchors=$allAnchorsRegistered " +
+                "(${cameraUiFtueAnchors.size}/${com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.size}), " +
+                "oldFtueComplete=$cameraFtueCompleted"
+            )
+
+            // Log which anchors are missing
+            if (!allAnchorsRegistered) {
+                val missing = com.scanium.app.ftue.CameraUiFtueViewModel.ALL_ANCHOR_IDS.filter {
+                    !cameraUiFtueAnchors.containsKey(it)
+                }
+                Log.d("FTUE_CAMERA_UI", "Missing anchors: ${missing.joinToString(", ")}")
+            }
+        }
 
         cameraUiFtueViewModel.initialize(
             cameraPermissionGranted = hasCameraPermission,
@@ -826,6 +858,19 @@ fun CameraScreen(
                     )
                 }
 
+                // DEV-ONLY: FTUE Diagnostics Overlay (PHASE 2)
+                // Shows real-time anchor status and force step buttons for debugging
+                if (BuildConfig.FLAVOR == "dev" && showCameraUiFtueBounds) {
+                    com.scanium.app.ftue.CameraUiFtueDiagnosticsOverlay(
+                        currentStep = cameraUiFtueStep,
+                        anchors = cameraUiFtueAnchors,
+                        showDebugBorders = showCameraUiFtueBounds,
+                        onForceStep = { step ->
+                            cameraUiFtueViewModel.forceStep(step)
+                        },
+                    )
+                }
+
                 // Cloud configuration status banner
                 ConfigurationStatusBanner(
                     classificationMode = classificationMode,
@@ -963,6 +1008,7 @@ fun CameraScreen(
                     },
                     tourViewModel = tourViewModel,
                     cameraUiFtueRegistry = cameraUiFtueRegistry,
+                    cameraUiFtueStep = cameraUiFtueStep,
                     showShutterHint = showShutterHint,
                     onShutterTap = {
                         // Notify Camera FTUE of shutter tap

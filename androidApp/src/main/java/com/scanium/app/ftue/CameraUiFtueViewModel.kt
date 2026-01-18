@@ -221,5 +221,18 @@ class CameraUiFtueViewModel(
      * Get the current step ID as a string for logging.
      */
     fun getCurrentStepId(): String = _currentStep.value.name
+
+    /**
+     * DEV-ONLY: Force a specific step for testing.
+     * Does NOT mark as completed or persist state.
+     * Used by diagnostics panel to isolate and test individual steps.
+     */
+    fun forceStep(step: CameraUiFtueStep) {
+        viewModelScope.launch {
+            Log.d(TAG, "DEV: Force step to $step")
+            _currentStep.value = step
+            _isActive.value = step != CameraUiFtueStep.IDLE && step != CameraUiFtueStep.COMPLETED
+        }
+    }
 }
 

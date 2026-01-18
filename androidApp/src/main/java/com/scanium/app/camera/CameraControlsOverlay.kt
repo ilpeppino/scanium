@@ -35,6 +35,7 @@ import com.scanium.app.R
 import com.scanium.app.ftue.CameraUiFtueAnchorRegistry
 import com.scanium.app.ftue.CameraUiFtueViewModel
 import com.scanium.app.ftue.ftueAnchor
+import com.scanium.app.ftue.ftuePulse
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ScannedItem
 import com.scanium.app.ui.common.DonationContent
@@ -54,6 +55,7 @@ internal fun BoxScope.CameraOverlay(
     onOpenSettings: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
     cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
+    cameraUiFtueStep: CameraUiFtueViewModel.CameraUiFtueStep = CameraUiFtueViewModel.CameraUiFtueStep.IDLE,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -86,6 +88,7 @@ internal fun BoxScope.CameraOverlay(
                 modifier =
                     Modifier
                         .size(48.dp)
+                        .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS)
                         .then(
                             if (tourViewModel != null) {
                                 Modifier.tourTarget("camera_settings", tourViewModel)
@@ -139,6 +142,7 @@ internal fun BoxScope.CameraOverlay(
             onNavigateToItems = onNavigateToItems,
             tourViewModel = tourViewModel,
             cameraUiFtueRegistry = cameraUiFtueRegistry,
+            cameraUiFtueStep = cameraUiFtueStep,
             showShutterHint = showShutterHint,
             onShutterTap = onShutterTap,
             onShutterLongPress = onShutterLongPress,
@@ -157,6 +161,7 @@ internal fun BoxScope.CameraOverlay(
             onNavigateToItems = onNavigateToItems,
             tourViewModel = tourViewModel,
             cameraUiFtueRegistry = cameraUiFtueRegistry,
+            cameraUiFtueStep = cameraUiFtueStep,
             showShutterHint = showShutterHint,
             onShutterTap = onShutterTap,
             onShutterLongPress = onShutterLongPress,
@@ -224,6 +229,7 @@ internal fun BoxScope.CameraOverlayPortrait(
     onNavigateToItems: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
     cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
+    cameraUiFtueStep: CameraUiFtueViewModel.CameraUiFtueStep,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -284,6 +290,7 @@ internal fun BoxScope.CameraOverlayPortrait(
                         modifier =
                             Modifier
                                 .size(48.dp)
+                                .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST)
                                 .background(
                                     Color.Black.copy(alpha = 0.5f),
                                     shape = MaterialTheme.shapes.small,
@@ -343,6 +350,7 @@ internal fun BoxScope.CameraOverlayPortrait(
                     modifier =
                         Modifier
                             .offset(y = 6.dp)
+                            .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER)
                             .then(
                                 if (tourViewModel != null) {
                                     Modifier.tourTarget("camera_shutter", tourViewModel)
@@ -373,6 +381,7 @@ internal fun BoxScope.CameraOverlayPortrait(
                     modifier =
                         Modifier
                             .size(48.dp)
+                            .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA)
                             .background(
                                 Color.Black.copy(alpha = 0.5f),
                                 shape = MaterialTheme.shapes.small,
@@ -430,6 +439,7 @@ internal fun BoxScope.CameraOverlayLandscape(
     onNavigateToItems: () -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
     cameraUiFtueRegistry: CameraUiFtueAnchorRegistry?,
+    cameraUiFtueStep: CameraUiFtueViewModel.CameraUiFtueStep,
     showShutterHint: Boolean,
     onShutterTap: () -> Unit,
     onShutterLongPress: () -> Unit,
@@ -472,6 +482,7 @@ internal fun BoxScope.CameraOverlayLandscape(
                 showHint = showShutterHint,
                 modifier =
                     Modifier
+                        .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER)
                         .then(
                             if (tourViewModel != null) {
                                 Modifier.tourTarget("camera_shutter", tourViewModel)
@@ -535,6 +546,7 @@ internal fun BoxScope.CameraOverlayLandscape(
                 modifier =
                     Modifier
                         .size(48.dp)
+                        .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST)
                         .background(
                             Color.Black.copy(alpha = 0.5f),
                             shape = MaterialTheme.shapes.small,
@@ -596,6 +608,7 @@ internal fun BoxScope.CameraOverlayLandscape(
             modifier =
                 Modifier
                     .size(48.dp)
+                    .ftuePulse(enabled = cameraUiFtueStep == CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA)
                     .background(
                         Color.Black.copy(alpha = 0.5f),
                         shape = MaterialTheme.shapes.small,
