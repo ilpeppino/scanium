@@ -96,15 +96,27 @@ class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewM
      */
     fun initialize(shouldStartFtue: Boolean, itemCount: Int = 0) {
         viewModelScope.launch {
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue, itemCount=$itemCount")
+            }
+
             if (!shouldStartFtue || itemCount == 0) {
+                // Don't set completion flag - just mark as not active
                 _currentStep.value = ItemsListFtueStep.COMPLETED
                 _isActive.value = false
-                ftueRepository.setListFtueCompleted(true)
+                // NO ftueRepository.setListFtueCompleted() call here!
+                if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                    Log.d(TAG, "FTUE not starting (preconditions not met)")
+                }
                 return@launch
             }
 
             _isActive.value = true
             _currentStep.value = ItemsListFtueStep.WAITING_TAP_HINT
+
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "FTUE starting: step=WAITING_TAP_HINT")
+            }
 
             // Delay before showing first hint
             delay(INITIAL_DELAY_MS)
@@ -214,6 +226,10 @@ class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewM
         _showTapEditHint.value = true
         ftueRepository.setListTapEditHintSeen(true)
 
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: TAP_HINT_SHOWN, overlayVisible=true")
+        }
+
         // Show hint for duration, then auto-advance
         delay(STEP_DISPLAY_DURATION_MS)
         _showTapEditHint.value = false
@@ -230,6 +246,10 @@ class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewM
         _currentStep.value = ItemsListFtueStep.SWIPE_HINT_SHOWN
         _showSwipeDeleteHint.value = true
         ftueRepository.setListSwipeDeleteHintSeen(true)
+
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: SWIPE_HINT_SHOWN, overlayVisible=true")
+        }
 
         // Run nudge animation (offset right, then snap back)
         runSwipeNudgeAnimation()
@@ -252,6 +272,10 @@ class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewM
         _showLongPressHint.value = true
         ftueRepository.setListLongPressHintSeen(true)
 
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: LONG_PRESS_HINT_SHOWN, overlayVisible=true")
+        }
+
         // Show hint for duration, then auto-advance
         delay(STEP_DISPLAY_DURATION_MS)
         _showLongPressHint.value = false
@@ -268,6 +292,10 @@ class ItemsListFtueViewModel(private val ftueRepository: FtueRepository) : ViewM
         _currentStep.value = ItemsListFtueStep.SHARE_GOAL_SHOWN
         _showShareGoalHint.value = true
         ftueRepository.setListShareGoalHintSeen(true)
+
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: SHARE_GOAL_SHOWN, overlayVisible=true")
+        }
 
         // Show hint for duration, then auto-complete
         delay(STEP_DISPLAY_DURATION_MS)

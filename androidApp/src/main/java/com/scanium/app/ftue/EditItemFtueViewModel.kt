@@ -82,15 +82,27 @@ class EditItemFtueViewModel(private val ftueRepository: FtueRepository) : ViewMo
      */
     fun initialize(shouldStartFtue: Boolean, isDevBuild: Boolean = false) {
         viewModelScope.launch {
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue, isDevBuild=$isDevBuild")
+            }
+
             if (!shouldStartFtue) {
+                // Don't set completion flag - just mark as not active
                 _currentStep.value = EditItemFtueStep.COMPLETED
                 _isActive.value = false
-                ftueRepository.setEditFtueCompleted(true)
+                // NO ftueRepository.setEditFtueCompleted() call here!
+                if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                    Log.d(TAG, "FTUE not starting (preconditions not met)")
+                }
                 return@launch
             }
 
             _isActive.value = true
             _currentStep.value = EditItemFtueStep.WAITING_DETAILS_HINT
+
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "FTUE starting: step=WAITING_DETAILS_HINT")
+            }
 
             // Delay before showing first hint
             delay(INITIAL_DELAY_MS)
@@ -168,6 +180,10 @@ class EditItemFtueViewModel(private val ftueRepository: FtueRepository) : ViewMo
         _showDetailsHint.value = true
         ftueRepository.setEditImproveDetailsHintSeen(true)
 
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: DETAILS_HINT_SHOWN, overlayVisible=true")
+        }
+
         // Show hint for duration, then auto-advance
         delay(STEP_DISPLAY_DURATION_MS)
         _showDetailsHint.value = false
@@ -184,6 +200,10 @@ class EditItemFtueViewModel(private val ftueRepository: FtueRepository) : ViewMo
         _currentStep.value = EditItemFtueStep.CONDITION_PRICE_HINT_SHOWN
         _showConditionPriceHint.value = true
         ftueRepository.setEditConditionPriceHintSeen(true)
+
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: CONDITION_PRICE_HINT_SHOWN, overlayVisible=true")
+        }
 
         // Show hint for duration, then auto-advance
         delay(STEP_DISPLAY_DURATION_MS)

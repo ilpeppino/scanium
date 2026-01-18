@@ -372,6 +372,39 @@ fun DeveloperOptionsScreen(
                 onClick = { viewModel.resetFtueTour() },
             )
 
+            // FTUE Debug Info (DEV-only)
+            if (FeatureFlags.isDevBuild) {
+                val ftueDebugState by viewModel.ftueDebugState.collectAsState()
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                SettingsSectionHeader("FTUE Debug Info")
+
+                SettingReadOnlyRow(
+                    title = "Current Screen",
+                    subtitle = ftueDebugState.currentScreen,
+                    icon = Icons.Default.Visibility,
+                )
+
+                SettingReadOnlyRow(
+                    title = "Current Step",
+                    subtitle = ftueDebugState.currentStep,
+                    icon = Icons.Default.Timeline,
+                )
+
+                SettingReadOnlyRow(
+                    title = "Last Anchor Rect",
+                    subtitle = ftueDebugState.lastAnchorRect,
+                    icon = Icons.Default.CropFree,
+                )
+
+                SettingReadOnlyRow(
+                    title = "Overlay Rendered",
+                    subtitle = if (ftueDebugState.overlayRendered) "Yes" else "No",
+                    icon = Icons.Default.Layers,
+                )
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -676,6 +709,43 @@ private fun NotificationPermissionSection() {
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Read-only row for displaying FTUE debug information.
+ */
+@Composable
+private fun SettingReadOnlyRow(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp),
+        )
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
         }
     }
 }

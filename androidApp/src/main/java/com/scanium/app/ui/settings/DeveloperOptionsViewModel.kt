@@ -103,6 +103,17 @@ class DeveloperOptionsViewModel
             settingsRepository.devShowFtueBoundsFlow
                 .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+        // FTUE Debug State (DEV-only)
+        private val _ftueDebugState = MutableStateFlow(FtueDebugState())
+        val ftueDebugState: StateFlow<FtueDebugState> = _ftueDebugState.asStateFlow()
+
+        data class FtueDebugState(
+            val currentScreen: String = "None",
+            val currentStep: String = "IDLE",
+            val lastAnchorRect: String = "Not captured",
+            val overlayRendered: Boolean = false,
+        )
+
         // Detection settings (default ON for beta)
         val barcodeDetectionEnabled: StateFlow<Boolean> =
             settingsRepository.devBarcodeDetectionEnabledFlow
@@ -470,6 +481,28 @@ class DeveloperOptionsViewModel
             viewModelScope.launch {
                 ftueRepository.reset()
             }
+        }
+
+        /**
+         * Update FTUE debug state (DEV-only).
+         * Called from FTUE ViewModels to report current state.
+         */
+        fun updateFtueDebugState(
+            screen: String,
+            step: String,
+            anchorRect: androidx.compose.ui.geometry.Rect?,
+            overlayRendered: Boolean,
+        ) {
+            if (!FeatureFlags.isDevBuild) return
+
+            _ftueDebugState.value = FtueDebugState(
+                currentScreen = screen,
+                currentStep = step,
+                lastAnchorRect = anchorRect?.let {
+                    "x=%.0f, y=%.0f, w=%.0f, h=%.0f".format(it.left, it.top, it.width, it.height)
+                } ?: "Not captured",
+                overlayRendered = overlayRendered,
+            )
         }
 
         fun triggerCrashTest(throwCrash: Boolean = false) {

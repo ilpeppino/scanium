@@ -112,6 +112,22 @@ fun ItemsListScreen(
     val listFtueShowShareHint by listFtueViewModel.showShareGoalHint.collectAsState()
     val listFtueSwipeNudge by listFtueViewModel.swipeNudgeProgress.collectAsState()
 
+    // FTUE debug toast (DEV-only)
+    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+        val context = androidx.compose.ui.platform.LocalContext.current
+        LaunchedEffect(listFtueCurrentStep) {
+            if (listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.IDLE &&
+                listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.COMPLETED
+            ) {
+                android.widget.Toast.makeText(
+                    context,
+                    "FTUE ItemsList step=${listFtueCurrentStep.name}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
     var firstItemRect by remember { mutableStateOf<Rect?>(null) }
     var actionAreaRect by remember { mutableStateOf<Rect?>(null) }
 

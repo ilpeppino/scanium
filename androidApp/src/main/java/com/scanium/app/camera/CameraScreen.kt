@@ -241,6 +241,22 @@ fun CameraScreen(
     val cameraFtueShowBboxHint by cameraFtueViewModel.showBboxHint.collectAsState()
     val cameraFtueShowShutterHint by cameraFtueViewModel.showShutterHint.collectAsState()
 
+    // FTUE debug toast (DEV-only)
+    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+        val context = androidx.compose.ui.platform.LocalContext.current
+        LaunchedEffect(cameraFtueCurrentStep) {
+            if (cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.IDLE &&
+                cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.COMPLETED
+            ) {
+                android.widget.Toast.makeText(
+                    context,
+                    "FTUE Camera step=${cameraFtueCurrentStep.name}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
     // Compute ROI rect from scanGuidanceState
     val roiRect: androidx.compose.ui.geometry.Rect by remember(scanGuidanceState, previewSize) {
         derivedStateOf {

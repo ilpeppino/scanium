@@ -107,6 +107,23 @@ fun EditItemScreenV3(
     val editFtueIsActive by editItemFtueViewModel.isActive.collectAsState()
     val editFtueShowDetailsHint by editItemFtueViewModel.showDetailsHint.collectAsState()
     val editFtueShowConditionPriceHint by editItemFtueViewModel.showConditionPriceHint.collectAsState()
+
+    // FTUE debug toast (DEV-only)
+    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+        val toastContext = androidx.compose.ui.platform.LocalContext.current
+        LaunchedEffect(editFtueCurrentStep) {
+            if (editFtueCurrentStep != com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.IDLE &&
+                editFtueCurrentStep != com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.COMPLETED
+            ) {
+                android.widget.Toast.makeText(
+                    toastContext,
+                    "FTUE EditItem step=${editFtueCurrentStep.name}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
     var firstFieldRect by remember { mutableStateOf<Rect?>(null) }
     var conditionPriceFieldRect by remember { mutableStateOf<Rect?>(null) }
 

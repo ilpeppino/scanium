@@ -73,15 +73,27 @@ class SettingsFtueViewModel(private val ftueRepository: FtueRepository) : ViewMo
      */
     fun initialize(shouldStartFtue: Boolean) {
         viewModelScope.launch {
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue")
+            }
+
             if (!shouldStartFtue) {
+                // Don't set completion flag - just mark as not active
                 _currentStep.value = SettingsFtueStep.COMPLETED
                 _isActive.value = false
-                ftueRepository.setSettingsFtueCompleted(true)
+                // NO ftueRepository.setSettingsFtueCompleted() call here!
+                if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                    Log.d(TAG, "FTUE not starting (preconditions not met)")
+                }
                 return@launch
             }
 
             _isActive.value = true
             _currentStep.value = SettingsFtueStep.WAITING_LANGUAGE_HINT
+
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "FTUE starting: step=WAITING_LANGUAGE_HINT")
+            }
 
             // Delay before showing first hint
             delay(INITIAL_DELAY_MS)
@@ -144,6 +156,10 @@ class SettingsFtueViewModel(private val ftueRepository: FtueRepository) : ViewMo
         _showLanguageHint.value = true
         ftueRepository.setSettingsLanguageHintSeen(true)
 
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: LANGUAGE_HINT_SHOWN, overlayVisible=true")
+        }
+
         // Show hint for duration, then auto-advance
         delay(STEP_DISPLAY_DURATION_MS)
         _showLanguageHint.value = false
@@ -160,6 +176,10 @@ class SettingsFtueViewModel(private val ftueRepository: FtueRepository) : ViewMo
         _currentStep.value = SettingsFtueStep.REPLAY_HINT_SHOWN
         _showReplayHint.value = true
         ftueRepository.setSettingsReplayHintSeen(true)
+
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: REPLAY_HINT_SHOWN, overlayVisible=true")
+        }
 
         // Show hint for duration, then auto-complete
         delay(STEP_DISPLAY_DURATION_MS)

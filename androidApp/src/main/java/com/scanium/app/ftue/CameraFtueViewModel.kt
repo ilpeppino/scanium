@@ -85,15 +85,27 @@ class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewMode
      */
     fun initialize(shouldStartFtue: Boolean, hasExistingItems: Boolean = false) {
         viewModelScope.launch {
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "initialize: shouldStartFtue=$shouldStartFtue, hasExistingItems=$hasExistingItems")
+            }
+
             if (!shouldStartFtue || hasExistingItems) {
+                // Don't set completion flag - just mark as not active
                 _currentStep.value = CameraFtueStep.COMPLETED
                 _isActive.value = false
-                ftueRepository.setCameraFtueCompleted(true)
+                // NO ftueRepository.setCameraFtueCompleted() call here!
+                if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                    Log.d(TAG, "FTUE not starting (preconditions not met)")
+                }
                 return@launch
             }
 
             _isActive.value = true
             _currentStep.value = CameraFtueStep.WAITING_ROI
+
+            if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+                Log.d(TAG, "FTUE starting: step=WAITING_ROI")
+            }
 
             // Delay before showing first hint
             delay(ROI_HINT_INITIAL_DELAY_MS)
@@ -187,6 +199,10 @@ class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewMode
         _showRoiHint.value = true
         ftueRepository.setCameraRoiHintSeen(true)
 
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: ROI_HINT_SHOWN, overlayVisible=true")
+        }
+
         // ROI hint automatically hides after pulse animation completes
         delay(ROI_PULSE_DURATION_MS)
         _showRoiHint.value = false
@@ -201,6 +217,10 @@ class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewMode
         _currentStep.value = CameraFtueStep.BBOX_HINT_SHOWN
         _showBboxHint.value = true
         ftueRepository.setCameraBboxHintSeen(true)
+
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: BBOX_HINT_SHOWN, overlayVisible=true")
+        }
 
         // BBox hint shows briefly then hides
         delay(BBOX_GLOW_DURATION_MS)
@@ -219,6 +239,10 @@ class CameraFtueViewModel(private val ftueRepository: FtueRepository) : ViewMode
         _currentStep.value = CameraFtueStep.SHUTTER_HINT_SHOWN
         _showShutterHint.value = true
         ftueRepository.setCameraShutterHintSeen(true)
+
+        if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+            Log.d(TAG, "Step transition: SHUTTER_HINT_SHOWN, overlayVisible=true")
+        }
 
         // Keep shutter hint visible until user taps shutter
         // (will be dismissed in onShutterTapped/onItemCaptured)
