@@ -38,7 +38,7 @@ import com.scanium.app.R
  * - Tap-to-dismiss
  */
 @Composable
-fun EditItemFtueOverlay(
+private fun EditItemFtueOverlayContent(
     isVisible: Boolean,
     hintType: EditHintType,
     targetFieldRect: Rect? = null,
@@ -191,7 +191,7 @@ fun EditItemFtueOverlay(
 
     if (alpha > 0f) {
         Box(modifier = Modifier.alpha(alpha)) {
-            EditItemFtueOverlay(
+            EditItemFtueOverlayContent(
                 isVisible = true,
                 hintType = hintType,
                 targetFieldRect = targetFieldRect,

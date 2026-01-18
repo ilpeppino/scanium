@@ -347,7 +347,7 @@
     <!-- Camera Screen FTUE Micro-animations -->
     <string name="ftue_camera_roi">Centra un oggetto qui per scansionarlo.</string>
     <string name="ftue_camera_bbox">Le caselle appaiono intorno agli oggetti rilevati.</string>
-    <string name="ftue_camera_distance_hint">Allontanati un po' se il rilevamento è instabile.</string>
+    <string name="ftue_camera_distance_hint">Allontanati un po\' se il rilevamento e\' instabile.</string>
     <string name="ftue_camera_shutter">Tocca per catturare il tuo primo articolo.</string>
 
     <!-- Items List Screen FTUE Gestures -->

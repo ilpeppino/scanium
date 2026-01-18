@@ -114,7 +114,6 @@ fun ItemsListScreen(
 
     // FTUE debug toast (DEV-only)
     if (com.scanium.app.config.FeatureFlags.isDevBuild) {
-        val context = androidx.compose.ui.platform.LocalContext.current
         LaunchedEffect(listFtueCurrentStep) {
             if (listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.IDLE &&
                 listFtueCurrentStep != com.scanium.app.ftue.ItemsListFtueViewModel.ItemsListFtueStep.COMPLETED
@@ -152,7 +151,6 @@ fun ItemsListScreen(
     val exportState by exportViewModel.exportState.collectAsState()
     val bundleResult by exportViewModel.bundleResult.collectAsState()
 
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val soundManager = LocalSoundManager.current

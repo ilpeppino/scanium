@@ -38,7 +38,7 @@ import com.scanium.app.R
  * - Tap-to-dismiss
  */
 @Composable
-fun SettingsFtueOverlay(
+private fun SettingsFtueOverlayContent(
     isVisible: Boolean,
     hintType: SettingsHintType,
     targetOptionRect: Rect? = null,
@@ -189,7 +189,7 @@ fun SettingsFtueOverlay(
 
     if (alpha > 0f) {
         Box(modifier = Modifier.alpha(alpha)) {
-            SettingsFtueOverlay(
+            SettingsFtueOverlayContent(
                 isVisible = true,
                 hintType = hintType,
                 targetOptionRect = targetOptionRect,

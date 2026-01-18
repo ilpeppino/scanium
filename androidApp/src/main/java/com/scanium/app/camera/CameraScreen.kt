@@ -241,42 +241,6 @@ fun CameraScreen(
     val cameraFtueShowBboxHint by cameraFtueViewModel.showBboxHint.collectAsState()
     val cameraFtueShowShutterHint by cameraFtueViewModel.showShutterHint.collectAsState()
 
-    // FTUE debug toast (DEV-only)
-    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
-        val context = androidx.compose.ui.platform.LocalContext.current
-        LaunchedEffect(cameraFtueCurrentStep) {
-            if (cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.IDLE &&
-                cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.COMPLETED
-            ) {
-                android.widget.Toast.makeText(
-                    context,
-                    "FTUE Camera step=${cameraFtueCurrentStep.name}",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
-    // Compute ROI rect from scanGuidanceState
-    val roiRect: androidx.compose.ui.geometry.Rect by remember(scanGuidanceState, previewSize) {
-        derivedStateOf {
-            val roi = scanGuidanceState.scanRoi
-            val previewWidth = previewSize.width
-            val previewHeight = previewSize.height
-
-            if (previewWidth == 0 || previewHeight == 0) {
-                androidx.compose.ui.geometry.Rect(0f, 0f, 0f, 0f)
-            } else {
-                androidx.compose.ui.geometry.Rect(
-                    left = roi.left * previewWidth,
-                    top = roi.top * previewHeight,
-                    right = roi.right * previewWidth,
-                    bottom = roi.bottom * previewHeight,
-                )
-            }
-        }
-    }
-
     var shutterButtonCenter by remember { mutableStateOf<Offset?>(null) }
     var firstDetectionSeen by remember { mutableStateOf(false) }
 
@@ -304,6 +268,42 @@ fun CameraScreen(
     var imageRotationDegrees by remember { mutableStateOf(90) } // Default portrait
 
     var targetRotation by remember { mutableStateOf(view.display?.rotation ?: Surface.ROTATION_0) }
+
+    // FTUE debug toast (DEV-only)
+    if (com.scanium.app.config.FeatureFlags.isDevBuild) {
+        val context = androidx.compose.ui.platform.LocalContext.current
+        LaunchedEffect(cameraFtueCurrentStep) {
+            if (cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.IDLE &&
+                cameraFtueCurrentStep != com.scanium.app.ftue.CameraFtueViewModel.CameraFtueStep.COMPLETED
+            ) {
+                android.widget.Toast.makeText(
+                    context,
+                    "FTUE Camera step=${cameraFtueCurrentStep.name}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    // Compute ROI rect from scanGuidanceState
+    val roiRect: androidx.compose.ui.geometry.Rect by remember(scanGuidanceState, previewSize) {
+        derivedStateOf {
+            val roi = scanGuidanceState.scanRoi
+            val previewWidth = previewSize.width
+            val previewHeight = previewSize.height
+
+            if (previewWidth == 0 || previewHeight == 0) {
+                androidx.compose.ui.geometry.Rect(0f, 0f, 0f, 0f)
+            } else {
+                androidx.compose.ui.geometry.Rect(
+                    left = roi.left * previewWidth.toFloat(),
+                    top = roi.top * previewHeight.toFloat(),
+                    right = roi.right * previewWidth.toFloat(),
+                    bottom = roi.bottom * previewHeight.toFloat(),
+                )
+            }
+        }
+    }
 
     var showShutterHint by remember { mutableStateOf(false) }
 
@@ -746,10 +746,10 @@ fun CameraScreen(
                         hintType = HintType.BBOX_HINT,
                         targetRect = overlayTracks.firstOrNull()?.let { track ->
                             androidx.compose.ui.geometry.Rect(
-                                left = track.bounds.left,
-                                top = track.bounds.top,
-                                right = track.bounds.right,
-                                bottom = track.bounds.bottom,
+                                left = track.bboxNorm.left * previewSize.width.toFloat(),
+                                top = track.bboxNorm.top * previewSize.height.toFloat(),
+                                right = track.bboxNorm.right * previewSize.width.toFloat(),
+                                bottom = track.bboxNorm.bottom * previewSize.height.toFloat(),
                             )
                         },
                         onDismiss = { cameraFtueViewModel.dismiss() },

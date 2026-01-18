@@ -42,7 +42,7 @@ import com.scanium.app.R
  * - Tap-to-dismiss (tap outside spotlight area)
  */
 @Composable
-fun ItemsListFtueOverlay(
+private fun ItemsListFtueOverlayContent(
     isVisible: Boolean,
     hintType: ListHintType,
     targetItemRect: Rect? = null,
@@ -265,7 +265,7 @@ fun ItemsListFtueOverlay(
 
     if (alpha > 0f) {
         Box(modifier = Modifier.alpha(alpha)) {
-            ItemsListFtueOverlay(
+            ItemsListFtueOverlayContent(
                 isVisible = true,
                 hintType = hintType,
                 targetItemRect = targetItemRect,

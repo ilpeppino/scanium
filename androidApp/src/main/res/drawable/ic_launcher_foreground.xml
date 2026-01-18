@@ -7,43 +7,35 @@
 
     <!-- Upper Lens -->
     <path
-        android:fillColor="none"
         android:strokeColor="***REMOVED***6400FF"
         android:strokeWidth="20"
         android:strokeLineCap="round"
         android:pathData="M 400,310 m -170,0 a 170,170 0 1,0 340,0 a 170,170 0 1,0 -340,0" />
 
     <path
-        android:fillColor="none"
         android:strokeColor="***REMOVED***1a1a1a"
         android:strokeWidth="14"
         android:pathData="M 400,310 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
 
-    <circle
-        android:cx="400"
-        android:cy="310"
-        android:r="110"
+    <path
+        android:pathData="M 290,310 a 110,110 0 1,0 220,0 a 110,110 0 1,0 -220,0"
         android:fillColor="***REMOVED***6400FF"
         android:fillAlpha="0.6" />
 
     <!-- Lower Lens -->
     <path
-        android:fillColor="none"
         android:strokeColor="***REMOVED***6400FF"
         android:strokeWidth="20"
         android:strokeLineCap="round"
         android:pathData="M 400,690 m -170,0 a 170,170 0 1,0 340,0 a 170,170 0 1,0 -340,0" />
 
     <path
-        android:fillColor="none"
         android:strokeColor="***REMOVED***1a1a1a"
         android:strokeWidth="14"
         android:pathData="M 400,690 m -150,0 a 150,150 0 1,0 300,0 a 150,150 0 1,0 -300,0" />
 
-    <circle
-        android:cx="400"
-        android:cy="690"
-        android:r="110"
+    <path
+        android:pathData="M 290,690 a 110,110 0 1,0 220,0 a 110,110 0 1,0 -220,0"
         android:fillColor="***REMOVED***6400FF"
         android:fillAlpha="0.6" />
 
@@ -53,7 +45,6 @@
         android:strokeWidth="80"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:fillColor="none"
         android:pathData="M 520,250 Q 570,210 620,225 Q 670,240 680,300 Q 690,360 645,385 Q 600,410 550,375" />
 
     <!-- Blue Curved S - Lower Part -->
@@ -62,6 +53,5 @@
         android:strokeWidth="80"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:fillColor="none"
         android:pathData="M 500,650 Q 550,710 600,695 Q 650,680 660,620 Q 670,560 625,535 Q 580,510 530,545" />
 </vector>

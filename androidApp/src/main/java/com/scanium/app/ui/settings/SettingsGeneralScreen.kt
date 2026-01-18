@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.ThemeMode
