@@ -321,6 +321,27 @@
     <string name="ftue_tour_completion_title">Você está pronto!</string>
     <string name="ftue_tour_completion_desc">Você está pronto para escanear, catalogar e vender seus itens. Boas digitalizações!</string>
 
+    <!-- Camera Screen FTUE Micro-animations -->
+    <string name="ftue_camera_roi">Centralize um objeto aqui para digitalizá-lo.</string>
+    <string name="ftue_camera_bbox">As caixas aparecem ao redor dos objetos detectados.</string>
+    <string name="ftue_camera_distance_hint">Afaste-se um pouco se a detecção estiver instável.</string>
+    <string name="ftue_camera_shutter">Toque para capturar seu primeiro item.</string>
+
+    <!-- Items List Screen FTUE Gestures -->
+    <string name="ftue_list_tap_edit">Toque em um item para editar detalhes antes de vender.</string>
+    <string name="ftue_list_swipe_delete">Deslize para a direita para remover itens.</string>
+    <string name="ftue_list_long_press_select">Mantenha pressionado para selecionar vários itens.</string>
+    <string name="ftue_list_share_sell">Selecione itens e compartilhe ou exporte para vender.</string>
+
+    <!-- Edit Item Screen FTUE -->
+    <string name="ftue_edit_improve_details">Melhore os detalhes para obter listagens melhores.</string>
+    <string name="ftue_edit_condition_price">Defina a condição e o preço para melhores resultados.</string>
+    <string name="ftue_edit_use_ai">Use IA para gerar uma descrição pronta para venda.</string>
+
+    <!-- Settings Screen FTUE -->
+    <string name="ftue_settings_language">Defina seu idioma uma vez — IA e voz o acompanham.</string>
+    <string name="ftue_settings_replay">Você pode revisar este guia a qualquer momento.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium é um aplicativo focado em câmera que usa aprendizado de máquina para detectar e identificar objetos em tempo real, ajudando você a avaliar e listar itens para revenda.</string>
     <string name="about_copyright">© 2025 Equipe Scanium</string>

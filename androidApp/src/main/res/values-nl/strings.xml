@@ -320,6 +320,27 @@
     <string name="ftue_tour_completion_title">Je bent klaar!</string>
     <string name="ftue_tour_completion_desc">Je bent klaar om items te scannen, catalogiseren en verkopen. Veel scanplezier!</string>
 
+    <!-- Camera Screen FTUE Micro-animations -->
+    <string name="ftue_camera_roi">Zet een object hier in het midden om het in te scannen.</string>
+    <string name="ftue_camera_bbox">Vakken verschijnen rond gedetecteerde objecten.</string>
+    <string name="ftue_camera_distance_hint">Ga wat verder weg als de detectie instabil is.</string>
+    <string name="ftue_camera_shutter">Tik om je eerste item vast te leggen.</string>
+
+    <!-- Items List Screen FTUE Gestures -->
+    <string name="ftue_list_tap_edit">Tik op een item om details voor verkoop aan te passen.</string>
+    <string name="ftue_list_swipe_delete">Veeg naar rechts om items te verwijderen.</string>
+    <string name="ftue_list_long_press_select">Houd ingedrukt om meerdere items te selecteren.</string>
+    <string name="ftue_list_share_sell">Selecteer items en deel of exporteer ze voor verkoop.</string>
+
+    <!-- Edit Item Screen FTUE -->
+    <string name="ftue_edit_improve_details">Verbeter details voor betere aanbiedingen.</string>
+    <string name="ftue_edit_condition_price">Stel voorwaarde en prijs in voor betere resultaten.</string>
+    <string name="ftue_edit_use_ai">Gebruik AI om een verkoopklare omschrijving te genereren.</string>
+
+    <!-- Settings Screen FTUE -->
+    <string name="ftue_settings_language">Stel je taal eenmaal in — AI en spraak volgen mee.</string>
+    <string name="ftue_settings_replay">Je kunt deze gids op elk moment opnieuw bekijken.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium is een cameragerichte app die machine learning gebruikt om objecten realtime te detecteren en te identificeren, zodat je items kunt waarderen en aanbieden voor verkoop.</string>
     <string name="about_copyright">© 2025 Scanium-team</string>
