@@ -348,7 +348,10 @@ class SettingsViewModel
 
         fun resetFtueTour() {
             viewModelScope.launch {
-                ftueRepository.reset()
+                if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
+                    android.util.Log.d("FTUE", "Replay: Resetting all FTUE flags via resetAll()")
+                }
+                ftueRepository.resetAll()
             }
         }
 

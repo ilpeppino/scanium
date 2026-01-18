@@ -81,7 +81,7 @@ fun SettingsGeneralScreen(
     val context = LocalContext.current
     val ftueRepository = remember { FtueRepository(context) }
     val settingsFtueViewModel = remember { SettingsFtueViewModel(ftueRepository) }
-    val settingsFtueCompleted by ftueRepository.settingsFtueCompletedFlow.collectAsState(initial = true)
+    val settingsFtueCompleted by ftueRepository.settingsFtueCompletedFlow.collectAsState(initial = false)
     val settingsFtueCurrentStep by settingsFtueViewModel.currentStep.collectAsState()
     val settingsFtueShowLanguageHint by settingsFtueViewModel.showLanguageHint.collectAsState()
     val settingsFtueShowReplayHint by settingsFtueViewModel.showReplayHint.collectAsState()
@@ -90,7 +90,13 @@ fun SettingsGeneralScreen(
 
     // Initialize Settings FTUE when screen is first shown
     LaunchedEffect(settingsFtueCompleted) {
+        if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
+            android.util.Log.d("FTUE", "Settings: settingsFtueCompleted=$settingsFtueCompleted")
+        }
         if (!settingsFtueCompleted) {
+            if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
+                android.util.Log.d("FTUE", "Settings: Initializing FTUE (first time)")
+            }
             settingsFtueViewModel.initialize(shouldStartFtue = true)
         }
     }

@@ -103,7 +103,7 @@ fun ItemsListScreen(
     val listFtueViewModel = remember { ItemsListFtueViewModel(ftueRepository) }
 
     // Items List FTUE state
-    val listFtueCompleted by ftueRepository.listFtueCompletedFlow.collectAsState(initial = true)
+    val listFtueCompleted by ftueRepository.listFtueCompletedFlow.collectAsState(initial = false)
     val listFtueCurrentStep by listFtueViewModel.currentStep.collectAsState()
     val listFtueIsActive by listFtueViewModel.isActive.collectAsState()
     val listFtueShowTapHint by listFtueViewModel.showTapEditHint.collectAsState()
@@ -288,7 +288,13 @@ fun ItemsListScreen(
 
     // Initialize Items List FTUE when screen is first shown with items
     LaunchedEffect(items, listFtueCompleted) {
+        if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
+            android.util.Log.d("FTUE", "ItemsList: items.size=${items.size}, listFtueCompleted=$listFtueCompleted")
+        }
         if (items.isNotEmpty() && !listFtueCompleted) {
+            if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
+                android.util.Log.d("FTUE", "ItemsList: Initializing FTUE (first time)")
+            }
             listFtueViewModel.initialize(shouldStartFtue = true, itemCount = items.size)
         }
     }

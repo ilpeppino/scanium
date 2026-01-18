@@ -102,7 +102,7 @@ fun EditItemScreenV3(
     // Edit Item FTUE State
     val ftueRepository = remember { FtueRepository(context) }
     val editItemFtueViewModel = remember { EditItemFtueViewModel(ftueRepository) }
-    val editFtueCompleted by ftueRepository.editFtueCompletedFlow.collectAsState(initial = true)
+    val editFtueCompleted by ftueRepository.editFtueCompletedFlow.collectAsState(initial = false)
     val editFtueCurrentStep by editItemFtueViewModel.currentStep.collectAsState()
     val editFtueIsActive by editItemFtueViewModel.isActive.collectAsState()
     val editFtueShowDetailsHint by editItemFtueViewModel.showDetailsHint.collectAsState()
@@ -138,7 +138,13 @@ fun EditItemScreenV3(
 
     // Initialize Edit Item FTUE when screen is first shown
     LaunchedEffect(editFtueCompleted) {
+        if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
+            android.util.Log.d("FTUE", "EditItem: editFtueCompleted=$editFtueCompleted")
+        }
         if (!editFtueCompleted) {
+            if (com.scanium.app.BuildConfig.FLAVOR == "dev") {
+                android.util.Log.d("FTUE", "EditItem: Initializing FTUE (first time)")
+            }
             editItemFtueViewModel.initialize(shouldStartFtue = true, isDevBuild = com.scanium.app.BuildConfig.FLAVOR == "dev")
         }
     }

@@ -234,7 +234,7 @@ fun CameraScreen(
     val lastRoiFilterResult by itemsViewModel.lastRoiFilterResult.collectAsState()
 
     // Camera FTUE state
-    val cameraFtueCompleted by ftueRepository.cameraFtueCompletedFlow.collectAsState(initial = true)
+    val cameraFtueCompleted by ftueRepository.cameraFtueCompletedFlow.collectAsState(initial = false)
     val cameraFtueCurrentStep by cameraFtueViewModel.currentStep.collectAsState()
     val cameraFtueIsActive by cameraFtueViewModel.isActive.collectAsState()
     val cameraFtueShowRoiHint by cameraFtueViewModel.showRoiHint.collectAsState()
@@ -443,7 +443,13 @@ fun CameraScreen(
 
     // Initialize Camera FTUE when permission is granted and camera is ready
     LaunchedEffect(hasCameraPermission, cameraFtueCompleted) {
+        if (BuildConfig.FLAVOR == "dev") {
+            Log.d("FTUE", "Camera: hasCameraPermission=$hasCameraPermission, cameraFtueCompleted=$cameraFtueCompleted")
+        }
         if (hasCameraPermission && !cameraFtueCompleted) {
+            if (BuildConfig.FLAVOR == "dev") {
+                Log.d("FTUE", "Camera: Initializing FTUE (first time)")
+            }
             delay(1000) // Wait for camera to fully initialize
             val hasExistingItems = itemsCount.isNotEmpty()
             cameraFtueViewModel.initialize(shouldStartFtue = true, hasExistingItems = hasExistingItems)
