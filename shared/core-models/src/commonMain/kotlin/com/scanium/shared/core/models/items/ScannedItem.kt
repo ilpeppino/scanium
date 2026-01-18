@@ -288,8 +288,9 @@ data class ScannedItem<FullImageUri>(
     val formattedUserPrice: String?
         get() {
             val cents = userPriceCents ?: return null
-            val euros = cents / 100.0
-            return "€${"%.2f".format(euros)}"
+            val euros = cents / 100
+            val centsPart = cents % 100
+            return "€$euros.${centsPart.toString().padStart(2, '0')}"
         }
 }
 

@@ -35,6 +35,14 @@ kotlin {
                 implementation(kotlin("test-junit"))
             }
         }
+
+        // Configure iosMain to be shared across all iOS targets
+        val iosMain by creating {
+            dependsOn(commonMain.get())
+        }
+        val iosX64Main by getting { dependsOn(iosMain) }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
     }
 }
 

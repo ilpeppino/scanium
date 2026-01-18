@@ -18,6 +18,11 @@ import com.scanium.core.tracking.DetectionInfo
  * These builders replace Android-specific helpers (RectF, Bitmap) with pure Kotlin types.
  */
 
+// Multiplatform-compatible time function for tests (monotonically increasing)
+private var testTimeCounter = 1000000000000L
+
+private fun currentTimeMillis(): Long = testTimeCounter++
+
 /**
  * Creates a NormalizedRect from normalized coordinates (0.0 to 1.0).
  *
@@ -113,7 +118,7 @@ fun testScannedItem(
     boundingBox: NormalizedRect = testCenteredRect(),
     priceRange: Pair<Double, Double> = 10.0 to 50.0,
     thumbnail: ImageRef? = null,
-    timestampMs: Long = System.currentTimeMillis(),
+    timestampMs: Long = currentTimeMillis(),
     mergeCount: Int = 1,
     sourceDetectionIds: Set<String> = setOf(id),
     estimatedPriceRange: PriceRange? = null,
@@ -230,4 +235,4 @@ fun testDetectionGrid(
 
 // Internal helper for generating unique IDs
 private var idCounter = 0
-private fun randomId(): String = "${System.currentTimeMillis()}_${idCounter++}"
+private fun randomId(): String = "${currentTimeMillis()}_${idCounter++}"

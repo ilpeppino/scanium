@@ -48,8 +48,11 @@ class PriceEstimationOrchestrator(
                 try {
                     val priceRange = provider.estimate(request)
                     statusFlow.emit(PriceEstimationStatus.Ready(priceRange))
+                    val low = priceRange.low.amount
+                    val high = priceRange.high.amount
                     logger(
-                        "price_estimation_ready id=${request.itemId} provider=${provider.id} range=${priceRange.low.amount}-${priceRange.high.amount}",
+                        "price_estimation_ready id=${request.itemId} " +
+                            "provider=${provider.id} range=$low-$high",
                     )
                 } catch (cancel: CancellationException) {
                     // Swallow cancellation if timeout already emitted FAILED

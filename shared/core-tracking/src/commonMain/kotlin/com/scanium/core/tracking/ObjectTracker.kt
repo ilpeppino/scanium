@@ -946,10 +946,7 @@ data class TrackerConfig(
     val linearScanThreshold: Int = 8,
     /** Controls verbose logging (debug-only). */
     val enableVerboseLogging: Boolean = false,
-    // =========================================================================
-    // Center-weighted selection parameters (fixes distant background detection)
-    // =========================================================================
-    /** Enable center-weighted candidate selection */
+    /** Enable center-weighted candidate selection (fixes distant background detection). */
     val enableCenterWeightedSelection: Boolean = false,
     /** Weight for confidence in composite score (default 0.4) */
     val centerWeightConfidence: Float = 0.4f,

@@ -3,6 +3,13 @@ package com.scanium.core.tracking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlin.math.roundToInt
+
+// Multiplatform-compatible decimal formatting (one decimal place)
+private fun formatOneDecimal(value: Float): String {
+    val scaled = (value * 10).roundToInt()
+    return "${scaled / 10}.${scaled % 10}"
+}
 
 /**
  * PHASE 5: Lightweight, privacy-safe metrics for scan confidence tracking.
@@ -215,11 +222,11 @@ class ScanConfidenceMetrics {
         return buildString {
             appendLine("=== Scan Confidence Metrics ===")
             appendLine("Frames: $totalFramesAnalyzed")
-            appendLine("Preview bbox: ${String.format("%.1f", previewBboxPercentage)}%")
-            appendLine("Locked: ${String.format("%.1f", lockPercentage)}%")
-            appendLine("Avg time-to-lock: ${String.format("%.0f", avgTimeToLockMs)}ms")
-            appendLine("Lock success: ${String.format("%.1f", lockSuccessRate)}%")
-            appendLine("Shutter w/o bbox: ${String.format("%.1f", shutterTapsWithoutBboxPercentage)}%")
+            appendLine("Preview bbox: ${formatOneDecimal(previewBboxPercentage)}%")
+            appendLine("Locked: ${formatOneDecimal(lockPercentage)}%")
+            appendLine("Avg time-to-lock: ${avgTimeToLockMs.toInt()}ms")
+            appendLine("Lock success: ${formatOneDecimal(lockSuccessRate)}%")
+            appendLine("Shutter w/o bbox: ${formatOneDecimal(shutterTapsWithoutBboxPercentage)}%")
             if (_unlockReasons.isNotEmpty()) {
                 appendLine("Unlock reasons:")
                 _unlockReasons.entries.sortedByDescending { it.value }.forEach { (reason, count) ->
@@ -271,8 +278,8 @@ data class ScanMetricsSnapshot(
     fun toDebugString(): String =
         buildString {
             append("Frames:$totalFrames ")
-            append("Bbox:${String.format("%.0f", previewBboxPct)}% ")
-            append("Lock:${String.format("%.0f", lockPct)}% ")
-            append("TTL:${String.format("%.0f", avgTimeToLockMs)}ms ")
+            append("Bbox:${previewBboxPct.toInt()}% ")
+            append("Lock:${lockPct.toInt()}% ")
+            append("TTL:${avgTimeToLockMs.toInt()}ms ")
         }
 }
