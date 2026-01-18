@@ -20,7 +20,12 @@ Dark mode: White frame with yellow lightning bolt accent on dark slate backgroun
         android:pivotX="0"
         android:pivotY="0">
 
-        <!-- Camera frame (rounded square) - White for dark mode -->
+        <!-- Background filled rounded square - Dark slate for dark mode -->
+        <path
+            android:pathData="M 27.5 11 H 80.5 A 16.5 16.5 0 0 1 97 27.5 V 80.5 A 16.5 16.5 0 0 1 80.5 97 H 27.5 A 16.5 16.5 0 0 1 11 80.5 V 27.5 A 16.5 16.5 0 0 1 27.5 11 Z"
+            android:fillColor="***REMOVED***0F172A"/>
+
+        <!-- White border frame -->
         <path
             android:pathData="M 27.5 11 H 80.5 A 16.5 16.5 0 0 1 97 27.5 V 80.5 A 16.5 16.5 0 0 1 80.5 97 H 27.5 A 16.5 16.5 0 0 1 11 80.5 V 27.5 A 16.5 16.5 0 0 1 27.5 11 Z"
             android:strokeColor="***REMOVED***FFFFFF"

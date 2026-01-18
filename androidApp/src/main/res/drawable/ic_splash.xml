@@ -28,10 +28,15 @@ safe zone to prevent any cropping.
         android:pivotX="0"
         android:pivotY="0">
 
-        <!-- Camera frame (rounded square) - Blue for light mode -->
+        <!-- Background filled rounded square - Blue for light mode -->
         <path
             android:pathData="M 27.5 11 H 80.5 A 16.5 16.5 0 0 1 97 27.5 V 80.5 A 16.5 16.5 0 0 1 80.5 97 H 27.5 A 16.5 16.5 0 0 1 11 80.5 V 27.5 A 16.5 16.5 0 0 1 27.5 11 Z"
-            android:strokeColor="***REMOVED***1F4BFF"
+            android:fillColor="***REMOVED***1F4BFF"/>
+
+        <!-- White border frame -->
+        <path
+            android:pathData="M 27.5 11 H 80.5 A 16.5 16.5 0 0 1 97 27.5 V 80.5 A 16.5 16.5 0 0 1 80.5 97 H 27.5 A 16.5 16.5 0 0 1 11 80.5 V 27.5 A 16.5 16.5 0 0 1 27.5 11 Z"
+            android:strokeColor="***REMOVED***FFFFFF"
             android:strokeWidth="6.5"
             android:fillColor="***REMOVED***00000000"/>
 
