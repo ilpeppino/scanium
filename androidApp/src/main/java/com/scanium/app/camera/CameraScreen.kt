@@ -892,23 +892,24 @@ fun CameraScreen(
                     )
                 }
 
-                // Performance Overlay (Debug)
+                // Performance Overlay (Debug) - DISABLED to avoid conflict with FTUE diagnostics
                 // Only visible in Dev flavor (hidden in Beta and Prod)
-                if (verboseLogging && BuildConfig.FLAVOR == "dev") {
-                    PerfOverlay(
-                        analysisFps = analysisFps,
-                        classificationMode = classificationMode,
-                        callsStarted = callsStarted,
-                        callsCompleted = callsCompleted,
-                        callsFailed = callsFailed,
-                        lastLatency = lastLatency,
-                        queueDepth = queueDepth,
-                        modifier =
-                            Modifier
-                                .align(Alignment.TopStart)
-                                .padding(top = 90.dp, start = 16.dp),
-                    )
-                }
+                // Uncomment to re-enable:
+                // if (verboseLogging && BuildConfig.FLAVOR == "dev") {
+                //     PerfOverlay(
+                //         analysisFps = analysisFps,
+                //         classificationMode = classificationMode,
+                //         callsStarted = callsStarted,
+                //         callsCompleted = callsCompleted,
+                //         callsFailed = callsFailed,
+                //         lastLatency = lastLatency,
+                //         queueDepth = queueDepth,
+                //         modifier =
+                //             Modifier
+                //                 .align(Alignment.TopStart)
+                //                 .padding(top = 90.dp, start = 16.dp),
+                //     )
+                // }
 
                 // Camera Pipeline Lifecycle Debug Overlay
                 // Only visible in Dev flavor (hidden in Beta and Prod)

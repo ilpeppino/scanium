@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -79,20 +80,24 @@ fun CameraUiFtueDiagnosticsOverlay(
             )
         }
 
-        // Anchor Inspector Panel (top-left, non-intrusive)
-        AnchorInspectorPanel(
-            currentStep = currentStep,
-            anchors = anchors,
+        // Center-left vertical stack of diagnostic panels
+        Column(
             modifier = Modifier
-                .padding(start = 16.dp, top = 80.dp)
-        )
+                .align(androidx.compose.ui.Alignment.CenterStart)
+                .padding(start = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Anchor Inspector Panel
+            AnchorInspectorPanel(
+                currentStep = currentStep,
+                anchors = anchors,
+            )
 
-        // Force Step Buttons Panel (bottom-left)
-        ForceStepButtonsPanel(
-            onForceStep = onForceStep,
-            modifier = Modifier
-                .padding(start = 16.dp, bottom = 200.dp)
-        )
+            // Force Step Buttons Panel
+            ForceStepButtonsPanel(
+                onForceStep = onForceStep,
+            )
+        }
     }
 }
 
@@ -103,10 +108,9 @@ fun CameraUiFtueDiagnosticsOverlay(
 private fun AnchorInspectorPanel(
     currentStep: CameraUiFtueViewModel.CameraUiFtueStep,
     anchors: Map<String, Rect>,
-    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .background(
                 Color.Black.copy(alpha = 0.7f),
                 shape = MaterialTheme.shapes.small
@@ -168,10 +172,9 @@ private fun AnchorInspectorPanel(
 @Composable
 private fun ForceStepButtonsPanel(
     onForceStep: (CameraUiFtueViewModel.CameraUiFtueStep) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .background(
                 Color.Black.copy(alpha = 0.7f),
                 shape = MaterialTheme.shapes.small
