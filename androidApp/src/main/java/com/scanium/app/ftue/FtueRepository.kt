@@ -183,6 +183,24 @@ class FtueRepository(private val context: Context) {
         }
 
     /**
+     * Flow indicating whether the edit item FTUE sequence has been completed.
+     * Defaults to false (not completed).
+     */
+    val editFtueCompletedFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[EDIT_FTUE_COMPLETED_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the settings FTUE sequence has been completed.
+     * Defaults to false (not completed).
+     */
+    val settingsFtueCompletedFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[SETTINGS_FTUE_COMPLETED_KEY] ?: false
+        }
+
+    /**
      * Sets the tour completion status.
      * @param completed True if tour has been completed, false otherwise
      */
@@ -319,6 +337,76 @@ class FtueRepository(private val context: Context) {
     suspend fun setListFtueCompleted(completed: Boolean) {
         context.ftueDataStore.edit { preferences ->
             preferences[LIST_FTUE_COMPLETED_KEY] = completed
+        }
+    }
+
+    /**
+     * Sets the edit item "improve details" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setEditImproveDetailsHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[EDIT_IMPROVE_DETAILS_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the edit item "condition/price" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setEditConditionPriceHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[EDIT_CONDITION_PRICE_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the edit item "use AI" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setEditUseAiHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[EDIT_USE_AI_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the edit item FTUE completion status.
+     * @param completed True if the edit item FTUE sequence has been completed, false otherwise
+     */
+    suspend fun setEditFtueCompleted(completed: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[EDIT_FTUE_COMPLETED_KEY] = completed
+        }
+    }
+
+    /**
+     * Sets the settings "language" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setSettingsLanguageHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[SETTINGS_LANGUAGE_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the settings "replay guide" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setSettingsReplayHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[SETTINGS_REPLAY_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the settings FTUE completion status.
+     * @param completed True if the settings FTUE sequence has been completed, false otherwise
+     */
+    suspend fun setSettingsFtueCompleted(completed: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[SETTINGS_FTUE_COMPLETED_KEY] = completed
         }
     }
 
