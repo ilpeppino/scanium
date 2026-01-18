@@ -398,6 +398,15 @@
     <string name="ftue_list_long_press_select">Long-press to select multiple items.</string>
     <string name="ftue_list_share_sell">Select items, then share or export to sell.</string>
 
+    <!-- Edit Item Screen FTUE -->
+    <string name="ftue_edit_improve_details">Improve details to get better listings.</string>
+    <string name="ftue_edit_condition_price">Set condition and price for better results.</string>
+    <string name="ftue_edit_use_ai">Use AI to generate a ready-to-sell description.</string>
+
+    <!-- Settings Screen FTUE -->
+    <string name="ftue_settings_language">Set your language once — AI and voice follow it.</string>
+    <string name="ftue_settings_replay">You can replay this guide anytime.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium is a camera-first application that uses machine learning to detect and identify objects in real-time, helping you value and list items for resale.</string>
     <string name="about_copyright">© 2025 Scanium Team</string>
