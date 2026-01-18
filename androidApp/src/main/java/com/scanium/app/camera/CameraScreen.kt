@@ -41,6 +41,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -71,7 +72,10 @@ import com.scanium.app.R
 import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.ftue.CameraFtueOverlay
+import com.scanium.app.ftue.CameraFtueViewModel
 import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.ftue.HintType
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.ItemsViewModel
 import com.scanium.app.media.StorageHelper
@@ -114,6 +118,7 @@ fun CameraScreen(
     val soundManager = LocalSoundManager.current
     val settingsRepository = remember { SettingsRepository(context) }
     val ftueRepository = remember { FtueRepository(context) }
+    val cameraFtueViewModel = remember { CameraFtueViewModel(ftueRepository) }
     val autoSaveEnabled by settingsRepository.autoSaveEnabledFlow.collectAsState(initial = false)
     val saveDirectoryUri by settingsRepository.saveDirectoryUriFlow.collectAsState(initial = null)
 
@@ -227,6 +232,37 @@ fun CameraScreen(
     val scanGuidanceState by cameraManager.scanGuidanceState.collectAsState()
     val scanDiagnosticsEnabled by cameraManager.scanDiagnosticsEnabled.collectAsState()
     val lastRoiFilterResult by itemsViewModel.lastRoiFilterResult.collectAsState()
+
+    // Camera FTUE state
+    val cameraFtueCompleted by ftueRepository.cameraFtueCompletedFlow.collectAsState(initial = true)
+    val cameraFtueCurrentStep by cameraFtueViewModel.currentStep.collectAsState()
+    val cameraFtueIsActive by cameraFtueViewModel.isActive.collectAsState()
+    val cameraFtueShowRoiHint by cameraFtueViewModel.showRoiHint.collectAsState()
+    val cameraFtueShowBboxHint by cameraFtueViewModel.showBboxHint.collectAsState()
+    val cameraFtueShowShutterHint by cameraFtueViewModel.showShutterHint.collectAsState()
+
+    // Compute ROI rect from scanGuidanceState
+    val roiRect: androidx.compose.ui.geometry.Rect by remember(scanGuidanceState, previewSize) {
+        derivedStateOf {
+            val roi = scanGuidanceState.scanRoi
+            val previewWidth = previewSize.width
+            val previewHeight = previewSize.height
+
+            if (previewWidth == 0 || previewHeight == 0) {
+                androidx.compose.ui.geometry.Rect(0f, 0f, 0f, 0f)
+            } else {
+                androidx.compose.ui.geometry.Rect(
+                    left = roi.left * previewWidth,
+                    top = roi.top * previewHeight,
+                    right = roi.right * previewWidth,
+                    bottom = roi.bottom * previewHeight,
+                )
+            }
+        }
+    }
+
+    var shutterButtonCenter by remember { mutableStateOf<Offset?>(null) }
+    var firstDetectionSeen by remember { mutableStateOf(false) }
 
     // Document scan state
     var documentScanState by remember { mutableStateOf<DocumentScanState>(DocumentScanState.Idle) }
@@ -402,6 +438,30 @@ fun CameraScreen(
         if (hasCameraPermission && isTourActive && languageSelectionShown) {
             delay(300) // Let camera initialize
             tourViewModel?.startTour()
+        }
+    }
+
+    // Initialize Camera FTUE when permission is granted and camera is ready
+    LaunchedEffect(hasCameraPermission, cameraFtueCompleted) {
+        if (hasCameraPermission && !cameraFtueCompleted) {
+            delay(1000) // Wait for camera to fully initialize
+            val hasExistingItems = itemsCount.isNotEmpty()
+            cameraFtueViewModel.initialize(shouldStartFtue = true, hasExistingItems = hasExistingItems)
+        }
+    }
+
+    // Track first detection for BBox hint
+    LaunchedEffect(overlayTracks) {
+        if (!firstDetectionSeen && overlayTracks.isNotEmpty() && cameraFtueIsActive) {
+            firstDetectionSeen = true
+            cameraFtueViewModel.onFirstDetectionAppeared()
+        }
+    }
+
+    // Track when user captures an item to complete FTUE
+    LaunchedEffect(itemsCount) {
+        if (itemsCount.isNotEmpty() && cameraFtueIsActive) {
+            cameraFtueViewModel.onItemCaptured()
         }
     }
 
@@ -648,6 +708,41 @@ fun CameraScreen(
                     }
                 }
 
+                // Camera FTUE overlays - ROI, BBox, and Shutter hints
+                if (cameraFtueShowRoiHint) {
+                    CameraFtueOverlay(
+                        isVisible = true,
+                        hintType = HintType.ROI_PULSE,
+                        roiRect = roiRect,
+                        onDismiss = { cameraFtueViewModel.dismiss() },
+                    )
+                }
+
+                if (cameraFtueShowBboxHint) {
+                    CameraFtueOverlay(
+                        isVisible = true,
+                        hintType = HintType.BBOX_HINT,
+                        targetRect = overlayTracks.firstOrNull()?.let { track ->
+                            androidx.compose.ui.geometry.Rect(
+                                left = track.bounds.left,
+                                top = track.bounds.top,
+                                right = track.bounds.right,
+                                bottom = track.bounds.bottom,
+                            )
+                        },
+                        onDismiss = { cameraFtueViewModel.dismiss() },
+                    )
+                }
+
+                if (cameraFtueShowShutterHint) {
+                    CameraFtueOverlay(
+                        isVisible = true,
+                        hintType = HintType.SHUTTER_PULSE,
+                        shutterButtonCenter = shutterButtonCenter,
+                        onDismiss = { cameraFtueViewModel.dismiss() },
+                    )
+                }
+
                 // Cloud configuration status banner
                 ConfigurationStatusBanner(
                     classificationMode = classificationMode,
@@ -786,6 +881,9 @@ fun CameraScreen(
                     tourViewModel = tourViewModel,
                     showShutterHint = showShutterHint,
                     onShutterTap = {
+                        // Notify Camera FTUE of shutter tap
+                        cameraFtueViewModel.onShutterTapped()
+
                         // Single tap: capture one frame
                         if (cameraState == CameraState.IDLE) {
                             // PHASE 3: Check ROI eligibility before capture for better feedback

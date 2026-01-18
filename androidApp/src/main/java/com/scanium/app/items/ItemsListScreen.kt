@@ -47,8 +47,15 @@ import com.scanium.app.audio.AppSound
 import com.scanium.app.audio.LocalSoundManager
 import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
+import com.scanium.app.ftue.FtueRepository
+import com.scanium.app.ftue.ItemsListFtueOverlay
+import com.scanium.app.ftue.ItemsListFtueViewModel
+import com.scanium.app.ftue.ListHintType
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.ui.shimmerEffect
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import com.scanium.app.items.components.AttributeChipsRow
 import com.scanium.app.items.components.AttributeEditDialog
 import com.scanium.app.items.export.CsvExportWriter
@@ -91,6 +98,22 @@ fun ItemsListScreen(
     tourViewModel: com.scanium.app.ftue.TourViewModel? = null,
 ) {
     val items by itemsViewModel.items.collectAsState()
+    val context = LocalContext.current
+    val ftueRepository = remember { FtueRepository(context) }
+    val listFtueViewModel = remember { ItemsListFtueViewModel(ftueRepository) }
+
+    // Items List FTUE state
+    val listFtueCompleted by ftueRepository.listFtueCompletedFlow.collectAsState(initial = true)
+    val listFtueCurrentStep by listFtueViewModel.currentStep.collectAsState()
+    val listFtueIsActive by listFtueViewModel.isActive.collectAsState()
+    val listFtueShowTapHint by listFtueViewModel.showTapEditHint.collectAsState()
+    val listFtueShowSwipeHint by listFtueViewModel.showSwipeDeleteHint.collectAsState()
+    val listFtueShowLongPressHint by listFtueViewModel.showLongPressHint.collectAsState()
+    val listFtueShowShareHint by listFtueViewModel.showShareGoalHint.collectAsState()
+    val listFtueSwipeNudge by listFtueViewModel.swipeNudgeProgress.collectAsState()
+
+    var firstItemRect by remember { mutableStateOf<Rect?>(null) }
+    var actionAreaRect by remember { mutableStateOf<Rect?>(null) }
 
     // Item detail sheet state
     var detailSheetItem by remember { mutableStateOf<ScannedItem?>(null) }
@@ -260,6 +283,13 @@ fun ItemsListScreen(
                 message = alert.message,
                 duration = SnackbarDuration.Long,
             )
+        }
+    }
+
+    // Initialize Items List FTUE when screen is first shown with items
+    LaunchedEffect(items, listFtueCompleted) {
+        if (items.isNotEmpty() && !listFtueCompleted) {
+            listFtueViewModel.initialize(shouldStartFtue = true, itemCount = items.size)
         }
     }
 
@@ -450,6 +480,44 @@ fun ItemsListScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
+            )
+        }
+
+        // Items List FTUE overlays
+        if (listFtueShowTapHint) {
+            ItemsListFtueOverlay(
+                isVisible = true,
+                hintType = ListHintType.TAP_EDIT,
+                targetItemRect = firstItemRect,
+                onDismiss = { listFtueViewModel.dismiss() },
+            )
+        }
+
+        if (listFtueShowSwipeHint) {
+            ItemsListFtueOverlay(
+                isVisible = true,
+                hintType = ListHintType.SWIPE_DELETE,
+                targetItemRect = firstItemRect,
+                onDismiss = { listFtueViewModel.dismiss() },
+                swipeNudgeProgress = listFtueSwipeNudge,
+            )
+        }
+
+        if (listFtueShowLongPressHint) {
+            ItemsListFtueOverlay(
+                isVisible = true,
+                hintType = ListHintType.LONG_PRESS_SELECT,
+                targetItemRect = firstItemRect,
+                onDismiss = { listFtueViewModel.dismiss() },
+            )
+        }
+
+        if (listFtueShowShareHint) {
+            ItemsListFtueOverlay(
+                isVisible = true,
+                hintType = ListHintType.SHARE_SELL,
+                actionAreaRect = actionAreaRect,
+                onDismiss = { listFtueViewModel.dismiss() },
             )
         }
 

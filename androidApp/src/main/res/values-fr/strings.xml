@@ -316,6 +316,27 @@
     <string name="ftue_tour_completion_title">Vous êtes prêt !</string>
     <string name="ftue_tour_completion_desc">Vous êtes prêt à scanner, cataloguer et vendre vos articles. Bon scan !</string>
 
+    <!-- Camera Screen FTUE Micro-animations -->
+    <string name="ftue_camera_roi">Centrez un objet ici pour le scanner.</string>
+    <string name="ftue_camera_bbox">Les boîtes apparaissent autour des objets détectés.</string>
+    <string name="ftue_camera_distance_hint">Éloignez-vous un peu si la détection est instable.</string>
+    <string name="ftue_camera_shutter">Touchez pour capturer votre premier article.</string>
+
+    <!-- Items List Screen FTUE Gestures -->
+    <string name="ftue_list_tap_edit">Touchez un article pour modifier les détails avant de vendre.</string>
+    <string name="ftue_list_swipe_delete">Glissez vers la droite pour supprimer des articles.</string>
+    <string name="ftue_list_long_press_select">Maintenez enfoncé pour sélectionner plusieurs articles.</string>
+    <string name="ftue_list_share_sell">Sélectionnez des articles, puis partagez ou exportez pour vendre.</string>
+
+    <!-- Edit Item Screen FTUE -->
+    <string name="ftue_edit_improve_details">Améliorez les détails pour de meilleures annonces.</string>
+    <string name="ftue_edit_condition_price">Définissez l\'état et le prix pour de meilleurs résultats.</string>
+    <string name="ftue_edit_use_ai">Utilisez l\'IA pour générer une description prête à vendre.</string>
+
+    <!-- Settings Screen FTUE -->
+    <string name="ftue_settings_language">Définissez votre langue une fois — L\'IA et la voix la suivront.</string>
+    <string name="ftue_settings_replay">Vous pouvez relire ce guide à tout moment.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium est une application centrée sur la caméra qui utilise le machine learning pour détecter et identifier des objets en temps réel, vous aidant à les estimer et à les lister pour la revente.</string>
     <string name="about_copyright">© 2025 Équipe Scanium</string>

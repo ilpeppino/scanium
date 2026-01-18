@@ -20,6 +20,30 @@ class FtueRepository(private val context: Context) {
         private val PERMISSION_EDUCATION_SHOWN_KEY = booleanPreferencesKey("permission_education_shown")
         private val SHUTTER_HINT_SHOWN_KEY = booleanPreferencesKey("shutter_hint_shown")
         private val LANGUAGE_SELECTION_SHOWN_KEY = booleanPreferencesKey("language_selection_shown")
+
+        // Camera FTUE flags (screen-scoped, per-step)
+        private val CAMERA_ROI_HINT_SEEN_KEY = booleanPreferencesKey("camera_roi_hint_seen")
+        private val CAMERA_BBOX_HINT_SEEN_KEY = booleanPreferencesKey("camera_bbox_hint_seen")
+        private val CAMERA_SHUTTER_HINT_SEEN_KEY = booleanPreferencesKey("camera_shutter_hint_seen")
+        private val CAMERA_FTUE_COMPLETED_KEY = booleanPreferencesKey("camera_ftue_completed")
+
+        // Items List FTUE flags (screen-scoped, per-step)
+        private val LIST_TAP_EDIT_HINT_SEEN_KEY = booleanPreferencesKey("list_tap_edit_hint_seen")
+        private val LIST_SWIPE_DELETE_HINT_SEEN_KEY = booleanPreferencesKey("list_swipe_delete_hint_seen")
+        private val LIST_LONG_PRESS_HINT_SEEN_KEY = booleanPreferencesKey("list_long_press_hint_seen")
+        private val LIST_SHARE_GOAL_HINT_SEEN_KEY = booleanPreferencesKey("list_share_goal_hint_seen")
+        private val LIST_FTUE_COMPLETED_KEY = booleanPreferencesKey("list_ftue_completed")
+
+        // Edit Item FTUE flags (screen-scoped, per-step)
+        private val EDIT_IMPROVE_DETAILS_HINT_SEEN_KEY = booleanPreferencesKey("edit_improve_details_hint_seen")
+        private val EDIT_CONDITION_PRICE_HINT_SEEN_KEY = booleanPreferencesKey("edit_condition_price_hint_seen")
+        private val EDIT_USE_AI_HINT_SEEN_KEY = booleanPreferencesKey("edit_use_ai_hint_seen")
+        private val EDIT_FTUE_COMPLETED_KEY = booleanPreferencesKey("edit_ftue_completed")
+
+        // Settings FTUE flags (screen-scoped, per-step)
+        private val SETTINGS_LANGUAGE_HINT_SEEN_KEY = booleanPreferencesKey("settings_language_hint_seen")
+        private val SETTINGS_REPLAY_HINT_SEEN_KEY = booleanPreferencesKey("settings_replay_hint_seen")
+        private val SETTINGS_FTUE_COMPLETED_KEY = booleanPreferencesKey("settings_ftue_completed")
     }
 
     /**
@@ -68,6 +92,94 @@ class FtueRepository(private val context: Context) {
     val languageSelectionShownFlow: Flow<Boolean> =
         context.ftueDataStore.data.map { preferences ->
             preferences[LANGUAGE_SELECTION_SHOWN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the camera ROI pulse hint has been shown.
+     * Part of the camera screen FTUE sequence.
+     * Defaults to false (not shown).
+     */
+    val cameraRoiHintSeenFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[CAMERA_ROI_HINT_SEEN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the camera bounding box hint has been shown.
+     * Part of the camera screen FTUE sequence.
+     * Defaults to false (not shown).
+     */
+    val cameraBboxHintSeenFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[CAMERA_BBOX_HINT_SEEN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the camera shutter hint has been shown.
+     * Part of the camera screen FTUE sequence.
+     * Defaults to false (not shown).
+     */
+    val cameraShutterHintSeenFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[CAMERA_SHUTTER_HINT_SEEN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the camera FTUE sequence has been completed.
+     * Defaults to false (not completed).
+     */
+    val cameraFtueCompletedFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[CAMERA_FTUE_COMPLETED_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the items list "tap to edit" hint has been shown.
+     * Part of the items list FTUE sequence.
+     * Defaults to false (not shown).
+     */
+    val listTapEditHintSeenFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[LIST_TAP_EDIT_HINT_SEEN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the items list "swipe to delete" hint has been shown.
+     * Part of the items list FTUE sequence.
+     * Defaults to false (not shown).
+     */
+    val listSwipeDeleteHintSeenFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[LIST_SWIPE_DELETE_HINT_SEEN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the items list "long-press to select" hint has been shown.
+     * Part of the items list FTUE sequence.
+     * Defaults to false (not shown).
+     */
+    val listLongPressHintSeenFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[LIST_LONG_PRESS_HINT_SEEN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the items list "share to sell" goal hint has been shown.
+     * Part of the items list FTUE sequence.
+     * Defaults to false (not shown).
+     */
+    val listShareGoalHintSeenFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[LIST_SHARE_GOAL_HINT_SEEN_KEY] ?: false
+        }
+
+    /**
+     * Flow indicating whether the items list FTUE sequence has been completed.
+     * Defaults to false (not completed).
+     */
+    val listFtueCompletedFlow: Flow<Boolean> =
+        context.ftueDataStore.data.map { preferences ->
+            preferences[LIST_FTUE_COMPLETED_KEY] ?: false
         }
 
     /**
@@ -121,6 +233,96 @@ class FtueRepository(private val context: Context) {
     }
 
     /**
+     * Sets the camera ROI hint seen status.
+     * @param seen True if the ROI pulse hint has been shown, false otherwise
+     */
+    suspend fun setCameraRoiHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[CAMERA_ROI_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the camera bounding box hint seen status.
+     * @param seen True if the BBox hint has been shown, false otherwise
+     */
+    suspend fun setCameraBboxHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[CAMERA_BBOX_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the camera shutter hint seen status.
+     * @param seen True if the shutter hint has been shown, false otherwise
+     */
+    suspend fun setCameraShutterHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[CAMERA_SHUTTER_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the camera FTUE completion status.
+     * @param completed True if the camera FTUE sequence has been completed, false otherwise
+     */
+    suspend fun setCameraFtueCompleted(completed: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[CAMERA_FTUE_COMPLETED_KEY] = completed
+        }
+    }
+
+    /**
+     * Sets the items list "tap to edit" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setListTapEditHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[LIST_TAP_EDIT_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the items list "swipe to delete" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setListSwipeDeleteHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[LIST_SWIPE_DELETE_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the items list "long-press to select" hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setListLongPressHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[LIST_LONG_PRESS_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the items list "share to sell" goal hint seen status.
+     * @param seen True if the hint has been shown, false otherwise
+     */
+    suspend fun setListShareGoalHintSeen(seen: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[LIST_SHARE_GOAL_HINT_SEEN_KEY] = seen
+        }
+    }
+
+    /**
+     * Sets the items list FTUE completion status.
+     * @param completed True if the items list FTUE sequence has been completed, false otherwise
+     */
+    suspend fun setListFtueCompleted(completed: Boolean) {
+        context.ftueDataStore.edit { preferences ->
+            preferences[LIST_FTUE_COMPLETED_KEY] = completed
+        }
+    }
+
+    /**
      * Resets the tour completion status, allowing the tour to be shown again.
      */
     suspend fun reset() {
@@ -128,7 +330,7 @@ class FtueRepository(private val context: Context) {
     }
 
     /**
-     * Resets all FTUE state including permission education.
+     * Resets all FTUE state including permission education and screen-scoped FTUE sequences.
      * Useful for debugging or when user wants to see onboarding again.
      */
     suspend fun resetAll() {
@@ -137,6 +339,26 @@ class FtueRepository(private val context: Context) {
             preferences[PERMISSION_EDUCATION_SHOWN_KEY] = false
             preferences[SHUTTER_HINT_SHOWN_KEY] = false
             preferences[LANGUAGE_SELECTION_SHOWN_KEY] = false
+            // Camera FTUE
+            preferences[CAMERA_ROI_HINT_SEEN_KEY] = false
+            preferences[CAMERA_BBOX_HINT_SEEN_KEY] = false
+            preferences[CAMERA_SHUTTER_HINT_SEEN_KEY] = false
+            preferences[CAMERA_FTUE_COMPLETED_KEY] = false
+            // Items List FTUE
+            preferences[LIST_TAP_EDIT_HINT_SEEN_KEY] = false
+            preferences[LIST_SWIPE_DELETE_HINT_SEEN_KEY] = false
+            preferences[LIST_LONG_PRESS_HINT_SEEN_KEY] = false
+            preferences[LIST_SHARE_GOAL_HINT_SEEN_KEY] = false
+            preferences[LIST_FTUE_COMPLETED_KEY] = false
+            // Edit Item FTUE
+            preferences[EDIT_IMPROVE_DETAILS_HINT_SEEN_KEY] = false
+            preferences[EDIT_CONDITION_PRICE_HINT_SEEN_KEY] = false
+            preferences[EDIT_USE_AI_HINT_SEEN_KEY] = false
+            preferences[EDIT_FTUE_COMPLETED_KEY] = false
+            // Settings FTUE
+            preferences[SETTINGS_LANGUAGE_HINT_SEEN_KEY] = false
+            preferences[SETTINGS_REPLAY_HINT_SEEN_KEY] = false
+            preferences[SETTINGS_FTUE_COMPLETED_KEY] = false
         }
     }
 }
