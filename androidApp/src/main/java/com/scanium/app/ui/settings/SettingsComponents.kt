@@ -144,9 +144,10 @@ fun SettingActionRow(
     icon: ImageVector? = null,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    modifier: Modifier = Modifier,
 ) {
     val rowModifier =
-        Modifier
+        modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {}
             .alpha(if (enabled) 1f else 0.5f)
@@ -409,6 +410,7 @@ fun <T> ValuePickerSettingRow(
     onValueSelected: (T) -> Unit,
     enabled: Boolean = true,
     modalTitle: String? = null,
+    modifier: Modifier = Modifier,
 ) {
     var showSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -419,7 +421,7 @@ fun <T> ValuePickerSettingRow(
 
     // Main row
     val rowModifier =
-        Modifier
+        modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {}
             .alpha(if (enabled) 1f else 0.5f)

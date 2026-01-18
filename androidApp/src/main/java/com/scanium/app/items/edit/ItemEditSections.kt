@@ -60,6 +60,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.geometry.Rect
 import com.scanium.app.R
 import com.scanium.app.ftue.tourTarget
 import com.scanium.app.items.AttributeDisplayFormatter
@@ -75,6 +77,8 @@ fun ItemEditSections(
     focusManager: FocusManager,
     onAddPhotos: (String) -> Unit,
     tourViewModel: com.scanium.app.ftue.TourViewModel?,
+    onFirstFieldBoundsChanged: ((Rect?) -> Unit)? = null,
+    onConditionPriceBoundsChanged: ((Rect?) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -237,6 +241,7 @@ fun ItemEditSections(
             visualTransformation = AttributeDisplayFormatter.visualTransformation(state.context, "brand"),
             imeAction = ImeAction.Next,
             onNext = { focusManager.moveFocus(FocusDirection.Down) },
+            onBoundsChanged = onFirstFieldBoundsChanged,
             modifier = if (tourViewModel != null) {
                 Modifier.tourTarget("edit_brand_field", tourViewModel)
             } else {
@@ -310,6 +315,7 @@ fun ItemEditSections(
             label = stringResource(R.string.edit_item_field_condition),
             selectedCondition = state.conditionField,
             onConditionSelected = { state.conditionField = it },
+            onBoundsChanged = onConditionPriceBoundsChanged,
         )
 
         Spacer(Modifier.height(12.dp))
@@ -375,6 +381,7 @@ private fun LabeledTextField(
     imeAction: ImeAction = ImeAction.Next,
     onNext: () -> Unit = {},
     keyboardOptions: KeyboardOptions? = null,
+    onBoundsChanged: ((Rect?) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -387,7 +394,14 @@ private fun LabeledTextField(
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onGloballyPositioned { coordinates ->
+                    if (onBoundsChanged != null) {
+                        val bounds = coordinates.boundsInWindow()
+                        onBoundsChanged(bounds)
+                    }
+                },
             visualTransformation = visualTransformation,
             trailingIcon = {
                 if (value.isNotEmpty()) {
@@ -411,6 +425,7 @@ private fun LabeledConditionDropdown(
     label: String,
     selectedCondition: ItemCondition?,
     onConditionSelected: (ItemCondition?) -> Unit,
+    onBoundsChanged: ((Rect?) -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -432,7 +447,13 @@ private fun LabeledConditionDropdown(
                 readOnly = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(),
+                    .menuAnchor()
+                    .onGloballyPositioned { coordinates ->
+                        if (onBoundsChanged != null) {
+                            val bounds = coordinates.boundsInWindow()
+                            onBoundsChanged(bounds)
+                        }
+                    },
                 trailingIcon = {
                     if (selectedCondition != null) {
                         IconButton(onClick = { onConditionSelected(null) }) {

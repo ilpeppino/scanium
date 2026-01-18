@@ -40,6 +40,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import com.scanium.app.ftue.EditItemFtueOverlay
+import com.scanium.app.ftue.EditItemFtueViewModel
+import com.scanium.app.ftue.EditHintType
+import com.scanium.app.ftue.FtueRepository
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -94,6 +99,17 @@ fun EditItemScreenV3(
     val isTourActive by tourViewModel?.isTourActive?.collectAsState() ?: remember { mutableStateOf(false) }
     val targetBounds by tourViewModel?.targetBounds?.collectAsState() ?: remember { mutableStateOf(emptyMap()) }
 
+    // Edit Item FTUE State
+    val ftueRepository = remember { FtueRepository(context) }
+    val editItemFtueViewModel = remember { EditItemFtueViewModel(ftueRepository) }
+    val editFtueCompleted by ftueRepository.editFtueCompletedFlow.collectAsState(initial = true)
+    val editFtueCurrentStep by editItemFtueViewModel.currentStep.collectAsState()
+    val editFtueIsActive by editItemFtueViewModel.isActive.collectAsState()
+    val editFtueShowDetailsHint by editItemFtueViewModel.showDetailsHint.collectAsState()
+    val editFtueShowConditionPriceHint by editItemFtueViewModel.showConditionPriceHint.collectAsState()
+    var firstFieldRect by remember { mutableStateOf<Rect?>(null) }
+    var conditionPriceFieldRect by remember { mutableStateOf<Rect?>(null) }
+
     val editState = rememberItemEditState(
         item = item,
         itemId = itemId,
@@ -117,6 +133,27 @@ fun EditItemScreenV3(
                     editState.priceField = "%.2f".format(median)
                 }
             }
+        }
+    }
+
+    // Initialize Edit Item FTUE when screen is first shown
+    LaunchedEffect(editFtueCompleted) {
+        if (!editFtueCompleted) {
+            editItemFtueViewModel.initialize(shouldStartFtue = true, isDevBuild = com.scanium.app.BuildConfig.FLAVOR == "dev")
+        }
+    }
+
+    // Track field edits for FTUE progression
+    LaunchedEffect(editState.brandField, editState.productTypeField, editState.modelField, editState.colorField, editState.sizeField, editState.materialField) {
+        if (editFtueCurrentStep == com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.DETAILS_HINT_SHOWN) {
+            editItemFtueViewModel.onFieldEdited()
+        }
+    }
+
+    // Track condition/price updates for FTUE progression
+    LaunchedEffect(editState.conditionField, editState.priceField) {
+        if (editFtueCurrentStep == com.scanium.app.ftue.EditItemFtueViewModel.EditItemFtueStep.CONDITION_PRICE_HINT_SHOWN) {
+            editItemFtueViewModel.onConditionOrPriceSet()
         }
     }
 
@@ -274,6 +311,8 @@ fun EditItemScreenV3(
             focusManager = focusManager,
             onAddPhotos = onAddPhotos,
             tourViewModel = tourViewModel,
+            onFirstFieldBoundsChanged = { bounds -> firstFieldRect = bounds },
+            onConditionPriceBoundsChanged = { bounds -> conditionPriceFieldRect = bounds },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
@@ -433,6 +472,25 @@ fun EditItemScreenV3(
                 )
             }
         }
+    }
+
+    // Edit Item FTUE Overlays
+    if (editFtueShowDetailsHint) {
+        EditItemFtueOverlay(
+            isVisible = true,
+            hintType = EditHintType.IMPROVE_DETAILS,
+            targetFieldRect = firstFieldRect,
+            onDismiss = { editItemFtueViewModel.dismiss() },
+        )
+    }
+
+    if (editFtueShowConditionPriceHint) {
+        EditItemFtueOverlay(
+            isVisible = true,
+            hintType = EditHintType.CONDITION_PRICE,
+            targetFieldRect = conditionPriceFieldRect,
+            onDismiss = { editItemFtueViewModel.dismiss() },
+        )
     }
 }
 
