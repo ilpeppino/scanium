@@ -344,6 +344,27 @@
     <string name="ftue_tour_completion_title">Sei pronto!</string>
     <string name="ftue_tour_completion_desc">Sei pronto per scansionare, catalogare e vendere i tuoi articoli. Buona scansione!</string>
 
+    <!-- Camera Screen FTUE Micro-animations -->
+    <string name="ftue_camera_roi">Centra un oggetto qui per scansionarlo.</string>
+    <string name="ftue_camera_bbox">Le caselle appaiono intorno agli oggetti rilevati.</string>
+    <string name="ftue_camera_distance_hint">Allontanati un po' se il rilevamento è instabile.</string>
+    <string name="ftue_camera_shutter">Tocca per catturare il tuo primo articolo.</string>
+
+    <!-- Items List Screen FTUE Gestures -->
+    <string name="ftue_list_tap_edit">Tocca un articolo per modificare i dettagli prima di venderlo.</string>
+    <string name="ftue_list_swipe_delete">Scorri a destra per rimuovere gli articoli.</string>
+    <string name="ftue_list_long_press_select">Tieni premuto per selezionare più articoli.</string>
+    <string name="ftue_list_share_sell">Seleziona gli articoli, quindi condividi o esporta per vendere.</string>
+
+    <!-- Edit Item Screen FTUE -->
+    <string name="ftue_edit_improve_details">Migliora i dettagli per ottenere listing migliori.</string>
+    <string name="ftue_edit_condition_price">Imposta la condizione e il prezzo per risultati migliori.</string>
+    <string name="ftue_edit_use_ai">Usa l\'IA per generare una descrizione pronta per la vendita.</string>
+
+    <!-- Settings Screen FTUE -->
+    <string name="ftue_settings_language">Imposta la tua lingua una volta — L\'IA e la voce la seguiranno.</string>
+    <string name="ftue_settings_replay">Puoi ripetere questa guida in qualsiasi momento.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium è un\'applicazione incentrata sulla fotocamera che usa il machine learning per rilevare e identificare oggetti in tempo reale, aiutandoti a valutarli e inserirli per la rivendita.</string>
     <string name="about_copyright">© 2025 Team Scanium</string>

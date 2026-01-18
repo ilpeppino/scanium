@@ -326,6 +326,27 @@
     <string name="ftue_tour_completion_title">Du bist bereit!</string>
     <string name="ftue_tour_completion_desc">Alles bereit, um Artikel zu scannen, zu katalogisieren und zu verkaufen. Viel Spaß beim Scannen!</string>
 
+    <!-- Camera Screen FTUE Micro-animations -->
+    <string name="ftue_camera_roi">Zentriere ein Objekt hier, um es zu scannen.</string>
+    <string name="ftue_camera_bbox">Rahmen erscheinen um erkannte Objekte.</string>
+    <string name="ftue_camera_distance_hint">Move dich etwas weiter weg, wenn die Erkennung instabil ist.</string>
+    <string name="ftue_camera_shutter">Tippe, um dein erstes Objekt zu erfassen.</string>
+
+    <!-- Items List Screen FTUE Gestures -->
+    <string name="ftue_list_tap_edit">Tippe auf ein Element, um Details vor dem Verkauf zu bearbeiten.</string>
+    <string name="ftue_list_swipe_delete">Wische nach rechts, um Elemente zu löschen.</string>
+    <string name="ftue_list_long_press_select">Halte gedrückt, um mehrere Elemente auszuwählen.</string>
+    <string name="ftue_list_share_sell">Wähle Elemente aus, dann teile oder exportiere zum Verkauf.</string>
+
+    <!-- Edit Item Screen FTUE -->
+    <string name="ftue_edit_improve_details">Verbessere Details für bessere Angebote.</string>
+    <string name="ftue_edit_condition_price">Lege Zustand und Preis für bessere Ergebnisse fest.</string>
+    <string name="ftue_edit_use_ai">Verwende KI, um eine verkaufsfertige Beschreibung zu generieren.</string>
+
+    <!-- Settings Screen FTUE -->
+    <string name="ftue_settings_language">Stelle deine Sprache einmal ein — KI und Sprachfunktion folgen.</string>
+    <string name="ftue_settings_replay">Du kannst diese Anleitung jederzeit wiederholen.</string>
+
     <!-- About & Legal -->
     <string name="about_description">Scanium ist eine kameraorientierte Anwendung, die maschinelles Lernen nutzt, um Objekte in Echtzeit zu erkennen und zu identifizieren und dir bei der Bewertung und dem Einstellen von Artikeln zum Wiederverkauf zu helfen.</string>
     <string name="about_copyright">© 2025 Scanium-Team</string>
