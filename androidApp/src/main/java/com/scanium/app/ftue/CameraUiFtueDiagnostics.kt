@@ -131,8 +131,18 @@ private fun AnchorInspectorPanel(
 
         Spacer(modifier = Modifier.height(4.dp))
 
+        // Show step index + name for actual execution tracking
+        val stepIndex = when (currentStep) {
+            CameraUiFtueViewModel.CameraUiFtueStep.IDLE -> -1
+            CameraUiFtueViewModel.CameraUiFtueStep.SHUTTER -> 0
+            CameraUiFtueViewModel.CameraUiFtueStep.FLIP_CAMERA -> 1
+            CameraUiFtueViewModel.CameraUiFtueStep.ITEM_LIST -> 2
+            CameraUiFtueViewModel.CameraUiFtueStep.SETTINGS -> 3
+            CameraUiFtueViewModel.CameraUiFtueStep.COMPLETED -> 4
+        }
+
         Text(
-            text = "Step: ${currentStep.name}",
+            text = "Step: [$stepIndex] ${currentStep.name}",
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace,
             color = Color.White,
