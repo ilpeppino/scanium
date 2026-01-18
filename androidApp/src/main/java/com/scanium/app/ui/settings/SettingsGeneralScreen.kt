@@ -42,10 +42,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
 import com.scanium.app.R
 import com.scanium.app.data.MarketplaceRepository
 import com.scanium.app.data.ThemeMode
 import com.scanium.app.model.user.UserEdition
+import com.scanium.app.ftue.SettingsFtueViewModel
+import com.scanium.app.ftue.SettingsFtueOverlay
+import com.scanium.app.ftue.SettingsHintType
+import com.scanium.app.ftue.FtueRepository
 import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
@@ -69,6 +76,31 @@ fun SettingsGeneralScreen(
     // Unified settings state
     val primaryRegionCountry by viewModel.primaryRegionCountry.collectAsState()
     val primaryLanguage by viewModel.primaryLanguage.collectAsState()
+
+    // Settings FTUE state
+    val context = LocalContext.current
+    val ftueRepository = remember { FtueRepository(context) }
+    val settingsFtueViewModel = remember { SettingsFtueViewModel(ftueRepository) }
+    val settingsFtueCompleted by ftueRepository.settingsFtueCompletedFlow.collectAsState(initial = true)
+    val settingsFtueCurrentStep by settingsFtueViewModel.currentStep.collectAsState()
+    val settingsFtueShowLanguageHint by settingsFtueViewModel.showLanguageHint.collectAsState()
+    val settingsFtueShowReplayHint by settingsFtueViewModel.showReplayHint.collectAsState()
+    var languageOptionRect by remember { mutableStateOf<Rect?>(null) }
+    var replayOptionRect by remember { mutableStateOf<Rect?>(null) }
+
+    // Initialize Settings FTUE when screen is first shown
+    LaunchedEffect(settingsFtueCompleted) {
+        if (!settingsFtueCompleted) {
+            settingsFtueViewModel.initialize(shouldStartFtue = true)
+        }
+    }
+
+    // Track language changes for FTUE progression
+    LaunchedEffect(primaryLanguage) {
+        if (settingsFtueCurrentStep == com.scanium.app.ftue.SettingsFtueViewModel.SettingsFtueStep.LANGUAGE_HINT_SHOWN) {
+            settingsFtueViewModel.onLanguageChanged()
+        }
+    }
 
     // Load countries for primary region picker
     val countries = remember { marketplaceRepository.loadCountries() }
@@ -332,6 +364,9 @@ fun SettingsGeneralScreen(
                 currentValue = primaryLanguage,
                 options = languageOptions,
                 onValueSelected = viewModel::setPrimaryLanguage,
+                modifier = Modifier.onGloballyPositioned { coordinates ->
+                    languageOptionRect = coordinates.boundsInWindow()
+                },
             )
 
             // 2) Marketplace country - Drives marketplace selection only
@@ -375,6 +410,9 @@ fun SettingsGeneralScreen(
                 subtitle = stringResource(R.string.settings_replay_guide_subtitle),
                 icon = Icons.Filled.Info,
                 onClick = viewModel::resetFtueTour,
+                modifier = Modifier.onGloballyPositioned { coordinates ->
+                    replayOptionRect = coordinates.boundsInWindow()
+                },
             )
         }
 
@@ -427,6 +465,25 @@ fun SettingsGeneralScreen(
                         Text(stringResource(R.string.settings_delete_account_cancel))
                     }
                 }
+            )
+        }
+
+        // Settings FTUE Overlays
+        if (settingsFtueShowLanguageHint) {
+            SettingsFtueOverlay(
+                isVisible = true,
+                hintType = SettingsHintType.LANGUAGE,
+                targetOptionRect = languageOptionRect,
+                onDismiss = { settingsFtueViewModel.dismiss() },
+            )
+        }
+
+        if (settingsFtueShowReplayHint) {
+            SettingsFtueOverlay(
+                isVisible = true,
+                hintType = SettingsHintType.REPLAY,
+                targetOptionRect = replayOptionRect,
+                onDismiss = { settingsFtueViewModel.dismiss() },
             )
         }
     }
