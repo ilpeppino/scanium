@@ -35,6 +35,10 @@ kotlin {
                 implementation(kotlin("test-junit"))
             }
         }
+
+        jvmTest.dependencies {
+            implementation(kotlin("test-junit"))
+        }
     }
 }
 
