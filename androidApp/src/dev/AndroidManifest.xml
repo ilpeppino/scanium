@@ -2,4 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- DEV flavor only: Required for background health monitor notifications on Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- Debug broadcast receiver for build verification (dev flavor only) -->
+        <receiver
+            android:name=".debug.BuildInfoReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.scanium.app.DEBUG_BUILD_INFO" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>
