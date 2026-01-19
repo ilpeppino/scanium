@@ -1,7 +1,7 @@
 package com.scanium.app.ml.classification
 
 import android.util.Log
-import com.scanium.app.aggregation.AggregatedItem
+import com.scanium.app.AggregatedItem
 import com.scanium.shared.core.models.model.ImageRef
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap

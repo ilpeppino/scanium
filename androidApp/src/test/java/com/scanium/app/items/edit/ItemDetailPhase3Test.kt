@@ -2,7 +2,7 @@ package com.scanium.app.items.edit
 
 import android.net.Uri
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.summary.AttributeSummaryGenerator
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.ml.ItemCategory

@@ -3,7 +3,7 @@ package com.scanium.app.selling.generation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.model.ItemAttributeSnapshot
 import com.scanium.app.model.ItemContextSnapshot
 import com.scanium.app.selling.assistant.AssistantBackendException

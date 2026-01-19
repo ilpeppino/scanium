@@ -3,7 +3,7 @@ package com.scanium.app.selling.data
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.selling.util.ListingDraftMapper
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.Bytes

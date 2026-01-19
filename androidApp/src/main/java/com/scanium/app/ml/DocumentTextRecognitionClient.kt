@@ -9,7 +9,7 @@ import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import kotlinx.coroutines.tasks.await
 
 /**

@@ -1,6 +1,6 @@
 package com.scanium.app.items.persistence
 
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 
 interface ScannedItemSyncer {
     suspend fun sync(items: List<ScannedItem>)

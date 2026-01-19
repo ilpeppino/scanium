@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.util.Log
 import com.google.mlkit.vision.common.InputImage
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.ml.detector.DetectionMapping
 import com.scanium.app.ml.detector.ObjectDetectionEngine
 

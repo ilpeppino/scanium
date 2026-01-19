@@ -56,7 +56,7 @@ import com.scanium.app.ftue.CameraUiFtueViewModel
 import com.scanium.app.ftue.ftueAnchor
 import com.scanium.app.ftue.ftuePulse
 import com.scanium.app.ftue.tourTarget
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.ui.common.DonationContent
 import kotlinx.coroutines.delay
 

@@ -1,10 +1,10 @@
 package com.scanium.app.ml.classification
 
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.aggregation.AggregatedItem
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.AggregatedItem
+import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner

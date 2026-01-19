@@ -1,6 +1,6 @@
 package com.scanium.app.camera.detection
 
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.ml.DetectionResult
 
 /**

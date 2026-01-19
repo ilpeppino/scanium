@@ -1,6 +1,6 @@
 package com.scanium.app.items.export.bundle
 
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

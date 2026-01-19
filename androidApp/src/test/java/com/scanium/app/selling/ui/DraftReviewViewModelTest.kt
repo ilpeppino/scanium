@@ -5,14 +5,14 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.scanium.app.data.ExportProfilePreferences
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.awaitItems
 import com.scanium.app.items.createTestItemsViewModel
 import com.scanium.app.listing.ExportProfileDefinition
 import com.scanium.app.listing.ExportProfileId
 import com.scanium.app.listing.ExportProfileRepository
 import com.scanium.app.listing.ExportProfiles
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.app.selling.persistence.ListingDraftStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

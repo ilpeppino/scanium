@@ -1,6 +1,6 @@
 package com.scanium.app.items.export
 
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.core.export.ExportItem
 import com.scanium.core.export.ExportPayload
 import com.scanium.shared.core.models.items.ItemPhoto

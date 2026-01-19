@@ -1,7 +1,7 @@
 package com.scanium.app.ml.classification
 
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.aggregation.AggregatedItem
+import com.scanium.app.AggregatedItem
 import com.scanium.core.models.geometry.NormalizedRect
 import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory

@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.scanium.app.R
 import com.scanium.shared.core.models.items.ItemCondition
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 
 /**
  * Localization helper for item categories, conditions, and attribute sources.

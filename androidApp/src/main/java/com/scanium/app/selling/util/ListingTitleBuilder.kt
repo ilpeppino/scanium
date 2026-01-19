@@ -2,7 +2,7 @@ package com.scanium.app.selling.util
 
 import android.util.Log
 import com.scanium.app.domain.DomainPackProvider
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import kotlinx.coroutines.runBlocking
 
 object ListingTitleBuilder {

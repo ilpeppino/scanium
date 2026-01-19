@@ -2,7 +2,7 @@ package com.scanium.app.items.summary
 
 import com.scanium.app.items.ItemCondition
 import com.scanium.shared.core.models.items.ItemAttribute
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 
 /**
  * Generates and parses the attribute summary text format.

@@ -4,12 +4,12 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.listing.DraftProvenance
 import com.scanium.app.listing.DraftStatus
 import com.scanium.app.listing.ListingDraft
 import com.scanium.app.listing.ListingDraftBuilder
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.runBlocking
 import org.junit.After

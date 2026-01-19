@@ -1,7 +1,7 @@
 package com.scanium.app.camera.geom
 
 import android.graphics.Rect
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

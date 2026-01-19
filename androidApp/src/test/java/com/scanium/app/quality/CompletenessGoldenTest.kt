@@ -1,7 +1,7 @@
 package com.scanium.app.quality
 
 import com.scanium.shared.core.models.items.ItemAttribute
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.float
 import kotlinx.serialization.json.int

@@ -1,6 +1,6 @@
 package com.scanium.app.quality
 
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 
 /**
  * Provides deterministic photo guidance based on item category and missing attributes.

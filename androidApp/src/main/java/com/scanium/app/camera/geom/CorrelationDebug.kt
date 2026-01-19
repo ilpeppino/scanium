@@ -2,7 +2,7 @@ package com.scanium.app.camera.geom
 
 import android.os.SystemClock
 import android.util.Log
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

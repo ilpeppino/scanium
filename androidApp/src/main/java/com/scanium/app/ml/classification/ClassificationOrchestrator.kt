@@ -3,7 +3,7 @@ package com.scanium.app.ml.classification
 import android.os.Trace
 import com.scanium.android.platform.adapters.AndroidLogger
 import com.scanium.android.platform.adapters.ClassifierAdapter
-import com.scanium.app.aggregation.AggregatedItem
+import com.scanium.app.AggregatedItem
 import com.scanium.shared.core.models.classification.ClassificationSource
 import com.scanium.shared.core.models.classification.Classifier
 import com.scanium.telemetry.facade.Telemetry

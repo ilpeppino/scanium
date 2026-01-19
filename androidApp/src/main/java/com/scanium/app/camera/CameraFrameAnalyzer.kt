@@ -11,13 +11,13 @@ import com.scanium.app.camera.detection.DetectionRouter
 import com.scanium.app.camera.detection.DocumentCandidate
 import com.scanium.app.camera.detection.DocumentCandidateDetector
 import com.scanium.app.camera.detection.DocumentCandidateState
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.ml.BarcodeDetectorClient
 import com.scanium.app.ml.DetectionResult
 import com.scanium.app.ml.DocumentTextRecognitionClient
 import com.scanium.app.ml.ObjectDetectorClient
 import com.scanium.app.perf.PerformanceMonitor
-import com.scanium.app.tracking.ObjectTracker
+import com.scanium.app.ObjectTracker
 import com.scanium.core.models.scanning.GuidanceState
 import com.scanium.core.models.scanning.ScanGuidanceState
 import com.scanium.core.tracking.CandidateInfo

@@ -2,7 +2,7 @@ package com.scanium.app.items.export.bundle
 
 import android.content.Context
 import android.graphics.Bitmap
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals

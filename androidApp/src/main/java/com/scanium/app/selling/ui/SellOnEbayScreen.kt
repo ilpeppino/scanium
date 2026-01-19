@@ -53,7 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.scanium.app.R
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.di.ListingViewModelFactoryEntryPoint
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.model.toImageBitmap
 import com.scanium.app.selling.data.EbayMarketplaceService
 import com.scanium.app.selling.domain.ListingCondition

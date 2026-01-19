@@ -1,6 +1,6 @@
 package com.scanium.domain.repository
 
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 
 /**

@@ -7,7 +7,7 @@ import android.graphics.Paint
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.app.ml.classification.ClassificationInput
 import com.scanium.app.ml.classification.ClassificationMode
 import com.scanium.app.ml.classification.ClassificationStatus

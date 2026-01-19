@@ -2,7 +2,7 @@ package com.scanium.app.items.export.bundle
 
 import android.content.Context
 import android.util.Log
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.photos.ItemPhotoManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File

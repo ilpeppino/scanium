@@ -6,7 +6,7 @@ import android.util.Log
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus
 import com.scanium.shared.core.models.items.ItemAttribute
 import com.scanium.shared.core.models.items.LayerState
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.LocalDate
 import javax.inject.Inject

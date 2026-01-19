@@ -4,10 +4,10 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import com.scanium.app.BuildConfig
-import com.scanium.app.items.ScannedItem
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ScannedItem
+import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import java.util.UUID
 
 /**

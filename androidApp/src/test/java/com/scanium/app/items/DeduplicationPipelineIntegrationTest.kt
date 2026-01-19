@@ -9,7 +9,7 @@ import com.scanium.core.models.image.Bytes
 import com.scanium.core.models.ml.ItemCategory
 import com.scanium.core.tracking.DetectionInfo
 import com.scanium.core.tracking.ObjectCandidate
-import com.scanium.core.tracking.ObjectTracker
+import com.scanium.app.ObjectTracker
 import com.scanium.core.tracking.TrackerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi

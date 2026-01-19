@@ -8,9 +8,9 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.scanium.android.platform.adapters.toBitmap
 import com.scanium.android.platform.adapters.toImageRefJpeg
-import com.scanium.app.aggregation.AggregatedItem
-import com.scanium.shared.core.models.ml.ItemCategory
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.AggregatedItem
+import com.scanium.app.ItemCategory
+import com.scanium.app.NormalizedRect
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith

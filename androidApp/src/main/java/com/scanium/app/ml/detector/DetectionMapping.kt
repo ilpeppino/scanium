@@ -6,9 +6,9 @@ import android.util.Log
 import com.google.mlkit.vision.objects.DetectedObject
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.ml.DetectionResult
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.app.perf.PerformanceMonitor
 import com.scanium.app.tracking.DetectionInfo
 import com.scanium.core.models.ml.LabelWithConfidence

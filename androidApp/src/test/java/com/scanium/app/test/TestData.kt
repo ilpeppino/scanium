@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.RectF
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 
 fun RectF.toNormalizedRect(): NormalizedRect = NormalizedRect(left, top, right, bottom)
 

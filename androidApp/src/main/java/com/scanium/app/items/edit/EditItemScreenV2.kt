@@ -76,7 +76,7 @@ import com.scanium.app.config.FeatureFlags
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.AttributeDisplayFormatter
 import com.scanium.app.items.ItemsViewModel
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.summary.AttributeSummaryGenerator
 import com.scanium.app.model.toImageBitmap
 import com.scanium.shared.core.models.items.EnrichmentLayerStatus

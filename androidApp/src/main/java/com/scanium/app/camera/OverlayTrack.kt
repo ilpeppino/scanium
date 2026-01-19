@@ -1,9 +1,9 @@
 package com.scanium.app.camera
 
-import com.scanium.app.aggregation.AggregatedItem
+import com.scanium.app.AggregatedItem
 import com.scanium.app.ml.DetectionResult
-import com.scanium.app.ml.ItemCategory
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.ItemCategory
+import com.scanium.app.NormalizedRect
 import com.scanium.shared.core.models.pricing.Money
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import com.scanium.shared.core.models.pricing.PriceRange

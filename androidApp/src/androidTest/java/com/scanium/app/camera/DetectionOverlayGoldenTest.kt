@@ -14,7 +14,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import com.scanium.shared.core.models.pricing.PriceEstimationStatus
 import org.junit.Rule
 import org.junit.Test

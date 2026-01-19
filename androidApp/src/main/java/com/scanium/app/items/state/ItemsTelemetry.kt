@@ -1,7 +1,7 @@
 package com.scanium.app.items.state
 
 import android.util.Log
-import com.scanium.app.aggregation.AggregationStats
+import com.scanium.app.AggregationStats
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

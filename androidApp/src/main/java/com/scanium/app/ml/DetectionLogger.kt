@@ -1,7 +1,7 @@
 package com.scanium.app.ml
 
 import android.util.Log
-import com.scanium.app.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import com.scanium.app.platform.toBitmap
 import com.scanium.shared.core.models.model.ImageRef
 

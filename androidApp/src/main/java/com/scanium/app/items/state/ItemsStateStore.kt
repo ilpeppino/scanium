@@ -1,8 +1,8 @@
 package com.scanium.app.items.state
 
 import android.util.Log
-import com.scanium.app.aggregation.ItemAggregator
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ItemAggregator
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.shared.core.models.model.ImageRef
 import kotlinx.coroutines.flow.MutableSharedFlow

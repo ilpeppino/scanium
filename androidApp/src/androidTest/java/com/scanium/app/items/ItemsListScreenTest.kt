@@ -13,7 +13,7 @@ import com.scanium.app.items.export.bundle.ExportViewModel
 import com.scanium.app.items.export.bundle.PlainTextExporter
 import com.scanium.app.items.photos.ItemPhotoManager
 import com.scanium.app.items.photos.PerItemDedupeHelper
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.app.selling.persistence.NoopListingDraftStore
 import com.scanium.app.ui.theme.ScaniumTheme
 import org.junit.Rule

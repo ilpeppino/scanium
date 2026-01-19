@@ -3,8 +3,8 @@ package com.scanium.app.items
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.scanium.app.aggregation.AggregationPresets
-import com.scanium.app.aggregation.AggregationStats
+import com.scanium.app.AggregationPresets
+import com.scanium.app.AggregationStats
 import com.scanium.app.camera.OverlayTrack
 import com.scanium.app.data.SettingsRepository
 import com.scanium.app.items.classification.ItemClassificationCoordinator

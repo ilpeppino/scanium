@@ -2,7 +2,7 @@ package com.scanium.app.items.listing
 
 import android.util.Log
 import com.scanium.app.items.ItemListingStatus
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.persistence.ScannedItemStore
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

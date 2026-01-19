@@ -9,10 +9,10 @@ import com.scanium.shared.core.models.classification.ClassificationSource
 import com.scanium.shared.core.models.classification.ClassificationStatus
 import com.scanium.shared.core.models.classification.Classifier
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.app.ml.ItemCategory as AndroidItemCategory
+import com.scanium.app.ItemCategory as AndroidItemCategory
 import com.scanium.app.ml.classification.ClassificationMode as AndroidClassificationMode
 import com.scanium.app.ml.classification.ClassificationStatus as AndroidClassificationStatus
-import com.scanium.shared.core.models.ml.ItemCategory as SharedItemCategory
+import com.scanium.app.ItemCategory as SharedItemCategory
 
 /**
  * Adapter that bridges Android ItemClassifier to portable Classifier interface.

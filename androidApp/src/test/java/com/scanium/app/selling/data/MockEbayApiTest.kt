@@ -1,7 +1,7 @@
 package com.scanium.app.selling.data
 
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.selling.domain.ListingCondition
 import com.scanium.app.selling.domain.ListingDraft
 import com.scanium.app.selling.domain.ListingId

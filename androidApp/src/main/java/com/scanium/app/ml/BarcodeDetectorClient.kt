@@ -10,8 +10,8 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import com.scanium.android.platform.adapters.toImageRefJpeg
 import com.scanium.android.platform.adapters.toNormalizedRect
-import com.scanium.app.items.ScannedItem
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ScannedItem
+import com.scanium.app.ItemCategory
 import kotlinx.coroutines.tasks.await
 
 /**

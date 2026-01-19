@@ -9,14 +9,14 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.export.CsvExportWriter
 import com.scanium.app.items.export.ZipExportWriter
 import com.scanium.shared.core.export.ExportPayload
 import com.scanium.shared.core.export.toExportItem
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before

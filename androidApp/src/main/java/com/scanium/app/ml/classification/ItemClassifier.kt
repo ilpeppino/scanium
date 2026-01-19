@@ -1,7 +1,7 @@
 package com.scanium.app.ml.classification
 
 import android.graphics.Bitmap
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 
 /**
  * Contract for enhanced item classifiers.

@@ -1,6 +1,6 @@
 package com.scanium.domain.repository
 
-import com.scanium.app.ml.ItemCategory
+import com.scanium.app.ItemCategory
 
 /**
  * Interface for mapping domain category IDs to UI-displayable categories.

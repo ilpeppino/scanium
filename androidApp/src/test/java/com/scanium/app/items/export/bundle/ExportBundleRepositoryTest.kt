@@ -1,10 +1,10 @@
 package com.scanium.app.items.export.bundle
 
 import android.content.Context
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.photos.ItemPhotoManager
 import com.scanium.shared.core.models.items.ItemAttribute
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

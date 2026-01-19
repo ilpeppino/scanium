@@ -4,7 +4,7 @@ import com.scanium.shared.core.models.classification.ClassificationResult
 import com.scanium.shared.core.models.classification.ClassificationSource
 import com.scanium.shared.core.models.classification.ClassificationStatus
 import com.scanium.shared.core.models.classification.Classifier
-import com.scanium.shared.core.models.ml.ItemCategory
+import com.scanium.app.ItemCategory
 import com.scanium.shared.core.models.model.ImageRef
 
 /**

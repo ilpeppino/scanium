@@ -6,7 +6,7 @@ import android.graphics.RectF
 import android.net.Uri
 import android.util.Log
 import com.scanium.android.platform.adapters.toImageRefJpeg
-import com.scanium.app.aggregation.AggregatedItem
+import com.scanium.app.AggregatedItem
 import com.scanium.app.camera.ImageUtils
 import com.scanium.app.model.toBitmap
 import com.scanium.app.platform.toRectF

@@ -2,7 +2,7 @@ package com.scanium.app.items.persistence
 
 import android.database.SQLException
 import android.util.Log
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow

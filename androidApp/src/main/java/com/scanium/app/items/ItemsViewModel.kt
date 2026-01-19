@@ -5,7 +5,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.scanium.app.aggregation.AggregationStats
+import com.scanium.app.AggregationStats
 import com.scanium.app.camera.CameraXManager
 import com.scanium.app.camera.OverlayTrack
 import com.scanium.app.camera.detection.DetectionEvent

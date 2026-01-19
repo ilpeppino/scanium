@@ -2,7 +2,7 @@ package com.scanium.app.items.state
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.google.common.truth.Truth.assertThat
-import com.scanium.app.items.ScannedItem
+import com.scanium.app.ScannedItem
 import com.scanium.app.items.ThumbnailCache
 import com.scanium.app.items.persistence.PersistenceError
 import com.scanium.app.items.persistence.ScannedItemStore

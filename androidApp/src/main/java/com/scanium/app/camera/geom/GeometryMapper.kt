@@ -6,7 +6,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.util.Log
 import com.scanium.app.camera.geom.GeometryMapper.uprightToSensor
-import com.scanium.shared.core.models.model.NormalizedRect
+import com.scanium.app.NormalizedRect
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
