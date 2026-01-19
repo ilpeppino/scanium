@@ -531,6 +531,7 @@ fun AssistantScreen(
                         // Just clear the failure state without retrying
                         viewModel.clearFailureState()
                     },
+                    onNavigateToSettingsGeneral = onNavigateToSettingsGeneral,
                 )
             }
 
@@ -1368,6 +1369,7 @@ private fun AssistantUnavailableBanner(
     failure: AssistantBackendFailure?,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
+    onNavigateToSettingsGeneral: () -> Unit = {},
 ) {
     val (title, detail, showRetry) =
         when (availability.reason) {
@@ -1502,6 +1504,15 @@ private fun AssistantUnavailableBanner(
                         .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                // Show "Go to Settings" button for auth issues
+                if (availability.reason == UnavailableReason.UNAUTHORIZED) {
+                    Button(
+                        onClick = onNavigateToSettingsGeneral,
+                        modifier = Modifier.semantics { contentDescription = "Go to Settings to sign in" },
+                    ) {
+                        Text("Go to Settings")
+                    }
+                }
                 if (showRetry && availability.canRetry) {
                     Button(
                         onClick = onRetry,
